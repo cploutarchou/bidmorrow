@@ -8,22 +8,27 @@ Status legend: `OPEN` (needs human), `PROVIDED` (done), `DEFERRED` (not needed y
 
 ---
 
-## 1. Cloudflare account & deployment credentials — OPEN
+## 1. Cloudflare account & deployment credentials — PARTIALLY PROVIDED (2026-08-14)
 
-Needed for: staging/production deployment (Phase 13). Not needed for local dev.
+**Provided**: the Cloudflare account is connected to the Claude session via
+the Cloudflare MCP connector (verified with read-only listing: account
+reachable, no D1/Workers resources exist yet). Claude can create/manage
+D1, R2, and KV resources through this connector when the deployment phases
+need them; resources will be created in their owning phases, not before.
 
-Human actions:
+Still human-required:
 
-1. Create (or designate) a Cloudflare account; note the **Account ID**
-   (Dashboard → Workers & Pages → right sidebar).
-2. Create a **scoped API token** for CI (do NOT use the Global API Key):
-   Dashboard → My Profile → API Tokens → Create Token → start from
-   "Edit Cloudflare Workers" template and add: `Account / D1 / Edit`,
-   `Account / Workers R2 Storage / Edit`, `Account / Workers Scripts / Edit`,
-   `Account / Queues / Edit`.
-3. Add GitHub repository secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`.
-4. Workers Paid plan ($5/mo) is required for Cloudflare Queues — approve this
-   spend (it is inside the cost budget; see docs/cost-model.md).
+1. Create a **scoped API token** for GitHub Actions CI (do NOT use the
+   Global API Key): Dashboard → My Profile → API Tokens → Create Token →
+   start from "Edit Cloudflare Workers" template and add: `Account / D1 /
+   Edit`, `Account / Workers R2 Storage / Edit`, `Account / Workers Scripts
+   / Edit`, `Account / Queues / Edit`. The MCP connector serves this
+   session, not CI — CI needs its own least-privilege token.
+2. Add GitHub repository secrets: `CLOUDFLARE_API_TOKEN`,
+   `CLOUDFLARE_ACCOUNT_ID`.
+3. Workers Paid plan ($5/mo) is required for Cloudflare Queues — approve
+   this spend on the connected account (inside the cost budget; see
+   docs/cost-model.md).
 
 ## 2. Domain & DNS for bidmorrow.com — OPEN
 
