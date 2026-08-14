@@ -1,0 +1,560 @@
+CREATE TABLE `audit_events` (
+	`id` text PRIMARY KEY NOT NULL,
+	`actor_type` text NOT NULL,
+	`actor_id` text,
+	`organization_id` text,
+	`action` text NOT NULL,
+	`target_type` text NOT NULL,
+	`target_id` text,
+	`before_summary` text,
+	`after_summary` text,
+	`occurred_at` integer NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_audit_events__actor_type" CHECK("audit_events"."actor_type" IN ('user', 'admin', 'system'))
+);
+--> statement-breakpoint
+CREATE INDEX `idx_audit_events__organization_id_occurred_at` ON `audit_events` (`organization_id`,`occurred_at`);--> statement-breakpoint
+CREATE INDEX `idx_audit_events__target_type_target_id` ON `audit_events` (`target_type`,`target_id`);--> statement-breakpoint
+CREATE TABLE `billing_events` (
+	`id` text PRIMARY KEY NOT NULL,
+	`stripe_event_id` text NOT NULL,
+	`type` text NOT NULL,
+	`organization_id` text,
+	`payload_json` text NOT NULL,
+	`status` text NOT NULL,
+	`processed_at` integer,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_billing_events__status" CHECK("billing_events"."status" IN ('received', 'processed', 'failed', 'ignored'))
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_billing_events__stripe_event_id` ON `billing_events` (`stripe_event_id`);--> statement-breakpoint
+CREATE INDEX `idx_billing_events__organization_id_created_at` ON `billing_events` (`organization_id`,`created_at`);--> statement-breakpoint
+CREATE TABLE `buyers` (
+	`id` text PRIMARY KEY NOT NULL,
+	`source` text NOT NULL,
+	`source_buyer_id` text,
+	`name` text NOT NULL,
+	`country_code` text,
+	`buyer_legal_type` text,
+	`buyer_activity` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_buyers__source_source_buyer_id` ON `buyers` (`source`,`source_buyer_id`) WHERE "buyers"."source_buyer_id" IS NOT NULL;--> statement-breakpoint
+CREATE INDEX `idx_buyers__source_name_country_code` ON `buyers` (`source`,`name`,`country_code`);--> statement-breakpoint
+CREATE TABLE `company_capabilities` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`label` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_company_capabilities__organization_id_label` ON `company_capabilities` (`organization_id`,`label`);--> statement-breakpoint
+CREATE TABLE `company_certifications` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`certification_code` text NOT NULL,
+	`label` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_company_certifications__certification_code" CHECK("company_certifications"."certification_code" IN ('ISO_27001', 'ISO_9001', 'SOC2', 'OTHER'))
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_company_certifications__organization_id_certification_code_label` ON `company_certifications` (`organization_id`,`certification_code`,`label`);--> statement-breakpoint
+CREATE TABLE `company_cpv_preferences` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`cpv_code` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_company_cpv_preferences__organization_id_cpv_code` ON `company_cpv_preferences` (`organization_id`,`cpv_code`);--> statement-breakpoint
+CREATE TABLE `company_exclusions` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`kind` text NOT NULL,
+	`value` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_company_exclusions__kind" CHECK("company_exclusions"."kind" IN ('cpv_family', 'country', 'nuts', 'phrase', 'contract_nature'))
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_company_exclusions__organization_id_kind_value` ON `company_exclusions` (`organization_id`,`kind`,`value`);--> statement-breakpoint
+CREATE TABLE `company_geographies` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`kind` text NOT NULL,
+	`code` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_company_geographies__kind" CHECK("company_geographies"."kind" IN ('preferred_nuts', 'opportunity_country', 'country_served'))
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_company_geographies__organization_id_kind_code` ON `company_geographies` (`organization_id`,`kind`,`code`);--> statement-breakpoint
+CREATE TABLE `company_keywords` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`kind` text NOT NULL,
+	`term` text NOT NULL,
+	`synonym_group` text,
+	`language` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_company_keywords__kind" CHECK("company_keywords"."kind" IN ('positive', 'synonym')),
+	CONSTRAINT "ck_company_keywords__synonym_group" CHECK(("company_keywords"."kind" = 'synonym' AND "company_keywords"."synonym_group" IS NOT NULL) OR ("company_keywords"."kind" = 'positive' AND "company_keywords"."synonym_group" IS NULL))
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_company_keywords__organization_id_kind_term` ON `company_keywords` (`organization_id`,`kind`,`term`);--> statement-breakpoint
+CREATE INDEX `idx_company_keywords__organization_id_synonym_group` ON `company_keywords` (`organization_id`,`synonym_group`);--> statement-breakpoint
+CREATE TABLE `company_profiles` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`display_name` text,
+	`description` text,
+	`website` text,
+	`employee_band` text,
+	`preset_key` text,
+	`onboarding_completed_at` integer,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_company_profiles__organization_id` ON `company_profiles` (`organization_id`);--> statement-breakpoint
+CREATE TABLE `customer_feedback` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`match_id` text NOT NULL,
+	`user_id` text NOT NULL,
+	`verdict` text NOT NULL,
+	`reasons_json` text,
+	`comment` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`match_id`) REFERENCES `tender_matches`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_customer_feedback__verdict" CHECK("customer_feedback"."verdict" IN ('useful', 'not_useful'))
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_customer_feedback__organization_id_match_id` ON `customer_feedback` (`organization_id`,`match_id`);--> statement-breakpoint
+CREATE INDEX `idx_customer_feedback__organization_id_created_at` ON `customer_feedback` (`organization_id`,`created_at`);--> statement-breakpoint
+CREATE TABLE `digest_items` (
+	`id` text PRIMARY KEY NOT NULL,
+	`digest_run_id` text NOT NULL,
+	`match_id` text,
+	`rank` integer NOT NULL,
+	`title_snapshot` text NOT NULL,
+	`score_snapshot` real,
+	`classification_snapshot` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`digest_run_id`) REFERENCES `digest_runs`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`match_id`) REFERENCES `tender_matches`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_digest_items__digest_run_id_match_id` ON `digest_items` (`digest_run_id`,`match_id`);--> statement-breakpoint
+CREATE INDEX `idx_digest_items__digest_run_id` ON `digest_items` (`digest_run_id`);--> statement-breakpoint
+CREATE INDEX `idx_digest_items__match_id` ON `digest_items` (`match_id`);--> statement-breakpoint
+CREATE TABLE `digest_preferences` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`enabled` integer DEFAULT 1 NOT NULL,
+	`send_empty` integer DEFAULT 0 NOT NULL,
+	`min_classification` text DEFAULT 'WORTH_REVIEWING' NOT NULL,
+	`timezone` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_digest_preferences__min_classification" CHECK("digest_preferences"."min_classification" IN ('STRONG_MATCH', 'WORTH_REVIEWING', 'POSSIBLE_MATCH', 'LOW_FIT'))
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_digest_preferences__organization_id` ON `digest_preferences` (`organization_id`);--> statement-breakpoint
+CREATE TABLE `digest_runs` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`digest_date` text NOT NULL,
+	`status` text NOT NULL,
+	`matches_count` integer NOT NULL,
+	`email_delivery_id` text,
+	`sent_at` integer,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`email_delivery_id`) REFERENCES `email_deliveries`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_digest_runs__status" CHECK("digest_runs"."status" IN ('pending', 'sent', 'skipped_empty', 'skipped_paused', 'failed'))
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_digest_runs__organization_id_digest_date` ON `digest_runs` (`organization_id`,`digest_date`);--> statement-breakpoint
+CREATE TABLE `email_deliveries` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text,
+	`user_id` text,
+	`kind` text NOT NULL,
+	`to_email` text NOT NULL,
+	`provider` text NOT NULL,
+	`provider_message_id` text,
+	`status` text NOT NULL,
+	`error` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_email_deliveries__kind" CHECK("email_deliveries"."kind" IN ('digest', 'verification', 'password_reset', 'billing')),
+	CONSTRAINT "ck_email_deliveries__status" CHECK("email_deliveries"."status" IN ('queued', 'sent', 'delivered', 'bounced', 'complained', 'failed')),
+	CONSTRAINT "ck_email_deliveries__recipient" CHECK("email_deliveries"."organization_id" IS NOT NULL OR "email_deliveries"."user_id" IS NOT NULL)
+);
+--> statement-breakpoint
+CREATE INDEX `idx_email_deliveries__organization_id_created_at` ON `email_deliveries` (`organization_id`,`created_at`);--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_email_deliveries__provider_provider_message_id` ON `email_deliveries` (`provider`,`provider_message_id`) WHERE "email_deliveries"."provider_message_id" IS NOT NULL;--> statement-breakpoint
+CREATE TABLE `exchange_rates` (
+	`id` text PRIMARY KEY NOT NULL,
+	`rate_date` text NOT NULL,
+	`currency` text NOT NULL,
+	`rate_to_eur` real NOT NULL,
+	`fetched_at` integer NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_exchange_rates__rate_date_currency` ON `exchange_rates` (`rate_date`,`currency`);--> statement-breakpoint
+CREATE TABLE `feature_flags` (
+	`id` text PRIMARY KEY NOT NULL,
+	`key` text NOT NULL,
+	`value_json` text NOT NULL,
+	`description` text NOT NULL,
+	`updated_by_user_id` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`updated_by_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_feature_flags__key` ON `feature_flags` (`key`);--> statement-breakpoint
+CREATE TABLE `ignored_tenders` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`lot_id` text NOT NULL,
+	`notice_id` text NOT NULL,
+	`ignored_by_user_id` text NOT NULL,
+	`reason` text,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`lot_id`) REFERENCES `tender_lots`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`notice_id`) REFERENCES `tender_notices`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`ignored_by_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_ignored_tenders__organization_id_lot_id` ON `ignored_tenders` (`organization_id`,`lot_id`);--> statement-breakpoint
+CREATE INDEX `idx_ignored_tenders__lot_id` ON `ignored_tenders` (`lot_id`);--> statement-breakpoint
+CREATE TABLE `ingestion_checkpoints` (
+	`id` text PRIMARY KEY NOT NULL,
+	`source` text NOT NULL,
+	`last_publication_date` text NOT NULL,
+	`last_sequence_token` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_ingestion_checkpoints__source` ON `ingestion_checkpoints` (`source`);--> statement-breakpoint
+CREATE TABLE `ingestion_errors` (
+	`id` text PRIMARY KEY NOT NULL,
+	`ingestion_run_id` text NOT NULL,
+	`source` text NOT NULL,
+	`source_notice_id` text,
+	`stage` text NOT NULL,
+	`error_code` text NOT NULL,
+	`message` text NOT NULL,
+	`detail_json` text,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`ingestion_run_id`) REFERENCES `ingestion_runs`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_ingestion_errors__stage" CHECK("ingestion_errors"."stage" IN ('fetch', 'parse', 'map', 'persist', 'score'))
+);
+--> statement-breakpoint
+CREATE INDEX `idx_ingestion_errors__ingestion_run_id` ON `ingestion_errors` (`ingestion_run_id`);--> statement-breakpoint
+CREATE INDEX `idx_ingestion_errors__source_source_notice_id` ON `ingestion_errors` (`source`,`source_notice_id`);--> statement-breakpoint
+CREATE TABLE `ingestion_runs` (
+	`id` text PRIMARY KEY NOT NULL,
+	`source` text NOT NULL,
+	`status` text NOT NULL,
+	`window_from` text NOT NULL,
+	`window_to` text NOT NULL,
+	`notices_seen` integer DEFAULT 0 NOT NULL,
+	`notices_upserted` integer DEFAULT 0 NOT NULL,
+	`versions_created` integer DEFAULT 0 NOT NULL,
+	`lots_created` integer DEFAULT 0 NOT NULL,
+	`matches_scored` integer DEFAULT 0 NOT NULL,
+	`errors_count` integer DEFAULT 0 NOT NULL,
+	`started_at` integer NOT NULL,
+	`finished_at` integer,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	CONSTRAINT "ck_ingestion_runs__status" CHECK("ingestion_runs"."status" IN ('running', 'succeeded', 'partial', 'failed'))
+);
+--> statement-breakpoint
+CREATE INDEX `idx_ingestion_runs__source_started_at` ON `ingestion_runs` (`source`,`started_at`);--> statement-breakpoint
+CREATE TABLE `match_components` (
+	`id` text PRIMARY KEY NOT NULL,
+	`match_id` text NOT NULL,
+	`component_key` text NOT NULL,
+	`points` real NOT NULL,
+	`max_points` real NOT NULL,
+	`status` text NOT NULL,
+	`explanation` text NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`match_id`) REFERENCES `tender_matches`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_match_components__component_key" CHECK("match_components"."component_key" IN ('cpv', 'capability', 'geography', 'value', 'buyer', 'procedure_nature', 'deadline', 'eligibility')),
+	CONSTRAINT "ck_match_components__status" CHECK("match_components"."status" IN ('MATCHED', 'PARTIAL', 'NO_MATCH', 'UNKNOWN'))
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_match_components__match_id_component_key` ON `match_components` (`match_id`,`component_key`);--> statement-breakpoint
+CREATE TABLE `match_risk_flags` (
+	`id` text PRIMARY KEY NOT NULL,
+	`match_id` text NOT NULL,
+	`type` text NOT NULL,
+	`evidence` text NOT NULL,
+	`source_field` text NOT NULL,
+	`confidence` text NOT NULL,
+	`explanation` text NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`match_id`) REFERENCES `tender_matches`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_match_risk_flags__type" CHECK("match_risk_flags"."type" IN ('certification', 'security_clearance', 'insurance', 'financial_turnover', 'prior_experience', 'framework_membership', 'local_presence', 'mandatory_references')),
+	CONSTRAINT "ck_match_risk_flags__confidence" CHECK("match_risk_flags"."confidence" IN ('HIGH', 'POSSIBLE'))
+);
+--> statement-breakpoint
+CREATE INDEX `idx_match_risk_flags__match_id` ON `match_risk_flags` (`match_id`);--> statement-breakpoint
+CREATE TABLE `matching_preferences` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`min_value_eur` real,
+	`max_value_eur` real,
+	`supported_contract_natures_json` text NOT NULL,
+	`minimum_days_remaining` integer,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_matching_preferences__organization_id` ON `matching_preferences` (`organization_id`);--> statement-breakpoint
+CREATE TABLE `organization_members` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`user_id` text NOT NULL,
+	`role` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_organization_members__role" CHECK("organization_members"."role" IN ('ORGANIZATION_OWNER', 'MEMBER'))
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_organization_members__organization_id_user_id` ON `organization_members` (`organization_id`,`user_id`);--> statement-breakpoint
+CREATE INDEX `idx_organization_members__user_id` ON `organization_members` (`user_id`);--> statement-breakpoint
+CREATE TABLE `organizations` (
+	`id` text PRIMARY KEY NOT NULL,
+	`name` text NOT NULL,
+	`status` text NOT NULL,
+	`created_by_user_id` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`created_by_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_organizations__status" CHECK("organizations"."status" IN ('active', 'deleted'))
+);
+--> statement-breakpoint
+CREATE TABLE `product_events` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text,
+	`user_id` text,
+	`name` text NOT NULL,
+	`properties_json` text,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE INDEX `idx_product_events__name_created_at` ON `product_events` (`name`,`created_at`);--> statement-breakpoint
+CREATE INDEX `idx_product_events__organization_id_created_at` ON `product_events` (`organization_id`,`created_at`);--> statement-breakpoint
+CREATE TABLE `saved_tenders` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`lot_id` text NOT NULL,
+	`notice_id` text NOT NULL,
+	`saved_by_user_id` text NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`lot_id`) REFERENCES `tender_lots`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`notice_id`) REFERENCES `tender_notices`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`saved_by_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_saved_tenders__organization_id_lot_id` ON `saved_tenders` (`organization_id`,`lot_id`);--> statement-breakpoint
+CREATE INDEX `idx_saved_tenders__lot_id` ON `saved_tenders` (`lot_id`);--> statement-breakpoint
+CREATE TABLE `source_snapshots` (
+	`id` text PRIMARY KEY NOT NULL,
+	`source` text NOT NULL,
+	`source_notice_id` text NOT NULL,
+	`version_number` integer NOT NULL,
+	`r2_key` text NOT NULL,
+	`content_hash` text NOT NULL,
+	`size_bytes` integer NOT NULL,
+	`content_type` text NOT NULL,
+	`retained_until_at` integer,
+	`deleted_at` integer,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_source_snapshots__r2_key` ON `source_snapshots` (`r2_key`);--> statement-breakpoint
+CREATE INDEX `idx_source_snapshots__source_source_notice_id` ON `source_snapshots` (`source`,`source_notice_id`);--> statement-breakpoint
+CREATE TABLE `subscriptions` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`stripe_customer_id` text NOT NULL,
+	`stripe_subscription_id` text,
+	`status` text NOT NULL,
+	`plan` text NOT NULL,
+	`current_period_end_at` integer,
+	`cancel_at_period_end` integer DEFAULT 0 NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_subscriptions__status" CHECK("subscriptions"."status" IN ('trialing', 'active', 'past_due', 'canceled', 'unpaid')),
+	CONSTRAINT "ck_subscriptions__plan" CHECK("subscriptions"."plan" IN ('founding', 'standard'))
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_subscriptions__organization_id` ON `subscriptions` (`organization_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_subscriptions__stripe_customer_id` ON `subscriptions` (`stripe_customer_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_subscriptions__stripe_subscription_id` ON `subscriptions` (`stripe_subscription_id`);--> statement-breakpoint
+CREATE TABLE `support_notes` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`author_user_id` text NOT NULL,
+	`body` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`author_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE INDEX `idx_support_notes__organization_id_created_at` ON `support_notes` (`organization_id`,`created_at`);--> statement-breakpoint
+CREATE TABLE `tender_cpv_codes` (
+	`id` text PRIMARY KEY NOT NULL,
+	`lot_id` text NOT NULL,
+	`cpv_code` text NOT NULL,
+	`is_main` integer NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`lot_id`) REFERENCES `tender_lots`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_tender_cpv_codes__lot_id_cpv_code` ON `tender_cpv_codes` (`lot_id`,`cpv_code`);--> statement-breakpoint
+CREATE INDEX `idx_tender_cpv_codes__cpv_code` ON `tender_cpv_codes` (`cpv_code`);--> statement-breakpoint
+CREATE TABLE `tender_geographies` (
+	`id` text PRIMARY KEY NOT NULL,
+	`lot_id` text NOT NULL,
+	`country_code` text NOT NULL,
+	`nuts_code` text,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`lot_id`) REFERENCES `tender_lots`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE INDEX `idx_tender_geographies__lot_id` ON `tender_geographies` (`lot_id`);--> statement-breakpoint
+CREATE TABLE `tender_lots` (
+	`id` text PRIMARY KEY NOT NULL,
+	`notice_version_id` text NOT NULL,
+	`lot_number` text NOT NULL,
+	`title` text NOT NULL,
+	`description` text,
+	`contract_nature` text,
+	`estimated_value_amount` real,
+	`estimated_value_currency` text,
+	`estimated_value_eur` real,
+	`value_is_derived` integer NOT NULL,
+	`deadline_at` integer,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`notice_version_id`) REFERENCES `tender_notice_versions`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_tender_lots__notice_version_id_lot_number` ON `tender_lots` (`notice_version_id`,`lot_number`);--> statement-breakpoint
+CREATE INDEX `idx_tender_lots__deadline_at` ON `tender_lots` (`deadline_at`);--> statement-breakpoint
+CREATE TABLE `tender_matches` (
+	`id` text PRIMARY KEY NOT NULL,
+	`organization_id` text NOT NULL,
+	`lot_id` text NOT NULL,
+	`notice_id` text NOT NULL,
+	`engine_version` text NOT NULL,
+	`score` real,
+	`classification` text NOT NULL,
+	`exclusion_rule` text,
+	`exclusion_evidence` text,
+	`scored_at` integer NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`lot_id`) REFERENCES `tender_lots`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`notice_id`) REFERENCES `tender_notices`(`id`) ON UPDATE no action ON DELETE no action,
+	CONSTRAINT "ck_tender_matches__classification" CHECK("tender_matches"."classification" IN ('STRONG_MATCH', 'WORTH_REVIEWING', 'POSSIBLE_MATCH', 'LOW_FIT', 'EXCLUDED'))
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_tender_matches__organization_id_lot_id_engine_version` ON `tender_matches` (`organization_id`,`lot_id`,`engine_version`);--> statement-breakpoint
+CREATE INDEX `idx_tender_matches__organization_id_engine_version_classification_scored_at` ON `tender_matches` (`organization_id`,`engine_version`,`classification`,`scored_at`);--> statement-breakpoint
+CREATE INDEX `idx_tender_matches__lot_id` ON `tender_matches` (`lot_id`);--> statement-breakpoint
+CREATE TABLE `tender_notice_versions` (
+	`id` text PRIMARY KEY NOT NULL,
+	`notice_id` text NOT NULL,
+	`version_number` integer NOT NULL,
+	`publication_date` text NOT NULL,
+	`content_hash` text NOT NULL,
+	`snapshot_id` text NOT NULL,
+	`eforms_sdk_version` text,
+	`ingestion_run_id` text,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`notice_id`) REFERENCES `tender_notices`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`snapshot_id`) REFERENCES `source_snapshots`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`ingestion_run_id`) REFERENCES `ingestion_runs`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_tender_notice_versions__notice_id_version_number` ON `tender_notice_versions` (`notice_id`,`version_number`);--> statement-breakpoint
+CREATE TABLE `tender_notices` (
+	`id` text PRIMARY KEY NOT NULL,
+	`source` text NOT NULL,
+	`source_notice_id` text NOT NULL,
+	`current_version_id` text,
+	`buyer_id` text,
+	`notice_type` text NOT NULL,
+	`procedure_type` text,
+	`eforms_sdk_version` text,
+	`source_languages_json` text NOT NULL,
+	`source_url` text NOT NULL,
+	`publication_date` text NOT NULL,
+	`retrieved_at` integer NOT NULL,
+	`content_hash` text NOT NULL,
+	`archived_at` integer,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`current_version_id`) REFERENCES `tender_notice_versions`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`buyer_id`) REFERENCES `buyers`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_tender_notices__source_source_notice_id` ON `tender_notices` (`source`,`source_notice_id`);--> statement-breakpoint
+CREATE INDEX `idx_tender_notices__publication_date` ON `tender_notices` (`publication_date`);--> statement-breakpoint
+CREATE INDEX `idx_tender_notices__archived_at` ON `tender_notices` (`archived_at`) WHERE "tender_notices"."archived_at" IS NOT NULL;--> statement-breakpoint
+CREATE TABLE `users` (
+	`id` text PRIMARY KEY NOT NULL,
+	`email` text NOT NULL,
+	`email_verified` integer NOT NULL,
+	`name` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_users__email` ON `users` (`email`);

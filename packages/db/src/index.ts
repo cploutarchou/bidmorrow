@@ -1,11 +1,15 @@
 /**
  * @bidmorrow/db — Drizzle schema + repository layer.
  *
- * Phase 2 skeleton: the D1 schema and the repository functions arrive in
- * Phase 3. What is foundational now is the tenancy contract below.
+ * Phase 3: the D1 schema lives in ./schema (docs/data-model.md); repository
+ * functions arrive with their consuming features. The tenancy contract below
+ * is foundational and applies to every repository function.
  */
 
 export const PACKAGE = '@bidmorrow/db';
+
+export * as schema from './schema';
+export * from './schema';
 
 /**
  * Context handed to every repository function by the composition root

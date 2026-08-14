@@ -290,6 +290,25 @@ carries its own lot rows). The matching unit.
 - **Index** `(lot_id)`. No unique constraint: NULL `nuts_code` makes SQLite
   unique semantics unhelpful; ingestion dedupes in-app.
 
+### exchange_rates
+
+ECB euro foreign exchange reference rates used for value-fit scoring only
+(ADR-0004). Global; refreshed by the ingestion cron; ~30 currencies per rate
+date. A rate is valid for scoring if ≤ 7 days old. _(reconciled Phase 3:
+table was specified in ADR-0004 but missing from this doc; added here.)_
+
+- `id TEXT PK` · `rate_date TEXT NOT NULL` — `YYYY-MM-DD` ECB reference date
+  the rate was published for.
+- `currency TEXT NOT NULL` — ISO-4217 code (e.g. `SEK`).
+- `rate_to_eur REAL NOT NULL` — multiplier converting one unit of `currency`
+  into EUR (`eur = amount × rate_to_eur`; the inverse of the ECB-published
+  currency-per-EUR quote).
+- `fetched_at INTEGER NOT NULL` — when the rate was fetched from the ECB
+  feed; a re-fetch upserts the same `(rate_date, currency)` row (`updated_at`
+  tracks it).
+- **Unique** `(rate_date, currency)` — refresh idempotency: the daily fetch
+  upserts, never duplicates.
+
 ## 5. Ingestion pipeline (global, ops)
 
 ### ingestion_runs
@@ -679,6 +698,7 @@ erDiagram
 | 15  | Admin: notices per window, run history, notice errors                           | tender_notices / ingestion_runs / ingestion_errors | `(publication_date)` / `(source, started_at)` / `(source, source_notice_id)` |
 | 16  | Admin: CPV scope analysis                                                       | tender_cpv_codes                                   | `(cpv_code)`                                                                 |
 | 17  | Feedback trend per org                                                          | customer_feedback                                  | `(organization_id, created_at)`                                              |
+| 18  | FX rate lookup for scoring; daily refresh upsert                                | exchange_rates                                     | `(rate_date, currency)` unique                                               |
 
 Indexes not listed here should not exist — every index costs write throughput
 on the ingestion hot path and D1 storage.
@@ -709,6 +729,7 @@ unchanged).
 | product_events                                   | customer activity                | ~2,000           | 250                                | ~180 MB/yr (prunable)             |
 | audit_events / billing_events / support_notes    | admin+billing activity           | tens             | 500–2,000                          | negligible                        |
 | company_* / matching_preferences / subscriptions | customers                        | one-time per org | —                                  | < 1 MB total                      |
+| exchange_rates                                   | time (~30 currencies/day)        | ~30              | 100                                | ~1 MB/yr, prunable                |
 
 **Reading for the cost model:**
 
