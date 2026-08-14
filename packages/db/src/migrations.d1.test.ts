@@ -4,8 +4,9 @@
  * The suite setup (src/test/apply-migrations.ts) applies every file in
  * /migrations to a completely empty database — reaching these assertions at
  * all proves the chain applies cleanly from scratch. The tests then assert
- * the outcome: every expected application table exists, the 0001 `_bootstrap`
- * placeholder was dropped by 0002, and both migrations are recorded.
+ * the outcome: every expected application table exists (including the
+ * Better Auth core tables added in 0003), the 0001 `_bootstrap` placeholder
+ * was dropped by 0002, and all three migrations are recorded.
  */
 import { env } from 'cloudflare:workers';
 import { describe, expect, it } from 'vitest';
@@ -50,6 +51,10 @@ const EXPECTED_TABLES = [
   'tender_notice_versions',
   'tender_notices',
   'users',
+  'auth_accounts',
+  'auth_sessions',
+  'auth_verifications',
+  'auth_rate_limits',
 ] as const;
 
 async function listTables(): Promise<Set<string>> {
@@ -71,13 +76,14 @@ describe('migrations apply from an empty database', () => {
     expect(tables.has('_bootstrap')).toBe(false);
   });
 
-  it('records both migrations in d1_migrations', async () => {
+  it('records all three migrations in d1_migrations', async () => {
     const result = await env.DB.prepare('SELECT name FROM d1_migrations ORDER BY name').all<{
       name: string;
     }>();
     expect(result.results.map((row) => row.name)).toEqual([
       '0001_init.sql',
       '0002_core_schema.sql',
+      '0003_auth_tables.sql',
     ]);
   });
 });

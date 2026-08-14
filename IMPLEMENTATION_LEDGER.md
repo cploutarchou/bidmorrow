@@ -5,7 +5,8 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 3 — Database: COMPLETE (signed off).** Next: Phase 4 — Auth/Tenancy.
+**Phase 4 — Auth/Tenancy: COMPLETE (signed off).** Next: Phase 5 — TED
+Ingestion.
 
 ## Completed
 
@@ -140,27 +141,254 @@ context compaction. Read first in every session.
 - Root `pnpm test` chains root+worker+db suites (P3-R-003 foot-gun noted:
   future pool-workers suites must be appended to the chain).
 
+### Phase 4 stage A — Auth core (2026-08-14)
+
+- Verified against live Better Auth 1.6.29 docs (github.com/better-auth/
+  better-auth main branch, fetched — better-auth.com is proxy-blocked) AND
+  the installed package source (`@better-auth/core`, `@better-auth/
+drizzle-adapter`, `better-auth` dist), not memory: `drizzleAdapter` import
+  is `@better-auth/drizzle-adapter` (separate package, matches ADR-0002 +
+  dependency-versions.md pin — NOT the `better-auth/adapters/drizzle`
+  subpath some doc pages show for a different release line); model
+  resolution (`getModelName`) proven from `@better-auth/core` source to key
+  the `schema` object passed to `drizzleAdapter` by the **mapped**
+  `modelName`, so `packages/auth` sets `user.modelName`/`session.modelName`/
+  `account.modelName`/`verification.modelName` to our real snake_case table
+  names and keys the `schema` object with those same strings; email/reset
+  hook signatures, `requireEmailVerification` (proven via sign-in/sign-up
+  route source: 403 `EMAIL_NOT_VERIFIED`, sign-up returns `{token:null,
+user}` while still firing `sendVerificationEmail`), `rateLimit: {enabled,
+storage:'database', modelName}`, and CSRF origin-header enforcement (a
+  cookie-bearing state-changing request needs a matching `Origin` header —
+  discovered via a failing smoke test, not assumed) were all confirmed this
+  way, not assumed from ADR prose.
+- ADR-0007 followed: NO organization plugin; `packages/auth` is
+  authentication-only (`createAuth` in packages/auth/src/index.ts).
+- Schema reconciliation (packages/db/src/schema/identity.ts): `users`
+  gained `image`; four new Better-Auth-core tables (`auth_accounts`,
+  `auth_sessions`, `auth_verifications`, `auth_rate_limits`) hand-mapped
+  (CLI generation can't know our table-name mapping, so it isn't
+  authoritative here — documented in-file). DEVIATION recorded in-file and
+  in docs/data-model.md §1: these five tables use Drizzle
+  `integer(...,{mode:'timestamp_ms'})`/`{mode:'boolean'}` column modes
+  (Better Auth writes native `Date`/`boolean` for those fields) — on-disk
+  storage is still plain INTEGER; every other table keeps the repo's plain-
+  number convention untouched. Existing Phase-3 test helpers
+  (`test/helpers.ts`, `tenant-isolation.d1.test.ts`) updated to the new JS
+  types (`Date`, `boolean`) for their placeholder `users` inserts.
+- Migration 0003_auth_tables.sql: additive only (4x CREATE TABLE + indexes,
+  1x ALTER TABLE users ADD COLUMN image). Procedure: rebuilt
+  packages/db/drizzle/ as a two-step baseline→diff (old schema snapshot,
+  then new schema diff) since the in-repo drizzle/ journal only tracks a
+  single collapsed snapshot (mirroring the Phase 3 0000_core_schema.sql
+  pattern) — flattened the diff into the migration, then regenerated a
+  fresh single `packages/db/drizzle/0000_core_schema.sql` baseline and
+  proved `drizzle-kit generate` afterward gives **zero diff**. Full chain
+  (0001+0002+0003) verified twice: once against a brand-new scratch D1
+  (`--persist-to` under the session scratchpad; 0001✅/0002✅/0003✅, 11
+  commands on 0003) and once via `pnpm db:migrate:local`. 0001/0002
+  untouched (only 0003 is new).
+- packages/notifications: added `EmailProvider`/`EmailMessage` +
+  `createLoggingEmailProvider(logger)` — logs `kind`+`to` only, never
+  `subject`/`text` (which may carry a verification/reset URL) — Resend
+  implementation still Phase 8 (blocker 3).
+- apps/worker: `/api/auth/*` mounted per the documented Hono pattern
+  (`app.on(['GET','POST'], ...)`); `Env` gained `APP_ENV`/`APP_BASE_URL`/
+  `BETTER_AUTH_SECRET`/`BETTER_AUTH_URL`; wrangler.jsonc got non-secret
+  `vars` per env + comments pointing secrets at `wrangler secret put`/
+  `.dev.vars`; `.dev.vars.example` added (gitignore needed a
+  `!.dev.vars.example` exception — `.dev.vars.*` was blanket-ignoring it).
+- Smoke tests (apps/worker/src/auth.test.ts, real workerd+D1, pool-workers):
+  10 tests — sign-up creates `users` row with `email_verified=0` and fires
+  the logging email stub with `kind=verification`+the email (asserted via a
+  `console.warn`/`console.error` capture, with a regression assertion that
+  NO captured log line contains the verification URL/token); unverified
+  sign-in → 403 `EMAIL_NOT_VERIFIED`, no session cookie; after setting
+  `email_verified=1` directly in D1, sign-in succeeds, sets an HttpOnly
+  session cookie, `get-session` returns the user, `sign-out` clears the
+  session (subsequent `get-session` → null). Existing
+  packages/db/src/migrations.d1.test.ts sentinel updated for the 4 new
+  tables + 0003 in `d1_migrations`.
+- Gates (all executed 2026-08-14, real output, no claims without runs):
+  `pnpm format:check` PASS · `pnpm lint` PASS · `pnpm typecheck` PASS
+  (14/14 workspace projects) · `pnpm test` PASS — root 17 files/66 tests,
+  worker 2 files/10 tests (workerd+D1), db 8 files/38 tests (workerd+D1) =
+  114 tests total, zero skipped/deleted · `pnpm build` PASS (vite + wrangler
+  deploy --dry-run, bindings listed including the new `vars`).
+
+### Phase 4 stage B — Tenancy (2026-08-14)
+
+- Verified against installed `better-auth@1.6.29` source (not memory):
+  `auth.api.getSession({ headers })` returns `{ session, user } | null`
+  (`requireHeaders: true`, `dist/api/routes/session.mjs`);
+  `auth.api.deleteUser({ headers, body })` is disabled by default and
+  throws 404 unless `user.deleteUser.enabled` is set
+  (`dist/api/routes/update-user.mjs`) — enabled in `packages/auth`
+  (password/verification-email confirmation left off for V1; the
+  composition root's own domain-level gate — sole-OWNER orgs cannot
+  self-delete — is the safety check instead); `internalAdapter.deleteUser`
+  cascades `auth_accounts`/`auth_sessions` but NOT `organization_members`
+  (no FK cascade — that table is domain-owned), so the account-deletion
+  handler removes membership rows itself first. Better Auth's own
+  database-storage rate limiter applies a strict 3-req/10s rule to
+  sign-up/sign-in keyed by `x-forwarded-for` (`@better-auth/core/dist/
+utils/ip.mjs`) — the new SEC-P3-04 test suite gives each test-created user
+  a distinct synthetic IP so its own volume doesn't self-throttle; also
+  caught (and fixed) that Better Auth lowercases emails on sign-up, so the
+  test helper's raw-SQL force-verify update needed lowercase addresses to
+  match.
+- apps/worker/src/env.ts: `Env`/`Variables`/`AppBindings` extracted from
+  index.ts (avoids a circular import with the new
+  src/auth-instance.ts factory, which both `/api/auth/*` and the session
+  middleware now share). `Env` gained `ADMIN_EMAILS?` (secret-like — never
+  a wrangler.jsonc `vars` entry, only `.dev.vars`/`wrangler secret put`)
+  and `API_RATE_LIMITER?: RateLimit`.
+- Middleware (src/middleware/): `requireSession` (401 JSON on no session);
+  `requireOrganization` (org/role from `organization_members` via
+  `getOrganizationsForUser` ONLY — V1 single-org rule, 403 `no_organization`
+  when none) + `requireRole(role)` guard; `requireInternalAdmin`
+  (ADMIN_EMAILS allowlist, case-insensitive/trimmed; 404 — not 401/403 —
+  for every non-admin caller so the admin surface's existence is never
+  revealed, docs/security.md C11); `rateLimitOrgApi` (native
+  `API_RATE_LIMITER` binding on `/api/org/*`, IP-keyed, tolerant of a
+  missing binding — logs once and skips rather than failing closed/open).
+- Routes (src/routes/, zod-validated via `@hono/zod-validator` 0.9.0, new
+  dep): `POST /api/org` (create org + OWNER membership, 409 if the user
+  already has one — V1 single-org rule); `GET/PUT /api/org/profile` (PUT
+  OWNER-only, closed zod schema — unknown fields incl. a client-supplied
+  `organizationId` are rejected 400, never honored); `GET/PUT
+/api/org/keywords` (PUT OWNER-only, `CapExceededError` → 422
+  `{error:'cap_exceeded',cap}`); `DELETE /api/account` (409
+  `transfer_or_delete_organization_first` for a sole OWNER — checked via
+  new `countOrganizationOwners`, not just "has an OWNER row", so it stays
+  correct if multi-owner orgs ever ship; otherwise removes memberships then
+  calls Better Auth's deleteUser); `/api/admin/health-details` placeholder
+  (real admin tooling is Phase 10). All handlers read `organizationId`
+  from `c.var` only; every write goes through a repository function.
+- packages/db/src/repositories/identity.ts: three additions, all
+  `(db, organizationId, ...)`-shaped (no structural-contract-test
+  exemption needed) — `addOrganizationMember` (no invite UI in V1; exists
+  for org bootstrap + MEMBER-role test seeding), `removeOrganizationMember`
+  (double-scoped delete), `countOrganizationOwners`.
+- wrangler.jsonc: `[[ratelimits]]` binding `API_RATE_LIMITER`
+  (namespace_id 1001, simple 100 req/60s) — confirmed working in BOTH the
+  pool-workers 0.21 test runtime (miniflare's ratelimit plugin picked it up
+  from `wrangler.jsonc` via `configPath`, no test-only override needed) and
+  `wrangler deploy --dry-run` bindings output; middleware still guards the
+  missing-binding case per the plan for any environment where it isn't
+  true.
+- Tests: `apps/worker/src/tenancy.test.ts`, 8 tests, real workerd + local
+  D1, covering every SEC-P3-04 bullet — unauthenticated 401 on every
+  `/api/org/*` route and 404 on `/api/admin/*`; B never reads/writes A's
+  profile row (asserted both via HTTP response AND a direct repository
+  read of A's row before/after); query-string `organizationId` ignored on
+  GET, JSON-body `organizationId` rejected 400 on PUT (both leave A
+  untouched); MEMBER role → 403 on PUT profile (member row seeded via the
+  new `addOrganizationMember`); admin gate 404 for a normal user / 200 for
+  the ADMIN_EMAILS test user; keywords cap 51 → 422 with zero rows
+  persisted; account deletion 409 for a sole OWNER, 204 + D1 row gone +
+  subsequent session check 401 for a memberless user.
+- Deliberate scope note: account deletion only removes
+  `organization_members` rows before calling Better Auth's deleteUser
+  (matches what V1 actually populates for a self-deleting user); a broader
+  user-reference sweep (`support_notes.author_user_id`,
+  `feature_flags.updated_by_user_id`, admin-only tables) is out of scope
+  here and would only matter for an INTERNAL_ADMIN account, which Phase 10
+  owns.
+- Gates (all executed 2026-08-14, real output): `pnpm format` (1 file
+  reformatted, the new test file) · `pnpm format:check` PASS ·
+  `pnpm lint` PASS · `pnpm typecheck` PASS (14/14 workspace projects) ·
+  `pnpm test` PASS — root 17 files/66, worker 3 files/18 (workerd+D1, incl.
+  the new tenancy.test.ts), db 8 files/38 (workerd+D1) = 122 tests, zero
+  skipped/deleted · `pnpm build` PASS (vite 17 modules; `wrangler deploy
+--dry-run` lists `env.API_RATE_LIMITER (100 requests/60s)` alongside the
+  existing bindings).
+
+### Phase 4 review fixes (2026-08-14)
+
+Targeted fixes from the security + production reviews of Phase 4 stage A/B —
+no refactors, each read-before-edit.
+
+- SEC-P4-01 (fixed): `apps/worker/wrangler.jsonc` — wrangler named
+  environments do NOT inherit top-level bindings; `ratelimits` is now
+  redeclared identically inside both `env.staging` and `env.production`.
+  Verified with `wrangler deploy --dry-run --env staging`: bindings output
+  now lists `env.API_RATE_LIMITER (100 requests/60s)` (it did not before).
+- SEC-P4-02 (fixed): `apps/worker/src/index.ts` — `hono/body-limit`
+  middleware bounds every `/api/*` request body to 128 KB before any route
+  handler runs, returning a JSON 413 `{error:'payload_too_large'}`. New test
+  in `tenancy.test.ts` (`SEC-P4-02`): `PUT /api/org/profile` with a >128 KB
+  body → 413.
+- SEC-P4-03 (fixed): `apps/worker/src/routes/org.ts` — `website` schema
+  switched from `z.url()` to zod v4's built-in `z.httpUrl()` (verified from
+  installed `zod/v4/classic/schemas` — restricts to the `http`/`https`
+  protocol regex), so `javascript:`/other schemes can never be stored. New
+  test (`SEC-P4-03`): `website: 'javascript:alert(1)'` → 400.
+- SEC-P4-04 + P4-R-03 (fixed): `apps/worker/src/routes/account.ts` —
+  membership removal still runs before `auth.api.deleteUser` (FK ordering
+  unchanged), but the `account.deleted` audit event now writes only AFTER
+  `deleteUser` succeeds, and `deleteUser` is wrapped in try/catch: on
+  failure the removed membership rows are re-inserted (compensation) via the
+  captured rows, the error is logged (no secrets) with the correlation id,
+  and the handler returns 500 `{error:'account_deletion_failed'}`. The
+  10-row membership fetch cap was removed — `getOrganizationsForUser` is now
+  paginated to exhaustion so an OWNER row past a fixed page size can't
+  silently escape the sole-OWNER guard.
+- P4-R-02 (applied): `packages/auth/src/index.ts` sets
+  `advanced.ipAddress.ipAddressHeaders: ['cf-connecting-ip']` (option path
+  verified from installed `@better-auth/core/src/utils/ip.ts` — `getIp`
+  walks `ipAddressHeaders` in order with NO fallback to
+  `x-forwarded-for` once set, so the client-spoofable header is no longer
+  consulted at all). `apps/worker/src/tenancy.test.ts` and
+  `apps/worker/src/auth.test.ts` updated to key their per-test IP isolation
+  off `cf-connecting-ip` instead of `x-forwarded-for`.
+- SEC-P4-05 (documented, accepted for V1): TOCTOU race between the
+  organization-existence check and the insert in `POST /api/org` — comment
+  added at the check site; a partial unique index is scheduled with the
+  next schema migration. Failure mode is an orphaned extra org, not a
+  security issue, since `requireOrganization` deterministically picks the
+  first org by id order.
+- SEC-P4-08 (documented, accepted for V1): comments added at both
+  `void deps.sendEmail(...)` call sites in `packages/auth/src/index.ts` —
+  fire-and-forget is fine for the current logging-only dev/test provider,
+  but the Phase 8 Resend provider MUST NOT rely on fire-and-forget on
+  Workers (isolate teardown can drop the email); it needs
+  `ExecutionContext.waitUntil` or a durable queue instead.
+- SEC-P4-06 (tests added) in `apps/worker/src/tenancy.test.ts`: MEMBER role
+  → 403 on `PUT /api/org/keywords`; a second `POST /api/org` by the same
+  user → 409 `organization_exists`; `PUT /api/org/keywords` with an unknown
+  top-level field → 400 (closed zod schema); `ADMIN_EMAILS`
+  case-insensitivity exercised by reconfiguring the test binding to mixed
+  case (`Admin@Example.test`) while the admin-gate test signs in with the
+  lowercase form — 200.
+- P4-R-01 (partial): smoke test added in `apps/worker/src/auth.test.ts` for
+  `POST /api/auth/request-password-reset` (path verified from installed
+  `better-auth` source, `dist/api/routes/password.mjs`) — 200 for an
+  existing verified user, confirms the logging email provider was invoked
+  for that recipient, and confirms the token/reset-url never appear in
+  worker logs (C10). Full token-roundtrip reset (actually consuming the
+  token via `/reset-password`) stays deferred to Phase 12 E2E — no test
+  harness currently exposes the generated token outside the (intentionally
+  unlogged) email body.
+- Gates (all executed 2026-08-14, real output): `pnpm format` (reformatted
+  1 file, the new auth.test.ts additions) · `pnpm format:check` PASS ·
+  `pnpm lint` PASS (0 errors) · `pnpm typecheck` PASS (14/14 workspace
+  projects) · `pnpm test` PASS — root 17 files/66 tests, worker 3 files/24
+  tests (workerd+D1, +6 over the prior 18), db 8 files/38 tests = 128 tests,
+  zero skipped/deleted · `pnpm build` PASS (vite 17 modules; `wrangler
+deploy --dry-run` for the top-level env AND `--env staging` both list
+  `env.API_RATE_LIMITER`).
+
 ## In progress
 
 - Nothing mid-flight. Working tree committed at each checkpoint.
 
-## Next (Phase 4 — Auth/Tenancy)
+## Next (Phase 5)
 
-1. Better Auth 1.6.x wiring per ADR-0002: @better-auth/drizzle-adapter over
-   D1, org plugin; `npx @better-auth/cli generate` → reconcile users
-   placeholder + add auth_accounts/auth_sessions via migration 0003.
-2. Hono routes: signup, email verification, login/logout, password reset,
-   session management, account deletion; email via provider interface
-   (mock in dev — Resend key is blocker 3).
-3. Organization context middleware: org from session membership only;
-   role checks (ORGANIZATION_OWNER/MEMBER); INTERNAL_ADMIN via
-   ADMIN_EMAILS allowlist, separate route group.
-4. Rate limiting: Better Auth built-in (database storage) + native Workers
-   rate-limit binding on auth routes.
-5. Endpoint-level tenant tests (SEC-P3-04 hard requirement): 403/404
-   cross-org attempts, member escalation, admin-as-normal-user.
-6. Fix-forward SEC-P3-01-class checks anywhere client-supplied ids enter.
-7. Security agent review + production-reviewer sign-off.
+1. Security agent review + production-reviewer sign-off for the full
+   Phase 4 (stage A + B together, incl. this review-fix batch) — not yet
+   run this session.
+2. TED ingestion scope work per docs/ted-ingestion-scope.md.
 
 ## Architecture decisions
 
@@ -184,6 +412,15 @@ wrangler ^4, @cloudflare/vitest-pool-workers ^0.21,
 until Phase 3), @playwright/test ^1.62. pnpm.onlyBuiltDependencies
 [esbuild, workerd].
 
+Phase 4 stage A: better-auth 1.6.29, @better-auth/drizzle-adapter 1.6.29
+(packages/auth); @cloudflare/workers-types added as a devDependency to
+packages/auth/notifications (needed for the `console`/`crypto` ambient
+types once they compile packages/db/observability source directly).
+
+Phase 4 stage B: @hono/zod-validator ^0.9.0, zod ^4.4.3 (apps/worker —
+peer-compatible with hono ^4.13 and zod 4 per the installed package's
+declared peerDependencies).
+
 ## Tests executed
 
 Phase 2 final run (2026-08-14, all executed, all green): format:check PASS ·
@@ -192,6 +429,24 @@ lint PASS · typecheck PASS (14 projects) · test PASS (root vitest 15 files /
 file / 7 tests in workerd with real local D1) · build PASS (vite 17 modules;
 wrangler deploy --dry-run) · db:migrate:local PASS (also verified from a
 completely empty DB via fresh --persist-to dir by production-reviewer).
+
+Phase 4 stage A final run (2026-08-14, all executed, all green):
+format:check PASS · lint PASS · typecheck PASS (14/14 workspace projects) ·
+test PASS (root vitest 17 files/66 tests; worker pool-workers 2 files/10
+tests in workerd with real local D1, incl. new auth.test.ts; packages/db
+pool-workers 8 files/38 tests in workerd with real local D1, incl. updated
+migrations.d1.test.ts) — 114 tests total · build PASS (vite 17 modules;
+wrangler deploy --dry-run, new APP_ENV/APP_BASE_URL/BETTER_AUTH_URL vars
+listed in bindings output) · full migration chain (0001+0002+0003) verified
+against a fresh scratch D1 and via `pnpm db:migrate:local`; drizzle-kit
+generate afterward gives zero diff.
+
+Phase 4 review fixes final run (2026-08-14, all executed, all green):
+format:check PASS · lint PASS · typecheck PASS (14/14 workspace projects) ·
+test PASS — root 17 files/66, worker 3 files/24 (workerd+D1), db 8 files/38
+(workerd+D1) = 128 tests, zero skipped/deleted · build PASS (vite 17
+modules; `wrangler deploy --dry-run` for both the top-level env and
+`--env staging` list `env.API_RATE_LIMITER`, confirming SEC-P4-01).
 
 ## Known risks
 
@@ -207,6 +462,19 @@ completely empty DB via fresh --persist-to dir by production-reviewer).
   re-verify before Phase 8.
 - eForms buyer resolution (OPT-300 indirection) is the trickiest parse path
   — needs real fixtures early in Phase 5.
+- SEC-P4-05 (accepted): `POST /api/org`'s existence-check-then-insert is not
+  atomic — two concurrent requests from the same user can both create an
+  organization. Accepted for V1 (orphaned extra org, not a security issue);
+  a partial unique index closing this race is scheduled with the next
+  schema migration.
+- SEC-P4-08 (accepted, must fix before Phase 8 ships): `packages/auth`'s
+  `sendResetPassword`/`sendVerificationEmail` hooks call `sendEmail`
+  fire-and-forget (`void`, not awaited) to avoid timing attacks. This is
+  safe today because the only provider is the logging-only dev/test stub,
+  but the Phase 8 Resend provider MUST route delivery through
+  `ExecutionContext.waitUntil` (or a durable queue) — fire-and-forget on
+  Workers can be torn down mid-flight and silently drop verification/reset
+  emails.
 
 ## Human actions required
 
@@ -261,6 +529,20 @@ Nothing deployed. No Cloudflare resources exist yet.
   INFO (future digest_items repo must scope through parent) and
   SEC-P3-04 INFO (endpoint-level isolation tests are a Phase 4 hard
   requirement) carried into Phase 4 plan.
+- Phase 4: **PASS** — production-reviewer, 2026-08-14 (all gates re-run
+  independently: 122 tests pre-fixes, fresh-empty-DB chain 0001–0003,
+  drizzle zero-drift; findings P4-R-01 password-reset coverage → partial
+  smoke test added, token roundtrip deferred to Phase 12 E2E; P4-R-02
+  cf-connecting-ip keying → applied; P4-R-03 audit ordering → fixed).
+  **Security agent SIGN-OFF**, 2026-08-14 (0 CRITICAL/HIGH): grep audit
+  clean, org context strictly membership-derived, admin gate cloaked, no
+  token logging. SEC-P4-01 (env rate-limit bindings), SEC-P4-02 (body
+  limit), SEC-P4-03 (URL scheme) MEDIUMs FIXED same day; SEC-P4-04
+  deletion ordering FIXED (audit-after-success + compensation); SEC-P4-05
+  TOCTOU documented-accepted; SEC-P4-06 test gaps closed (4 tests);
+  SEC-P4-07 admin auditing scheduled with Phase 10 tooling; SEC-P4-08
+  email waitUntil requirement recorded for Phase 8; SEC-P4-09 threat-model
+  deltas noted for next touch. Final post-fix gates: 128 tests green.
 
 ## Pilot checkpoint
 

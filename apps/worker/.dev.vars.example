@@ -1,0 +1,20 @@
+# Local dev secrets/config for `wrangler dev` — NAMES ONLY, never real
+# values (see /.env.example for the full application list). Copy this file
+# to `.dev.vars` (git-ignored) and fill in local/test values.
+#
+# BETTER_AUTH_SECRET must be a locally generated value
+# (`openssl rand -base64 32`) — never invent/commit a real secret
+# (HUMAN_DECISION_BLOCKERS.md item 5). Staging/production secrets are set
+# via `wrangler secret put <NAME> --env <env>`, never via this file.
+
+APP_ENV=local
+APP_BASE_URL=http://localhost:8787
+
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=http://localhost:8787
+
+# Comma-separated INTERNAL_ADMIN email allowlist (docs/security.md C6).
+# Never real production emails in a committed file — this is names-only
+# guidance; fill in your own local test address(es).
+# See HUMAN_DECISION_BLOCKERS.md item 6 for the production allowlist.
+ADMIN_EMAILS=

@@ -51,10 +51,10 @@ export async function insertTestUser(db: Db, email = uniqueEmail()): Promise<str
   await db.insert(users).values({
     id,
     email,
-    emailVerified: 1,
+    emailVerified: true,
     name: 'Test User',
-    createdAt: T0,
-    updatedAt: T0,
+    createdAt: new Date(T0),
+    updatedAt: new Date(T0),
   });
   return id;
 }

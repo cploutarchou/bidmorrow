@@ -64,10 +64,10 @@ async function seedUser(db: Db): Promise<string> {
   await db.insert(users).values({
     id,
     email: `${id}@example.test`,
-    emailVerified: 0,
+    emailVerified: false,
     name: null,
-    createdAt: now,
-    updatedAt: now,
+    createdAt: new Date(now),
+    updatedAt: new Date(now),
   });
   return id;
 }

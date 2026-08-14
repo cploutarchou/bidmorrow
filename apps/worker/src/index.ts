@@ -1,27 +1,30 @@
 /**
  * @bidmorrow/worker — Cloudflare Worker composition root.
  *
- * Phase 2 skeleton: Hono API with health endpoints, request-id correlation,
- * structured logging, and security headers (strict CSP per docs/security.md
- * C3/C4). Auth, queue consumers, and cron handlers are wired here in their
- * own phases.
+ * Phase 4 stage A: Hono API with health endpoints, request-id correlation,
+ * structured logging, security headers (strict CSP per docs/security.md
+ * C3/C4), and Better Auth core (ADR-0002, ADR-0007) mounted at
+ * `/api/auth/*`.
+ *
+ * Phase 4 stage B: organization context (`/api/org/*`), the INTERNAL_ADMIN
+ * allowlist gate (`/api/admin/*`), and account deletion (`/api/account`) —
+ * see src/middleware/* and src/routes/*. Queue consumers and cron handlers
+ * arrive in later phases.
  */
 import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
-import { createLogger, type Logger } from '@bidmorrow/observability';
+import { createLogger } from '@bidmorrow/observability';
 
-/** Worker bindings declared in wrangler.jsonc. */
-export interface Env {
-  DB: D1Database;
-  ASSETS: Fetcher;
-}
+import { createRequestAuth } from './auth-instance';
+import type { AppBindings, Env } from './env';
+import { accountRoutes } from './routes/account';
+import { adminRoutes } from './routes/admin';
+import { orgRoutes } from './routes/org';
 
-interface Variables {
-  requestId: string;
-  logger: Logger;
-}
+export type { Env, Variables } from './env';
 
-const app = new Hono<{ Bindings: Env; Variables: Variables }>();
+const app = new Hono<AppBindings>();
 
 // Correlation: every request gets a UUID, stored on the context, echoed as
 // the `x-request-id` response header, and bound to the structured logger so
@@ -62,6 +65,19 @@ app.use(
   }),
 );
 
+// SEC-P4-02: bound every /api/* request body to 128 KB before any handler
+// reads it — procurement content and org input are untrusted, and Workers
+// has no platform-level body-size cap of its own. Applied ahead of every
+// route mount below.
+const MAX_API_BODY_BYTES = 128 * 1024;
+app.use(
+  '/api/*',
+  bodyLimit({
+    maxSize: MAX_API_BODY_BYTES,
+    onError: (c) => c.json({ error: 'payload_too_large', request_id: c.get('requestId') }, 413),
+  }),
+);
+
 // Liveness: process is up and serving requests.
 app.get('/api/health/live', (c) => c.json({ status: 'ok' }));
 
@@ -76,6 +92,18 @@ app.get('/api/health/ready', async (c) => {
     return c.json({ status: 'degraded', db: 'error' }, 503);
   }
 });
+
+// Better Auth core (ADR-0002, ADR-0007: authentication only, no org
+// plugin — tenancy stays in organizations/organization_members).
+app.on(['GET', 'POST'], '/api/auth/*', (c) => {
+  const auth = createRequestAuth(c.env, c.get('logger'));
+  return auth.handler(c.req.raw);
+});
+
+// Phase 4 stage B: tenant-scoped, admin, and account routes.
+app.route('/api/org', orgRoutes);
+app.route('/api/admin', adminRoutes);
+app.route('/api/account', accountRoutes);
 
 // Unknown routes: run_worker_first routes only /api/* to this Worker in
 // production (everything else is served by Static Assets with SPA fallback),
