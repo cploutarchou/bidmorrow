@@ -1,17 +1,17 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { PACKAGE } from './index';
-import type { RepositoryContext, TenantScoped } from './index';
+import type { Db, RepositoryContext, TenantScoped } from './index';
 
 describe('@bidmorrow/db skeleton', () => {
   it('exports its package name', () => {
     expect(PACKAGE).toBe('@bidmorrow/db');
   });
 
-  it('RepositoryContext carries a db handle that is untyped until Phase 3', () => {
-    const ctx: RepositoryContext = { db: null };
-    expectTypeOf(ctx.db).toEqualTypeOf<unknown>();
-    expect(ctx).toHaveProperty('db');
+  it('RepositoryContext carries the schema-typed Drizzle D1 client', () => {
+    expectTypeOf<RepositoryContext['db']>().toEqualTypeOf<Db>();
+    // @ts-expect-error — an untyped handle no longer satisfies the context
+    const _rejected: RepositoryContext = { db: null };
   });
 
   it('TenantScoped preserves the argument shape while requiring organizationId', () => {

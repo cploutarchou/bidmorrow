@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@bidmorrow/config": "workspace:*",
+    "@bidmorrow/domain": "workspace:*",
     "drizzle-orm": "~0.45.2"
   },
   "devDependencies": {

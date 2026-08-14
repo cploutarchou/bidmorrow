@@ -11,14 +11,36 @@ export const PACKAGE = '@bidmorrow/db';
 export * as schema from './schema';
 export * from './schema';
 
+export { createDb } from './client';
+export type { Db } from './client';
+export { newId } from './id';
+
+// Shared repository infrastructure (pagination, batching, typed errors).
+export * from './repositories/shared';
+export * from './repositories/errors';
+
+// Global repositories (no organizationId by design; see the header comment
+// in each file): tender corpus, ingestion ops, global feature flags.
+export * from './repositories/tender-corpus';
+export * from './repositories/ingestion';
+export * from './repositories/ops-global';
+
+// Tenant-scoped repositories (every function REQUIRES organizationId per
+// the TENANT RULE below; the two nullable-org ledgers take an explicit
+// `OrganizationId | null`).
+export * from './repositories/identity';
+export * from './repositories/company';
+export * from './repositories/matching';
+export * from './repositories/engagement';
+export * from './repositories/billing';
+export * from './repositories/ops';
+
 /**
  * Context handed to every repository function by the composition root
- * (`apps/worker`). `db` becomes the typed Drizzle D1 client in Phase 3; it
- * is `unknown` here so nothing can be built against an untyped client by
- * accident.
+ * (`apps/worker`): the schema-typed Drizzle D1 client from `createDb`.
  */
 export interface RepositoryContext {
-  readonly db: unknown;
+  readonly db: import('./client').Db;
 }
 
 /**
