@@ -13,7 +13,8 @@ import type { OrganizationId } from '@bidmorrow/domain';
 import type { Db } from '../client';
 import { newId } from '../id';
 import { customerFeedback, digestRuns, ignoredTenders, savedTenders } from '../schema/engagement';
-import { DuplicateDigestError } from './errors';
+import { tenderMatches } from '../schema/matching';
+import { DuplicateDigestError, TenantMismatchError } from './errors';
 import { assertIsoDate } from './shared';
 
 export type SavedTender = typeof savedTenders.$inferSelect;
@@ -144,6 +145,20 @@ export async function upsertCustomerFeedback(
   organizationId: OrganizationId,
   args: UpsertCustomerFeedbackArgs,
 ): Promise<CustomerFeedback> {
+  // SEC-P3-01: matchId is client-influenced in later phases — verify the
+  // match belongs to this organization before writing a row that references
+  // it, otherwise Org A could attach feedback to Org B's match.
+  const match = await db
+    .select({ id: tenderMatches.id })
+    .from(tenderMatches)
+    .where(
+      and(eq(tenderMatches.id, args.matchId), eq(tenderMatches.organizationId, organizationId)),
+    )
+    .limit(1);
+  if (match.length === 0) {
+    throw new TenantMismatchError('customer_feedback', organizationId);
+  }
+
   const now = Date.now();
   const values = {
     userId: args.userId,

@@ -12,7 +12,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "typecheck": "pnpm -r --no-bail run typecheck",
-    "test": "vitest run && pnpm --filter @bidmorrow/worker test",
+    "test": "vitest run && pnpm --filter @bidmorrow/worker test && pnpm --filter @bidmorrow/db test",
     "test:watch": "vitest",
     "build": "pnpm --filter @bidmorrow/web build && pnpm --filter @bidmorrow/worker build",
     "dev": "pnpm --filter @bidmorrow/worker dev",

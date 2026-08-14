@@ -88,18 +88,12 @@
       "indexes": {
         "idx_audit_events__organization_id_occurred_at": {
           "name": "idx_audit_events__organization_id_occurred_at",
-          "columns": [
-            "organization_id",
-            "occurred_at"
-          ],
+          "columns": ["organization_id", "occurred_at"],
           "isUnique": false
         },
         "idx_audit_events__target_type_target_id": {
           "name": "idx_audit_events__target_type_target_id",
-          "columns": [
-            "target_type",
-            "target_id"
-          ],
+          "columns": ["target_type", "target_id"],
           "isUnique": false
         }
       },
@@ -108,12 +102,8 @@
           "name": "audit_events_organization_id_organizations_id_fk",
           "tableFrom": "audit_events",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -197,17 +187,12 @@
       "indexes": {
         "uq_billing_events__stripe_event_id": {
           "name": "uq_billing_events__stripe_event_id",
-          "columns": [
-            "stripe_event_id"
-          ],
+          "columns": ["stripe_event_id"],
           "isUnique": true
         },
         "idx_billing_events__organization_id_created_at": {
           "name": "idx_billing_events__organization_id_created_at",
-          "columns": [
-            "organization_id",
-            "created_at"
-          ],
+          "columns": ["organization_id", "created_at"],
           "isUnique": false
         }
       },
@@ -216,12 +201,8 @@
           "name": "billing_events_organization_id_organizations_id_fk",
           "tableFrom": "billing_events",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -305,20 +286,13 @@
       "indexes": {
         "uq_buyers__source_source_buyer_id": {
           "name": "uq_buyers__source_source_buyer_id",
-          "columns": [
-            "source",
-            "source_buyer_id"
-          ],
+          "columns": ["source", "source_buyer_id"],
           "isUnique": true,
           "where": "\"buyers\".\"source_buyer_id\" IS NOT NULL"
         },
         "idx_buyers__source_name_country_code": {
           "name": "idx_buyers__source_name_country_code",
-          "columns": [
-            "source",
-            "name",
-            "country_code"
-          ],
+          "columns": ["source", "name", "country_code"],
           "isUnique": false
         }
       },
@@ -369,10 +343,7 @@
       "indexes": {
         "uq_company_capabilities__organization_id_label": {
           "name": "uq_company_capabilities__organization_id_label",
-          "columns": [
-            "organization_id",
-            "label"
-          ],
+          "columns": ["organization_id", "label"],
           "isUnique": true
         }
       },
@@ -381,12 +352,8 @@
           "name": "company_capabilities_organization_id_organizations_id_fk",
           "tableFrom": "company_capabilities",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -444,11 +411,7 @@
       "indexes": {
         "uq_company_certifications__organization_id_certification_code_label": {
           "name": "uq_company_certifications__organization_id_certification_code_label",
-          "columns": [
-            "organization_id",
-            "certification_code",
-            "label"
-          ],
+          "columns": ["organization_id", "certification_code", "label"],
           "isUnique": true
         }
       },
@@ -457,12 +420,8 @@
           "name": "company_certifications_organization_id_organizations_id_fk",
           "tableFrom": "company_certifications",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -518,10 +477,7 @@
       "indexes": {
         "uq_company_cpv_preferences__organization_id_cpv_code": {
           "name": "uq_company_cpv_preferences__organization_id_cpv_code",
-          "columns": [
-            "organization_id",
-            "cpv_code"
-          ],
+          "columns": ["organization_id", "cpv_code"],
           "isUnique": true
         }
       },
@@ -530,12 +486,8 @@
           "name": "company_cpv_preferences_organization_id_organizations_id_fk",
           "tableFrom": "company_cpv_preferences",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -593,11 +545,7 @@
       "indexes": {
         "uq_company_exclusions__organization_id_kind_value": {
           "name": "uq_company_exclusions__organization_id_kind_value",
-          "columns": [
-            "organization_id",
-            "kind",
-            "value"
-          ],
+          "columns": ["organization_id", "kind", "value"],
           "isUnique": true
         }
       },
@@ -606,12 +554,8 @@
           "name": "company_exclusions_organization_id_organizations_id_fk",
           "tableFrom": "company_exclusions",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -674,11 +618,7 @@
       "indexes": {
         "uq_company_geographies__organization_id_kind_code": {
           "name": "uq_company_geographies__organization_id_kind_code",
-          "columns": [
-            "organization_id",
-            "kind",
-            "code"
-          ],
+          "columns": ["organization_id", "kind", "code"],
           "isUnique": true
         }
       },
@@ -687,12 +627,8 @@
           "name": "company_geographies_organization_id_organizations_id_fk",
           "tableFrom": "company_geographies",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -769,19 +705,12 @@
       "indexes": {
         "uq_company_keywords__organization_id_kind_term": {
           "name": "uq_company_keywords__organization_id_kind_term",
-          "columns": [
-            "organization_id",
-            "kind",
-            "term"
-          ],
+          "columns": ["organization_id", "kind", "term"],
           "isUnique": true
         },
         "idx_company_keywords__organization_id_synonym_group": {
           "name": "idx_company_keywords__organization_id_synonym_group",
-          "columns": [
-            "organization_id",
-            "synonym_group"
-          ],
+          "columns": ["organization_id", "synonym_group"],
           "isUnique": false
         }
       },
@@ -790,12 +719,8 @@
           "name": "company_keywords_organization_id_organizations_id_fk",
           "tableFrom": "company_keywords",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -890,9 +815,7 @@
       "indexes": {
         "uq_company_profiles__organization_id": {
           "name": "uq_company_profiles__organization_id",
-          "columns": [
-            "organization_id"
-          ],
+          "columns": ["organization_id"],
           "isUnique": true
         }
       },
@@ -901,12 +824,8 @@
           "name": "company_profiles_organization_id_organizations_id_fk",
           "tableFrom": "company_profiles",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -985,18 +904,12 @@
       "indexes": {
         "uq_customer_feedback__organization_id_match_id": {
           "name": "uq_customer_feedback__organization_id_match_id",
-          "columns": [
-            "organization_id",
-            "match_id"
-          ],
+          "columns": ["organization_id", "match_id"],
           "isUnique": true
         },
         "idx_customer_feedback__organization_id_created_at": {
           "name": "idx_customer_feedback__organization_id_created_at",
-          "columns": [
-            "organization_id",
-            "created_at"
-          ],
+          "columns": ["organization_id", "created_at"],
           "isUnique": false
         }
       },
@@ -1005,12 +918,8 @@
           "name": "customer_feedback_organization_id_organizations_id_fk",
           "tableFrom": "customer_feedback",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1018,12 +927,8 @@
           "name": "customer_feedback_match_id_tender_matches_id_fk",
           "tableFrom": "customer_feedback",
           "tableTo": "tender_matches",
-          "columnsFrom": [
-            "match_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["match_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1031,12 +936,8 @@
           "name": "customer_feedback_user_id_users_id_fk",
           "tableFrom": "customer_feedback",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1120,24 +1021,17 @@
       "indexes": {
         "uq_digest_items__digest_run_id_match_id": {
           "name": "uq_digest_items__digest_run_id_match_id",
-          "columns": [
-            "digest_run_id",
-            "match_id"
-          ],
+          "columns": ["digest_run_id", "match_id"],
           "isUnique": true
         },
         "idx_digest_items__digest_run_id": {
           "name": "idx_digest_items__digest_run_id",
-          "columns": [
-            "digest_run_id"
-          ],
+          "columns": ["digest_run_id"],
           "isUnique": false
         },
         "idx_digest_items__match_id": {
           "name": "idx_digest_items__match_id",
-          "columns": [
-            "match_id"
-          ],
+          "columns": ["match_id"],
           "isUnique": false
         }
       },
@@ -1146,12 +1040,8 @@
           "name": "digest_items_digest_run_id_digest_runs_id_fk",
           "tableFrom": "digest_items",
           "tableTo": "digest_runs",
-          "columnsFrom": [
-            "digest_run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["digest_run_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1159,12 +1049,8 @@
           "name": "digest_items_match_id_tender_matches_id_fk",
           "tableFrom": "digest_items",
           "tableTo": "tender_matches",
-          "columnsFrom": [
-            "match_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["match_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1239,9 +1125,7 @@
       "indexes": {
         "uq_digest_preferences__organization_id": {
           "name": "uq_digest_preferences__organization_id",
-          "columns": [
-            "organization_id"
-          ],
+          "columns": ["organization_id"],
           "isUnique": true
         }
       },
@@ -1250,12 +1134,8 @@
           "name": "digest_preferences_organization_id_organizations_id_fk",
           "tableFrom": "digest_preferences",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1339,10 +1219,7 @@
       "indexes": {
         "uq_digest_runs__organization_id_digest_date": {
           "name": "uq_digest_runs__organization_id_digest_date",
-          "columns": [
-            "organization_id",
-            "digest_date"
-          ],
+          "columns": ["organization_id", "digest_date"],
           "isUnique": true
         }
       },
@@ -1351,12 +1228,8 @@
           "name": "digest_runs_organization_id_organizations_id_fk",
           "tableFrom": "digest_runs",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1364,12 +1237,8 @@
           "name": "digest_runs_email_delivery_id_email_deliveries_id_fk",
           "tableFrom": "digest_runs",
           "tableTo": "email_deliveries",
-          "columnsFrom": [
-            "email_delivery_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["email_delivery_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1467,18 +1336,12 @@
       "indexes": {
         "idx_email_deliveries__organization_id_created_at": {
           "name": "idx_email_deliveries__organization_id_created_at",
-          "columns": [
-            "organization_id",
-            "created_at"
-          ],
+          "columns": ["organization_id", "created_at"],
           "isUnique": false
         },
         "uq_email_deliveries__provider_provider_message_id": {
           "name": "uq_email_deliveries__provider_provider_message_id",
-          "columns": [
-            "provider",
-            "provider_message_id"
-          ],
+          "columns": ["provider", "provider_message_id"],
           "isUnique": true,
           "where": "\"email_deliveries\".\"provider_message_id\" IS NOT NULL"
         }
@@ -1488,12 +1351,8 @@
           "name": "email_deliveries_organization_id_organizations_id_fk",
           "tableFrom": "email_deliveries",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1501,12 +1360,8 @@
           "name": "email_deliveries_user_id_users_id_fk",
           "tableFrom": "email_deliveries",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1584,10 +1439,7 @@
       "indexes": {
         "uq_exchange_rates__rate_date_currency": {
           "name": "uq_exchange_rates__rate_date_currency",
-          "columns": [
-            "rate_date",
-            "currency"
-          ],
+          "columns": ["rate_date", "currency"],
           "isUnique": true
         }
       },
@@ -1652,9 +1504,7 @@
       "indexes": {
         "uq_feature_flags__key": {
           "name": "uq_feature_flags__key",
-          "columns": [
-            "key"
-          ],
+          "columns": ["key"],
           "isUnique": true
         }
       },
@@ -1663,12 +1513,8 @@
           "name": "feature_flags_updated_by_user_id_users_id_fk",
           "tableFrom": "feature_flags",
           "tableTo": "users",
-          "columnsFrom": [
-            "updated_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1733,17 +1579,12 @@
       "indexes": {
         "uq_ignored_tenders__organization_id_lot_id": {
           "name": "uq_ignored_tenders__organization_id_lot_id",
-          "columns": [
-            "organization_id",
-            "lot_id"
-          ],
+          "columns": ["organization_id", "lot_id"],
           "isUnique": true
         },
         "idx_ignored_tenders__lot_id": {
           "name": "idx_ignored_tenders__lot_id",
-          "columns": [
-            "lot_id"
-          ],
+          "columns": ["lot_id"],
           "isUnique": false
         }
       },
@@ -1752,12 +1593,8 @@
           "name": "ignored_tenders_organization_id_organizations_id_fk",
           "tableFrom": "ignored_tenders",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1765,12 +1602,8 @@
           "name": "ignored_tenders_lot_id_tender_lots_id_fk",
           "tableFrom": "ignored_tenders",
           "tableTo": "tender_lots",
-          "columnsFrom": [
-            "lot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["lot_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1778,12 +1611,8 @@
           "name": "ignored_tenders_notice_id_tender_notices_id_fk",
           "tableFrom": "ignored_tenders",
           "tableTo": "tender_notices",
-          "columnsFrom": [
-            "notice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["notice_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1791,12 +1620,8 @@
           "name": "ignored_tenders_ignored_by_user_id_users_id_fk",
           "tableFrom": "ignored_tenders",
           "tableTo": "users",
-          "columnsFrom": [
-            "ignored_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["ignored_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1854,9 +1679,7 @@
       "indexes": {
         "uq_ingestion_checkpoints__source": {
           "name": "uq_ingestion_checkpoints__source",
-          "columns": [
-            "source"
-          ],
+          "columns": ["source"],
           "isUnique": true
         }
       },
@@ -1935,17 +1758,12 @@
       "indexes": {
         "idx_ingestion_errors__ingestion_run_id": {
           "name": "idx_ingestion_errors__ingestion_run_id",
-          "columns": [
-            "ingestion_run_id"
-          ],
+          "columns": ["ingestion_run_id"],
           "isUnique": false
         },
         "idx_ingestion_errors__source_source_notice_id": {
           "name": "idx_ingestion_errors__source_source_notice_id",
-          "columns": [
-            "source",
-            "source_notice_id"
-          ],
+          "columns": ["source", "source_notice_id"],
           "isUnique": false
         }
       },
@@ -1954,12 +1772,8 @@
           "name": "ingestion_errors_ingestion_run_id_ingestion_runs_id_fk",
           "tableFrom": "ingestion_errors",
           "tableTo": "ingestion_runs",
-          "columnsFrom": [
-            "ingestion_run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["ingestion_run_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2091,10 +1905,7 @@
       "indexes": {
         "idx_ingestion_runs__source_started_at": {
           "name": "idx_ingestion_runs__source_started_at",
-          "columns": [
-            "source",
-            "started_at"
-          ],
+          "columns": ["source", "started_at"],
           "isUnique": false
         }
       },
@@ -2171,10 +1982,7 @@
       "indexes": {
         "uq_match_components__match_id_component_key": {
           "name": "uq_match_components__match_id_component_key",
-          "columns": [
-            "match_id",
-            "component_key"
-          ],
+          "columns": ["match_id", "component_key"],
           "isUnique": true
         }
       },
@@ -2183,12 +1991,8 @@
           "name": "match_components_match_id_tender_matches_id_fk",
           "tableFrom": "match_components",
           "tableTo": "tender_matches",
-          "columnsFrom": [
-            "match_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["match_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2269,9 +2073,7 @@
       "indexes": {
         "idx_match_risk_flags__match_id": {
           "name": "idx_match_risk_flags__match_id",
-          "columns": [
-            "match_id"
-          ],
+          "columns": ["match_id"],
           "isUnique": false
         }
       },
@@ -2280,12 +2082,8 @@
           "name": "match_risk_flags_match_id_tender_matches_id_fk",
           "tableFrom": "match_risk_flags",
           "tableTo": "tender_matches",
-          "columnsFrom": [
-            "match_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["match_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2366,9 +2164,7 @@
       "indexes": {
         "uq_matching_preferences__organization_id": {
           "name": "uq_matching_preferences__organization_id",
-          "columns": [
-            "organization_id"
-          ],
+          "columns": ["organization_id"],
           "isUnique": true
         }
       },
@@ -2377,12 +2173,8 @@
           "name": "matching_preferences_organization_id_organizations_id_fk",
           "tableFrom": "matching_preferences",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2440,17 +2232,12 @@
       "indexes": {
         "uq_organization_members__organization_id_user_id": {
           "name": "uq_organization_members__organization_id_user_id",
-          "columns": [
-            "organization_id",
-            "user_id"
-          ],
+          "columns": ["organization_id", "user_id"],
           "isUnique": true
         },
         "idx_organization_members__user_id": {
           "name": "idx_organization_members__user_id",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -2459,12 +2246,8 @@
           "name": "organization_members_organization_id_organizations_id_fk",
           "tableFrom": "organization_members",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2472,12 +2255,8 @@
           "name": "organization_members_user_id_users_id_fk",
           "tableFrom": "organization_members",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2543,12 +2322,8 @@
           "name": "organizations_created_by_user_id_users_id_fk",
           "tableFrom": "organizations",
           "tableTo": "users",
-          "columnsFrom": [
-            "created_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2611,18 +2386,12 @@
       "indexes": {
         "idx_product_events__name_created_at": {
           "name": "idx_product_events__name_created_at",
-          "columns": [
-            "name",
-            "created_at"
-          ],
+          "columns": ["name", "created_at"],
           "isUnique": false
         },
         "idx_product_events__organization_id_created_at": {
           "name": "idx_product_events__organization_id_created_at",
-          "columns": [
-            "organization_id",
-            "created_at"
-          ],
+          "columns": ["organization_id", "created_at"],
           "isUnique": false
         }
       },
@@ -2631,12 +2400,8 @@
           "name": "product_events_organization_id_organizations_id_fk",
           "tableFrom": "product_events",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2644,12 +2409,8 @@
           "name": "product_events_user_id_users_id_fk",
           "tableFrom": "product_events",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2707,17 +2468,12 @@
       "indexes": {
         "uq_saved_tenders__organization_id_lot_id": {
           "name": "uq_saved_tenders__organization_id_lot_id",
-          "columns": [
-            "organization_id",
-            "lot_id"
-          ],
+          "columns": ["organization_id", "lot_id"],
           "isUnique": true
         },
         "idx_saved_tenders__lot_id": {
           "name": "idx_saved_tenders__lot_id",
-          "columns": [
-            "lot_id"
-          ],
+          "columns": ["lot_id"],
           "isUnique": false
         }
       },
@@ -2726,12 +2482,8 @@
           "name": "saved_tenders_organization_id_organizations_id_fk",
           "tableFrom": "saved_tenders",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2739,12 +2491,8 @@
           "name": "saved_tenders_lot_id_tender_lots_id_fk",
           "tableFrom": "saved_tenders",
           "tableTo": "tender_lots",
-          "columnsFrom": [
-            "lot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["lot_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2752,12 +2500,8 @@
           "name": "saved_tenders_notice_id_tender_notices_id_fk",
           "tableFrom": "saved_tenders",
           "tableTo": "tender_notices",
-          "columnsFrom": [
-            "notice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["notice_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2765,12 +2509,8 @@
           "name": "saved_tenders_saved_by_user_id_users_id_fk",
           "tableFrom": "saved_tenders",
           "tableTo": "users",
-          "columnsFrom": [
-            "saved_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["saved_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2870,17 +2610,12 @@
       "indexes": {
         "uq_source_snapshots__r2_key": {
           "name": "uq_source_snapshots__r2_key",
-          "columns": [
-            "r2_key"
-          ],
+          "columns": ["r2_key"],
           "isUnique": true
         },
         "idx_source_snapshots__source_source_notice_id": {
           "name": "idx_source_snapshots__source_source_notice_id",
-          "columns": [
-            "source",
-            "source_notice_id"
-          ],
+          "columns": ["source", "source_notice_id"],
           "isUnique": false
         }
       },
@@ -2967,23 +2702,17 @@
       "indexes": {
         "uq_subscriptions__organization_id": {
           "name": "uq_subscriptions__organization_id",
-          "columns": [
-            "organization_id"
-          ],
+          "columns": ["organization_id"],
           "isUnique": true
         },
         "uq_subscriptions__stripe_customer_id": {
           "name": "uq_subscriptions__stripe_customer_id",
-          "columns": [
-            "stripe_customer_id"
-          ],
+          "columns": ["stripe_customer_id"],
           "isUnique": true
         },
         "uq_subscriptions__stripe_subscription_id": {
           "name": "uq_subscriptions__stripe_subscription_id",
-          "columns": [
-            "stripe_subscription_id"
-          ],
+          "columns": ["stripe_subscription_id"],
           "isUnique": true
         }
       },
@@ -2992,12 +2721,8 @@
           "name": "subscriptions_organization_id_organizations_id_fk",
           "tableFrom": "subscriptions",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3064,10 +2789,7 @@
       "indexes": {
         "idx_support_notes__organization_id_created_at": {
           "name": "idx_support_notes__organization_id_created_at",
-          "columns": [
-            "organization_id",
-            "created_at"
-          ],
+          "columns": ["organization_id", "created_at"],
           "isUnique": false
         }
       },
@@ -3076,12 +2798,8 @@
           "name": "support_notes_organization_id_organizations_id_fk",
           "tableFrom": "support_notes",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3089,12 +2807,8 @@
           "name": "support_notes_author_user_id_users_id_fk",
           "tableFrom": "support_notes",
           "tableTo": "users",
-          "columnsFrom": [
-            "author_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["author_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3145,17 +2859,12 @@
       "indexes": {
         "uq_tender_cpv_codes__lot_id_cpv_code": {
           "name": "uq_tender_cpv_codes__lot_id_cpv_code",
-          "columns": [
-            "lot_id",
-            "cpv_code"
-          ],
+          "columns": ["lot_id", "cpv_code"],
           "isUnique": true
         },
         "idx_tender_cpv_codes__cpv_code": {
           "name": "idx_tender_cpv_codes__cpv_code",
-          "columns": [
-            "cpv_code"
-          ],
+          "columns": ["cpv_code"],
           "isUnique": false
         }
       },
@@ -3164,12 +2873,8 @@
           "name": "tender_cpv_codes_lot_id_tender_lots_id_fk",
           "tableFrom": "tender_cpv_codes",
           "tableTo": "tender_lots",
-          "columnsFrom": [
-            "lot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["lot_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3220,9 +2925,7 @@
       "indexes": {
         "idx_tender_geographies__lot_id": {
           "name": "idx_tender_geographies__lot_id",
-          "columns": [
-            "lot_id"
-          ],
+          "columns": ["lot_id"],
           "isUnique": false
         }
       },
@@ -3231,12 +2934,8 @@
           "name": "tender_geographies_lot_id_tender_lots_id_fk",
           "tableFrom": "tender_geographies",
           "tableTo": "tender_lots",
-          "columnsFrom": [
-            "lot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["lot_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3336,17 +3035,12 @@
       "indexes": {
         "uq_tender_lots__notice_version_id_lot_number": {
           "name": "uq_tender_lots__notice_version_id_lot_number",
-          "columns": [
-            "notice_version_id",
-            "lot_number"
-          ],
+          "columns": ["notice_version_id", "lot_number"],
           "isUnique": true
         },
         "idx_tender_lots__deadline_at": {
           "name": "idx_tender_lots__deadline_at",
-          "columns": [
-            "deadline_at"
-          ],
+          "columns": ["deadline_at"],
           "isUnique": false
         }
       },
@@ -3355,12 +3049,8 @@
           "name": "tender_lots_notice_version_id_tender_notice_versions_id_fk",
           "tableFrom": "tender_lots",
           "tableTo": "tender_notice_versions",
-          "columnsFrom": [
-            "notice_version_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["notice_version_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3453,28 +3143,17 @@
       "indexes": {
         "uq_tender_matches__organization_id_lot_id_engine_version": {
           "name": "uq_tender_matches__organization_id_lot_id_engine_version",
-          "columns": [
-            "organization_id",
-            "lot_id",
-            "engine_version"
-          ],
+          "columns": ["organization_id", "lot_id", "engine_version"],
           "isUnique": true
         },
         "idx_tender_matches__organization_id_engine_version_classification_scored_at": {
           "name": "idx_tender_matches__organization_id_engine_version_classification_scored_at",
-          "columns": [
-            "organization_id",
-            "engine_version",
-            "classification",
-            "scored_at"
-          ],
+          "columns": ["organization_id", "engine_version", "classification", "scored_at"],
           "isUnique": false
         },
         "idx_tender_matches__lot_id": {
           "name": "idx_tender_matches__lot_id",
-          "columns": [
-            "lot_id"
-          ],
+          "columns": ["lot_id"],
           "isUnique": false
         }
       },
@@ -3483,12 +3162,8 @@
           "name": "tender_matches_organization_id_organizations_id_fk",
           "tableFrom": "tender_matches",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3496,12 +3171,8 @@
           "name": "tender_matches_lot_id_tender_lots_id_fk",
           "tableFrom": "tender_matches",
           "tableTo": "tender_lots",
-          "columnsFrom": [
-            "lot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["lot_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3509,12 +3180,8 @@
           "name": "tender_matches_notice_id_tender_notices_id_fk",
           "tableFrom": "tender_matches",
           "tableTo": "tender_notices",
-          "columnsFrom": [
-            "notice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["notice_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3598,10 +3265,7 @@
       "indexes": {
         "uq_tender_notice_versions__notice_id_version_number": {
           "name": "uq_tender_notice_versions__notice_id_version_number",
-          "columns": [
-            "notice_id",
-            "version_number"
-          ],
+          "columns": ["notice_id", "version_number"],
           "isUnique": true
         }
       },
@@ -3610,12 +3274,8 @@
           "name": "tender_notice_versions_notice_id_tender_notices_id_fk",
           "tableFrom": "tender_notice_versions",
           "tableTo": "tender_notices",
-          "columnsFrom": [
-            "notice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["notice_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3623,12 +3283,8 @@
           "name": "tender_notice_versions_snapshot_id_source_snapshots_id_fk",
           "tableFrom": "tender_notice_versions",
           "tableTo": "source_snapshots",
-          "columnsFrom": [
-            "snapshot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["snapshot_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3636,12 +3292,8 @@
           "name": "tender_notice_versions_ingestion_run_id_ingestion_runs_id_fk",
           "tableFrom": "tender_notice_versions",
           "tableTo": "ingestion_runs",
-          "columnsFrom": [
-            "ingestion_run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["ingestion_run_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3769,24 +3421,17 @@
       "indexes": {
         "uq_tender_notices__source_source_notice_id": {
           "name": "uq_tender_notices__source_source_notice_id",
-          "columns": [
-            "source",
-            "source_notice_id"
-          ],
+          "columns": ["source", "source_notice_id"],
           "isUnique": true
         },
         "idx_tender_notices__publication_date": {
           "name": "idx_tender_notices__publication_date",
-          "columns": [
-            "publication_date"
-          ],
+          "columns": ["publication_date"],
           "isUnique": false
         },
         "idx_tender_notices__archived_at": {
           "name": "idx_tender_notices__archived_at",
-          "columns": [
-            "archived_at"
-          ],
+          "columns": ["archived_at"],
           "isUnique": false,
           "where": "\"tender_notices\".\"archived_at\" IS NOT NULL"
         }
@@ -3796,12 +3441,8 @@
           "name": "tender_notices_current_version_id_tender_notice_versions_id_fk",
           "tableFrom": "tender_notices",
           "tableTo": "tender_notice_versions",
-          "columnsFrom": [
-            "current_version_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["current_version_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3809,12 +3450,8 @@
           "name": "tender_notices_buyer_id_buyers_id_fk",
           "tableFrom": "tender_notices",
           "tableTo": "buyers",
-          "columnsFrom": [
-            "buyer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["buyer_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3872,9 +3509,7 @@
       "indexes": {
         "uq_users__email": {
           "name": "uq_users__email",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "isUnique": true
         }
       },

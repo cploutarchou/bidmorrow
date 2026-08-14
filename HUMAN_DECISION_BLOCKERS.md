@@ -21,8 +21,8 @@ Still human-required:
 1. Create a **scoped API token** for GitHub Actions CI (do NOT use the
    Global API Key): Dashboard → My Profile → API Tokens → Create Token →
    start from "Edit Cloudflare Workers" template and add: `Account / D1 /
-   Edit`, `Account / Workers R2 Storage / Edit`, `Account / Workers Scripts
-   / Edit`, `Account / Queues / Edit`. The MCP connector serves this
+Edit`, `Account / Workers R2 Storage / Edit`, `Account / Workers Scripts
+/ Edit`, `Account / Queues / Edit`. The MCP connector serves this
    session, not CI — CI needs its own least-privilege token.
 2. Add GitHub repository secrets: `CLOUDFLARE_API_TOKEN`,
    `CLOUDFLARE_ACCOUNT_ID`.

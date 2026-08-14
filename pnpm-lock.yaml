@@ -134,10 +134,22 @@ importers:
 
   packages/db:
     dependencies:
+      '@bidmorrow/config':
+        specifier: workspace:*
+        version: link:../config
+      '@bidmorrow/domain':
+        specifier: workspace:*
+        version: link:../domain
       drizzle-orm:
         specifier: ~0.45.2
         version: 0.45.2(@cloudflare/workers-types@5.20260814.1)
     devDependencies:
+      '@cloudflare/vitest-pool-workers':
+        specifier: ^0.21.3
+        version: 0.21.3(@cloudflare/workers-types@5.20260814.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10(vite@8.2.1(esbuild@0.28.1)(tsx@4.23.12)))
+      '@cloudflare/workers-types':
+        specifier: ^5.20260814.1
+        version: 5.20260814.1
       drizzle-kit:
         specifier: ~0.31.0
         version: 0.31.10
