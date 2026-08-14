@@ -119,7 +119,7 @@ None — no code exists yet. (No test claims made.)
 
 ## Human actions required
 
-See HUMAN_DECISION_BLOCKERS.md (7 open items: Cloudflare account/token,
+See HUMAN_DECISION_BLOCKERS.md (8 open items: Cloudflare account/token,
 DNS + email auth records, Resend, Stripe, auth secret, admin allowlist,
 business/legal info, GitHub branch protection). None block Phases 2–7.
 
@@ -139,9 +139,17 @@ Nothing deployed. No Cloudflare resources exist yet.
 
 ## Reviewer sign-offs per phase
 
-- Phase 0: pending production-reviewer (docs-only phase; gates N/A — no
-  code). To be run at end of the Phase 0/1 session.
-- Phase 1: pending production-reviewer.
+- Phase 0: **PASS** — production-reviewer, 2026-08-14. Docs-only phase;
+  gates honestly N/A (no code); completeness/consistency/truthfulness
+  verified independently.
+- Phase 1: **PASS** — production-reviewer, 2026-08-14. Findings:
+  P1-001 MEDIUM (matching example not table-derivable) → FIXED (example
+  recomputed table-exact, 84.5 with derivations; will become a test
+  fixture in Phase 6). P1-002 LOW (blocker count) → FIXED. P1-003 LOW
+  (.env.example caught by deny glob) → FIXED (globs narrowed to real
+  secret variants). P1-004 INFO → no change needed (security agent body
+  already restricts Bash to test/lint, security.md agent line 14).
+  P1-005 INFO (scope+retention share ADR-0003) → accepted, no action.
 
 ## Pilot checkpoint
 

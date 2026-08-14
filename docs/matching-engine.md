@@ -167,16 +167,21 @@ machine translation.
 
 ## Explanation rendering (example)
 
-```
-84 / 100 — STRONG_MATCH        engine v1
+Every rendered line derives strictly from the component tables above
+(this example is table-exact and is used as a test fixture):
 
-+32  CPV: 72150000 (exact-class match with your preference 72100000)
-+18  Capabilities: "penetration testing", "security assessment" matched
-+15  Geography: Cyprus — preferred country
- +8  Value: €180,000 within your €50k–€500k range
- +5  Buyer: national ministry
- +4  Deadline: 34 days (threshold 10)
- +2  Eligibility: no blocking signals detected (neutral)
+```
+84.5 / 100 — STRONG_MATCH        engine v1
+
++27   CPV: lot 72155000 vs your preference 72150000 — same class (7215)
++15   Capabilities: phrases "penetration testing" (+4), "security assessment"
+      (+4), synonym group "SOC" (+3), words "audit" (+2), "cloud" (+2)
++15   Geography: lot NUTS CY00 within your preferred region CY
++10   Value: €180,000 within your €50k–€500k range
+ +5   Buyer: national ministry (strong-fit buyer type)
+ +5   Procedure: services supported (+3), open procedure (+2)
+ +5   Deadline: 34 days ≥ 2× your 10-day threshold
++2.5  Eligibility: no signals detected — UNKNOWN, neutral half of 5
 
 Risk flags:
  ⚠ ISO 27001 may be required — "certified to ISO 27001" (POSSIBLE) — verify in source documents
