@@ -154,3 +154,11 @@ Nothing deployed. No Cloudflare resources exist yet.
 ## Pilot checkpoint
 
 Not reached (after Phase 8).
+
+## Notes
+
+- Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
+  returns HTTP 403 (session credentials are scoped to the working branch
+  only). Phase completion is authoritatively recorded here and in commit
+  history; re-push tags from an environment with tag permissions, or tag on
+  merge to the default branch.
