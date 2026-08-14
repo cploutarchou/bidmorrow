@@ -14,7 +14,7 @@
 
 import type { Logger } from '@bidmorrow/observability';
 
-import { TedBudgetExceededError, TedRequestError } from './errors';
+import { TedBudgetExceededError, TedRequestError, TedXmlTooLargeError } from './errors';
 import { TED_API_BASE } from './index';
 import type { TedSearchRequest } from './index';
 
@@ -51,6 +51,13 @@ const DEFAULT_SPACING_MS = 500;
 /** Hosts we allow notice-XML fetches from (links come from TED responses, but never trust data-driven URLs blindly). */
 const ALLOWED_XML_HOST_SUFFIX = '.ted.europa.eu';
 const ALLOWED_XML_HOST = 'ted.europa.eu';
+
+/**
+ * Hard cap on a single notice XML's decoded size. Notices are normally
+ * kilobytes to low-single-digit megabytes; this bounds worst-case memory/CPU
+ * for one bad or malicious response without touching legitimate notices.
+ */
+export const MAX_XML_BYTES = 15_000_000;
 
 function isRetryableStatus(status: number): boolean {
   return status === 429 || status >= 500;
@@ -152,8 +159,22 @@ export class TedClient {
       });
     }
     const response = await this.requestWithRetry(url, { method: 'GET' });
+    // Content-Length is checked first to reject an oversized body before
+    // buffering it, but it is untrusted (can lie or be absent) — the actual
+    // decoded size is checked below regardless.
+    const contentLengthHeader = response.headers.get('Content-Length');
+    if (contentLengthHeader !== null) {
+      const declaredBytes = Number(contentLengthHeader);
+      if (Number.isFinite(declaredBytes) && declaredBytes > MAX_XML_BYTES) {
+        throw new TedXmlTooLargeError(url, declaredBytes, MAX_XML_BYTES);
+      }
+    }
     const xml = await response.text();
-    this.logger.info('ted.notice_xml.ok', { bytes: xml.length });
+    const actualBytes = new TextEncoder().encode(xml).length;
+    if (actualBytes > MAX_XML_BYTES) {
+      throw new TedXmlTooLargeError(url, actualBytes, MAX_XML_BYTES);
+    }
+    this.logger.info('ted.notice_xml.ok', { bytes: actualBytes });
     return xml;
   }
 

@@ -26,10 +26,12 @@ import {
   insertLots,
   insertSnapshotIfNewHash,
   newId,
+  setFeatureFlag,
   upsertBuyer,
   upsertNoticeWithVersion,
 } from '@bidmorrow/db';
 import { schema } from '@bidmorrow/db';
+import { FLAG_INGESTION_PAUSED } from '@bidmorrow/config';
 
 // pool-workers tests run inside sandboxed workerd, not Node — real
 // filesystem reads (`node:fs`) are not available for arbitrary host paths,
@@ -414,6 +416,48 @@ describe('runIngestionCatchUp', () => {
 
     const checkpoint = await getCheckpoint(db, { source: 'ted' });
     expect(checkpoint?.lastPublicationDate).toBe(expectedWindows.at(-1)?.windowTo);
+  });
+
+  it('the ingestion_paused flag short-circuits catch-up: no runs created, checkpoint unchanged (P5-R-02)', async () => {
+    const db = createDb(env.DB);
+    const before = await getCheckpoint(db, { source: 'ted' });
+    await setFeatureFlag(db, {
+      key: FLAG_INGESTION_PAUSED,
+      valueJson: 'true',
+      description: 'test: pause ingestion',
+    });
+
+    const runsBefore = await env.DB.prepare('SELECT COUNT(*) as n FROM ingestion_runs').first<{
+      n: number;
+    }>();
+    const client = makeClient(makeFakeFetch([{ notices: [] }], {}));
+
+    const result = await runIngestionCatchUp({
+      db,
+      client,
+      snapshots: env.SNAPSHOTS,
+      logger: createLogger({ test: true }),
+      maxWindowsPerRun: 3,
+      now: () => Date.parse('2026-09-01T00:00:00Z'),
+    });
+
+    expect(result.paused).toBe(true);
+    expect(result.results).toHaveLength(0);
+
+    const runsAfter = await env.DB.prepare('SELECT COUNT(*) as n FROM ingestion_runs').first<{
+      n: number;
+    }>();
+    expect(runsAfter?.n).toBe(runsBefore?.n);
+
+    const after = await getCheckpoint(db, { source: 'ted' });
+    expect(after?.lastPublicationDate).toBe(before?.lastPublicationDate);
+
+    // Reset for any tests that might run after this one in the shared DB file.
+    await setFeatureFlag(db, {
+      key: FLAG_INGESTION_PAUSED,
+      valueJson: 'false',
+      description: 'test: unpause ingestion',
+    });
   });
 });
 

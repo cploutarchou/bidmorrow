@@ -9,6 +9,7 @@
 import { FLAG_INGESTION_CPV_SCOPE, FLAG_INGESTION_PAUSED } from '@bidmorrow/config';
 import { getFeatureFlag } from '@bidmorrow/db';
 import type { Db } from '@bidmorrow/db';
+import type { Logger } from '@bidmorrow/observability';
 
 export interface IngestionScope {
   /**
@@ -57,15 +58,26 @@ export async function loadIngestionScope(db: Db): Promise<IngestionScope> {
   return parseIngestionScope(flag.valueJson);
 }
 
-/** Reads the `ingestion_paused` flag; absent/malformed defaults to NOT paused. */
-export async function isIngestionPaused(db: Db): Promise<boolean> {
+/**
+ * Reads the `ingestion_paused` flag; absent/malformed defaults to NOT
+ * paused. This is a deliberate availability-over-strictness choice: the pause
+ * flag exists as an emergency stop lever (e.g. to halt ingestion mid-incident
+ * without a deploy), so a malformed flag value must never itself become an
+ * outage by silently halting ingestion — it is logged instead so the anomaly
+ * is visible without changing the fail-open behavior.
+ */
+export async function isIngestionPaused(db: Db, logger?: Logger): Promise<boolean> {
   const flag = await getFeatureFlag(db, FLAG_INGESTION_PAUSED);
   if (flag === null) {
     return false;
   }
   try {
     return JSON.parse(flag.valueJson) === true;
-  } catch {
+  } catch (cause) {
+    logger?.warn('ingestion.paused_flag.malformed', {
+      value_json: flag.valueJson,
+      error: cause instanceof Error ? cause.message : String(cause),
+    });
     return false;
   }
 }

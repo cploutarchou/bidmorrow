@@ -330,6 +330,28 @@ describe('parseEformsNotice — adversarial input safety', () => {
     expect(notice.issues.map((issue) => issue.code)).toContain('text-truncated');
   });
 
+  it('a huge source-derived value never produces an unbounded ParseIssue message (SEC-P5-04)', () => {
+    // Doesn't match the `eforms-sdk-<major>.<minor>` shape at all, so the raw
+    // (huge) value gets interpolated verbatim into the issue message.
+    const hugeId = 'not-a-valid-sdk-version-' + 'a'.repeat(50_000);
+    const xml = loadFixture('1.15/normal.xml').replace(
+      '<cbc:CustomizationID>eforms-sdk-1.15</cbc:CustomizationID>',
+      `<cbc:CustomizationID>${hugeId}</cbc:CustomizationID>`,
+    );
+    let caught: unknown = null;
+    try {
+      parseEformsNotice(xml);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(TedParseError);
+    const issue = (caught as TedParseError).issues.find(
+      (i) => i.code === 'unsupported-customization-id',
+    );
+    expect(issue).toBeDefined();
+    expect(issue?.message.length).toBeLessThanOrEqual(1_100);
+  });
+
   it('documents with a DTD are rejected (entity-expansion attack surface)', () => {
     const xml = `<!DOCTYPE lol [<!ENTITY a "b">]>${loadFixture('1.15/normal.xml').replace('<?xml version="1.0" encoding="utf-8"?>', '')}`;
     let caught: unknown = null;

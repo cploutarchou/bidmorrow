@@ -24,7 +24,7 @@ export interface RunCatchUpResult {
 }
 
 export async function runIngestionCatchUp(deps: RunCatchUpDeps): Promise<RunCatchUpResult> {
-  if (await isIngestionPaused(deps.db)) {
+  if (await isIngestionPaused(deps.db, deps.logger)) {
     deps.logger.info('ingestion.paused', { source: TED_SOURCE_ID });
     return { results: [], paused: true };
   }

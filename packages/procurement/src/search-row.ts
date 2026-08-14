@@ -24,6 +24,28 @@ function asNonEmptyString(value: unknown): string | null {
 }
 
 /**
+ * The documented TED publication-number format: up to 8 digits, a hyphen,
+ * then a 4-digit year (e.g. `123456-2026`).
+ */
+const TED_PUBLICATION_NUMBER_RE = /^\d{1,8}-\d{4}$/;
+
+/**
+ * Conservative fallback charset for `publication-number` values that don't
+ * match the documented TED format. Some historic/demo notice ids legitimately
+ * differ from the current format (verified against scripts/seed-demo.sql's
+ * `TED-DEMO-00N` ids), so we don't hard-reject on format mismatch alone — but
+ * this value becomes a raw R2 key path segment (snapshot.ts) and a filesystem
+ * path-like identifier elsewhere, so ANY value we accept must be free of `/`
+ * and bounded in length. A row is only rejected when it fails BOTH tiers.
+ */
+const CONSERVATIVE_ID_CHARSET_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+
+/** True when `sourceNoticeId` is safe to use as a source_notice_id / R2 key segment. */
+function isValidSourceNoticeId(value: string): boolean {
+  return TED_PUBLICATION_NUMBER_RE.test(value) || CONSERVATIVE_ID_CHARSET_RE.test(value);
+}
+
+/**
  * Pulls `publication-number`, `publication-date`, and `links.xml.MUL` out of
  * a search row. Returns null (never throws, never fabricates) when any
  * required field is missing or malformed — the caller records an
@@ -41,7 +63,12 @@ export function extractSearchRow(row: Readonly<Record<string, unknown>>): Search
   const xml = links === null ? null : asRecord(links['xml']);
   const xmlUrl = xml === null ? null : asNonEmptyString(xml['MUL']);
 
-  if (sourceNoticeId === null || publicationDate === null || xmlUrl === null) {
+  if (
+    sourceNoticeId === null ||
+    publicationDate === null ||
+    xmlUrl === null ||
+    !isValidSourceNoticeId(sourceNoticeId)
+  ) {
     return null;
   }
   return { sourceNoticeId, publicationDate, xmlUrl };

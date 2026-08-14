@@ -9,7 +9,7 @@ import { createLogger } from '@bidmorrow/observability';
 
 import { TedClient } from './client';
 import type { TedFetch } from './client';
-import { TedBudgetExceededError, TedRequestError } from './errors';
+import { TedBudgetExceededError, TedRequestError, TedXmlTooLargeError } from './errors';
 
 interface FakeResponseSpec {
   readonly status: number;
@@ -301,5 +301,31 @@ describe('TedClient.fetchNoticeXml', () => {
     ).rejects.toMatchObject({ name: 'TedRequestError' });
     expect(calls).toHaveLength(0);
     expect(client.requestsUsedThisRun).toBe(0);
+  });
+
+  it('rejects an oversized body declared by Content-Length before buffering it', async () => {
+    const { fetchImpl, calls } = makeFakeFetch([
+      { status: 200, body: 'irrelevant', headers: { 'Content-Length': '20000000' } },
+    ]);
+    const client = makeClient(fetchImpl);
+    await expect(
+      client.fetchNoticeXml('https://ted.europa.eu/en/notice/1-2026/xml'),
+    ).rejects.toMatchObject({
+      name: 'TedXmlTooLargeError',
+      bytes: 20_000_000,
+      maxBytes: 15_000_000,
+    });
+    expect(calls).toHaveLength(1); // the fetch itself still happens (retry budget aside)
+  });
+
+  it('rejects an oversized body even when Content-Length is absent or lies', async () => {
+    const oversized = 'x'.repeat(15_000_001);
+    const { fetchImpl } = makeFakeFetch([{ status: 200, body: oversized }]);
+    const client = makeClient(fetchImpl);
+    const error = await client
+      .fetchNoticeXml('https://ted.europa.eu/en/notice/1-2026/xml')
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(TedXmlTooLargeError);
+    expect((error as TedXmlTooLargeError).bytes).toBe(15_000_001);
   });
 });

@@ -118,6 +118,21 @@ const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})(Z|[+-]\d{2}:\d{2})?$/;
 const TIME_RE = /^(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})?$/;
 const CPV_RE = /^(\d{8})(?:-\d)?$/;
 
+/**
+ * Several `ParseIssue` messages interpolate a source-derived string verbatim
+ * (a raw CustomizationID, an unparseable date, an organization id, ...).
+ * That text is untrusted procurement content — cap it before it becomes part
+ * of the message so one pathological field can never make an issue (and, in
+ * turn, an `ingestion_errors.detail_json` row) unboundedly large.
+ */
+const MAX_ISSUE_MESSAGE_CHARS = 1_000;
+
+function truncateForIssue(message: string): string {
+  return message.length > MAX_ISSUE_MESSAGE_CHARS
+    ? `${message.slice(0, MAX_ISSUE_MESSAGE_CHARS)}...(truncated)`
+    : message;
+}
+
 interface IssueCollector {
   readonly issues: ParseIssue[];
   add(severity: ParseIssue['severity'], code: string, message: string, path?: string): void;
@@ -128,8 +143,11 @@ function makeCollector(): IssueCollector {
   return {
     issues,
     add(severity, code, message, path) {
+      const bounded = truncateForIssue(message);
       issues.push(
-        path === undefined ? { severity, code, message } : { severity, code, message, path },
+        path === undefined
+          ? { severity, code, message: bounded }
+          : { severity, code, message: bounded, path },
       );
     },
   };

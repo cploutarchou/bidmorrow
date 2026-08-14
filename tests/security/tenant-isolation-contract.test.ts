@@ -49,8 +49,16 @@ const GLOBAL_FILES_TENANT_SCHEMA_EXEMPT: Record<string, string> = {
   'retention.ts':
     'the retention purge sweep is a single global operational job (docs/ted-ingestion-scope.md) ' +
     "that must see EVERY organization's saved_tenders/customer_feedback pins to decide global " +
-    'purge eligibility — by definition it cannot be organizationId-scoped; it is read-only against ' +
-    'those tables (never writes tenant data) and only ever deletes global corpus rows.',
+    "purge eligibility, and once a lot is purged must remove EVERY organization's matches on " +
+    'it — by definition this cannot be organizationId-scoped: it reads saved_tenders/' +
+    'customer_feedback (tenant-owned) read-only to compute pins, DELETEs tender_matches ' +
+    '(tenant-owned — but scoped by lot_id across all organizations, not by a single ' +
+    'organization_id, because a purged global lot must not leave orphaned matches behind for ' +
+    'ANY tenant) and UPDATEs digest_items.match_id to NULL (tenant-owned via digest_run_id — ' +
+    'detaching, never deleting, so historical digests stay readable after the match is gone). ' +
+    'It never INSERTs into a tenant-owned table. No request-handler path reaches this module; ' +
+    'it runs only from the scheduled retention job (ADR-0003), which is why the per-request ' +
+    'organizationId contract does not apply here.',
 };
 
 /** Infrastructure helpers/errors — no data access of their own. */
@@ -231,6 +239,16 @@ describe('tenant-isolation structural contract (packages/db/src/repositories)', 
         ).toBe(false);
       }
     }
+  });
+
+  it('retention.ts never INSERTs into a tenant-owned table (SEC-P5-03)', () => {
+    // The exemption above justifies retention.ts's cross-tenant UPDATE
+    // (digest_items) and DELETE (tender_matches) as read-then-cascade-delete
+    // operations against ALREADY-EXISTING tenant data — it must never
+    // originate new tenant-owned rows, which would need an organizationId
+    // the global purge job has no business assigning.
+    const source = readRepositoryFile('retention.ts');
+    expect(source.includes('.insert(')).toBe(false);
   });
 
   it('every global tenant-schema exemption names a file that actually imports a tenant schema module', () => {

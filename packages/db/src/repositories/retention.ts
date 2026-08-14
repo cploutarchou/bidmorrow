@@ -55,6 +55,16 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
  * the caller (packages/procurement) applies the notice-count bound after
  * grouping, since a notice's eligibility can only be decided once ALL of its
  * lots are known.
+ *
+ * Scaling profile (P5-R-04): this is an unbounded, in-memory, full-table
+ * scan of every current-version lot, on every purge run. That's fine at the
+ * corpus size docs/cost-model.md targets for steady state (roughly
+ * 15,000-40,000 active lots given the V1 CPV-family/country scope), and
+ * still fine up to roughly 50,000 lots. Past that, this needs keyset
+ * pagination (chunk by lot id, accumulate per-notice eligibility across
+ * pages) instead of one unbounded SELECT — revisit if the ingestion scope
+ * (more CPV families, more countries) grows the active-lot count past that
+ * range.
  */
 export async function listCurrentVersionLots(db: Db): Promise<RetentionLotRow[]> {
   const rows = await db

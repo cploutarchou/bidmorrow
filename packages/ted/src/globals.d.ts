@@ -15,6 +15,10 @@ declare const console: {
 
 declare function setTimeout(callback: () => void, ms?: number): number;
 
+declare class TextEncoder {
+  encode(input: string): Uint8Array;
+}
+
 interface TedFetchHeaders {
   get(name: string): string | null;
 }

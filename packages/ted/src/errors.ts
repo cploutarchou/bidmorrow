@@ -59,6 +59,28 @@ export class TedRequestError extends Error {
 }
 
 /**
+ * Thrown when a notice XML fetch exceeds `MAX_XML_BYTES` (client.ts) —
+ * either the `Content-Length` header declared an oversized body, or the
+ * actual decoded body did (headers can lie or be absent, so both are
+ * checked). The caller (procurement's run-window) routes this to
+ * `ingestion_errors` and skips just that notice — the window proceeds.
+ */
+export class TedXmlTooLargeError extends Error {
+  readonly url: string;
+  /** The byte count that tripped the cap (from whichever check caught it). */
+  readonly bytes: number;
+  readonly maxBytes: number;
+
+  constructor(url: string, bytes: number, maxBytes: number) {
+    super(`notice XML exceeds the ${String(maxBytes)}-byte cap (${String(bytes)} bytes): ${url}`);
+    this.name = 'TedXmlTooLargeError';
+    this.url = url;
+    this.bytes = bytes;
+    this.maxBytes = maxBytes;
+  }
+}
+
+/**
  * Thrown when an eForms notice cannot be normalized. Carries every issue
  * collected (errors and warnings) so `ingestion_errors` records the full
  * diagnosis, plus the source notice id when it could be determined.

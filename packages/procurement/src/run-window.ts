@@ -3,8 +3,8 @@
  * `@bidmorrow/db` (checkpointed, idempotent persistence) into one bounded
  * publication-date-window run (ted-ingestion-audit checklist items 1–7).
  */
-import { TED_SOURCE_ID, TedParseError } from '@bidmorrow/ted';
-import type { TedClient } from '@bidmorrow/ted';
+import { TED_SOURCE_ID, TedParseError, TedXmlTooLargeError } from '@bidmorrow/ted';
+import type { ParseIssue, TedClient } from '@bidmorrow/ted';
 import type { Logger } from '@bidmorrow/observability';
 import type { Db, IngestionRun, IngestionRunTerminalStatus } from '@bidmorrow/db';
 import {
@@ -168,7 +168,25 @@ async function processOneNotice(
   const prospectiveVersion =
     existingNotice === null ? 1 : (await getLatestVersionNumber(deps.db, existingNotice.id)) + 1;
 
-  const rawXml = await deps.client.fetchNoticeXml(row.xmlUrl);
+  let rawXml: string;
+  try {
+    rawXml = await deps.client.fetchNoticeXml(row.xmlUrl);
+  } catch (cause) {
+    if (!(cause instanceof TedXmlTooLargeError)) {
+      throw cause;
+    }
+    counts.errorsCount += 1;
+    await recordError(deps.db, {
+      ingestionRunId,
+      source: TED_SOURCE_ID,
+      sourceNoticeId: row.sourceNoticeId,
+      stage: 'fetch',
+      errorCode: 'XML_TOO_LARGE',
+      message: cause.message,
+      detail: { bytes: cause.bytes, maxBytes: cause.maxBytes },
+    });
+    return;
+  }
   const contentHash = await sha256Hex(rawXml);
   const r2Key = buildSnapshotR2Key(
     TED_SOURCE_ID,
@@ -209,7 +227,7 @@ async function processOneNotice(
       errorCode: cause.issues.find((i) => i.severity === 'error')?.code ?? 'PARSE_ERROR',
       message: cause.message,
       snapshotR2Key: snapshotResult.snapshot.r2Key,
-      detail: { issues: cause.issues },
+      detail: { issues: boundIssuesForErrorDetail(cause.issues) },
     });
     return;
   }
@@ -308,6 +326,37 @@ async function processOneNotice(
   }
   await insertCpvCodes(deps.db, { entries: dedupeCpv(cpvEntries) });
   await insertGeographies(deps.db, { entries: dedupeGeo(geoEntries) });
+}
+
+/**
+ * D1 caps a single statement (including bound-parameter values) at ~100KB.
+ * `detail_json` is the only unbounded field in a `recordError` insert — a
+ * pathological notice (many lots, each producing several issues) must never
+ * be able to blow that cap. Issues are kept in order and dropped from the
+ * tail once the running JSON size would exceed the budget; a boolean marker
+ * records that truncation happened so the operator knows more issues exist
+ * (retrievable from the archived R2 snapshot via `snapshotR2Key`).
+ */
+const MAX_ISSUES_DETAIL_JSON_CHARS = 50_000;
+
+function boundIssuesForErrorDetail(issues: readonly ParseIssue[]): readonly unknown[] {
+  const fullJson = JSON.stringify(issues);
+  if (fullJson.length <= MAX_ISSUES_DETAIL_JSON_CHARS) {
+    return issues;
+  }
+  const kept: ParseIssue[] = [];
+  let runningLength = 2; // '[' + ']'
+  const marker = '...truncated';
+  const markerLength = JSON.stringify(marker).length + 1;
+  for (const issue of issues) {
+    const entryLength = JSON.stringify(issue).length + 1; // + comma/bracket
+    if (runningLength + entryLength + markerLength > MAX_ISSUES_DETAIL_JSON_CHARS) {
+      break;
+    }
+    kept.push(issue);
+    runningLength += entryLength;
+  }
+  return [...kept, marker];
 }
 
 /** First value from a `{lang: text}` map (deterministic key order is not guaranteed; any variant is fine for a display title). */
