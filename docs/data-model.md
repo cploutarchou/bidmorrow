@@ -49,6 +49,8 @@ once implemented, and any divergence must be reconciled back into this doc.
 > the **expected core columns only** — do not treat them as exhaustive or
 > hand-author them ahead of generation. Table/column names will be mapped to
 > snake_case via Better Auth's Drizzle adapter config.
+> (Phase 3: users placeholder created for FK integrity; auth_accounts/auth_sessions
+> deferred to Phase 4 generation)
 
 Expected core columns: `id TEXT PK`, `email TEXT NOT NULL` (**unique**),
 `email_verified INTEGER NOT NULL`, `name TEXT NULL`.
