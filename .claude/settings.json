@@ -1,0 +1,56 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.development)",
+      "Read(**/.env.test)",
+      "Read(**/.env.staging)",
+      "Read(**/.env.production)",
+      "Read(**/.env.secret*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(./.dev.vars)",
+      "Read(**/.dev.vars)",
+      "Write(./.env)",
+      "Write(**/.env.local)",
+      "Write(**/.env.development)",
+      "Write(**/.env.test)",
+      "Write(**/.env.staging)",
+      "Write(**/.env.production)",
+      "Write(**/.dev.vars)",
+      "Bash(wrangler d1 execute * --remote*)",
+      "Bash(npx wrangler d1 execute * --remote*)",
+      "Bash(pnpm wrangler d1 execute * --remote*)",
+      "Bash(wrangler d1 delete*)",
+      "Bash(npx wrangler d1 delete*)",
+      "Bash(wrangler delete*)",
+      "Bash(wrangler r2 bucket delete*)",
+      "Bash(wrangler secret*)"
+    ],
+    "allow": [
+      "Bash(pnpm format:check*)",
+      "Bash(pnpm lint*)",
+      "Bash(pnpm typecheck*)",
+      "Bash(pnpm test*)",
+      "Bash(pnpm build*)",
+      "Bash(pnpm --filter *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/typecheck-changed.sh",
+            "timeout": 120,
+            "statusMessage": "Typechecking changed package"
+          }
+        ]
+      }
+    ]
+  }
+}

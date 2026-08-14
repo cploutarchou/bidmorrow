@@ -1,0 +1,29 @@
+# Dependencies / build
+node_modules/
+dist/
+.wrangler/
+*.tsbuildinfo
+
+# Secrets — never committed
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
+
+# Test / tooling output
+coverage/
+playwright-report/
+test-results/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Local Claude Code state
+.claude/settings.local.json
+.claude/agent-memory-local/
