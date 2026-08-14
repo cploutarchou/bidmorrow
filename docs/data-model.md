@@ -39,8 +39,6 @@ once implemented, and any divergence must be reconciled back into this doc.
   Retention & archival); no `ON DELETE CASCADE` except where noted, so a bug
   can never silently mass-delete tender or customer data.
 
----
-
 ## 1. Identity & tenancy
 
 ### users — managed by Better Auth
@@ -79,30 +77,21 @@ Expected core columns: `id TEXT PK`, `user_id TEXT NOT NULL FK → users`
 
 The tenant root. Everything customer-owned hangs off this table.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK (ULID) |
-| name | TEXT | no | |
-| status | TEXT | no | `active` \| `deleted` (soft-delete gate while purge job hard-deletes owned rows) |
-| created_by_user_id | TEXT | no | FK → users |
-
-- **PK** `id` · **FK** `created_by_user_id`.
+- `id TEXT PK` (ULID) · `name TEXT NOT NULL`.
+- `status TEXT NOT NULL` — `active` \| `deleted` (soft-delete gate while the
+  purge job hard-deletes owned rows).
+- `created_by_user_id TEXT NOT NULL FK → users`.
 - No index beyond PK: org lookups are by id (from session → membership).
 
 ### organization_members — [tenant-owned]
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| organization_id | TEXT | no | FK → organizations |
-| user_id | TEXT | no | FK → users |
-| role | TEXT | no | `ORGANIZATION_OWNER` \| `MEMBER` (CHECK). INTERNAL_ADMIN deliberately absent — see users |
-
-- **PK** `id` · **Unique** `(organization_id, user_id)` ·
+- `id TEXT PK` · `organization_id TEXT NOT NULL FK → organizations` ·
+  `user_id TEXT NOT NULL FK → users`.
+- `role TEXT NOT NULL` — `ORGANIZATION_OWNER` \| `MEMBER` (CHECK).
+  INTERNAL_ADMIN deliberately absent — see users.
+- **Unique** `(organization_id, user_id)` ·
   **Index** `(user_id)` — every authenticated request resolves
   "which org(s) does this user belong to".
-
----
 
 ## 2. Company profile & preferences
 
@@ -114,20 +103,14 @@ organizations`; those two columns are not repeated in the compact listings.
 
 ### company_profiles
 
-1:1 with organization; descriptive profile + onboarding state.
+1:1 with organization (`organization_id` **unique**); descriptive profile +
+onboarding state.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| organization_id | TEXT | no | FK → organizations, **unique** (1:1) |
-| display_name | TEXT | yes | |
-| description | TEXT | yes | |
-| employee_band | TEXT | yes | e.g. `5-10`, `11-25`, `26-50` |
-| website | TEXT | yes | |
-| preset_key | TEXT | yes | which preset seeded onboarding (`cyber_consultancy`, `cloud_devops`, `software_house`, `it_generalist`) |
-| onboarding_completed_at | INTEGER | yes | null until onboarding finished |
-
-- **PK** `id` · **Unique** `(organization_id)`.
+- `display_name TEXT NULL` · `description TEXT NULL` · `website TEXT NULL`.
+- `employee_band TEXT NULL` — e.g. `5-10`, `11-25`, `26-50`.
+- `preset_key TEXT NULL` — which preset seeded onboarding
+  (`cyber_consultancy`, `cloud_devops`, `software_house`, `it_generalist`).
+- `onboarding_completed_at INTEGER NULL` — null until onboarding finished.
 
 ### company_capabilities
 
@@ -197,8 +180,6 @@ reads.
 - `minimum_days_remaining INTEGER NULL` — null = threshold unset (deadline
   rule scores 0 instead of hard-excluding).
 
----
-
 ## 3. Buyers
 
 ### buyers
@@ -206,22 +187,14 @@ reads.
 Global (not tenant-owned) normalized buyer entities, deduplicated across
 notices. Feeds the buyer/sector component and future award-history enrichment.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| source | TEXT | no | `ted` (source-agnostic like notices) |
-| source_buyer_id | TEXT | yes | eForms organization id when present |
-| name | TEXT | no | |
-| country_code | TEXT | yes | ISO-3166-1 alpha-2 |
-| buyer_legal_type | TEXT | yes | eForms code |
-| buyer_activity | TEXT | yes | eForms code |
-
+- `id TEXT PK` · `source TEXT NOT NULL` (`ted`; source-agnostic like notices)
+  · `source_buyer_id TEXT NULL` — eForms organization id when present.
+- `name TEXT NOT NULL` · `country_code TEXT NULL` (ISO-3166-1 alpha-2).
+- `buyer_legal_type TEXT NULL` · `buyer_activity TEXT NULL` — eForms codes.
 - **PK** `id` · **Unique (partial)** `(source, source_buyer_id) WHERE
   source_buyer_id IS NOT NULL`.
 - **Index** `(source, name, country_code)` — dedupe fallback when the source
   provides no stable buyer id.
-
----
 
 ## 4. Tender corpus (global, grows with notices)
 
@@ -315,8 +288,6 @@ carries its own lot rows). The matching unit.
 - **Index** `(lot_id)`. No unique constraint: NULL `nuts_code` makes SQLite
   unique semantics unhelpful; ingestion dedupes in-app.
 
----
-
 ## 5. Ingestion pipeline (global, ops)
 
 ### ingestion_runs
@@ -324,18 +295,16 @@ carries its own lot rows). The matching unit.
 One row per scheduled/triggered ingestion execution; the admin debugging
 anchor.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| source | TEXT | no | `ted` |
-| status | TEXT | no | `running` \| `succeeded` \| `partial` \| `failed` (CHECK) |
-| window_from / window_to | TEXT | no | `YYYY-MM-DD` publication window processed |
-| notices_seen, notices_upserted, versions_created, lots_created, matches_scored, errors_count | INTEGER | no | counters, default 0 (scoring runs inside the ingestion pipeline) |
-| started_at | INTEGER | no | |
-| finished_at | INTEGER | yes | null while running |
-
-- **PK** `id` · **Index** `(source, started_at)` — "recent runs" admin view;
-  ULID PK also gives rough recency ordering.
+- `id TEXT PK` · `source TEXT NOT NULL` · `status TEXT NOT NULL` —
+  `running` \| `succeeded` \| `partial` \| `failed` (CHECK).
+- `window_from TEXT NOT NULL` / `window_to TEXT NOT NULL` — `YYYY-MM-DD`
+  publication window processed.
+- Counters, all `INTEGER NOT NULL` default 0: `notices_seen`,
+  `notices_upserted`, `versions_created`, `lots_created`, `matches_scored`
+  (scoring runs inside the ingestion pipeline), `errors_count`.
+- `started_at INTEGER NOT NULL` · `finished_at INTEGER NULL` (null while
+  running).
+- **Index** `(source, started_at)` — "recent runs" admin view.
 
 ### ingestion_checkpoints
 
@@ -368,23 +337,16 @@ the batch).
 Pointer to the raw source payload archived in **R2** (the DB stores metadata
 only; XML bodies never enter D1).
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| source | TEXT | no | |
-| source_notice_id | TEXT | no | |
-| version_number | INTEGER | no | |
-| r2_key | TEXT | no | deterministic path: `{source}/{yyyy}/{mm}/{source_notice_id}/v{version_number}.xml` |
-| content_hash | TEXT | no | integrity + change detection |
-| size_bytes | INTEGER | no | |
-| content_type | TEXT | no | e.g. `application/xml` |
-| retained_until_at | INTEGER | yes | retention hint for the R2 lifecycle job |
-| deleted_at | INTEGER | yes | tombstone after R2 object deletion (row kept for audit) |
-
-- **PK** `id` · **Unique** `(r2_key)` ·
-  **Index** `(source, source_notice_id)`.
-
----
+- `id TEXT PK` · `source TEXT NOT NULL` · `source_notice_id TEXT NOT NULL` ·
+  `version_number INTEGER NOT NULL`.
+- `r2_key TEXT NOT NULL` — deterministic path:
+  `{source}/{yyyy}/{mm}/{source_notice_id}/v{version_number}.xml`.
+- `content_hash TEXT NOT NULL` (integrity + change detection) ·
+  `size_bytes INTEGER NOT NULL` · `content_type TEXT NOT NULL`.
+- `retained_until_at INTEGER NULL` — retention hint for the R2 lifecycle job.
+- `deleted_at INTEGER NULL` — tombstone after R2 object deletion (row kept
+  for audit).
+- **Unique** `(r2_key)` · **Index** `(source, source_notice_id)`.
 
 ## 6. Matching results
 
@@ -439,19 +401,16 @@ invariant 2). ~8 rows per scored match.
 0..n per match; conservative, evidence-backed only (never fabricate a
 requirement).
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| match_id | TEXT | no | FK → tender_matches |
-| type | TEXT | no | `certification` \| `security_clearance` \| `insurance` \| `financial_turnover` \| `prior_experience` \| `framework_membership` \| `local_presence` \| `mandatory_references` (CHECK) |
-| evidence | TEXT | no | quoted source snippet |
-| source_field | TEXT | no | field path in the source notice the snippet came from |
-| confidence | TEXT | no | `HIGH` \| `POSSIBLE` (CHECK) |
-| explanation | TEXT | no | rendered wording ("Possible requirement detected — verify in source documents.") |
-
-- **Index** `(match_id)`.
-
----
+- `id TEXT PK` · `match_id TEXT NOT NULL FK → tender_matches` (**indexed**).
+- `type TEXT NOT NULL` — `certification` \| `security_clearance` \|
+  `insurance` \| `financial_turnover` \| `prior_experience` \|
+  `framework_membership` \| `local_presence` \| `mandatory_references`
+  (CHECK).
+- `evidence TEXT NOT NULL` — quoted source snippet · `source_field TEXT NOT
+  NULL` — field path in the source notice the snippet came from.
+- `confidence TEXT NOT NULL` — `HIGH` \| `POSSIBLE` (CHECK).
+- `explanation TEXT NOT NULL` — rendered wording ("Possible requirement
+  detected — verify in source documents.").
 
 ## 7. Customer actions & feedback — all [tenant-owned]
 
@@ -480,22 +439,17 @@ Useful / Not-useful verdicts with structured reasons. Stored verbatim; never
 feeds back into scoring automatically. Pins the referenced match (and its lot)
 against purge so feedback stays interpretable.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| organization_id | TEXT | no | FK → organizations |
-| match_id | TEXT | no | FK → tender_matches |
-| user_id | TEXT | no | FK → users |
-| verdict | TEXT | no | `useful` \| `not_useful` (CHECK) |
-| reasons_json | TEXT | yes | JSON array of structured reason codes (`wrong_cpv`, `wrong_geography`, `too_large`, `too_small`, `not_our_work`, `deadline_too_close`, `other`) |
-| comment | TEXT | yes | |
-
+- `id TEXT PK` · `organization_id TEXT NOT NULL FK → organizations` ·
+  `match_id TEXT NOT NULL FK → tender_matches` · `user_id TEXT NOT NULL FK →
+  users`.
+- `verdict TEXT NOT NULL` — `useful` \| `not_useful` (CHECK).
+- `reasons_json TEXT NULL` — JSON array of structured reason codes
+  (`wrong_cpv`, `wrong_geography`, `too_large`, `too_small`, `not_our_work`,
+  `deadline_too_close`, `other`) · `comment TEXT NULL`.
 - **Unique** `(organization_id, match_id)` — one live verdict per match;
   changing your mind upserts (updated_at tracks it).
 - **Index** `(organization_id, created_at)` — per-org Useful/Not-useful trend
   (pilot success signal).
-
----
 
 ## 8. Digest & email — [tenant-owned] except deliveries' user-level rows
 
@@ -515,18 +469,14 @@ One attempted digest per org per day. **The unique constraint is the dedupe
 mechanism** — the digest worker inserts first (`INSERT ... ON CONFLICT DO
 NOTHING`); losing the insert means another invocation owns today's digest.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| organization_id | TEXT | no | FK → organizations |
-| digest_date | TEXT | no | `YYYY-MM-DD` in the org's timezone |
-| status | TEXT | no | `pending` \| `sent` \| `skipped_empty` \| `skipped_paused` \| `failed` (CHECK) |
-| matches_count | INTEGER | no | included matches |
-| email_delivery_id | TEXT | yes | FK → email_deliveries; null when skipped |
-| sent_at | INTEGER | yes | |
-
-- **PK** `id` · **Unique** `(organization_id, digest_date)` — DB-enforced
-  "one digest per org per day".
+- `id TEXT PK` · `organization_id TEXT NOT NULL FK → organizations`.
+- `digest_date TEXT NOT NULL` — `YYYY-MM-DD` in the org's timezone.
+- `status TEXT NOT NULL` — `pending` \| `sent` \| `skipped_empty` \|
+  `skipped_paused` \| `failed` (CHECK).
+- `matches_count INTEGER NOT NULL` · `email_delivery_id TEXT NULL FK →
+  email_deliveries` (null when skipped) · `sent_at INTEGER NULL`.
+- **Unique** `(organization_id, digest_date)` — DB-enforced "one digest per
+  org per day".
 
 ### digest_items
 
@@ -541,6 +491,8 @@ meaningful after the underlying match is purged by retention.
   `classification_snapshot TEXT NOT NULL` — captured at send time.
 - **Unique** `(digest_run_id, match_id)` · **Index** `(digest_run_id)` ·
   **Index** `(match_id)` (purge SET NULL pass).
+- Tenancy inherited through `digest_run_id` (like `match_components` through
+  `match_id`); access always goes via the org-checked parent row.
 
 ### email_deliveries
 
@@ -548,24 +500,18 @@ Every outbound email (digest, verification, password reset, billing notices).
 Org-level for digests, user-level for auth mail — hence both FKs nullable,
 CHECK at least one set.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| organization_id | TEXT | yes | FK → organizations |
-| user_id | TEXT | yes | FK → users |
-| kind | TEXT | no | `digest` \| `verification` \| `password_reset` \| `billing` (CHECK) |
-| to_email | TEXT | no | |
-| provider | TEXT | no | e.g. `resend` |
-| provider_message_id | TEXT | yes | for delivery-event correlation |
-| status | TEXT | no | `queued` \| `sent` \| `delivered` \| `bounced` \| `complained` \| `failed` (CHECK) |
-| error | TEXT | yes | |
-| created_at / updated_at | INTEGER | no | updated_at moves on provider status events |
-
-- **PK** `id` · **Index** `(organization_id, created_at)` — admin "emails for
+- `id TEXT PK` · `organization_id TEXT NULL FK → organizations` ·
+  `user_id TEXT NULL FK → users`.
+- `kind TEXT NOT NULL` — `digest` \| `verification` \| `password_reset` \|
+  `billing` (CHECK).
+- `to_email TEXT NOT NULL` · `provider TEXT NOT NULL` (e.g. `resend`) ·
+  `provider_message_id TEXT NULL` — for delivery-event correlation.
+- `status TEXT NOT NULL` — `queued` \| `sent` \| `delivered` \| `bounced` \|
+  `complained` \| `failed` (CHECK) · `error TEXT NULL`. `updated_at` moves on
+  provider status events.
+- **Index** `(organization_id, created_at)` — admin "emails for
   this org" · **Unique (partial)** `(provider, provider_message_id) WHERE
   provider_message_id IS NOT NULL` — webhook status updates resolve one row.
-
----
 
 ## 9. Billing — [tenant-owned]
 
@@ -574,18 +520,17 @@ CHECK at least one set.
 1:1 with organization (V1: exactly one subscription per org, created at
 checkout). Server-side entitlements read this row.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| organization_id | TEXT | no | FK → organizations, **unique** (1:1) |
-| stripe_customer_id | TEXT | no | **unique** |
-| stripe_subscription_id | TEXT | yes | **unique**; null between customer creation and checkout completion |
-| status | TEXT | no | `trialing` \| `active` \| `past_due` \| `canceled` \| `unpaid` (CHECK) — mirrors Stripe |
-| plan | TEXT | no | `founding` \| `standard` (CHECK) |
-| current_period_end_at | INTEGER | yes | entitlement grace boundary |
-| cancel_at_period_end | INTEGER | no | default 0 |
-
-- **PK** `id` · **Unique** `(organization_id)`, `(stripe_customer_id)`,
+- `id TEXT PK` · `organization_id TEXT NOT NULL FK → organizations` —
+  **unique** (1:1).
+- `stripe_customer_id TEXT NOT NULL` — **unique**.
+- `stripe_subscription_id TEXT NULL` — **unique**; null between customer
+  creation and checkout completion.
+- `status TEXT NOT NULL` — `trialing` \| `active` \| `past_due` \|
+  `canceled` \| `unpaid` (CHECK) — mirrors Stripe.
+- `plan TEXT NOT NULL` — `founding` \| `standard` (CHECK).
+- `current_period_end_at INTEGER NULL` — entitlement grace boundary.
+- `cancel_at_period_end INTEGER NOT NULL` — default 0.
+- **Unique** `(organization_id)`, `(stripe_customer_id)`,
   `(stripe_subscription_id)` — the two Stripe uniques are the webhook →
   organization resolution path.
 
@@ -596,20 +541,15 @@ idempotency guard**: handlers insert first; a conflict means the event was
 already processed (or is in flight) and the webhook returns 200 without
 side effects.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| stripe_event_id | TEXT | no | **unique** |
-| type | TEXT | no | e.g. `customer.subscription.updated` |
-| organization_id | TEXT | yes | FK → organizations; resolved via customer id, null when unresolvable |
-| payload_json | TEXT | no | full event payload |
-| status | TEXT | no | `received` \| `processed` \| `failed` \| `ignored` (CHECK) |
-| processed_at | INTEGER | yes | |
-
-- **PK** `id` · **Unique** `(stripe_event_id)` ·
-  **Index** `(organization_id, created_at)` — admin billing debugging.
-
----
+- `id TEXT PK` · `stripe_event_id TEXT NOT NULL` — **unique**.
+- `type TEXT NOT NULL` — e.g. `customer.subscription.updated`.
+- `organization_id TEXT NULL FK → organizations` — resolved via customer id,
+  null when unresolvable.
+- `payload_json TEXT NOT NULL` — full event payload.
+- `status TEXT NOT NULL` — `received` \| `processed` \| `failed` \| `ignored`
+  (CHECK) · `processed_at INTEGER NULL`.
+- **Unique** `(stripe_event_id)` · **Index** `(organization_id, created_at)`
+  — admin billing debugging.
 
 ## 10. Ops, analytics & admin
 
@@ -629,19 +569,17 @@ Minimal first-party analytics (no third-party tooling). Append-only.
 
 Append-only audit log for security-relevant and admin actions.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| actor_type | TEXT | no | `user` \| `admin` \| `system` (CHECK) |
-| actor_id | TEXT | yes | users.id for user/admin; null for system |
-| organization_id | TEXT | yes | FK → organizations; the org affected, when applicable |
-| action | TEXT | no | stable verb, e.g. `feature_flag.updated`, `recompute.triggered`, `org.deleted` |
-| target_type | TEXT | no | e.g. `feature_flag`, `organization`, `subscription` |
-| target_id | TEXT | yes | |
-| before_summary | TEXT | yes | compact human-readable before-state |
-| after_summary | TEXT | yes | compact after-state |
-| occurred_at | INTEGER | no | |
-
+- `id TEXT PK` · `actor_type TEXT NOT NULL` — `user` \| `admin` \| `system`
+  (CHECK) · `actor_id TEXT NULL` — users.id for user/admin, null for system.
+- `organization_id TEXT NULL FK → organizations` — the org affected, when
+  applicable.
+- `action TEXT NOT NULL` — stable verb, e.g. `feature_flag.updated`,
+  `recompute.triggered`, `org.deleted`.
+- `target_type TEXT NOT NULL` (e.g. `feature_flag`, `organization`,
+  `subscription`) · `target_id TEXT NULL`.
+- `before_summary TEXT NULL` / `after_summary TEXT NULL` — compact
+  human-readable before/after state.
+- `occurred_at INTEGER NOT NULL`.
 - **Index** `(organization_id, occurred_at)` ·
   **Index** `(target_type, target_id)` — "who changed this flag?".
 
@@ -668,8 +606,6 @@ booleans, numbers and structured config.
 - `updated_by_user_id TEXT NULL FK → users`. Every flag change writes an
   `audit_events` row.
 
----
-
 ## 11. Retention & archival
 
 Policy: tender data is kept **until `deadline_at + N days`** (`N` default 60;
@@ -691,8 +627,6 @@ Two phases, both bounded batch jobs:
 
 Never touched by the purge: all company-profile tables, `buyers`,
 `digest_runs`/`digest_items`, `email_deliveries`, billing, events, audit.
-
----
 
 ## 12. Entity-relationship overview (core tables)
 
