@@ -124,11 +124,21 @@ export function createAuth(deps: CreateAuthDeps) {
       sendResetPassword: async ({ user, url, token }) => {
         // Not awaited: Better Auth's docs warn awaiting invites timing
         // attacks on the reset-password endpoint.
+        //
+        // SEC-P4-08 (documented, accepted for V1): fire-and-forget here is
+        // fine for the current dev/test logging-only provider, but the
+        // Phase 8 Resend provider MUST NOT rely on fire-and-forget on
+        // Workers — an isolate can be torn down before this promise
+        // settles, silently dropping the email. Phase 8 needs to route
+        // this through `ExecutionContext.waitUntil` (or a durable queue)
+        // instead, or verification/reset emails will be lost intermittently
+        // in production.
         void deps.sendEmail({ to: user.email, kind: 'password_reset', url, token });
       },
     },
     emailVerification: {
       sendVerificationEmail: async ({ user, url, token }) => {
+        // SEC-P4-08: same fire-and-forget caveat as sendResetPassword above.
         void deps.sendEmail({ to: user.email, kind: 'verification', url, token });
       },
     },
@@ -143,6 +153,18 @@ export function createAuth(deps: CreateAuthDeps) {
       database: {
         // Keep IDs consistent with the rest of the schema (TEXT ULIDs).
         generateId: () => newId(),
+      },
+      // P4-R-02: without this, Better Auth's rate limiter and audit
+      // ipAddress fields key off `x-forwarded-for` by default (verified
+      // from installed @better-auth/core/src/utils/ip.ts `DEFAULT_IP_HEADERS`
+      // / `getIp`), which is a client-controlled header on Cloudflare
+      // Workers — any caller could spoof it to split (or collide) rate-limit
+      // buckets. Cloudflare's edge sets `cf-connecting-ip` itself and it
+      // cannot be overridden by the client, so restrict resolution to that
+      // header only; `getIp` walks `ipAddressHeaders` in order and does NOT
+      // fall back to `x-forwarded-for` once this is set.
+      ipAddress: {
+        ipAddressHeaders: ['cf-connecting-ip'],
       },
     },
   });

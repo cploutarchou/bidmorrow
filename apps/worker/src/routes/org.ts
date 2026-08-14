@@ -38,7 +38,12 @@ const upsertProfileSchema = z
   .object({
     displayName: z.string().trim().min(1).max(200).nullable(),
     description: z.string().trim().max(4000).nullable(),
-    website: z.url().nullable(),
+    // SEC-P4-03: constrained to http/https so `javascript:`/`data:`/other
+    // schemes can never be stored and later rendered as a link. `z.httpUrl`
+    // is zod v4's built-in URL-with-protocol-restriction helper (verified
+    // from installed zod/v4/classic/schemas — protocol defaults to
+    // `core.regexes.httpProtocol`), so no manual regex refine is needed.
+    website: z.httpUrl().nullable(),
     employeeBand: z.string().trim().max(50).nullable(),
     presetKey: z.string().trim().max(100).nullable(),
     onboardingCompletedAt: z.number().int().nonnegative().nullable(),
@@ -72,6 +77,14 @@ orgRoutes.post('/', zValidator('json', createOrganizationSchema), async (c) => {
   if (session === undefined) return c.json({ error: 'unauthenticated' }, 401);
   const db = createDb(c.env.DB);
 
+  // SEC-P4-05 (accepted, V1): this existence check and the insert below are
+  // not atomic — two concurrent POST /api/org calls from the same user can
+  // both pass the check and each create an organization. Accepted for V1
+  // because `requireOrganization` deterministically picks the first org (by
+  // id order) for a user with multiple memberships, so the failure mode is
+  // an orphaned extra org rather than a security issue. A partial unique
+  // index on (user_id) via a covering membership-count constraint is
+  // scheduled with the next schema migration to close this race.
   const existing = await getOrganizationsForUser(db, { userId: session.user.id, limit: 1 });
   if (existing.items.length > 0) {
     return c.json({ error: 'organization_exists' }, 409);

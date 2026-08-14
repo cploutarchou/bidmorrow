@@ -34,11 +34,11 @@ function uniqueEmail(prefix = 'tenancy'): string {
 /**
  * Better Auth's own database-storage rate limiter (docs/security.md C7)
  * applies a strict 3-requests/10s rule to sign-up/sign-in, keyed by client
- * IP (`x-forwarded-for`, verified from installed
- * `@better-auth/core/dist/utils/ip.mjs`). Without a forwarded-IP header
- * every test request would share one bucket and throttle each other after
- * 3 sign-ups — give each test-created user its own IP so this suite's
- * volume doesn't trip Better Auth's own abuse protection.
+ * IP. P4-R-02 restricts Better Auth's IP resolution to `cf-connecting-ip`
+ * only (packages/auth `advanced.ipAddress.ipAddressHeaders` — the
+ * client-spoofable `x-forwarded-for` is no longer consulted at all), so
+ * give each test-created user its own `cf-connecting-ip` value so this
+ * suite's volume doesn't trip Better Auth's own abuse protection.
  */
 function nextTestIp(): string {
   uniqueSeq += 1;
@@ -51,7 +51,7 @@ async function fetchApi(path: string, init: RequestInit = {}) {
 
 /** Signs up, force-verifies the email directly in D1, signs in, returns the session cookie. */
 async function createVerifiedUser(email: string): Promise<string> {
-  const ipHeaders = { 'x-forwarded-for': nextTestIp() };
+  const ipHeaders = { 'cf-connecting-ip': nextTestIp() };
   const signUpResponse = await fetchApi('/api/auth/sign-up/email', {
     method: 'POST',
     headers: { 'content-type': 'application/json', ...STATE_CHANGING_HEADERS, ...ipHeaders },
@@ -274,6 +274,35 @@ describe('SEC-P3-04: role escalation', () => {
     expect(putAsMember.status).toBe(403);
     expect(await putAsMember.json()).toEqual({ error: 'forbidden' });
   });
+
+  it('SEC-P4-06: a MEMBER (non-owner) gets 403 on PUT /api/org/keywords', async () => {
+    const owner = await setUpOrg('MemberKeywordsOrg');
+    const memberEmail = uniqueEmail('member-kw');
+    const memberCookie = await createVerifiedUser(memberEmail);
+
+    const { addOrganizationMember } = await import('@bidmorrow/db');
+    const db = createDb(env.DB);
+    const memberUserRow = await env.DB.prepare('SELECT id FROM users WHERE email = ?')
+      .bind(memberEmail)
+      .first<{ id: string }>();
+    if (memberUserRow === null) throw new Error('test setup: member user row missing');
+    await addOrganizationMember(db, toOrganizationId(owner.orgId), {
+      userId: memberUserRow.id,
+      role: 'MEMBER',
+    });
+
+    const putAsMember = await fetchApi('/api/org/keywords', {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+        cookie: memberCookie,
+        ...STATE_CHANGING_HEADERS,
+      },
+      body: JSON.stringify({ keywords: [{ kind: 'positive', term: 'should-not-be-allowed' }] }),
+    });
+    expect(putAsMember.status).toBe(403);
+    expect(await putAsMember.json()).toEqual({ error: 'forbidden' });
+  });
 });
 
 describe('SEC-P3-04: INTERNAL_ADMIN gate', () => {
@@ -284,13 +313,50 @@ describe('SEC-P3-04: INTERNAL_ADMIN gate', () => {
     });
     expect(normalResponse.status).toBe(404);
 
-    // Matches the ADMIN_EMAILS test binding in vitest.config.ts.
+    // SEC-P4-06d: vitest.config.ts configures ADMIN_EMAILS as
+    // `Admin@Example.test` (mixed case) precisely so this exercises the
+    // allowlist-side case-insensitivity, not just a trivial exact match —
+    // Better Auth stores/returns the signed-up email lowercased, so this
+    // lowercase sign-in only succeeds against the allowlist if admin.ts's
+    // comparison lowercases both sides.
     const adminCookie = await createVerifiedUser('admin@example.test');
     const adminResponse = await fetchApi('/api/admin/health-details', {
       headers: { cookie: adminCookie },
     });
     expect(adminResponse.status).toBe(200);
     expect(await adminResponse.json()).toEqual({ ok: true, admin: true });
+  });
+});
+
+describe('SEC-P4-06: organization creation is one-per-user', () => {
+  it('a second POST /api/org by the same user returns 409 organization_exists', async () => {
+    const email = uniqueEmail('dup-org');
+    const cookie = await createVerifiedUser(email);
+    await createOrgForUser(cookie, 'First Org');
+
+    const secondResponse = await fetchApi('/api/org', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie, ...STATE_CHANGING_HEADERS },
+      body: JSON.stringify({ name: 'Second Org' }),
+    });
+    expect(secondResponse.status).toBe(409);
+    expect(await secondResponse.json()).toEqual({ error: 'organization_exists' });
+  });
+});
+
+describe('SEC-P4-06: input boundary — unknown fields are rejected', () => {
+  it('PUT /api/org/keywords with an unknown top-level field returns 400', async () => {
+    const org = await setUpOrg('UnknownFieldOrg');
+    const response = await fetchApi('/api/org/keywords', {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+        cookie: org.cookie,
+        ...STATE_CHANGING_HEADERS,
+      },
+      body: JSON.stringify({ keywords: [], unexpectedField: 'x' }),
+    });
+    expect(response.status).toBe(400);
   });
 });
 
@@ -348,5 +414,52 @@ describe('SEC-P3-04: account deletion', () => {
       headers: { cookie: memberlessCookie },
     });
     expect(afterDeleteRequest.status).toBe(401);
+  });
+});
+
+describe('SEC-P4-03: website field is restricted to http/https', () => {
+  it('PUT /api/org/profile with a javascript: website URL returns 400', async () => {
+    const org = await setUpOrg('BadWebsiteOrg');
+    const response = await fetchApi('/api/org/profile', {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+        cookie: org.cookie,
+        ...STATE_CHANGING_HEADERS,
+      },
+      body: JSON.stringify({
+        displayName: 'Bad Website',
+        description: null,
+        website: 'javascript:alert(1)',
+        employeeBand: null,
+        presetKey: null,
+        onboardingCompletedAt: null,
+      }),
+    });
+    expect(response.status).toBe(400);
+  });
+});
+
+describe('SEC-P4-02: request body size limit', () => {
+  it('PUT /api/org/profile with a body over 128 KB returns 413', async () => {
+    const org = await setUpOrg('OversizedBodyOrg');
+    const oversizedDescription = 'x'.repeat(130 * 1024);
+    const response = await fetchApi('/api/org/profile', {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+        cookie: org.cookie,
+        ...STATE_CHANGING_HEADERS,
+      },
+      body: JSON.stringify({
+        displayName: 'Oversized',
+        description: oversizedDescription,
+        website: null,
+        employeeBand: null,
+        presetKey: null,
+        onboardingCompletedAt: null,
+      }),
+    });
+    expect(response.status).toBe(413);
   });
 });

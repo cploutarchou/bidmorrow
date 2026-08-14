@@ -38,6 +38,18 @@ function uniqueEmail(): string {
 }
 
 /**
+ * Better Auth's database-storage rate limiter (docs/security.md C7) keys on
+ * client IP, restricted by P4-R-02 to `cf-connecting-ip` only (packages/auth
+ * `advanced.ipAddress.ipAddressHeaders`). Give the password-reset smoke test
+ * its own IP so it doesn't share a bucket with the sign-up/sign-in tests
+ * above.
+ */
+function nextTestIp(): string {
+  uniqueSeq += 1;
+  return `10.${(uniqueSeq >> 8) & 0xff}.${uniqueSeq & 0xff}.2`;
+}
+
+/**
  * Better Auth's CSRF protection is origin-header validation against
  * `trustedOrigins` (dependency-versions.md "Better Auth facts") — a
  * cookie-bearing request needs an `Origin` header matching `trustedOrigins`
@@ -150,5 +162,67 @@ describe('email verification gate', () => {
       headers: { cookie: cookieHeader },
     });
     expect(await afterSignOut.json()).toBeNull();
+  });
+});
+
+/**
+ * P4-R-01 (partial — smoke test only; full token-roundtrip reset stays
+ * deferred to Phase 12 E2E). Verifies the request-password-reset flow (path
+ * verified from installed better-auth source,
+ * `dist/api/routes/password.mjs` `requestPasswordReset` ->
+ * `/request-password-reset`) actually triggers our outbound-email hook and,
+ * per C10, never puts the token/url anywhere the composition root logs.
+ */
+describe('POST /api/auth/request-password-reset', () => {
+  it('200s for an existing verified user, sends via the logging email provider, and never logs the token/url', async () => {
+    const capture = captureLogs();
+    try {
+      const email = uniqueEmail();
+      const ipHeaders = { 'cf-connecting-ip': nextTestIp() };
+      const signUpResponse = await exports.default.fetch(`${BASE}/api/auth/sign-up/email`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...STATE_CHANGING_HEADERS, ...ipHeaders },
+        body: JSON.stringify({
+          email,
+          password: 'correct horse battery staple 1!',
+          name: 'Reset Smoke',
+        }),
+      });
+      expect(signUpResponse.status).toBe(200);
+      await env.DB.prepare('UPDATE users SET email_verified = 1 WHERE email = ?').bind(email).run();
+
+      capture.lines.length = 0; // Only inspect logs from the reset request itself.
+
+      const resetResponse = await exports.default.fetch(`${BASE}/api/auth/request-password-reset`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...STATE_CHANGING_HEADERS, ...ipHeaders },
+        body: JSON.stringify({ email }),
+      });
+      expect(resetResponse.status).toBe(200);
+      const body = (await resetResponse.json()) as { status?: boolean };
+      expect(body.status).toBe(true);
+
+      // The logging email provider (packages/notifications
+      // `createLoggingEmailProvider`) was invoked for this user: it logs
+      // `kind`/`to` only (never `subject`/`text`, which carries the reset
+      // url/token per C10). Better Auth's own `AuthEmailKind`
+      // ('password_reset' vs 'verification') only ever reaches the
+      // `subject` string passed into that provider — by design it is not a
+      // field the provider (or its logs) exposes, so this asserts the send
+      // attempt happened for the right recipient rather than a kind label
+      // that doesn't exist at this layer.
+      const emailLog = capture.lines.find(
+        (line) => line.includes('"kind":"transactional"') && line.includes(email),
+      );
+      expect(emailLog).toBeDefined();
+
+      for (const line of capture.lines) {
+        expect(line).not.toMatch(/reset-password\/[A-Za-z0-9_-]+/);
+        expect(line.toLowerCase()).not.toContain('"url"');
+        expect(line.toLowerCase()).not.toContain('"token"');
+      }
+    } finally {
+      capture.restore();
+    }
   });
 });

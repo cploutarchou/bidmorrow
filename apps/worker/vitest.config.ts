@@ -30,8 +30,13 @@ export default defineConfig({
             // requires >= 32 chars. wrangler.jsonc `vars` never carries this.
             BETTER_AUTH_SECRET: 'test-only-secret-do-not-use-in-prod-00000000',
             // Test-only INTERNAL_ADMIN allowlist (docs/security.md C6) —
-            // matches the fixed admin email used by admin-gate tests.
-            ADMIN_EMAILS: 'admin@example.test',
+            // mixed-case on purpose (SEC-P4-06d): the allowlist match is
+            // case-insensitive (admin.ts lowercases both sides), and Better
+            // Auth stores/returns emails lowercased, so this also proves the
+            // allowlist side of that comparison, not just the trivial
+            // exact-match case. Admin-gate tests sign in with the lowercase
+            // form of this same address.
+            ADMIN_EMAILS: 'Admin@Example.test',
           },
         },
       };

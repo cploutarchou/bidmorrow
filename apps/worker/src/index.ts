@@ -12,6 +12,7 @@
  * arrive in later phases.
  */
 import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
 import { createLogger } from '@bidmorrow/observability';
 
@@ -61,6 +62,19 @@ app.use(
       geolocation: [],
       microphone: [],
     },
+  }),
+);
+
+// SEC-P4-02: bound every /api/* request body to 128 KB before any handler
+// reads it — procurement content and org input are untrusted, and Workers
+// has no platform-level body-size cap of its own. Applied ahead of every
+// route mount below.
+const MAX_API_BODY_BYTES = 128 * 1024;
+app.use(
+  '/api/*',
+  bodyLimit({
+    maxSize: MAX_API_BODY_BYTES,
+    onError: (c) => c.json({ error: 'payload_too_large', request_id: c.get('requestId') }, 413),
   }),
 );
 

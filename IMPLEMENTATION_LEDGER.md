@@ -5,9 +5,8 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 4 stage B — Tenancy: COMPLETE (gates green, sign-off pending).**
-Next: security agent review + production-reviewer sign-off for the full
-Phase 4 (stage A + B together), then Phase 5.
+**Phase 4 — Auth/Tenancy: COMPLETE (signed off).** Next: Phase 5 — TED
+Ingestion.
 
 ## Completed
 
@@ -305,6 +304,81 @@ utils/ip.mjs`) — the new SEC-P3-04 test suite gives each test-created user
 --dry-run` lists `env.API_RATE_LIMITER (100 requests/60s)` alongside the
   existing bindings).
 
+### Phase 4 review fixes (2026-08-14)
+
+Targeted fixes from the security + production reviews of Phase 4 stage A/B —
+no refactors, each read-before-edit.
+
+- SEC-P4-01 (fixed): `apps/worker/wrangler.jsonc` — wrangler named
+  environments do NOT inherit top-level bindings; `ratelimits` is now
+  redeclared identically inside both `env.staging` and `env.production`.
+  Verified with `wrangler deploy --dry-run --env staging`: bindings output
+  now lists `env.API_RATE_LIMITER (100 requests/60s)` (it did not before).
+- SEC-P4-02 (fixed): `apps/worker/src/index.ts` — `hono/body-limit`
+  middleware bounds every `/api/*` request body to 128 KB before any route
+  handler runs, returning a JSON 413 `{error:'payload_too_large'}`. New test
+  in `tenancy.test.ts` (`SEC-P4-02`): `PUT /api/org/profile` with a >128 KB
+  body → 413.
+- SEC-P4-03 (fixed): `apps/worker/src/routes/org.ts` — `website` schema
+  switched from `z.url()` to zod v4's built-in `z.httpUrl()` (verified from
+  installed `zod/v4/classic/schemas` — restricts to the `http`/`https`
+  protocol regex), so `javascript:`/other schemes can never be stored. New
+  test (`SEC-P4-03`): `website: 'javascript:alert(1)'` → 400.
+- SEC-P4-04 + P4-R-03 (fixed): `apps/worker/src/routes/account.ts` —
+  membership removal still runs before `auth.api.deleteUser` (FK ordering
+  unchanged), but the `account.deleted` audit event now writes only AFTER
+  `deleteUser` succeeds, and `deleteUser` is wrapped in try/catch: on
+  failure the removed membership rows are re-inserted (compensation) via the
+  captured rows, the error is logged (no secrets) with the correlation id,
+  and the handler returns 500 `{error:'account_deletion_failed'}`. The
+  10-row membership fetch cap was removed — `getOrganizationsForUser` is now
+  paginated to exhaustion so an OWNER row past a fixed page size can't
+  silently escape the sole-OWNER guard.
+- P4-R-02 (applied): `packages/auth/src/index.ts` sets
+  `advanced.ipAddress.ipAddressHeaders: ['cf-connecting-ip']` (option path
+  verified from installed `@better-auth/core/src/utils/ip.ts` — `getIp`
+  walks `ipAddressHeaders` in order with NO fallback to
+  `x-forwarded-for` once set, so the client-spoofable header is no longer
+  consulted at all). `apps/worker/src/tenancy.test.ts` and
+  `apps/worker/src/auth.test.ts` updated to key their per-test IP isolation
+  off `cf-connecting-ip` instead of `x-forwarded-for`.
+- SEC-P4-05 (documented, accepted for V1): TOCTOU race between the
+  organization-existence check and the insert in `POST /api/org` — comment
+  added at the check site; a partial unique index is scheduled with the
+  next schema migration. Failure mode is an orphaned extra org, not a
+  security issue, since `requireOrganization` deterministically picks the
+  first org by id order.
+- SEC-P4-08 (documented, accepted for V1): comments added at both
+  `void deps.sendEmail(...)` call sites in `packages/auth/src/index.ts` —
+  fire-and-forget is fine for the current logging-only dev/test provider,
+  but the Phase 8 Resend provider MUST NOT rely on fire-and-forget on
+  Workers (isolate teardown can drop the email); it needs
+  `ExecutionContext.waitUntil` or a durable queue instead.
+- SEC-P4-06 (tests added) in `apps/worker/src/tenancy.test.ts`: MEMBER role
+  → 403 on `PUT /api/org/keywords`; a second `POST /api/org` by the same
+  user → 409 `organization_exists`; `PUT /api/org/keywords` with an unknown
+  top-level field → 400 (closed zod schema); `ADMIN_EMAILS`
+  case-insensitivity exercised by reconfiguring the test binding to mixed
+  case (`Admin@Example.test`) while the admin-gate test signs in with the
+  lowercase form — 200.
+- P4-R-01 (partial): smoke test added in `apps/worker/src/auth.test.ts` for
+  `POST /api/auth/request-password-reset` (path verified from installed
+  `better-auth` source, `dist/api/routes/password.mjs`) — 200 for an
+  existing verified user, confirms the logging email provider was invoked
+  for that recipient, and confirms the token/reset-url never appear in
+  worker logs (C10). Full token-roundtrip reset (actually consuming the
+  token via `/reset-password`) stays deferred to Phase 12 E2E — no test
+  harness currently exposes the generated token outside the (intentionally
+  unlogged) email body.
+- Gates (all executed 2026-08-14, real output): `pnpm format` (reformatted
+  1 file, the new auth.test.ts additions) · `pnpm format:check` PASS ·
+  `pnpm lint` PASS (0 errors) · `pnpm typecheck` PASS (14/14 workspace
+  projects) · `pnpm test` PASS — root 17 files/66 tests, worker 3 files/24
+  tests (workerd+D1, +6 over the prior 18), db 8 files/38 tests = 128 tests,
+  zero skipped/deleted · `pnpm build` PASS (vite 17 modules; `wrangler
+deploy --dry-run` for the top-level env AND `--env staging` both list
+  `env.API_RATE_LIMITER`).
+
 ## In progress
 
 - Nothing mid-flight. Working tree committed at each checkpoint.
@@ -312,7 +386,8 @@ utils/ip.mjs`) — the new SEC-P3-04 test suite gives each test-created user
 ## Next (Phase 5)
 
 1. Security agent review + production-reviewer sign-off for the full
-   Phase 4 (stage A + B together) — not yet run this session.
+   Phase 4 (stage A + B together, incl. this review-fix batch) — not yet
+   run this session.
 2. TED ingestion scope work per docs/ted-ingestion-scope.md.
 
 ## Architecture decisions
@@ -366,6 +441,13 @@ listed in bindings output) · full migration chain (0001+0002+0003) verified
 against a fresh scratch D1 and via `pnpm db:migrate:local`; drizzle-kit
 generate afterward gives zero diff.
 
+Phase 4 review fixes final run (2026-08-14, all executed, all green):
+format:check PASS · lint PASS · typecheck PASS (14/14 workspace projects) ·
+test PASS — root 17 files/66, worker 3 files/24 (workerd+D1), db 8 files/38
+(workerd+D1) = 128 tests, zero skipped/deleted · build PASS (vite 17
+modules; `wrangler deploy --dry-run` for both the top-level env and
+`--env staging` list `env.API_RATE_LIMITER`, confirming SEC-P4-01).
+
 ## Known risks
 
 - TED rate limits undocumented → self-imposed throttling; measure real
@@ -380,6 +462,19 @@ generate afterward gives zero diff.
   re-verify before Phase 8.
 - eForms buyer resolution (OPT-300 indirection) is the trickiest parse path
   — needs real fixtures early in Phase 5.
+- SEC-P4-05 (accepted): `POST /api/org`'s existence-check-then-insert is not
+  atomic — two concurrent requests from the same user can both create an
+  organization. Accepted for V1 (orphaned extra org, not a security issue);
+  a partial unique index closing this race is scheduled with the next
+  schema migration.
+- SEC-P4-08 (accepted, must fix before Phase 8 ships): `packages/auth`'s
+  `sendResetPassword`/`sendVerificationEmail` hooks call `sendEmail`
+  fire-and-forget (`void`, not awaited) to avoid timing attacks. This is
+  safe today because the only provider is the logging-only dev/test stub,
+  but the Phase 8 Resend provider MUST route delivery through
+  `ExecutionContext.waitUntil` (or a durable queue) — fire-and-forget on
+  Workers can be torn down mid-flight and silently drop verification/reset
+  emails.
 
 ## Human actions required
 
@@ -434,6 +529,20 @@ Nothing deployed. No Cloudflare resources exist yet.
   INFO (future digest_items repo must scope through parent) and
   SEC-P3-04 INFO (endpoint-level isolation tests are a Phase 4 hard
   requirement) carried into Phase 4 plan.
+- Phase 4: **PASS** — production-reviewer, 2026-08-14 (all gates re-run
+  independently: 122 tests pre-fixes, fresh-empty-DB chain 0001–0003,
+  drizzle zero-drift; findings P4-R-01 password-reset coverage → partial
+  smoke test added, token roundtrip deferred to Phase 12 E2E; P4-R-02
+  cf-connecting-ip keying → applied; P4-R-03 audit ordering → fixed).
+  **Security agent SIGN-OFF**, 2026-08-14 (0 CRITICAL/HIGH): grep audit
+  clean, org context strictly membership-derived, admin gate cloaked, no
+  token logging. SEC-P4-01 (env rate-limit bindings), SEC-P4-02 (body
+  limit), SEC-P4-03 (URL scheme) MEDIUMs FIXED same day; SEC-P4-04
+  deletion ordering FIXED (audit-after-success + compensation); SEC-P4-05
+  TOCTOU documented-accepted; SEC-P4-06 test gaps closed (4 tests);
+  SEC-P4-07 admin auditing scheduled with Phase 10 tooling; SEC-P4-08
+  email waitUntil requirement recorded for Phase 8; SEC-P4-09 threat-model
+  deltas noted for next touch. Final post-fix gates: 128 tests green.
 
 ## Pilot checkpoint
 
