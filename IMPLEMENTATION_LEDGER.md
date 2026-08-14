@@ -5,8 +5,8 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 5 — TED Ingestion: implementation + audits complete; reviewer
-re-verification in progress.** Next: Phase 6 — Matching.
+**Phase 5 — TED Ingestion: COMPLETE (signed off).** Next: Phase 6 —
+Matching.
 
 ## Completed
 
@@ -449,6 +449,9 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
 3. Recompute path for corrected notices (TED-P5-03).
 4. Unit tests per master spec list incl. worked example 84.5 as fixture;
    determinism property test; matching-audit skill + reviews.
+5. Phase 5 residual LOWs (re-verification): direct D1 test for the
+   XML_TOO_LARGE → ingestion_errors window-proceeds branch; unit test for
+   the 50 KB boundIssuesForErrorDetail cap.
 
 ## Architecture decisions
 
@@ -603,6 +606,17 @@ Nothing deployed. No Cloudflare resources exist yet.
   SEC-P4-07 admin auditing scheduled with Phase 10 tooling; SEC-P4-08
   email waitUntil requirement recorded for Phase 8; SEC-P4-09 threat-model
   deltas noted for next touch. Final post-fix gates: 128 tests green.
+- Phase 5: **ted-data agent SIGN-OFF** (ingestion-audit skill, all 8 items
+  PASS with evidence; TED-P5-01 live query validation → deployment gate;
+  TED-P5-02 live fixtures pending network; TED-P5-03 recompute → Phase 6;
+  TED-P5-04 watchdog is log-line + uptime monitor note). **Security agent
+  SIGN-OFF** (0 CRITICAL/HIGH; XXE/SSRF/ReDoS/resource-exhaustion posture
+  verified; SEC-P5-01/02 MEDIUMs + 03/04 LOWs FIXED same day).
+  **production-reviewer**: initial FAIL on P5-R-01 HIGH (ledger unflushed)
+  - P5-R-02 MEDIUM (paused-flag untested) → fixes applied →
+    **re-verification PASS** (2026-08-14, commit 8c76c07, all fixes verified
+    with evidence, 205 tests green). Residual LOWs (XML_TOO_LARGE branch D1
+    test, 50 KB cap unit test) carried into Phase 6 next-list.
 
 ## Pilot checkpoint
 
