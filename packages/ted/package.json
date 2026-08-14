@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@bidmorrow/domain": "workspace:*"
+    "@bidmorrow/domain": "workspace:*",
+    "@bidmorrow/observability": "workspace:*",
+    "fast-xml-parser": "^5.10.1"
   },
   "devDependencies": {
     "typescript": "~5.9.2",

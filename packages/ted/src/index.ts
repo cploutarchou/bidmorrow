@@ -1,10 +1,17 @@
 /**
- * @bidmorrow/ted — ProcurementSource implementation for TED.
+ * @bidmorrow/ted — TED Search API client + eForms notice parser.
  *
- * Phase 2 skeleton: the HTTP client and the eForms parser arrive in Phase 5.
- * This module pins the source identity and the Search API request shape per
- * docs/ted-data-source.md (verified 2026-08-14). No fetch logic yet.
+ * Source identity and Search API request shape per docs/ted-data-source.md
+ * (verified 2026-08-14). Phase 5 stage A: `TedClient` (polite, budgeted
+ * HTTP) and `parseEformsNotice` (eForms XML → NormalizedNotice). Stage B
+ * (packages/procurement) composes them into the ProcurementSource
+ * `fetchWindow` pipeline — this package stays pure (no db dependency).
  */
+
+export * from './errors';
+export * from './client';
+export * from './parser/parse-notice';
+export { MAX_TEXT_LENGTH } from './parser/xml';
 
 export const PACKAGE = '@bidmorrow/ted';
 
