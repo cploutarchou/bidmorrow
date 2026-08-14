@@ -5,6 +5,12 @@ on:
   push:
     branches: [master]
 
+# Least-privilege token: gitleaks-action needs to read PR commits on
+# pull_request events; nothing in CI ever writes.
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   checks:
     runs-on: ubuntu-latest

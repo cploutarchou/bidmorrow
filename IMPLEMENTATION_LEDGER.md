@@ -86,7 +86,7 @@ context compaction. Read first in every session.
   empty DB. Pool-workers 0.21 tests (7) run in real workerd with local D1;
   note: cloudflareTest()/readD1Migrations import from package ROOT in 0.21
   (docs prose partly stale), tests use `import { env, exports } from
-  'cloudflare:workers'`.
+'cloudflare:workers'`.
 - apps/web: React 19.2 + Vite 8.2 shell (headline/subheadline/CTA from
   product-scope, TED attribution + decision-support disclaimer in footer,
   semantic HTML); copy exported from src/copy.ts and tested.
