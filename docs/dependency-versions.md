@@ -6,23 +6,23 @@ skill before relying on any entry older than ~1 month.
 
 ## Pinned application dependencies (Phase 2 targets)
 
-| Package | Version | Notes |
-|---|---|---|
-| typescript | 5.9.x pin | npm latest is 7.0.2 (native-compiler era); we pin the mature 5.x line until the Vite/Vitest plugin ecosystem is verified on TS7 (revisit Phase 12) |
-| pnpm | 11.x | workspace manager |
-| hono | 4.13.x | built-in secure-headers/csrf/cors middleware; validation via @hono/zod-validator 0.9.x |
-| react / react-dom | 19.2.x | |
-| vite | 8.2.x | Vite 8 is current stable |
-| vitest | 4.1.x | Vitest 5 is RC — do not adopt |
-| @cloudflare/vitest-pool-workers | 0.21.x | peer vitest ^4.1.0; Vite-plugin architecture (`cloudflareTest()`); D1 migrations in tests via readD1Migrations/applyD1Migrations; per-file storage isolation |
-| @playwright/test | 1.62.x | |
-| wrangler | 4.x (4.123.0) | wrangler.jsonc recommended config format; `migrations_pattern` supports Drizzle nested layout |
-| drizzle-orm / drizzle-kit | 0.45.2 / 0.31.10 | 1.0 at rc.4 — pin 0.45.x, revisit after 1.0 stable |
-| better-auth | 1.6.29 | 1.7 at rc — pin stable; no beta/RC auth (project rule) |
-| @better-auth/drizzle-adapter | 1.6.x | official adapter package (moved out of better-auth core path); peer drizzle-orm ^0.45.2 |
-| stripe | 22.x | pinned API version 2026-07-29.dahlia; Workers requires `constructEventAsync` (SubtleCrypto) |
-| resend | 6.x | fetch-based; Workers-compatible; batch ≤100/call; default rate limit 2 req/s |
-| zod | 4.x (verify at install) | validation at API boundary |
+| Package                         | Version                 | Notes                                                                                                                                                        |
+| ------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| typescript                      | 5.9.x pin               | npm latest is 7.0.2 (native-compiler era); we pin the mature 5.x line until the Vite/Vitest plugin ecosystem is verified on TS7 (revisit Phase 12)           |
+| pnpm                            | 11.x                    | workspace manager                                                                                                                                            |
+| hono                            | 4.13.x                  | built-in secure-headers/csrf/cors middleware; validation via @hono/zod-validator 0.9.x                                                                       |
+| react / react-dom               | 19.2.x                  |                                                                                                                                                              |
+| vite                            | 8.2.x                   | Vite 8 is current stable                                                                                                                                     |
+| vitest                          | 4.1.x                   | Vitest 5 is RC — do not adopt                                                                                                                                |
+| @cloudflare/vitest-pool-workers | 0.21.x                  | peer vitest ^4.1.0; Vite-plugin architecture (`cloudflareTest()`); D1 migrations in tests via readD1Migrations/applyD1Migrations; per-file storage isolation |
+| @playwright/test                | 1.62.x                  |                                                                                                                                                              |
+| wrangler                        | 4.x (4.123.0)           | wrangler.jsonc recommended config format; `migrations_pattern` supports Drizzle nested layout                                                                |
+| drizzle-orm / drizzle-kit       | 0.45.2 / 0.31.10        | 1.0 at rc.4 — pin 0.45.x, revisit after 1.0 stable                                                                                                           |
+| better-auth                     | 1.6.29                  | 1.7 at rc — pin stable; no beta/RC auth (project rule)                                                                                                       |
+| @better-auth/drizzle-adapter    | 1.6.x                   | official adapter package (moved out of better-auth core path); peer drizzle-orm ^0.45.2                                                                      |
+| stripe                          | 22.x                    | pinned API version 2026-07-29.dahlia; Workers requires `constructEventAsync` (SubtleCrypto)                                                                  |
+| resend                          | 6.x                     | fetch-based; Workers-compatible; batch ≤100/call; default rate limit 2 req/s                                                                                 |
+| zod                             | 4.x (verify at install) | validation at API boundary                                                                                                                                   |
 
 ## Platform facts (Cloudflare, verified 2026-08-14)
 
@@ -39,7 +39,7 @@ skill before relying on any entry older than ~1 month.
   15 min CPU.
 - **Workers Static Assets** is the recommended SPA hosting (Pages is
   maintenance-mode for new projects): `assets.not_found_handling:
-  "single-page-application"`, `run_worker_first: ["/api/*"]`.
+"single-page-application"`, `run_worker_first: ["/api/*"]`.
 - **Native rate-limiting binding**: GA since 2025-09; `[[ratelimits]]` with
   `simple = { limit, period: 10|60 }`; per-colo best-effort; no extra cost.
 - **Workflows**: GA but bills per-step since ~2026-08 — not used (ADR-0006).

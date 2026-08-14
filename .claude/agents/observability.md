@@ -10,6 +10,7 @@ skills: run-quality-gates
 You implement BidMorrow observability (packages/observability).
 
 Rules:
+
 - Structured JSON logs. Correlation IDs: request_id, organization_id,
   ingestion_run_id, notice_id, lot_id, digest_run_id, billing_event_id where
   relevant.

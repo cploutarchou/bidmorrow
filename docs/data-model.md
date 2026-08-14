@@ -192,7 +192,7 @@ notices. Feeds the buyer/sector component and future award-history enrichment.
 - `name TEXT NOT NULL` · `country_code TEXT NULL` (ISO-3166-1 alpha-2).
 - `buyer_legal_type TEXT NULL` · `buyer_activity TEXT NULL` — eForms codes.
 - **PK** `id` · **Unique (partial)** `(source, source_buyer_id) WHERE
-  source_buyer_id IS NOT NULL`.
+source_buyer_id IS NOT NULL`.
 - **Index** `(source, name, country_code)` — dedupe fallback when the source
   provides no stable buyer id.
 
@@ -203,22 +203,22 @@ notices. Feeds the buyer/sector component and future award-history enrichment.
 One row per procurement notice, **source-agnostic** (`ProcurementSource`
 interface); the notice is the stable identity across corrections.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| source | TEXT | no | `ted` in V1 |
-| source_notice_id | TEXT | no | e.g. TED publication number |
-| current_version_id | TEXT | yes | FK → tender_notice_versions; null only during the insert transaction, then always set |
-| buyer_id | TEXT | yes | FK → buyers |
-| notice_type | TEXT | no | eForms notice subtype; V1 ingests COMPETITION types only |
-| procedure_type | TEXT | yes | open/restricted/negotiated… (notice-level in eForms) |
-| eforms_sdk_version | TEXT | yes | null for non-eForms sources |
-| source_languages_json | TEXT | no | JSON array of language codes present |
-| source_url | TEXT | no | canonical link to the original notice |
-| publication_date | TEXT | no | `YYYY-MM-DD` of first publication |
-| retrieved_at | INTEGER | no | when we fetched it |
-| content_hash | TEXT | no | hash of current version content (change detection) |
-| archived_at | INTEGER | yes | set by retention job; archived notices leave the feed |
+| column                | type    | null | notes                                                                                 |
+| --------------------- | ------- | ---- | ------------------------------------------------------------------------------------- |
+| id                    | TEXT    | no   | PK                                                                                    |
+| source                | TEXT    | no   | `ted` in V1                                                                           |
+| source_notice_id      | TEXT    | no   | e.g. TED publication number                                                           |
+| current_version_id    | TEXT    | yes  | FK → tender_notice_versions; null only during the insert transaction, then always set |
+| buyer_id              | TEXT    | yes  | FK → buyers                                                                           |
+| notice_type           | TEXT    | no   | eForms notice subtype; V1 ingests COMPETITION types only                              |
+| procedure_type        | TEXT    | yes  | open/restricted/negotiated… (notice-level in eForms)                                  |
+| eforms_sdk_version    | TEXT    | yes  | null for non-eForms sources                                                           |
+| source_languages_json | TEXT    | no   | JSON array of language codes present                                                  |
+| source_url            | TEXT    | no   | canonical link to the original notice                                                 |
+| publication_date      | TEXT    | no   | `YYYY-MM-DD` of first publication                                                     |
+| retrieved_at          | INTEGER | no   | when we fetched it                                                                    |
+| content_hash          | TEXT    | no   | hash of current version content (change detection)                                    |
+| archived_at           | INTEGER | yes  | set by retention job; archived notices leave the feed                                 |
 
 - **PK** `id` · **Unique** `(source, source_notice_id)` — ingestion
   idempotency: re-fetching a notice upserts, never duplicates.
@@ -232,16 +232,16 @@ One row per **published version/correction**. Rows are immutable — a
 correction inserts a new version and repoints
 `tender_notices.current_version_id`; history is never overwritten.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| notice_id | TEXT | no | FK → tender_notices |
-| version_number | INTEGER | no | 1..n in publication order |
-| publication_date | TEXT | no | of this version |
-| content_hash | TEXT | no | |
-| snapshot_id | TEXT | no | FK → source_snapshots (raw payload in R2) |
-| eforms_sdk_version | TEXT | yes | can change between versions |
-| ingestion_run_id | TEXT | yes | FK → ingestion_runs (provenance) |
+| column             | type    | null | notes                                     |
+| ------------------ | ------- | ---- | ----------------------------------------- |
+| id                 | TEXT    | no   | PK                                        |
+| notice_id          | TEXT    | no   | FK → tender_notices                       |
+| version_number     | INTEGER | no   | 1..n in publication order                 |
+| publication_date   | TEXT    | no   | of this version                           |
+| content_hash       | TEXT    | no   |                                           |
+| snapshot_id        | TEXT    | no   | FK → source_snapshots (raw payload in R2) |
+| eforms_sdk_version | TEXT    | yes  | can change between versions               |
+| ingestion_run_id   | TEXT    | yes  | FK → ingestion_runs (provenance)          |
 
 - **PK** `id` · **Unique** `(notice_id, version_number)`.
 
@@ -250,19 +250,19 @@ correction inserts a new version and repoints
 Belongs to a notice **version** (a correction can change lots; each version
 carries its own lot rows). The matching unit.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| notice_version_id | TEXT | no | FK → tender_notice_versions |
-| lot_number | TEXT | no | `LOT-0001`-style eForms id, or `1` for lotless notices |
-| title | TEXT | no | |
-| description | TEXT | yes | |
-| contract_nature | TEXT | yes | works/supplies/services |
-| estimated_value_amount | REAL | yes | **null = value not published — unknown is explicit, never 0** |
-| estimated_value_currency | TEXT | yes | ISO-4217; null iff amount null |
-| estimated_value_eur | REAL | yes | derived conversion; null when unconvertible → value component UNKNOWN |
-| value_is_derived | INTEGER | no | 1 when procedure total was divided across lots (component scored PARTIAL) |
-| deadline_at | INTEGER | yes | submission deadline; **null = no deadline (some procedure types) — explicit unknown** |
+| column                   | type    | null | notes                                                                                 |
+| ------------------------ | ------- | ---- | ------------------------------------------------------------------------------------- |
+| id                       | TEXT    | no   | PK                                                                                    |
+| notice_version_id        | TEXT    | no   | FK → tender_notice_versions                                                           |
+| lot_number               | TEXT    | no   | `LOT-0001`-style eForms id, or `1` for lotless notices                                |
+| title                    | TEXT    | no   |                                                                                       |
+| description              | TEXT    | yes  |                                                                                       |
+| contract_nature          | TEXT    | yes  | works/supplies/services                                                               |
+| estimated_value_amount   | REAL    | yes  | **null = value not published — unknown is explicit, never 0**                         |
+| estimated_value_currency | TEXT    | yes  | ISO-4217; null iff amount null                                                        |
+| estimated_value_eur      | REAL    | yes  | derived conversion; null when unconvertible → value component UNKNOWN                 |
+| value_is_derived         | INTEGER | no   | 1 when procedure total was divided across lots (component scored PARTIAL)             |
+| deadline_at              | INTEGER | yes  | submission deadline; **null = no deadline (some procedure types) — explicit unknown** |
 
 - **PK** `id` · **Unique** `(notice_version_id, lot_number)`.
 - **Index** `(deadline_at)` — feed expiry filtering (expired lots drop out by
@@ -355,18 +355,18 @@ only; XML bodies never enter D1).
 One row per (organization, lot, engine version) — the engine-versioned score.
 Recomputation inserts new-version rows; it never mutates old ones.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| organization_id | TEXT | no | FK → organizations |
-| lot_id | TEXT | no | FK → tender_lots |
-| notice_id | TEXT | no | FK → tender_notices (denormalized — feed and detail queries group by notice without an extra join through versions) |
-| engine_version | TEXT | no | e.g. `1` |
-| score | REAL | yes | 0–100; **null when classification = EXCLUDED** (no score shown). REAL because UNKNOWN policy yields half-points (7.5) |
-| classification | TEXT | no | `STRONG_MATCH` \| `WORTH_REVIEWING` \| `POSSIBLE_MATCH` \| `LOW_FIT` \| `EXCLUDED` (CHECK) |
-| exclusion_rule | TEXT | yes | which hard rule fired (`excluded_geography`, `excluded_cpv`, `excluded_phrase`, `unsupported_nature`, `deadline_below_threshold`); null unless EXCLUDED |
-| exclusion_evidence | TEXT | yes | code/phrase/date that triggered the rule |
-| scored_at | INTEGER | no | deadline-runway is time-dependent; this anchors reproducibility |
+| column             | type    | null | notes                                                                                                                                                   |
+| ------------------ | ------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id                 | TEXT    | no   | PK                                                                                                                                                      |
+| organization_id    | TEXT    | no   | FK → organizations                                                                                                                                      |
+| lot_id             | TEXT    | no   | FK → tender_lots                                                                                                                                        |
+| notice_id          | TEXT    | no   | FK → tender_notices (denormalized — feed and detail queries group by notice without an extra join through versions)                                     |
+| engine_version     | TEXT    | no   | e.g. `1`                                                                                                                                                |
+| score              | REAL    | yes  | 0–100; **null when classification = EXCLUDED** (no score shown). REAL because UNKNOWN policy yields half-points (7.5)                                   |
+| classification     | TEXT    | no   | `STRONG_MATCH` \| `WORTH_REVIEWING` \| `POSSIBLE_MATCH` \| `LOW_FIT` \| `EXCLUDED` (CHECK)                                                              |
+| exclusion_rule     | TEXT    | yes  | which hard rule fired (`excluded_geography`, `excluded_cpv`, `excluded_phrase`, `unsupported_nature`, `deadline_below_threshold`); null unless EXCLUDED |
+| exclusion_evidence | TEXT    | yes  | code/phrase/date that triggered the rule                                                                                                                |
+| scored_at          | INTEGER | no   | deadline-runway is time-dependent; this anchors reproducibility                                                                                         |
 
 - **PK** `id` · **Unique** `(organization_id, lot_id, engine_version)` —
   contractual; makes re-scoring idempotent per engine version.
@@ -381,15 +381,15 @@ Recomputation inserts new-version rows; it never mutates old ones.
 Per-match score decomposition (components sum to the total — engine
 invariant 2). ~8 rows per scored match.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| match_id | TEXT | no | FK → tender_matches |
-| component_key | TEXT | no | `cpv` \| `capability` \| `geography` \| `value` \| `buyer` \| `procedure_nature` \| `deadline` \| `eligibility` (CHECK) |
-| points | REAL | no | awarded (7.5-style halves possible) |
-| max_points | REAL | no | component max at this engine version |
-| status | TEXT | no | `MATCHED` \| `PARTIAL` \| `NO_MATCH` \| `UNKNOWN` (CHECK) |
-| explanation | TEXT | no | human-readable line, e.g. "value not published — neutral score applied" |
+| column        | type | null | notes                                                                                                                   |
+| ------------- | ---- | ---- | ----------------------------------------------------------------------------------------------------------------------- |
+| id            | TEXT | no   | PK                                                                                                                      |
+| match_id      | TEXT | no   | FK → tender_matches                                                                                                     |
+| component_key | TEXT | no   | `cpv` \| `capability` \| `geography` \| `value` \| `buyer` \| `procedure_nature` \| `deadline` \| `eligibility` (CHECK) |
+| points        | REAL | no   | awarded (7.5-style halves possible)                                                                                     |
+| max_points    | REAL | no   | component max at this engine version                                                                                    |
+| status        | TEXT | no   | `MATCHED` \| `PARTIAL` \| `NO_MATCH` \| `UNKNOWN` (CHECK)                                                               |
+| explanation   | TEXT | no   | human-readable line, e.g. "value not published — neutral score applied"                                                 |
 
 - **Unique** `(match_id, component_key)` — doubles as the `match_id` lookup
   index (tender detail explanation, digest rendering).
@@ -407,7 +407,7 @@ requirement).
   `framework_membership` \| `local_presence` \| `mandatory_references`
   (CHECK).
 - `evidence TEXT NOT NULL` — quoted source snippet · `source_field TEXT NOT
-  NULL` — field path in the source notice the snippet came from.
+NULL` — field path in the source notice the snippet came from.
 - `confidence TEXT NOT NULL` — `HIGH` \| `POSSIBLE` (CHECK).
 - `explanation TEXT NOT NULL` — rendered wording ("Possible requirement
   detected — verify in source documents.").
@@ -421,7 +421,7 @@ underlying tender data against retention purge.
 
 - `id TEXT PK` · `organization_id TEXT NOT NULL FK → organizations`.
 - `lot_id TEXT NOT NULL FK → tender_lots` · `notice_id TEXT NOT NULL FK →
-  tender_notices` (denormalized, same rationale as matches).
+tender_notices` (denormalized, same rationale as matches).
 - `saved_by_user_id TEXT NOT NULL FK → users`.
 - **Unique** `(organization_id, lot_id)` — doubles as the Saved-tab index ·
   **Index** `(lot_id)` — purge job checks "is this lot pinned?".
@@ -441,7 +441,7 @@ against purge so feedback stays interpretable.
 
 - `id TEXT PK` · `organization_id TEXT NOT NULL FK → organizations` ·
   `match_id TEXT NOT NULL FK → tender_matches` · `user_id TEXT NOT NULL FK →
-  users`.
+users`.
 - `verdict TEXT NOT NULL` — `useful` \| `not_useful` (CHECK).
 - `reasons_json TEXT NULL` — JSON array of structured reason codes
   (`wrong_cpv`, `wrong_geography`, `too_large`, `too_small`, `not_our_work`,
@@ -474,7 +474,7 @@ NOTHING`); losing the insert means another invocation owns today's digest.
 - `status TEXT NOT NULL` — `pending` \| `sent` \| `skipped_empty` \|
   `skipped_paused` \| `failed` (CHECK).
 - `matches_count INTEGER NOT NULL` · `email_delivery_id TEXT NULL FK →
-  email_deliveries` (null when skipped) · `sent_at INTEGER NULL`.
+email_deliveries` (null when skipped) · `sent_at INTEGER NULL`.
 - **Unique** `(organization_id, digest_date)` — DB-enforced "one digest per
   org per day".
 
@@ -511,7 +511,7 @@ CHECK at least one set.
   provider status events.
 - **Index** `(organization_id, created_at)` — admin "emails for
   this org" · **Unique (partial)** `(provider, provider_message_id) WHERE
-  provider_message_id IS NOT NULL` — webhook status updates resolve one row.
+provider_message_id IS NOT NULL` — webhook status updates resolve one row.
 
 ## 9. Billing — [tenant-owned]
 
@@ -658,25 +658,25 @@ erDiagram
 
 ## 13. Query patterns → indexes
 
-| # | Query (hot path) | Table | Index / constraint used |
-|---|---|---|---|
-| 1 | Resolve session user's org(s) on every request | organization_members | `(user_id)` |
-| 2 | Feed: org + latest engine version + classification tab, newest first, paginated | tender_matches | `(organization_id, engine_version, classification, scored_at)` |
-| 3 | Feed expiry filter: hide lots past deadline | tender_lots | `(deadline_at)` |
-| 4 | Tender detail: components + risk flags for a match | match_components / match_risk_flags | `(match_id, component_key)` unique / `(match_id)` |
-| 5 | Saved / Ignored tabs; "is lot saved/ignored?" | saved_tenders / ignored_tenders | `(organization_id, lot_id)` unique |
-| 6 | Ingestion upsert: does this notice exist? changed? | tender_notices | `(source, source_notice_id)` unique + `content_hash` compare |
-| 7 | Ingestion resume point | ingestion_checkpoints | `(source)` unique |
-| 8 | Version insert idempotency | tender_notice_versions | `(notice_id, version_number)` unique |
-| 9 | Scoring idempotency / recompute | tender_matches | `(organization_id, lot_id, engine_version)` unique |
-| 10 | Digest dedupe (one per org per day) | digest_runs | `(organization_id, digest_date)` unique |
-| 11 | Stripe webhook idempotency | billing_events | `(stripe_event_id)` unique |
-| 12 | Stripe webhook → org resolution | subscriptions | `(stripe_customer_id)` / `(stripe_subscription_id)` unique |
-| 13 | Email provider status webhook → row | email_deliveries | partial unique `(provider, provider_message_id)` |
-| 14 | Purge scan: expired lots, then owned rows | tender_lots / tender_matches / saved_tenders | `(deadline_at)` / `(lot_id)` / `(lot_id)` |
-| 15 | Admin: notices per window, run history, notice errors | tender_notices / ingestion_runs / ingestion_errors | `(publication_date)` / `(source, started_at)` / `(source, source_notice_id)` |
-| 16 | Admin: CPV scope analysis | tender_cpv_codes | `(cpv_code)` |
-| 17 | Feedback trend per org | customer_feedback | `(organization_id, created_at)` |
+| #   | Query (hot path)                                                                | Table                                              | Index / constraint used                                                      |
+| --- | ------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------- |
+| 1   | Resolve session user's org(s) on every request                                  | organization_members                               | `(user_id)`                                                                  |
+| 2   | Feed: org + latest engine version + classification tab, newest first, paginated | tender_matches                                     | `(organization_id, engine_version, classification, scored_at)`               |
+| 3   | Feed expiry filter: hide lots past deadline                                     | tender_lots                                        | `(deadline_at)`                                                              |
+| 4   | Tender detail: components + risk flags for a match                              | match_components / match_risk_flags                | `(match_id, component_key)` unique / `(match_id)`                            |
+| 5   | Saved / Ignored tabs; "is lot saved/ignored?"                                   | saved_tenders / ignored_tenders                    | `(organization_id, lot_id)` unique                                           |
+| 6   | Ingestion upsert: does this notice exist? changed?                              | tender_notices                                     | `(source, source_notice_id)` unique + `content_hash` compare                 |
+| 7   | Ingestion resume point                                                          | ingestion_checkpoints                              | `(source)` unique                                                            |
+| 8   | Version insert idempotency                                                      | tender_notice_versions                             | `(notice_id, version_number)` unique                                         |
+| 9   | Scoring idempotency / recompute                                                 | tender_matches                                     | `(organization_id, lot_id, engine_version)` unique                           |
+| 10  | Digest dedupe (one per org per day)                                             | digest_runs                                        | `(organization_id, digest_date)` unique                                      |
+| 11  | Stripe webhook idempotency                                                      | billing_events                                     | `(stripe_event_id)` unique                                                   |
+| 12  | Stripe webhook → org resolution                                                 | subscriptions                                      | `(stripe_customer_id)` / `(stripe_subscription_id)` unique                   |
+| 13  | Email provider status webhook → row                                             | email_deliveries                                   | partial unique `(provider, provider_message_id)`                             |
+| 14  | Purge scan: expired lots, then owned rows                                       | tender_lots / tender_matches / saved_tenders       | `(deadline_at)` / `(lot_id)` / `(lot_id)`                                    |
+| 15  | Admin: notices per window, run history, notice errors                           | tender_notices / ingestion_runs / ingestion_errors | `(publication_date)` / `(source, started_at)` / `(source, source_notice_id)` |
+| 16  | Admin: CPV scope analysis                                                       | tender_cpv_codes                                   | `(cpv_code)`                                                                 |
+| 17  | Feedback trend per org                                                          | customer_feedback                                  | `(organization_id, created_at)`                                              |
 
 Indexes not listed here should not exist — every index costs write throughput
 on the ingestion hot path and D1 storage.
@@ -690,23 +690,23 @@ days** of tender data (deadline + 90d per ADR-0003, staggered deadlines) —
 sizes below scale accordingly (~25% above a 120-day window; conclusions
 unchanged).
 
-| Table | Grows with | Rows/day (mid) | ~Bytes/row | Steady-state size |
-|---|---|---|---|---|
-| tender_notices | notices | 225 | 600 | 27k rows ≈ 16 MB |
-| tender_notice_versions | notices (+corrections ~15%) | 260 | 350 | 31k ≈ 11 MB |
-| tender_lots | notices | 360 | 2,000 (description text dominates) | 43k ≈ 86 MB |
-| tender_cpv_codes | notices | 900 | 100 | 108k ≈ 11 MB |
-| tender_geographies | notices | 470 | 100 | 56k ≈ 6 MB |
-| source_snapshots (rows) | notices | 260 | 250 | 31k ≈ 8 MB (bodies in R2, not D1) |
-| tender_matches | **notices × customers** | ~10,800 | 250 | 1.3M ≈ 325 MB |
-| match_components | notices × customers × 8 | ~86,000 | 180 | 10.4M ≈ **1.9 GB** |
-| match_risk_flags | notices × customers (~0.5/match) | ~5,400 | 350 | 650k ≈ 230 MB |
-| ingestion_runs / errors | time | ~1 / ~20 | 300 / 500 | negligible |
-| digest_runs / digest_items | customers × days | 30 / ~300 | 250 / 300 | ~40 MB/yr, unbounded but slow |
-| email_deliveries | customers × days | ~35 | 400 | ~5 MB/yr |
-| product_events | customer activity | ~2,000 | 250 | ~180 MB/yr (prunable) |
-| audit_events / billing_events / support_notes | admin+billing activity | tens | 500–2,000 | negligible |
-| company_* / matching_preferences / subscriptions | customers | one-time per org | — | < 1 MB total |
+| Table                                            | Grows with                       | Rows/day (mid)   | ~Bytes/row                         | Steady-state size                 |
+| ------------------------------------------------ | -------------------------------- | ---------------- | ---------------------------------- | --------------------------------- |
+| tender_notices                                   | notices                          | 225              | 600                                | 27k rows ≈ 16 MB                  |
+| tender_notice_versions                           | notices (+corrections ~15%)      | 260              | 350                                | 31k ≈ 11 MB                       |
+| tender_lots                                      | notices                          | 360              | 2,000 (description text dominates) | 43k ≈ 86 MB                       |
+| tender_cpv_codes                                 | notices                          | 900              | 100                                | 108k ≈ 11 MB                      |
+| tender_geographies                               | notices                          | 470              | 100                                | 56k ≈ 6 MB                        |
+| source_snapshots (rows)                          | notices                          | 260              | 250                                | 31k ≈ 8 MB (bodies in R2, not D1) |
+| tender_matches                                   | **notices × customers**          | ~10,800          | 250                                | 1.3M ≈ 325 MB                     |
+| match_components                                 | notices × customers × 8          | ~86,000          | 180                                | 10.4M ≈ **1.9 GB**                |
+| match_risk_flags                                 | notices × customers (~0.5/match) | ~5,400           | 350                                | 650k ≈ 230 MB                     |
+| ingestion_runs / errors                          | time                             | ~1 / ~20         | 300 / 500                          | negligible                        |
+| digest_runs / digest_items                       | customers × days                 | 30 / ~300        | 250 / 300                          | ~40 MB/yr, unbounded but slow     |
+| email_deliveries                                 | customers × days                 | ~35              | 400                                | ~5 MB/yr                          |
+| product_events                                   | customer activity                | ~2,000           | 250                                | ~180 MB/yr (prunable)             |
+| audit_events / billing_events / support_notes    | admin+billing activity           | tens             | 500–2,000                          | negligible                        |
+| company_* / matching_preferences / subscriptions | customers                        | one-time per org | —                                  | < 1 MB total                      |
 
 **Reading for the cost model:**
 

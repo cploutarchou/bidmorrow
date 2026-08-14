@@ -13,16 +13,16 @@ built and validated.
 
 ## Data inventory & retention
 
-| Category | Contents | Personal data? | Store | Retention |
-|---|---|---|---|---|
-| Account identity | email, password hash, email-verification state, session rows | Yes | D1 (Better Auth tables) | Life of account; deleted on account deletion [validate: Phase 3] |
-| Org profile & preferences | org name, CPV preferences (≤30), keywords (≤50), digest settings, timezone | Low (org-level; names may identify sole traders) | D1 | Life of organization; deleted on org deletion [validate: Phase 3] |
-| Product events | first-party usage events (page/feature counters) keyed by org/user id | Pseudonymous | D1 (`analytics` package) | 12 months, then purged [validate: Phase 10] |
-| Feedback | match-quality feedback (thumbs/reasons), free-text | Yes (free-text may contain anything) | D1 | Life of organization; deleted with org |
-| Billing metadata | Stripe customer id, subscription state, entitlements. Card data never touches BidMorrow — Stripe is the processor of record. | Yes (indirect) | D1 + Stripe | D1 rows: life of org + accounting obligations; Stripe retains per its own policy |
-| Email delivery metadata | `email_deliveries` rows: recipient, digest date, status, provider message id | Yes | D1 (+ Resend logs) | 12 months (aligned with `digest_runs` retention) |
-| Audit logs | `audit_events`: actor id, action, target, timestamp — append-only (security control C8) | Yes | D1 | 24 months; never user-deletable (security/legal record) — anonymize actor on account deletion instead of deleting rows |
-| TED procurement data | notices, lots, CPV/geo rows, matches; raw eForms XML in R2 | **Public, non-personal** — but raw snapshots may contain buyer contact persons (name/email/phone of public officials) published by TED | D1 + R2 | D1: deadline+90d purge (ted-ingestion-scope.md); R2: 3-year lifecycle (ADR-0005) |
+| Category                  | Contents                                                                                                                     | Personal data?                                                                                                                         | Store                    | Retention                                                                                                              |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Account identity          | email, password hash, email-verification state, session rows                                                                 | Yes                                                                                                                                    | D1 (Better Auth tables)  | Life of account; deleted on account deletion [validate: Phase 3]                                                       |
+| Org profile & preferences | org name, CPV preferences (≤30), keywords (≤50), digest settings, timezone                                                   | Low (org-level; names may identify sole traders)                                                                                       | D1                       | Life of organization; deleted on org deletion [validate: Phase 3]                                                      |
+| Product events            | first-party usage events (page/feature counters) keyed by org/user id                                                        | Pseudonymous                                                                                                                           | D1 (`analytics` package) | 12 months, then purged [validate: Phase 10]                                                                            |
+| Feedback                  | match-quality feedback (thumbs/reasons), free-text                                                                           | Yes (free-text may contain anything)                                                                                                   | D1                       | Life of organization; deleted with org                                                                                 |
+| Billing metadata          | Stripe customer id, subscription state, entitlements. Card data never touches BidMorrow — Stripe is the processor of record. | Yes (indirect)                                                                                                                         | D1 + Stripe              | D1 rows: life of org + accounting obligations; Stripe retains per its own policy                                       |
+| Email delivery metadata   | `email_deliveries` rows: recipient, digest date, status, provider message id                                                 | Yes                                                                                                                                    | D1 (+ Resend logs)       | 12 months (aligned with `digest_runs` retention)                                                                       |
+| Audit logs                | `audit_events`: actor id, action, target, timestamp — append-only (security control C8)                                      | Yes                                                                                                                                    | D1                       | 24 months; never user-deletable (security/legal record) — anonymize actor on account deletion instead of deleting rows |
+| TED procurement data      | notices, lots, CPV/geo rows, matches; raw eForms XML in R2                                                                   | **Public, non-personal** — but raw snapshots may contain buyer contact persons (name/email/phone of public officials) published by TED | D1 + R2                  | D1: deadline+90d purge (ted-ingestion-scope.md); R2: 3-year lifecycle (ADR-0005)                                       |
 
 Notes on TED data: it is public-sector data published by the EU; we treat it
 as non-personal for product purposes, but buyer contact persons appearing in
@@ -33,12 +33,12 @@ legal review (blocker 7).
 
 ## Subprocessors
 
-| Subprocessor | Purpose | Data received | Location notes |
-|---|---|---|---|
-| Cloudflare | Hosting: Workers, D1, R2, Queues | All application data in transit and at rest | EU jurisdiction analysis pending legal review |
-| Stripe | Payments, subscriptions, invoices, Customer Portal | Billing identity, payment details (Stripe-only) | — |
-| Resend | Transactional + digest email delivery | Recipient email, message content, delivery events | — |
-| GitHub | Source code, CI/CD | No customer data (code + CI secrets only) | Listed for completeness |
+| Subprocessor | Purpose                                            | Data received                                     | Location notes                                |
+| ------------ | -------------------------------------------------- | ------------------------------------------------- | --------------------------------------------- |
+| Cloudflare   | Hosting: Workers, D1, R2, Queues                   | All application data in transit and at rest       | EU jurisdiction analysis pending legal review |
+| Stripe       | Payments, subscriptions, invoices, Customer Portal | Billing identity, payment details (Stripe-only)   | —                                             |
+| Resend       | Transactional + digest email delivery              | Recipient email, message content, delivery events | —                                             |
+| GitHub       | Source code, CI/CD                                 | No customer data (code + CI secrets only)         | Listed for completeness                       |
 
 No analytics, monitoring, translation, or LLM SaaS in V1 (architecture.md
 "deliberate non-choices") — the subprocessor list is intentionally short.

@@ -8,12 +8,12 @@ Blocked prerequisites live in HUMAN_DECISION_BLOCKERS.md (items 1, 2, 3, 4,
 
 ## Environments
 
-| Env | Purpose | D1 / Queues / R2 | Stripe mode | Secrets |
-|---|---|---|---|---|
-| local | dev on `wrangler dev` (Miniflare) | local simulators | test keys (or mocks) | `.dev.vars` (git-ignored) |
-| test | CI (vitest-pool-workers) | ephemeral, per-file isolation | mocked | injected by test config |
-| staging | pre-prod verification | dedicated staging resources | **test mode** | `wrangler secret put --env staging` |
-| production | customers | dedicated prod resources | **live mode** | `wrangler secret put --env production` |
+| Env        | Purpose                           | D1 / Queues / R2              | Stripe mode          | Secrets                                |
+| ---------- | --------------------------------- | ----------------------------- | -------------------- | -------------------------------------- |
+| local      | dev on `wrangler dev` (Miniflare) | local simulators              | test keys (or mocks) | `.dev.vars` (git-ignored)              |
+| test       | CI (vitest-pool-workers)          | ephemeral, per-file isolation | mocked               | injected by test config                |
+| staging    | pre-prod verification             | dedicated staging resources   | **test mode**        | `wrangler secret put --env staging`    |
+| production | customers                         | dedicated prod resources      | **live mode**        | `wrangler secret put --env production` |
 
 Rules: environments **never** share databases, queues, buckets, secrets, or
 Stripe modes. Staging always uses Stripe test keys; production always live —
@@ -26,18 +26,22 @@ never mixed (blocker 4).
   "name": "bidmorrow",
   "main": "src/index.ts",
   "compatibility_flags": ["nodejs_compat"],
-  "assets": { "binding": "ASSETS",
-              "not_found_handling": "single-page-application",
-              "run_worker_first": ["/api/*"] },
+  "assets": {
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
   "d1_databases": [{ "binding": "DB", "database_name": "bidmorrow-dev", "database_id": "…" }],
-  "queues": { "producers": ["INGEST_QUEUE", "MATCH_QUEUE", "DIGEST_QUEUE"],
-              "consumers": ["… + DLQs, max_retries, dead_letter_queue"] },
+  "queues": {
+    "producers": ["INGEST_QUEUE", "MATCH_QUEUE", "DIGEST_QUEUE"],
+    "consumers": ["… + DLQs, max_retries, dead_letter_queue"],
+  },
   "r2_buckets": [{ "binding": "SNAPSHOTS", "bucket_name": "bidmorrow-snapshots-dev" }],
   "triggers": { "crons": ["ingestion", "digest", "retention", "watchdog schedules"] },
   "env": {
-    "staging":    { /* staging DB id, queue names, bucket, vars */ },
-    "production": { /* production DB id, queue names, bucket, vars */ }
-  }
+    "staging": {/* staging DB id, queue names, bucket, vars */},
+    "production": {/* production DB id, queue names, bucket, vars */},
+  },
 }
 ```
 

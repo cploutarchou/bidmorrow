@@ -13,6 +13,7 @@ company like mine spend time investigating this tender?" — qualification and
 relevance, not generic tender search.
 
 Your job:
+
 - Reject scope creep. Anything not in the V1 IN list needs an explicit
   documented trade-off before it proceeds; default answer is no.
 - Verify features serve the target customer (5–50 employee EU cybersecurity /

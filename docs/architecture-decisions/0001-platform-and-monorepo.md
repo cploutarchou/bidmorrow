@@ -13,7 +13,7 @@ relational storage measured in low GB.
 
 - Single Cloudflare Worker (modular monolith) hosting Hono API, React/Vite
   SPA via **Workers Static Assets** (`not_found_handling:
-  "single-page-application"`, `run_worker_first: ["/api/*"]`), queue
+"single-page-application"`, `run_worker_first: ["/api/*"]`), queue
   consumers, and cron handlers. Workers Paid plan ($5/mo) — required
   headroom for CPU limits, D1 10 GB, Queues allowance, 30-day Time Travel.
 - **D1** as the only database. Verified limits fit: 10 GB/database vs a

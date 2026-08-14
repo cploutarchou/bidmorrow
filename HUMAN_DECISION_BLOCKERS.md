@@ -13,6 +13,7 @@ Status legend: `OPEN` (needs human), `PROVIDED` (done), `DEFERRED` (not needed y
 Needed for: staging/production deployment (Phase 13). Not needed for local dev.
 
 Human actions:
+
 1. Create (or designate) a Cloudflare account; note the **Account ID**
    (Dashboard → Workers & Pages → right sidebar).
 2. Create a **scoped API token** for CI (do NOT use the Global API Key):
@@ -29,6 +30,7 @@ Human actions:
 Needed for: production URLs and email deliverability (Phases 8/13).
 
 Human actions:
+
 1. Confirm bidmorrow.com registration and (recommended) move DNS to Cloudflare.
 2. Add DNS records for the app: `bidmorrow.com` / `app.bidmorrow.com` routed to
    the Worker (custom domain in Workers settings).
@@ -45,6 +47,7 @@ Human actions:
 Needed for: real email sending (Phase 8+). Local/test uses a mock provider.
 
 Human actions:
+
 1. Create a Resend account; verify domain bidmorrow.com (see item 2).
 2. Create an API key; provide as secret `RESEND_API_KEY` (staging + production,
    separate keys per environment).
@@ -57,6 +60,7 @@ Needed for: Phase 9 billing. All Phase 9 development uses Stripe **test mode**;
 test-mode keys are still human-provided (never invented).
 
 Human actions:
+
 1. Create a Stripe account (or use existing). Activate test mode first.
 2. Create Products/Prices in test mode (repeat in live mode before launch):
    - `BIDMORROW_FOUNDING_MONTHLY` — $29/month recurring
@@ -82,6 +86,7 @@ Suggested initial value: cploutarchou@gmail.com — confirm.
 ## 7. Business / legal information — OPEN
 
 Needed for: terms, privacy policy, Stripe account, invoices.
+
 - Legal entity name, registered address, VAT status/ID (affects Stripe Tax decision).
 - Contact email for privacy requests.
 - Decision: is Stripe Tax needed at launch (EU B2B reverse charge)? Default

@@ -19,19 +19,19 @@ what tenders a company pursues) and account/billing integrity.
 
 ## 1. Assets inventory
 
-| # | Asset | Where it lives | Sensitivity | Primary threats (STRIDE) |
-|---|---|---|---|---|
-| A1 | User credentials & sessions | D1 (Better Auth tables), session cookies | High | Spoofing, Elevation |
-| A2 | Organization profiles (capabilities, CPV prefs, keywords, exclusions, certifications) | D1 | High — reveals a customer's bidding strategy | Info disclosure, Tampering |
-| A3 | Match results, feedback, saved/ignored state | D1 | High — same competitive signal as A2 | Info disclosure |
-| A4 | TED notices & lots (parsed) | D1 | Low (public data) but integrity-critical: it drives scores and is rendered in UI | Tampering, DoS |
-| A5 | Raw TED snapshots | R2 private bucket | Low/Medium (audit trail for score reproducibility) | Tampering, Info disclosure |
-| A6 | Billing state & entitlements | D1 (subscriptions), Stripe (source of truth) | High | Tampering, Spoofing, Repudiation |
-| A7 | Secrets (Stripe keys, webhook secret, Resend key, BETTER_AUTH_SECRET, CF API token) | Wrangler secrets / CI secrets | Critical | Info disclosure, Elevation |
-| A8 | Internal admin surface (flags, ingestion scope, match trace, pause switches) | Worker routes gated by INTERNAL_ADMIN | Critical | Elevation, Tampering, Repudiation |
-| A9 | Email sending capability (verification, reset, digests) | Resend + Queues | Medium — abuse burns domain reputation | Spoofing, DoS |
-| A10 | Availability of ingestion/scoring/digest pipeline | Queues, Cron, Worker CPU/D1 quotas | Medium | DoS |
-| A11 | Audit log | D1 append-only table | High (forensics; must not be tamperable via app paths) | Tampering, Repudiation |
+| #   | Asset                                                                                 | Where it lives                               | Sensitivity                                                                      | Primary threats (STRIDE)          |
+| --- | ------------------------------------------------------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------- |
+| A1  | User credentials & sessions                                                           | D1 (Better Auth tables), session cookies     | High                                                                             | Spoofing, Elevation               |
+| A2  | Organization profiles (capabilities, CPV prefs, keywords, exclusions, certifications) | D1                                           | High — reveals a customer's bidding strategy                                     | Info disclosure, Tampering        |
+| A3  | Match results, feedback, saved/ignored state                                          | D1                                           | High — same competitive signal as A2                                             | Info disclosure                   |
+| A4  | TED notices & lots (parsed)                                                           | D1                                           | Low (public data) but integrity-critical: it drives scores and is rendered in UI | Tampering, DoS                    |
+| A5  | Raw TED snapshots                                                                     | R2 private bucket                            | Low/Medium (audit trail for score reproducibility)                               | Tampering, Info disclosure        |
+| A6  | Billing state & entitlements                                                          | D1 (subscriptions), Stripe (source of truth) | High                                                                             | Tampering, Spoofing, Repudiation  |
+| A7  | Secrets (Stripe keys, webhook secret, Resend key, BETTER_AUTH_SECRET, CF API token)   | Wrangler secrets / CI secrets                | Critical                                                                         | Info disclosure, Elevation        |
+| A8  | Internal admin surface (flags, ingestion scope, match trace, pause switches)          | Worker routes gated by INTERNAL_ADMIN        | Critical                                                                         | Elevation, Tampering, Repudiation |
+| A9  | Email sending capability (verification, reset, digests)                               | Resend + Queues                              | Medium — abuse burns domain reputation                                           | Spoofing, DoS                     |
+| A10 | Availability of ingestion/scoring/digest pipeline                                     | Queues, Cron, Worker CPU/D1 quotas           | Medium                                                                           | DoS                               |
+| A11 | Audit log                                                                             | D1 append-only table                         | High (forensics; must not be tamperable via app paths)                           | Tampering, Repudiation            |
 
 ## 2. Trust boundaries
 
@@ -79,18 +79,18 @@ what tenders a company pursues) and account/billing integrity.
 
 ## 3. Mandatory control set (referenced as C1–C11 below)
 
-| ID | Control |
-|---|---|
-| C1 | Strict input validation: zod schemas at the API boundary (every route body/query/param) and at the TED ingestion parse boundary |
-| C2 | Safe output encoding: React default escaping; `dangerouslySetInnerHTML` banned for any source-derived data (lint rule) |
-| C3 | Content-Security-Policy: no `unsafe-inline` script, no external script origins; SPA served with nonce/hash-based policy |
-| C4 | Security headers: HSTS, X-Content-Type-Options, X-Frame-Options/frame-ancestors, Referrer-Policy, Permissions-Policy |
-| C5 | Secure cookies: HttpOnly, Secure, SameSite=Lax (Strict for admin), session cookie never readable by JS |
-| C6 | Server-side authorization: repository layer where every tenant-scoped query **requires** `organizationId` from the session (not from the request); role checks per route |
-| C7 | Rate/abuse protection: per-IP and per-account limits on auth endpoints, API write endpoints, and email-triggering endpoints; Cloudflare WAF/bot rules in front |
-| C8 | Audit logs: append-only records for auth events, admin actions, billing transitions, profile changes (actor, org, action, timestamp) |
-| C9 | Stripe webhook signature verification + event-ID idempotency table |
-| C10 | Secret isolation: wrangler secrets per environment, never in code/vars/logs; test vs live keys never mixed |
+| ID  | Control                                                                                                                                                                       |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C1  | Strict input validation: zod schemas at the API boundary (every route body/query/param) and at the TED ingestion parse boundary                                               |
+| C2  | Safe output encoding: React default escaping; `dangerouslySetInnerHTML` banned for any source-derived data (lint rule)                                                        |
+| C3  | Content-Security-Policy: no `unsafe-inline` script, no external script origins; SPA served with nonce/hash-based policy                                                       |
+| C4  | Security headers: HSTS, X-Content-Type-Options, X-Frame-Options/frame-ancestors, Referrer-Policy, Permissions-Policy                                                          |
+| C5  | Secure cookies: HttpOnly, Secure, SameSite=Lax (Strict for admin), session cookie never readable by JS                                                                        |
+| C6  | Server-side authorization: repository layer where every tenant-scoped query **requires** `organizationId` from the session (not from the request); role checks per route      |
+| C7  | Rate/abuse protection: per-IP and per-account limits on auth endpoints, API write endpoints, and email-triggering endpoints; Cloudflare WAF/bot rules in front                |
+| C8  | Audit logs: append-only records for auth events, admin actions, billing transitions, profile changes (actor, org, action, timestamp)                                          |
+| C9  | Stripe webhook signature verification + event-ID idempotency table                                                                                                            |
+| C10 | Secret isolation: wrangler secrets per environment, never in code/vars/logs; test vs live keys never mixed                                                                    |
 | C11 | Least privilege: scoped CF API token for CI (no Global API Key), read-only credentials for reviewer agents, `ADMIN_EMAILS` allowlist, R2 bucket private with no public access |
 
 ---
@@ -348,15 +348,15 @@ no postinstall-heavy packages without review.
 
 ## 5. Residual risks (accepted for V1, with rationale)
 
-| Risk | Why accepted | Revisit when |
-|---|---|---|
-| No 2FA/passkeys at launch | Better Auth supports it but V1 UI scope is minimal; strong rate-limiting + breach-password checks carry interim load | First customer request, or any credential-stuffing incident — whichever first |
-| Admin plane shares the single Worker with the customer app (monolith) | Separate admin deployment is disproportionate at this scale; role + allowlist + audit compensate | Team grows beyond founder, or SOC2-type requirements appear |
-| D1 has no row-level security; tenant isolation is application-layer (C6) | D1/SQLite offers no native RLS; the typed repository requirement + CI isolation tests are the enforcement | Any C6 bypass found in review, or migration off D1 |
-| TED upstream integrity is trusted after TLS (no content signing exists) | No signed feed available; quarantine + versioning + R2 snapshots bound the damage | TED offers integrity mechanisms, or a poisoning incident |
-| Stripe reconciliation is periodic, not real-time — short entitlement-drift windows possible | Webhooks + idempotency make drift rare; daily reconciliation bounds it to ≤24h | Chargeback/abuse patterns, or plan complexity grows |
-| No dedicated SIEM/alerting stack; audit logs reviewed manually | V1 has no analytics/monitoring SaaS by design; CF dashboards + email alerts suffice at pilot scale | >50 orgs, or first security incident |
-| Single-region single-DB (D1) availability profile | Accepted for a daily-digest product; RPO = D1 backup cadence | Paying customers demand SLA |
+| Risk                                                                                        | Why accepted                                                                                                         | Revisit when                                                                  |
+| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| No 2FA/passkeys at launch                                                                   | Better Auth supports it but V1 UI scope is minimal; strong rate-limiting + breach-password checks carry interim load | First customer request, or any credential-stuffing incident — whichever first |
+| Admin plane shares the single Worker with the customer app (monolith)                       | Separate admin deployment is disproportionate at this scale; role + allowlist + audit compensate                     | Team grows beyond founder, or SOC2-type requirements appear                   |
+| D1 has no row-level security; tenant isolation is application-layer (C6)                    | D1/SQLite offers no native RLS; the typed repository requirement + CI isolation tests are the enforcement            | Any C6 bypass found in review, or migration off D1                            |
+| TED upstream integrity is trusted after TLS (no content signing exists)                     | No signed feed available; quarantine + versioning + R2 snapshots bound the damage                                    | TED offers integrity mechanisms, or a poisoning incident                      |
+| Stripe reconciliation is periodic, not real-time — short entitlement-drift windows possible | Webhooks + idempotency make drift rare; daily reconciliation bounds it to ≤24h                                       | Chargeback/abuse patterns, or plan complexity grows                           |
+| No dedicated SIEM/alerting stack; audit logs reviewed manually                              | V1 has no analytics/monitoring SaaS by design; CF dashboards + email alerts suffice at pilot scale                   | >50 orgs, or first security incident                                          |
+| Single-region single-DB (D1) availability profile                                           | Accepted for a daily-digest product; RPO = D1 backup cadence                                                         | Paying customers demand SLA                                                   |
 
 ## 6. Review triggers — when this model must be revisited
 
@@ -385,6 +385,6 @@ following happens:
 
 ---
 
-*Owner: engineering. Last reviewed: 2026-08-14. Status: V1 baseline —
+_Owner: engineering. Last reviewed: 2026-08-14. Status: V1 baseline —
 written against the assumed architecture; reconcile with docs/architecture.md
-when it lands (trigger #1 applies if they diverge).*
+when it lands (trigger #1 applies if they diverge)._

@@ -19,11 +19,11 @@ consultancies. Matching uses prefix semantics (`classification-cpv IN (...)`
 with the family roots; the ted-data agent validates exact query form against
 `checkQuerySyntax`).
 
-| Family | Coverage | Rationale |
-|---|---|---|
-| `72*` (72000000) | IT services: consulting, software development, internet, support | Core segment |
-| `48*` (48000000) | Software packages and information systems | Core segment |
-| `79417000` | Safety consultancy | Security-adjacent consultancy (narrow pick, not all of 79*) |
+| Family           | Coverage                                                         | Rationale                                                   |
+| ---------------- | ---------------------------------------------------------------- | ----------------------------------------------------------- |
+| `72*` (72000000) | IT services: consulting, software development, internet, support | Core segment                                                |
+| `48*` (48000000) | Software packages and information systems                        | Core segment                                                |
+| `79417000`       | Safety consultancy                                               | Security-adjacent consultancy (narrow pick, not all of 79*) |
 
 Families considered and **excluded by default** (all config-addable after
 pilot evidence): broad `79*` business services (noise outweighs relevance),

@@ -3,8 +3,8 @@
 Headline: **"Find the tenders worth pursuing. Skip the rest."**
 
 BidMorrow is bid/no-bid qualification intelligence for EU public procurement.
-It answers one question for its customer: *"Should a company like mine spend
-time investigating this tender?"*
+It answers one question for its customer: _"Should a company like mine spend
+time investigating this tender?"_
 
 ## Target customer
 
@@ -54,19 +54,19 @@ generic tender search.
 
 ## V1 scope — OUT (deliberate exclusions)
 
-| Excluded | Why |
-|---|---|
-| Non-TED sources (national portals, paid datasets) | TED-only V1; `ProcurementSource` interface keeps the door open |
-| Contract **award** notices in matching | Competition notices are the bid/no-bid input; awards deferred to future buyer-history enrichment |
-| Exhaustive all-of-TED ingestion | D1 size limits + cost; scoped ingestion is the product promise (relevance, not completeness) |
-| LLM scoring / summaries | Cost, determinism, explainability; V1 must be auditable |
-| Machine translation | Cost; language-independent fields (CPV/NUTS/values/deadlines) dominate scoring; capability match marked UNKNOWN when no matchable-language text |
-| ML-driven score learning from feedback | Opaque; V1 stores feedback and may later *suggest* deterministic preference edits |
-| Multi-seat collaboration UX | Memberships modeled; UI deferred |
-| Complex pricing tiers, annual plans, usage billing | Two monthly prices; schema supports future plans |
-| Mobile apps | Responsive web only |
-| Session replay / third-party analytics | Minimal first-party events only |
-| Public tender SEO pages | Risk of thin content + leaking customer relevance signals |
+| Excluded                                           | Why                                                                                                                                             |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Non-TED sources (national portals, paid datasets)  | TED-only V1; `ProcurementSource` interface keeps the door open                                                                                  |
+| Contract **award** notices in matching             | Competition notices are the bid/no-bid input; awards deferred to future buyer-history enrichment                                                |
+| Exhaustive all-of-TED ingestion                    | D1 size limits + cost; scoped ingestion is the product promise (relevance, not completeness)                                                    |
+| LLM scoring / summaries                            | Cost, determinism, explainability; V1 must be auditable                                                                                         |
+| Machine translation                                | Cost; language-independent fields (CPV/NUTS/values/deadlines) dominate scoring; capability match marked UNKNOWN when no matchable-language text |
+| ML-driven score learning from feedback             | Opaque; V1 stores feedback and may later _suggest_ deterministic preference edits                                                               |
+| Multi-seat collaboration UX                        | Memberships modeled; UI deferred                                                                                                                |
+| Complex pricing tiers, annual plans, usage billing | Two monthly prices; schema supports future plans                                                                                                |
+| Mobile apps                                        | Responsive web only                                                                                                                             |
+| Session replay / third-party analytics             | Minimal first-party events only                                                                                                                 |
+| Public tender SEO pages                            | Risk of thin content + leaking customer relevance signals                                                                                       |
 
 ## Product-truth rules
 

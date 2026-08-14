@@ -15,16 +15,16 @@ tender lot)** and stored with the engine version that produced them.
 
 ## Score model (max 100)
 
-| Component | Max | UNKNOWN policy (neutral fraction) |
-|---|---|---|
-| CPV fit | 35 | n/a — CPV is mandatory in eForms; if absent record ingestion error |
-| Capability/keyword fit | 20 | 50% (10) when no matchable-language text exists |
-| Geography | 15 | 50% (7.5 → stored as 7.5) when no NUTS/country on lot |
-| Contract value | 10 | 50% (5) when no value published or non-EUR unconverted |
-| Buyer/sector | 5 | 50% (2.5) when buyer type absent |
-| Procedure/contract nature | 5 | 50% (2.5) when absent |
-| Deadline runway | 5 | 50% (2.5) when no deadline (e.g. some procedure types) |
-| Eligibility/cert signals | 5 | 50% (2.5) when no signals detectable |
+| Component                 | Max | UNKNOWN policy (neutral fraction)                                  |
+| ------------------------- | --- | ------------------------------------------------------------------ |
+| CPV fit                   | 35  | n/a — CPV is mandatory in eForms; if absent record ingestion error |
+| Capability/keyword fit    | 20  | 50% (10) when no matchable-language text exists                    |
+| Geography                 | 15  | 50% (7.5 → stored as 7.5) when no NUTS/country on lot              |
+| Contract value            | 10  | 50% (5) when no value published or non-EUR unconverted             |
+| Buyer/sector              | 5   | 50% (2.5) when buyer type absent                                   |
+| Procedure/contract nature | 5   | 50% (2.5) when absent                                              |
+| Deadline runway           | 5   | 50% (2.5) when no deadline (e.g. some procedure types)             |
+| Eligibility/cert signals  | 5   | 50% (2.5) when no signals detectable                               |
 
 Neutral fraction is a single engine constant `UNKNOWN_NEUTRAL = 0.5` of the
 component max. Each component result records `status: MATCHED | PARTIAL |
@@ -38,14 +38,14 @@ division (2), group (3), class (4), category (5+). Compare every lot CPV
 (main + additional) against org CPV preferences; take the best pairwise level,
 with a small bonus for multiple independent matches.
 
-| Best relationship | Points |
-|---|---|
-| Exact code match | 35 |
-| Same category (5 digits) | 31 |
-| Same class (4 digits) | 27 |
-| Same group (3 digits) | 21 |
-| Same division (2 digits) | 12 |
-| No relationship | 0 |
+| Best relationship        | Points |
+| ------------------------ | ------ |
+| Exact code match         | 35     |
+| Same category (5 digits) | 31     |
+| Same class (4 digits)    | 27     |
+| Same group (3 digits)    | 21     |
+| Same division (2 digits) | 12     |
+| No relationship          | 0      |
 
 Bonus: +2 (capped at 35) if ≥2 distinct org CPV preferences match at class
 level or better. Main CPV weighted as-is; additional CPVs scored at 85% of the
@@ -65,18 +65,18 @@ English + any language the customer entered keywords in).
   single-word hit = 2, synonym-group hit counts once per group = 3. Capped at 20.
 - If the notice has NO matchable-language text: component = UNKNOWN (10),
   and the match carries indicator `source language: XX — keyword matching
-  limited`. A tender is never penalized for its language.
+limited`. A tender is never penalized for its language.
 
 ### Geography (15)
 
-| Relationship | Points |
-|---|---|
-| Lot NUTS within a preferred NUTS region (prefix match) | 15 |
-| Country in preferred opportunity countries | 13 |
-| Country in countries-served | 10 |
-| Neighboring country of a preferred country (static EU adjacency table) | 6 |
-| Otherwise | 0 |
-| No geography on lot | UNKNOWN (7.5) |
+| Relationship                                                           | Points        |
+| ---------------------------------------------------------------------- | ------------- |
+| Lot NUTS within a preferred NUTS region (prefix match)                 | 15            |
+| Country in preferred opportunity countries                             | 13            |
+| Country in countries-served                                            | 10            |
+| Neighboring country of a preferred country (static EU adjacency table) | 6             |
+| Otherwise                                                              | 0             |
+| No geography on lot                                                    | UNKNOWN (7.5) |
 
 ### Contract value (10)
 
@@ -132,12 +132,12 @@ Signals found but not satisfied: 0 (plus a risk flag — never a fabricated
 
 ## Classification
 
-| Score | Category |
-|---|---|
-| 80–100 | STRONG_MATCH |
-| 65–79 | WORTH_REVIEWING |
-| 45–64 | POSSIBLE_MATCH |
-| 0–44 | LOW_FIT |
+| Score  | Category        |
+| ------ | --------------- |
+| 80–100 | STRONG_MATCH    |
+| 65–79  | WORTH_REVIEWING |
+| 45–64  | POSSIBLE_MATCH  |
+| 0–44   | LOW_FIT         |
 
 ## Hard exclusions (result = EXCLUDED, no score shown)
 

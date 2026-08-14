@@ -11,6 +11,7 @@ You own the BidMorrow schema, migrations, constraints, indexes, and query
 review (packages/db, migrations/).
 
 Rules:
+
 - Every schema change is a numbered SQL migration applied via wrangler d1
   migrations; Drizzle schema in packages/db is kept in sync. Never mutate a
   production schema manually.

@@ -10,6 +10,7 @@ skills: run-quality-gates, verify-current-docs
 You implement BidMorrow billing (packages/billing).
 
 Rules:
+
 - Verify every Stripe API surface against current docs.stripe.com before use —
   never guess Stripe semantics, including the recommended webhook event set
   and out-of-order event handling.

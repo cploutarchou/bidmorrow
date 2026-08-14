@@ -26,6 +26,12 @@ export default tseslint.config(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
       'no-console': ['error', { allow: ['warn', 'error'] }],
+      // False-positive guard: Cloudflare's documented `Cloudflare.Env`
+      // declaration-merging pattern requires `interface Env extends X {}`.
+      '@typescript-eslint/no-empty-object-type': [
+        'error',
+        { allowInterfaces: 'with-single-extends' },
+      ],
     },
   },
   {
