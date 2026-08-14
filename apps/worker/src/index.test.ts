@@ -28,11 +28,20 @@ describe('GET /api/health/ready', () => {
     expect(await response.json()).toEqual({ status: 'ok', db: 'ok' });
   });
 
-  it('runs against a migrated database (bootstrap table exists)', async () => {
-    const row = await env.DB.prepare(
+  it('runs against a migrated database (core schema applied, bootstrap dropped)', async () => {
+    // 0002_core_schema creates the real schema and drops the 0001 `_bootstrap`
+    // placeholder, so a fully migrated database has `organizations` and no
+    // `_bootstrap`. (The exhaustive table check lives in packages/db's
+    // migrations.d1.test.ts; this is the worker-side smoke sentinel.)
+    const organizations = await env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'organizations'",
+    ).first<{ name: string }>();
+    expect(organizations?.name).toBe('organizations');
+
+    const bootstrap = await env.DB.prepare(
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name = '_bootstrap'",
     ).first<{ name: string }>();
-    expect(row?.name).toBe('_bootstrap');
+    expect(bootstrap).toBeNull();
   });
 });
 
