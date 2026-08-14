@@ -533,16 +533,12 @@ NOTHING`); losing the insert means another invocation owns today's digest.
 What a digest actually contained, with display snapshots so the row stays
 meaningful after the underlying match is purged by retention.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| digest_run_id | TEXT | no | FK → digest_runs |
-| match_id | TEXT | yes | FK → tender_matches; **SET NULL on purge** of unpinned matches |
-| rank | INTEGER | no | display order |
-| title_snapshot | TEXT | no | lot title at send time |
-| score_snapshot | REAL | yes | |
-| classification_snapshot | TEXT | no | |
-
+- `id TEXT PK` · `digest_run_id TEXT NOT NULL FK → digest_runs`.
+- `match_id TEXT NULL FK → tender_matches` — **SET NULL on purge** of
+  unpinned matches.
+- `rank INTEGER NOT NULL` — display order.
+- `title_snapshot TEXT NOT NULL` · `score_snapshot REAL NULL` ·
+  `classification_snapshot TEXT NOT NULL` — captured at send time.
 - **Unique** `(digest_run_id, match_id)` · **Index** `(digest_run_id)` ·
   **Index** `(match_id)` (purge SET NULL pass).
 
@@ -621,14 +617,10 @@ side effects.
 
 Minimal first-party analytics (no third-party tooling). Append-only.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| organization_id | TEXT | yes | FK → organizations; null for anonymous/marketing events |
-| user_id | TEXT | yes | FK → users |
-| name | TEXT | no | e.g. `feed_viewed`, `digest_opened`, `match_expanded` |
-| properties_json | TEXT | yes | |
-
+- `id TEXT PK` · `organization_id TEXT NULL FK → organizations` (null for
+  anonymous/marketing events) · `user_id TEXT NULL FK → users`.
+- `name TEXT NOT NULL` — e.g. `feed_viewed`, `digest_opened`,
+  `match_expanded` · `properties_json TEXT NULL`.
 - **Index** `(name, created_at)` — metric counts over time ·
   **Index** `(organization_id, created_at)` — per-org activity (pilot success
   signals).
@@ -658,13 +650,9 @@ Append-only audit log for security-relevant and admin actions.
 Internal admin notes about a customer org (visible to INTERNAL_ADMIN only —
 enforced in the app layer, never rendered to customers).
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| organization_id | TEXT | no | FK → organizations |
-| author_user_id | TEXT | no | FK → users (must pass admin allowlist check) |
-| body | TEXT | no | |
-
+- `id TEXT PK` · `organization_id TEXT NOT NULL FK → organizations`.
+- `author_user_id TEXT NOT NULL FK → users` (must pass admin allowlist
+  check) · `body TEXT NOT NULL`.
 - **Index** `(organization_id, created_at)`.
 
 ### feature_flags
@@ -672,15 +660,12 @@ enforced in the app layer, never rendered to customers).
 Admin-editable runtime configuration. Values are JSON so one table serves
 booleans, numbers and structured config.
 
-| column | type | null | notes |
-|---|---|---|---|
-| id | TEXT | no | PK |
-| key | TEXT | no | **unique** — `founding_plan_open`, `founding_cap`, `ingestion_paused`, `digest_paused`, `ingestion_cpv_scope` |
-| value_json | TEXT | no | e.g. `true`, `20`, `{"divisions":["72","79"],"extra_codes":[...]}` |
-| description | TEXT | no | what the flag does and safe values |
-| updated_by_user_id | TEXT | yes | FK → users |
-
-- **PK** `id` · **Unique** `(key)`. Every flag change writes an
+- `id TEXT PK` · `key TEXT NOT NULL` — **unique**: `founding_plan_open`,
+  `founding_cap`, `ingestion_paused`, `digest_paused`, `ingestion_cpv_scope`.
+- `value_json TEXT NOT NULL` — e.g. `true`, `20`,
+  `{"divisions":["72","79"],"extra_codes":[...]}`.
+- `description TEXT NOT NULL` — what the flag does and safe values.
+- `updated_by_user_id TEXT NULL FK → users`. Every flag change writes an
   `audit_events` row.
 
 ---
