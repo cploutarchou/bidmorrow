@@ -73,6 +73,21 @@ env-specific resource names/ids — wrangler does not inherit bindings.
    smoke green → capture D1 Time Travel bookmark (see below) → apply
    migrations → `wrangler deploy --env production` → post-deploy smoke.
 
+### Pre-first-ingestion gates (from Phase 5 audits — MUST close on staging before the production ingestion cron is enabled)
+
+The TED API is unreachable from the development environment, so two
+verifications could only be deferred to the first staging deploy:
+
+1. **TED-P5-01**: round-trip the composed scope query through the live API
+   with `checkQuerySyntax: true` (see `packages/procurement/src/scope.ts`
+   `buildScopeQuery`); fix syntax if rejected before any real window runs.
+2. **Volume measurement**: run one bounded staging ingestion window and
+   record actual scoped notices/day in docs/cost-model.md + the ledger
+   (planning assumption is 150–300/day; tighten scope before widening if
+   reality exceeds 2× projection per ADR-0003).
+3. Refresh fixtures from live published notices (ted-fixture-refresh skill)
+   to complement the OP-TED SDK example fixtures (TED-P5-02 audit note).
+
 ## Migration deployment procedure
 
 Migrations are numbered SQL under `migrations/`, applied with wrangler.
