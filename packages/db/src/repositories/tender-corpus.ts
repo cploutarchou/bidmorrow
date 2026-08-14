@@ -293,6 +293,24 @@ export async function upsertNoticeWithVersion(
   };
 }
 
+/**
+ * Highest `version_number` recorded for a notice, or 0 if it has none yet.
+ * Ingestion (packages/procurement) uses this to compute the version number a
+ * NEW snapshot row would get (the actual version row is only inserted by
+ * `upsertNoticeWithVersion` if the content hash actually changed).
+ */
+export async function getLatestVersionNumber(db: Db, noticeId: string): Promise<number> {
+  const row = (
+    await db
+      .select({ versionNumber: tenderNoticeVersions.versionNumber })
+      .from(tenderNoticeVersions)
+      .where(eq(tenderNoticeVersions.noticeId, noticeId))
+      .orderBy(desc(tenderNoticeVersions.versionNumber))
+      .limit(1)
+  )[0];
+  return row?.versionNumber ?? 0;
+}
+
 export interface GetNoticeByPublicationNumberArgs {
   readonly source: string;
   /** The source's notice identifier, e.g. TED publication number. */

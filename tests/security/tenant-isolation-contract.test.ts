@@ -39,7 +39,19 @@ const TENANT_FILES = [
 ] as const;
 
 /** Global (non-tenant) data: shared corpus, ingestion plumbing, ops config. */
-const GLOBAL_FILES = ['ingestion.ts', 'ops-global.ts', 'tender-corpus.ts'] as const;
+const GLOBAL_FILES = ['ingestion.ts', 'ops-global.ts', 'retention.ts', 'tender-corpus.ts'] as const;
+
+/**
+ * Global files that legitimately import a tenant schema module, with a
+ * written justification (checked below instead of the blanket ban).
+ */
+const GLOBAL_FILES_TENANT_SCHEMA_EXEMPT: Record<string, string> = {
+  'retention.ts':
+    'the retention purge sweep is a single global operational job (docs/ted-ingestion-scope.md) ' +
+    "that must see EVERY organization's saved_tenders/customer_feedback pins to decide global " +
+    'purge eligibility — by definition it cannot be organizationId-scoped; it is read-only against ' +
+    'those tables (never writes tenant data) and only ever deletes global corpus rows.',
+};
 
 /** Infrastructure helpers/errors — no data access of their own. */
 const INFRA_FILES = ['errors.ts', 'shared.ts'] as const;
@@ -208,6 +220,9 @@ describe('tenant-isolation structural contract (packages/db/src/repositories)', 
     // tenant data is being accessed without the organizationId contract.
     const tenantSchemaModules = ['../schema/company', '../schema/engagement', '../schema/billing'];
     for (const file of GLOBAL_FILES) {
+      if (file in GLOBAL_FILES_TENANT_SCHEMA_EXEMPT) {
+        continue; // documented exception above
+      }
       const source = readRepositoryFile(file);
       for (const module of tenantSchemaModules) {
         expect(
@@ -215,6 +230,19 @@ describe('tenant-isolation structural contract (packages/db/src/repositories)', 
           `${file} imports ${module} — tenant tables require the organizationId contract`,
         ).toBe(false);
       }
+    }
+  });
+
+  it('every global tenant-schema exemption names a file that actually imports a tenant schema module', () => {
+    const tenantSchemaModules = ['../schema/company', '../schema/engagement', '../schema/billing'];
+    for (const [file, reason] of Object.entries(GLOBAL_FILES_TENANT_SCHEMA_EXEMPT)) {
+      expect(reason.length, `${file} exemption needs a non-empty justification`).toBeGreaterThan(0);
+      const source = readRepositoryFile(file);
+      const importsAny = tenantSchemaModules.some((module) => source.includes(`'${module}'`));
+      expect(
+        importsAny,
+        `${file} is exempted but imports no tenant schema module — remove it`,
+      ).toBe(true);
     }
   });
 });

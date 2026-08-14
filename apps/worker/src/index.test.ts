@@ -22,10 +22,17 @@ describe('GET /api/health/live', () => {
 });
 
 describe('GET /api/health/ready', () => {
-  it('returns 200 with db ok against the local D1 database', async () => {
+  it('returns 200 with db ok and ingestion-staleness fields against the local D1 database', async () => {
     const response = await exports.default.fetch('https://bidmorrow.local/api/health/ready');
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ status: 'ok', db: 'ok' });
+    // No ingestion has ever run against this fresh database — stale is true
+    // and there is no successful run yet, but readiness itself is `ok`.
+    expect(await response.json()).toEqual({
+      status: 'ok',
+      db: 'ok',
+      lastSuccessfulIngestionAt: null,
+      stale: true,
+    });
   });
 
   it('runs against a migrated database (core schema applied, bootstrap dropped)', async () => {

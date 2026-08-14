@@ -81,6 +81,12 @@ importers:
       '@bidmorrow/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@bidmorrow/procurement':
+        specifier: workspace:*
+        version: link:../../packages/procurement
+      '@bidmorrow/ted':
+        specifier: workspace:*
+        version: link:../../packages/ted
       '@hono/zod-validator':
         specifier: ^0.9.0
         version: 0.9.0(hono@4.13.2)(zod@4.4.3)
@@ -239,7 +245,26 @@ importers:
         version: 4.1.10(vite@8.2.1(esbuild@0.28.1)(tsx@4.23.12))
 
   packages/procurement:
+    dependencies:
+      '@bidmorrow/config':
+        specifier: workspace:*
+        version: link:../config
+      '@bidmorrow/db':
+        specifier: workspace:*
+        version: link:../db
+      '@bidmorrow/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@bidmorrow/observability':
+        specifier: workspace:*
+        version: link:../observability
+      '@bidmorrow/ted':
+        specifier: workspace:*
+        version: link:../ted
     devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^5.20260814.1
+        version: 5.20260814.1
       typescript:
         specifier: ~5.9.2
         version: 5.9.3
