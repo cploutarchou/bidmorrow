@@ -190,3 +190,13 @@ Risk flags:
 - Stored per match; admin can trigger bounded recomputation (limited window,
   limited org set) producing new-version rows; the feed always reads the
   latest version per (org, lot).
+
+## Component persistence (cost rule)
+
+`match_components` / `match_risk_flags` rows are persisted only for matches
+classified POSSIBLE_MATCH or better (and for EXCLUDED, the firing rule +
+evidence). For LOW_FIT matches only the total score and classification are
+stored; because the engine is deterministic and versioned, the full
+component breakdown for a LOW_FIT lot is recomputed on demand when a user
+opens it. Rationale and size projection: docs/data-model.md §14 — component
+rows are the dominant D1 growth term.

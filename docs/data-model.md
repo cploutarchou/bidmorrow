@@ -625,8 +625,9 @@ Two phases, both bounded batch jobs:
    - `source_snapshots`: delete the R2 object, set `deleted_at` (row kept as
      tombstone)
 
-Never touched by the purge: all company-profile tables, `buyers`,
-`digest_runs`/`digest_items`, `email_deliveries`, billing, events, audit.
+Never deleted by the purge: all company-profile tables, `buyers`,
+`digest_runs`/`digest_items` (items only get `match_id` nulled),
+`email_deliveries`, billing, events, audit.
 
 ## 12. Entity-relationship overview (core tables)
 
@@ -684,8 +685,10 @@ on the ingestion hot path and D1 storage.
 
 Assumptions: scoped ingestion **150–300 notices/day** (mid 225), ~1.6
 lots/notice (~360 lots/day), ~2.5 CPV rows and ~1.3 geography rows per lot,
-**30 active customer orgs**, retention keeps a live window of roughly **120
-days** of tender data (deadline + 60d, staggered deadlines).
+**30 active customer orgs**, retention keeps a live window of roughly **150
+days** of tender data (deadline + 90d per ADR-0003, staggered deadlines) —
+sizes below scale accordingly (~25% above a 120-day window; conclusions
+unchanged).
 
 | Table | Grows with | Rows/day (mid) | ~Bytes/row | Steady-state size |
 |---|---|---|---|---|
