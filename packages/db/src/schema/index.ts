@@ -1,10 +1,19 @@
 /**
- * Drizzle schema barrel — every table in the Phase 3 core schema
- * (docs/data-model.md), grouped by schema area. `auth_accounts` and
- * `auth_sessions` are deliberately absent: Better Auth generates them in
- * Phase 4 (see the AUTH TABLES DECISION comment in ./identity).
+ * Drizzle schema barrel — every table in the schema (docs/data-model.md),
+ * grouped by schema area. `users`, `auth_accounts`, `auth_sessions`,
+ * `auth_verifications`, `auth_rate_limits` are Better Auth core tables,
+ * hand-mapped in Phase 4 (see the AUTH TABLES DECISION comment in
+ * ./identity).
  */
-export { users, organizations, organizationMembers } from './identity';
+export {
+  users,
+  authAccounts,
+  authSessions,
+  authVerifications,
+  authRateLimits,
+  organizations,
+  organizationMembers,
+} from './identity';
 export {
   companyProfiles,
   companyCapabilities,

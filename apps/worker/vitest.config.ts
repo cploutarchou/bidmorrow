@@ -23,8 +23,13 @@ export default defineConfig({
       return {
         wrangler: { configPath: './wrangler.jsonc' },
         miniflare: {
-          // Test-only binding so the setup file can apply migrations.
-          bindings: { TEST_MIGRATIONS: migrations },
+          bindings: {
+            // Test-only binding so the setup file can apply migrations.
+            TEST_MIGRATIONS: migrations,
+            // Clearly-fake test secret (never a real value) — Better Auth
+            // requires >= 32 chars. wrangler.jsonc `vars` never carries this.
+            BETTER_AUTH_SECRET: 'test-only-secret-do-not-use-in-prod-00000000',
+          },
         },
       };
     }),

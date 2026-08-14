@@ -23,6 +23,15 @@
       "migrations_dir": "../../migrations",
     },
   ],
+  // Non-secret config vars. Secrets (BETTER_AUTH_SECRET) are NEVER put here:
+  // local dev reads them from `.dev.vars` (git-ignored — see
+  // .dev.vars.example), staging/production from `wrangler secret put
+  // <NAME> --env <env>` (HUMAN_DECISION_BLOCKERS.md item 5).
+  "vars": {
+    "APP_ENV": "local",
+    "APP_BASE_URL": "http://localhost:8787",
+    "BETTER_AUTH_URL": "http://localhost:8787",
+  },
   "env": {
     "staging": {
       "d1_databases": [
@@ -34,6 +43,12 @@
           "migrations_dir": "../../migrations",
         },
       ],
+      "vars": {
+        "APP_ENV": "staging",
+        // set real URLs before first staging deploy
+        "APP_BASE_URL": "https://staging.bidmorrow.com",
+        "BETTER_AUTH_URL": "https://staging.bidmorrow.com",
+      },
     },
     "production": {
       "d1_databases": [
@@ -45,6 +60,11 @@
           "migrations_dir": "../../migrations",
         },
       ],
+      "vars": {
+        "APP_ENV": "production",
+        "APP_BASE_URL": "https://bidmorrow.com",
+        "BETTER_AUTH_URL": "https://bidmorrow.com",
+      },
     },
   },
 }

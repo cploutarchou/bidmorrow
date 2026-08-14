@@ -16,6 +16,56 @@ CREATE TABLE `audit_events` (
 --> statement-breakpoint
 CREATE INDEX `idx_audit_events__organization_id_occurred_at` ON `audit_events` (`organization_id`,`occurred_at`);--> statement-breakpoint
 CREATE INDEX `idx_audit_events__target_type_target_id` ON `audit_events` (`target_type`,`target_id`);--> statement-breakpoint
+CREATE TABLE `auth_accounts` (
+	`id` text PRIMARY KEY NOT NULL,
+	`user_id` text NOT NULL,
+	`account_id` text NOT NULL,
+	`provider_id` text NOT NULL,
+	`access_token` text,
+	`refresh_token` text,
+	`access_token_expires_at` integer,
+	`refresh_token_expires_at` integer,
+	`scope` text,
+	`id_token` text,
+	`password` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE INDEX `idx_auth_accounts__user_id` ON `auth_accounts` (`user_id`);--> statement-breakpoint
+CREATE TABLE `auth_rate_limits` (
+	`id` text PRIMARY KEY NOT NULL,
+	`key` text NOT NULL,
+	`count` integer NOT NULL,
+	`last_request` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_auth_rate_limits__key` ON `auth_rate_limits` (`key`);--> statement-breakpoint
+CREATE TABLE `auth_sessions` (
+	`id` text PRIMARY KEY NOT NULL,
+	`user_id` text NOT NULL,
+	`token` text NOT NULL,
+	`expires_at` integer NOT NULL,
+	`ip_address` text,
+	`user_agent` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_auth_sessions__token` ON `auth_sessions` (`token`);--> statement-breakpoint
+CREATE INDEX `idx_auth_sessions__user_id` ON `auth_sessions` (`user_id`);--> statement-breakpoint
+CREATE TABLE `auth_verifications` (
+	`id` text PRIMARY KEY NOT NULL,
+	`identifier` text NOT NULL,
+	`value` text NOT NULL,
+	`expires_at` integer NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `idx_auth_verifications__identifier` ON `auth_verifications` (`identifier`);--> statement-breakpoint
 CREATE TABLE `billing_events` (
 	`id` text PRIMARY KEY NOT NULL,
 	`stripe_event_id` text NOT NULL,
@@ -553,6 +603,7 @@ CREATE TABLE `users` (
 	`email` text NOT NULL,
 	`email_verified` integer NOT NULL,
 	`name` text,
+	`image` text,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL
 );

@@ -5,7 +5,9 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 3 — Database: COMPLETE (signed off).** Next: Phase 4 — Auth/Tenancy.
+**Phase 4 stage A — Auth core: COMPLETE (gates green, sign-off pending).**
+Next: Phase 4 stage B — organization context middleware, admin allowlist,
+endpoint-level tenant isolation tests (SEC-P3-04).
 
 ## Completed
 
@@ -140,27 +142,101 @@ context compaction. Read first in every session.
 - Root `pnpm test` chains root+worker+db suites (P3-R-003 foot-gun noted:
   future pool-workers suites must be appended to the chain).
 
+### Phase 4 stage A — Auth core (2026-08-14)
+
+- Verified against live Better Auth 1.6.29 docs (github.com/better-auth/
+  better-auth main branch, fetched — better-auth.com is proxy-blocked) AND
+  the installed package source (`@better-auth/core`, `@better-auth/
+drizzle-adapter`, `better-auth` dist), not memory: `drizzleAdapter` import
+  is `@better-auth/drizzle-adapter` (separate package, matches ADR-0002 +
+  dependency-versions.md pin — NOT the `better-auth/adapters/drizzle`
+  subpath some doc pages show for a different release line); model
+  resolution (`getModelName`) proven from `@better-auth/core` source to key
+  the `schema` object passed to `drizzleAdapter` by the **mapped**
+  `modelName`, so `packages/auth` sets `user.modelName`/`session.modelName`/
+  `account.modelName`/`verification.modelName` to our real snake_case table
+  names and keys the `schema` object with those same strings; email/reset
+  hook signatures, `requireEmailVerification` (proven via sign-in/sign-up
+  route source: 403 `EMAIL_NOT_VERIFIED`, sign-up returns `{token:null,
+user}` while still firing `sendVerificationEmail`), `rateLimit: {enabled,
+storage:'database', modelName}`, and CSRF origin-header enforcement (a
+  cookie-bearing state-changing request needs a matching `Origin` header —
+  discovered via a failing smoke test, not assumed) were all confirmed this
+  way, not assumed from ADR prose.
+- ADR-0007 followed: NO organization plugin; `packages/auth` is
+  authentication-only (`createAuth` in packages/auth/src/index.ts).
+- Schema reconciliation (packages/db/src/schema/identity.ts): `users`
+  gained `image`; four new Better-Auth-core tables (`auth_accounts`,
+  `auth_sessions`, `auth_verifications`, `auth_rate_limits`) hand-mapped
+  (CLI generation can't know our table-name mapping, so it isn't
+  authoritative here — documented in-file). DEVIATION recorded in-file and
+  in docs/data-model.md §1: these five tables use Drizzle
+  `integer(...,{mode:'timestamp_ms'})`/`{mode:'boolean'}` column modes
+  (Better Auth writes native `Date`/`boolean` for those fields) — on-disk
+  storage is still plain INTEGER; every other table keeps the repo's plain-
+  number convention untouched. Existing Phase-3 test helpers
+  (`test/helpers.ts`, `tenant-isolation.d1.test.ts`) updated to the new JS
+  types (`Date`, `boolean`) for their placeholder `users` inserts.
+- Migration 0003_auth_tables.sql: additive only (4x CREATE TABLE + indexes,
+  1x ALTER TABLE users ADD COLUMN image). Procedure: rebuilt
+  packages/db/drizzle/ as a two-step baseline→diff (old schema snapshot,
+  then new schema diff) since the in-repo drizzle/ journal only tracks a
+  single collapsed snapshot (mirroring the Phase 3 0000_core_schema.sql
+  pattern) — flattened the diff into the migration, then regenerated a
+  fresh single `packages/db/drizzle/0000_core_schema.sql` baseline and
+  proved `drizzle-kit generate` afterward gives **zero diff**. Full chain
+  (0001+0002+0003) verified twice: once against a brand-new scratch D1
+  (`--persist-to` under the session scratchpad; 0001✅/0002✅/0003✅, 11
+  commands on 0003) and once via `pnpm db:migrate:local`. 0001/0002
+  untouched (only 0003 is new).
+- packages/notifications: added `EmailProvider`/`EmailMessage` +
+  `createLoggingEmailProvider(logger)` — logs `kind`+`to` only, never
+  `subject`/`text` (which may carry a verification/reset URL) — Resend
+  implementation still Phase 8 (blocker 3).
+- apps/worker: `/api/auth/*` mounted per the documented Hono pattern
+  (`app.on(['GET','POST'], ...)`); `Env` gained `APP_ENV`/`APP_BASE_URL`/
+  `BETTER_AUTH_SECRET`/`BETTER_AUTH_URL`; wrangler.jsonc got non-secret
+  `vars` per env + comments pointing secrets at `wrangler secret put`/
+  `.dev.vars`; `.dev.vars.example` added (gitignore needed a
+  `!.dev.vars.example` exception — `.dev.vars.*` was blanket-ignoring it).
+- Smoke tests (apps/worker/src/auth.test.ts, real workerd+D1, pool-workers):
+  10 tests — sign-up creates `users` row with `email_verified=0` and fires
+  the logging email stub with `kind=verification`+the email (asserted via a
+  `console.warn`/`console.error` capture, with a regression assertion that
+  NO captured log line contains the verification URL/token); unverified
+  sign-in → 403 `EMAIL_NOT_VERIFIED`, no session cookie; after setting
+  `email_verified=1` directly in D1, sign-in succeeds, sets an HttpOnly
+  session cookie, `get-session` returns the user, `sign-out` clears the
+  session (subsequent `get-session` → null). Existing
+  packages/db/src/migrations.d1.test.ts sentinel updated for the 4 new
+  tables + 0003 in `d1_migrations`.
+- Gates (all executed 2026-08-14, real output, no claims without runs):
+  `pnpm format:check` PASS · `pnpm lint` PASS · `pnpm typecheck` PASS
+  (14/14 workspace projects) · `pnpm test` PASS — root 17 files/66 tests,
+  worker 2 files/10 tests (workerd+D1), db 8 files/38 tests (workerd+D1) =
+  114 tests total, zero skipped/deleted · `pnpm build` PASS (vite + wrangler
+  deploy --dry-run, bindings listed including the new `vars`).
+
 ## In progress
 
 - Nothing mid-flight. Working tree committed at each checkpoint.
 
-## Next (Phase 4 — Auth/Tenancy)
+## Next (Phase 4 stage B — Tenancy)
 
-1. Better Auth 1.6.x wiring per ADR-0002: @better-auth/drizzle-adapter over
-   D1, org plugin; `npx @better-auth/cli generate` → reconcile users
-   placeholder + add auth_accounts/auth_sessions via migration 0003.
-2. Hono routes: signup, email verification, login/logout, password reset,
-   session management, account deletion; email via provider interface
-   (mock in dev — Resend key is blocker 3).
-3. Organization context middleware: org from session membership only;
-   role checks (ORGANIZATION_OWNER/MEMBER); INTERNAL_ADMIN via
-   ADMIN_EMAILS allowlist, separate route group.
-4. Rate limiting: Better Auth built-in (database storage) + native Workers
-   rate-limit binding on auth routes.
-5. Endpoint-level tenant tests (SEC-P3-04 hard requirement): 403/404
+1. Organization context middleware: org from session membership only
+   (`organization_members`, never client input); role checks
+   (ORGANIZATION_OWNER/MEMBER); INTERNAL_ADMIN via ADMIN_EMAILS allowlist,
+   separate route group.
+2. App-level signup/onboarding routes that create the org + owner
+   membership atomically after Better Auth sign-up (createOrganization
+   already exists in packages/db repositories/identity.ts).
+3. Native Workers rate-limit binding (`[[ratelimits]]`) at the edge on auth
+   routes, in addition to Better Auth's own database-storage limiter.
+4. Endpoint-level tenant tests (SEC-P3-04 hard requirement): 403/404
    cross-org attempts, member escalation, admin-as-normal-user.
-6. Fix-forward SEC-P3-01-class checks anywhere client-supplied ids enter.
-7. Security agent review + production-reviewer sign-off.
+5. Fix-forward SEC-P3-01-class checks anywhere client-supplied ids enter.
+6. Security agent review + production-reviewer sign-off for the full
+   Phase 4 (stage A + B together).
 
 ## Architecture decisions
 
@@ -184,6 +260,11 @@ wrangler ^4, @cloudflare/vitest-pool-workers ^0.21,
 until Phase 3), @playwright/test ^1.62. pnpm.onlyBuiltDependencies
 [esbuild, workerd].
 
+Phase 4 stage A: better-auth 1.6.29, @better-auth/drizzle-adapter 1.6.29
+(packages/auth); @cloudflare/workers-types added as a devDependency to
+packages/auth/notifications (needed for the `console`/`crypto` ambient
+types once they compile packages/db/observability source directly).
+
 ## Tests executed
 
 Phase 2 final run (2026-08-14, all executed, all green): format:check PASS ·
@@ -192,6 +273,17 @@ lint PASS · typecheck PASS (14 projects) · test PASS (root vitest 15 files /
 file / 7 tests in workerd with real local D1) · build PASS (vite 17 modules;
 wrangler deploy --dry-run) · db:migrate:local PASS (also verified from a
 completely empty DB via fresh --persist-to dir by production-reviewer).
+
+Phase 4 stage A final run (2026-08-14, all executed, all green):
+format:check PASS · lint PASS · typecheck PASS (14/14 workspace projects) ·
+test PASS (root vitest 17 files/66 tests; worker pool-workers 2 files/10
+tests in workerd with real local D1, incl. new auth.test.ts; packages/db
+pool-workers 8 files/38 tests in workerd with real local D1, incl. updated
+migrations.d1.test.ts) — 114 tests total · build PASS (vite 17 modules;
+wrangler deploy --dry-run, new APP_ENV/APP_BASE_URL/BETTER_AUTH_URL vars
+listed in bindings output) · full migration chain (0001+0002+0003) verified
+against a fresh scratch D1 and via `pnpm db:migrate:local`; drizzle-kit
+generate afterward gives zero diff.
 
 ## Known risks
 

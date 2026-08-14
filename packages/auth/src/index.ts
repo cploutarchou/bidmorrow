@@ -1,10 +1,38 @@
 /**
- * @bidmorrow/auth — Better Auth configuration + middleware (ADR-0002).
+ * @bidmorrow/auth — Better Auth configuration (ADR-0002, ADR-0007).
  *
- * Phase 2 skeleton: this package owns only the role vocabulary for now.
- * Better Auth wiring, the Drizzle adapter, and middleware arrive in the auth
- * phase (Phase 4) together with the CLI-generated schema.
+ * `createAuth` wires Better Auth 1.6.x CORE (email/password auth, DB-backed
+ * sessions, email verification, password reset, database-storage rate
+ * limiting) over our own Drizzle/D1 schema via `@better-auth/drizzle-adapter`.
+ * The organization plugin is deliberately NOT enabled — tenancy
+ * (`organizations` / `organization_members`) stays domain-owned (ADR-0007);
+ * this package owns authentication only.
+ *
+ * TABLE/FIELD MAPPING: Better Auth resolves a model's schema entry from the
+ * `schema` object passed to `drizzleAdapter` using the string set in that
+ * model's `modelName` (verified against
+ * @better-auth/core/dist/db/adapter/get-model-name.mjs — `getModelName`
+ * looks up `schema[modelName]` once a `modelName` override is configured).
+ * We set `modelName` to our real snake_case table names and key the
+ * `schema` object with those same strings, pointing each at our Drizzle
+ * table object (whose own `sqliteTable(...)` first argument is the actual
+ * SQL table name). Field names need NO explicit `fields` override: Better
+ * Auth's Drizzle adapter maps a field by the property key on the Drizzle
+ * table object (docs/adapters/drizzle.mdx "Modifying Field Names"), and our
+ * table objects already use the same camelCase property keys Better Auth's
+ * core schema documents (`emailVerified`, `userId`, `expiresAt`, …).
  */
+import { drizzleAdapter } from '@better-auth/drizzle-adapter';
+import { betterAuth } from 'better-auth';
+import {
+  authAccounts,
+  authRateLimits,
+  authSessions,
+  authVerifications,
+  newId,
+  users,
+  type Db,
+} from '@bidmorrow/db';
 
 export const PACKAGE = '@bidmorrow/auth';
 
@@ -22,3 +50,92 @@ export type Role = (typeof ORGANIZATION_ROLES)[number];
  * concept without ever making it assignable to a membership role.
  */
 export type InternalAdmin = 'INTERNAL_ADMIN';
+
+/** The two auth emails this package sends via Better Auth's built-in hooks. */
+export type AuthEmailKind = 'verification' | 'password_reset';
+
+/**
+ * Outbound-email hook signature required by `createAuth`. Implementations
+ * MUST NEVER log `url`/`token` (docs/security.md C10) — only the composition
+ * root decides how the email is actually delivered (dev: logging stub;
+ * Phase 8: Resend).
+ */
+export interface AuthSendEmail {
+  (msg: { to: string; kind: AuthEmailKind; url: string; token?: string }): Promise<void>;
+}
+
+export type AppEnv = 'development' | 'staging' | 'production';
+
+export interface CreateAuthDeps {
+  /** Schema-typed Drizzle D1 client from `@bidmorrow/db` `createDb`. */
+  db: Db;
+  /** `BETTER_AUTH_SECRET` — never a hardcoded/default value outside tests. */
+  secret: string;
+  /** Public base URL of the deployed app (used for links + trustedOrigins). */
+  baseUrl: string;
+  appEnv: AppEnv;
+  sendEmail: AuthSendEmail;
+}
+
+/**
+ * Creates the Better Auth instance. Call once per Worker invocation from the
+ * composition root (`apps/worker`), passing bindings-derived config — never
+ * construct this with hardcoded secrets.
+ */
+export function createAuth(deps: CreateAuthDeps) {
+  return betterAuth({
+    database: drizzleAdapter(deps.db, {
+      provider: 'sqlite',
+      // Adapter debug logs are useful locally and never contain secrets
+      // (query shapes only); off in staging/production to keep logs quiet.
+      debugLogs: deps.appEnv === 'development',
+      schema: {
+        users,
+        auth_accounts: authAccounts,
+        auth_sessions: authSessions,
+        auth_verifications: authVerifications,
+        auth_rate_limits: authRateLimits,
+      },
+    }),
+    secret: deps.secret,
+    baseURL: deps.baseUrl,
+    trustedOrigins: [deps.baseUrl],
+    user: { modelName: 'users' },
+    session: { modelName: 'auth_sessions' },
+    account: { modelName: 'auth_accounts' },
+    verification: { modelName: 'auth_verifications' },
+    emailAndPassword: {
+      enabled: true,
+      // Users must verify their email before signing in (ADR-0002 /
+      // docs/security.md); every sign-in attempt for an unverified user
+      // re-triggers sendVerificationEmail per Better Auth's documented
+      // behavior.
+      requireEmailVerification: true,
+      sendResetPassword: async ({ user, url, token }) => {
+        // Not awaited: Better Auth's docs warn awaiting invites timing
+        // attacks on the reset-password endpoint.
+        void deps.sendEmail({ to: user.email, kind: 'password_reset', url, token });
+      },
+    },
+    emailVerification: {
+      sendVerificationEmail: async ({ user, url, token }) => {
+        void deps.sendEmail({ to: user.email, kind: 'verification', url, token });
+      },
+    },
+    rateLimit: {
+      // In-memory (default) storage does not work across Workers isolates;
+      // database storage is the only viable option here (ADR-0002).
+      enabled: true,
+      storage: 'database',
+      modelName: 'auth_rate_limits',
+    },
+    advanced: {
+      database: {
+        // Keep IDs consistent with the rest of the schema (TEXT ULIDs).
+        generateId: () => newId(),
+      },
+    },
+  });
+}
+
+export type Auth = ReturnType<typeof createAuth>;

@@ -11,8 +11,11 @@
     "db:migrate:local": "wrangler d1 migrations apply bidmorrow --local"
   },
   "dependencies": {
+    "@bidmorrow/auth": "workspace:*",
     "@bidmorrow/config": "workspace:*",
+    "@bidmorrow/db": "workspace:*",
     "@bidmorrow/domain": "workspace:*",
+    "@bidmorrow/notifications": "workspace:*",
     "@bidmorrow/observability": "workspace:*",
     "hono": "^4.13.0"
   },
