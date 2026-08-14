@@ -29,6 +29,9 @@ export default defineConfig({
             // Clearly-fake test secret (never a real value) — Better Auth
             // requires >= 32 chars. wrangler.jsonc `vars` never carries this.
             BETTER_AUTH_SECRET: 'test-only-secret-do-not-use-in-prod-00000000',
+            // Test-only INTERNAL_ADMIN allowlist (docs/security.md C6) —
+            // matches the fixed admin email used by admin-gate tests.
+            ADMIN_EMAILS: 'admin@example.test',
           },
         },
       };

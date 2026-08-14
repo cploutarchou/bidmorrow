@@ -100,7 +100,17 @@ export function createAuth(deps: CreateAuthDeps) {
     secret: deps.secret,
     baseURL: deps.baseUrl,
     trustedOrigins: [deps.baseUrl],
-    user: { modelName: 'users' },
+    user: {
+      modelName: 'users',
+      // Phase 4 stage B: account deletion (docs/security.md auth policy).
+      // Disabled by default in Better Auth core — verified from installed
+      // source (dist/api/routes/update-user.mjs `deleteUser` endpoint
+      // throws 404 unless `user.deleteUser.enabled` is set). No password
+      // confirmation/verification-email step in V1: the composition root
+      // requires an authenticated session and applies its own domain-level
+      // gate (sole-OWNER orgs cannot self-delete) before calling this API.
+      deleteUser: { enabled: true },
+    },
     session: { modelName: 'auth_sessions' },
     account: { modelName: 'auth_accounts' },
     verification: { modelName: 'auth_verifications' },
@@ -139,3 +149,12 @@ export function createAuth(deps: CreateAuthDeps) {
 }
 
 export type Auth = ReturnType<typeof createAuth>;
+
+/**
+ * The non-null shape returned by `auth.api.getSession({ headers })` —
+ * `{ session, user }` per Better Auth core (verified from installed
+ * `dist/api/index.d.mts`). The composition root's session middleware sets
+ * this on the request context; never trust any client-supplied
+ * user/organization identifier instead of reading this.
+ */
+export type AuthSession = NonNullable<Awaited<ReturnType<Auth['api']['getSession']>>>;

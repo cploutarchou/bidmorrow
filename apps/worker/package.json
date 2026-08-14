@@ -17,7 +17,9 @@
     "@bidmorrow/domain": "workspace:*",
     "@bidmorrow/notifications": "workspace:*",
     "@bidmorrow/observability": "workspace:*",
-    "hono": "^4.13.0"
+    "@hono/zod-validator": "^0.9.0",
+    "hono": "^4.13.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.21.3",

@@ -93,6 +93,86 @@ export async function getOrganizationsForUser(
   return toPage(rows, limit, (last) => last.organization.id);
 }
 
+export interface AddOrganizationMemberArgs {
+  userId: string;
+  role: OrganizationMemberRole;
+}
+
+/**
+ * Adds a membership row for an existing organization. V1 ships no
+ * invitation UI (ADR-0007) — this exists for the OWNER-created org
+ * bootstrap path and for test seeding of MEMBER rows; a full invite flow is
+ * out of V1 scope (docs/product-scope.md).
+ */
+export async function addOrganizationMember(
+  db: Db,
+  organizationId: OrganizationId,
+  args: AddOrganizationMemberArgs,
+): Promise<OrganizationMember> {
+  const now = Date.now();
+  const rows = await db
+    .insert(organizationMembers)
+    .values({
+      id: newId(now),
+      organizationId,
+      userId: args.userId,
+      role: args.role,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+  const row = rows[0];
+  if (row === undefined) {
+    throw new Error('addOrganizationMember: insert returned no row');
+  }
+  return row;
+}
+
+/**
+ * Removes a single user's membership from an organization (double-scoped by
+ * organizationId AND userId). Returns false when no such membership existed.
+ */
+export async function removeOrganizationMember(
+  db: Db,
+  organizationId: OrganizationId,
+  userId: string,
+): Promise<boolean> {
+  const deleted = await db
+    .delete(organizationMembers)
+    .where(
+      and(
+        eq(organizationMembers.organizationId, organizationId),
+        eq(organizationMembers.userId, userId),
+      ),
+    )
+    .returning({ id: organizationMembers.id });
+  return deleted.length > 0;
+}
+
+/**
+ * Counts ORGANIZATION_OWNER memberships for an organization. Used to gate
+ * account deletion (docs/security.md C6): V1 always creates exactly one
+ * owner per organization and has no ownership-transfer UI, so any OWNER
+ * membership currently means "sole owner" — this function exists so the
+ * check is explicit and survives a future multi-owner feature without
+ * silently becoming wrong.
+ */
+export async function countOrganizationOwners(
+  db: Db,
+  organizationId: OrganizationId,
+): Promise<number> {
+  const rows = await db
+    .select({ id: organizationMembers.id })
+    .from(organizationMembers)
+    .where(
+      and(
+        eq(organizationMembers.organizationId, organizationId),
+        eq(organizationMembers.role, 'ORGANIZATION_OWNER'),
+      ),
+    );
+  return rows.length;
+}
+
 /**
  * Soft-deletes an organization (`status = 'deleted'`), gating all access
  * while the retention purge job hard-deletes owned rows

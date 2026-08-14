@@ -12,3 +12,9 @@ APP_BASE_URL=http://localhost:8787
 
 BETTER_AUTH_SECRET=
 BETTER_AUTH_URL=http://localhost:8787
+
+# Comma-separated INTERNAL_ADMIN email allowlist (docs/security.md C6).
+# Never real production emails in a committed file — this is names-only
+# guidance; fill in your own local test address(es).
+# See HUMAN_DECISION_BLOCKERS.md item 6 for the production allowlist.
+ADMIN_EMAILS=

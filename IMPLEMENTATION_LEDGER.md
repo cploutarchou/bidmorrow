@@ -5,9 +5,9 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 4 stage A — Auth core: COMPLETE (gates green, sign-off pending).**
-Next: Phase 4 stage B — organization context middleware, admin allowlist,
-endpoint-level tenant isolation tests (SEC-P3-04).
+**Phase 4 stage B — Tenancy: COMPLETE (gates green, sign-off pending).**
+Next: security agent review + production-reviewer sign-off for the full
+Phase 4 (stage A + B together), then Phase 5.
 
 ## Completed
 
@@ -217,26 +217,103 @@ storage:'database', modelName}`, and CSRF origin-header enforcement (a
   114 tests total, zero skipped/deleted · `pnpm build` PASS (vite + wrangler
   deploy --dry-run, bindings listed including the new `vars`).
 
+### Phase 4 stage B — Tenancy (2026-08-14)
+
+- Verified against installed `better-auth@1.6.29` source (not memory):
+  `auth.api.getSession({ headers })` returns `{ session, user } | null`
+  (`requireHeaders: true`, `dist/api/routes/session.mjs`);
+  `auth.api.deleteUser({ headers, body })` is disabled by default and
+  throws 404 unless `user.deleteUser.enabled` is set
+  (`dist/api/routes/update-user.mjs`) — enabled in `packages/auth`
+  (password/verification-email confirmation left off for V1; the
+  composition root's own domain-level gate — sole-OWNER orgs cannot
+  self-delete — is the safety check instead); `internalAdapter.deleteUser`
+  cascades `auth_accounts`/`auth_sessions` but NOT `organization_members`
+  (no FK cascade — that table is domain-owned), so the account-deletion
+  handler removes membership rows itself first. Better Auth's own
+  database-storage rate limiter applies a strict 3-req/10s rule to
+  sign-up/sign-in keyed by `x-forwarded-for` (`@better-auth/core/dist/
+utils/ip.mjs`) — the new SEC-P3-04 test suite gives each test-created user
+  a distinct synthetic IP so its own volume doesn't self-throttle; also
+  caught (and fixed) that Better Auth lowercases emails on sign-up, so the
+  test helper's raw-SQL force-verify update needed lowercase addresses to
+  match.
+- apps/worker/src/env.ts: `Env`/`Variables`/`AppBindings` extracted from
+  index.ts (avoids a circular import with the new
+  src/auth-instance.ts factory, which both `/api/auth/*` and the session
+  middleware now share). `Env` gained `ADMIN_EMAILS?` (secret-like — never
+  a wrangler.jsonc `vars` entry, only `.dev.vars`/`wrangler secret put`)
+  and `API_RATE_LIMITER?: RateLimit`.
+- Middleware (src/middleware/): `requireSession` (401 JSON on no session);
+  `requireOrganization` (org/role from `organization_members` via
+  `getOrganizationsForUser` ONLY — V1 single-org rule, 403 `no_organization`
+  when none) + `requireRole(role)` guard; `requireInternalAdmin`
+  (ADMIN_EMAILS allowlist, case-insensitive/trimmed; 404 — not 401/403 —
+  for every non-admin caller so the admin surface's existence is never
+  revealed, docs/security.md C11); `rateLimitOrgApi` (native
+  `API_RATE_LIMITER` binding on `/api/org/*`, IP-keyed, tolerant of a
+  missing binding — logs once and skips rather than failing closed/open).
+- Routes (src/routes/, zod-validated via `@hono/zod-validator` 0.9.0, new
+  dep): `POST /api/org` (create org + OWNER membership, 409 if the user
+  already has one — V1 single-org rule); `GET/PUT /api/org/profile` (PUT
+  OWNER-only, closed zod schema — unknown fields incl. a client-supplied
+  `organizationId` are rejected 400, never honored); `GET/PUT
+/api/org/keywords` (PUT OWNER-only, `CapExceededError` → 422
+  `{error:'cap_exceeded',cap}`); `DELETE /api/account` (409
+  `transfer_or_delete_organization_first` for a sole OWNER — checked via
+  new `countOrganizationOwners`, not just "has an OWNER row", so it stays
+  correct if multi-owner orgs ever ship; otherwise removes memberships then
+  calls Better Auth's deleteUser); `/api/admin/health-details` placeholder
+  (real admin tooling is Phase 10). All handlers read `organizationId`
+  from `c.var` only; every write goes through a repository function.
+- packages/db/src/repositories/identity.ts: three additions, all
+  `(db, organizationId, ...)`-shaped (no structural-contract-test
+  exemption needed) — `addOrganizationMember` (no invite UI in V1; exists
+  for org bootstrap + MEMBER-role test seeding), `removeOrganizationMember`
+  (double-scoped delete), `countOrganizationOwners`.
+- wrangler.jsonc: `[[ratelimits]]` binding `API_RATE_LIMITER`
+  (namespace_id 1001, simple 100 req/60s) — confirmed working in BOTH the
+  pool-workers 0.21 test runtime (miniflare's ratelimit plugin picked it up
+  from `wrangler.jsonc` via `configPath`, no test-only override needed) and
+  `wrangler deploy --dry-run` bindings output; middleware still guards the
+  missing-binding case per the plan for any environment where it isn't
+  true.
+- Tests: `apps/worker/src/tenancy.test.ts`, 8 tests, real workerd + local
+  D1, covering every SEC-P3-04 bullet — unauthenticated 401 on every
+  `/api/org/*` route and 404 on `/api/admin/*`; B never reads/writes A's
+  profile row (asserted both via HTTP response AND a direct repository
+  read of A's row before/after); query-string `organizationId` ignored on
+  GET, JSON-body `organizationId` rejected 400 on PUT (both leave A
+  untouched); MEMBER role → 403 on PUT profile (member row seeded via the
+  new `addOrganizationMember`); admin gate 404 for a normal user / 200 for
+  the ADMIN_EMAILS test user; keywords cap 51 → 422 with zero rows
+  persisted; account deletion 409 for a sole OWNER, 204 + D1 row gone +
+  subsequent session check 401 for a memberless user.
+- Deliberate scope note: account deletion only removes
+  `organization_members` rows before calling Better Auth's deleteUser
+  (matches what V1 actually populates for a self-deleting user); a broader
+  user-reference sweep (`support_notes.author_user_id`,
+  `feature_flags.updated_by_user_id`, admin-only tables) is out of scope
+  here and would only matter for an INTERNAL_ADMIN account, which Phase 10
+  owns.
+- Gates (all executed 2026-08-14, real output): `pnpm format` (1 file
+  reformatted, the new test file) · `pnpm format:check` PASS ·
+  `pnpm lint` PASS · `pnpm typecheck` PASS (14/14 workspace projects) ·
+  `pnpm test` PASS — root 17 files/66, worker 3 files/18 (workerd+D1, incl.
+  the new tenancy.test.ts), db 8 files/38 (workerd+D1) = 122 tests, zero
+  skipped/deleted · `pnpm build` PASS (vite 17 modules; `wrangler deploy
+--dry-run` lists `env.API_RATE_LIMITER (100 requests/60s)` alongside the
+  existing bindings).
+
 ## In progress
 
 - Nothing mid-flight. Working tree committed at each checkpoint.
 
-## Next (Phase 4 stage B — Tenancy)
+## Next (Phase 5)
 
-1. Organization context middleware: org from session membership only
-   (`organization_members`, never client input); role checks
-   (ORGANIZATION_OWNER/MEMBER); INTERNAL_ADMIN via ADMIN_EMAILS allowlist,
-   separate route group.
-2. App-level signup/onboarding routes that create the org + owner
-   membership atomically after Better Auth sign-up (createOrganization
-   already exists in packages/db repositories/identity.ts).
-3. Native Workers rate-limit binding (`[[ratelimits]]`) at the edge on auth
-   routes, in addition to Better Auth's own database-storage limiter.
-4. Endpoint-level tenant tests (SEC-P3-04 hard requirement): 403/404
-   cross-org attempts, member escalation, admin-as-normal-user.
-5. Fix-forward SEC-P3-01-class checks anywhere client-supplied ids enter.
-6. Security agent review + production-reviewer sign-off for the full
-   Phase 4 (stage A + B together).
+1. Security agent review + production-reviewer sign-off for the full
+   Phase 4 (stage A + B together) — not yet run this session.
+2. TED ingestion scope work per docs/ted-ingestion-scope.md.
 
 ## Architecture decisions
 
@@ -264,6 +341,10 @@ Phase 4 stage A: better-auth 1.6.29, @better-auth/drizzle-adapter 1.6.29
 (packages/auth); @cloudflare/workers-types added as a devDependency to
 packages/auth/notifications (needed for the `console`/`crypto` ambient
 types once they compile packages/db/observability source directly).
+
+Phase 4 stage B: @hono/zod-validator ^0.9.0, zod ^4.4.3 (apps/worker —
+peer-compatible with hono ^4.13 and zod 4 per the installed package's
+declared peerDependencies).
 
 ## Tests executed
 
