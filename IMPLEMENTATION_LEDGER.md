@@ -5,12 +5,12 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 1 — Product/Architecture: COMPLETE pending reviewer sign-off.**
-Phase 0 (research) complete. Next session: Phase 2 — Foundation.
+**Phase 2 — Foundation: COMPLETE (signed off).** Next: Phase 3 — Database.
 
 ## Completed
 
 ### Phase 0 — Research (2026-08-14)
+
 - Repository inspected: was empty (single README).
 - Official docs verified via research subagents (full details in
   docs/dependency-versions.md and docs/ted-data-source.md):
@@ -38,6 +38,7 @@ Phase 0 (research) complete. Next session: Phase 2 — Foundation.
   `.claude/hooks/typecheck-changed.sh`).
 
 ### Phase 1 — Product/Architecture (2026-08-14)
+
 - docs/product-scope.md (V1 in/out, exclusions table, pricing).
 - docs/architecture.md + ADRs 0001–0006 (platform/monorepo; Better Auth
   Drizzle-over-D1 route; ingestion scope + retention; currency via ECB
@@ -62,45 +63,94 @@ Phase 0 (research) complete. Next session: Phase 2 — Foundation.
   depend on unbuilt systems).
 - CLAUDE.md, HUMAN_DECISION_BLOCKERS.md, README.md, .env.example.
 
+### Phase 2 — Foundation (2026-08-14)
+
+- pnpm workspace (pnpm 10.33.0, Node 22): root scripts format/lint/typecheck/
+  test/build/db:migrate:local; strict tsconfig base (TS ~5.9.2, Bundler
+  resolution, noEmit, source-level package exports — no per-package builds);
+  ESLint flat config (no-any, no-empty-catch, no-console except warn/error);
+  Prettier 3.6.
+- 12 package skeletons. Real foundational code: `domain` (branded IDs,
+  core unions, Unknown<T> helper, ProcurementSource interface), `config`
+  (zod 4.4.3 env schema — errors list NAMES only, secrets required in
+  staging/production), `observability` (JSON logger, recursive key-based
+  redaction, never-throws — hardened per SEC-P2-01, child loggers for
+  correlation IDs), `matching` (ENGINE_VERSION, COMPONENT_MAX sums 100,
+  UNKNOWN_NEUTRAL, classify() with tested 80/65/45 boundaries), `db`
+  (TenantScoped contract marker). Others are honest type-stub skeletons.
+- apps/worker: Hono 4.13, secure headers + strict CSP, server-generated
+  request-id, /api/health/live + /api/health/ready (no detail leakage),
+  onError/notFound JSON; wrangler.jsonc (nodejs_compat, Static Assets SPA
+  with run_worker_first /api/*, per-env D1 with distinct names + placeholder
+  IDs → blockers item 1). migrations/0001_init.sql bootstrap applies from
+  empty DB. Pool-workers 0.21 tests (7) run in real workerd with local D1;
+  note: cloudflareTest()/readD1Migrations import from package ROOT in 0.21
+  (docs prose partly stale), tests use `import { env, exports } from
+'cloudflare:workers'`.
+- apps/web: React 19.2 + Vite 8.2 shell (headline/subheadline/CTA from
+  product-scope, TED attribution + decision-support disclaimer in footer,
+  semantic HTML); copy exported from src/copy.ts and tested.
+- CI: .github/workflows/ci.yml — frozen install, format:check, lint,
+  typecheck, test, build + separate gitleaks job (fetch-depth 0). No deploy
+  steps. Playwright scaffold only (config + README; suites in Phase 12).
+- Deferred deliberately (P2-002/P2-003): Queues/R2/cron bindings arrive with
+  their owning phases per ADR-0006; tests/{fixtures,unit,...} dirs and
+  scripts/ created when their first artifacts land (unit tests are colocated
+  in src/).
+- PostToolUse typecheck hook verified live (P2-005): fired on every scaffold
+  edit (pre-install failures surfaced TS2307 exactly as designed; silent
+  green after install, including the SEC-P2-01 fix edits).
+- Known INFO gap (P2-004): readiness-failure path has no automated test yet
+  (code-review-verified only); add a broken-DB-binding test in a later phase.
+
 ## In progress
 
 - Nothing mid-flight. Working tree committed at each checkpoint.
 
-## Next (Phase 2 — Foundation)
+## Next (Phase 3 — Database)
 
-1. pnpm workspace + package skeletons per docs/architecture.md structure.
-2. TypeScript strict base config (pin TS 5.9.x — see dependency-versions).
-3. apps/worker: Hono app skeleton, wrangler.jsonc (envs, D1/Queues/R2/assets
-   bindings, nodejs_compat), health endpoints.
-4. apps/web: Vite + React 19 skeleton served via Static Assets.
-5. Vitest 4 + @cloudflare/vitest-pool-workers 0.21 (Vite-plugin style,
-   `cloudflareTest()`); Playwright scaffold.
-6. GitHub Actions PR pipeline: frozen install, format (prettier), lint
-   (eslint), typecheck, tests, gitleaks, build.
-7. Root scripts: format:check, lint, typecheck, test, build,
-   db:migrate:local.
-8. Verify the .claude PostToolUse typecheck hook fires correctly once
-   packages exist.
+1. Drizzle schema in packages/db per docs/data-model.md (reconcile with the
+   doc; doc updated where implementation diverges deliberately).
+2. Real migrations replacing 0001 bootstrap (migration-safety skill; CI
+   applies chain from empty DB — already wired).
+3. Repository layer: organizationId-REQUIRED functions for all tenant-owned
+   tables (grep-auditable per docs/security.md C6).
+4. Seed/demo fixtures ("Acme Cyber Consulting", clearly marked demo data,
+   never auto-seeded in production).
+5. Integration tests via pool-workers real D1: repositories, migrations from
+   empty + upgrade path, tenant-scoping negative tests.
+6. Re-run tenant-isolation-audit (security agent) once repositories exist.
 
 ## Architecture decisions
 
 ADR-0001 Workers modular monolith / D1 / plain pnpm (no Turborepo).
 ADR-0002 Better Auth 1.6.x + @better-auth/drizzle-adapter over D1;
-  org plugin for tenancy; nodejs_compat; rate-limit storage=database.
+org plugin for tenancy; nodejs_compat; rate-limit storage=database.
 ADR-0003 Scoped ingestion (72*, 48*, 79417000 default) + deadline+90d
-  retention; widening = admin bounded backfill.
+retention; widening = admin bounded backfill.
 ADR-0004 Currency: EUR direct; ECB reference rates (≤7d old) for scoring
-  only; else UNKNOWN. Original values always displayed.
+only; else UNKNOWN. Original values always displayed.
 ADR-0005 Raw XML snapshots gzipped in private R2, 3-year lifecycle.
 ADR-0006 Queues + Cron; Workflows rejected (per-step billing, no need).
 
 ## Dependencies added
 
-None yet (no code). Pinned targets recorded in docs/dependency-versions.md.
+Phase 2 (all per docs/dependency-versions.md pins): typescript ~5.9.2,
+eslint 9 + typescript-eslint 8, prettier 3.6, vitest ^4.1, hono ^4.13,
+wrangler ^4, @cloudflare/vitest-pool-workers ^0.21,
+@cloudflare/workers-types ^5, react/react-dom ^19.2, vite ^8.2,
+@vitejs/plugin-react ^6, zod ^4.4.3, drizzle-orm ~0.45.2 (declared, unused
+until Phase 3), @playwright/test ^1.62. pnpm.onlyBuiltDependencies
+[esbuild, workerd].
 
 ## Tests executed
 
-None — no code exists yet. (No test claims made.)
+Phase 2 final run (2026-08-14, all executed, all green): format:check PASS ·
+lint PASS · typecheck PASS (14 projects) · test PASS (root vitest 15 files /
+57 tests incl. new SEC-P2-01 hostile-getter test; worker pool-workers 1
+file / 7 tests in workerd with real local D1) · build PASS (vite 17 modules;
+wrangler deploy --dry-run) · db:migrate:local PASS (also verified from a
+completely empty DB via fresh --persist-to dir by production-reviewer).
 
 ## Known risks
 
@@ -150,6 +200,13 @@ Nothing deployed. No Cloudflare resources exist yet.
   secret variants). P1-004 INFO → no change needed (security agent body
   already restricts Bash to test/lint, security.md agent line 14).
   P1-005 INFO (scope+retention share ADR-0003) → accepted, no action.
+- Phase 2: **PASS** — production-reviewer, 2026-08-14 (re-ran every gate
+  independently; findings P2-001 MEDIUM resolved by security review below,
+  P2-002/003 deferrals recorded, P2-004/005 handled — see Phase 2 notes).
+  **Security agent SIGN-OFF**, 2026-08-14: CSP/headers, logger redaction,
+  env schema, wrangler config, repo-wide greps all pass; SEC-P2-01 LOW
+  (logger throw path) FIXED same day with regression test; SEC-P2-02/03
+  INFO tracked as conventions for Phases 4/6 and deploy time.
 
 ## Pilot checkpoint
 

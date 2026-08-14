@@ -1,0 +1,50 @@
+// BidMorrow Worker configuration.
+// Queues, R2 and cron triggers are added in their own phases (ADR-0006).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bidmorrow",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-01",
+  // nodejs_compat is required by Better Auth (AsyncLocalStorage) — ADR-0002.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "../web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bidmorrow",
+      // Local development and tests never talk to a remote database; wrangler
+      // uses local storage in dev, so this ID is a placeholder until deploy.
+      "database_id": "local-placeholder",
+      "migrations_dir": "../../migrations",
+    },
+  ],
+  "env": {
+    "staging": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "bidmorrow-staging",
+          // set real IDs per HUMAN_DECISION_BLOCKERS.md item 1; never share databases across envs
+          "database_id": "staging-placeholder",
+          "migrations_dir": "../../migrations",
+        },
+      ],
+    },
+    "production": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "bidmorrow-production",
+          // set real IDs per HUMAN_DECISION_BLOCKERS.md item 1; never share databases across envs
+          "database_id": "production-placeholder",
+          "migrations_dir": "../../migrations",
+        },
+      ],
+    },
+  },
+}

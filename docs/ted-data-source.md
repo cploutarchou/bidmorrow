@@ -69,21 +69,21 @@ Useful fields: `publication-number`, `publication-date`, `notice-type`,
 
 ### Field map (SDK 1.15.1 `fields.json`; parser targets these, per-version aware)
 
-| Concept | Field ID | XPath |
-|---|---|---|
-| Title | BT-21-Procedure / BT-21-Lot | `cac:ProcurementProject/cbc:Name` (lot: under `cac:ProcurementProjectLot[cbc:ID/@schemeName='Lot']`) |
-| Description | BT-24-Procedure / BT-24-Lot | `cac:ProcurementProject/cbc:Description` |
-| Buyer name | BT-500-Organization-Company | `ext:UBLExtensions/.../efac:Organization/efac:Company/cac:PartyName/cbc:Name` (buyer resolved via OPT-300-Procedure-Buyer) |
-| Buyer country | BT-514-Organization-Company | `efac:Company/cac:PostalAddress/cac:Country/cbc:IdentificationCode` |
-| CPV main | BT-262-Procedure/-Lot | `cac:MainCommodityClassification/cbc:ItemClassificationCode` |
-| CPV additional | BT-263-Procedure/-Lot | `cac:AdditionalCommodityClassification/cbc:ItemClassificationCode` |
-| NUTS | BT-5071-Procedure/-Lot | `cac:RealizedLocation/cac:Address/cbc:CountrySubentityCode` |
-| Estimated value (+currency attr) | BT-27-Procedure/-Lot | `cac:RequestedTenderTotal/cbc:EstimatedOverallContractAmount[@currencyID]` |
-| Deadline | BT-131(d)/(t)-Lot | `cac:TenderingProcess/cac:TenderSubmissionDeadlinePeriod/cbc:EndDate|EndTime` |
-| Procedure type | BT-105-Procedure | `cac:TenderingProcess/cbc:ProcedureCode` |
-| Contract nature | BT-23-Procedure/-Lot | `cac:ProcurementProject/cbc:ProcurementTypeCode[@listName='contract-nature']` |
-| Lot ID | BT-137-Lot | `cac:ProcurementProjectLot/cbc:ID[@schemeName='Lot']` |
-| Notice language(s) | BT-702(a)-notice | `/*/cbc:NoticeLanguageCode` + `cac:AdditionalNoticeLanguage/cbc:ID` |
+| Concept                          | Field ID                    | XPath                                                                                                                      |
+| -------------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Title                            | BT-21-Procedure / BT-21-Lot | `cac:ProcurementProject/cbc:Name` (lot: under `cac:ProcurementProjectLot[cbc:ID/@schemeName='Lot']`)                       |
+| Description                      | BT-24-Procedure / BT-24-Lot | `cac:ProcurementProject/cbc:Description`                                                                                   |
+| Buyer name                       | BT-500-Organization-Company | `ext:UBLExtensions/.../efac:Organization/efac:Company/cac:PartyName/cbc:Name` (buyer resolved via OPT-300-Procedure-Buyer) |
+| Buyer country                    | BT-514-Organization-Company | `efac:Company/cac:PostalAddress/cac:Country/cbc:IdentificationCode`                                                        |
+| CPV main                         | BT-262-Procedure/-Lot       | `cac:MainCommodityClassification/cbc:ItemClassificationCode`                                                               |
+| CPV additional                   | BT-263-Procedure/-Lot       | `cac:AdditionalCommodityClassification/cbc:ItemClassificationCode`                                                         |
+| NUTS                             | BT-5071-Procedure/-Lot      | `cac:RealizedLocation/cac:Address/cbc:CountrySubentityCode`                                                                |
+| Estimated value (+currency attr) | BT-27-Procedure/-Lot        | `cac:RequestedTenderTotal/cbc:EstimatedOverallContractAmount[@currencyID]`                                                 |
+| Deadline                         | BT-131(d)/(t)-Lot           | `cac:TenderingProcess/cac:TenderSubmissionDeadlinePeriod/cbc:EndDate                                                       | EndTime` |
+| Procedure type                   | BT-105-Procedure            | `cac:TenderingProcess/cbc:ProcedureCode`                                                                                   |
+| Contract nature                  | BT-23-Procedure/-Lot        | `cac:ProcurementProject/cbc:ProcurementTypeCode[@listName='contract-nature']`                                              |
+| Lot ID                           | BT-137-Lot                  | `cac:ProcurementProjectLot/cbc:ID[@schemeName='Lot']`                                                                      |
+| Notice language(s)               | BT-702(a)-notice            | `/*/cbc:NoticeLanguageCode` + `cac:AdditionalNoticeLanguage/cbc:ID`                                                        |
 
 ## Classifications
 

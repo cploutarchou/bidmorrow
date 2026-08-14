@@ -109,14 +109,14 @@ gated by allowlist + audited; all procurement content treated as hostile.
 
 ## Key decisions (ADR index)
 
-| ADR | Decision |
-|---|---|
-| 0001 | Cloudflare Workers modular monolith; D1; pnpm workspace, no Turborepo |
-| 0002 | Better Auth + official Drizzle adapter over D1; CLI-generated auth schema |
-| 0003 | Scoped TED ingestion (CPV superset) + 90-day post-deadline retention |
+| ADR  | Decision                                                                   |
+| ---- | -------------------------------------------------------------------------- |
+| 0001 | Cloudflare Workers modular monolith; D1; pnpm workspace, no Turborepo      |
+| 0002 | Better Auth + official Drizzle adapter over D1; CLI-generated auth schema  |
+| 0003 | Scoped TED ingestion (CPV superset) + 90-day post-deadline retention       |
 | 0004 | Currency: EUR direct + ECB reference rates for major non-EUR; else UNKNOWN |
-| 0005 | Raw eForms XML snapshots in private R2, hashed deterministic paths |
-| 0006 | Queues + Cron Triggers, not Workflows |
+| 0005 | Raw eForms XML snapshots in private R2, hashed deterministic paths         |
+| 0006 | Queues + Cron Triggers, not Workflows                                      |
 
 ## Deliberate non-choices
 

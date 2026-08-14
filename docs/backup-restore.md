@@ -7,12 +7,12 @@ as proven.
 
 ## What protects what
 
-| Data | Mechanism | Window |
-|---|---|---|
-| D1 (all application state) | D1 Time Travel — always-on, free, 30-day retention on paid plan | Any point in the last 30 days |
-| R2 raw snapshots | Content is re-fetchable from TED for recent notices; otherwise see limitations below | — |
-| Secrets/config | Not backed up by us — re-settable from provider dashboards (see incident-response.md secret procedure) | — |
-| Code | Git (GitHub) + Workers version history | — |
+| Data                       | Mechanism                                                                                              | Window                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------- |
+| D1 (all application state) | D1 Time Travel — always-on, free, 30-day retention on paid plan                                        | Any point in the last 30 days |
+| R2 raw snapshots           | Content is re-fetchable from TED for recent notices; otherwise see limitations below                   | —                             |
+| Secrets/config             | Not backed up by us — re-settable from provider dashboards (see incident-response.md secret procedure) | —                             |
+| Code                       | Git (GitHub) + Workers version history                                                                 | —                             |
 
 ## D1 Time Travel
 
@@ -46,6 +46,7 @@ demonstrated:
 ## Scenario playbooks
 
 ### 1. Pre-migration recovery (planned safety net)
+
 1. Before the migration: `wrangler d1 time-travel info … ` → record bookmark
    (mandatory step in docs/deployment.md migration procedure).
 2. If the migration must be undone and roll-forward is not viable:
@@ -54,6 +55,7 @@ demonstrated:
    acceptable because the window is minutes and deploys are announced.
 
 ### 2. Accidental data deletion (operator or code bug)
+
 1. Establish the deletion time from audit_events / logs.
 2. **Pause writes to limit divergence**: set `ingestion_paused` and
    `digest_paused` flags (docs/runbook.md); consider brief maintenance mode
@@ -66,6 +68,7 @@ demonstrated:
 5. Unpause; record incident (docs/incident-response.md).
 
 ### 3. Bad migration (applied to production, wrong effect)
+
 1. Default: **roll forward** — write a corrective migration, apply via the
    normal procedure. Restore is the fallback, not the reflex.
 2. If data was destroyed and forward-fix cannot reconstruct it: restore to
@@ -74,6 +77,7 @@ demonstrated:
    staging/prod would diverge.
 
 ### 4. Bad deployment (code, not data)
+
 1. `wrangler rollback` (or Dashboard → Deployments) to the previous Worker
    version — no D1 action needed if the bad code didn't corrupt data.
 2. If the bad code wrote garbage: combine with playbook 2/3 — roll back

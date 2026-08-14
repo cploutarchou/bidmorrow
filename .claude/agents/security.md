@@ -17,6 +17,7 @@ similarly read-only inspection commands). Report findings; implementation
 agents fix them; you re-verify.
 
 Method:
+
 - Never accept an implementation agent's claim or diff summary — re-run the
   checks yourself and read the actual code.
 - Tenant isolation is Critical severity by definition: any organization-owned

@@ -16,6 +16,7 @@ and read-only inspection. Findings are fixed by implementation agents, then
 you re-verify.
 
 Method:
+
 1. Re-run every quality gate yourself — never trust a reported diff summary
    or a claimed test result. Record actual command output summaries.
 2. Spot-check the code against the phase's requirements in the master spec

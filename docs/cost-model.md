@@ -11,18 +11,18 @@ Prices verified against official Cloudflare/Resend docs on **2026-08-14**
 
 ## Platform allowances (Workers Paid, $5/mo base)
 
-| Resource | Included at $5/mo | Overage |
-|---|---|---|
-| Worker requests | 10M/mo (static asset requests free & unlimited) | $0.30/M |
-| Worker CPU | 30M CPU-ms/mo | $0.02/M CPU-ms |
-| D1 rows read | 25B/mo | $0.001/M |
-| D1 rows written | 50M/mo | $1.00/M |
-| D1 storage | 5 GB | $0.75/GB-mo |
-| Queues operations | 1M/mo (~3 ops per delivered message) | $0.40/M |
-| KV reads/writes | 10M / 1M per mo | $0.50/M / $5.00/M |
-| Cron triggers | 250/account | — |
-| D1 Time Travel | 30-day retention, free | — |
-| R2 (separate free tier) | 10 GB storage, 1M Class A, 10M Class B per mo | $0.015/GB-mo, $4.50/M A, $0.36/M B |
+| Resource                | Included at $5/mo                               | Overage                            |
+| ----------------------- | ----------------------------------------------- | ---------------------------------- |
+| Worker requests         | 10M/mo (static asset requests free & unlimited) | $0.30/M                            |
+| Worker CPU              | 30M CPU-ms/mo                                   | $0.02/M CPU-ms                     |
+| D1 rows read            | 25B/mo                                          | $0.001/M                           |
+| D1 rows written         | 50M/mo                                          | $1.00/M                            |
+| D1 storage              | 5 GB                                            | $0.75/GB-mo                        |
+| Queues operations       | 1M/mo (~3 ops per delivered message)            | $0.40/M                            |
+| KV reads/writes         | 10M / 1M per mo                                 | $0.50/M / $5.00/M                  |
+| Cron triggers           | 250/account                                     | —                                  |
+| D1 Time Travel          | 30-day retention, free                          | —                                  |
+| R2 (separate free tier) | 10 GB storage, 1M Class A, 10M Class B per mo   | $0.015/GB-mo, $4.50/M A, $0.36/M B |
 
 Key limits: **D1 max database size 10 GB (paid)**; 1,000 D1 queries per
 invocation; Queues message ≤128 KB, batch ≤100 msgs; native rate-limiting
@@ -30,18 +30,19 @@ binding (GA) at no documented extra cost.
 
 ## Fixed monthly components
 
-| Component | 0 customers | 10 | 100 | 1,000 |
-|---|---|---|---|---|
-| Workers Paid base (incl. D1/Queues/KV allowances) | $5.00 | $5.00 | $5.00 | $5.00 |
-| Workers request overage | 0 | 0 | 0 | ~$0–3 |
-| D1 overage (reads/writes/storage) | 0 | 0 | 0 | ~$0–5 |
-| Queues overage | 0 | 0 | 0 | ~$0–2 |
-| R2 (snapshots, ~2–6 GB steady-state) | $0 (free tier) | $0 | $0 | ~$0–1 |
-| Resend | $0 (free 3k/mo) | $0 | $20 (paid tier) | ~$20–90 |
-| Domain (amortized ~$12/yr) | $1 | $1 | $1 | $1 |
-| **Total fixed** | **~$6** | **~$6** | **~$26** | **~$30–105** |
+| Component                                         | 0 customers     | 10      | 100             | 1,000        |
+| ------------------------------------------------- | --------------- | ------- | --------------- | ------------ |
+| Workers Paid base (incl. D1/Queues/KV allowances) | $5.00           | $5.00   | $5.00           | $5.00        |
+| Workers request overage                           | 0               | 0       | 0               | ~$0–3        |
+| D1 overage (reads/writes/storage)                 | 0               | 0       | 0               | ~$0–5        |
+| Queues overage                                    | 0               | 0       | 0               | ~$0–2        |
+| R2 (snapshots, ~2–6 GB steady-state)              | $0 (free tier)  | $0      | $0              | ~$0–1        |
+| Resend                                            | $0 (free 3k/mo) | $0      | $20 (paid tier) | ~$20–90      |
+| Domain (amortized ~$12/yr)                        | $1              | $1      | $1              | $1           |
+| **Total fixed**                                   | **~$6**         | **~$6** | **~$26**        | **~$30–105** |
 
 Assumptions behind the request math:
+
 - Ingestion: 1 daily cron, ~150–300 scoped notices/day, ≤ a few hundred TED
   API calls/day, queue-batched normalization → well under 100k Worker
   requests/mo and ~1M D1 row writes/mo including match recomputation.

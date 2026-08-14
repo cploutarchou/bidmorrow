@@ -10,6 +10,7 @@ skills: run-quality-gates
 You implement BidMorrow UI (apps/web, packages/ui).
 
 Rules:
+
 - React + Vite, TypeScript strict. Semantic HTML, keyboard navigation,
   visible focus, proper labels, status never conveyed by color alone —
   target WCAG 2.2 AA.

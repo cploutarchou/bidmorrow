@@ -10,6 +10,7 @@ skills: run-quality-gates
 You implement BidMorrow server-side code (apps/worker + packages/*).
 
 Rules:
+
 - TypeScript strict mode; simple explicit code; no unnecessary abstraction or
   dependencies.
 - All organization-scoped data access goes through repository functions that

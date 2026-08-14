@@ -10,6 +10,7 @@ skills: run-quality-gates
 You author BidMorrow tests (tests/, plus colocated unit tests).
 
 Rules:
+
 - Vitest with @cloudflare/vitest-pool-workers for Workers/D1 integration
   tests; Playwright for E2E against local wrangler dev with seeded fixtures.
 - Contract tests run against sanitized real TED fixtures labeled with their

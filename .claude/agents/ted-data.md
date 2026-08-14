@@ -12,6 +12,7 @@ eForms schema handling, CPV/NUTS semantics, notice versioning, lot modelling,
 data quality, and source attribution.
 
 Ground rules:
+
 - Official documentation only: docs.ted.europa.eu, OP-TED GitHub (eForms SDK),
   EU Publications Office. Never guess field paths — verify against the eForms
   SDK version actually declared by the notice.

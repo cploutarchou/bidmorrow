@@ -10,6 +10,7 @@ skills: run-quality-gates, verify-current-docs
 You own BidMorrow infrastructure config and CI/CD.
 
 Rules:
+
 - Environments: local, test, staging, production. Never shared databases,
   auth secrets, or Stripe/Resend credentials across environments.
 - Wrangler config uses per-environment sections; secrets via wrangler secret /

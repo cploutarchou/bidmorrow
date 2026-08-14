@@ -9,12 +9,12 @@ person; the process still applies — it is what makes 3 a.m. decisions sane.
 
 ## Severity levels
 
-| Level | Definition | Examples | Response |
-|---|---|---|---|
-| SEV1 | Security or data breach; any tenant-isolation failure; data loss | Org A sees Org B's data; leaked secret in use; destructive bug in production | Immediate, drop everything; containment before diagnosis |
-| SEV2 | Service down or a core function broken for all users | App unreachable; login broken; no digests sent platform-wide | Within 1 h of detection |
-| SEV3 | Degraded | Ingestion stale > 24 h; digest failures for a subset; elevated error rate | Same business day |
-| SEV4 | Minor | Cosmetic bugs; single-org glitch with workaround; noisy alert | Next business day; may become a normal ticket |
+| Level | Definition                                                       | Examples                                                                     | Response                                                 |
+| ----- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------- |
+| SEV1  | Security or data breach; any tenant-isolation failure; data loss | Org A sees Org B's data; leaked secret in use; destructive bug in production | Immediate, drop everything; containment before diagnosis |
+| SEV2  | Service down or a core function broken for all users             | App unreachable; login broken; no digests sent platform-wide                 | Within 1 h of detection                                  |
+| SEV3  | Degraded                                                         | Ingestion stale > 24 h; digest failures for a subset; elevated error rate    | Same business day                                        |
+| SEV4  | Minor                                                            | Cosmetic bugs; single-org glitch with workaround; noisy alert                | Next business day; may become a normal ticket            |
 
 Tenant-isolation failures are SEV1 **by definition** (security.md), even if
 "only one field" leaked or "probably nobody saw it".
@@ -22,9 +22,7 @@ Tenant-isolation failures are SEV1 **by definition** (security.md), even if
 ## Response steps by level
 
 **SEV1** — 1) Contain first: pause the affected surface (flags, `wrangler
-rollback`, or disable the route) — stopping exposure beats diagnosis.
-2) Preserve evidence (below). 3) Assess scope. 4) Fix. 5) Notify (below).
-6) Post-incident review, mandatory.
+rollback`, or disable the route) — stopping exposure beats diagnosis. 2) Preserve evidence (below). 3) Assess scope. 4) Fix. 5) Notify (below). 6) Post-incident review, mandatory.
 
 **SEV2** — 1) Check the obvious: last deploy (`wrangler rollback` if
 correlated), Cloudflare status page, secrets recently rotated. 2) Runbook
@@ -45,7 +43,7 @@ novel.
    outranks isolation.
 2. **Preserve evidence before changing anything else**: capture a D1 Time
    Travel bookmark (`wrangler d1 time-travel info bidmorrow-prod --env
-   production`), export relevant `audit_events` and product-events rows,
+production`), export relevant `audit_events` and product-events rows,
    save Worker logs. Do not delete or "clean up" anything.
 3. **Assess scope** via audit_events + product events: which orgs' data was
    exposed, to whom, over what time window, via which endpoint. Record the
@@ -83,7 +81,7 @@ A secret exposed in logs, a commit, a paste, or a compromised machine:
 4. If the leak was a git commit: purge from history, force-push per GitHub's
    documented procedure, and treat the secret as permanently public anyway
    (rotation already done in step 1).
-5. Post-incident review including *how* it leaked — gitleaks/redaction gap?
+5. Post-incident review including _how_ it leaked — gitleaks/redaction gap?
 
 ## Post-incident review template
 
@@ -92,14 +90,22 @@ File under `docs/incidents/YYYY-MM-DD-<slug>.md` within 5 business days
 
 ```markdown
 # Incident: <title>
+
 - Severity / Detected / Resolved / Duration:
 - Customer impact: (orgs affected, data exposed?, downtime)
+
 ## Timeline (UTC)
+
 - HH:MM event …
+
 ## Root cause
+
 (the actual mechanism, not "human error")
+
 ## What went well / what went badly
+
 ## Action items
+
 - [ ] fix + regression test (owner, due date)
 - [ ] detection gap: would the health page have caught this earlier?
 - [ ] doc/runbook update
