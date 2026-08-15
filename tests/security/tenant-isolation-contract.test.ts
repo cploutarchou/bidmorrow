@@ -82,6 +82,13 @@ const TENANT_EXEMPT: Record<string, { name: string; reason: string }[]> = {
         'equivalent of listing "all tenants", never reachable from a per-request/per-tenant ' +
         'handler, and returns only organization ids (no tenant-owned row data of its own).',
     },
+    {
+      name: 'listOrgsWithDigestEnabled',
+      reason:
+        'the digest scheduler (@bidmorrow/notifications selectDigestOrgs) must enumerate every ' +
+        'digest-enabled organization across all tenants — same "list all tenants" rationale as ' +
+        'listOrgsEligibleForScoring, never reachable from a per-request/per-tenant handler.',
+    },
   ],
   'billing.ts': [
     {

@@ -13,7 +13,7 @@ import type { OrganizationId } from '@bidmorrow/domain';
 
 import type { Db } from '../client';
 import { newId } from '../id';
-import { organizationMembers, organizations } from '../schema/identity';
+import { organizationMembers, organizations, users } from '../schema/identity';
 import { normalizeLimit, toPage, type Page, type Pagination } from './shared';
 
 export type Organization = typeof organizations.$inferSelect;
@@ -171,6 +171,37 @@ export async function countOrganizationOwners(
       ),
     );
   return rows.length;
+}
+
+/** The organization row itself (name, status) — null when it does not exist. */
+export async function getOrganization(
+  db: Db,
+  organizationId: OrganizationId,
+): Promise<Organization | null> {
+  const rows = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/**
+ * Every member's email address for an organization (digest recipient list —
+ * docs/product-scope.md §7: V1 ships no invitation UI, so this is every user
+ * with an `organization_members` row, owner or not). Emails only — never
+ * `users.name` or other PII beyond what a "To:" header needs.
+ */
+export async function listOrganizationMemberEmails(
+  db: Db,
+  organizationId: OrganizationId,
+): Promise<string[]> {
+  const rows = await db
+    .select({ email: users.email })
+    .from(organizationMembers)
+    .innerJoin(users, eq(users.id, organizationMembers.userId))
+    .where(eq(organizationMembers.organizationId, organizationId));
+  return rows.map((row) => row.email);
 }
 
 /**

@@ -5,10 +5,168 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 7 — Customer Product: COMPLETE (signed off).** Next: Phase 8 —
-Digest. PILOT CHECKPOINT arrives after Phase 8.
+**Phase 8 — Digest: implemented, not yet reviewed.** Next: run
+`production-reviewer` + `security` sign-off, then the PILOT CHECKPOINT.
 
 ## Completed
+
+### Phase 8 — Daily digest (2026-08-15)
+
+- **Provider choice**: plain `fetch` against `api.resend.com/emails`
+  (`packages/notifications/src/resend.ts`), not the `resend` npm package —
+  justified in-file: docs/dependency-versions.md already records Resend 6.x
+  as fetch-based/Workers-compatible, so for a single-recipient send the SDK
+  adds a dependency with zero functional gain over one `POST` call; revisit
+  if a later phase needs batch sending or webhook signature verification.
+  `RetryableEmailError` (5xx/429/network) vs `PermanentEmailError` (other
+  4xx) typed errors; sequential sends on one provider instance are spaced
+  ≥600ms apart (Resend's documented 2 req/s default) via an internal
+  `lastSendAt` timer — correct because a fresh instance is created per queue
+  invocation and every digest send is `await`ed inside a queue consumer
+  (never fire-and-forget — SEC-P4-08's Phase 8 note, now resolved: contrast
+  with `packages/auth`'s intentionally-unawaited transactional-email hooks,
+  which stay fire-and-forget and are unaffected by this phase). API key
+  never logged; error messages carry HTTP status only, never the response
+  body or recipient.
+- **TZ / send-hour model**: the Worker cron fires **hourly**
+  (`'15 * * * *'`, `apps/worker/wrangler.jsonc` + `src/index.ts`
+  `CRON_DIGEST_SCHEDULE`) rather than once daily, because org-local send
+  times roll over at different UTC hours. `selectDigestOrgs`
+  (`packages/notifications/src/digest-orchestration.ts`) computes each
+  org's local date/hour via `Intl.DateTimeFormat({timeZone})` (verified
+  working in the workerd pool-workers test runtime —
+  `digest-tz.test.ts`) and considers an org due once its local hour ≥
+  `DEFAULT_SEND_HOUR_LOCAL` (06:00) AND no `digest_runs` row exists yet for
+  that local date — re-evaluated every hour, so a missed/failed cron
+  invocation self-heals on the next hourly check instead of silently
+  skipping a day (the DB-enforced `(organization_id, digest_date)`
+  uniqueness is what makes re-checking safe).
+- **Resume path** (`generateDigest`, same file): `createDigestRun` DB-claims
+  the run first. A queue retry after a `RetryableEmailError` throw hits
+  `DuplicateDigestError` on the next attempt; the function then reads the
+  existing row — a terminal status (`sent`/`skipped_empty`/`skipped_paused`)
+  is a true duplicate (no-op, no second email); `pending`/`failed` means
+  THIS invocation's own prior attempt was interrupted, and it resumes by
+  loading the ALREADY-WRITTEN `digest_items` rows (never re-collecting
+  candidates) and re-rendering/re-sending from them — proven by the KEY
+  test (`apps/worker/src/digest.d1.test.ts`: retryable failure → run
+  `failed` → same-day retry → `sent`, `digest_items` row count unchanged
+  across both attempts). Trade-off documented in-file: a resumed render
+  reconstructs only the persisted snapshot fields (title/score/
+  classification), not the original reasons/risk/buyer/deadline detail —
+  guarantees no duplicate items and a stable subject/count, not a
+  byte-identical body to the first attempt.
+- **Candidate collection is bounded, not just the rendered top-10**:
+  `listDigestCandidateMatches` (`packages/db/src/repositories/matching.ts`)
+  collects up to `MAX_DIGEST_ITEMS = 200` matches (org + engine version,
+  classification ≥ `minClassification`, scored within the digest window,
+  not ignored, deadline not expired) and ALL of them become `digest_items`
+  rows (so classification counts and `matchesCount` reflect the true set,
+  bounded at 200 — same bounded-background-job pattern as
+  `MAX_PAIRS_PER_INVOCATION` elsewhere); `renderDigest`
+  (`digest-renderer.ts`) then slices to the top 10 by score for the actual
+  email body (`DIGEST_MAX_ITEMS`).
+- **Rendering** (`digest-renderer.ts`, pure, no DB/network): subject +
+  semantic HTML + plain-text alternative; every source-derived string
+  (title, buyer name, component reasons) goes through a new `escapeHtml`
+  util (`escape-html.ts`) before touching the template — proven by an XSS
+  fixture test (`<script>`/`<img onerror>` in title/buyer/reasons never
+  appears unescaped). Counts by classification, top 10 items sorted score
+  DESC (title, score+classification, top 2 reasons, top risk flag with the
+  existing POSSIBLE "verify in source documents" wording, buyer, deadline,
+  CTA `{appBaseUrl}/app/tenders/{matchId}` link), footer with TED
+  attribution + decision-support disclaimer + manage-preferences link +
+  opt-out note. Honest empty state when `sendEmpty` fires with zero
+  candidates.
+- **Repo layer additions** (all through `packages/db/src/repositories/`,
+  every tenant function still `(db, organizationId, ...)`-first per
+  docs/security.md C6): `matching.ts` `listDigestCandidateMatches`;
+  `engagement.ts` `getDigestRunByDate`, `insertDigestItems`/
+  `listDigestItems` (SEC-P3-03 pattern — both re-verify the parent
+  `digest_runs` row belongs to the org before touching `digest_items`),
+  `createEmailDelivery`/`updateEmailDeliveryStatus`; `identity.ts`
+  `getOrganization`, `listOrganizationMemberEmails` (digest recipients =
+  every org member, V1 has no invite/role-based-notification UI);
+  `company.ts` `listOrgsWithDigestEnabled` (new documented
+  tenant-isolation-contract exemption in
+  `tests/security/tenant-isolation-contract.test.ts`, same "enumerate every
+  tenant" rationale as the existing `listOrgsEligibleForScoring`
+  exemption — the digest scheduler must scan all orgs, never reachable
+  from a per-request handler).
+- **`digest_paused` global flag** (already existed as
+  `FLAG_DIGEST_PAUSED` in `@bidmorrow/config` from Phase 3): checked in
+  `generateDigest` BEFORE any DB write — a paused digest leaves NO
+  `digest_runs` row at all (not even `skipped_paused`), proven by a test
+  asserting `getDigestRunByDate` returns null. Per-org `enabled=false`
+  short-circuits the same way (`skipped_paused` status reused for both —
+  no separate "disabled" status exists in the schema's CHECK enum).
+- **Worker wiring**: `DIGEST_QUEUE` + `bidmorrow-digest-dlq-*` producer/
+  consumer in `wrangler.jsonc` (top-level + staging + production, verified
+  via three separate `wrangler deploy --dry-run` runs each showing
+  `env.DIGEST_QUEUE` alongside the existing bindings); `env.ts`
+  `DigestQueueMessage` (`{kind:'digest', organizationId, localDate}`),
+  `RESEND_API_KEY?`/`EMAIL_FROM?` (already present in `@bidmorrow/config`'s
+  `DEPLOYED_REQUIRED_NAMES` since Phase 4/8 scaffolding — now actually
+  consumed); `apps/worker/src/digest.ts` (new composition module, mirrors
+  `ingestion.ts`'s pattern) — `runDigestScheduleJob` (hourly cron entry
+  point, enqueues only, batched ≤100/message via `sendBatch`, never
+  generates inline) and `runDigestJob` (queue consumer entry point);
+  `resolveDigestProvider` picks the real Resend provider when both
+  `RESEND_API_KEY`/`EMAIL_FROM` are set, else
+  `createLoggingDigestEmailProvider` (type-safe, logged fallback — never a
+  silent misconfiguration). `index.ts`'s `queue()` dispatches
+  `{kind:'digest'}` through the existing catch→retry→DLQ path (retryable
+  throws propagate exactly like every other handler failure).
+  `.dev.vars.example` gained `RESEND_API_KEY`/`EMAIL_FROM` (both blank,
+  names-only).
+- **Tests** (all real, all executed): `packages/notifications` — 20 unit
+  tests across 4 files (`digest-renderer.test.ts` incl. the XSS fixture and
+  empty-digest/counts/POSSIBLE-wording cases, `resend.test.ts` incl.
+  retryable-vs-permanent classification, the 600ms spacing check with fake
+  timers, and an assertion the API key never appears in a thrown message,
+  `digest-tz.test.ts` incl. the Europe/Nicosia-vs-America/New_York
+  same-UTC-instant-different-local-date case, `index.test.ts` unchanged).
+  `apps/worker` — 2 new D1 integration files, real workerd+D1:
+  `digest.d1.test.ts` (9 tests) — full happy path (run+items+delivery+sent,
+  content assertions on the rendered HTML), DB-enforced dedupe (second full
+  invocation same org+date → no second email), empty+`!sendEmpty` →
+  `skipped_empty`/no send, empty+`sendEmpty` → sends, `minClassification`
+  filter excludes a below-threshold match, ignored matches excluded, the
+  KEY retryable-failure-then-resume test (no duplicate `digest_items`),
+  permanent failure → `failed` without throwing (no queue retry), global
+  pause → no `digest_runs` row at all; `digest-schedule.d1.test.ts` (5
+  tests) — `runDigestScheduleJob` enqueues one message per due org via a
+  fake `DIGEST_QUEUE` binding (mirrors `ingestion.continuation.test.ts`'s
+  fake-queue pattern) and skips disabled orgs, `resolveDigestProvider`'s
+  three branches.
+- **Real counts (2026-08-15, all executed)**: `pnpm format` (10 files
+  reformatted by the formatter itself — no manual/logic changes, all
+  Phase-8-session files) · `format:check` PASS · `lint` PASS ·
+  `typecheck` PASS (14/14 workspace `typecheck`-scripted projects) ·
+  `test` PASS — root vitest **47 files/328 tests** (+3 files/+28 tests over
+  the last recorded root figure, the four new `packages/notifications`
+  test files); worker pool-workers **9 files/77 tests** (+2 files/+14
+  tests, the two new digest D1 suites); packages/db pool-workers **9
+  files/46 tests** (unchanged — no new packages/db-scoped test file this
+  phase; new repo functions are exercised via the worker's D1 suites) =
+  **65 files/451 tests total** · `build` PASS (`vite build` 59 modules,
+  305 KB JS/90 KB gzip; `wrangler deploy --dry-run` — top-level AND
+  `--env staging` AND `--env production` all list `env.DIGEST_QUEUE`
+  alongside every pre-existing binding).
+- **Open items for the next session**: (1) production-reviewer + security
+  sign-off not yet run for Phase 8 (this session's own gate list stops at
+  the automated checks — human/agent review is the PILOT CHECKPOINT
+  gate); (2) the founding-price digest-copy mention flagged as a Phase 7
+  follow-up (P7 review batch) was NOT added to the digest templates this
+  session — `digest-renderer.ts`'s footer covers TED attribution/
+  decision-support/manage-preferences/opt-out only, not pricing — flagged,
+  not fixed, revisit if the reviewer calls it required before pilot; (3)
+  digest recipients = every org member with no per-member opt-out/role
+  filter (V1 has no invite/notification-preference UI at the member level,
+  matches the existing single-org-membership model); (4) admin-surfaced
+  digest staleness/debugging (docs/product-scope.md item 9) is explicitly
+  Phase 10 scope, not touched here — `digest_runs`/`email_deliveries` rows
+  are already queryable for it.
 
 ### Phase 7 review fixes (2026-08-15)
 

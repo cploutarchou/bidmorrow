@@ -16,6 +16,9 @@
     "vitest": "^4.1.0"
   },
   "dependencies": {
+    "@bidmorrow/config": "workspace:*",
+    "@bidmorrow/db": "workspace:*",
+    "@bidmorrow/domain": "workspace:*",
     "@bidmorrow/observability": "workspace:*"
   }
 }

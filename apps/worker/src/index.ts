@@ -19,7 +19,14 @@ import { createLogger } from '@bidmorrow/observability';
 import { isIngestionStale, lastSuccessfulRunAt } from '@bidmorrow/procurement';
 
 import { createRequestAuth } from './auth-instance';
-import type { AppBindings, Env, IngestQueueMessage, MatchQueueMessage } from './env';
+import type {
+  AppBindings,
+  DigestQueueMessage,
+  Env,
+  IngestQueueMessage,
+  MatchQueueMessage,
+} from './env';
+import { runDigestJob, runDigestScheduleJob } from './digest';
 import {
   runIngestCatchUpJob,
   runRecomputeContinuationJob,
@@ -146,10 +153,15 @@ app.onError((err, c) => {
 
 // Cron patterns (wrangler.jsonc `triggers.crons`, UTC): daily ingestion
 // catch-up (05:00), daily retention purge (06:30), stale-ingestion watchdog
-// (09:00). Dispatch by exact pattern string — see ADR-0006.
+// (09:00), hourly digest scheduling (Phase 8 — timezones roll over at
+// different UTC hours, so a once-daily cron cannot serve every org at a
+// consistent LOCAL send time; see @bidmorrow/notifications
+// digest-orchestration.ts for the per-org due/resume logic this triggers).
+// Dispatch by exact pattern string — see ADR-0006.
 const CRON_INGEST = '0 5 * * *';
 const CRON_RETENTION = '30 6 * * *';
 const CRON_WATCHDOG = '0 9 * * *';
+const CRON_DIGEST_SCHEDULE = '15 * * * *';
 
 /**
  * Cron entry point. Ingestion is enqueued (bounded, retried, DLQ'd via
@@ -187,6 +199,18 @@ async function scheduled(
       }
       return;
     }
+    case CRON_DIGEST_SCHEDULE:
+      // Enqueues only — digest generation/sending happens in the queue
+      // consumer below, never inline in the cron (a slow send must never
+      // risk the cron's own execution budget).
+      ctx.waitUntil(
+        runDigestScheduleJob(env, logger).catch((cause: unknown) => {
+          logger.error('cron.digest_schedule.failed', {
+            error: cause instanceof Error ? cause.message : String(cause),
+          });
+        }),
+      );
+      return;
     default:
       logger.error('cron.unrecognized_pattern', { cron: event.cron });
   }
@@ -203,7 +227,7 @@ async function scheduled(
  * export) can dispatch both.
  */
 async function queue(
-  batch: MessageBatch<IngestQueueMessage | MatchQueueMessage>,
+  batch: MessageBatch<IngestQueueMessage | MatchQueueMessage | DigestQueueMessage>,
   env: Env,
   _ctx: ExecutionContext,
 ): Promise<void> {
@@ -252,6 +276,15 @@ async function queue(
             pairs_scored: result.pairsScored,
             matches_written: result.matchesWritten,
             truncated: result.truncated,
+          });
+          break;
+        }
+        case 'digest': {
+          const result = await runDigestJob(env, logger, message.body);
+          logger.info('queue.digest.completed', {
+            status: result.status,
+            resumed: result.resumed,
+            matches_count: result.matchesCount,
           });
           break;
         }

@@ -230,6 +230,15 @@ importers:
 
   packages/notifications:
     dependencies:
+      '@bidmorrow/config':
+        specifier: workspace:*
+        version: link:../config
+      '@bidmorrow/db':
+        specifier: workspace:*
+        version: link:../db
+      '@bidmorrow/domain':
+        specifier: workspace:*
+        version: link:../domain
       '@bidmorrow/observability':
         specifier: workspace:*
         version: link:../observability

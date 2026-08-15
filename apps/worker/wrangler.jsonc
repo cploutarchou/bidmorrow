@@ -51,10 +51,15 @@
   // MATCH_QUEUE (Phase 6): the ingest queue consumer enqueues `score`/
   // `recompute` messages after a successful/partial ingestion window; its
   // own consumer runs the matching engine. Same bounded-batch/DLQ shape.
+  // DIGEST_QUEUE (Phase 8): the hourly digest cron enqueues one
+  // `{kind:'digest', organizationId, localDate}` message per org due for a
+  // digest; its own consumer runs `@bidmorrow/notifications` generateDigest.
+  // Same bounded-batch/DLQ shape.
   "queues": {
     "producers": [
       { "queue": "bidmorrow-ingest-local", "binding": "INGEST_QUEUE" },
       { "queue": "bidmorrow-match-local", "binding": "MATCH_QUEUE" },
+      { "queue": "bidmorrow-digest-local", "binding": "DIGEST_QUEUE" },
     ],
     "consumers": [
       {
@@ -69,16 +74,25 @@
         "max_retries": 3,
         "dead_letter_queue": "bidmorrow-match-dlq-local",
       },
+      {
+        "queue": "bidmorrow-digest-local",
+        "max_batch_size": 10,
+        "max_retries": 3,
+        "dead_letter_queue": "bidmorrow-digest-dlq-local",
+      },
     ],
   },
-  // Cron triggers (UTC): daily ingestion catch-up, daily retention purge,
-  // and a stale-ingestion watchdog (docs/architecture.md background paths).
+  // Cron triggers (UTC): daily ingestion catch-up, daily retention purge, a
+  // stale-ingestion watchdog, and an hourly digest scheduling pass
+  // (docs/architecture.md background paths; the digest cron runs hourly,
+  // not daily, because org-local send times roll over at different UTC
+  // hours — see src/index.ts's CRON_DIGEST_SCHEDULE comment).
   "triggers": {
-    "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *"],
+    "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *"],
   },
-  // Non-secret config vars. Secrets (BETTER_AUTH_SECRET) are NEVER put here:
-  // local dev reads them from `.dev.vars` (git-ignored — see
-  // .dev.vars.example), staging/production from `wrangler secret put
+  // Non-secret config vars. Secrets (BETTER_AUTH_SECRET, RESEND_API_KEY) are
+  // NEVER put here: local dev reads them from `.dev.vars` (git-ignored —
+  // see .dev.vars.example), staging/production from `wrangler secret put
   // <NAME> --env <env>` (HUMAN_DECISION_BLOCKERS.md item 5).
   "vars": {
     "APP_ENV": "local",
@@ -117,6 +131,7 @@
         "producers": [
           { "queue": "bidmorrow-ingest-staging", "binding": "INGEST_QUEUE" },
           { "queue": "bidmorrow-match-staging", "binding": "MATCH_QUEUE" },
+          { "queue": "bidmorrow-digest-staging", "binding": "DIGEST_QUEUE" },
         ],
         "consumers": [
           {
@@ -131,10 +146,16 @@
             "max_retries": 3,
             "dead_letter_queue": "bidmorrow-match-dlq-staging",
           },
+          {
+            "queue": "bidmorrow-digest-staging",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "bidmorrow-digest-dlq-staging",
+          },
         ],
       },
       "triggers": {
-        "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *"],
+        "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *"],
       },
       "vars": {
         "APP_ENV": "staging",
@@ -173,6 +194,7 @@
         "producers": [
           { "queue": "bidmorrow-ingest-production", "binding": "INGEST_QUEUE" },
           { "queue": "bidmorrow-match-production", "binding": "MATCH_QUEUE" },
+          { "queue": "bidmorrow-digest-production", "binding": "DIGEST_QUEUE" },
         ],
         "consumers": [
           {
@@ -187,10 +209,16 @@
             "max_retries": 3,
             "dead_letter_queue": "bidmorrow-match-dlq-production",
           },
+          {
+            "queue": "bidmorrow-digest-production",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "bidmorrow-digest-dlq-production",
+          },
         ],
       },
       "triggers": {
-        "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *"],
+        "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *"],
       },
       "vars": {
         "APP_ENV": "production",

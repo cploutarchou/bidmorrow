@@ -18,3 +18,10 @@ BETTER_AUTH_URL=http://localhost:8787
 # guidance; fill in your own local test address(es).
 # See HUMAN_DECISION_BLOCKERS.md item 6 for the production allowlist.
 ADMIN_EMAILS=
+
+# Resend (digest email — Phase 8). Both optional in local/test: absent means
+# the digest queue consumer falls back to a logging-only provider (no real
+# send, never a startup failure). REQUIRED in staging/production
+# (HUMAN_DECISION_BLOCKERS.md item 3 — Resend account is a human blocker).
+RESEND_API_KEY=
+EMAIL_FROM=

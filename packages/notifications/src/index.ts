@@ -2,12 +2,25 @@
  * @bidmorrow/notifications — digest generation + email provider interface.
  *
  * Phase 4: `EmailProvider` is the delivery-agnostic outbound-email contract
- * and `createLoggingEmailProvider` is the dev/test stub used by the Worker
- * until the real Resend implementation arrives in Phase 8 (see
- * HUMAN_DECISION_BLOCKERS.md item 3 — Resend account is a human blocker).
- * The digest pipeline itself also arrives in Phase 8.
+ * (fire-and-forget transactional mail — verification/password-reset — used
+ * by `packages/auth`) and `createLoggingEmailProvider` is its dev/test stub.
+ *
+ * Phase 8: the digest pipeline (`digest-renderer.ts`,
+ * `digest-orchestration.ts`, `resend.ts`) — a SEPARATE, always-awaited
+ * `DigestEmailProvider` contract (SEC-P4-08: digest sends run inside a
+ * queue consumer, where awaiting is correct, unlike the transactional
+ * fire-and-forget hooks above). `createResendEmailProvider` is the real
+ * provider; `createLoggingDigestEmailProvider` is its dev/test fallback
+ * when `RESEND_API_KEY` is absent (local/test envs).
  */
 import type { Logger } from '@bidmorrow/observability';
+
+import type { DigestEmailProvider, DigestSendMessage, DigestSendResult } from './resend';
+
+export * from './escape-html';
+export * from './digest-renderer';
+export * from './digest-orchestration';
+export * from './resend';
 
 export const PACKAGE = '@bidmorrow/notifications';
 
@@ -49,6 +62,27 @@ export function createLoggingEmailProvider(logger: Logger): EmailProvider {
         kind: message.kind,
         to: message.to,
       });
+    },
+  };
+}
+
+/**
+ * Dev/test stub for the digest send path: "sends" nothing, records a
+ * synthetic `providerMessageId` so callers exercising the sent/delivered
+ * path in local dev never crash on a missing id. Logs `kind`/`to` ONLY,
+ * matching `createLoggingEmailProvider` (docs/security.md C10). Used when
+ * `RESEND_API_KEY` is absent — see apps/worker's provider wiring.
+ */
+export function createLoggingDigestEmailProvider(logger: Logger): DigestEmailProvider {
+  let counter = 0;
+  return {
+    send(message: DigestSendMessage): Promise<DigestSendResult> {
+      counter += 1;
+      logger.info('digest email not sent: logging provider only (RESEND_API_KEY not configured)', {
+        kind: message.kind,
+        to: message.to,
+      });
+      return Promise.resolve({ providerMessageId: `logging-${counter}` });
     },
   };
 }
