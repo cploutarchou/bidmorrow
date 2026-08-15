@@ -51,6 +51,14 @@ export interface RunWindowDeps {
 export interface RunWindowResult {
   readonly run: IngestionRun;
   readonly status: IngestionRunTerminalStatus;
+  /**
+   * Ids of every lot freshly inserted in this window — from brand-new
+   * notices AND from a corrected notice's new current version (TED-P5-03).
+   * The caller (worker `queue()`) enqueues these to `MATCH_QUEUE` after a
+   * successful/partial window; scoring itself is Phase 6's decoupled,
+   * asynchronous concern, never run inline here.
+   */
+  readonly newLotIds: readonly string[];
 }
 
 interface MutableCounts {
@@ -58,7 +66,17 @@ interface MutableCounts {
   noticesUpserted: number;
   versionsCreated: number;
   lotsCreated: number;
-  /** Scoring runs inside the ingestion pipeline in a later phase; always 0 here. */
+  /**
+   * Scoring is decoupled from ingestion (Phase 6): a window enqueues its new
+   * lot ids to `MATCH_QUEUE` and returns before any scoring happens, so
+   * `matches_scored` on THIS `ingestion_runs` row is honestly always 0 —
+   * nothing was scored during the run. The scored-pair count for a scoring
+   * pass is observable on its own `scoring.run.completed` log line
+   * (packages/procurement/src/score.ts), not retrofitted onto an unrelated
+   * ingestion run (a scoring pass processes lots across many prior windows,
+   * so attributing its count to any single `ingestion_runs` row would be
+   * misleading).
+   */
   matchesScored: number;
   errorsCount: number;
 }
@@ -92,6 +110,7 @@ export async function runIngestionWindow(
     matchesScored: 0,
     errorsCount: 0,
   };
+  const newLotIds: string[] = [];
 
   try {
     const query = buildScopeQuery(deps.scope, window);
@@ -115,7 +134,7 @@ export async function runIngestionWindow(
           });
           continue;
         }
-        await processOneNotice(deps, run.id, extracted, counts);
+        await processOneNotice(deps, run.id, extracted, counts, newLotIds);
       }
     }
   } catch (cause) {
@@ -132,7 +151,7 @@ export async function runIngestionWindow(
       finishedAt: now(),
     });
     // Checkpoint intentionally NOT advanced — the window did not fully succeed.
-    return { run: finished, status: 'failed' };
+    return { run: finished, status: 'failed', newLotIds: [] };
   }
 
   const status: IngestionRunTerminalStatus = counts.errorsCount > 0 ? 'partial' : 'succeeded';
@@ -146,7 +165,7 @@ export async function runIngestionWindow(
     source: TED_SOURCE_ID,
     lastPublicationDate: window.windowTo,
   });
-  return { run: finished, status };
+  return { run: finished, status, newLotIds };
 }
 
 /**
@@ -160,6 +179,7 @@ async function processOneNotice(
   ingestionRunId: string,
   row: SearchRowFields,
   counts: MutableCounts,
+  newLotIds: string[],
 ): Promise<void> {
   const existingNotice = await getNoticeByPublicationNumber(deps.db, {
     source: TED_SOURCE_ID,
@@ -297,6 +317,9 @@ async function processOneNotice(
     }),
   });
   counts.lotsCreated += lotRows.length;
+  for (const lotRow of lotRows) {
+    newLotIds.push(lotRow.id);
+  }
 
   const cpvEntries: { lotId: string; cpvCode: string; isMain: boolean }[] = [];
   const geoEntries: { lotId: string; countryCode: string; nutsCode: string | null }[] = [];
@@ -337,9 +360,10 @@ async function processOneNotice(
  * records that truncation happened so the operator knows more issues exist
  * (retrievable from the archived R2 snapshot via `snapshotR2Key`).
  */
-const MAX_ISSUES_DETAIL_JSON_CHARS = 50_000;
+export const MAX_ISSUES_DETAIL_JSON_CHARS = 50_000;
 
-function boundIssuesForErrorDetail(issues: readonly ParseIssue[]): readonly unknown[] {
+/** Exported for direct unit testing of the truncation cap; internal callers use it via `recordError`. */
+export function boundIssuesForErrorDetail(issues: readonly ParseIssue[]): readonly unknown[] {
   const fullJson = JSON.stringify(issues);
   if (fullJson.length <= MAX_ISSUES_DETAIL_JSON_CHARS) {
     return issues;

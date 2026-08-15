@@ -50,7 +50,10 @@ Assumptions behind the request math:
   200 lots × 12 rows ≈ 240k writes/day ≈ 7.2M/mo — inside the 50M allowance.
   At 1,000 orgs this reaches ~72M/mo → ~$22/mo overage worst case; mitigate
   by pre-filtering lots per org (CPV scope intersection) before scoring,
-  which cuts ≥80% of pairs. Modeled conservatively in the 1,000 column.
+  which cuts ≥80% of pairs. Modeled conservatively in the 1,000 column. This
+  pre-filter is also a deliberate relevance decision, not purely a cost one
+  — see docs/matching-engine.md "CPV pre-filter (scoring eligibility)" for
+  the trade-off and its disclosure requirements.
 - Dashboard traffic: 1,000 active customers × ~30 sessions × ~50 API calls
   ≈ 1.5M requests/mo — inside included 10M.
 - Email: digests ≈ customers × ~22 send-days/mo (only-when-meaningful

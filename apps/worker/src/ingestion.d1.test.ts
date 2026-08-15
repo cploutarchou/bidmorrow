@@ -84,6 +84,22 @@ function textResponse(body: string): FakeResponse {
 }
 
 /**
+ * A response whose `Content-Length` header declares an oversized body —
+ * `TedClient.fetchNoticeXml` checks the header before buffering the body, so
+ * `text()` is never actually invoked for this response.
+ */
+function oversizedXmlResponse(declaredBytes: number): FakeResponse {
+  return {
+    ok: true,
+    status: 200,
+    headers: { get: (name: string) => (name === 'Content-Length' ? String(declaredBytes) : null) },
+    json: () => Promise.reject(new Error('not json')),
+    text: () =>
+      Promise.reject(new Error('body should not be read when Content-Length rejects first')),
+  };
+}
+
+/**
  * A scripted fake TED backend: `searchPages` is consumed one page per POST
  * /v3/notices/search call (in order, across the whole test's client
  * lifetime); `xmlByUrl` serves GET requests for notice XML.
@@ -262,6 +278,79 @@ describe('runIngestionWindow', () => {
     const goodNotice = await getNoticeByPublicationNumber(db, {
       source: 'ted',
       publicationNumber: 'good-1',
+    });
+    expect(goodNotice).not.toBeNull();
+
+    // Partial (not failed) — checkpoint still advances.
+    const checkpoint = await getCheckpoint(db, { source: 'ted' });
+    expect(checkpoint?.lastPublicationDate).toBe('2026-08-11');
+  });
+
+  it('an oversized notice XML lands in ingestion_errors as XML_TOO_LARGE (fetch stage); the window proceeds', async () => {
+    const db = createDb(env.DB);
+    const rows = [
+      searchRow('huge-1', '2026-08-11', 'https://ted.europa.eu/notice/huge-1.xml'),
+      searchRow('good-2', '2026-08-11', 'https://ted.europa.eu/notice/good-2.xml'),
+    ];
+    const oversizedUrl = 'https://ted.europa.eu/notice/huge-1.xml';
+    const goodUrl = 'https://ted.europa.eu/notice/good-2.xml';
+    const pages = [{ notices: rows }];
+    const fetchImpl: TedFetch = (url) => {
+      if (url.endsWith('/v3/notices/search')) {
+        const page = pages.shift() ?? { notices: [] };
+        return Promise.resolve(jsonResponse({ ...page, totalNoticeCount: page.notices.length }));
+      }
+      if (url === oversizedUrl) {
+        // Declared Content-Length far above TedClient's MAX_XML_BYTES cap.
+        return Promise.resolve(oversizedXmlResponse(20_000_000));
+      }
+      if (url === goodUrl) {
+        return Promise.resolve(textResponse(missingValueXml));
+      }
+      return Promise.resolve({
+        ok: false,
+        status: 404,
+        headers: { get: () => null },
+        json: () => Promise.reject(new Error('not found')),
+        text: () => Promise.resolve(''),
+      });
+    };
+    const client = makeClient(fetchImpl);
+
+    const result = await runIngestionWindow(
+      {
+        db,
+        client,
+        snapshots: env.SNAPSHOTS,
+        logger: createLogger({ test: true }),
+        scope: DEFAULT_INGESTION_SCOPE,
+        now: () => T0,
+      },
+      { windowFrom: '2026-08-11', windowTo: '2026-08-11' },
+    );
+
+    expect(result.status).toBe('partial');
+    expect(result.run.errorsCount).toBe(1);
+    expect(result.run.noticesUpserted).toBe(1); // only good-2
+
+    const errorRow = await env.DB.prepare(
+      'SELECT stage, source_notice_id, error_code, detail_json FROM ingestion_errors WHERE ingestion_run_id = ?',
+    )
+      .bind(result.run.id)
+      .first<{
+        stage: string;
+        source_notice_id: string;
+        error_code: string;
+        detail_json: string;
+      }>();
+    expect(errorRow?.stage).toBe('fetch');
+    expect(errorRow?.source_notice_id).toBe('huge-1');
+    expect(errorRow?.error_code).toBe('XML_TOO_LARGE');
+    expect(errorRow?.detail_json).toContain('maxBytes');
+
+    const goodNotice = await getNoticeByPublicationNumber(db, {
+      source: 'ted',
+      publicationNumber: 'good-2',
     });
     expect(goodNotice).not.toBeNull();
 

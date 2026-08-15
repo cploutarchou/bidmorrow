@@ -11,7 +11,7 @@
  * uniqueness assumption is additionally backed by a DB unique index so a
  * duplicate write fails loudly instead of corrupting the corpus.
  */
-import { and, asc, desc, eq, gt, gte, isNull, lte } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, inArray, isNull, lte } from 'drizzle-orm';
 
 import type { Db } from '../client';
 import { newId } from '../id';
@@ -532,4 +532,122 @@ export async function listLotsForScoring(
     .limit(limit + 1);
 
   return toPage(rows, limit, (row) => row.lot.id);
+}
+
+// ---------------------------------------------------------------------------
+// Scoring input bundles (Phase 6): everything the engine-input mapper needs
+// for a set of lots, in a small fixed number of queries.
+// ---------------------------------------------------------------------------
+
+export interface LotScoringBundle {
+  readonly lot: TenderLot;
+  readonly noticeId: string;
+  readonly sourceLanguagesJson: string;
+  readonly procedureType: string | null;
+  readonly buyerLegalType: string | null;
+  readonly cpvCodes: readonly TenderCpvCode[];
+  readonly geographies: readonly TenderGeography[];
+}
+
+/**
+ * Loads everything `@bidmorrow/procurement`'s engine-input mapper needs for
+ * the given lot ids — notice languages/procedure type, buyer legal type, CPV
+ * codes, and geographies — in four bounded queries regardless of lot count.
+ * Lots are returned in the same order they exist in the corpus (no
+ * ordering guarantee vs. `lotIds` input order — callers that care must
+ * re-key by `lot.id`). Skips ids that no longer resolve (deleted/purged)
+ * rather than throwing — recompute call sites must tolerate that.
+ */
+export async function loadLotScoringBundlesByIds(
+  db: Db,
+  lotIds: readonly string[],
+): Promise<LotScoringBundle[]> {
+  if (lotIds.length === 0) return [];
+  const rows = await db
+    .select({
+      lot: tenderLots,
+      noticeId: tenderNotices.id,
+      sourceLanguagesJson: tenderNotices.sourceLanguagesJson,
+      procedureType: tenderNotices.procedureType,
+      buyerLegalType: buyers.buyerLegalType,
+    })
+    .from(tenderLots)
+    .innerJoin(tenderNoticeVersions, eq(tenderLots.noticeVersionId, tenderNoticeVersions.id))
+    .innerJoin(tenderNotices, eq(tenderNoticeVersions.noticeId, tenderNotices.id))
+    .leftJoin(buyers, eq(tenderNotices.buyerId, buyers.id))
+    .where(inArray(tenderLots.id, [...lotIds]));
+
+  return attachCpvAndGeography(db, rows);
+}
+
+/**
+ * Loads the scoring bundles for the CURRENT-version lots of the given
+ * notices — used by the recompute path after a correction (a new notice
+ * version's lots replace the prior version's for scoring purposes).
+ */
+export async function loadLotScoringBundlesForNotices(
+  db: Db,
+  noticeIds: readonly string[],
+): Promise<LotScoringBundle[]> {
+  if (noticeIds.length === 0) return [];
+  const rows = await db
+    .select({
+      lot: tenderLots,
+      noticeId: tenderNotices.id,
+      sourceLanguagesJson: tenderNotices.sourceLanguagesJson,
+      procedureType: tenderNotices.procedureType,
+      buyerLegalType: buyers.buyerLegalType,
+    })
+    .from(tenderLots)
+    .innerJoin(
+      tenderNoticeVersions,
+      and(
+        eq(tenderLots.noticeVersionId, tenderNoticeVersions.id),
+        eq(tenderNoticeVersions.id, tenderNotices.currentVersionId),
+      ),
+    )
+    .innerJoin(tenderNotices, eq(tenderNoticeVersions.noticeId, tenderNotices.id))
+    .leftJoin(buyers, eq(tenderNotices.buyerId, buyers.id))
+    .where(inArray(tenderNotices.id, [...noticeIds]));
+
+  return attachCpvAndGeography(db, rows);
+}
+
+async function attachCpvAndGeography(
+  db: Db,
+  rows: {
+    lot: TenderLot;
+    noticeId: string;
+    sourceLanguagesJson: string;
+    procedureType: string | null;
+    buyerLegalType: string | null;
+  }[],
+): Promise<LotScoringBundle[]> {
+  if (rows.length === 0) return [];
+  const lotIds = rows.map((row) => row.lot.id);
+  const [cpvRows, geoRows] = await db.batch([
+    db.select().from(tenderCpvCodes).where(inArray(tenderCpvCodes.lotId, lotIds)),
+    db.select().from(tenderGeographies).where(inArray(tenderGeographies.lotId, lotIds)),
+  ]);
+  const cpvByLot = new Map<string, TenderCpvCode[]>();
+  for (const cpv of cpvRows) {
+    const list = cpvByLot.get(cpv.lotId) ?? [];
+    list.push(cpv);
+    cpvByLot.set(cpv.lotId, list);
+  }
+  const geoByLot = new Map<string, TenderGeography[]>();
+  for (const geo of geoRows) {
+    const list = geoByLot.get(geo.lotId) ?? [];
+    list.push(geo);
+    geoByLot.set(geo.lotId, list);
+  }
+  return rows.map((row) => ({
+    lot: row.lot,
+    noticeId: row.noticeId,
+    sourceLanguagesJson: row.sourceLanguagesJson,
+    procedureType: row.procedureType,
+    buyerLegalType: row.buyerLegalType,
+    cpvCodes: cpvByLot.get(row.lot.id) ?? [],
+    geographies: geoByLot.get(row.lot.id) ?? [],
+  }));
 }

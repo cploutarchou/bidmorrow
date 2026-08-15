@@ -28,3 +28,6 @@ export * from './run-window';
 export * from './catch-up';
 export * from './purge';
 export * from './health';
+export * from './ecb';
+export * from './scoring-input';
+export * from './score';

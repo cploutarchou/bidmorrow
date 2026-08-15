@@ -255,12 +255,18 @@ importers:
       '@bidmorrow/domain':
         specifier: workspace:*
         version: link:../domain
+      '@bidmorrow/matching':
+        specifier: workspace:*
+        version: link:../matching
       '@bidmorrow/observability':
         specifier: workspace:*
         version: link:../observability
       '@bidmorrow/ted':
         specifier: workspace:*
         version: link:../ted
+      fast-xml-parser:
+        specifier: ^5.10.1
+        version: 5.10.1
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^5.20260814.1

@@ -73,6 +73,16 @@ const TENANT_EXEMPT: Record<string, { name: string; reason: string }[]> = {
     { name: 'createOrganization', reason: 'creates the tenant — no organization exists yet' },
     { name: 'getOrganizationsForUser', reason: 'tenancy bootstrap: session user -> organizations' },
   ],
+  'company.ts': [
+    {
+      name: 'listOrgsEligibleForScoring',
+      reason:
+        'the matching engine orchestration (packages/procurement/src/score.ts) must enumerate ' +
+        'every eligible organization to score a given lot against — it is the scoring-pipeline ' +
+        'equivalent of listing "all tenants", never reachable from a per-request/per-tenant ' +
+        'handler, and returns only organization ids (no tenant-owned row data of its own).',
+    },
+  ],
   'billing.ts': [
     {
       name: 'insertBillingEventIfNew',
