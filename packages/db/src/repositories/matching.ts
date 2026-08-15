@@ -10,7 +10,7 @@
  * risk flags is written in ONE D1 batch (a single SQL transaction), so a
  * match row can never exist without its decomposition.
  */
-import { and, desc, eq, inArray, gte, lt, or } from 'drizzle-orm';
+import { and, desc, eq, exists, gt, inArray, gte, like, lt, lte, or, sql } from 'drizzle-orm';
 import type {
   ComponentStatus,
   MatchClassification,
@@ -21,6 +21,14 @@ import type {
 import type { Db } from '../client';
 import { newId } from '../id';
 import { matchComponents, matchRiskFlags, tenderMatches } from '../schema/matching';
+import { ignoredTenders, savedTenders } from '../schema/engagement';
+import {
+  buyers,
+  tenderCpvCodes,
+  tenderGeographies,
+  tenderLots,
+  tenderNotices,
+} from '../schema/tender';
 import { normalizeLimit, toBatch, toPage, type Page, type Pagination } from './shared';
 import type { SqliteBatchItem } from './shared';
 
@@ -418,4 +426,339 @@ export async function getTenderMatchWithComponents(
       .orderBy(matchRiskFlags.id),
   ]);
   return { match, components, riskFlags };
+}
+
+/**
+ * Resolves the `(lotId, noticeId)` a match belongs to, org-checked. Used by
+ * the save/ignore action handlers so `lotId`/`noticeId` are ALWAYS derived
+ * server-side from the match row, never accepted from client input. Null
+ * when the match does not exist IN THIS ORGANIZATION.
+ */
+export async function getTenderMatchLotNotice(
+  db: Db,
+  organizationId: OrganizationId,
+  args: { matchId: string },
+): Promise<{ lotId: string; noticeId: string } | null> {
+  const rows = await db
+    .select({ lotId: tenderMatches.lotId, noticeId: tenderMatches.noticeId })
+    .from(tenderMatches)
+    .where(
+      and(eq(tenderMatches.organizationId, organizationId), eq(tenderMatches.id, args.matchId)),
+    )
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Feed (Phase 7): the customer-facing list of matches, joined with the
+// tender corpus and the org's own save/ignore state.
+// ---------------------------------------------------------------------------
+
+export type FeedTab = 'today' | 'strong' | 'worth_reviewing' | 'possible' | 'saved' | 'ignored';
+
+export interface FeedFilters {
+  readonly minScore?: number;
+  /** ISO-3166-1 alpha-2. */
+  readonly country?: string;
+  /** CPV prefix (any length ≥ 2) — matched against main + additional CPV codes. */
+  readonly cpvPrefix?: string;
+  /** Case-insensitive substring match against the buyer name. */
+  readonly buyerName?: string;
+  readonly minValueEur?: number;
+  readonly maxValueEur?: number;
+  readonly deadlineBefore?: number;
+  readonly deadlineAfter?: number;
+  /** `YYYY-MM-DD`; matches notices published on/after this date. */
+  readonly publishedAfter?: string;
+}
+
+export interface ListFeedArgs extends Pagination, FeedFilters {
+  readonly tab: FeedTab;
+  readonly engineVersion: string;
+  /** Injected clock — `today` and expired-deadline exclusion are time-dependent. */
+  readonly now: number;
+}
+
+export interface FeedComponentSummary {
+  readonly componentKey: MatchComponentKey;
+  readonly points: number;
+  readonly explanation: string;
+}
+
+export interface FeedRiskFlagSummary {
+  readonly type: RiskFlagType;
+  readonly confidence: RiskConfidence;
+  readonly explanation: string;
+}
+
+export interface FeedRow {
+  readonly matchId: string;
+  readonly lotId: string;
+  readonly score: number | null;
+  readonly classification: MatchClassification;
+  readonly title: string;
+  readonly buyerName: string | null;
+  readonly country: string | null;
+  readonly valueEur: number | null;
+  readonly valueOriginalAmount: number | null;
+  readonly valueOriginalCurrency: string | null;
+  readonly deadlineAt: number | null;
+  readonly scoredAt: number;
+  /** Top 2 components by points, highest first — never the full breakdown (feed rows never carry description text). */
+  readonly topComponents: readonly FeedComponentSummary[];
+  readonly topRiskFlag: FeedRiskFlagSummary | null;
+  readonly savedByYou: boolean;
+  readonly ignoredByYou: boolean;
+}
+
+const MS_PER_DAY_FEED = 86_400_000;
+
+/** Feed cursor: `${score}:${id}` of the last row — score DESC, id DESC is the deterministic order. */
+function decodeScoreCursor(cursor: string): { score: number; id: string } {
+  const separator = cursor.indexOf(':');
+  const score = separator > 0 ? Number(cursor.slice(0, separator)) : Number.NaN;
+  const id = separator > 0 ? cursor.slice(separator + 1) : '';
+  if (!Number.isFinite(score) || id.length === 0) {
+    throw new Error('listFeedRows: malformed cursor');
+  }
+  return { score, id };
+}
+
+/**
+ * The customer feed query (docs/product-scope.md §5): org + latest engine
+ * version, tab-scoped, filtered, deterministically ordered (score DESC, id
+ * DESC tiebreak). `EXCLUDED` matches never appear (no score to show).
+ * Expired-deadline lots are excluded from every tab EXCEPT `saved`/`ignored`
+ * — a customer who explicitly saved or ignored a tender can still find it
+ * after its deadline passes; the scored classification tabs stay
+ * forward-looking only. Rows never carry the lot description (size —
+ * docs/matching-engine.md component-persistence rationale mirrors this).
+ */
+export async function listFeedRows(
+  db: Db,
+  organizationId: OrganizationId,
+  args: ListFeedArgs,
+): Promise<Page<FeedRow>> {
+  const limit = normalizeLimit(args.limit);
+
+  const conditions = [
+    eq(tenderMatches.organizationId, organizationId),
+    eq(tenderMatches.engineVersion, args.engineVersion),
+    sql`${tenderMatches.classification} <> 'EXCLUDED'`,
+  ];
+
+  switch (args.tab) {
+    case 'today':
+      conditions.push(gte(tenderMatches.scoredAt, args.now - MS_PER_DAY_FEED));
+      break;
+    case 'strong':
+      conditions.push(eq(tenderMatches.classification, 'STRONG_MATCH'));
+      break;
+    case 'worth_reviewing':
+      conditions.push(eq(tenderMatches.classification, 'WORTH_REVIEWING'));
+      break;
+    case 'possible':
+      conditions.push(eq(tenderMatches.classification, 'POSSIBLE_MATCH'));
+      break;
+    case 'saved':
+      conditions.push(
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(savedTenders)
+            .where(
+              and(
+                eq(savedTenders.organizationId, organizationId),
+                eq(savedTenders.lotId, tenderMatches.lotId),
+              ),
+            ),
+        ),
+      );
+      break;
+    case 'ignored':
+      conditions.push(
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(ignoredTenders)
+            .where(
+              and(
+                eq(ignoredTenders.organizationId, organizationId),
+                eq(ignoredTenders.lotId, tenderMatches.lotId),
+              ),
+            ),
+        ),
+      );
+      break;
+  }
+
+  const excludeExpired = args.tab !== 'saved' && args.tab !== 'ignored';
+  if (excludeExpired) {
+    conditions.push(
+      sql`(${tenderLots.deadlineAt} IS NULL OR ${tenderLots.deadlineAt} >= ${args.now})`,
+    );
+  }
+
+  if (args.minScore !== undefined) conditions.push(gte(tenderMatches.score, args.minScore));
+  if (args.minValueEur !== undefined)
+    conditions.push(gte(tenderLots.estimatedValueEur, args.minValueEur));
+  if (args.maxValueEur !== undefined)
+    conditions.push(lte(tenderLots.estimatedValueEur, args.maxValueEur));
+  if (args.deadlineBefore !== undefined)
+    conditions.push(lt(tenderLots.deadlineAt, args.deadlineBefore));
+  if (args.deadlineAfter !== undefined)
+    conditions.push(gt(tenderLots.deadlineAt, args.deadlineAfter));
+  if (args.publishedAfter !== undefined)
+    conditions.push(gte(tenderNotices.publicationDate, args.publishedAfter));
+  if (args.buyerName !== undefined) conditions.push(like(buyers.name, `%${args.buyerName}%`));
+  if (args.country !== undefined) {
+    conditions.push(
+      exists(
+        db
+          .select({ one: sql`1` })
+          .from(tenderGeographies)
+          .where(
+            and(
+              eq(tenderGeographies.lotId, tenderLots.id),
+              eq(tenderGeographies.countryCode, args.country),
+            ),
+          ),
+      ),
+    );
+  }
+  if (args.cpvPrefix !== undefined) {
+    conditions.push(
+      exists(
+        db
+          .select({ one: sql`1` })
+          .from(tenderCpvCodes)
+          .where(
+            and(
+              eq(tenderCpvCodes.lotId, tenderLots.id),
+              like(tenderCpvCodes.cpvCode, `${args.cpvPrefix}%`),
+            ),
+          ),
+      ),
+    );
+  }
+
+  if (args.cursor !== undefined) {
+    const cursor = decodeScoreCursor(args.cursor);
+    const keyset = or(
+      lt(tenderMatches.score, cursor.score),
+      and(eq(tenderMatches.score, cursor.score), lt(tenderMatches.id, cursor.id)),
+    );
+    if (keyset !== undefined) conditions.push(keyset);
+  }
+
+  const rows = await db
+    .select({ match: tenderMatches, lot: tenderLots, notice: tenderNotices, buyer: buyers })
+    .from(tenderMatches)
+    .innerJoin(tenderLots, eq(tenderMatches.lotId, tenderLots.id))
+    .innerJoin(tenderNotices, eq(tenderMatches.noticeId, tenderNotices.id))
+    .leftJoin(buyers, eq(tenderNotices.buyerId, buyers.id))
+    .where(and(...conditions))
+    .orderBy(desc(tenderMatches.score), desc(tenderMatches.id))
+    .limit(limit + 1);
+
+  const page = toPage(rows, limit, (last) => `${last.match.score}:${last.match.id}`);
+  if (page.items.length === 0) {
+    return { items: [], nextCursor: page.nextCursor };
+  }
+
+  const matchIds = page.items.map((row) => row.match.id);
+  const lotIds = [...new Set(page.items.map((row) => row.lot.id))];
+
+  const [componentRows, riskFlagRows, geoRows, savedRows, ignoredRows] = await db.batch([
+    db
+      .select()
+      .from(matchComponents)
+      .where(inArray(matchComponents.matchId, matchIds))
+      .orderBy(desc(matchComponents.points)),
+    db.select().from(matchRiskFlags).where(inArray(matchRiskFlags.matchId, matchIds)),
+    db.select().from(tenderGeographies).where(inArray(tenderGeographies.lotId, lotIds)),
+    db
+      .select({ lotId: savedTenders.lotId })
+      .from(savedTenders)
+      .where(
+        and(eq(savedTenders.organizationId, organizationId), inArray(savedTenders.lotId, lotIds)),
+      ),
+    db
+      .select({ lotId: ignoredTenders.lotId })
+      .from(ignoredTenders)
+      .where(
+        and(
+          eq(ignoredTenders.organizationId, organizationId),
+          inArray(ignoredTenders.lotId, lotIds),
+        ),
+      ),
+  ]);
+
+  const componentsByMatch = new Map<string, FeedComponentSummary[]>();
+  for (const component of componentRows) {
+    const list = componentsByMatch.get(component.matchId) ?? [];
+    if (list.length < 2) {
+      list.push({
+        componentKey: component.componentKey as MatchComponentKey,
+        points: component.points,
+        explanation: component.explanation,
+      });
+    }
+    componentsByMatch.set(component.matchId, list);
+  }
+
+  // "Top" risk flag: HIGH confidence before POSSIBLE, then earliest inserted.
+  const riskFlagsByMatch = new Map<string, MatchRiskFlag>();
+  for (const flag of riskFlagRows) {
+    const current = riskFlagsByMatch.get(flag.matchId);
+    if (
+      current === undefined ||
+      (current.confidence !== 'HIGH' && flag.confidence === 'HIGH') ||
+      (current.confidence === flag.confidence && flag.id < current.id)
+    ) {
+      riskFlagsByMatch.set(flag.matchId, flag);
+    }
+  }
+
+  const countryByLot = new Map<string, string>();
+  for (const geo of geoRows) {
+    const current = countryByLot.get(geo.lotId);
+    if (current === undefined || geo.countryCode < current) {
+      countryByLot.set(geo.lotId, geo.countryCode);
+    }
+  }
+
+  const savedLotIds = new Set(savedRows.map((row) => row.lotId));
+  const ignoredLotIds = new Set(ignoredRows.map((row) => row.lotId));
+
+  const items: FeedRow[] = page.items.map((row) => {
+    const flag = riskFlagsByMatch.get(row.match.id);
+    return {
+      matchId: row.match.id,
+      lotId: row.lot.id,
+      score: row.match.score,
+      classification: row.match.classification as MatchClassification,
+      title: row.lot.title,
+      buyerName: row.buyer?.name ?? null,
+      country: countryByLot.get(row.lot.id) ?? null,
+      valueEur: row.lot.estimatedValueEur,
+      valueOriginalAmount: row.lot.estimatedValueAmount,
+      valueOriginalCurrency: row.lot.estimatedValueCurrency,
+      deadlineAt: row.lot.deadlineAt,
+      scoredAt: row.match.scoredAt,
+      topComponents: componentsByMatch.get(row.match.id) ?? [],
+      topRiskFlag:
+        flag === undefined
+          ? null
+          : {
+              type: flag.type as RiskFlagType,
+              confidence: flag.confidence as RiskConfidence,
+              explanation: flag.explanation,
+            },
+      savedByYou: savedLotIds.has(row.lot.id),
+      ignoredByYou: ignoredLotIds.has(row.lot.id),
+    };
+  });
+
+  return { items, nextCursor: page.nextCursor };
 }

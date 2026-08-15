@@ -15,6 +15,7 @@
     "@bidmorrow/config": "workspace:*",
     "@bidmorrow/db": "workspace:*",
     "@bidmorrow/domain": "workspace:*",
+    "@bidmorrow/matching": "workspace:*",
     "@bidmorrow/notifications": "workspace:*",
     "@bidmorrow/observability": "workspace:*",
     "@bidmorrow/procurement": "workspace:*",

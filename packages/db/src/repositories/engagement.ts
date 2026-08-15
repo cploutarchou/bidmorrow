@@ -63,6 +63,20 @@ export async function saveTender(
   return inserted.length > 0;
 }
 
+/** Whether the org has saved this lot — for tender-detail state. */
+export async function isTenderSaved(
+  db: Db,
+  organizationId: OrganizationId,
+  args: { lotId: string },
+): Promise<boolean> {
+  const rows = await db
+    .select({ id: savedTenders.id })
+    .from(savedTenders)
+    .where(and(eq(savedTenders.organizationId, organizationId), eq(savedTenders.lotId, args.lotId)))
+    .limit(1);
+  return rows.length > 0;
+}
+
 /** Idempotent: returns false when the lot was not saved. */
 export async function unsaveTender(
   db: Db,
@@ -105,6 +119,22 @@ export async function ignoreTender(
     .onConflictDoNothing({ target: [ignoredTenders.organizationId, ignoredTenders.lotId] })
     .returning({ id: ignoredTenders.id });
   return inserted.length > 0;
+}
+
+/** Whether the org has ignored this lot — for tender-detail state. */
+export async function isTenderIgnored(
+  db: Db,
+  organizationId: OrganizationId,
+  args: { lotId: string },
+): Promise<boolean> {
+  const rows = await db
+    .select({ id: ignoredTenders.id })
+    .from(ignoredTenders)
+    .where(
+      and(eq(ignoredTenders.organizationId, organizationId), eq(ignoredTenders.lotId, args.lotId)),
+    )
+    .limit(1);
+  return rows.length > 0;
 }
 
 /** Idempotent: returns false when the lot was not ignored. */
@@ -186,6 +216,25 @@ export async function upsertCustomerFeedback(
     throw new Error('upsertCustomerFeedback: upsert returned no row');
   }
   return row;
+}
+
+/** Reads the org's current feedback verdict for a match, if any — for tender-detail state. */
+export async function getCustomerFeedback(
+  db: Db,
+  organizationId: OrganizationId,
+  args: { matchId: string },
+): Promise<CustomerFeedback | null> {
+  const rows = await db
+    .select()
+    .from(customerFeedback)
+    .where(
+      and(
+        eq(customerFeedback.organizationId, organizationId),
+        eq(customerFeedback.matchId, args.matchId),
+      ),
+    )
+    .limit(1);
+  return rows[0] ?? null;
 }
 
 // ---------------------------------------------------------------------------

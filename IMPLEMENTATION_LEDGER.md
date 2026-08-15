@@ -5,8 +5,112 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 6 — Matching: COMPLETE (signed off).** Next: Phase 7 — Customer
-Product.
+**Phase 7 stage A — Customer product API: IMPLEMENTED (pending review sign-
+off).** Stage B (frontend) not started.
+
+### Phase 7 stage A — Customer product API (2026-08-15)
+
+- Ledger carry-over item 0 (residual LOW from Phase 6): `packages/procurement/
+src/scoring-input.ts` — `parseExclusionContractNature`/
+  `parseCertificationCode` route the `company_exclusions` contract-nature
+  value and `company_certifications.certification_code` through validated
+  union parsing (same pattern as `parseSupportedContractNatures`); invalid
+  values are dropped and logged, never blindly cast.
+- Presets (`packages/domain/src/presets.ts`): 4 static, fully client-editable
+  `CompanyPreset`s (`cyber_consultancy`, `cloud_devops`, `software_house`,
+  `it_generalist`) — CPV codes chosen within/near the default ingestion scope
+  (72\*/48\*/79417000), capabilities, and keywords+synonym groups. `GET
+/api/org/presets` (session-only, no org needed) returns them; applying one
+  is a client-side pre-fill via the PUT endpoints below.
+- Profile-bundle PUT endpoints added (`apps/worker/src/routes/org.ts`,
+  mirroring the keywords pattern: owner-only, closed zod schemas, audit
+  events on replace): `cpv-preferences` (422 `cap_exceeded` at 30, matches
+  the existing repo cap), `geographies`, `capabilities`, `certifications`,
+  `exclusions`, `matching-preferences`, `digest-preferences` — each with a
+  paired GET. `POST /api/org/onboarding/complete` (owner-only) sets
+  `company_profiles.onboarding_completed_at` and returns
+  `scopeOverlapWarning: true` when the org's CPV-preference divisions have
+  zero overlap with `loadIngestionScope()` (MATCH-P6-01 Phase 7 follow-up
+  item 3) — resolves the "Next (Phase 7)" item 3 onboarding warning.
+  `onboarding_started`/`onboarding_completed` product events fire on first
+  profile write / completion respectively.
+- Feed (`GET /api/org/feed`, `apps/worker/src/routes/feed.ts` +
+  `packages/db/src/repositories/matching.ts` `listFeedRows`): tabs
+  (`today|strong|worth_reviewing|possible|saved|ignored`), filters
+  (minScore, country, cpvPrefix, buyerName substring, min/maxValueEur,
+  deadlineBefore/After, publishedAfter), cursor pagination (≤50, default 25,
+  keyset on score DESC/id DESC). `EXCLUDED` matches never appear. Expired-
+  deadline lots are excluded from every tab EXCEPT `saved`/`ignored`
+  (deliberate: a customer who saved/ignored something can still find it
+  after its deadline). Rows carry top-2 components by points, one "top" risk
+  flag (HIGH before POSSIBLE), saved/ignored flags — never the lot
+  description.
+- Detail (`GET /api/org/tenders/:matchId`, `apps/worker/src/routes/
+tenders.ts` + `packages/db` `getTenderMatchWithComponents`/
+  `getTenderDetailBundle` (new, tender-corpus.ts)): full lot/notice/buyer
+  bundle, score+components+risk flags, saved/ignored/feedback state.
+  **On-demand LOW_FIT recompute** (resolves "Next (Phase 7)" item 1): when a
+  match has no stored component rows, the route recomputes live via
+  `loadOrgProfile` + `mapLotToEngineInput` (called with the match's ORIGINAL
+  `scored_at`, not "now" — required for deadline-runway reproducibility) +
+  `scoreLotForOrg`, at the CURRENT org profile — never persisted. Determinism
+  guarantee documented in-file: reproduces exactly when the org profile is
+  unchanged and `match.engine_version === ENGINE_VERSION`; an engine-version
+  mismatch skips recompute entirely and returns a score-only note instead of
+  a fabricated breakdown (never silently wrong). Test proves recomputed
+  component sum === stored score.
+- Actions (`apps/worker/src/routes/tenders.ts`): `save`/`unsave`/`ignore`/
+  `unignore` (idempotent booleans; `lotId`/`noticeId` resolved server-side
+  from the org-checked match row via new `getTenderMatchLotNotice`, never
+  from client input) and `feedback` (`upsertCustomerFeedback`, reasons enum,
+  comment ≤500 chars). Product events: `match_saved`, `match_ignored`,
+  `feedback_useful`, `feedback_not_useful` (existing `insertProductEvent`,
+  no repo change needed).
+- Repo extensions: `packages/db/src/repositories/matching.ts`
+  (`getTenderMatchLotNotice`, `listFeedRows` + `FeedRow`/`FeedFilters`
+  types); `engagement.ts` (`isTenderSaved`, `isTenderIgnored`,
+  `getCustomerFeedback`); `tender-corpus.ts` (`getTenderDetailBundle`,
+  global — org check happens one layer up via the match row, same pattern as
+  `loadLotScoringBundlesByIds`).
+- Methodology-page CPV pre-filter disclosure ("Next (Phase 7)" item 2) is
+  NOT done — no marketing/methodology page exists yet; still open, tracked
+  below.
+- Tests: `packages/db/src/repositories/matching.d1.test.ts` (new, 6 tests,
+  real D1) — tab filtering, `today` 24h window incl. LOW_FIT, minScore,
+  cursor pagination stability across a page boundary, expired-deadline
+  exclusion (scored tabs vs. saved), saved/ignored tabs + cross-org
+  invisibility. `apps/worker/src/product.test.ts` (new, 18 tests, real
+  workerd+D1) — presets shape + 401; profile-bundle PUT owner-only/cap/
+  cross-org isolation + full bundle round-trip; onboarding complete sets
+  timestamp + scope-overlap warning (disjoint-CPV org) + no-warning
+  (in-scope org) + 409 without a profile; feed cross-org marker + 401;
+  detail full STRONG bundle, LOW_FIT recompute (score computed via the REAL
+  engine in test setup so the sum-equals-stored assertion is meaningful,
+  not asserting against an arbitrary seeded number), engine-version-
+  mismatch note path, cross-org 404; save/unsave/ignore/unignore idempotency
+  - product-event counts, cross-org 404 on save, feedback upsert (verdict
+    change replaces the row, not duplicates) + distinct product events,
+    comment >500 chars rejected at the boundary.
+- Real counts (2026-08-15, all executed): `pnpm format` (2 test files
+  reformatted, no source diffs) · `format:check` PASS · `lint` PASS ·
+  `typecheck` PASS (14/14 projects) · `test` PASS — root vitest 41 files/280
+  tests (unchanged); worker pool-workers 7 files/62 tests (+18 over the
+  prior 44, new `product.test.ts`); packages/db pool-workers 9 files/44
+  tests (+6, new `matching.d1.test.ts`) = 57 files/386 tests total · `build`
+  PASS (web 17 modules; worker `wrangler deploy --dry-run` lists all
+  bindings incl. `MATCH_QUEUE`).
+- Open items for stage B (frontend): (1) methodology-page CPV pre-filter
+  disclosure copy (Phase 7 item 2) still not written — no marketing page
+  exists to host it yet; (2) onboarding UI to apply a preset client-side and
+  surface `scopeOverlapWarning`; (3) feed UI (tabs, filters, infinite
+  scroll/cursor), tender detail UI (explanation rendering per docs/matching-
+  engine.md's example format, save/ignore/feedback controls); (4) no
+  dedicated `/api/org/tenders` list-all endpoint — the feed IS the list
+  surface, by design; (5) feed's `country`/`cpvPrefix`/`buyerName` filters
+  are unit-tested at the repo level (matching.d1.test.ts's tab/score/cursor
+  coverage) but not independently HTTP-tested per filter — the query-schema
+  wiring is straightforward and low-risk, flagged rather than exhaustively
+  tested given the phase's scope.
 
 ## Completed
 
