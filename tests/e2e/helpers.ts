@@ -79,3 +79,51 @@ export async function scoreNow(request: APIRequestContext): Promise<void> {
   const response = await request.post('/api/test/score-now');
   expect(response.status(), 'score-now test hook must succeed').toBe(200);
 }
+
+/**
+ * A signed-up, verified, logged-in, onboarded-with-matches account, for
+ * specs (accessibility, keyboard traversal) that need real authenticated
+ * pages but don't themselves exercise the onboarding wizard's UI in detail
+ * (`critical-path.spec.ts` covers that). Applies the cybersecurity-
+ * consultancy preset unedited (its CPV divisions overlap the default
+ * ingestion scope and the seeded demo lots), skips every optional step, then
+ * runs `scoreNow` so the feed/tender-detail pages have real content to
+ * render for the accessibility scan.
+ */
+export async function bootstrapOnboardedUserWithMatches(
+  page: Page,
+  orgNamePrefix: string,
+): Promise<{ email: string }> {
+  const email = uniqueEmail(orgNamePrefix.toLowerCase().replace(/\s+/g, '-'));
+  await signUpAndVerify(page, { name: `${orgNamePrefix} User`, email, password: TEST_PASSWORD });
+  await login(page, email, TEST_PASSWORD);
+
+  await page.goto('/onboarding');
+  await page.getByLabel('Organization name').fill(`${orgNamePrefix} ${String(Date.now())}`);
+  await page.getByRole('button', { name: 'Create organization' }).click();
+  await page.getByRole('radio', { name: /Cybersecurity consultancy/ }).check();
+  await page.getByRole('button', { name: 'Save & continue' }).click();
+  // CPV codes step MUST be explicitly saved (not skipped) — "Skip" never
+  // calls saveCpv(), and without a persisted org CPV preference the
+  // division pre-filter (`scoreLotsForOrgs`) drops every pair with no match
+  // row at all, leaving the feed empty. The preset's codes are already
+  // pre-selected; saving them as-is is enough for the seeded demo lots to
+  // produce matches.
+  await page.getByRole('button', { name: 'Save & continue' }).click();
+  // Remaining optional steps (geographies, keywords, capabilities/certs,
+  // exclusions, value/deadline, digest) — skip.
+  for (let i = 0; i < 6; i += 1) {
+    await page.getByRole('button', { name: 'Skip' }).click();
+  }
+  await expect(page.getByText('Step 10 of 10: Review')).toBeVisible();
+  await page.getByRole('button', { name: 'Finish onboarding' }).click();
+  await expect(page.locator('.scope-warning')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Go to your feed' }).click();
+  await expect(page).toHaveURL(/\/app$/);
+
+  await scoreNow(page.request);
+  await page.reload();
+  await expect(page.locator('article.tender-card').first()).toBeVisible();
+
+  return { email };
+}
