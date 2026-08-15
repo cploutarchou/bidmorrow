@@ -30,15 +30,19 @@ Edit`, `Account / Workers R2 Storage / Edit`, `Account / Workers Scripts
    this spend on the connected account (inside the cost budget; see
    docs/cost-model.md).
 
-## 2. Domain & DNS for bidmorrow.com — OPEN
+## 2. Domain & DNS for bidmorrow.com — PARTIALLY PROVIDED (2026-08-15)
 
 Needed for: production URLs and email deliverability (Phases 8/13).
 
-Human actions:
+**Provided**: bidmorrow.com DNS is on Cloudflare, on the account connected
+to Claude via the MCP connector. Staging needs no DNS (workers.dev).
 
-1. Confirm bidmorrow.com registration and (recommended) move DNS to Cloudflare.
-2. Add DNS records for the app: `bidmorrow.com` / `app.bidmorrow.com` routed to
-   the Worker (custom domain in Workers settings).
+Still human-required / deferred to Phase 13:
+
+1. ~~Confirm bidmorrow.com registration and move DNS to Cloudflare.~~ DONE.
+2. App custom-domain attach (`bidmorrow.com` → Worker) happens at
+   production deploy time via wrangler routes (`custom_domain: true`) —
+   no manual DNS record needed now that the zone is on the account.
 3. Email authentication (required before any digest email is sent to customers —
    deliverability depends on it):
    - Add the SPF, DKIM and DMARC records that Resend displays under
