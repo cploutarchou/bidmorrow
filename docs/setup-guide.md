@@ -55,14 +55,21 @@ but **GitHub Actions CI needs its own least-privilege token** to deploy.
 1. https://dash.cloudflare.com → top-right profile icon → **My Profile** →
    **API Tokens** → **Create Token**.
 2. Start from the **"Edit Cloudflare Workers"** template.
-3. Under **Permissions**, make sure the final list includes (add any missing):
-   - `Account` / `Workers Scripts` / `Edit`
-   - `Account` / `D1` / `Edit`
-   - `Account` / `Workers R2 Storage` / `Edit`
-   - `Account` / `Queues` / `Edit`
+3. Under **Permissions**, make sure the final list includes (add any missing;
+   verified against Cloudflare docs 2026-08-15):
+   - `Account` / `Workers Scripts` / `Edit` — deploy, cron, `wrangler secret put`
+   - `Account` / `D1` / `Edit` — create DB, remote migrations
+   - `Account` / `Workers R2 Storage` / `Edit` — snapshots bucket
+   - `Account` / `Queues` / `Edit` — job queues + DLQs
+   - `Account` / `Account Settings` / `Read` (template default)
+   - `Zone` / `Workers Routes` / `Edit` — custom-domain attach at deploy
+   - `User` / `User Details` / `Read` + `User` / `Memberships` / `Read`
+     (template defaults, used by `wrangler whoami`)
+   - Remove `Workers KV Storage` if the template added it (unused).
+   - Do NOT add DNS Edit — custom domains manage their own record via
+     Workers Routes.
 4. **Account Resources**: Include → your account (not "All accounts").
-5. **Zone Resources**: Include → Specific zone → `bidmorrow.com`
-   (needed so deploys can attach the custom domain).
+5. **Zone Resources**: Include → Specific zone → `bidmorrow.com`.
 6. Continue → Create Token → **copy the token now** (shown once).
 
 Never use the legacy "Global API Key" — it cannot be scoped.
