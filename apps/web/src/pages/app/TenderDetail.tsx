@@ -267,9 +267,21 @@ export function TenderDetail(): ReactElement {
       )}
 
       <p>
-        <a href={detail.notice.sourceUrl} target="_blank" rel="noopener noreferrer" className="cta">
-          Open original TED notice
-        </a>
+        {/* SEC-P7-05: sourceUrl is untrusted TED-sourced data — only render an
+            actual clickable link when it is a genuine https:// URL, never a
+            javascript:/data: or other scheme, otherwise show it as plain text. */}
+        {detail.notice.sourceUrl.startsWith('https://') ? (
+          <a
+            href={detail.notice.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cta"
+          >
+            Open original TED notice
+          </a>
+        ) : (
+          <span>Original TED notice link unavailable ({detail.notice.sourceUrl})</span>
+        )}
       </p>
       <p className="ted-attribution">
         Source of procurement notices: Tenders Electronic Daily (TED), Publications Office of the

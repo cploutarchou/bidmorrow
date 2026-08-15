@@ -10,7 +10,7 @@
  * risk flags is written in ONE D1 batch (a single SQL transaction), so a
  * match row can never exist without its decomposition.
  */
-import { and, desc, eq, exists, gt, inArray, gte, like, lt, lte, or, sql } from 'drizzle-orm';
+import { and, desc, eq, exists, gt, inArray, gte, lt, lte, or, sql } from 'drizzle-orm';
 import type {
   ComponentStatus,
   MatchClassification,
@@ -513,6 +513,18 @@ export interface FeedRow {
 
 const MS_PER_DAY_FEED = 86_400_000;
 
+/**
+ * Escapes LIKE metacharacters (`%`, `_`, and the escape character itself, `\`)
+ * in a value that will be embedded inside a LIKE pattern, so a literal `%`/`_`
+ * typed by a customer (e.g. a buyer name containing "R&D 50%") is matched
+ * literally rather than as an unintended wildcard (SEC-P7-03). Always paired
+ * with an explicit `ESCAPE '\'` clause at the call site — the default SQLite
+ * LIKE has no escape character otherwise.
+ */
+function escapeLikePattern(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
+
 /** Feed cursor: `${score}:${id}` of the last row — score DESC, id DESC is the deterministic order. */
 function decodeScoreCursor(cursor: string): { score: number; id: string } {
   const separator = cursor.indexOf(':');
@@ -610,7 +622,11 @@ export async function listFeedRows(
     conditions.push(gt(tenderLots.deadlineAt, args.deadlineAfter));
   if (args.publishedAfter !== undefined)
     conditions.push(gte(tenderNotices.publicationDate, args.publishedAfter));
-  if (args.buyerName !== undefined) conditions.push(like(buyers.name, `%${args.buyerName}%`));
+  if (args.buyerName !== undefined) {
+    conditions.push(
+      sql`${buyers.name} LIKE ${`%${escapeLikePattern(args.buyerName)}%`} ESCAPE '\\'`,
+    );
+  }
   if (args.country !== undefined) {
     conditions.push(
       exists(
@@ -635,7 +651,7 @@ export async function listFeedRows(
           .where(
             and(
               eq(tenderCpvCodes.lotId, tenderLots.id),
-              like(tenderCpvCodes.cpvCode, `${args.cpvPrefix}%`),
+              sql`${tenderCpvCodes.cpvCode} LIKE ${`${escapeLikePattern(args.cpvPrefix)}%`} ESCAPE '\\'`,
             ),
           ),
       ),

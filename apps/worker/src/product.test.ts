@@ -422,6 +422,16 @@ describe('GET /api/org/feed', () => {
     const response = await fetchApi('/api/org/feed?tab=today');
     expect(response.status).toBe(401);
   });
+
+  it('SEC-P7-03: a malformed cursor returns 400 invalid_cursor, never a 500', async () => {
+    const org = await setUpOrg('FeedBadCursorOrg');
+    const response = await fetchApi('/api/org/feed?tab=today&cursor=not-a-valid-cursor', {
+      headers: { cookie: org.cookie },
+    });
+    expect(response.status).toBe(400);
+    const body = (await response.json()) as { error: string };
+    expect(body.error).toBe('invalid_cursor');
+  });
 });
 
 describe('GET /api/org/tenders/:matchId', () => {

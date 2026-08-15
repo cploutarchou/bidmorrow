@@ -162,7 +162,7 @@ tendersRoutes.get('/tenders/:matchId', zValidator('param', matchIdParamSchema), 
         explanationNote =
           'The original tender data is no longer available — only the stored score is shown.';
       } else {
-        const mapped = await mapLotToEngineInput(db, bundle, match.scoredAt);
+        const mapped = await mapLotToEngineInput(db, bundle, match.scoredAt, c.get('logger'));
         if (mapped.kind === 'missing_main_cpv') {
           explanationNote =
             'The original tender data is no longer complete enough to recompute an explanation.';

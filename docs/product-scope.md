@@ -90,3 +90,8 @@ generic tender search.
 - Founding: $29/month, limited to first 20 customers (feature flag
   `founding_plan_open`, configurable cap).
 - Standard: $49/month.
+- The founding price is retained for the life of the subscription — a
+  founding customer's plan never auto-migrates to the standard price
+  (PROD-P7-01, Phase 7 review). Any future price change to an existing
+  subscriber would require its own explicit, disclosed decision; none is
+  planned for V1.

@@ -54,22 +54,33 @@ feedRoutes.get('/feed', zValidator('query', feedQuerySchema), async (c) => {
   if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
 
   const query = c.req.valid('query');
-  const page = await listFeedRows(db, organizationId, {
-    tab: query.tab,
-    engineVersion: ENGINE_VERSION,
-    now: Date.now(),
-    ...(query.minScore !== undefined ? { minScore: query.minScore } : {}),
-    ...(query.country !== undefined ? { country: query.country } : {}),
-    ...(query.cpvPrefix !== undefined ? { cpvPrefix: query.cpvPrefix } : {}),
-    ...(query.buyerName !== undefined ? { buyerName: query.buyerName } : {}),
-    ...(query.minValueEur !== undefined ? { minValueEur: query.minValueEur } : {}),
-    ...(query.maxValueEur !== undefined ? { maxValueEur: query.maxValueEur } : {}),
-    ...(query.deadlineBefore !== undefined ? { deadlineBefore: query.deadlineBefore } : {}),
-    ...(query.deadlineAfter !== undefined ? { deadlineAfter: query.deadlineAfter } : {}),
-    ...(query.publishedAfter !== undefined ? { publishedAfter: query.publishedAfter } : {}),
-    ...(query.limit !== undefined ? { limit: query.limit } : {}),
-    ...(query.cursor !== undefined ? { cursor: query.cursor } : {}),
-  });
+  // SEC-P7-03: `listFeedRows` throws a plain Error on a malformed/tampered
+  // cursor (packages/db `decodeScoreCursor`) — that must surface as a 400
+  // to the client, never an unhandled 500.
+  let page: Awaited<ReturnType<typeof listFeedRows>>;
+  try {
+    page = await listFeedRows(db, organizationId, {
+      tab: query.tab,
+      engineVersion: ENGINE_VERSION,
+      now: Date.now(),
+      ...(query.minScore !== undefined ? { minScore: query.minScore } : {}),
+      ...(query.country !== undefined ? { country: query.country } : {}),
+      ...(query.cpvPrefix !== undefined ? { cpvPrefix: query.cpvPrefix } : {}),
+      ...(query.buyerName !== undefined ? { buyerName: query.buyerName } : {}),
+      ...(query.minValueEur !== undefined ? { minValueEur: query.minValueEur } : {}),
+      ...(query.maxValueEur !== undefined ? { maxValueEur: query.maxValueEur } : {}),
+      ...(query.deadlineBefore !== undefined ? { deadlineBefore: query.deadlineBefore } : {}),
+      ...(query.deadlineAfter !== undefined ? { deadlineAfter: query.deadlineAfter } : {}),
+      ...(query.publishedAfter !== undefined ? { publishedAfter: query.publishedAfter } : {}),
+      ...(query.limit !== undefined ? { limit: query.limit } : {}),
+      ...(query.cursor !== undefined ? { cursor: query.cursor } : {}),
+    });
+  } catch (cause) {
+    if (cause instanceof Error && cause.message.includes('malformed cursor')) {
+      return c.json({ error: 'invalid_cursor' }, 400);
+    }
+    throw cause;
+  }
 
   return c.json({ items: page.items, nextCursor: page.nextCursor });
 });

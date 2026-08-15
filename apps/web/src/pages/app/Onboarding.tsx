@@ -2,11 +2,14 @@ import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import { useNavigate } from 'react-router';
 import { COMPANY_PRESETS, CONTRACT_NATURES, type ContractNature } from '@bidmorrow/domain';
 import { api, ApiError } from '../../lib/api';
-import type {
-  ExclusionDto,
-  GeographyDto,
-  KeywordDto,
-  OrgProfileResponse,
+import {
+  CERTIFICATION_CODES,
+  type CertificationCode,
+  type CertificationDto,
+  type ExclusionDto,
+  type GeographyDto,
+  type KeywordDto,
+  type OrgProfileResponse,
 } from '../../lib/onboarding-types';
 
 const STEPS = [
@@ -15,11 +18,25 @@ const STEPS = [
   'CPV codes',
   'Geographies',
   'Keywords',
+  'Capabilities & certifications',
   'Exclusions',
   'Value & deadline',
   'Digest',
   'Review',
 ] as const;
+
+/** Mirrors the worker's own 422 `cap_exceeded` shape (packages/db repos). */
+function describeSaveError(cause: unknown): string {
+  if (cause instanceof ApiError && cause.status === 422) {
+    const body = cause.body as { error?: string; cap?: number } | null;
+    if (body?.error === 'cap_exceeded') {
+      return body.cap !== undefined
+        ? `You've reached the limit of ${String(body.cap)} items for this list — remove one before adding another.`
+        : "You've reached the limit for this list — remove an item before adding another.";
+    }
+  }
+  return 'Could not save this step. Please try again.';
+}
 
 const COUNTRY_OPTIONS = [
   'AT',
@@ -84,17 +101,24 @@ export function Onboarding(): ReactElement {
   const [keywords, setKeywords] = useState<KeywordDto[]>([]);
   const [keywordInput, setKeywordInput] = useState('');
 
-  // Step 5: exclusions
+  // Step 5: capabilities + certifications
+  const [capabilities, setCapabilities] = useState<string[]>([]);
+  const [capabilityInput, setCapabilityInput] = useState('');
+  const [certifications, setCertifications] = useState<CertificationDto[]>([]);
+  const [newCertCode, setNewCertCode] = useState<CertificationCode>('ISO_27001');
+  const [newCertLabel, setNewCertLabel] = useState('');
+
+  // Step 6: exclusions
   const [exclusions, setExclusions] = useState<ExclusionDto[]>([]);
   const [exclusionInput, setExclusionInput] = useState('');
 
-  // Step 6: value + deadline
+  // Step 7: value + deadline
   const [minValueEur, setMinValueEur] = useState('');
   const [maxValueEur, setMaxValueEur] = useState('');
   const [supportedNatures, setSupportedNatures] = useState<ContractNature[]>([...CONTRACT_NATURES]);
   const [minimumDaysRemaining, setMinimumDaysRemaining] = useState('');
 
-  // Step 7: digest
+  // Step 8: digest
   const [digestEnabled, setDigestEnabled] = useState(true);
   const [digestSendEmpty, setDigestSendEmpty] = useState(false);
   const [digestMinClassification, setDigestMinClassification] = useState('WORTH_REVIEWING');
@@ -116,6 +140,18 @@ export function Onboarding(): ReactElement {
           setPresetKey(res.profile.presetKey ?? '');
           setStep(1);
         }
+        // Best-effort prefill of already-saved capabilities/certifications
+        // (e.g. a resumed session) — a failure here shouldn't block the rest
+        // of the wizard, which is why it's a separate, silently-tolerant
+        // fetch rather than part of the required-profile chain above.
+        void api
+          .get<{ capabilities: { label: string }[] }>('/api/org/capabilities')
+          .then((r) => setCapabilities(r.capabilities.map((c) => c.label)))
+          .catch(() => undefined);
+        void api
+          .get<{ certifications: CertificationDto[] }>('/api/org/certifications')
+          .then((r) => setCertifications(r.certifications))
+          .catch(() => undefined);
       })
       .catch((cause: unknown) => {
         if (cause instanceof ApiError && (cause.status === 403 || cause.status === 401)) {
@@ -136,6 +172,7 @@ export function Onboarding(): ReactElement {
         language: k.language ?? null,
       })),
     );
+    setCapabilities([...preset.capabilities]);
   }
 
   async function createOrganization(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -153,8 +190,9 @@ export function Onboarding(): ReactElement {
     }
   }
 
-  async function saveBasics(): Promise<void> {
+  async function saveBasics(): Promise<boolean> {
     setBusy(true);
+    setError(null);
     try {
       await api.put('/api/org/profile', {
         displayName: displayName.length > 0 ? displayName : null,
@@ -164,53 +202,93 @@ export function Onboarding(): ReactElement {
         presetKey: presetKey.length > 0 ? presetKey : null,
         onboardingCompletedAt: null,
       });
+      return true;
+    } catch (cause) {
+      setError(describeSaveError(cause));
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
-  async function saveCpv(): Promise<void> {
+  async function saveCpv(): Promise<boolean> {
     setBusy(true);
+    setError(null);
     try {
       await api.put('/api/org/cpv-preferences', { cpvCodes });
+      return true;
+    } catch (cause) {
+      setError(describeSaveError(cause));
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
-  async function saveGeographies(): Promise<void> {
+  async function saveGeographies(): Promise<boolean> {
     setBusy(true);
+    setError(null);
     try {
       const geographies: GeographyDto[] = [
         ...countries.map((code): GeographyDto => ({ kind: 'opportunity_country', code })),
         ...nutsCodes.map((code): GeographyDto => ({ kind: 'preferred_nuts', code })),
       ];
       await api.put('/api/org/geographies', { geographies });
+      return true;
+    } catch (cause) {
+      setError(describeSaveError(cause));
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
-  async function saveKeywords(): Promise<void> {
+  async function saveKeywords(): Promise<boolean> {
     setBusy(true);
+    setError(null);
     try {
       await api.put('/api/org/keywords', { keywords });
+      return true;
+    } catch (cause) {
+      setError(describeSaveError(cause));
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
-  async function saveExclusions(): Promise<void> {
+  async function saveCapabilitiesAndCertifications(): Promise<boolean> {
     setBusy(true);
+    setError(null);
+    try {
+      await api.put('/api/org/capabilities', { labels: capabilities });
+      await api.put('/api/org/certifications', { certifications });
+      return true;
+    } catch (cause) {
+      setError(describeSaveError(cause));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveExclusions(): Promise<boolean> {
+    setBusy(true);
+    setError(null);
     try {
       await api.put('/api/org/exclusions', { exclusions });
+      return true;
+    } catch (cause) {
+      setError(describeSaveError(cause));
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
-  async function saveMatchingPreferences(): Promise<void> {
+  async function saveMatchingPreferences(): Promise<boolean> {
     setBusy(true);
+    setError(null);
     try {
       await api.put('/api/org/matching-preferences', {
         minValueEur: minValueEur.length > 0 ? Number(minValueEur) : null,
@@ -218,13 +296,18 @@ export function Onboarding(): ReactElement {
         supportedContractNatures: supportedNatures,
         minimumDaysRemaining: minimumDaysRemaining.length > 0 ? Number(minimumDaysRemaining) : null,
       });
+      return true;
+    } catch (cause) {
+      setError(describeSaveError(cause));
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
-  async function saveDigestPreferences(): Promise<void> {
+  async function saveDigestPreferences(): Promise<boolean> {
     setBusy(true);
+    setError(null);
     try {
       await api.put('/api/org/digest-preferences', {
         enabled: digestEnabled,
@@ -232,6 +315,10 @@ export function Onboarding(): ReactElement {
         minClassification: digestMinClassification,
         timezone: digestTimezone,
       });
+      return true;
+    } catch (cause) {
+      setError(describeSaveError(cause));
+      return false;
     } finally {
       setBusy(false);
     }
@@ -370,7 +457,15 @@ export function Onboarding(): ReactElement {
               onChange={(event) => setEmployeeBand(event.target.value)}
             />
           </div>
-          <StepActions busy={busy} onSkip={next} onSave={() => void saveBasics().then(next)} />
+          <StepActions
+            busy={busy}
+            onSkip={next}
+            onSave={() =>
+              void saveBasics().then((ok) => {
+                if (ok) next();
+              })
+            }
+          />
         </section>
       )}
 
@@ -409,7 +504,15 @@ export function Onboarding(): ReactElement {
               Add
             </button>
           </div>
-          <StepActions busy={busy} onSkip={next} onSave={() => void saveCpv().then(next)} />
+          <StepActions
+            busy={busy}
+            onSkip={next}
+            onSave={() =>
+              void saveCpv().then((ok) => {
+                if (ok) next();
+              })
+            }
+          />
         </section>
       )}
 
@@ -451,7 +554,15 @@ export function Onboarding(): ReactElement {
               Add
             </button>
           </div>
-          <StepActions busy={busy} onSkip={next} onSave={() => void saveGeographies().then(next)} />
+          <StepActions
+            busy={busy}
+            onSkip={next}
+            onSave={() =>
+              void saveGeographies().then((ok) => {
+                if (ok) next();
+              })
+            }
+          />
         </section>
       )}
 
@@ -502,11 +613,131 @@ export function Onboarding(): ReactElement {
               Add
             </button>
           </div>
-          <StepActions busy={busy} onSkip={next} onSave={() => void saveKeywords().then(next)} />
+          <StepActions
+            busy={busy}
+            onSkip={next}
+            onSave={() =>
+              void saveKeywords().then((ok) => {
+                if (ok) next();
+              })
+            }
+          />
         </section>
       )}
 
       {step === 5 && (
+        <section>
+          <p>
+            List the capabilities you can deliver and any certifications your company holds — used
+            in your score explanations, not shown to buyers.
+          </p>
+          <fieldset>
+            <legend>Capabilities</legend>
+            <ul className="chip-list">
+              {capabilities.map((label, index) => (
+                <li key={`${label}-${index}`}>
+                  {label}
+                  <button
+                    type="button"
+                    aria-label={`Remove capability ${label}`}
+                    onClick={() => setCapabilities((cs) => cs.filter((_, i) => i !== index))}
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="form-field inline">
+              <label htmlFor="capability-input">Add a capability</label>
+              <input
+                id="capability-input"
+                value={capabilityInput}
+                onChange={(event) => setCapabilityInput(event.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (capabilityInput.trim().length > 0) {
+                    setCapabilities((cs) => [...cs, capabilityInput.trim()]);
+                    setCapabilityInput('');
+                  }
+                }}
+              >
+                Add
+              </button>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Certifications</legend>
+            <ul className="chip-list">
+              {certifications.map((cert, index) => (
+                <li key={`${cert.certificationCode}-${index}`}>
+                  {cert.certificationCode}
+                  {cert.label !== null ? `: ${cert.label}` : ''}
+                  <button
+                    type="button"
+                    aria-label={`Remove certification ${cert.certificationCode}`}
+                    onClick={() => setCertifications((cs) => cs.filter((_, i) => i !== index))}
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="form-field inline">
+              <label htmlFor="cert-code">Certification</label>
+              <select
+                id="cert-code"
+                value={newCertCode}
+                onChange={(event) => setNewCertCode(event.target.value as CertificationCode)}
+              >
+                {CERTIFICATION_CODES.map((code) => (
+                  <option key={code} value={code}>
+                    {code}
+                  </option>
+                ))}
+              </select>
+              {newCertCode === 'OTHER' && (
+                <>
+                  <label htmlFor="cert-label">Certification name</label>
+                  <input
+                    id="cert-label"
+                    value={newCertLabel}
+                    onChange={(event) => setNewCertLabel(event.target.value)}
+                  />
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  if (newCertCode === 'OTHER' && newCertLabel.trim().length === 0) return;
+                  setCertifications((cs) => [
+                    ...cs,
+                    {
+                      certificationCode: newCertCode,
+                      label: newCertCode === 'OTHER' ? newCertLabel.trim() : null,
+                    },
+                  ]);
+                  setNewCertLabel('');
+                }}
+              >
+                Add
+              </button>
+            </div>
+          </fieldset>
+          <StepActions
+            busy={busy}
+            onSkip={next}
+            onSave={() =>
+              void saveCapabilitiesAndCertifications().then((ok) => {
+                if (ok) next();
+              })
+            }
+          />
+        </section>
+      )}
+
+      {step === 6 && (
         <section>
           <p>Exclude phrases, CPV families, or countries you never want to see.</p>
           <ul className="chip-list">
@@ -542,11 +773,19 @@ export function Onboarding(): ReactElement {
               Add
             </button>
           </div>
-          <StepActions busy={busy} onSkip={next} onSave={() => void saveExclusions().then(next)} />
+          <StepActions
+            busy={busy}
+            onSkip={next}
+            onSave={() =>
+              void saveExclusions().then((ok) => {
+                if (ok) next();
+              })
+            }
+          />
         </section>
       )}
 
-      {step === 6 && (
+      {step === 7 && (
         <section>
           <div className="form-field">
             <label htmlFor="min-value">Minimum contract value (EUR)</label>
@@ -600,12 +839,16 @@ export function Onboarding(): ReactElement {
           <StepActions
             busy={busy}
             onSkip={next}
-            onSave={() => void saveMatchingPreferences().then(next)}
+            onSave={() =>
+              void saveMatchingPreferences().then((ok) => {
+                if (ok) next();
+              })
+            }
           />
         </section>
       )}
 
-      {step === 7 && (
+      {step === 8 && (
         <section>
           <label className="checkbox-row">
             <input
@@ -639,12 +882,16 @@ export function Onboarding(): ReactElement {
           <StepActions
             busy={busy}
             onSkip={next}
-            onSave={() => void saveDigestPreferences().then(next)}
+            onSave={() =>
+              void saveDigestPreferences().then((ok) => {
+                if (ok) next();
+              })
+            }
           />
         </section>
       )}
 
-      {step === 8 && (
+      {step === 9 && (
         <section>
           <p>Review complete. You can edit any of this later in Settings.</p>
           <button className="cta" type="button" disabled={busy} onClick={() => void complete()}>

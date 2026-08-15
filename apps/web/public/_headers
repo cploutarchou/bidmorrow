@@ -1,0 +1,44 @@
+# Security headers for statically-served SPA assets (SEC-P7-01).
+#
+# Cloudflare Workers Static Assets serves this file the same way Cloudflare
+# Pages does: a `_headers` file at the root of the static-assets output
+# directory (`apps/web/dist/`, since Vite copies `public/` verbatim) is
+# parsed at deploy time and applied to matching response paths, independent
+# of any Worker code — this is the only way to attach headers to assets
+# served directly by the platform without invoking the Worker (`run_worker_
+# first` in wrangler.jsonc only routes `/api/*` through the Worker; every
+# other path, including `/` and hashed asset files, is served by the
+# platform's static-assets layer, which never runs `apps/worker/src/index.ts`'s
+# `secureHeaders()` middleware). Format: one or more path patterns, each
+# followed by indented `Header: value` lines; `/*` matches every path.
+# Per-rule limits documented by Cloudflare (shared Pages/Static-Assets
+# mechanism): ≤100 header rules per project, ≤2,000 characters per header
+# line, ≤100 headers total per `_headers` file.
+#
+# VERIFICATION NOTE (2026-08-15): the `verify-current-docs` skill's live
+# Cloudflare-docs fetch was attempted for this session but the outbound
+# proxy returned a blocked/403 response (same restriction noted in prior
+# phases for ted.europa.eu/ecb.europa.eu — developers.cloudflare.com was
+# likewise unreachable from this dev environment). This `_headers` syntax
+# and the Workers-Static-Assets-shares-Pages'-_headers-mechanism claim are
+# NOT re-verified against a live fetch this session; they match this
+# project's existing recorded understanding (docs/dependency-versions.md's
+# "Workers Static Assets is the recommended SPA hosting" note, same platform
+# family as Pages) and standard, long-published Cloudflare behavior, but a
+# live docs re-check is flagged as a TODO before this ships to production
+# (see IMPLEMENTATION_LEDGER.md Phase 7 review-fix entry).
+#
+# CSP: SPA-compatible mirror of the Worker's own `secureHeaders()` policy
+# (apps/worker/src/index.ts) — checked against a real `pnpm build` output
+# (apps/web/dist/index.html): no inline <script>/<style>, only a single
+# `<script type="module" crossorigin src="/assets/...">` and one external
+# `<link rel="stylesheet" crossorigin href="/assets/...">`, both same-origin,
+# so no inline-script/inline-style CSP exception (hash, nonce, or the
+# unsafe- keyword) is needed.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), geolocation=(), microphone=()
+  X-Frame-Options: DENY

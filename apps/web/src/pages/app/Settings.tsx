@@ -3,20 +3,37 @@ import { useNavigate } from 'react-router';
 import { CONTRACT_NATURES, type ContractNature } from '@bidmorrow/domain';
 import { api, ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
-import type {
-  DigestPreferencesDto,
-  ExclusionDto,
-  GeographyDto,
-  KeywordDto,
-  MatchingPreferencesDto,
-  OrgProfileResponse,
+import {
+  CERTIFICATION_CODES,
+  type CertificationCode,
+  type CertificationDto,
+  type DigestPreferencesDto,
+  type ExclusionDto,
+  type GeographyDto,
+  type KeywordDto,
+  type MatchingPreferencesDto,
+  type OrgProfileResponse,
 } from '../../lib/onboarding-types';
+
+/** Mirrors the worker's own 422 `cap_exceeded` shape (packages/db repos). */
+function describeSaveError(cause: unknown): string {
+  if (cause instanceof ApiError && cause.status === 422) {
+    const body = cause.body as { error?: string; cap?: number } | null;
+    if (body?.error === 'cap_exceeded') {
+      return body.cap !== undefined
+        ? `You've reached the limit of ${String(body.cap)} items for this list — remove one before adding another.`
+        : "You've reached the limit for this list — remove an item before adding another.";
+    }
+  }
+  return 'Could not save — please try again.';
+}
 
 export function Settings(): ReactElement {
   const navigate = useNavigate();
   const { refresh } = useAuth();
   const [loading, setLoading] = useState(true);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');
@@ -35,6 +52,12 @@ export function Settings(): ReactElement {
   const [exclusions, setExclusions] = useState<ExclusionDto[]>([]);
   const [newExclusion, setNewExclusion] = useState('');
 
+  const [capabilities, setCapabilities] = useState<string[]>([]);
+  const [newCapability, setNewCapability] = useState('');
+  const [certifications, setCertifications] = useState<CertificationDto[]>([]);
+  const [newCertCode, setNewCertCode] = useState<CertificationCode>('ISO_27001');
+  const [newCertLabel, setNewCertLabel] = useState('');
+
   const [matching, setMatching] = useState<MatchingPreferencesDto | null>(null);
   const [digest, setDigest] = useState<DigestPreferencesDto | null>(null);
   const [supportedNatures, setSupportedNatures] = useState<ContractNature[]>([...CONTRACT_NATURES]);
@@ -44,87 +67,151 @@ export function Settings(): ReactElement {
 
   useEffect(() => {
     async function load(): Promise<void> {
-      const [profileRes, cpvRes, kwRes, geoRes, exRes] = await Promise.all([
-        api.get<OrgProfileResponse>('/api/org/profile'),
-        api.get<{ cpvPreferences: { cpvCode: string }[] }>('/api/org/cpv-preferences'),
-        api.get<{ keywords: KeywordDto[] }>('/api/org/keywords'),
-        api.get<{ geographies: GeographyDto[] }>('/api/org/geographies'),
-        api.get<{ exclusions: ExclusionDto[] }>('/api/org/exclusions'),
-      ]);
-      if (profileRes.profile !== null) {
-        setDisplayName(profileRes.profile.displayName ?? '');
-        setDescription(profileRes.profile.description ?? '');
-        setWebsite(profileRes.profile.website ?? '');
-        setEmployeeBand(profileRes.profile.employeeBand ?? '');
+      try {
+        const [profileRes, cpvRes, kwRes, geoRes, exRes, capRes, certRes] = await Promise.all([
+          api.get<OrgProfileResponse>('/api/org/profile'),
+          api.get<{ cpvPreferences: { cpvCode: string }[] }>('/api/org/cpv-preferences'),
+          api.get<{ keywords: KeywordDto[] }>('/api/org/keywords'),
+          api.get<{ geographies: GeographyDto[] }>('/api/org/geographies'),
+          api.get<{ exclusions: ExclusionDto[] }>('/api/org/exclusions'),
+          api.get<{ capabilities: { label: string }[] }>('/api/org/capabilities'),
+          api.get<{ certifications: CertificationDto[] }>('/api/org/certifications'),
+        ]);
+        if (profileRes.profile !== null) {
+          setDisplayName(profileRes.profile.displayName ?? '');
+          setDescription(profileRes.profile.description ?? '');
+          setWebsite(profileRes.profile.website ?? '');
+          setEmployeeBand(profileRes.profile.employeeBand ?? '');
+        }
+        setMatching(profileRes.matching);
+        setDigest(profileRes.digest);
+        if (profileRes.matching !== null) {
+          setSupportedNatures(
+            JSON.parse(profileRes.matching.supportedContractNaturesJson) as ContractNature[],
+          );
+        }
+        setCpvCodes(cpvRes.cpvPreferences.map((c) => c.cpvCode));
+        setKeywords(kwRes.keywords);
+        setGeographies(geoRes.geographies);
+        setExclusions(exRes.exclusions);
+        setCapabilities(capRes.capabilities.map((c) => c.label));
+        setCertifications(certRes.certifications);
+      } catch {
+        setSaveError('Could not load your settings. Please refresh the page and try again.');
+      } finally {
+        setLoading(false);
       }
-      setMatching(profileRes.matching);
-      setDigest(profileRes.digest);
-      if (profileRes.matching !== null) {
-        setSupportedNatures(
-          JSON.parse(profileRes.matching.supportedContractNaturesJson) as ContractNature[],
-        );
-      }
-      setCpvCodes(cpvRes.cpvPreferences.map((c) => c.cpvCode));
-      setKeywords(kwRes.keywords);
-      setGeographies(geoRes.geographies);
-      setExclusions(exRes.exclusions);
-      setLoading(false);
     }
     void load();
   }, []);
 
   async function saveProfile(): Promise<void> {
-    await api.put('/api/org/profile', {
-      displayName: displayName.length > 0 ? displayName : null,
-      description: description.length > 0 ? description : null,
-      website: website.length > 0 ? website : null,
-      employeeBand: employeeBand.length > 0 ? employeeBand : null,
-      presetKey: null,
-      onboardingCompletedAt: Date.now(),
-    });
-    setStatusMessage('Company profile saved.');
+    setSaveError(null);
+    try {
+      await api.put('/api/org/profile', {
+        displayName: displayName.length > 0 ? displayName : null,
+        description: description.length > 0 ? description : null,
+        website: website.length > 0 ? website : null,
+        employeeBand: employeeBand.length > 0 ? employeeBand : null,
+        presetKey: null,
+        onboardingCompletedAt: Date.now(),
+      });
+      setStatusMessage('Company profile saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
   }
 
   async function saveCpv(): Promise<void> {
-    await api.put('/api/org/cpv-preferences', { cpvCodes });
-    setStatusMessage('CPV preferences saved.');
+    setSaveError(null);
+    try {
+      await api.put('/api/org/cpv-preferences', { cpvCodes });
+      setStatusMessage('CPV preferences saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
   }
 
   async function saveKeywords(): Promise<void> {
-    await api.put('/api/org/keywords', { keywords });
-    setStatusMessage('Keywords saved.');
+    setSaveError(null);
+    try {
+      await api.put('/api/org/keywords', { keywords });
+      setStatusMessage('Keywords saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
   }
 
   async function saveGeographies(): Promise<void> {
-    await api.put('/api/org/geographies', { geographies });
-    setStatusMessage('Geographies saved.');
+    setSaveError(null);
+    try {
+      await api.put('/api/org/geographies', { geographies });
+      setStatusMessage('Geographies saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
   }
 
   async function saveExclusions(): Promise<void> {
-    await api.put('/api/org/exclusions', { exclusions });
-    setStatusMessage('Exclusions saved.');
+    setSaveError(null);
+    try {
+      await api.put('/api/org/exclusions', { exclusions });
+      setStatusMessage('Exclusions saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
+  }
+
+  async function saveCapabilities(): Promise<void> {
+    setSaveError(null);
+    try {
+      await api.put('/api/org/capabilities', { labels: capabilities });
+      setStatusMessage('Capabilities saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
+  }
+
+  async function saveCertifications(): Promise<void> {
+    setSaveError(null);
+    try {
+      await api.put('/api/org/certifications', { certifications });
+      setStatusMessage('Certifications saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
   }
 
   async function saveMatching(): Promise<void> {
     if (matching === null) return;
-    await api.put('/api/org/matching-preferences', {
-      minValueEur: matching.minValueEur,
-      maxValueEur: matching.maxValueEur,
-      supportedContractNatures: supportedNatures,
-      minimumDaysRemaining: matching.minimumDaysRemaining,
-    });
-    setStatusMessage('Matching preferences saved.');
+    setSaveError(null);
+    try {
+      await api.put('/api/org/matching-preferences', {
+        minValueEur: matching.minValueEur,
+        maxValueEur: matching.maxValueEur,
+        supportedContractNatures: supportedNatures,
+        minimumDaysRemaining: matching.minimumDaysRemaining,
+      });
+      setStatusMessage('Matching preferences saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
   }
 
   async function saveDigest(): Promise<void> {
     if (digest === null) return;
-    await api.put('/api/org/digest-preferences', {
-      enabled: digest.enabled === 1,
-      sendEmpty: digest.sendEmpty === 1,
-      minClassification: digest.minClassification,
-      timezone: digest.timezone,
-    });
-    setStatusMessage('Digest preferences saved.');
+    setSaveError(null);
+    try {
+      await api.put('/api/org/digest-preferences', {
+        enabled: digest.enabled === 1,
+        sendEmpty: digest.sendEmpty === 1,
+        minClassification: digest.minClassification,
+        timezone: digest.timezone,
+      });
+      setStatusMessage('Digest preferences saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
   }
 
   async function deleteAccount(): Promise<void> {
@@ -153,6 +240,11 @@ export function Settings(): ReactElement {
       <p role="status" aria-live="polite" className="visually-hidden-status">
         {statusMessage}
       </p>
+      {saveError !== null && (
+        <p role="alert" className="form-error">
+          {saveError}
+        </p>
+      )}
 
       <section>
         <h2>Company profile</h2>
@@ -354,6 +446,108 @@ export function Settings(): ReactElement {
         </div>
         <button className="cta" type="button" onClick={() => void saveExclusions()}>
           Save exclusions
+        </button>
+      </section>
+
+      <section>
+        <h2>Capabilities</h2>
+        <ul className="chip-list">
+          {capabilities.map((label, index) => (
+            <li key={`${label}-${index}`}>
+              {label}
+              <button
+                type="button"
+                aria-label={`Remove capability ${label}`}
+                onClick={() => setCapabilities((cs) => cs.filter((_, i) => i !== index))}
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className="form-field inline">
+          <label htmlFor="new-capability">Add capability</label>
+          <input
+            id="new-capability"
+            value={newCapability}
+            onChange={(e) => setNewCapability(e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (newCapability.trim().length > 0) {
+                setCapabilities((cs) => [...cs, newCapability.trim()]);
+                setNewCapability('');
+              }
+            }}
+          >
+            Add
+          </button>
+        </div>
+        <button className="cta" type="button" onClick={() => void saveCapabilities()}>
+          Save capabilities
+        </button>
+      </section>
+
+      <section>
+        <h2>Certifications</h2>
+        <ul className="chip-list">
+          {certifications.map((cert, index) => (
+            <li key={`${cert.certificationCode}-${index}`}>
+              {cert.certificationCode}
+              {cert.label !== null ? `: ${cert.label}` : ''}
+              <button
+                type="button"
+                aria-label={`Remove certification ${cert.certificationCode}`}
+                onClick={() => setCertifications((cs) => cs.filter((_, i) => i !== index))}
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className="form-field inline">
+          <label htmlFor="settings-cert-code">Certification</label>
+          <select
+            id="settings-cert-code"
+            value={newCertCode}
+            onChange={(e) => setNewCertCode(e.target.value as CertificationCode)}
+          >
+            {CERTIFICATION_CODES.map((code) => (
+              <option key={code} value={code}>
+                {code}
+              </option>
+            ))}
+          </select>
+          {newCertCode === 'OTHER' && (
+            <>
+              <label htmlFor="settings-cert-label">Certification name</label>
+              <input
+                id="settings-cert-label"
+                value={newCertLabel}
+                onChange={(e) => setNewCertLabel(e.target.value)}
+              />
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              if (newCertCode === 'OTHER' && newCertLabel.trim().length === 0) return;
+              setCertifications((cs) => [
+                ...cs,
+                {
+                  certificationCode: newCertCode,
+                  label: newCertCode === 'OTHER' ? newCertLabel.trim() : null,
+                },
+              ]);
+              setNewCertLabel('');
+            }}
+          >
+            Add
+          </button>
+        </div>
+        <button className="cta" type="button" onClick={() => void saveCertifications()}>
+          Save certifications
         </button>
       </section>
 

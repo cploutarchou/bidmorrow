@@ -53,4 +53,20 @@ export interface ExclusionDto {
   value: string;
 }
 
+/** Matches `packages/db` `CertificationCode` — kept as a local literal union
+ * since `apps/web` depends only on `@bidmorrow/domain`, not `@bidmorrow/db`. */
+export type CertificationCode = 'ISO_27001' | 'ISO_9001' | 'SOC2' | 'OTHER';
+
+export const CERTIFICATION_CODES: readonly CertificationCode[] = [
+  'ISO_27001',
+  'ISO_9001',
+  'SOC2',
+  'OTHER',
+];
+
+export interface CertificationDto {
+  certificationCode: CertificationCode;
+  label: string | null;
+}
+
 export type { PresetKey };

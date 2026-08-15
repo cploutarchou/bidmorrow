@@ -7,7 +7,141 @@ context compaction. Read first in every session.
 
 **Phase 7 stage A — Customer product API: IMPLEMENTED (pending review sign-
 off).** **Phase 7 stage B — Frontend (marketing + app SPA): IMPLEMENTED
-(pending production-reviewer/security sign-off).**
+(pending production-reviewer/security sign-off).** **Phase 7 review fix
+batch: APPLIED (2026-08-15) — see below.**
+
+### Phase 7 review fixes (2026-08-15)
+
+Targeted fixes from the security + production reviews of Phase 7 stages A/B —
+no refactors, each read-before-edit.
+
+- SEC-P7-01 (fixed): `apps/web/public/_headers` — Cloudflare Workers Static
+  Assets shares Pages' `_headers` mechanism (a file at the root of the
+  static-assets output dir, parsed at deploy time, applied independently of
+  the Worker's own `secureHeaders()` middleware which only ever runs for
+  `run_worker_first: ['/api/*']`). Applies to `/*`: an SPA-compatible mirror
+  of the Worker's CSP (`default-src 'self'; script-src 'self'; style-src
+'self'; img-src 'self' data:; frame-ancestors 'none'; object-src 'none';
+base-uri 'self'; form-action 'self'`), HSTS, X-Content-Type-Options,
+  Referrer-Policy, a minimal Permissions-Policy, X-Frame-Options DENY.
+  Verified against a real `pnpm --filter @bidmorrow/web build` output
+  (`dist/index.html`): no inline `<script>`/`<style>`, so no CSP relaxation
+  needed. **Verification caveat, honestly flagged**: the live-docs fetch this
+  fix's syntax/limits claim should have gone through (`verify-current-docs`
+  skill / a Cloudflare-docs MCP tool) was not available/reachable this
+  session — `developers.cloudflare.com` is proxy-blocked from this dev
+  environment (same restriction as ted.europa.eu/ecb.europa.eu in earlier
+  phases), and no Cloudflare-docs MCP tool was present in this session's
+  toolset despite the review item's instruction to use one. The `_headers`
+  content and its in-file comment are based on this project's existing
+  recorded platform understanding (docs/dependency-versions.md) and
+  long-published Cloudflare behavior, NOT a fresh live-docs confirmation —
+  a live re-check is a TODO before this ships to production. New test:
+  `tests/security/static-asset-headers.test.ts` (4 tests) — asserts every
+  required directive is present in the source file AND that `dist/_headers`
+  is byte-identical to it once a build has run (confirmed manually this
+  session: `dist/_headers` exists, `wrangler deploy --dry-run` lists it
+  among "5 files from the assets directory").
+- SEC-P7-02 (fixed): `eslint.config.js` — `no-restricted-syntax` bans the
+  JSX attribute `dangerouslySetInnerHTML` outright (message points at
+  docs/security.md C2), verified to actually fire against a throwaway test
+  file, then confirmed `pnpm lint` stays green with zero real usages in the
+  codebase.
+- SEC-P7-03 (fixed) + P7-R-03: `apps/worker/src/routes/feed.ts` now catches
+  `listFeedRows`'s malformed-cursor `Error` and returns 400
+  `{error:'invalid_cursor'}` instead of an unhandled 500 (test in
+  `product.test.ts`). `packages/db/src/repositories/matching.ts` — the
+  `buyerName`/`cpvPrefix` feed filters were building raw `LIKE '%...%'`
+  patterns directly from customer input with no escaping, letting a literal
+  `%`/`_` in a search term act as an unintended SQL wildcard; both now go
+  through a new `escapeLikePattern` helper (`\`→`\\`, `%`→`\%`, `_`→`\_`)
+  paired with an explicit `ESCAPE '\'` clause. Two new D1 tests in
+  `matching.d1.test.ts` prove a literal `%`/`_` in a filter matches only the
+  buyer/CPV code that actually contains that literal substring, not a decoy
+  row that would incidentally match if the character were treated as a
+  wildcard.
+- SEC-P7-05 (fixed): `apps/web/src/pages/app/TenderDetail.tsx` — the TED
+  `sourceUrl` anchor now only renders as a clickable `<a>` when the URL
+  starts with `https://`; any other scheme renders as inert plain text
+  instead (one-line guard + comment), closing off a `javascript:`/`data:`
+  scheme vector from untrusted TED-sourced data.
+- P7-R-01 (fixed, HIGH): added a Capabilities (free-text tag list) and
+  Certifications (`ISO_27001`/`ISO_9001`/`SOC2`/`OTHER` code select + a label
+  field that only appears for `OTHER`) editor to BOTH the onboarding wizard
+  (new step 6, "Capabilities & certifications", inserted after Keywords —
+  `STEPS` and every subsequent `step === N` branch renumbered) and Settings,
+  wired to the existing `GET`/`PUT /api/org/capabilities` +
+  `/api/org/certifications` routes. `applyPreset` now also applies
+  `preset.capabilities`. `apps/web/src/lib/onboarding-types.ts` gained a
+  local `CertificationCode` union + `CertificationDto`/`CERTIFICATION_CODES`
+  (kept local rather than importing `@bidmorrow/db`'s type, since `apps/web`
+  intentionally depends only on `@bidmorrow/domain`). HowItWorks copy left
+  as-is (already accurate).
+- P7-R-02 (fixed): every previously-silent `void x().then(...)`/no-catch
+  save chain now surfaces its failure via the existing `aria-live`/`role=
+"alert"` error pattern — onboarding wizard step saves (`saveBasics`/
+  `saveCpv`/`saveGeographies`/`saveKeywords`/
+  `saveCapabilitiesAndCertifications`/`saveExclusions`/
+  `saveMatchingPreferences`/`saveDigestPreferences` all now return a
+  `Promise<boolean>`, catch internally, and only advance to the next step on
+  success), Settings' per-section saves (new `saveError` state + `role=
+"alert"` region), Feed's `loadMore` (was uncaught — now catches and sets the
+  existing `error` state), and `AppShell`'s `signOut` (now checks
+  `response.ok` and catches network failures into a new `role="alert"`
+  region rather than silently no-op-ing on failure). A `cap_exceeded` 422
+  (the CPV-preferences/keywords caps) surfaces its `cap` value in the
+  message via a shared `describeSaveError` helper in both files. `grep -rn
+"void .*\.then("` over `apps/web/src` now shows only the `.then((ok) => {
+if (ok) next(); })`-guarded wizard calls — no bare, uncaught chains remain.
+- P7-R-04 (fixed): `packages/procurement/src/scoring-input.ts` — the lot
+  `contractNature` pass-through in `mapLotToEngineInput` was a blind `as
+ContractNature | null` cast off the raw DB column; replaced with a new
+  `parseLotContractNature` validator (same pattern as
+  `parseExclusionContractNature`/`parseCertificationCode`) that maps an
+  invalid stored value to `null` (logged) instead of fabricating a nature.
+  `mapLotToEngineInput` gained an optional `Logger` parameter, threaded
+  through from both call sites (`score.ts`'s `deps.logger`,
+  `routes/tenders.ts`'s `c.get('logger')`). New unit tests for both the
+  valid-passthrough and invalid-drops-to-null branches, plus direct
+  `parseLotContractNature` unit tests.
+- PROD-P7-01 (fixed): docs/product-scope.md's Pricing section gained a line
+  stating the founding price is retained for the life of the subscription
+  (plans never auto-migrate); `apps/web/src/pages/marketing/Terms.tsx`'s
+  billing paragraph mirrors it verbatim in substance.
+- P7-R-06 (cheap part, fixed): `apps/web/src/pages/app/Feed.tsx` — added
+  `deadlineAfter` and `publishedAfter` date filter inputs to the filter bar
+  (the feed API already accepted both; only the UI was missing them).
+- Accepted, not fixed this batch: **P7-R-05** (no prerender/SSR for
+  marketing pages — SEO/OG tags are still client-rendered-only; accepted for
+  V1 per the existing Phase 7 stage-B scope, no ADR change) and the
+  **pricing/digest-mention dependency** (the digest email itself, which
+  would be the natural place to reiterate "your price is locked," ships
+  Phase 8 — before launch, so the founding-price commitment is documented
+  now in product-scope.md/Terms.tsx and will get its digest-copy mention
+  when Phase 8 writes the digest templates, not before).
+- Real counts (2026-08-15, all executed): `pnpm format` (2 files
+  reformatted: `Terms.tsx`, `matching.d1.test.ts` — import merge/prose
+  wrap, no logic changes) · `format:check` PASS · `lint` PASS (new
+  `no-restricted-syntax` rule verified live-firing against a throwaway
+  `dangerouslySetInnerHTML` test file, then removed) · `typecheck` PASS
+  (14/14 workspace projects) · `test` PASS — root vitest **44 files/310
+  tests** (one new file this batch, `tests/security/static-asset-headers.
+test.ts`, 4 tests; `scoring-input.test.ts` gained 5 tests —
+  `parseLotContractNature` unit tests + two `mapLotToEngineInput` branch
+  tests; the file/test-count delta vs. the stage-B entry's "41 files/301
+  tests" is larger than this batch's own additions account for, so that
+  prior figure was evidently already stale going into this session —
+  reported here as the actual measured `pnpm test` output, not reconciled
+  against the older claim); worker pool-workers **7 files/63 tests** (one
+  new test this batch, the feed invalid-cursor 400); packages/db
+  pool-workers **9 files/46 tests** (two new tests this batch, the
+  buyerName/cpvPrefix LIKE-escaping D1 tests) = **60 files/419 tests
+  total** · `build` PASS (`vite build` 59 modules, 305 KB JS/90 KB gzip;
+  `wrangler deploy --dry-run` reads "5 files from the assets directory" and
+  lists all bindings incl. `MATCH_QUEUE`) — **confirmed `apps/web/dist/
+_headers` exists post-build and is byte-identical to `apps/web/public/
+_headers`** (manual `diff`, and covered going forward by
+  `static-asset-headers.test.ts`'s third assertion).
 
 ### Phase 7 stage B — Frontend (2026-08-15)
 

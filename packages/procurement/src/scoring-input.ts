@@ -127,6 +127,25 @@ export function parseCertificationCode(
 }
 
 /**
+ * Validates a `tender_lots.contract_nature` value against the known union —
+ * never a blind cast (P7-R-04, same pattern as `parseExclusionContractNature`
+ * / `parseCertificationCode`). An invalid stored value maps to `null`
+ * (engine treats it as UNKNOWN) rather than fabricating a nature that was
+ * never actually true. Exported for unit tests.
+ */
+export function parseLotContractNature(
+  value: string | null,
+  logger?: Logger,
+): ContractNature | null {
+  if (value === null) return null;
+  if (VALID_CONTRACT_NATURES.has(value)) {
+    return value as ContractNature;
+  }
+  logger?.error('scoring_input.lot_contract_nature.invalid_value', { value });
+  return null;
+}
+
+/**
  * @throws never — invalid `ContractNature` values are dropped and logged,
  * never blindly cast (SEC-P6-04). Exported for unit tests.
  */
@@ -277,6 +296,7 @@ export async function mapLotToEngineInput(
   db: Db,
   bundle: LotScoringBundle,
   asOfMs: number,
+  logger?: Logger,
 ): Promise<LotMappingResult> {
   const mainCpv = bundle.cpvCodes.find((c) => c.isMain === 1)?.cpvCode;
   if (mainCpv === undefined) {
@@ -316,7 +336,7 @@ export async function mapLotToEngineInput(
     deadlineAt: bundle.lot.deadlineAt,
     buyerLegalType: bundle.buyerLegalType,
     procedureType: bundle.procedureType,
-    contractNature: (bundle.lot.contractNature as ContractNature | null) ?? null,
+    contractNature: parseLotContractNature(bundle.lot.contractNature, logger),
     languages: languages.length > 0 ? languages : [primaryLanguage],
   };
   return { kind: 'ok', lot, rateDate };

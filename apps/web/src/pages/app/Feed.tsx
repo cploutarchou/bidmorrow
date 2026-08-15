@@ -23,6 +23,8 @@ interface Filters {
   minValueEur: string;
   maxValueEur: string;
   deadlineBefore: string;
+  deadlineAfter: string;
+  publishedAfter: string;
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -33,6 +35,8 @@ const EMPTY_FILTERS: Filters = {
   minValueEur: '',
   maxValueEur: '',
   deadlineBefore: '',
+  deadlineAfter: '',
+  publishedAfter: '',
 };
 
 function buildQuery(tab: Tab, filters: Filters, cursor: string | undefined): string {
@@ -46,6 +50,10 @@ function buildQuery(tab: Tab, filters: Filters, cursor: string | undefined): str
   if (filters.deadlineBefore.length > 0) {
     params.set('deadlineBefore', String(Date.parse(filters.deadlineBefore)));
   }
+  if (filters.deadlineAfter.length > 0) {
+    params.set('deadlineAfter', String(Date.parse(filters.deadlineAfter)));
+  }
+  if (filters.publishedAfter.length > 0) params.set('publishedAfter', filters.publishedAfter);
   if (cursor !== undefined) params.set('cursor', cursor);
   return params.toString();
 }
@@ -89,11 +97,14 @@ export function Feed(): ReactElement {
   async function loadMore(): Promise<void> {
     if (state === null || state.nextCursor === null) return;
     setLoadingMore(true);
+    setError(null);
     try {
       const res = await api.get<FeedResponse>(
         `/api/org/feed?${buildQuery(tab, filters, state.nextCursor)}`,
       );
       setState((prev) => (prev === null ? startCursor(res) : appendCursor(prev, res)));
+    } catch {
+      setError('Could not load more results. Please try again.');
     } finally {
       setLoadingMore(false);
     }
@@ -229,6 +240,24 @@ export function Feed(): ReactElement {
             type="date"
             value={filters.deadlineBefore}
             onChange={(event) => setFilters({ ...filters, deadlineBefore: event.target.value })}
+          />
+        </div>
+        <div className="form-field">
+          <label htmlFor="filter-deadline-after">Deadline after</label>
+          <input
+            id="filter-deadline-after"
+            type="date"
+            value={filters.deadlineAfter}
+            onChange={(event) => setFilters({ ...filters, deadlineAfter: event.target.value })}
+          />
+        </div>
+        <div className="form-field">
+          <label htmlFor="filter-published-after">Published after</label>
+          <input
+            id="filter-published-after"
+            type="date"
+            value={filters.publishedAfter}
+            onChange={(event) => setFilters({ ...filters, publishedAfter: event.target.value })}
           />
         </div>
         <button className="cta" type="submit">

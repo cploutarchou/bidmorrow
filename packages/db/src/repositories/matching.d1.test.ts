@@ -17,6 +17,7 @@ import {
   insertCpvCodes,
   insertGeographies,
   insertLots,
+  upsertBuyer,
   upsertNoticeWithVersion,
 } from './tender-corpus';
 import { ignoreTender, saveTender } from './engagement';
@@ -34,7 +35,13 @@ interface SeededLot {
 async function seedLot(
   db: Db,
   sourceNoticeId: string,
-  overrides: { deadlineAt?: number | null; valueEur?: number | null; country?: string } = {},
+  overrides: {
+    deadlineAt?: number | null;
+    valueEur?: number | null;
+    country?: string;
+    buyerName?: string;
+    cpvCode?: string;
+  } = {},
 ): Promise<SeededLot> {
   const { snapshot } = await insertSnapshotIfNewHash(db, {
     source: SOURCE,
@@ -45,6 +52,16 @@ async function seedLot(
     sizeBytes: 1024,
     contentType: 'application/xml',
   });
+  const buyerId =
+    overrides.buyerName !== undefined
+      ? (
+          await upsertBuyer(db, {
+            source: SOURCE,
+            sourceBuyerId: `buyer-${sourceNoticeId}`,
+            name: overrides.buyerName,
+          })
+        ).id
+      : null;
   const { noticeId, versionId } = await upsertNoticeWithVersion(db, {
     source: SOURCE,
     sourceNoticeId,
@@ -55,6 +72,7 @@ async function seedLot(
     retrievedAt: T0,
     contentHash: `hash-${sourceNoticeId}`,
     snapshotId: snapshot.id,
+    buyerId,
   });
   const [lot] = await insertLots(db, {
     noticeVersionId: versionId,
@@ -73,7 +91,9 @@ async function seedLot(
     ],
   });
   if (lot === undefined) throw new Error('test setup: lot insert failed');
-  await insertCpvCodes(db, { entries: [{ lotId: lot.id, cpvCode: '72000000', isMain: true }] });
+  await insertCpvCodes(db, {
+    entries: [{ lotId: lot.id, cpvCode: overrides.cpvCode ?? '72000000', isMain: true }],
+  });
   await insertGeographies(db, {
     entries: [{ lotId: lot.id, countryCode: overrides.country ?? 'CY' }],
   });
@@ -288,5 +308,49 @@ describe('listFeedRows', () => {
       now: T0 + 1000,
     });
     expect(orgBSaved.items).toEqual([]);
+  });
+
+  it('buyerName filter treats a literal "%" as a literal character, not a wildcard (SEC-P7-03)', async () => {
+    const { orgId } = await insertTestOrganization(db, 'Feed LIKE Escape Org');
+    const literalMatch = await seedLot(db, 'feed-like-buyer-literal', {
+      buyerName: 'Acme 50% Holdings',
+    });
+    const decoyMatch = await seedLot(db, 'feed-like-buyer-decoy', {
+      buyerName: 'Acme 500 Holdings',
+    });
+    await insertTenderMatches(db, orgId, {
+      matches: [matchInput(literalMatch, 55, T0), matchInput(decoyMatch, 55, T0 - 1)],
+    });
+
+    const page = await listFeedRows(db, orgId, {
+      tab: 'possible',
+      engineVersion: ENGINE_VERSION,
+      now: T0 + 1000,
+      buyerName: '50%',
+    });
+    // Without ESCAPE handling, the `%` in "50%" would act as a SQL wildcard
+    // and also match "Acme 500 Holdings" (which contains "50" then any
+    // chars). Only the buyer whose name contains the literal substring
+    // "50%" must match.
+    expect(page.items.map((r) => r.lotId)).toEqual([literalMatch.lotId]);
+  });
+
+  it('cpvPrefix filter treats a literal "_" as a literal character, not a single-char wildcard (SEC-P7-03)', async () => {
+    const { orgId } = await insertTestOrganization(db, 'Feed LIKE Escape CPV Org');
+    const literalMatch = await seedLot(db, 'feed-like-cpv-literal', { cpvCode: '72_00000' });
+    const decoyMatch = await seedLot(db, 'feed-like-cpv-decoy', { cpvCode: '72A00000' });
+    await insertTenderMatches(db, orgId, {
+      matches: [matchInput(literalMatch, 55, T0), matchInput(decoyMatch, 55, T0 - 1)],
+    });
+
+    const page = await listFeedRows(db, orgId, {
+      tab: 'possible',
+      engineVersion: ENGINE_VERSION,
+      now: T0 + 1000,
+      cpvPrefix: '72_',
+    });
+    // Without ESCAPE handling, `_` acts as a SQL single-char wildcard and
+    // would also match "72A00000". Only the literal "72_" prefix must match.
+    expect(page.items.map((r) => r.lotId)).toEqual([literalMatch.lotId]);
   });
 });
