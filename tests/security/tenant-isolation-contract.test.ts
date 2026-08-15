@@ -95,6 +95,29 @@ const TENANT_EXEMPT: Record<string, { name: string; reason: string }[]> = {
       name: 'insertBillingEventIfNew',
       reason: 'Stripe webhook ledger; organizationId is nullable but EXPLICIT in args',
     },
+    {
+      name: 'getBillingEventByStripeId',
+      reason:
+        'idempotency/retry read on the same unique stripe_event_id ledger as insertBillingEventIfNew ' +
+        '— distinguishes a true duplicate from a retryable failed/stuck row; organization_id is ' +
+        'nullable on this table by design (see file header) and is not a lookup key here.',
+    },
+    {
+      name: 'markBillingEventStatus',
+      reason:
+        'terminal-status transition on an already-recorded billing_events row, keyed on the ' +
+        'unique stripe_event_id (which may itself be organization_id: null — unresolvable at ' +
+        'insert time); never touches tenant-owned data.',
+    },
+    {
+      name: 'countNonCanceledSubscriptionsByPlan',
+      reason:
+        'founding-plan seat-cap enforcement (packages/billing createCheckoutSession, and ' +
+        'isFoundingPlanAvailable behind GET /api/billing/status) must count across every ' +
+        'organization on a plan, the billing equivalent of company.ts ' +
+        'listOrgsEligibleForScoring/listOrgsWithDigestEnabled — reachable from per-tenant ' +
+        'handlers but returns only a bare global count, no tenant-owned row data (SEC-P9-04).',
+    },
   ],
   'ops.ts': [
     {

@@ -72,6 +72,9 @@ importers:
       '@bidmorrow/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@bidmorrow/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@bidmorrow/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -102,6 +105,9 @@ importers:
       hono:
         specifier: ^4.13.0
         version: 4.13.2
+      stripe:
+        specifier: ^22.5.0
+        version: 22.5.0
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -157,7 +163,26 @@ importers:
         version: 4.1.10(vite@8.2.1(esbuild@0.28.1)(tsx@4.23.12))
 
   packages/billing:
+    dependencies:
+      '@bidmorrow/config':
+        specifier: workspace:*
+        version: link:../config
+      '@bidmorrow/db':
+        specifier: workspace:*
+        version: link:../db
+      '@bidmorrow/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@bidmorrow/observability':
+        specifier: workspace:*
+        version: link:../observability
+      stripe:
+        specifier: ^22.5.0
+        version: 22.5.0
     devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^5.20260814.1
+        version: 5.20260814.1
       typescript:
         specifier: ~5.9.2
         version: 5.9.3
@@ -2170,6 +2195,15 @@ packages:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
 
+  stripe@22.5.0:
+    resolution: {integrity: sha512-QVwMwriC0bbySx6R4dpsvJ0W//GojC1kwWVS6rPSoVqDUIZX4Hy3TaUrd2AZeXEAaKbfWIjQjvo3vKAReHZ0vQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+
   strnum@2.4.2:
     resolution: {integrity: sha512-rDG3Ah4TV0k1hWvLSzkZtMmLN9+eS+h3knq4MP6A42Y3Yh5qGNnOUs1jJkoSr8FG5dsL28c7KgkIBzSEykqtuw==}
 
@@ -3787,6 +3821,8 @@ snapshots:
   std-env@4.2.0: {}
 
   strip-json-comments@3.1.1: {}
+
+  stripe@22.5.0: {}
 
   strnum@2.4.2:
     dependencies:

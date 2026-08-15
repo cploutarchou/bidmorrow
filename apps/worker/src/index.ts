@@ -36,9 +36,11 @@ import {
 } from './ingestion';
 import { accountRoutes } from './routes/account';
 import { adminRoutes } from './routes/admin';
+import { billingRoutes } from './routes/billing';
 import { feedRoutes } from './routes/feed';
 import { orgRoutes } from './routes/org';
 import { tendersRoutes } from './routes/tenders';
+import { webhookRoutes } from './routes/webhooks';
 
 export type { Env, Variables } from './env';
 
@@ -138,6 +140,10 @@ app.route('/api/org', feedRoutes);
 app.route('/api/org', tendersRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api/account', accountRoutes);
+// Phase 9: billing (session/org-scoped) and the Stripe webhook (the one
+// deliberately unauthenticated-by-session route — see routes/webhooks.ts).
+app.route('/api/billing', billingRoutes);
+app.route('/api/webhooks', webhookRoutes);
 
 // Unknown routes: run_worker_first routes only /api/* to this Worker in
 // production (everything else is served by Static Assets with SPA fallback),

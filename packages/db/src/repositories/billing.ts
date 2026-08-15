@@ -8,7 +8,7 @@
  * rather than omitting the argument — the tenant linkage stays visible and
  * grep-auditable at every call site.
  */
-import { and, eq } from 'drizzle-orm';
+import { and, eq, ne, sql } from 'drizzle-orm';
 import type { OrganizationId } from '@bidmorrow/domain';
 
 import type { Db } from '../client';
@@ -139,4 +139,72 @@ export async function insertBillingEventIfNew(
     .onConflictDoNothing({ target: billingEvents.stripeEventId })
     .returning({ id: billingEvents.id });
   return inserted.length > 0;
+}
+
+/**
+ * Reads a previously-recorded billing event by its unique `stripe_event_id`
+ * — used by the webhook processor to distinguish a TRUE duplicate (already
+ * `processed`/`ignored`, ack with zero side effects) from a RETRYABLE
+ * `failed` (or a `received` row stuck by a crash between insert and its
+ * terminal status write) — the latter two get reprocessed rather than
+ * silently ack'd, which is what makes the "failure marks the row and a
+ * retry succeeds" path actually retry instead of getting permanently stuck
+ * behind the unique-`stripe_event_id` insert-dedup.
+ */
+export async function getBillingEventByStripeId(
+  db: Db,
+  stripeEventId: string,
+): Promise<BillingEvent | null> {
+  const rows = await db
+    .select()
+    .from(billingEvents)
+    .where(eq(billingEvents.stripeEventId, stripeEventId))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export type BillingEventStatus = 'processed' | 'failed' | 'ignored';
+
+/**
+ * Moves a previously-recorded billing event to a terminal status
+ * (`insertBillingEventIfNew` always writes `received` first). Keyed on the
+ * unique `stripe_event_id`, not organization — the row may have
+ * `organization_id: null` (unresolvable at insert time), and marking it
+ * done never needs to touch tenant data. `processed_at` moves with every
+ * transition, including `failed` (records the last attempt time, not a
+ * success time).
+ */
+export async function markBillingEventStatus(
+  db: Db,
+  stripeEventId: string,
+  status: BillingEventStatus,
+): Promise<void> {
+  const now = Date.now();
+  await db
+    .update(billingEvents)
+    .set({ status, processedAt: now, updatedAt: now })
+    .where(eq(billingEvents.stripeEventId, stripeEventId));
+}
+
+/**
+ * Cross-tenant count of non-canceled subscriptions on a given plan — used
+ * ONLY to enforce the founding-plan seat cap (docs/product-scope.md: "first
+ * 20 customers") at checkout time. This is the billing equivalent of
+ * `company.ts`'s `listOrgsEligibleForScoring`/`listOrgsWithDigestEnabled`
+ * exemptions: a global count across every tenant, never reachable from a
+ * per-tenant request path, and it returns a bare number — no tenant-owned
+ * row data. A canceled subscription frees its seat; every other status
+ * (`trialing`/`active`/`past_due`/`unpaid`) still occupies one, since the
+ * founding price is retained for the subscription's life
+ * (docs/product-scope.md).
+ */
+export async function countNonCanceledSubscriptionsByPlan(
+  db: Db,
+  plan: SubscriptionPlan,
+): Promise<number> {
+  const rows = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(subscriptions)
+    .where(and(eq(subscriptions.plan, plan), ne(subscriptions.status, 'canceled')));
+  return Number(rows[0]?.count ?? 0);
 }

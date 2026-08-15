@@ -5,10 +5,193 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 8 — Digest: COMPLETE (signed off). PILOT CHECKPOINT reached.**
-Next: Phase 9 — Billing (then STOP per user instruction).
+**Phase 9 — Billing: COMPLETE (signed off). STOPPED per user instruction** —
+awaiting go-ahead before Phase 10 (Admin/Operations).
 
 ## Completed
+
+### Phase 9 — Billing (2026-08-15)
+
+- **Stripe facts verified this session, source = installed
+  `stripe@22.5.0` SDK type declarations** (docs.stripe.com WebFetch was
+  egress-blocked, same restriction as earlier phases' external-docs hosts;
+  a WebSearch cross-check independently confirmed the recommended webhook
+  event set): `Stripe.API_VERSION`/`LatestApiVersion` =
+  `"2026-07-29.dahlia"` (matches the pre-existing docs/dependency-
+  versions.md pin exactly); `Stripe.createFetchHttpClient()` +
+  `Stripe.createSubtleCryptoProvider()` static methods (Workers/edge-safe,
+  no Node `http`/`crypto`); `stripe.webhooks.constructEventAsync(payload,
+header, secret, tolerance?, cryptoProvider?, receivedAt?)` and
+  `generateTestHeaderStringAsync` confirmed on the `WebhookObject`
+  interface; a `workerd`/`worker` package-export condition exists
+  (`stripe.esm.worker.js`) but the client is still built with an EXPLICIT
+  `httpClient`/`cryptoProvider` everywhere so behavior is identical
+  regardless of which build a bundler resolves. **Non-obvious, easy-to-get-
+  wrong fact caught only by reading the installed types**: in this API
+  version, `Stripe.Subscription` has NO top-level `current_period_end` —
+  it moved to each `SubscriptionItem` (`items.data[0].current_period_end`);
+  and `Invoice.subscription` moved to
+  `invoice.parent.subscription_details.subscription`, whose sibling
+  `.metadata` field is documented as "an immutable snapshot of the
+  subscription metadata at the time of invoice finalization" — this is
+  what makes org-identity resolution work for `invoice.*` events with zero
+  extra API calls (see below).
+- **Customer/org linking design** (`packages/billing/src/checkout.ts`):
+  Checkout sessions are created with `client_reference_id`,
+  `metadata.organizationId`, AND `subscription_data.metadata.organizationId`
+  all set to the org id — the third copy propagates onto the Stripe
+  Subscription object itself at creation, so `customer.subscription.*`
+  events carry it directly and `invoice.*` events carry the immutable
+  snapshot described above. Every handled event type can therefore resolve
+  its organization straight from the (signature-verified) payload with
+  ZERO Stripe API calls, regardless of delivery order — org identity is a
+  label we wrote ourselves and Stripe echoes back unchanged, which is a
+  different trust category from mutable payment STATE (see below).
+  Reactivation after cancellation reuses the existing `stripe_customer_id`
+  as Checkout's `customer` param (the `subscriptions.organization_id`
+  unique index is strict 1:1, so a brand-new customer would collide) —
+  this widens the literal "block only trialing/active" guard text into
+  blocking every non-canceled status, documented in-file as a deliberate,
+  correctness-driven deviation from the literal spec wording.
+- **State authority / out-of-order safety** (`webhook.ts`): identity comes
+  from the payload (above); STATE (status, plan, period end,
+  cancel_at_period_end) NEVER does — every handled event triggers a live
+  `subscriptions.retrieve` re-fetch and only the re-fetch result is
+  written, so whichever event a batch happens to process last, the stored
+  state is always Stripe's current truth, never a stale payload's claim
+  (proven by the "out-of-order" D1 test: a `canceled`-claiming payload
+  processed AFTER an `active` one still leaves the DB `active`, because the
+  re-fetch — not the payload — said so both times).
+- **Idempotency + retry, corrected mid-session**: the original design
+  (pure `insertBillingEventIfNew` unique-insert dedup) would have
+  permanently wedged a `failed` row, because Stripe redelivers the SAME
+  `event.id` on a non-2xx response — a naive "insert failed → duplicate"
+  check would ack that redelivery without ever retrying. Fixed by adding
+  `getBillingEventByStripeId` (`packages/db/src/repositories/billing.ts`):
+  on an insert conflict, only `processed`/`ignored` rows are treated as a
+  true duplicate; `failed` (or a crash-stuck `received`) rows fall through
+  and are reprocessed — proven by the `failure-then-retry` test (first
+  call throws + row `failed`; second call with a now-working fake client
+  succeeds, single row, `processed`).
+- **Founding cap/flag**: `FLAG_FOUNDING_CAP` (`founding_cap`, default 20 —
+  `packages/billing` `DEFAULT_FOUNDING_CAP`) added to
+  `@bidmorrow/config`'s `FEATURE_FLAG_KEYS` (the DB schema's doc comment
+  already anticipated this key; the constant was simply missing).
+  `countNonCanceledSubscriptionsByPlan` (`packages/db/billing.ts`, new
+  documented cross-tenant exemption, same "enumerate all tenants"
+  rationale as `listOrgsEligibleForScoring`) counts every non-canceled
+  founding subscription; `createCheckoutSession` blocks founding checkout
+  when the flag is closed OR the count ≥ cap, both checked BEFORE any
+  Stripe API call.
+- **Entitlement service** (`entitlement.ts`): `active = status IN
+(trialing, active)` OR `status = past_due` within a 7-day grace window
+  (`PAST_DUE_GRACE_DAYS`, product/ops trade-off, not Stripe-documented —
+  flagged as revisit-with-real-dunning-data) measured from
+  `current_period_end_at`; a `past_due` row with no stored period end
+  fails closed (no grace basis). Pure grace/status math (`reasonFor`) is
+  split out and unit-tested directly, no DB.
+- **`FLAG_ENTITLEMENT_ENFORCED`** (`entitlement_enforced`, default `false`
+  — V1-pilot mode preserved): gates `GET /api/org/feed` (402
+  `subscription_required` when enforced + inactive) and digest generation
+  (`apps/worker/src/digest.ts`'s `runDigestJob`, gated BEFORE
+  `generateDigest` is ever called — `@bidmorrow/notifications` does not
+  and should not depend on `@bidmorrow/billing`; apps/worker, the sole
+  composition root, wires both). Both branches D1-tested with the flag on
+  and off.
+- **Routes** (`apps/worker/src/routes/billing.ts`,
+  `routes/webhooks.ts`, composition in `src/billing.ts`): `POST
+/api/billing/checkout` (OWNER, 409 on existing-subscription/founding-
+  unavailable, audit `billing.checkout_started` + product
+  `checkout_started` on success), `POST /api/billing/portal` (OWNER, 404
+  `no_billing_customer` before any Stripe call, audit
+  `billing.portal_opened`), `GET /api/billing/status` (any member —
+  entitlement + subscription summary + `foundingAvailable` so the UI knows
+  whether to show the founding button without inferring it client-side).
+  `POST /api/webhooks/stripe`: no session middleware (the one
+  deliberately-unauthenticated-by-cookie route), raw body read via
+  `c.req.text()` once before any JSON parsing (never conflicts with the
+  global `/api/*` `bodyLimit` — it only caps size while streaming through),
+  `constructEventAsync` signature verification, 400 with NO detail on
+  failure, 200 on success/duplicate/ignored, 500 on a genuine post-record
+  failure (Stripe retries — safe, re-fetch-based reprocessing).
+  `subscription_started`/`subscription_canceled` product events fire from
+  `syncSubscriptionState`'s before/after status comparison (webhook.ts),
+  not from a route — it is the one place the transition is actually known.
+- **Frontend** (`apps/web/src/pages/app/Settings.tsx`): a Billing section
+  — status line (plan/status/cancel-at-period-end/inactive-reason),
+  Subscribe buttons (Standard always, Founding only when
+  `foundingAvailable`), Manage billing (redirects to the Portal URL); no
+  client-side role gating (matches every other Settings section — the
+  server 403s, `describeBillingError` renders it). Founding-price-for-life
+  line repeated here (already in Terms per the Phase 7 review fix).
+- **No real Stripe credentials anywhere** (HUMAN_DECISION_BLOCKERS.md item
+  4, still OPEN): every test-mode value is an obvious sentinel
+  (`sk_test_fake_for_worker_tests_only`, `whsec_fake_for_worker_tests_only`,
+  `price_fake_*`) — grep-checked, no `sk_live`/realistic-looking key
+  anywhere in the new code. `.env.example`/`apps/worker/.dev.vars.example`
+  carry the four Stripe names only.
+- **Tests, deliberately two-tiered given the no-real-keys constraint**:
+  `packages/billing` (Node, no D1, no network) — 5 files/43 tests:
+  `plans.test.ts` (status mapping incl. the `incomplete`/`paused` fail-safe
+  branches, price↔plan round-trip), `checkout.test.ts` (pure guard
+  predicates: `blocksNewCheckout`, `isFoundingPlanOpenFlag`,
+  `resolveFoundingCap` incl. malformed/negative fallback), `entitlement.
+test.ts` (`reasonFor` grace-window math incl. the inclusive boundary and
+  the no-period-end fail-closed case), `webhook.test.ts` (pure payload-only
+  org/subscription-id resolution for all six handled event types incl. the
+  invoice-metadata-snapshot path, `isHandledEvent`), `index.test.ts`
+  (unchanged skeleton). `apps/worker` — 1 new D1 file
+  (`billing.d1.test.ts`, real workerd+D1, Stripe test-mode sentinel
+  bindings added to `vitest.config.ts`) — 24 tests, two tiers per its own
+  file-header split: HTTP-level (everything reachable without a real
+  Stripe network call — 409/404 guards, role/auth gates, webhook signature
+  verification incl. `generateTestHeaderStringAsync`, idempotent replay,
+  entitlement-flag feed gating, cross-org status isolation, founding
+  flag/cap toggling) and direct `processStripeEvent` calls with a
+  hand-written fake `WebhookStripeClient` (real D1, zero network) —
+  idempotent duplicate (single `retrieve` call), out-of-order
+  (state-from-re-fetch proof), unknown-type ack, failure-then-retry,
+  cross-org `TenantMismatchError` tenant guard. `packages/db` — 0 new
+  files (new repo functions exercised via the worker's D1 suite, same
+  pattern as prior phases); `tests/security/tenant-isolation-contract.
+test.ts` gained 2 documented exemptions
+  (`countNonCanceledSubscriptionsByPlan`, `getBillingEventByStripeId`,
+  alongside the pre-existing `markBillingEventStatus`/
+  `insertBillingEventIfNew`).
+- **Real counts (2026-08-15, all executed)**: `pnpm format` (5 files
+  reformatted this batch — prettier only, no logic changes) ·
+  `format:check` PASS · `lint` PASS · `typecheck` PASS (14/14 workspace
+  projects incl. the now-dependency-added `packages/billing`) · `test`
+  PASS — root vitest **51 files/370 tests** (+7 files/+43 tests over the
+  prior Phase 8 entry, the five new `packages/billing` files plus the
+  `tenant-isolation-contract`/`env.test.ts` additions already counted in
+  the file totals); worker pool-workers **10 files/102 tests** (+1
+  file/+24 tests, the new `billing.d1.test.ts`); packages/db pool-workers
+  **9 files/46 tests** (unchanged) = **70 files/518 tests total** · `build`
+  PASS (`vite build` 59 modules, 307 KB JS/91 KB gzip incl. the new Billing
+  section; `wrangler deploy --dry-run` — top-level AND `--env staging` AND
+  `--env production` all clean, no Stripe secret ever appears as a
+  committed `vars` binding, matching the `RESEND_API_KEY` precedent).
+- **Open items for the next session**: (1) production-reviewer + security
+  sign-off not yet run for Phase 9 (this session's own gate list stops at
+  the automated checks — same PILOT-adjacent gate pattern as Phase 8); (2)
+  HUMAN_DECISION_BLOCKERS.md item 4 (Stripe account/prices/webhook
+  endpoint/Customer Portal enablement) is still fully OPEN — nothing in
+  this phase required or invented real credentials, but real end-to-end
+  verification against live Stripe test mode (a real `checkout.sessions.
+create` round trip, a real webhook delivery from Stripe's dashboard) has
+  NOT happened and cannot happen until that blocker is resolved; (3) the
+  HTTP-level `/api/billing/checkout` and `/api/billing/portal` SUCCESS
+  paths (the calls that would actually reach Stripe's network) are
+  deliberately untested at the D1/HTTP layer — only their guard paths
+  (which run before any network call) are — flagged as an accepted,
+  documented scope boundary given the no-real-keys constraint, not a gap
+  to silently carry forward; (4) `ENTITLEMENT_ENFORCED` defaults `false`
+  and nothing in this phase flips it — V1-pilot manual provisioning
+  continues exactly as before; turning it on is a future-phase/operational
+  decision; (5) no admin UI to view/edit `founding_cap`/`founding_plan_open`/
+  `entitlement_enforced` flags yet (Phase 10 admin-surface scope, flags are
+  DB-editable via `setFeatureFlag` today, same as every other flag).
 
 ### Phase 8 — Daily digest (2026-08-15)
 
@@ -1374,6 +1557,17 @@ Nothing deployed. No Cloudflare resources exist yet.
   P8-R-02 all-member delivery verified; 03 CTA guard; residuals accepted).
   Final gates: 453 tests green (2026-08-15, commit dbf7857).
 
+- Phase 9: **Security agent SIGN-OFF** (C9 webhook integrity, tenant
+  guard, secrets, server-side entitlements, authz all PASS; SEC-P9-01/04
+  comment/wording fixes applied same day; SEC-P9-02 webhook rate limit →
+  WAF rule at deploy time and SEC-P9-03 concurrent-checkout double-customer
+  edge → follow-ups recorded below). **production-reviewer PASS** (all
+  gates re-run, 518 tests; P9-R-01 MEDIUM unknown-price-id silent-ack →
+  FIXED same day (now throws → failed row + Stripe retry, routed through
+  the tested failure path); P9-R-02 crypto-provider claim → FIXED
+  (explicit SubtleCrypto default at verification call site)). Post-fix
+  gates all green.
+
 ## Pilot checkpoint
 
 **REACHED (2026-08-15, post-Phase 8).** The product is functionally usable
@@ -1384,6 +1578,15 @@ Resend key — blocker 3 — and email DNS — blocker 2). Billing is not yet
 live (Phase 9 next). The human may start pilot recruitment while Phases
 9–13 proceed. Provisioning: create the account via normal signup; digest
 requires RESEND_API_KEY + verified domain.
+
+## Phase 9 follow-ups (tracked for Phase 10/13)
+
+- SEC-P9-02: add a WAF/rate-limit rule for POST /api/webhooks/stripe at
+  deployment time (unauthenticated endpoint; currently mitigated by body
+  limit + cheap pre-DB 400s).
+- SEC-P9-03: concurrent double-checkout can orphan a Stripe customer and
+  wedge the second webhook (owner-self-inflicted, no cross-tenant impact);
+  pre-create the customer or add catch-and-reconcile.
 
 ## Notes
 

@@ -28,6 +28,44 @@ function describeSaveError(cause: unknown): string {
   return 'Could not save — please try again.';
 }
 
+interface BillingStatus {
+  entitlement: {
+    active: boolean;
+    plan: 'founding' | 'standard' | null;
+    status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | null;
+    reason: string;
+  };
+  subscription: {
+    plan: 'founding' | 'standard';
+    status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid';
+    cancelAtPeriodEnd: boolean;
+    currentPeriodEndAt: number | null;
+  } | null;
+  foundingAvailable: boolean;
+}
+
+/** Mirrors the worker's `/api/billing/*` error shapes (apps/worker/src/routes/billing.ts). */
+function describeBillingError(cause: unknown): string {
+  if (cause instanceof ApiError) {
+    if (cause.status === 403) return 'Only the organization owner can manage billing.';
+    if (cause.status === 409) {
+      const body = cause.body as { error?: string; reason?: string } | null;
+      if (body?.error === 'subscription_exists') {
+        return 'This organization already has a subscription — use Manage billing to change it.';
+      }
+      if (body?.error === 'founding_unavailable') {
+        return body.reason === 'cap_reached'
+          ? 'The founding plan is full — please choose the standard plan.'
+          : 'The founding plan is not open right now — please choose the standard plan.';
+      }
+    }
+    if (cause.status === 404) return 'No billing account on file yet — subscribe first.';
+    if (cause.status === 503)
+      return 'Billing is not available right now — please try again shortly.';
+  }
+  return 'Could not open billing — please try again.';
+}
+
 export function Settings(): ReactElement {
   const navigate = useNavigate();
   const { refresh } = useAuth();
@@ -62,21 +100,28 @@ export function Settings(): ReactElement {
   const [digest, setDigest] = useState<DigestPreferencesDto | null>(null);
   const [supportedNatures, setSupportedNatures] = useState<ContractNature[]>([...CONTRACT_NATURES]);
 
+  const [billing, setBilling] = useState<BillingStatus | null>(null);
+  const [billingBusy, setBillingBusy] = useState(false);
+  const [billingError, setBillingError] = useState<string | null>(null);
+
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load(): Promise<void> {
       try {
-        const [profileRes, cpvRes, kwRes, geoRes, exRes, capRes, certRes] = await Promise.all([
-          api.get<OrgProfileResponse>('/api/org/profile'),
-          api.get<{ cpvPreferences: { cpvCode: string }[] }>('/api/org/cpv-preferences'),
-          api.get<{ keywords: KeywordDto[] }>('/api/org/keywords'),
-          api.get<{ geographies: GeographyDto[] }>('/api/org/geographies'),
-          api.get<{ exclusions: ExclusionDto[] }>('/api/org/exclusions'),
-          api.get<{ capabilities: { label: string }[] }>('/api/org/capabilities'),
-          api.get<{ certifications: CertificationDto[] }>('/api/org/certifications'),
-        ]);
+        const [profileRes, cpvRes, kwRes, geoRes, exRes, capRes, certRes, billingRes] =
+          await Promise.all([
+            api.get<OrgProfileResponse>('/api/org/profile'),
+            api.get<{ cpvPreferences: { cpvCode: string }[] }>('/api/org/cpv-preferences'),
+            api.get<{ keywords: KeywordDto[] }>('/api/org/keywords'),
+            api.get<{ geographies: GeographyDto[] }>('/api/org/geographies'),
+            api.get<{ exclusions: ExclusionDto[] }>('/api/org/exclusions'),
+            api.get<{ capabilities: { label: string }[] }>('/api/org/capabilities'),
+            api.get<{ certifications: CertificationDto[] }>('/api/org/certifications'),
+            api.get<BillingStatus>('/api/billing/status'),
+          ]);
+        setBilling(billingRes);
         if (profileRes.profile !== null) {
           setDisplayName(profileRes.profile.displayName ?? '');
           setDescription(profileRes.profile.description ?? '');
@@ -214,6 +259,30 @@ export function Settings(): ReactElement {
     }
   }
 
+  async function startCheckout(plan: 'founding' | 'standard'): Promise<void> {
+    setBillingError(null);
+    setBillingBusy(true);
+    try {
+      const { url } = await api.post<{ url: string }>('/api/billing/checkout', { plan });
+      window.location.href = url;
+    } catch (cause) {
+      setBillingError(describeBillingError(cause));
+      setBillingBusy(false);
+    }
+  }
+
+  async function openPortal(): Promise<void> {
+    setBillingError(null);
+    setBillingBusy(true);
+    try {
+      const { url } = await api.post<{ url: string }>('/api/billing/portal');
+      window.location.href = url;
+    } catch (cause) {
+      setBillingError(describeBillingError(cause));
+      setBillingBusy(false);
+    }
+  }
+
   async function deleteAccount(): Promise<void> {
     setDeleteError(null);
     try {
@@ -245,6 +314,67 @@ export function Settings(): ReactElement {
           {saveError}
         </p>
       )}
+
+      <section>
+        <h2>Billing</h2>
+        {billingError !== null && (
+          <p role="alert" className="form-error">
+            {billingError}
+          </p>
+        )}
+        {billing !== null && (
+          <>
+            {billing.subscription === null ? (
+              <>
+                <p>No active subscription.</p>
+                <p className="hint">
+                  Founding price is locked in for the life of your subscription — it never migrates
+                  to the standard price later.
+                </p>
+                <div className="button-row">
+                  {billing.foundingAvailable && (
+                    <button
+                      className="cta"
+                      type="button"
+                      disabled={billingBusy}
+                      onClick={() => void startCheckout('founding')}
+                    >
+                      Subscribe — Founding ($29/mo, limited spots)
+                    </button>
+                  )}
+                  <button
+                    className="cta"
+                    type="button"
+                    disabled={billingBusy}
+                    onClick={() => void startCheckout('standard')}
+                  >
+                    Subscribe — Standard ($49/mo)
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p>
+                  Plan: <strong>{billing.subscription.plan}</strong> · Status:{' '}
+                  <strong>{billing.subscription.status}</strong>
+                  {billing.subscription.cancelAtPeriodEnd ? ' (cancels at period end)' : ''}
+                  {!billing.entitlement.active
+                    ? ` — ${billing.entitlement.reason.replace(/_/g, ' ')}`
+                    : ''}
+                </p>
+                <button
+                  className="cta"
+                  type="button"
+                  disabled={billingBusy}
+                  onClick={() => void openPortal()}
+                >
+                  Manage billing
+                </button>
+              </>
+            )}
+          </>
+        )}
+      </section>
 
       <section>
         <h2>Company profile</h2>
