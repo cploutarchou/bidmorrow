@@ -128,7 +128,7 @@ app.get('/api/health/ready', async (c) => {
 // Better Auth core (ADR-0002, ADR-0007: authentication only, no org
 // plugin — tenancy stays in organizations/organization_members).
 app.on(['GET', 'POST'], '/api/auth/*', (c) => {
-  const auth = createRequestAuth(c.env, c.get('logger'));
+  const auth = createRequestAuth(c.env, c.get('logger'), c.executionCtx);
   return auth.handler(c.req.raw);
 });
 

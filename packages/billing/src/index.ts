@@ -19,5 +19,6 @@ export * from './stripe-types';
 export * from './plans';
 export * from './checkout';
 export * from './portal';
+export * from './cancellation';
 export * from './webhook';
 export * from './entitlement';

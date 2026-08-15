@@ -5,9 +5,13 @@
  * the `/api/auth/*` mount and the session middleware, so both read the exact
  * same configuration (table mapping, deleteUser gate, trusted origins).
  */
-import { createAuth, type AppEnv as AuthAppEnv } from '@bidmorrow/auth';
+import { createAuth, type AppEnv as AuthAppEnv, type AuthEmailKind } from '@bidmorrow/auth';
 import { createDb } from '@bidmorrow/db';
-import { createLoggingEmailProvider } from '@bidmorrow/notifications';
+import {
+  createLoggingEmailProvider,
+  createResendAuthEmailProvider,
+  type AuthEmailProvider,
+} from '@bidmorrow/notifications';
 import type { Logger } from '@bidmorrow/observability';
 
 import type { Env } from './env';
@@ -20,24 +24,81 @@ export function toAuthAppEnv(appEnv: string): AuthAppEnv {
   return 'development';
 }
 
-export function createRequestAuth(env: Env, logger: Logger) {
-  const emailProvider = createLoggingEmailProvider(logger);
+/**
+ * Resolves the auth transactional-email provider: real Resend when
+ * `RESEND_API_KEY` (and `EMAIL_FROM`) are configured, the logging stub
+ * otherwise — same "configured vs. logged fallback" shape as
+ * `resolveDigestProvider` (`apps/worker/src/digest.ts`), never a silent
+ * misconfiguration (SEC-P11-02).
+ */
+function resolveAuthEmailProvider(env: Env, logger: Logger): AuthEmailProvider {
+  if (env.RESEND_API_KEY !== undefined && env.EMAIL_FROM !== undefined) {
+    return createResendAuthEmailProvider({ apiKey: env.RESEND_API_KEY, from: env.EMAIL_FROM });
+  }
+  const logging = createLoggingEmailProvider(logger);
+  return {
+    async send({ to, kind, url }) {
+      const subject = kind === 'verification' ? 'Verify your email address' : 'Reset your password';
+      // `text` (which contains the sensitive url/token) is passed to the
+      // provider, never to the logger — createLoggingEmailProvider only
+      // logs `kind`/`to` (docs/security.md C10).
+      await logging.send({ to, kind: 'transactional', subject, text: `${subject}: ${url}` });
+    },
+  };
+}
+
+/**
+ * SEC-P11-02 / SEC-P4-08: Better Auth's `sendResetPassword` /
+ * `sendVerificationEmail` hooks call `deps.sendEmail` fire-and-forget
+ * (`void deps.sendEmail(...)`, `packages/auth/src/index.ts`) — Better Auth's
+ * own docs warn AGAINST awaiting the reset-password send inline (a timing
+ * side channel would reveal account existence via response latency), so
+ * `packages/auth` cannot simply `await` it. On Cloudflare Workers a
+ * fire-and-forget promise with nothing tracking it can be dropped when the
+ * isolate is torn down before it settles, silently losing the email. This
+ * wrapper registers the actual send with `ExecutionContext.waitUntil`
+ * SYNCHRONOUSLY, before any `await` point, so calling it (even via `void`)
+ * is enough to extend the isolate's lifetime until the send settles,
+ * without changing `packages/auth`'s fire-and-forget call shape or
+ * reintroducing the timing side channel. Failures are logged (kind/to only
+ * — never url/token) rather than thrown, since nothing awaits this
+ * function's rejection anyway.
+ */
+function createWaitUntilSendEmail(
+  env: Env,
+  logger: Logger,
+  waitUntil: (promise: Promise<unknown>) => void,
+): (msg: { to: string; kind: AuthEmailKind; url: string }) => Promise<void> {
+  const provider = resolveAuthEmailProvider(env, logger);
+  return async ({ to, kind, url }) => {
+    const sendPromise = provider.send({ to, kind, url }).catch((cause: unknown) => {
+      logger.error('auth.email.send_failed', {
+        kind,
+        error: cause instanceof Error ? cause.message : String(cause),
+      });
+    });
+    waitUntil(sendPromise);
+    await sendPromise;
+  };
+}
+
+/**
+ * Only the one method this file needs from Hono's `c.executionCtx` — kept
+ * minimal (rather than the full `ExecutionContext` type) so call sites don't
+ * have to fight Hono's generic `ExecutionContext<unknown>` typing just to
+ * pass this through.
+ */
+export interface WaitUntilCtx {
+  waitUntil(promise: Promise<unknown>): void;
+}
+
+export function createRequestAuth(env: Env, logger: Logger, ctx: WaitUntilCtx) {
+  const sendEmail = createWaitUntilSendEmail(env, logger, (promise) => ctx.waitUntil(promise));
   return createAuth({
     db: createDb(env.DB),
     secret: env.BETTER_AUTH_SECRET,
     baseUrl: env.BETTER_AUTH_URL || env.APP_BASE_URL,
     appEnv: toAuthAppEnv(env.APP_ENV),
-    sendEmail: async ({ to, kind, url }) => {
-      const subject = kind === 'verification' ? 'Verify your email address' : 'Reset your password';
-      // `text` (which contains the sensitive url/token) is passed to the
-      // provider, never to the logger — createLoggingEmailProvider only
-      // logs `kind`/`to` (docs/security.md C10).
-      await emailProvider.send({
-        to,
-        kind: 'transactional',
-        subject,
-        text: `${subject}: ${url}`,
-      });
-    },
+    sendEmail,
   });
 }

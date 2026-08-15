@@ -25,6 +25,10 @@ export * from './repositories/tender-corpus';
 export * from './repositories/ingestion';
 export * from './repositories/ops-global';
 export * from './repositories/retention';
+// Deleted-organization hard-purge (Phase 11 stage A): cross-tenant by
+// design, reachable only from the daily retention cron path — see the file
+// header in repositories/org-purge.ts for the full rationale.
+export * from './repositories/org-purge';
 
 // ADMIN repository (Phase 10 stage A): documented cross-tenant reads,
 // reachable ONLY from /api/admin/* — see the file header in
@@ -41,6 +45,7 @@ export * from './repositories/matching';
 export * from './repositories/engagement';
 export * from './repositories/billing';
 export * from './repositories/ops';
+export * from './repositories/export';
 
 /**
  * Context handed to every repository function by the composition root

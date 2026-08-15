@@ -569,6 +569,15 @@ export async function listOrgsEligibleForScoring(db: Db): Promise<OrganizationId
       companyCpvPreferences,
       eq(companyCpvPreferences.organizationId, companyProfiles.organizationId),
     )
+    // Phase 11 privacy reconciliation (docs/privacy.md commitment 2): a
+    // soft-deleted (`status = 'deleted'`) organization must never be scored
+    // again — this JOIN was previously missing, so a deleted org with a
+    // leftover company profile + CPV preference (both intact until the purge
+    // job hard-deletes them, per the grace period) stayed scoring-eligible.
+    // `listOrgsWithDigestEnabled` (below) already had this filter; this
+    // brings scoring eligibility in line with it.
+    .innerJoin(organizations, eq(organizations.id, companyProfiles.organizationId))
+    .where(eq(organizations.status, 'active'))
     .orderBy(asc(companyProfiles.organizationId));
   return rows.map((row) => row.organizationId as OrganizationId);
 }

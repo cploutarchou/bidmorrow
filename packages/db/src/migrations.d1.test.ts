@@ -76,7 +76,7 @@ describe('migrations apply from an empty database', () => {
     expect(tables.has('_bootstrap')).toBe(false);
   });
 
-  it('records all four migrations in d1_migrations', async () => {
+  it('records all six migrations in d1_migrations', async () => {
     const result = await env.DB.prepare('SELECT name FROM d1_migrations ORDER BY name').all<{
       name: string;
     }>();
@@ -85,6 +85,8 @@ describe('migrations apply from an empty database', () => {
       '0002_core_schema.sql',
       '0003_auth_tables.sql',
       '0004_admin_suspension.sql',
+      '0005_nullable_authorship.sql',
+      '0006_org_created_by_nullable.sql',
     ]);
   });
 
@@ -93,5 +95,30 @@ describe('migrations apply from an empty database', () => {
       name: string;
     }>();
     expect(columns.results.map((c) => c.name)).toContain('suspended_at');
+  });
+
+  it('0005 makes saved_tenders/ignored_tenders/customer_feedback author columns nullable (Phase 11 stage A)', async () => {
+    const cases: [string, string][] = [
+      ['saved_tenders', 'saved_by_user_id'],
+      ['ignored_tenders', 'ignored_by_user_id'],
+      ['customer_feedback', 'user_id'],
+    ];
+    for (const [table, column] of cases) {
+      const columns = await env.DB.prepare(`PRAGMA table_info(${table})`).all<{
+        name: string;
+        notnull: number;
+      }>();
+      const info = columns.results.find((c) => c.name === column);
+      expect(info?.notnull).toBe(0);
+    }
+  });
+
+  it('0006 makes organizations.created_by_user_id nullable (Phase 11 stage A)', async () => {
+    const columns = await env.DB.prepare('PRAGMA table_info(organizations)').all<{
+      name: string;
+      notnull: number;
+    }>();
+    const info = columns.results.find((c) => c.name === 'created_by_user_id');
+    expect(info?.notnull).toBe(0);
   });
 });

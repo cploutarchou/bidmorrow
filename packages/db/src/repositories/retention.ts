@@ -16,11 +16,18 @@
  * testable without a database; this module only fetches the raw rows it
  * needs and performs the FK-safe cascade delete.
  */
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lte } from 'drizzle-orm';
 
 import type { Db } from '../client';
-import { customerFeedback, digestItems, savedTenders } from '../schema/engagement';
+import {
+  customerFeedback,
+  digestItems,
+  digestRuns,
+  emailDeliveries,
+  savedTenders,
+} from '../schema/engagement';
 import { matchComponents, matchRiskFlags, tenderMatches } from '../schema/matching';
+import { auditEvents, productEvents } from '../schema/ops';
 import {
   tenderCpvCodes,
   tenderGeographies,
@@ -222,4 +229,97 @@ export async function deleteNoticesCascade(
     matchesDeleted: matchIds.length,
     digestItemsDetached,
   };
+}
+
+// ---------------------------------------------------------------------------
+// SEC-P11-04: time-based ledger purges (docs/privacy.md data inventory) —
+// `audit_events` (24 months), `email_deliveries` / `product_events` (12
+// months). These three tables are append-only history, NOT tenant data
+// (docs/security.md C6 — no `organizationId` parameter), so they are purged
+// on a fixed retention window rather than the org-lifecycle purge above.
+// Bounded per run (`limit` rows per table); a repeated cron run makes steady
+// progress rather than needing to finish in one invocation.
+// ---------------------------------------------------------------------------
+
+export interface LedgerPurgeCounts {
+  readonly auditEventsDeleted: number;
+  readonly emailDeliveriesDeleted: number;
+  readonly productEventsDeleted: number;
+}
+
+/**
+ * Deletes `audit_events` rows older than `cutoffMs` (24-month window,
+ * measured off `occurred_at`), bounded by `limit`. No FK safety needed:
+ * nothing references `audit_events.id`. Consistent with SEC-P11-03's
+ * "the ledger is append-only by design, but not unbounded forever" story —
+ * a pre-purge organization's tombstoned name/id captured in an old audit row
+ * ages out after this window, same as every other row in the table.
+ */
+export async function purgeOldAuditEvents(
+  db: Db,
+  args: { cutoffMs: number; limit: number },
+): Promise<number> {
+  const rows = await db
+    .select({ id: auditEvents.id })
+    .from(auditEvents)
+    .where(lte(auditEvents.occurredAt, args.cutoffMs))
+    .limit(args.limit);
+  if (rows.length === 0) return 0;
+  const ids = rows.map((r) => r.id);
+  for (const idsChunk of chunk(ids, ID_CHUNK_SIZE)) {
+    await db.delete(auditEvents).where(inArray(auditEvents.id, idsChunk));
+  }
+  return ids.length;
+}
+
+/**
+ * Deletes `email_deliveries` rows older than `cutoffMs` (12-month window,
+ * measured off `created_at`), bounded by `limit`. FK safety: `digest_runs.
+ * email_delivery_id` references `email_deliveries.id` — a digest run
+ * referencing an old delivery row is detached (SET NULL) first, same
+ * "detach before delete" pattern `deleteNoticesCascade` uses for
+ * `digest_items.match_id`. The `digest_runs` row itself is untouched (its own
+ * retention is a separate, not-yet-scheduled concern — see docs/privacy.md).
+ */
+export async function purgeOldEmailDeliveries(
+  db: Db,
+  args: { cutoffMs: number; limit: number },
+): Promise<number> {
+  const rows = await db
+    .select({ id: emailDeliveries.id })
+    .from(emailDeliveries)
+    .where(lte(emailDeliveries.createdAt, args.cutoffMs))
+    .limit(args.limit);
+  if (rows.length === 0) return 0;
+  const ids = rows.map((r) => r.id);
+  for (const idsChunk of chunk(ids, ID_CHUNK_SIZE)) {
+    await db
+      .update(digestRuns)
+      .set({ emailDeliveryId: null, updatedAt: Date.now() })
+      .where(inArray(digestRuns.emailDeliveryId, idsChunk));
+    await db.delete(emailDeliveries).where(inArray(emailDeliveries.id, idsChunk));
+  }
+  return ids.length;
+}
+
+/**
+ * Deletes `product_events` rows older than `cutoffMs` (12-month window,
+ * measured off `created_at`), bounded by `limit`. No FK safety needed:
+ * nothing references `product_events.id`.
+ */
+export async function purgeOldProductEvents(
+  db: Db,
+  args: { cutoffMs: number; limit: number },
+): Promise<number> {
+  const rows = await db
+    .select({ id: productEvents.id })
+    .from(productEvents)
+    .where(lte(productEvents.createdAt, args.cutoffMs))
+    .limit(args.limit);
+  if (rows.length === 0) return 0;
+  const ids = rows.map((r) => r.id);
+  for (const idsChunk of chunk(ids, ID_CHUNK_SIZE)) {
+    await db.delete(productEvents).where(inArray(productEvents.id, idsChunk));
+  }
+  return ids.length;
 }

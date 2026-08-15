@@ -147,9 +147,20 @@ export const organizations = sqliteTable(
     name: text('name').notNull(),
     /** Soft-delete gate while the purge job hard-deletes owned rows. */
     status: text('status').notNull(),
-    createdByUserId: text('created_by_user_id')
-      .notNull()
-      .references(() => users.id),
+    /**
+     * Nullable (migration 0005, Phase 11 privacy reconciliation). A
+     * `deleted` organization is kept forever as a tombstone (see the
+     * `status` doc above and `identity.ts`'s `tombstoneOrganization`) —
+     * NOT NULL here would mean the user who created ANY deleted org could
+     * never delete their own account again, since the tombstone row would
+     * FK-block Better Auth's `deleteUser` forever (discovered via a D1
+     * test: a sole owner deletes their org, then tries to delete their
+     * account). `routes/account.ts` SET NULLs this column for every org
+     * the departing user created (any status) before calling `deleteUser`
+     * — same "anonymize the author, keep the row" pattern as
+     * `saved_tenders.saved_by_user_id` and `audit_events.actor_id`.
+     */
+    createdByUserId: text('created_by_user_id').references(() => users.id),
     /**
      * Phase 10 admin suspension (docs/security.md — INTERNAL_ADMIN
      * governance). Deliberately NOT a third `status` CHECK value: SQLite

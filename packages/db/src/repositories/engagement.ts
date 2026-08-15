@@ -7,7 +7,7 @@
  * whether this call changed anything. `digest_runs` relies on the unique
  * `(organization_id, digest_date)` as the daily dedupe mechanism.
  */
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { OrganizationId } from '@bidmorrow/domain';
 
 import type { Db } from '../client';
@@ -487,4 +487,114 @@ export async function updateEmailDeliveryStatus(
     )
     .returning();
   return rows[0] ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Account-deletion FK safety (Phase 11 privacy reconciliation, migration
+// 0005): `saved_by_user_id`/`ignored_by_user_id`/`customer_feedback.user_id`
+// are attribution fields on ORG-owned rows, nullable so a departing member's
+// account can be deleted without either (a) violating the FK to `users`, or
+// (b) deleting org data another member still relies on.
+// ---------------------------------------------------------------------------
+
+export interface NullifyUserAuthorshipCounts {
+  readonly savedTendersNulled: number;
+  readonly ignoredTendersNulled: number;
+  readonly customerFeedbackNulled: number;
+}
+
+/**
+ * SET NULLs `userId`'s authorship attribution on `saved_tenders` /
+ * `ignored_tenders` / `customer_feedback` rows, restricted to the given
+ * organizations AND that user's own authored rows — never a bare `userId`
+ * match with no organization scope, so this can never touch another org's
+ * data by construction. Called by `routes/account.ts` immediately before
+ * removing the membership rows for those same organizations, so the FK to
+ * `users` is clear before Better Auth's `deleteUser` runs.
+ */
+export async function nullifyUserAuthorship(
+  db: Db,
+  userId: string,
+  organizationIds: readonly OrganizationId[],
+): Promise<NullifyUserAuthorshipCounts> {
+  if (organizationIds.length === 0) {
+    return { savedTendersNulled: 0, ignoredTendersNulled: 0, customerFeedbackNulled: 0 };
+  }
+  const now = Date.now();
+  const orgIds = [...organizationIds];
+  const [savedRows, ignoredRows, feedbackRows] = await db.batch([
+    db
+      .update(savedTenders)
+      .set({ savedByUserId: null })
+      .where(
+        and(inArray(savedTenders.organizationId, orgIds), eq(savedTenders.savedByUserId, userId)),
+      )
+      .returning({ id: savedTenders.id }),
+    db
+      .update(ignoredTenders)
+      .set({ ignoredByUserId: null })
+      .where(
+        and(
+          inArray(ignoredTenders.organizationId, orgIds),
+          eq(ignoredTenders.ignoredByUserId, userId),
+        ),
+      )
+      .returning({ id: ignoredTenders.id }),
+    db
+      .update(customerFeedback)
+      .set({ userId: null, updatedAt: now })
+      .where(
+        and(inArray(customerFeedback.organizationId, orgIds), eq(customerFeedback.userId, userId)),
+      )
+      .returning({ id: customerFeedback.id }),
+  ]);
+  return {
+    savedTendersNulled: savedRows.length,
+    ignoredTendersNulled: ignoredRows.length,
+    customerFeedbackNulled: feedbackRows.length,
+  };
+}
+
+/**
+ * P11-R-04: SET NULLs `email_deliveries.user_id` for every row this user
+ * authored (verification/password-reset sends — `kind IN ('verification',
+ * 'password_reset')`), across EVERY organization, not scoped to the
+ * caller-supplied org list like `nullifyUserAuthorship` above.
+ *
+ * DELIBERATE EXEMPTION from this repository's "org-scoped access requires an
+ * `organizationId` parameter" rule (docs/security.md C6): `email_deliveries`
+ * is explicitly NOT tenant-owned for auth mail (see this file's module doc —
+ * `organizationId` is null for verification/reset sends; only `userId`
+ * identifies the row). Account deletion needs to clear every such row for
+ * the departing user regardless of which org(s) they belonged to, so a
+ * per-organization scope would be both wrong (most rows carry no
+ * organization_id at all) and incomplete. Digest rows (`kind = 'digest'`,
+ * `organization_id` set, `user_id` null) are untouched — they were never
+ * attributed to this user in the first place.
+ *
+ * Called by `routes/account.ts` alongside `nullifyUserAuthorship` /
+ * `nullifyOrganizationCreator`, before membership removal / `deleteUser`, so
+ * the `email_deliveries.user_id -> users.id` FK never blocks account
+ * deletion — same "anonymize the author, keep the row" pattern as the other
+ * two (docs/privacy.md commitment 5: delivery records are a provider/
+ * compliance audit trail, so the row itself is retained, just un-attributed).
+ *
+ * CHECK safety: `ck_email_deliveries__recipient` requires `organization_id
+ * IS NOT NULL OR user_id IS NOT NULL`. Today `createEmailDelivery` (this
+ * file) is the only writer and always sets `userId: null` (digest sends,
+ * `organizationId` set) — no row currently exists with `organization_id`
+ * null and `user_id` set, so this SET NULL is currently a no-op in
+ * practice. If a future auth-mail delivery-tracking writer starts inserting
+ * user-level rows (`organization_id` null, `user_id` set — see the module
+ * doc), this call would need to run BEFORE that row is otherwise
+ * unreachable, or the CHECK constraint will (correctly, loudly) reject a
+ * null/null row rather than silently violate the "at least one set" rule.
+ */
+export async function nullifyUserEmailDeliveries(db: Db, userId: string): Promise<number> {
+  const updated = await db
+    .update(emailDeliveries)
+    .set({ userId: null, updatedAt: Date.now() })
+    .where(eq(emailDeliveries.userId, userId))
+    .returning({ id: emailDeliveries.id });
+  return updated.length;
 }
