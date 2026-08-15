@@ -18,6 +18,7 @@ import { organizationId as toOrganizationId } from '@bidmorrow/domain';
 import { PermanentEmailError, RetryableEmailError, generateDigest } from '@bidmorrow/notifications';
 import type { DigestSendMessage, DigestSendResult } from '@bidmorrow/notifications';
 import {
+  addOrganizationMember,
   createDb,
   createOrganization,
   getDigestRunByDate,
@@ -279,7 +280,20 @@ describe('generateDigest', () => {
     expect(outcome.status).toBe('sent');
     expect(outcome.matchesCount).toBe(1);
     expect(provider.sent).toHaveLength(1);
-    expect(provider.sent[0]?.html).toContain('Cybersecurity audit services');
+    const sentHtml = provider.sent[0]?.html ?? '';
+    const sentText = provider.sent[0]?.text ?? '';
+    expect(sentHtml).toContain('Cybersecurity audit services');
+    // P8-R-01 (masking gap): the normal/non-resumed send path must render
+    // buyer, a deadline, and at least one component-explanation reason line
+    // — not just the title. Proves the fresh-path render (straight from
+    // listDigestCandidateMatches) actually carries this detail through,
+    // since digest_items itself has no columns for it.
+    expect(sentHtml).toContain('Buyer: City Council');
+    expect(sentHtml).toMatch(/Deadline: \d{4}-\d{2}-\d{2}/);
+    expect(sentHtml).toContain('CPV match');
+    expect(sentText).toContain('Buyer: City Council');
+    expect(sentText).toMatch(/Deadline: \d{4}-\d{2}-\d{2}/);
+    expect(sentText).toContain('CPV match');
 
     const run = await getDigestRunByDate(db, orgId, '2026-08-15');
     expect(run?.status).toBe('sent');
@@ -530,6 +544,10 @@ describe('generateDigest', () => {
     expect(resumedOutcome.status).toBe('sent');
     expect(resumedOutcome.resumed).toBe(true);
     expect(resumedOutcome.matchesCount).toBe(1);
+    // P8-R-01: the resume path is honestly degraded, not silently thinner —
+    // the rendered item explicitly says detail is unavailable rather than
+    // looking like a normal (but incomplete) digest.
+    expect(succeedingProvider.sent[0]?.html).toContain('(details unavailable — resent digest)');
 
     const itemsAfterResume = await env.DB.prepare(
       'SELECT id FROM digest_items WHERE digest_run_id = ?',
@@ -576,6 +594,74 @@ describe('generateDigest', () => {
     expect(outcome.status).toBe('failed');
     const run = await getDigestRunByDate(db, orgId, '2026-08-15');
     expect(run?.status).toBe('failed');
+  });
+
+  it('P8-R-02: emails every org member — N members yields N provider sends and N email_deliveries rows', async () => {
+    const db = createDb(env.DB);
+    const { orgId } = await makeOrg(db);
+    await upsertDigestPreferences(db, orgId, {
+      enabled: true,
+      sendEmpty: false,
+      minClassification: 'POSSIBLE_MATCH',
+      timezone: ORG_TZ,
+    });
+    await seedMatch(db, orgId, {
+      title: 'Multi-recipient lot',
+      classification: 'STRONG_MATCH',
+      score: 91,
+      scoredAt: NOW - 3_600_000,
+    });
+
+    // makeOrg already creates the OWNER member; add two more members.
+    const extraEmails: string[] = [];
+    for (let i = 0; i < 2; i += 1) {
+      userCounter += 1;
+      const userId = newId(Date.now());
+      const email = `digest-member-${String(userCounter)}@example.test`;
+      await db.insert(schema.users).values({
+        id: userId,
+        email,
+        emailVerified: true,
+        name: `Digest Member ${String(userCounter)}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      await addOrganizationMember(db, orgId, { userId, role: 'MEMBER' });
+      extraEmails.push(email);
+    }
+
+    const provider = new FakeDigestProvider('ok');
+    const outcome = await generateDigest(
+      {
+        db,
+        logger: createLogger({ test: true }),
+        provider,
+        appBaseUrl: APP_BASE_URL,
+        engineVersion: ENGINE_VERSION,
+      },
+      orgId,
+      { localDate: '2026-08-15', utcNow: NOW },
+    );
+
+    expect(outcome.status).toBe('sent');
+    // Owner (from makeOrg) + 2 extra members = 3 recipients, 3 provider sends.
+    expect(provider.sent).toHaveLength(3);
+    const sentTo = provider.sent.map((message) => message.to);
+    for (const email of extraEmails) {
+      expect(sentTo).toContain(email);
+    }
+    expect(new Set(sentTo).size).toBe(3); // every recipient got exactly one send
+
+    const run = await getDigestRunByDate(db, orgId, '2026-08-15');
+    const deliveries = await env.DB.prepare(
+      'SELECT to_email, status FROM email_deliveries WHERE organization_id = ? AND kind = ?',
+    )
+      .bind(orgId, 'digest')
+      .all<{ to_email: string; status: string }>();
+    // One email_deliveries row per recipient (P8-R-02's chosen representation).
+    expect(deliveries.results).toHaveLength(3);
+    expect(deliveries.results.every((row) => row.status === 'sent')).toBe(true);
+    expect(run?.status).toBe('sent');
   });
 
   it('the digest_paused global flag skips generation entirely — no digest_runs row at all', async () => {

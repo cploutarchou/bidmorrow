@@ -73,16 +73,32 @@ export async function runDigestScheduleJob(
   return { enqueued: messages.length };
 }
 
-/** `DIGEST_QUEUE` `{kind:'digest'}` consumer: generates/resumes one org's digest. */
+/**
+ * `DIGEST_QUEUE` `{kind:'digest'}` consumer: generates/resumes one org's
+ * digest. SEC-P8-01: `provider` is an optional injection point — the
+ * queue() consumer in `index.ts` hoists ONE provider instance per
+ * `queue()` invocation (not per message) and passes it into every
+ * `runDigestJob` call for that batch, so `createResendEmailProvider`'s
+ * internal `lastSendAt` rate-limit spacing spans the whole batch of digest
+ * messages, not just the sends within a single org's `generateDigest` call.
+ * Falls back to resolving its own provider when called standalone (e.g.
+ * tests), so the default behavior is unchanged.
+ */
 export async function runDigestJob(
   env: Env,
   logger: Logger,
   message: DigestQueueMessage,
+  provider?: DigestEmailProvider,
 ): Promise<DigestOutcome> {
   const db = createDb(env.DB);
-  const provider = resolveDigestProvider(env, logger);
   return generateDigest(
-    { db, logger, provider, appBaseUrl: env.APP_BASE_URL, engineVersion: ENGINE_VERSION },
+    {
+      db,
+      logger,
+      provider: provider ?? resolveDigestProvider(env, logger),
+      appBaseUrl: env.APP_BASE_URL,
+      engineVersion: ENGINE_VERSION,
+    },
     toOrganizationId(message.organizationId),
     { localDate: message.localDate, utcNow: Date.now() },
   );

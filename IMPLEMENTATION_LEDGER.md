@@ -5,8 +5,9 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 8 — Digest: implemented, not yet reviewed.** Next: run
-`production-reviewer` + `security` sign-off, then the PILOT CHECKPOINT.
+**Phase 8 — Digest: implemented, review fixes applied.** Next: run
+`production-reviewer` + `security` sign-off on the fixed state, then the
+PILOT CHECKPOINT.
 
 ## Completed
 
@@ -51,11 +52,15 @@ context compaction. Read first in every session.
   candidates) and re-rendering/re-sending from them — proven by the KEY
   test (`apps/worker/src/digest.d1.test.ts`: retryable failure → run
   `failed` → same-day retry → `sent`, `digest_items` row count unchanged
-  across both attempts). Trade-off documented in-file: a resumed render
-  reconstructs only the persisted snapshot fields (title/score/
-  classification), not the original reasons/risk/buyer/deadline detail —
-  guarantees no duplicate items and a stable subject/count, not a
-  byte-identical body to the first attempt.
+  across both attempts). **Corrected in the P8-R-01 review fix (see "Phase 8
+  review fixes" below)**: the ORIGINAL wording here claimed the NORMAL
+  (non-resumed) send also lost reasons/risk/buyer/deadline detail — that was
+  never actually true of the normal path and was a review-flagged masking
+  gap; only the RESUMED path is degraded (`digest_items` has no columns for
+  those fields, so a resume genuinely cannot reconstruct them), and it now
+  says so explicitly in the rendered email via a
+  `(details unavailable — resent digest)` note rather than silently
+  omitting the fields.
 - **Candidate collection is bounded, not just the rendered top-10**:
   `listDigestCandidateMatches` (`packages/db/src/repositories/matching.ts`)
   collects up to `MAX_DIGEST_ITEMS = 200` matches (org + engine version,
@@ -167,6 +172,103 @@ context compaction. Read first in every session.
   digest staleness/debugging (docs/product-scope.md item 9) is explicitly
   Phase 10 scope, not touched here — `digest_runs`/`email_deliveries` rows
   are already queryable for it.
+
+### Phase 8 review fixes (2026-08-15)
+
+Targeted fixes from the production review of Phase 8 — no refactors, each
+read-before-edit.
+
+- P8-R-01 (fixed, HIGH — the masking gap): `digest_items`
+  (`packages/db/src/schema/engagement.ts`) only ever persisted
+  `title_snapshot`/`score_snapshot`/`classification_snapshot`, no
+  reasons/risk/buyer/deadline columns — no migration was possible within
+  this fix's scope, so the fix is entirely in
+  `packages/notifications/src/digest-orchestration.ts`: the NORMAL
+  (non-resumed) send path now renders straight from the just-collected
+  `DigestCandidateMatch[]` returned by `listDigestCandidateMatches`
+  (`toRenderItemsFromCandidates` — same in-memory data used to build the
+  `digest_items` insert, no extra DB round-trip), which already carries
+  `buyerName`/`deadlineAt`/`topReasons`/`topRiskFlag`. This is the route
+  the reviewer's item description called out as available given the
+  schema; it required no migration. The RESUME path
+  (`toRenderItemsFromSnapshot`) genuinely cannot reconstruct those fields
+  (the columns don't exist) and stays degraded, but is now HONEST about
+  it: each resumed item's rendered reasons include an explicit
+  `(details unavailable — resent digest)` note instead of silently
+  rendering thinner. `digest-renderer.ts`'s `DigestRenderItem.matchId` is
+  now `string | null` (feeds P8-R-03 below). Strengthened the happy-path D1
+  test (`apps/worker/src/digest.d1.test.ts`) to assert the sent email
+  HTML/text contains the seeded buyer name (`Buyer: City Council`), a
+  `Deadline: YYYY-MM-DD` line, and a component-explanation reason
+  (`CPV match`) — the exact masking gap the review found; also asserts the
+  resumed-send test's email contains the degraded-note text. The Phase 8
+  "Resume path" bullet above is corrected in place rather than rewritten
+  wholesale, so the history of what was originally claimed stays visible.
+- P8-R-02 (fixed, MEDIUM): `generateDigest` now loops over EVERY org member
+  email from `listOrganizationMemberEmails` (previously only
+  `recipients[0]`), sequentially `await`ed on the same provider instance so
+  the existing ≥600ms Resend spacing (`resend.ts`) still applies across
+  every recipient. Chosen representation: **one `email_deliveries` row per
+  recipient**, not one row with a recipient count — `email_deliveries.to_email`
+  is a single TEXT column and the table's `(provider, provider_message_id)`
+  unique index assumes one row = one provider send = one recipient; a
+  count-only representation would be unable to record each recipient's own
+  provider message id or per-recipient send failure, and would collide with
+  that uniqueness the moment two rows shared a message id. A retryable
+  failure on any recipient aborts the remaining sends and rethrows (queue
+  retry resends to every recipient again — the accepted at-least-once
+  window, SEC-P8-02, now explicitly multiplied by recipient count and
+  documented as such); a permanent failure on one recipient does not abort
+  the rest. `digest_runs.email_delivery_id` (a single nullable FK, unchanged
+  schema) stores the first successful delivery's id, or the first attempted
+  delivery's id if none succeeded — a representative pointer, not a list.
+  `queue.digest.completed`/`digest.sent` logs now carry true
+  `recipient_count`/`sent_count`/`permanent_failure_count`. New D1 test:
+  N members (owner + 2 added via `addOrganizationMember`) → 3
+  `provider.sent` calls and 3 `email_deliveries` rows, all `status='sent'`.
+- SEC-P8-01 (fixed, LOW): `apps/worker/src/index.ts`'s `queue()` now
+  constructs ONE `DigestEmailProvider` per invocation (via the exported
+  `resolveDigestProvider` from `digest.ts`) and threads it into every
+  `runDigestJob` call in the batch, instead of `runDigestJob` resolving a
+  fresh provider (and thus a fresh `lastSendAt=0` spacing timer) per
+  message. `runDigestJob` gained an optional `provider` parameter
+  (defaults to its own `resolveDigestProvider` call when omitted, so
+  standalone/test call sites are unaffected) — the Resend 2 req/s spacing
+  now genuinely spans every digest send across the whole batch, not just
+  within one org's own recipient loop.
+- P8-R-03 (fixed, LOW): `digest-renderer.ts` only wraps the item title in a
+  `<a href=...>` CTA link when `item.matchId !== null`; a `null` matchId
+  (purged match, or a resumed/degraded render) now renders a plain escaped
+  title with no link, in both the HTML and plain-text bodies. New unit test
+  in `digest-renderer.test.ts` asserts no `/app/tenders/` URL appears when
+  `matchId` is `null`.
+- SEC-P8-04 (fixed, INFO): the poison-message error in `index.ts`'s
+  `queue()` said `unrecognized MATCH_QUEUE/INGEST_QUEUE message kind` even
+  though the same handler has served `DIGEST_QUEUE` since Phase 8 — now
+  `unrecognized queue message kind`, queue-name-agnostic, matching the
+  doc comment above it that already correctly described all three queues.
+- SEC-P8-02 (accepted, not fixed): the at-least-once queue-retry window
+  where a send can succeed but the status-write/ack fails, causing a resume
+  to re-send — already an accepted trade-off before this batch; unchanged
+  in kind by P8-R-02, just now applies per-recipient instead of to a single
+  recipient (documented above).
+- SEC-P8-03 (superseded by the P8-R-02 fix): the original finding was
+  scoped to the single-recipient send; P8-R-02's redesign (loop + one
+  delivery row per recipient) replaces that code path entirely, so there is
+  no longer a distinct single-recipient finding to track separately.
+- Real counts (2026-08-15, all executed): `pnpm format` (1 file
+  reformatted: `apps/worker/src/digest.d1.test.ts` — prettier import/prose
+  wrap from this batch's additions, no logic changes) · `format:check` PASS
+  · `lint` PASS · `typecheck` PASS (14/14 workspace projects) · `test` PASS
+  — root vitest **47 files/329 tests** (+1 test over the prior Phase 8
+  entry's 328, the new `digest-renderer.test.ts` null-matchId case); worker
+  pool-workers **9 files/78 tests** (+1 test over the prior 77, the new
+  P8-R-02 multi-recipient D1 test — the happy-path and KEY-retry D1 tests
+  gained assertions in place rather than new `it()` blocks) = **65
+  files/453 tests total** (root 329 + worker 78 + packages/db 46, db suite
+  unchanged this batch) · `build` PASS (`vite build` 59 modules, 305 KB
+  JS/90 KB gzip; `wrangler deploy --dry-run` lists `env.DIGEST_QUEUE`
+  alongside every other binding).
 
 ### Phase 7 review fixes (2026-08-15)
 

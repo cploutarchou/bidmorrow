@@ -287,8 +287,10 @@ export async function generateDigest(
   }
 
   let itemRows: DigestItem[];
+  let renderItems: DigestRenderItem[];
   if (resumed) {
     itemRows = await listDigestItems(db, organizationId, { digestRunId: run.id });
+    renderItems = toRenderItemsFromSnapshot(itemRows);
   } else {
     const sinceMs = args.utcNow - FALLBACK_WINDOW_MS;
     const candidates = await listDigestCandidateMatches(db, organizationId, {
@@ -310,8 +312,14 @@ export async function generateDigest(
           classificationSnapshot: candidate.classification,
         })),
       });
+      // Rendered straight from the just-collected candidates, not from the
+      // rows just written — same data, no extra round-trip, and this is
+      // what makes reasons/top risk/buyer/deadline present on the normal
+      // send path (P8-R-01).
+      renderItems = toRenderItemsFromCandidates(candidates);
     } else {
       itemRows = [];
+      renderItems = [];
     }
   }
 
@@ -342,7 +350,7 @@ export async function generateDigest(
   }
 
   const rendered = renderDigest({
-    items: toRenderItems(itemRows),
+    items: renderItems,
     counts: countsFromItems(itemRows),
     orgName: organization.name,
     digestDate: args.localDate,
@@ -350,68 +358,92 @@ export async function generateDigest(
     manageUrl: `${appBaseUrl}/app/settings`,
   });
 
-  const primaryRecipient = recipients[0];
-  if (primaryRecipient === undefined) {
-    throw new Error('generateDigest: recipients.length > 0 but recipients[0] is undefined');
-  }
+  // P8-R-02: email every org member, not just the first. One
+  // `email_deliveries` row per recipient (the table's `to_email` column is
+  // singular and its `(provider, provider_message_id)` uniqueness assumes
+  // one row = one provider send = one recipient, so a "recipient_count on
+  // one row" representation would collide with that constraint and would
+  // also be unable to record a per-recipient provider message id or
+  // per-recipient failure — the accurate representation given the existing
+  // schema is one row per recipient). Sends are sequential and `await`ed on
+  // the SAME provider instance, so `MIN_SEND_SPACING_MS` spacing applies
+  // across every recipient (and, since SEC-P8-01, across every digest in
+  // the same queue batch too — see apps/worker/src/index.ts).
+  let firstDeliveryId: string | null = null;
+  let firstSuccessfulDeliveryId: string | null = null;
+  let sentCount = 0;
+  let permanentFailureCount = 0;
 
-  const delivery = await createEmailDelivery(db, organizationId, {
-    kind: 'digest',
-    toEmail: primaryRecipient,
-    provider: 'resend',
-  });
-
-  try {
-    const sendResult = await provider.send({
-      to: primaryRecipient,
+  for (const toEmail of recipients) {
+    const delivery = await createEmailDelivery(db, organizationId, {
       kind: 'digest',
-      subject: rendered.subject,
-      html: rendered.html,
-      text: rendered.text,
+      toEmail,
+      provider: 'resend',
     });
-    await updateEmailDeliveryStatus(db, organizationId, {
-      emailDeliveryId: delivery.id,
-      status: 'sent',
-      providerMessageId: sendResult.providerMessageId,
-    });
-    await recordDigestRunOutcome(db, organizationId, {
-      digestRunId: run.id,
-      status: 'sent',
-      matchesCount: itemRows.length,
-      emailDeliveryId: delivery.id,
-      sentAt: Date.now(),
-    });
-    logger.info('digest.sent', {
-      organization_id: organizationId,
-      items: itemRows.length,
-      recipient_count: recipients.length,
-    });
-    return { status: 'sent', resumed, matchesCount: itemRows.length };
-  } catch (cause) {
-    const retryable = cause instanceof RetryableEmailError;
-    const permanent = cause instanceof PermanentEmailError;
-    const errorMessage = cause instanceof Error ? cause.message : 'unknown send error';
-    await updateEmailDeliveryStatus(db, organizationId, {
-      emailDeliveryId: delivery.id,
-      status: 'failed',
-      error: errorMessage,
-    });
-    await recordDigestRunOutcome(db, organizationId, {
-      digestRunId: run.id,
-      status: 'failed',
-      matchesCount: itemRows.length,
-      emailDeliveryId: delivery.id,
-    });
-    logger.error('digest.send_failed', {
-      organization_id: organizationId,
-      retryable,
-      error: errorMessage,
-    });
-    if (retryable || !permanent) {
-      // Unknown/network-shaped errors default to retryable — never silently
-      // drop a digest because of an unrecognized failure mode.
-      throw cause;
+    if (firstDeliveryId === null) firstDeliveryId = delivery.id;
+
+    try {
+      const sendResult = await provider.send({
+        to: toEmail,
+        kind: 'digest',
+        subject: rendered.subject,
+        html: rendered.html,
+        text: rendered.text,
+      });
+      await updateEmailDeliveryStatus(db, organizationId, {
+        emailDeliveryId: delivery.id,
+        status: 'sent',
+        providerMessageId: sendResult.providerMessageId,
+      });
+      sentCount += 1;
+      if (firstSuccessfulDeliveryId === null) firstSuccessfulDeliveryId = delivery.id;
+    } catch (cause) {
+      const retryable = cause instanceof RetryableEmailError;
+      const permanent = cause instanceof PermanentEmailError;
+      const errorMessage = cause instanceof Error ? cause.message : 'unknown send error';
+      await updateEmailDeliveryStatus(db, organizationId, {
+        emailDeliveryId: delivery.id,
+        status: 'failed',
+        error: errorMessage,
+      });
+      logger.error('digest.send_failed', {
+        organization_id: organizationId,
+        retryable,
+        error: errorMessage,
+      });
+      if (retryable || !permanent) {
+        // Unknown/network-shaped errors default to retryable — never
+        // silently drop a digest because of an unrecognized failure mode.
+        // Aborts the remaining recipients; the queue retry re-sends to
+        // every recipient again (the accepted at-least-once window —
+        // SEC-P8-02), never re-collects candidates (SEC-P8-03/P8-R-02).
+        await recordDigestRunOutcome(db, organizationId, {
+          digestRunId: run.id,
+          status: 'failed',
+          matchesCount: itemRows.length,
+          emailDeliveryId: firstDeliveryId,
+        });
+        throw cause;
+      }
+      permanentFailureCount += 1;
+      // Permanent failure for THIS recipient only — keep sending to the rest.
     }
-    return { status: 'failed', resumed, matchesCount: itemRows.length };
   }
+
+  const overallStatus: DigestOutcomeStatus = sentCount > 0 ? 'sent' : 'failed';
+  await recordDigestRunOutcome(db, organizationId, {
+    digestRunId: run.id,
+    status: overallStatus,
+    matchesCount: itemRows.length,
+    emailDeliveryId: firstSuccessfulDeliveryId ?? firstDeliveryId,
+    ...(overallStatus === 'sent' ? { sentAt: Date.now() } : {}),
+  });
+  logger.info('digest.sent', {
+    organization_id: organizationId,
+    items: itemRows.length,
+    recipient_count: recipients.length,
+    sent_count: sentCount,
+    permanent_failure_count: permanentFailureCount,
+  });
+  return { status: overallStatus, resumed, matchesCount: itemRows.length };
 }

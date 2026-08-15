@@ -26,7 +26,7 @@ import type {
   IngestQueueMessage,
   MatchQueueMessage,
 } from './env';
-import { runDigestJob, runDigestScheduleJob } from './digest';
+import { resolveDigestProvider, runDigestJob, runDigestScheduleJob } from './digest';
 import {
   runIngestCatchUpJob,
   runRecomputeContinuationJob,
@@ -232,6 +232,17 @@ async function queue(
   _ctx: ExecutionContext,
 ): Promise<void> {
   const logger = createLogger({ queue: batch.queue });
+  // SEC-P8-01: one provider instance for the whole batch, not one per
+  // message — `createResendEmailProvider`'s internal send-spacing timer is
+  // per-instance, so a fresh instance per digest message would let several
+  // digests in the same batch send in rapid succession (only spaced within
+  // each org's own recipient loop, never across orgs). Hoisting here means
+  // Resend's documented 2 req/s spacing holds across every digest send in
+  // this invocation, not just within one org's `generateDigest` call. Never
+  // shared across the digest-preview logging fallback path either — cheap
+  // to construct, so this build applies even to batches with zero digest
+  // messages.
+  const digestProvider = resolveDigestProvider(env, logger);
   for (const message of batch.messages) {
     try {
       switch (message.body.kind) {
@@ -280,7 +291,7 @@ async function queue(
           break;
         }
         case 'digest': {
-          const result = await runDigestJob(env, logger, message.body);
+          const result = await runDigestJob(env, logger, message.body, digestProvider);
           logger.info('queue.digest.completed', {
             status: result.status,
             resumed: result.resumed,
@@ -295,7 +306,12 @@ async function queue(
           // catch below as any other failure: bounded `message.retry()` up to
           // wrangler.jsonc `max_retries`, then the DLQ, so it is investigated
           // rather than dropped.
-          throw new Error(`unrecognized MATCH_QUEUE/INGEST_QUEUE message kind`);
+          // SEC-P8-04: this one handler now serves INGEST_QUEUE, MATCH_QUEUE,
+          // AND DIGEST_QUEUE (see the doc comment above) — the error text
+          // must not name only the first two queues, or an investigator
+          // chasing a DIGEST_QUEUE poison message gets misled about where it
+          // came from.
+          throw new Error(`unrecognized queue message kind`);
         }
       }
       message.ack();

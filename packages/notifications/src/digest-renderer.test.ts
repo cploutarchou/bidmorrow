@@ -98,6 +98,22 @@ describe('renderDigest', () => {
     expect(rendered.html).toContain('&lt;b&gt;bold reason&lt;/b&gt;');
   });
 
+  it('omits the CTA link and renders a plain title when matchId is null (P8-R-03)', () => {
+    const rendered = renderDigest({
+      items: [item({ matchId: null })],
+      counts: { ...ZERO_COUNTS, STRONG_MATCH: 1 },
+      orgName: 'Acme',
+      digestDate: '2026-08-15',
+      appBaseUrl: 'https://app.bidmorrow.com',
+      manageUrl: 'https://app.bidmorrow.com/app/settings',
+    });
+    expect(rendered.html).toContain('IT support services');
+    expect(rendered.html).not.toContain('/app/tenders/');
+    expect(rendered.html).not.toContain('<a href="https://app.bidmorrow.com/app/tenders');
+    expect(rendered.text).toContain('IT support services');
+    expect(rendered.text).not.toContain('/app/tenders/');
+  });
+
   it('renders an honest empty state and does not claim matches exist', () => {
     const rendered = renderDigest({
       items: [],
