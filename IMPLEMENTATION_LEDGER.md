@@ -6,7 +6,58 @@ context compaction. Read first in every session.
 ## Current phase
 
 **Phase 7 stage A — Customer product API: IMPLEMENTED (pending review sign-
-off).** Stage B (frontend) not started.
+off).** **Phase 7 stage B — Frontend (marketing + app SPA): IMPLEMENTED
+(pending production-reviewer/security sign-off).**
+
+### Phase 7 stage B — Frontend (2026-08-15)
+
+- `apps/web` React Router v7 SPA: marketing (`/`, `/pricing`, `/how-it-works`,
+  `/methodology`, `/pilot`, `/privacy`, `/terms`, `/contact` — privacy/terms
+  are honest "final legal text pending" summaries, not real legal text) and
+  app routes (`/signup`, `/login`, `/verify-email`, `/forgot-password`,
+  `/reset-password`, `/onboarding`, `/app`, `/app/tenders/:matchId`,
+  `/app/settings`) calling Better Auth REST endpoints directly (verified
+  paths from installed `better-auth` dist: `sign-up/email`, `sign-in/email`,
+  `sign-out`, `get-session`, `request-password-reset`, `reset-password`,
+  `send-verification-email`) and `/api/org/*`, `/api/account`.
+- Methodology page carries all required disclosures: score-component table,
+  UNKNOWN neutral-policy statement, 5 hard-exclusion rules, risk-flag
+  confidence wording, the CPV pre-filter trade-off disclosure (resolves
+  `[disclosed: methodology page, Phase 7]` from docs/matching-engine.md), and
+  the scoped-coverage statement (72\*/48\*/79417000, "not exhaustive"). New
+  copy constants in `apps/web/src/copy.ts`, unit-tested in `app.test.ts`.
+- Onboarding wizard: org creation → 8 skippable steps (basics, CPV picker
+  w/ preset pre-fill capped at 30, geographies, keywords, exclusions,
+  value/deadline, digest) → `POST onboarding/complete`; renders a prominent
+  (non-color-only) `scopeOverlapWarning` banner linking to `/methodology`.
+- Feed: 6 tabs, filter bar, cursor "load more" (`lib/cursor.ts`, unit
+  tested), optimistic save/ignore with rollback + `aria-live` status region,
+  honest empty state. Tender detail: full facts, plain-text
+  (`white-space: pre-wrap`, React-escaped) description, score-breakdown
+  table, risk flags with confidence wording, Useful/Not-useful feedback form
+  (reason checklist + ≤500-char comment), "Open original TED notice" link
+  (`rel="noopener noreferrer"`), TED attribution.
+- a11y: skip link, semantic landmarks/tables, labelled inputs, visible focus
+  retained from stage-A styles, status never color-only (`ScoreBadge`
+  always renders the text label), `aria-live` regions for optimistic
+  actions, mobile breakpoint in `styles.css`.
+- Pure logic under unit test (no DOM-testing lib, per Phase-7 scope):
+  `lib/format.ts` (relative deadline, score-badge/label mappers,
+  component-status/risk-confidence labels) and `lib/cursor.ts`
+  (pagination merge) — `format.test.ts`/`cursor.test.ts`.
+- New dependency: `react-router@^7.18.2` (verified current major on npm);
+  `@bidmorrow/domain` added as an `apps/web` dependency (pure types/presets
+  only, no DB/auth coupling) for `COMPANY_PRESETS`/`CONTRACT_NATURES`.
+- Gates: `pnpm format`/`format:check`/`lint`/`typecheck`/`test`/`build` all
+  green — 301 web+shared tests (vitest root) + 62 worker + 44 db = 407 total;
+  `vite build` succeeds (297 KB JS / 89 KB gzip) and `wrangler deploy
+--dry-run` packages the built assets without error.
+- Open items for next session: production-reviewer + security sign-off not
+  yet run for stage B; no DOM-level a11y/E2E verification yet (Phase 12);
+  Settings page save flows are per-section (no combined "unsaved changes"
+  guard); onboarding wizard state is not persisted across reload (in-memory
+  only — a refresh mid-wizard loses unsaved steps, though every already-
+  saved step re-loads correctly from `GET /api/org/profile`).
 
 ### Phase 7 stage A — Customer product API (2026-08-15)
 
