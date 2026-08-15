@@ -14,7 +14,8 @@ export type DigestClassification =
 export type DigestRiskConfidence = 'HIGH' | 'POSSIBLE';
 
 export interface DigestRenderItem {
-  readonly matchId: string;
+  /** Null when the underlying match was purged, or on a degraded resume render — omit the CTA link (P8-R-03). */
+  readonly matchId: string | null;
   readonly title: string;
   readonly score: number | null;
   readonly classification: DigestClassification;
@@ -105,7 +106,13 @@ export function renderDigest(args: RenderDigestArgs): RenderedDigest {
 
   const htmlItems = items
     .map((item) => {
-      const url = `${args.appBaseUrl}/app/tenders/${encodeURIComponent(item.matchId)}`;
+      // CTA link only when matchId is known (P8-R-03) — a purged match or a
+      // degraded resume render has no valid /app/tenders/{matchId} target,
+      // so the title renders as plain (escaped) text instead of a link.
+      const titleHtml =
+        item.matchId === null
+          ? escapeHtml(item.title)
+          : `<a href="${escapeHtml(`${args.appBaseUrl}/app/tenders/${encodeURIComponent(item.matchId)}`)}">${escapeHtml(item.title)}</a>`;
       const reasons = item.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join('');
       const risk =
         item.topRisk === null
@@ -115,7 +122,7 @@ export function renderDigest(args: RenderDigestArgs): RenderedDigest {
             )})</p>`;
       return `
         <article>
-          <h2><a href="${escapeHtml(url)}">${escapeHtml(item.title)}</a></h2>
+          <h2>${titleHtml}</h2>
           <p>${escapeHtml(formatScore(item))}</p>
           <ul>${reasons}</ul>
           ${risk}
@@ -151,7 +158,11 @@ export function renderDigest(args: RenderDigestArgs): RenderedDigest {
 
   const textItems = items
     .map((item) => {
-      const url = `${args.appBaseUrl}/app/tenders/${encodeURIComponent(item.matchId)}`;
+      // CTA link only when matchId is known — see the HTML branch above (P8-R-03).
+      const urlLine =
+        item.matchId === null
+          ? ''
+          : `${args.appBaseUrl}/app/tenders/${encodeURIComponent(item.matchId)}\n`;
       const reasons = item.reasons.map((reason) => `  - ${reason}`).join('\n');
       const risk =
         item.topRisk === null
@@ -159,7 +170,7 @@ export function renderDigest(args: RenderDigestArgs): RenderedDigest {
           : `\nRisk: ${item.topRisk.explanation} (${RISK_CONFIDENCE_LABEL[item.topRisk.confidence]})`;
       return (
         `\n${item.title}\n${formatScore(item)}\n${reasons}${risk}\n` +
-        `Buyer: ${item.buyerName ?? 'Unknown'}\nDeadline: ${formatDeadline(item.deadlineAt)}\n${url}\n`
+        `Buyer: ${item.buyerName ?? 'Unknown'}\nDeadline: ${formatDeadline(item.deadlineAt)}\n${urlLine}`
       );
     })
     .join('\n');

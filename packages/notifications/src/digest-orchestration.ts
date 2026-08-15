@@ -39,7 +39,7 @@ import {
   recordDigestRunOutcome,
   updateEmailDeliveryStatus,
 } from '@bidmorrow/db';
-import type { DigestItem, DigestRun } from '@bidmorrow/db';
+import type { DigestCandidateMatch, DigestItem, DigestRun } from '@bidmorrow/db';
 import type { Logger } from '@bidmorrow/observability';
 
 import { renderDigest } from './digest-renderer';
@@ -149,21 +149,65 @@ function countsFromItems(items: readonly { classificationSnapshot: string }[]): 
   return counts;
 }
 
-function toRenderItems(items: readonly DigestItem[]): DigestRenderItem[] {
-  // Resumed items carry only the snapshot fields (title/score/classification)
-  // — reasons/risk/buyer/deadline were part of the ORIGINAL render, not
-  // persisted per-field, so a resume send necessarily re-renders with those
-  // fields empty rather than fabricating them. Documented trade-off: the
-  // resume path guarantees no duplicate items and a stable subject/count,
-  // not a byte-identical body to the original attempt.
+/**
+ * FRESH PATH (P8-R-01): renders directly from the just-collected
+ * `DigestCandidateMatch` rows returned by `listDigestCandidateMatches` —
+ * `digest_items` has no columns for reasons/topRisk/buyerName/deadlineAt
+ * (`packages/db/src/schema/engagement.ts` only persists
+ * title/score/classification snapshots), so the normal send path never goes
+ * through the DB round-trip for these fields; it uses the same in-memory
+ * data that produced the `digest_items` rows in the same invocation. This
+ * is the path every non-resumed digest takes, so digest emails contain
+ * reasons/top risk/buyer/deadline on the normal (non-degraded) path.
+ */
+function toRenderItemsFromCandidates(
+  candidates: readonly DigestCandidateMatch[],
+): DigestRenderItem[] {
+  return candidates
+    .filter((candidate) => isDigestClassification(candidate.classification))
+    .map((candidate) => ({
+      matchId: candidate.matchId,
+      title: candidate.title,
+      score: candidate.score,
+      classification: candidate.classification as DigestClassification,
+      reasons: candidate.topReasons,
+      topRisk:
+        candidate.topRiskFlag === null
+          ? null
+          : {
+              explanation: candidate.topRiskFlag.explanation,
+              confidence: candidate.topRiskFlag.confidence,
+            },
+      buyerName: candidate.buyerName,
+      deadlineAt: candidate.deadlineAt,
+    }));
+}
+
+/**
+ * RESUME PATH: `digest_items` only persists title/score/classification
+ * snapshots (no reasons/risk/buyer/deadline columns exist — see the fresh
+ * path's doc above), so a resumed render cannot reconstruct those fields
+ * without re-querying and risking a body that no longer matches what was
+ * originally counted/ranked. Rather than silently omitting the detail (the
+ * masking gap the review flagged), each resumed item's `reasons` carries an
+ * explicit degraded-render note so the recipient sees why detail is
+ * missing, instead of a normal-looking but silently thinner email.
+ * Documented trade-off, unchanged in substance from the original: a resumed
+ * render guarantees no duplicate items and a stable subject/count, not a
+ * byte-identical body to the first attempt — now made honest in the
+ * rendered copy itself rather than only in code comments.
+ */
+const RESUME_DEGRADED_NOTE = '(details unavailable — resent digest)';
+
+function toRenderItemsFromSnapshot(items: readonly DigestItem[]): DigestRenderItem[] {
   return items
     .filter((item) => isDigestClassification(item.classificationSnapshot))
     .map((item) => ({
-      matchId: item.matchId ?? item.id,
+      matchId: item.matchId,
       title: item.titleSnapshot,
       score: item.scoreSnapshot,
       classification: item.classificationSnapshot as DigestClassification,
-      reasons: [],
+      reasons: [RESUME_DEGRADED_NOTE],
       topRisk: null,
       buyerName: null,
       deadlineAt: null,
