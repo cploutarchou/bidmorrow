@@ -5,8 +5,8 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 10 stage A — Admin/Operations API: implemented this session (gates
-green; production-reviewer/security sign-off NOT yet run).**
+**Phase 10 stage B — Admin UI: implemented this session (gates green;
+production-reviewer/security sign-off NOT yet run).**
 
 ## Completed
 
@@ -185,6 +185,126 @@ ships, same honesty pattern as the Phase 7`_headers` caveat.
   `rateLimitOrgApi` middleware is customer-route-specific and was not
   wired here — low risk given the allowlist gate, but worth a follow-up
   if abuse becomes a concern).
+
+### Phase 10 stage B — Internal admin UI (2026-08-15)
+
+- **Access model — client-side cloaking mirrors the server, never decides
+  anything**: `apps/web/src/components/admin/AdminGate.tsx` probes
+  `GET /api/admin/health-details` once on mount for the entire `/admin/*`
+  route subtree (`App.tsx`'s new nested `<Route path="/admin" element=
+{<AdminGate/>}>`); success renders `<AdminShell><Outlet/></AdminShell>`,
+  any failure (404 from `requireInternalAdmin`, or any other error) renders
+  the SAME `NotFound` page used as the app's catch-all route (`pages/
+NotFound.tsx`, also newly added — there was no 404 page before this
+  stage). The admin surface's existence is never revealed client-side; the
+  server's own always-404-for-non-admins gate
+  (`apps/worker/src/middleware/admin.ts`) remains the sole authority — every
+  page's every fetch is still independently authorized server-side.
+- **Shell**: `components/admin/AdminShell.tsx` — deliberately plain/dense,
+  distinct from the customer `AppShell` (no marketing chrome), skip-link +
+  `aria-label="Admin sections"` nav, footer-style note that every request is
+  audited.
+- **Pages** (`pages/admin/`, all thin tables/detail-panes over
+  `lib/admin-api.ts`'s typed `/api/admin/*` wrappers, `lib/admin-types.ts`
+  DTOs kept in sync with `routes/admin.ts`/`repositories/admin.ts`):
+  `Dashboard` (ingestion last-success/stale flag rendered as a TEXT
+  "STALE"/"OK" label plus a `form-warning` class — never color-only — plus
+  paused/error-count/digest-cycle/DB-size-honesty/DLQ-note/flag-state
+  sections), `Organizations` (search table) + `OrganizationDetail`
+  (profile/subscription/digest-prefs/counts bundle, suspend/unsuspend),
+  `Users` (email search), `Subscriptions` (status filter), `Ingestion`
+  (runs table, errors-by-run table with expandable detail-JSON disclosure,
+  notice lookup by `sourceNoticeId` rendering versions/lots/snapshot keys,
+  pause/resume, CPV-scope editor, backfill form), `Matching` (match-trace
+  form rendering a stored-vs-live component diff table with text mismatch
+  markers, recompute form), `Digest` (runs table, preview form, email-
+  failures table, pause/resume), `Support` (notes list + add form per org,
+  pre-fillable from `?organizationId=` — linked from `OrganizationDetail`),
+  `Audit` (actor/action/since filters), `Flags` (table + JSON-value PUT
+  editor). Every list uses the shared `components/admin/Pager.tsx`
+  "load more" control over the existing `lib/cursor.ts` `CursorState`
+  pattern (reused from `Feed.tsx`, not reinvented) — pagination on every
+  unbounded list, as required.
+- **Confirm pattern UX**: `components/admin/ConfirmAction.tsx` — renders
+  the exact confirm literal the API contract requires (e.g.
+  `SUSPEND_ORGANIZATION`), disables its button until the typed input
+  exactly matches (`lib/admin-confirm.ts`'s pure `confirmationMatches`, no
+  trim/case-fold), same "type the string to confirm" shape already
+  established by `Settings.tsx`'s pre-existing account-delete control —
+  extended into a single reusable component so every admin mutation
+  (suspend/unsuspend, ingestion pause/resume/scope/backfill, matching
+  recompute, digest pause/resume, flag update) shares it. Documented as UX
+  friction only, per the API's own doc comment — the server independently
+  requires and validates the same literal.
+- **Digest preview rendering — explicitly NOT `dangerouslySetInnerHTML`**:
+  `Digest.tsx` renders the admin preview's `subject` as plain JSX text, and
+  both `text` and the raw `html` source as `<pre>` TEXT blocks (React's
+  default escaping) rather than injecting the HTML as markup — even though
+  the preview HTML is the app's own already-escaped renderer output, the
+  eslint `no-restricted-syntax` ban on the `dangerouslySetInnerHTML` JSX
+  attribute is repo-wide (docs/security.md C2) and was not worked around.
+- **Match-trace diff — pure, unit-tested, text-marker mismatches**:
+  `lib/admin-trace.ts`'s `diffComponents` keys stored vs. live components
+  by `componentKey`/`key`, classifies each row `match` / `points_differ` /
+  `status_differ` / `stored_only` / `live_only`, and `mismatchMarker`
+  renders a distinct non-color string per kind (`"MISMATCH — ..."` prefix)
+  — `Matching.tsx` renders this as a 4th "Result" table column, never
+  color-only.
+- **Client-side validators mirror server bounds (UX only, never authority)**:
+  `lib/admin-date-range.ts` `validateBackfillRange` (≤90 days, mirrors
+  `routes/admin.ts`'s `enumerateDays`/`MAX_BACKFILL_DAYS`) and
+  `lib/admin-scope.ts` `validateCpvScope` (≤20 CPV families, 2-8 char
+  families, 2-letter countries, mirrors `ingestionScopeSchema`) — both
+  documented in-file as immediate feedback only; the server independently
+  re-validates (`parseIngestionScope` for scope, the same day-enumeration
+  for backfill) before persisting/enqueueing anything.
+- **`lib/format.ts` gained `formatIsoUtc`** (epoch ms → ISO-8601 UTC
+  string, `null` → `'not recorded'` rather than blank) — used by every
+  admin table per the "all timestamps rendered ISO UTC" instruction;
+  covered by 2 new cases in the existing `format.test.ts`.
+- **Tests — pure utils only, no DOM harness** (per this stage's explicit
+  instruction and the existing `vitest` root project's `environment:
+'node'` config, which cannot render JSX anyway): `admin-confirm.test.ts`
+  (5 cases: exact/case-mismatch/prefix/whitespace/empty), `admin-date-
+range.test.ts` (5 cases: single-day, exactly-at-max, over-max, inverted
+  range, malformed date), `admin-scope.test.ts` (5 cases: valid, empty,
+  over-cap, short family, bad country code), `admin-trace.test.ts` (8
+  cases: clean match, points/status mismatch, stored-only/live-only,
+  stable sort, `hasAnyMismatch`, marker uniqueness) — 23 new test cases
+  total, plus the 2 `formatIsoUtc` cases above = **25 new tests**.
+- **Real counts (2026-08-15, all executed)**: `pnpm format` (13 files
+  reformatted by the formatter itself — new admin files only, no logic
+  changes) · `format:check` PASS · `lint` PASS (one fix needed: `//
+eslint-disable-next-line react-hooks/exhaustive-deps` comments in
+  `Audit.tsx`/`Subscriptions.tsx`/`Support.tsx` referenced a rule from a
+  plugin not installed in this repo — removed, since the repo's existing
+  `Feed.tsx` pattern already excludes deps from `useEffect` without a
+  disable comment, i.e. no lint rule to suppress here) · `typecheck` PASS
+  (14/14 workspace projects) · `test` PASS — root vitest **55 files/396
+  tests** (+4 files/+25 tests: the 4 new `admin-*.test.ts` files plus the 2
+  new `formatIsoUtc` cases in the existing `format.test.ts`); worker pool-
+  workers **11 files/119 tests** (unchanged — no worker changes this
+  stage); packages/db pool-workers **9 files/47 tests** (unchanged) = **75
+  files/562 tests total** · `build` PASS (`vite build` 80 modules, 356.65
+  kB JS / 99.57 kB gzip, up from 307 KB/91 KB pre-admin-UI; `wrangler
+  deploy --dry-run` — top-level clean, all pre-existing bindings present,
+  no new binding required for a static-assets-only frontend addition).
+- **Open items**: (1) production-reviewer + security sign-off not yet run
+  for this stage; (2) no DOM/E2E coverage of the admin pages yet —
+  deliberately deferred to Phase 12 E2E per this stage's explicit scope
+  (Playwright, not Vitest+jsdom, matching the rest of the app's testing
+  split); (3) `OrganizationDetail`'s subscription/digest-preferences/
+  company-profile sections render their nested objects via
+  `JSON.stringify` in a `<pre>` rather than field-by-field tables — safe
+  (React-escaped text, no HTML injection) but less polished than a bespoke
+  layout; a future session could break these into proper `<dl>` fact
+  blocks if admin usage shows it's worth it; (4) `Flags.tsx`'s value editor
+  requires typing raw JSON (e.g. `"true"`, `42`, `"a string"`) rather than
+  a type-aware widget — matches the API's `z.unknown()` value contract
+  exactly but is unforgiving of a bare `true`/`42` without quotes for
+  strings; (5) `Support.tsx`'s organization-id field has no autocomplete/
+  link-from-search — an admin currently has to already know or copy an org
+  ID (the `OrganizationDetail` → Support deep link covers the common path).
 
 ### Phase 9 — Billing (2026-08-15)
 

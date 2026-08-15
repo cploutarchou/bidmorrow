@@ -1,0 +1,108 @@
+import { useCallback, useEffect, useState, type ReactElement } from 'react';
+import { adminApi } from '../../lib/admin-api';
+import { appendCursor, startCursor, type CursorState } from '../../lib/cursor';
+import { formatIsoUtc } from '../../lib/format';
+import { Pager } from '../../components/admin/Pager';
+import type { AdminSubscription } from '../../lib/admin-types';
+
+const STATUSES = ['', 'trialing', 'active', 'past_due', 'canceled', 'unpaid'] as const;
+
+export function Subscriptions(): ReactElement {
+  const [status, setStatus] = useState<string>('');
+  const [state, setState] = useState<CursorState<AdminSubscription> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async (nextStatus: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const page = await adminApi.listSubscriptions({
+        ...(nextStatus.length > 0 ? { status: nextStatus } : {}),
+      });
+      setState(startCursor(page));
+    } catch {
+      setError('Could not load subscriptions.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load(status);
+  }, [status]);
+
+  async function loadMore(): Promise<void> {
+    if (state === null || state.nextCursor === null) return;
+    setLoadingMore(true);
+    try {
+      const page = await adminApi.listSubscriptions({
+        ...(status.length > 0 ? { status } : {}),
+        cursor: state.nextCursor,
+      });
+      setState((prev) => (prev === null ? startCursor(page) : appendCursor(prev, page)));
+    } catch {
+      setError('Could not load more subscriptions.');
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  return (
+    <>
+      <title>Subscriptions — Admin</title>
+      <h1>Subscriptions</h1>
+      <div className="form-field">
+        <label htmlFor="sub-status">Filter by status</label>
+        <select id="sub-status" value={status} onChange={(event) => setStatus(event.target.value)}>
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {s.length === 0 ? 'All' : s}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {loading && <p>Loading…</p>}
+      {error !== null && (
+        <p role="alert" className="form-error">
+          {error}
+        </p>
+      )}
+      {!loading && state !== null && state.items.length === 0 && <p>No subscriptions found.</p>}
+      {!loading && state !== null && state.items.length > 0 && (
+        <div className="admin-table-scroll">
+          <table>
+            <caption className="visually-hidden-status">Subscriptions</caption>
+            <thead>
+              <tr>
+                <th scope="col">Organization</th>
+                <th scope="col">Plan</th>
+                <th scope="col">Status</th>
+                <th scope="col">Cancels at period end</th>
+                <th scope="col">Period end</th>
+              </tr>
+            </thead>
+            <tbody>
+              {state.items.map((sub) => (
+                <tr key={sub.id}>
+                  <td>{sub.organizationId}</td>
+                  <td>{sub.plan}</td>
+                  <td>{sub.status}</td>
+                  <td>{sub.cancelAtPeriodEnd === 1 ? 'Yes' : 'No'}</td>
+                  <td>{formatIsoUtc(sub.currentPeriodEndAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <Pager
+        nextCursor={state?.nextCursor ?? null}
+        loading={loadingMore}
+        onLoadMore={() => void loadMore()}
+      />
+    </>
+  );
+}
