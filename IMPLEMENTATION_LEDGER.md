@@ -5,11 +5,8 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 11 stage A — Privacy implementation: COMPLETE. Phase 11 fix batch
-(review findings SEC-P11-01..04, P11-R-01..05): COMPLETE**, gates green
-(589 tests). `production-reviewer`/`security` subagent re-review not yet
-run — next step before tagging. Next: that re-review, then Phase 11 stage B
-or Phase 12 (see docs/production-checklist.md for what's left).
+**Phase 11 — Security/Privacy: COMPLETE (signed off).** Next: Phase 12 —
+Quality.
 
 ## Completed
 
@@ -2137,6 +2134,16 @@ Nothing deployed. No Cloudflare resources exist yet.
   layers + tests; P10-R-04 LOW tracked: admin rate limit + live PRAGMA
   verification at deploy). Post-fix gates all green: 566 tests
   (2026-08-15). P10-R-03 satisfied by the security SIGN-OFF above.
+
+- Phase 11: **Comprehensive security audit SIGN-OFF** (all C1–C11
+  verified against the full codebase with evidence; 0 CRITICAL/HIGH;
+  SEC-P11-01/02 MEDIUMs FIXED same day; 03/04/05 fixed or documented;
+  tracked deploy-time gaps reconfirmed). **production-reviewer PASS**
+  (privacy commitments 1–6 all implemented+tested; purge table
+  enumeration complete vs schema; P11-R-01/03 MEDIUMs FIXED; 02/04 fixed).
+  **Re-verification PASS** (2026-08-15: all 11 fix items verified with
+  evidence, 589 tests green, threat model T22 + 7 deltas consistent).
+  Residual LOW/INFO items documented in code + ledger follow-ups.
 
 ## Pilot checkpoint
 
