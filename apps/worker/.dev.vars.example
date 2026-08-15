@@ -25,3 +25,14 @@ ADMIN_EMAILS=
 # (HUMAN_DECISION_BLOCKERS.md item 3 — Resend account is a human blocker).
 RESEND_API_KEY=
 EMAIL_FROM=
+
+# Stripe (billing — Phase 9). Test-mode keys only outside production, never
+# mixed with live keys. All four optional in local/test: absent means
+# /api/billing/* and the webhook endpoint respond `not_configured` instead
+# of constructing a client with an empty key. REQUIRED in staging/production
+# (HUMAN_DECISION_BLOCKERS.md item 4 — Stripe account/prices are a human
+# blocker; never invent a key or price id here).
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_FOUNDING_MONTHLY=
+STRIPE_PRICE_STANDARD_MONTHLY=

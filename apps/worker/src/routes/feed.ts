@@ -8,6 +8,7 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
+import { getEntitlement, isEntitlementEnforced } from '@bidmorrow/billing';
 import { createDb, listFeedRows } from '@bidmorrow/db';
 import { ENGINE_VERSION } from '@bidmorrow/matching';
 
@@ -52,6 +53,19 @@ feedRoutes.get('/feed', zValidator('query', feedQuerySchema), async (c) => {
   const db = createDb(c.env.DB);
   const organizationId = c.get('organizationId');
   if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
+
+  // Phase 9 ENTITLEMENT_ENFORCED gate (docs/architecture.md § billing):
+  // flag-off (default) preserves V1-pilot mode — subscriptions are tracked
+  // but nothing is gated, matching manual pilot provisioning. Checked
+  // AFTER organization resolution (never a client-supplied bypass) and
+  // BEFORE any feed query — a non-entitled org gets a clear 402, not a
+  // silently empty feed.
+  if (await isEntitlementEnforced(db)) {
+    const entitlement = await getEntitlement(db, organizationId);
+    if (!entitlement.active) {
+      return c.json({ error: 'subscription_required', reason: entitlement.reason }, 402);
+    }
+  }
 
   const query = c.req.valid('query');
   // SEC-P7-03: `listFeedRows` throws a plain Error on a malformed/tampered

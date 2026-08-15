@@ -96,9 +96,11 @@ describe('feature flag keys', () => {
   it('exposes the admin-editable flag keys', () => {
     expect(FEATURE_FLAG_KEYS).toEqual([
       'founding_plan_open',
+      'founding_cap',
       'ingestion_paused',
       'digest_paused',
       'ingestion_cpv_scope',
+      'entitlement_enforced',
     ]);
   });
 });

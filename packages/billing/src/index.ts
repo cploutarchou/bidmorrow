@@ -1,9 +1,5 @@
 /**
  * @bidmorrow/billing — Stripe checkout/portal/webhooks/entitlements.
- *
- * Phase 2 skeleton: the Stripe integration arrives in Phase 9. This module
- * owns the subscription-status vocabulary mirrored from Stripe
- * (docs/data-model.md §9, `subscriptions.status`).
  */
 
 export const PACKAGE = '@bidmorrow/billing';
@@ -17,4 +13,11 @@ export const SUBSCRIPTION_STATUSES = [
   'unpaid',
 ] as const;
 
-export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
+export * from './errors';
+export * from './stripe-client';
+export * from './stripe-types';
+export * from './plans';
+export * from './checkout';
+export * from './portal';
+export * from './webhook';
+export * from './entitlement';

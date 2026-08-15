@@ -5,6 +5,7 @@
  * of `index.ts` so it stays independently testable — mirrors
  * `src/ingestion.ts`'s composition pattern.
  */
+import { getEntitlement, isEntitlementEnforced } from '@bidmorrow/billing';
 import { createDb } from '@bidmorrow/db';
 import { ENGINE_VERSION } from '@bidmorrow/matching';
 import type { Logger } from '@bidmorrow/observability';
@@ -91,6 +92,30 @@ export async function runDigestJob(
   provider?: DigestEmailProvider,
 ): Promise<DigestOutcome> {
   const db = createDb(env.DB);
+
+  // Phase 9 ENTITLEMENT_ENFORCED gate (docs/architecture.md § billing):
+  // flag-off (default) preserves V1-pilot mode (manual provisioning
+  // continues, nothing gated here). Checked BEFORE `generateDigest` is
+  // ever called — same "no digest_runs row at all" shape as the existing
+  // `digest_paused` global-pause check inside `generateDigest` itself
+  // (Phase 8), just resolved one layer up since the gate depends on
+  // `@bidmorrow/billing`, which `@bidmorrow/notifications` does not (and
+  // should not) depend on — apps/worker is the sole composition root that
+  // wires both. Reuses the `skipped_paused` outcome status rather than
+  // adding a new one to packages/notifications' vocabulary for a
+  // composition-root-level gate.
+  if (await isEntitlementEnforced(db)) {
+    const organizationId = toOrganizationId(message.organizationId);
+    const entitlement = await getEntitlement(db, organizationId);
+    if (!entitlement.active) {
+      logger.info('digest.skipped.no_entitlement', {
+        organization_id: organizationId,
+        reason: entitlement.reason,
+      });
+      return { status: 'skipped_paused', resumed: false, matchesCount: 0 };
+    }
+  }
+
   return generateDigest(
     {
       db,
