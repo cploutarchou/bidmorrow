@@ -28,6 +28,7 @@ import type {
 } from './env';
 import { resolveDigestProvider, runDigestJob, runDigestScheduleJob } from './digest';
 import {
+  runBackfillWindowJob,
   runIngestCatchUpJob,
   runRecomputeContinuationJob,
   runRecomputeJob,
@@ -264,6 +265,17 @@ async function queue(
         case 'purge': {
           const result = await runRetentionPurgeJob(env, logger);
           logger.info('queue.purge.completed', { notices_deleted: result.noticesDeleted });
+          break;
+        }
+        case 'backfill_window': {
+          const result = await runBackfillWindowJob(env, logger, {
+            windowFrom: message.body.windowFrom,
+            windowTo: message.body.windowTo,
+          });
+          logger.info('queue.backfill_window.completed', {
+            status: result === null ? 'skipped_paused' : result.status,
+            new_lot_count: result === null ? 0 : result.newLotIds.length,
+          });
           break;
         }
         case 'score': {

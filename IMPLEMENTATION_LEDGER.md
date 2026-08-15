@@ -5,10 +5,306 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 9 — Billing: COMPLETE (signed off). STOPPED per user instruction** —
-awaiting go-ahead before Phase 10 (Admin/Operations).
+**Phase 10 — Admin/Operations: COMPLETE (signed off).** Next: Phase 11 —
+Security/Privacy.
 
 ## Completed
+
+### Phase 10 stage A — Internal admin API (2026-08-15)
+
+- **Migration 0004 (additive, zero drizzle drift)**:
+  `organizations.suspended_at INTEGER` nullable
+  (`migrations/0004_admin_suspension.sql`, drizzle-kit-generated from
+  `packages/db/src/schema/identity.ts`, `drizzle-kit generate` afterward
+  produces "No schema changes, nothing to migrate"). **Decision, documented
+  in-file on the column**: suspension is NOT a third `organizations.status`
+  CHECK value — SQLite cannot ALTER a CHECK constraint in place (only a full
+  create-new/copy/swap rebuild, migration-safety skill), and suspension is
+  orthogonal to the active/deleted lifecycle (a suspended org stays
+  `active`; retention/deletion is untouched). `identity.ts` gains
+  `suspendOrganization`/`unsuspendOrganization` (contract-compliant, take a
+  single `organizationId`, idempotent). `apps/worker/src/middleware/
+organization.ts`'s `requireOrganization` 403s `{error:
+'organization_suspended'}` when set — blocks every `/api/org/*`/feed/tender
+  route at the source; `company.ts`'s `listOrgsWithDigestEnabled` gained an
+  `isNull(organizations.suspendedAt)` filter so the digest scheduler
+  excludes suspended orgs too. Both proven by a D1 test (suspend → `GET
+/api/org/feed` 403 + digest-selection exclusion → unsuspend → both
+  restored).
+- **`packages/db/src/repositories/admin.ts` (new file, documented cross-
+  tenant exception)**: `searchOrganizationsAdmin`, `getOrgAdminDetail`,
+  `searchUsersAdmin`, `listSubscriptionsAdmin`, `listDigestRunsAdmin`,
+  `listEmailFailuresAdmin`, `listAuditEventsAdmin`, `getUsageCounts`,
+  `getRecentErrorCounts`, `getDbSizeEstimate` — every function is read-only,
+  reachable ONLY from `/api/admin/*` (never imported by a customer route),
+  and documented in-file as the deliberate exception to the "every tenant
+  function requires organizationId" contract. `tests/security/
+tenant-isolation-contract.test.ts` classifies `admin.ts` as a GLOBAL file
+  with an explicit exemption paragraph (it imports company/engagement/
+  billing schema modules specifically BECAUSE it does cross-tenant reads —
+  the opposite of every other GLOBAL file's guarantee); the suite passes.
+  Small additions to the existing global files for the same admin surface:
+  `ingestion.ts` `listErrorsForRun`, `tender-corpus.ts`
+  `getNoticeDebugBundle` (notice + versions + per-version lots + R2 snapshot
+  pointers, by `source_notice_id`), `matching.ts` `getTenderMatchByLot`
+  (contract-compliant — takes `organizationId`, so it stays in the tenant
+  file, not `admin.ts`).
+- **`GET/PUT` digest preview, read-only**: `packages/notifications`
+  `previewDigest` renders EXACTLY what `generateDigest`'s normal
+  (non-resumed) send path would render — same candidate query, same
+  fresh-path render-item mapping — but creates NO `digest_runs` row, writes
+  NO `digest_items`, sends NO email. Proven by a D1 test asserting
+  `digest_runs`/`email_deliveries` row counts are byte-identical before and
+  after a preview call.
+- **Backfill reuses the real ingestion pipeline, not a parallel one**:
+  `IngestQueueMessage` gained `{kind:'backfill_window', windowFrom,
+windowTo}`; `apps/worker/src/ingestion.ts`'s new `runBackfillWindowJob`
+  calls `runIngestionWindow` — the SAME per-window function the daily
+  catch-up cron uses — for one admin-supplied day, then enqueues new lots to
+  `MATCH_QUEUE` exactly like the cron path. `POST /api/admin/ingestion/
+backfill` enumerates `[fromDate, toDate]` into single-day windows, rejects
+  a range over 90 days (400 `range_too_large`) BEFORE enqueueing anything,
+  and enqueues one `INGEST_QUEUE` message per day. Deliberately does not
+  bypass the ingestion checkpoint's advance-only invariant — backfilling
+  behind the checkpoint still throws inside `runIngestionWindow`, which is
+  correct (backfill fills a gap ahead of catch-up, never rewrites history).
+- **Match-trace recompute reuses the exact Phase 7 on-demand-recompute
+  pattern** (`GET /api/admin/match-trace?organizationId&lotId`,
+  `routes/admin.ts`): `loadOrgProfile` + `mapLotToEngineInput` +
+  `scoreLotForOrg`, live, alongside the stored match/components/risk-flags
+  row (via the new `getTenderMatchByLot`). D1 test seeds a match with a
+  known component sum, asserts the STORED component points sum to the
+  stored score, and that a live recompute is returned. `POST /api/admin/
+matching/recompute` accepts `noticeIds` (≤100, → `{kind:'recompute'}`
+  batches) XOR `lotIds` (≤500, → `{kind:'recompute_continuation'}`
+  batches — reuses the existing SEC-P6-01 continuation consumer, which is
+  functionally identical to a lot-id-keyed hard-replace recompute, so no
+  new queue consumer was needed).
+- **Audit design (SEC-P4-07)**: `apps/worker/src/middleware/admin.ts`'s
+  `requireInternalAdmin` now writes ONE generic `audit_events` row
+  (`action: 'admin.request'`, actor + method+path + query-summary + response
+  status) for EVERY request that clears the allowlist — reads included, not
+  just mutations — written AFTER `next()` so the row carries the real
+  response status. Every mutation route ADDITIONALLY writes its own
+  specific row (`org.suspended`, `feature_flag.updated`,
+  `ingestion.scope_updated`, `ingestion.backfill_enqueued`,
+  `matching.recompute_enqueued`, `support_note.created`, etc.) via a shared
+  `writeAdminAction` helper in `routes/admin.ts`. D1-tested: a plain GET
+  writes exactly 1 row; a mutating PUT writes exactly 2 (generic + specific)
+  and both actions are present.
+- **Confirmation pattern**: every mutation route requires an exact-literal
+  `confirm` string in its JSON body (`PAUSE_INGESTION`, `RESUME_INGESTION`,
+  `UPDATE_INGESTION_SCOPE`, `RUN_BACKFILL`, `RECOMPUTE_MATCHES`,
+  `PAUSE_DIGEST`, `RESUME_DIGEST`, `SUSPEND_ORGANIZATION`,
+  `UNSUSPEND_ORGANIZATION`, `UPDATE_FLAG`), enforced by zod
+  `z.literal(...)` — missing/mismatched `confirm` 400s automatically via
+  `@hono/zod-validator`, before the handler body runs. Documented as a
+  mistake-friction gate, not a security boundary (`requireInternalAdmin`
+  alone is that).
+- **Routes** (`apps/worker/src/routes/admin.ts`, full rewrite of the
+  Phase 4 placeholder, all behind `requireInternalAdmin`, zod-strict,
+  pagination capped at 50 everywhere via a shared `paginationQuerySchema`):
+  `GET orgs` (name search + status/subscription summary + member count),
+  `GET orgs/:id` (full profile/subscription/digest-prefs/counts bundle),
+  `POST orgs/:id/suspend|unsuspend`, `GET users` (email search),
+  `GET subscriptions` (status filter), `GET ingestion/runs`,
+  `GET ingestion/errors?runId`, `GET notices/:sourceNoticeId`,
+  `POST ingestion/pause|resume`, `POST ingestion/scope` (≤20 CPV families,
+  re-validated through the pipeline's own `parseIngestionScope` before
+  persisting), `POST ingestion/backfill`, `GET match-trace`,
+  `POST matching/recompute`, `GET digest/runs`, `GET digest/preview`,
+  `GET email/failures`, `POST digest/pause|resume`, `GET/POST
+support-notes`, `GET audit-events` (actor/action/since filters),
+  `GET health-details` (ingestion staleness + pause state + 24h error
+  counts + DB size estimate + recent digest runs + flag states + an
+  HONEST note that DLQ contents are not directly readable from the Worker
+  runtime), `GET usage` (major-table row counts), `GET flags`,
+  `PUT flags/:key` (param validated against `FEATURE_FLAG_KEYS` via
+  `z.enum` — an unknown key 400s at the param-validation layer, never
+  reaches the handler).
+- **DB-size approach, honestly flagged**: `getDbSizeEstimate` attempts
+  `PRAGMA page_count`/`PRAGMA page_size` via `db.get(sql\`...\`)`, wrapped
+in try/catch; on any failure returns `{measured: false, approxBytes:
+  null}`rather than fabricating a number. NOT round-tripped against a real
+deployed D1 database from this dev environment (Cloudflare docs hosts are
+proxy-blocked here, same restriction as every prior phase's external-docs
+caveats) — flagged in-file as a TODO-verify-against-real-D1 before this
+ships, same honesty pattern as the Phase 7`_headers` caveat.
+- **Tests**: `apps/worker/src/admin.d1.test.ts` (new, 17 tests, real
+  workerd+D1) — 404/200 gate sample, audit-row-per-request (read = 1 row,
+  mutation = 2 rows: generic + specific), confirm-pattern 400s (missing +
+  wrong-literal), org suspension blocking `/api/org/feed` (403) AND
+  `listOrgsWithDigestEnabled` (exclusion) with unsuspend restoring both,
+  ingestion scope validation (>20 families 400, valid persists), backfill
+  bounds (>90 days 400, valid enqueues N single-day messages), match-trace
+  stored-component-sum-equals-stored-score + live recompute presence,
+  digest preview's zero-side-effects (run/delivery counts unchanged),
+  flags PUT rejecting an unknown key (400 at param validation) and a known
+  key round-tripping through `GET /flags`, pagination limit>50 rejected.
+  `packages/db/src/migrations.d1.test.ts` gained 2 tests (4-migration
+  chain applies from empty; `organizations.suspended_at` column exists).
+  `apps/worker/src/tenancy.test.ts`'s pre-existing admin-gate test updated
+  for the new `/health-details` response shape (was asserting the Phase 4
+  placeholder's `{ok:true,admin:true}` body). No new `packages/db`-scoped
+  test file — the new repo functions are exercised via the worker's D1
+  suite, same pattern as every prior phase.
+- **Real counts (2026-08-15, all executed)**: `pnpm format` (4 files
+  reformatted by the formatter itself: `routes/admin.ts`,
+  `repositories/admin.ts`, `repositories/matching.ts`,
+  `tests/security/tenant-isolation-contract.test.ts` — prettier only, no
+  logic changes) · `format:check` PASS · `lint` PASS · `typecheck` PASS
+  (14/14 workspace projects) · `test` PASS — root vitest **51 files/370
+  tests** (unchanged — no new root-scoped test file this phase); worker
+  pool-workers **11 files/119 tests** (+1 file/+17 tests, the new
+  `admin.d1.test.ts`); packages/db pool-workers **9 files/47 tests** (+1
+  test, the two new migration-suite assertions net +1 over the prior
+  46 — one test replaced/renamed, one added) = **71 files/536 tests
+  total** · `build` PASS (`vite build` 59 modules, 307 KB JS/91 KB gzip,
+  unchanged — no web changes this phase; `wrangler deploy --dry-run` —
+  top-level clean, lists `env.INGEST_QUEUE`/`MATCH_QUEUE`/`DIGEST_QUEUE`
+  alongside every pre-existing binding, no new binding required for this
+  phase's `backfill_window` message kind since it rides the existing
+  `INGEST_QUEUE`).
+- **Open items for stage B (admin UI)**: (1) production-reviewer +
+  security sign-off not yet run for this stage (same PILOT-adjacent gate
+  pattern noted at the end of every recent phase); (2) no admin frontend —
+  every route above is API-only, consumed via curl/Postman/a future
+  `apps/web` admin section; (3) `getDbSizeEstimate`'s PRAGMA approach is
+  unverified against real deployed D1 (see above); (4) DLQ contents remain
+  unreadable from the Worker runtime — surfaced as a documented note in
+  `GET health-details`, not solved (would need the Cloudflare dashboard API
+  or `wrangler queues list-dlq` wired in separately, out of this stage's
+  scope); (5) `POST matching/recompute`'s `lotIds` path reuses the
+  `recompute_continuation` message kind rather than a purpose-named one —
+  functionally correct (documented in-file) but a future session could add
+  a dedicated `admin_recompute` kind if the naming reuse ever causes
+  confusion in logs/metrics; (6) support-notes has no edit/delete route yet
+  (create + list only, matching the spec's "GET/POST support-notes" scope);
+  (7) no rate limiting on `/api/admin/*` specifically (relies on
+  `requireInternalAdmin`'s allowlist + audit trail; the existing
+  `rateLimitOrgApi` middleware is customer-route-specific and was not
+  wired here — low risk given the allowlist gate, but worth a follow-up
+  if abuse becomes a concern).
+
+### Phase 10 stage B — Internal admin UI (2026-08-15)
+
+- **Access model — client-side cloaking mirrors the server, never decides
+  anything**: `apps/web/src/components/admin/AdminGate.tsx` probes
+  `GET /api/admin/health-details` once on mount for the entire `/admin/*`
+  route subtree (`App.tsx`'s new nested `<Route path="/admin" element=
+{<AdminGate/>}>`); success renders `<AdminShell><Outlet/></AdminShell>`,
+  any failure (404 from `requireInternalAdmin`, or any other error) renders
+  the SAME `NotFound` page used as the app's catch-all route (`pages/
+NotFound.tsx`, also newly added — there was no 404 page before this
+  stage). The admin surface's existence is never revealed client-side; the
+  server's own always-404-for-non-admins gate
+  (`apps/worker/src/middleware/admin.ts`) remains the sole authority — every
+  page's every fetch is still independently authorized server-side.
+- **Shell**: `components/admin/AdminShell.tsx` — deliberately plain/dense,
+  distinct from the customer `AppShell` (no marketing chrome), skip-link +
+  `aria-label="Admin sections"` nav, footer-style note that every request is
+  audited.
+- **Pages** (`pages/admin/`, all thin tables/detail-panes over
+  `lib/admin-api.ts`'s typed `/api/admin/*` wrappers, `lib/admin-types.ts`
+  DTOs kept in sync with `routes/admin.ts`/`repositories/admin.ts`):
+  `Dashboard` (ingestion last-success/stale flag rendered as a TEXT
+  "STALE"/"OK" label plus a `form-warning` class — never color-only — plus
+  paused/error-count/digest-cycle/DB-size-honesty/DLQ-note/flag-state
+  sections), `Organizations` (search table) + `OrganizationDetail`
+  (profile/subscription/digest-prefs/counts bundle, suspend/unsuspend),
+  `Users` (email search), `Subscriptions` (status filter), `Ingestion`
+  (runs table, errors-by-run table with expandable detail-JSON disclosure,
+  notice lookup by `sourceNoticeId` rendering versions/lots/snapshot keys,
+  pause/resume, CPV-scope editor, backfill form), `Matching` (match-trace
+  form rendering a stored-vs-live component diff table with text mismatch
+  markers, recompute form), `Digest` (runs table, preview form, email-
+  failures table, pause/resume), `Support` (notes list + add form per org,
+  pre-fillable from `?organizationId=` — linked from `OrganizationDetail`),
+  `Audit` (actor/action/since filters), `Flags` (table + JSON-value PUT
+  editor). Every list uses the shared `components/admin/Pager.tsx`
+  "load more" control over the existing `lib/cursor.ts` `CursorState`
+  pattern (reused from `Feed.tsx`, not reinvented) — pagination on every
+  unbounded list, as required.
+- **Confirm pattern UX**: `components/admin/ConfirmAction.tsx` — renders
+  the exact confirm literal the API contract requires (e.g.
+  `SUSPEND_ORGANIZATION`), disables its button until the typed input
+  exactly matches (`lib/admin-confirm.ts`'s pure `confirmationMatches`, no
+  trim/case-fold), same "type the string to confirm" shape already
+  established by `Settings.tsx`'s pre-existing account-delete control —
+  extended into a single reusable component so every admin mutation
+  (suspend/unsuspend, ingestion pause/resume/scope/backfill, matching
+  recompute, digest pause/resume, flag update) shares it. Documented as UX
+  friction only, per the API's own doc comment — the server independently
+  requires and validates the same literal.
+- **Digest preview rendering — explicitly NOT `dangerouslySetInnerHTML`**:
+  `Digest.tsx` renders the admin preview's `subject` as plain JSX text, and
+  both `text` and the raw `html` source as `<pre>` TEXT blocks (React's
+  default escaping) rather than injecting the HTML as markup — even though
+  the preview HTML is the app's own already-escaped renderer output, the
+  eslint `no-restricted-syntax` ban on the `dangerouslySetInnerHTML` JSX
+  attribute is repo-wide (docs/security.md C2) and was not worked around.
+- **Match-trace diff — pure, unit-tested, text-marker mismatches**:
+  `lib/admin-trace.ts`'s `diffComponents` keys stored vs. live components
+  by `componentKey`/`key`, classifies each row `match` / `points_differ` /
+  `status_differ` / `stored_only` / `live_only`, and `mismatchMarker`
+  renders a distinct non-color string per kind (`"MISMATCH — ..."` prefix)
+  — `Matching.tsx` renders this as a 4th "Result" table column, never
+  color-only.
+- **Client-side validators mirror server bounds (UX only, never authority)**:
+  `lib/admin-date-range.ts` `validateBackfillRange` (≤90 days, mirrors
+  `routes/admin.ts`'s `enumerateDays`/`MAX_BACKFILL_DAYS`) and
+  `lib/admin-scope.ts` `validateCpvScope` (≤20 CPV families, 2-8 char
+  families, 2-letter countries, mirrors `ingestionScopeSchema`) — both
+  documented in-file as immediate feedback only; the server independently
+  re-validates (`parseIngestionScope` for scope, the same day-enumeration
+  for backfill) before persisting/enqueueing anything.
+- **`lib/format.ts` gained `formatIsoUtc`** (epoch ms → ISO-8601 UTC
+  string, `null` → `'not recorded'` rather than blank) — used by every
+  admin table per the "all timestamps rendered ISO UTC" instruction;
+  covered by 2 new cases in the existing `format.test.ts`.
+- **Tests — pure utils only, no DOM harness** (per this stage's explicit
+  instruction and the existing `vitest` root project's `environment:
+'node'` config, which cannot render JSX anyway): `admin-confirm.test.ts`
+  (5 cases: exact/case-mismatch/prefix/whitespace/empty), `admin-date-
+range.test.ts` (5 cases: single-day, exactly-at-max, over-max, inverted
+  range, malformed date), `admin-scope.test.ts` (5 cases: valid, empty,
+  over-cap, short family, bad country code), `admin-trace.test.ts` (8
+  cases: clean match, points/status mismatch, stored-only/live-only,
+  stable sort, `hasAnyMismatch`, marker uniqueness) — 23 new test cases
+  total, plus the 2 `formatIsoUtc` cases above = **25 new tests**.
+- **Real counts (2026-08-15, all executed)**: `pnpm format` (13 files
+  reformatted by the formatter itself — new admin files only, no logic
+  changes) · `format:check` PASS · `lint` PASS (one fix needed: `//
+eslint-disable-next-line react-hooks/exhaustive-deps` comments in
+  `Audit.tsx`/`Subscriptions.tsx`/`Support.tsx` referenced a rule from a
+  plugin not installed in this repo — removed, since the repo's existing
+  `Feed.tsx` pattern already excludes deps from `useEffect` without a
+  disable comment, i.e. no lint rule to suppress here) · `typecheck` PASS
+  (14/14 workspace projects) · `test` PASS — root vitest **55 files/396
+  tests** (+4 files/+25 tests: the 4 new `admin-*.test.ts` files plus the 2
+  new `formatIsoUtc` cases in the existing `format.test.ts`); worker pool-
+  workers **11 files/119 tests** (unchanged — no worker changes this
+  stage); packages/db pool-workers **9 files/47 tests** (unchanged) = **75
+  files/562 tests total** · `build` PASS (`vite build` 80 modules, 356.65
+  kB JS / 99.57 kB gzip, up from 307 KB/91 KB pre-admin-UI; `wrangler
+deploy --dry-run` — top-level clean, all pre-existing bindings present,
+  no new binding required for a static-assets-only frontend addition).
+- **Open items**: (1) production-reviewer + security sign-off not yet run
+  for this stage; (2) no DOM/E2E coverage of the admin pages yet —
+  deliberately deferred to Phase 12 E2E per this stage's explicit scope
+  (Playwright, not Vitest+jsdom, matching the rest of the app's testing
+  split); (3) `OrganizationDetail`'s subscription/digest-preferences/
+  company-profile sections render their nested objects via
+  `JSON.stringify` in a `<pre>` rather than field-by-field tables — safe
+  (React-escaped text, no HTML injection) but less polished than a bespoke
+  layout; a future session could break these into proper `<dl>` fact
+  blocks if admin usage shows it's worth it; (4) `Flags.tsx`'s value editor
+  requires typing raw JSON (e.g. `"true"`, `42`, `"a string"`) rather than
+  a type-aware widget — matches the API's `z.unknown()` value contract
+  exactly but is unforgiving of a bare `true`/`42` without quotes for
+  strings; (5) `Support.tsx`'s organization-id field has no autocomplete/
+  link-from-search — an admin currently has to already know or copy an org
+  ID (the `OrganizationDetail` → Support deep link covers the common path).
 
 ### Phase 9 — Billing (2026-08-15)
 
@@ -1567,6 +1863,17 @@ Nothing deployed. No Cloudflare resources exist yet.
   the tested failure path); P9-R-02 crypto-provider claim → FIXED
   (explicit SubtleCrypto default at verification call site)). Post-fix
   gates all green.
+
+- Phase 10: **Security agent SIGN-OFF** (gate integrity, audit
+  completeness, confirmations, suspension end-to-end, cross-tenant admin
+  surface all PASS; SEC-P10-01 MEDIUM flag-PUT shape validation FIXED same
+  day + tests; SEC-P10-02 LOW audit-on-error FIXED (try/finally);
+  SEC-P10-03/04/05 tracked LOW/INFO). **production-reviewer FAIL → fixes
+  applied** (P10-R-01 format gate fixed; P10-R-02 MEDIUM backfill now
+  honors the ingestion pause at BOTH enqueue (409) and consumer (skip)
+  layers + tests; P10-R-04 LOW tracked: admin rate limit + live PRAGMA
+  verification at deploy). Post-fix gates all green: 566 tests
+  (2026-08-15). P10-R-03 satisfied by the security SIGN-OFF above.
 
 ## Pilot checkpoint
 

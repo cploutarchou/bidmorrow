@@ -86,3 +86,14 @@ const COMPONENT_STATUS_LABEL: Record<string, string> = {
 export function componentStatusLabel(status: string): string {
   return COMPONENT_STATUS_LABEL[status] ?? status;
 }
+
+/**
+ * ISO-8601 UTC timestamp for admin tooling (docs instruction: "all
+ * timestamps rendered ISO UTC" — internal ops screens are not localized).
+ * Returns a fixed placeholder for `null` rather than an empty string, so a
+ * missing timestamp is never rendered as blank/ambiguous.
+ */
+export function formatIsoUtc(epochMs: number | null): string {
+  if (epochMs === null) return 'not recorded';
+  return new Date(epochMs).toISOString();
+}

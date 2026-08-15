@@ -15,6 +15,7 @@ import { and, asc, desc, eq, gt, gte, inArray, isNull, lte } from 'drizzle-orm';
 
 import type { Db } from '../client';
 import { newId } from '../id';
+import { sourceSnapshots } from '../schema/ingestion';
 import {
   buyers,
   tenderCpvCodes,
@@ -724,4 +725,73 @@ async function attachCpvAndGeography(
     cpvCodes: cpvByLot.get(row.lot.id) ?? [],
     geographies: geoByLot.get(row.lot.id) ?? [],
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Admin source debugging (Phase 10 stage A): full raw-notice bundle by
+// `source_notice_id` — every version, every version's lots, and the R2
+// snapshot pointers. Reachable ONLY from `/api/admin/notices/:sourceNoticeId`
+// (never a customer route); the corpus is already global (no
+// organizationId), so this is a normal, contract-compliant addition here
+// rather than the dedicated admin repository — it never crosses tenant
+// boundaries because the corpus itself has none.
+// ---------------------------------------------------------------------------
+
+export interface NoticeDebugBundle {
+  readonly notice: TenderNotice;
+  readonly versions: readonly TenderNoticeVersion[];
+  /** Keyed by `noticeVersionId`. */
+  readonly lotsByVersion: ReadonlyMap<string, TenderLot[]>;
+  readonly snapshots: readonly (typeof sourceSnapshots.$inferSelect)[];
+}
+
+export async function getNoticeDebugBundle(
+  db: Db,
+  args: { source: string; sourceNoticeId: string },
+): Promise<NoticeDebugBundle | null> {
+  const notice = (
+    await db
+      .select()
+      .from(tenderNotices)
+      .where(
+        and(
+          eq(tenderNotices.source, args.source),
+          eq(tenderNotices.sourceNoticeId, args.sourceNoticeId),
+        ),
+      )
+      .limit(1)
+  )[0];
+  if (notice === undefined) return null;
+
+  const [versions, snapshots] = await db.batch([
+    db
+      .select()
+      .from(tenderNoticeVersions)
+      .where(eq(tenderNoticeVersions.noticeId, notice.id))
+      .orderBy(asc(tenderNoticeVersions.versionNumber)),
+    db
+      .select()
+      .from(sourceSnapshots)
+      .where(
+        and(
+          eq(sourceSnapshots.source, args.source),
+          eq(sourceSnapshots.sourceNoticeId, args.sourceNoticeId),
+        ),
+      )
+      .orderBy(asc(sourceSnapshots.versionNumber)),
+  ]);
+
+  const versionIds = versions.map((v) => v.id);
+  const lots =
+    versionIds.length === 0
+      ? []
+      : await db.select().from(tenderLots).where(inArray(tenderLots.noticeVersionId, versionIds));
+  const lotsByVersion = new Map<string, TenderLot[]>();
+  for (const lot of lots) {
+    const list = lotsByVersion.get(lot.noticeVersionId) ?? [];
+    list.push(lot);
+    lotsByVersion.set(lot.noticeVersionId, list);
+  }
+
+  return { notice, versions, lotsByVersion, snapshots };
 }

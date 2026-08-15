@@ -41,6 +41,7 @@ export async function createOrganization(
     name: args.name,
     status: 'active',
     createdByUserId: args.createdByUserId,
+    suspendedAt: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -202,6 +203,38 @@ export async function listOrganizationMemberEmails(
     .innerJoin(users, eq(users.id, organizationMembers.userId))
     .where(eq(organizationMembers.organizationId, organizationId));
   return rows.map((row) => row.email);
+}
+
+/**
+ * INTERNAL_ADMIN governance (Phase 10 stage A): sets `suspended_at`. Reached
+ * only from `/api/admin/organizations/:id/suspend` — see
+ * `packages/db/src/schema/identity.ts`'s doc comment on the column for why
+ * this is a nullable timestamp rather than a third `status` value.
+ * Idempotent: returns the existing row unchanged when already suspended.
+ */
+export async function suspendOrganization(
+  db: Db,
+  organizationId: OrganizationId,
+): Promise<Organization | null> {
+  const rows = await db
+    .update(organizations)
+    .set({ suspendedAt: Date.now(), updatedAt: Date.now() })
+    .where(and(eq(organizations.id, organizationId), eq(organizations.status, 'active')))
+    .returning();
+  return rows[0] ?? null;
+}
+
+/** Inverse of `suspendOrganization`. Idempotent: returns null when not currently suspended. */
+export async function unsuspendOrganization(
+  db: Db,
+  organizationId: OrganizationId,
+): Promise<Organization | null> {
+  const rows = await db
+    .update(organizations)
+    .set({ suspendedAt: null, updatedAt: Date.now() })
+    .where(and(eq(organizations.id, organizationId), eq(organizations.status, 'active')))
+    .returning();
+  return rows[0] ?? null;
 }
 
 /**

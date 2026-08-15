@@ -26,6 +26,12 @@ export * from './repositories/ingestion';
 export * from './repositories/ops-global';
 export * from './repositories/retention';
 
+// ADMIN repository (Phase 10 stage A): documented cross-tenant reads,
+// reachable ONLY from /api/admin/* — see the file header in
+// repositories/admin.ts for the full rationale and the tenant-isolation
+// contract test exemption that enforces this boundary stays honest.
+export * from './repositories/admin';
+
 // Tenant-scoped repositories (every function REQUIRES organizationId per
 // the TENANT RULE below; the two nullable-org ledgers take an explicit
 // `OrganizationId | null`).

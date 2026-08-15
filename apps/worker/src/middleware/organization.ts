@@ -27,6 +27,13 @@ export const requireOrganization: MiddlewareHandler<AppBindings> = async (c, nex
   if (first === undefined) {
     return c.json({ error: 'no_organization' }, 403);
   }
+  // Phase 10 admin suspension (docs/security.md — INTERNAL_ADMIN
+  // governance): a suspended org keeps its `active` status (retention/
+  // deletion lifecycle is untouched) but loses every tenant-scoped API
+  // route while under review — feed/digest access blocked at the source.
+  if (first.organization.suspendedAt !== null) {
+    return c.json({ error: 'organization_suspended' }, 403);
+  }
   c.set('organizationId', toOrganizationId(first.organization.id));
   // The DB CHECK constrains `role` to the two valid values; Drizzle's
   // column type is plain `text`, so the cast is the enum boundary.

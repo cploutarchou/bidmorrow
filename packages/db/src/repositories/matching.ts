@@ -429,6 +429,47 @@ export async function getTenderMatchWithComponents(
 }
 
 /**
+ * Admin match-trace lookup (Phase 10 stage A, `GET /api/admin/match-
+ * trace?organizationId&lotId`): the stored match + components/risk flags for
+ * one (organization, lot) pair, at its most recent `engine_version`. Same
+ * org-checked shape as `getTenderMatchWithComponents` — `organizationId` is
+ * always required — this is not a cross-tenant read, it just accepts an
+ * admin-supplied org id instead of one derived from a session, which the
+ * repository contract already allows (every function here takes
+ * `organizationId` explicitly).
+ */
+export async function getTenderMatchByLot(
+  db: Db,
+  organizationId: OrganizationId,
+  args: { lotId: string },
+): Promise<TenderMatchWithComponents | null> {
+  const matches = await db
+    .select()
+    .from(tenderMatches)
+    .where(
+      and(eq(tenderMatches.organizationId, organizationId), eq(tenderMatches.lotId, args.lotId)),
+    )
+    .orderBy(desc(tenderMatches.engineVersion))
+    .limit(1);
+  const match = matches[0];
+  if (match === undefined) return null;
+
+  const [components, riskFlags] = await db.batch([
+    db
+      .select()
+      .from(matchComponents)
+      .where(eq(matchComponents.matchId, match.id))
+      .orderBy(matchComponents.componentKey),
+    db
+      .select()
+      .from(matchRiskFlags)
+      .where(eq(matchRiskFlags.matchId, match.id))
+      .orderBy(matchRiskFlags.id),
+  ]);
+  return { match, components, riskFlags };
+}
+
+/**
  * Resolves the `(lotId, noticeId)` a match belongs to, org-checked. Used by
  * the save/ignore action handlers so `lotId`/`noticeId` are ALWAYS derived
  * server-side from the match row, never accepted from client input. Null

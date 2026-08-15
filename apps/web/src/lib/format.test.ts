@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   classificationLabel,
   componentStatusLabel,
+  formatIsoUtc,
   formatOriginalValue,
   formatRelativeDeadline,
   formatScoreLine,
@@ -68,5 +69,14 @@ describe('componentStatusLabel', () => {
   });
   it('falls back to the raw string for unrecognized statuses', () => {
     expect(componentStatusLabel('SOMETHING_ELSE')).toBe('SOMETHING_ELSE');
+  });
+});
+
+describe('formatIsoUtc', () => {
+  it('renders a fixed epoch as an ISO-8601 UTC timestamp', () => {
+    expect(formatIsoUtc(Date.parse('2026-08-15T12:00:00Z'))).toBe('2026-08-15T12:00:00.000Z');
+  });
+  it('reports a missing timestamp honestly, never as blank', () => {
+    expect(formatIsoUtc(null)).toBe('not recorded');
   });
 });
