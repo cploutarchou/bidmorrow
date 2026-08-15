@@ -7,12 +7,19 @@
  * whether this call changed anything. `digest_runs` relies on the unique
  * `(organization_id, digest_date)` as the daily dedupe mechanism.
  */
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import type { OrganizationId } from '@bidmorrow/domain';
 
 import type { Db } from '../client';
 import { newId } from '../id';
-import { customerFeedback, digestRuns, ignoredTenders, savedTenders } from '../schema/engagement';
+import {
+  customerFeedback,
+  digestItems,
+  digestRuns,
+  emailDeliveries,
+  ignoredTenders,
+  savedTenders,
+} from '../schema/engagement';
 import { tenderMatches } from '../schema/matching';
 import { DuplicateDigestError, TenantMismatchError } from './errors';
 import { assertIsoDate } from './shared';
@@ -21,6 +28,8 @@ export type SavedTender = typeof savedTenders.$inferSelect;
 export type IgnoredTender = typeof ignoredTenders.$inferSelect;
 export type CustomerFeedback = typeof customerFeedback.$inferSelect;
 export type DigestRun = typeof digestRuns.$inferSelect;
+export type DigestItem = typeof digestItems.$inferSelect;
+export type EmailDelivery = typeof emailDeliveries.$inferSelect;
 
 export type FeedbackVerdict = 'useful' | 'not_useful';
 export type FeedbackReason =
@@ -276,6 +285,28 @@ export async function createDigestRun(
   return row;
 }
 
+/**
+ * Reads the (at most one) existing run for an org+date — the resume path
+ * uses this after `createDigestRun` throws `DuplicateDigestError` to decide
+ * whether the existing run is a genuine already-completed duplicate or an
+ * interrupted `pending`/`failed` run safe to resume.
+ */
+export async function getDigestRunByDate(
+  db: Db,
+  organizationId: OrganizationId,
+  digestDate: string,
+): Promise<DigestRun | null> {
+  assertIsoDate(digestDate, 'digestDate');
+  const rows = await db
+    .select()
+    .from(digestRuns)
+    .where(
+      and(eq(digestRuns.organizationId, organizationId), eq(digestRuns.digestDate, digestDate)),
+    )
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export interface RecordDigestRunOutcomeArgs {
   digestRunId: string;
   status: Exclude<DigestRunStatus, 'pending'>;
@@ -306,6 +337,154 @@ export async function recordDigestRunOutcome(
     .update(digestRuns)
     .set(set)
     .where(and(eq(digestRuns.organizationId, organizationId), eq(digestRuns.id, args.digestRunId)))
+    .returning();
+  return rows[0] ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// digest_items (SEC-P3-03: tenancy inherited through digest_run_id — every
+// access here first re-verifies the parent run belongs to this org, exactly
+// like customer_feedback's matchId check above)
+// ---------------------------------------------------------------------------
+
+export interface DigestItemInput {
+  /** Null only after retention purge SET NULLs it — never written null here. */
+  matchId: string;
+  rank: number;
+  titleSnapshot: string;
+  scoreSnapshot: number | null;
+  classificationSnapshot: string;
+}
+
+async function assertDigestRunOwnedByOrg(
+  db: Db,
+  organizationId: OrganizationId,
+  digestRunId: string,
+): Promise<void> {
+  const rows = await db
+    .select({ id: digestRuns.id })
+    .from(digestRuns)
+    .where(and(eq(digestRuns.organizationId, organizationId), eq(digestRuns.id, digestRunId)))
+    .limit(1);
+  if (rows.length === 0) {
+    throw new TenantMismatchError('digest_items', organizationId);
+  }
+}
+
+/**
+ * Writes the digest's item snapshots (what it actually contained — display
+ * fields, not a live join, so the row stays meaningful after retention
+ * purges the underlying match). Org-checked via the parent run first.
+ */
+export async function insertDigestItems(
+  db: Db,
+  organizationId: OrganizationId,
+  args: { digestRunId: string; items: DigestItemInput[] },
+): Promise<DigestItem[]> {
+  await assertDigestRunOwnedByOrg(db, organizationId, args.digestRunId);
+  if (args.items.length === 0) return [];
+  const now = Date.now();
+  return db
+    .insert(digestItems)
+    .values(
+      args.items.map((item) => ({
+        id: newId(now),
+        digestRunId: args.digestRunId,
+        matchId: item.matchId,
+        rank: item.rank,
+        titleSnapshot: item.titleSnapshot,
+        scoreSnapshot: item.scoreSnapshot,
+        classificationSnapshot: item.classificationSnapshot,
+        createdAt: now,
+        updatedAt: now,
+      })),
+    )
+    .returning();
+}
+
+/**
+ * Reads a run's stored item snapshots, rank-ordered — the resume path's
+ * source of truth (re-render without re-collecting candidates, so a
+ * queue-retried send can never duplicate items). Org-checked via the parent
+ * run first.
+ */
+export async function listDigestItems(
+  db: Db,
+  organizationId: OrganizationId,
+  args: { digestRunId: string },
+): Promise<DigestItem[]> {
+  await assertDigestRunOwnedByOrg(db, organizationId, args.digestRunId);
+  return db
+    .select()
+    .from(digestItems)
+    .where(eq(digestItems.digestRunId, args.digestRunId))
+    .orderBy(asc(digestItems.rank));
+}
+
+// ---------------------------------------------------------------------------
+// email_deliveries (org-scoped subset — digest sends only; auth/billing mail
+// is user-scoped and out of this repository's remit)
+// ---------------------------------------------------------------------------
+
+export type EmailDeliveryStatus =
+  'queued' | 'sent' | 'delivered' | 'bounced' | 'complained' | 'failed';
+
+/** Creates a `queued` delivery row before attempting the provider send. */
+export async function createEmailDelivery(
+  db: Db,
+  organizationId: OrganizationId,
+  args: { kind: 'digest'; toEmail: string; provider: string },
+): Promise<EmailDelivery> {
+  const now = Date.now();
+  const rows = await db
+    .insert(emailDeliveries)
+    .values({
+      id: newId(now),
+      organizationId,
+      userId: null,
+      kind: args.kind,
+      toEmail: args.toEmail,
+      provider: args.provider,
+      providerMessageId: null,
+      status: 'queued',
+      error: null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+  const row = rows[0];
+  if (row === undefined) {
+    throw new Error('createEmailDelivery: insert returned no row');
+  }
+  return row;
+}
+
+/** Updates a delivery's terminal provider status. Double-scoped (org AND id). */
+export async function updateEmailDeliveryStatus(
+  db: Db,
+  organizationId: OrganizationId,
+  args: {
+    emailDeliveryId: string;
+    status: EmailDeliveryStatus;
+    providerMessageId?: string | null;
+    error?: string | null;
+  },
+): Promise<EmailDelivery | null> {
+  const set: Partial<typeof emailDeliveries.$inferInsert> = {
+    status: args.status,
+    updatedAt: Date.now(),
+  };
+  if (args.providerMessageId !== undefined) set.providerMessageId = args.providerMessageId;
+  if (args.error !== undefined) set.error = args.error;
+  const rows = await db
+    .update(emailDeliveries)
+    .set(set)
+    .where(
+      and(
+        eq(emailDeliveries.organizationId, organizationId),
+        eq(emailDeliveries.id, args.emailDeliveryId),
+      ),
+    )
     .returning();
   return rows[0] ?? null;
 }

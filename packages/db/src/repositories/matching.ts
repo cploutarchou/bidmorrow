@@ -10,7 +10,7 @@
  * risk flags is written in ONE D1 batch (a single SQL transaction), so a
  * match row can never exist without its decomposition.
  */
-import { and, desc, eq, exists, gt, inArray, gte, lt, lte, or, sql } from 'drizzle-orm';
+import { and, desc, eq, exists, gt, inArray, gte, lt, lte, not, or, sql } from 'drizzle-orm';
 import type {
   ComponentStatus,
   MatchClassification,
@@ -777,4 +777,154 @@ export async function listFeedRows(
   });
 
   return { items, nextCursor: page.nextCursor };
+}
+
+// ---------------------------------------------------------------------------
+// Digest candidates (Phase 8): the bounded query feeding digest generation.
+// ---------------------------------------------------------------------------
+
+/** Classification rank for the digest's "≥ minClassification" filter (0 = never digestable). */
+const DIGEST_CLASSIFICATION_RANK: Record<MatchClassification, number> = {
+  STRONG_MATCH: 4,
+  WORTH_REVIEWING: 3,
+  POSSIBLE_MATCH: 2,
+  LOW_FIT: 1,
+  EXCLUDED: 0,
+};
+
+export interface DigestCandidateMatch {
+  readonly matchId: string;
+  readonly lotId: string;
+  readonly title: string;
+  readonly score: number | null;
+  readonly classification: MatchClassification;
+  readonly buyerName: string | null;
+  readonly deadlineAt: number | null;
+  /** Top 2 component explanations by points, highest first. */
+  readonly topReasons: readonly string[];
+  readonly topRiskFlag: FeedRiskFlagSummary | null;
+}
+
+export interface ListDigestCandidatesArgs {
+  readonly engineVersion: string;
+  /** Lowest classification to include (org's `digest_preferences.min_classification`). */
+  readonly minClassification: MatchClassification;
+  /** Inclusive lower bound on `scored_at` — the digest window. */
+  readonly sinceMs: number;
+  /** Exclusive upper bound on `scored_at`. */
+  readonly untilMs: number;
+  /** Reference time for expired-deadline exclusion. */
+  readonly now: number;
+  /** Bounded result size (MAX_DIGEST_ITEMS in @bidmorrow/notifications). */
+  readonly limit: number;
+}
+
+/**
+ * The digest candidate query (docs/product-scope.md §7): org + engine
+ * version, scored within the digest window, classification ≥
+ * `minClassification`, not ignored, deadline not yet expired. `EXCLUDED` is
+ * never digestable (rank 0, filtered out even if `minClassification` were
+ * misconfigured to it). Ordered score DESC, id DESC (deterministic), capped
+ * at `args.limit` — the same bounded-background-job pattern as
+ * `MAX_PAIRS_PER_INVOCATION` elsewhere in this codebase.
+ */
+export async function listDigestCandidateMatches(
+  db: Db,
+  organizationId: OrganizationId,
+  args: ListDigestCandidatesArgs,
+): Promise<DigestCandidateMatch[]> {
+  const minRank = DIGEST_CLASSIFICATION_RANK[args.minClassification];
+  const allowedClassifications = (
+    Object.keys(DIGEST_CLASSIFICATION_RANK) as MatchClassification[]
+  ).filter(
+    (classification) =>
+      DIGEST_CLASSIFICATION_RANK[classification] >= minRank &&
+      DIGEST_CLASSIFICATION_RANK[classification] > 0,
+  );
+
+  const rows = await db
+    .select({ match: tenderMatches, lot: tenderLots, buyer: buyers })
+    .from(tenderMatches)
+    .innerJoin(tenderLots, eq(tenderMatches.lotId, tenderLots.id))
+    .leftJoin(tenderNotices, eq(tenderMatches.noticeId, tenderNotices.id))
+    .leftJoin(buyers, eq(tenderNotices.buyerId, buyers.id))
+    .where(
+      and(
+        eq(tenderMatches.organizationId, organizationId),
+        eq(tenderMatches.engineVersion, args.engineVersion),
+        inArray(tenderMatches.classification, allowedClassifications),
+        gte(tenderMatches.scoredAt, args.sinceMs),
+        lt(tenderMatches.scoredAt, args.untilMs),
+        sql`(${tenderLots.deadlineAt} IS NULL OR ${tenderLots.deadlineAt} >= ${args.now})`,
+        not(
+          exists(
+            db
+              .select({ one: sql`1` })
+              .from(ignoredTenders)
+              .where(
+                and(
+                  eq(ignoredTenders.organizationId, organizationId),
+                  eq(ignoredTenders.lotId, tenderMatches.lotId),
+                ),
+              ),
+          ),
+        ),
+      ),
+    )
+    .orderBy(desc(tenderMatches.score), desc(tenderMatches.id))
+    .limit(args.limit);
+
+  if (rows.length === 0) return [];
+
+  const matchIds = rows.map((row) => row.match.id);
+  const [componentRows, riskFlagRows] = await db.batch([
+    db
+      .select()
+      .from(matchComponents)
+      .where(inArray(matchComponents.matchId, matchIds))
+      .orderBy(desc(matchComponents.points)),
+    db.select().from(matchRiskFlags).where(inArray(matchRiskFlags.matchId, matchIds)),
+  ]);
+
+  const reasonsByMatch = new Map<string, string[]>();
+  for (const component of componentRows) {
+    const list = reasonsByMatch.get(component.matchId) ?? [];
+    if (list.length < 2) list.push(component.explanation);
+    reasonsByMatch.set(component.matchId, list);
+  }
+
+  // "Top" risk flag: HIGH confidence before POSSIBLE, then earliest inserted.
+  const riskByMatch = new Map<string, MatchRiskFlag>();
+  for (const flag of riskFlagRows) {
+    const current = riskByMatch.get(flag.matchId);
+    if (
+      current === undefined ||
+      (current.confidence !== 'HIGH' && flag.confidence === 'HIGH') ||
+      (current.confidence === flag.confidence && flag.id < current.id)
+    ) {
+      riskByMatch.set(flag.matchId, flag);
+    }
+  }
+
+  return rows.map((row) => {
+    const flag = riskByMatch.get(row.match.id);
+    return {
+      matchId: row.match.id,
+      lotId: row.lot.id,
+      title: row.lot.title,
+      score: row.match.score,
+      classification: row.match.classification as MatchClassification,
+      buyerName: row.buyer?.name ?? null,
+      deadlineAt: row.lot.deadlineAt,
+      topReasons: reasonsByMatch.get(row.match.id) ?? [],
+      topRiskFlag:
+        flag === undefined
+          ? null
+          : {
+              type: flag.type as RiskFlagType,
+              confidence: flag.confidence as RiskConfidence,
+              explanation: flag.explanation,
+            },
+    };
+  });
 }

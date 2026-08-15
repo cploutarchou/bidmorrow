@@ -19,7 +19,14 @@ import { createLogger } from '@bidmorrow/observability';
 import { isIngestionStale, lastSuccessfulRunAt } from '@bidmorrow/procurement';
 
 import { createRequestAuth } from './auth-instance';
-import type { AppBindings, Env, IngestQueueMessage, MatchQueueMessage } from './env';
+import type {
+  AppBindings,
+  DigestQueueMessage,
+  Env,
+  IngestQueueMessage,
+  MatchQueueMessage,
+} from './env';
+import { resolveDigestProvider, runDigestJob, runDigestScheduleJob } from './digest';
 import {
   runIngestCatchUpJob,
   runRecomputeContinuationJob,
@@ -146,10 +153,15 @@ app.onError((err, c) => {
 
 // Cron patterns (wrangler.jsonc `triggers.crons`, UTC): daily ingestion
 // catch-up (05:00), daily retention purge (06:30), stale-ingestion watchdog
-// (09:00). Dispatch by exact pattern string — see ADR-0006.
+// (09:00), hourly digest scheduling (Phase 8 — timezones roll over at
+// different UTC hours, so a once-daily cron cannot serve every org at a
+// consistent LOCAL send time; see @bidmorrow/notifications
+// digest-orchestration.ts for the per-org due/resume logic this triggers).
+// Dispatch by exact pattern string — see ADR-0006.
 const CRON_INGEST = '0 5 * * *';
 const CRON_RETENTION = '30 6 * * *';
 const CRON_WATCHDOG = '0 9 * * *';
+const CRON_DIGEST_SCHEDULE = '15 * * * *';
 
 /**
  * Cron entry point. Ingestion is enqueued (bounded, retried, DLQ'd via
@@ -187,6 +199,18 @@ async function scheduled(
       }
       return;
     }
+    case CRON_DIGEST_SCHEDULE:
+      // Enqueues only — digest generation/sending happens in the queue
+      // consumer below, never inline in the cron (a slow send must never
+      // risk the cron's own execution budget).
+      ctx.waitUntil(
+        runDigestScheduleJob(env, logger).catch((cause: unknown) => {
+          logger.error('cron.digest_schedule.failed', {
+            error: cause instanceof Error ? cause.message : String(cause),
+          });
+        }),
+      );
+      return;
     default:
       logger.error('cron.unrecognized_pattern', { cron: event.cron });
   }
@@ -203,11 +227,22 @@ async function scheduled(
  * export) can dispatch both.
  */
 async function queue(
-  batch: MessageBatch<IngestQueueMessage | MatchQueueMessage>,
+  batch: MessageBatch<IngestQueueMessage | MatchQueueMessage | DigestQueueMessage>,
   env: Env,
   _ctx: ExecutionContext,
 ): Promise<void> {
   const logger = createLogger({ queue: batch.queue });
+  // SEC-P8-01: one provider instance for the whole batch, not one per
+  // message — `createResendEmailProvider`'s internal send-spacing timer is
+  // per-instance, so a fresh instance per digest message would let several
+  // digests in the same batch send in rapid succession (only spaced within
+  // each org's own recipient loop, never across orgs). Hoisting here means
+  // Resend's documented 2 req/s spacing holds across every digest send in
+  // this invocation, not just within one org's `generateDigest` call. Never
+  // shared across the digest-preview logging fallback path either — cheap
+  // to construct, so this build applies even to batches with zero digest
+  // messages.
+  const digestProvider = resolveDigestProvider(env, logger);
   for (const message of batch.messages) {
     try {
       switch (message.body.kind) {
@@ -255,6 +290,15 @@ async function queue(
           });
           break;
         }
+        case 'digest': {
+          const result = await runDigestJob(env, logger, message.body, digestProvider);
+          logger.info('queue.digest.completed', {
+            status: result.status,
+            resumed: result.resumed,
+            matches_count: result.matchesCount,
+          });
+          break;
+        }
         default: {
           // SEC-P6-02: an unrecognized `kind` is a poison message (a producer
           // bug or a message from a version this consumer doesn't know about)
@@ -262,7 +306,12 @@ async function queue(
           // catch below as any other failure: bounded `message.retry()` up to
           // wrangler.jsonc `max_retries`, then the DLQ, so it is investigated
           // rather than dropped.
-          throw new Error(`unrecognized MATCH_QUEUE/INGEST_QUEUE message kind`);
+          // SEC-P8-04: this one handler now serves INGEST_QUEUE, MATCH_QUEUE,
+          // AND DIGEST_QUEUE (see the doc comment above) — the error text
+          // must not name only the first two queues, or an investigator
+          // chasing a DIGEST_QUEUE poison message gets misled about where it
+          // came from.
+          throw new Error(`unrecognized queue message kind`);
         }
       }
       message.ack();

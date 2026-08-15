@@ -49,7 +49,31 @@ export interface Env {
    * retried, DLQ'd — never scored inline in the ingestion path.
    */
   MATCH_QUEUE: Queue<MatchQueueMessage>;
+  /**
+   * Digest queue producer (Phase 8): the hourly digest cron enqueues one
+   * `{kind:'digest', organizationId, localDate}` message per due org (see
+   * `@bidmorrow/notifications` `selectDigestOrgs`). Bounded, retried, DLQ'd
+   * — same shape as MATCH_QUEUE.
+   */
+  DIGEST_QUEUE: Queue<DigestQueueMessage>;
+  /**
+   * Resend API key (docs/dependency-versions.md). Optional: absent in
+   * local/test envs falls back to `createLoggingDigestEmailProvider`
+   * (never a real send) — required in staging/production
+   * (`@bidmorrow/config` `DEPLOYED_REQUIRED_NAMES`).
+   */
+  RESEND_API_KEY?: string;
+  /** Verified Resend sender, e.g. `BidMorrow <digest@bidmorrow.com>`. */
+  EMAIL_FROM?: string;
 }
+
+/** Message shape carried on DIGEST_QUEUE. */
+export type DigestQueueMessage = {
+  readonly kind: 'digest';
+  readonly organizationId: string;
+  /** `YYYY-MM-DD`, the org-local date this digest covers. */
+  readonly localDate: string;
+};
 
 /** Message shape carried on INGEST_QUEUE (src/index.ts `queue()` dispatches on `kind`). */
 export type IngestQueueMessage = { readonly kind: 'ingest' } | { readonly kind: 'purge' };

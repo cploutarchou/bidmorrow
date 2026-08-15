@@ -26,6 +26,7 @@ import {
   digestPreferences,
   matchingPreferences,
 } from '../schema/company';
+import { organizations } from '../schema/identity';
 import { CapExceededError } from './errors';
 import {
   chunkForInsert,
@@ -498,6 +499,45 @@ export async function upsertDigestPreferences(
     throw new Error('upsertDigestPreferences: upsert returned no row');
   }
   return row;
+}
+
+// ---------------------------------------------------------------------------
+// Digest eligibility (Phase 8): which orgs the digest scheduler considers
+// ---------------------------------------------------------------------------
+
+export interface DigestEnabledOrg {
+  readonly organizationId: OrganizationId;
+  /** IANA tz; drives which "day" a digest_date covers. */
+  readonly timezone: string;
+  readonly minClassification: DigestMinClassification;
+  readonly sendEmpty: boolean;
+}
+
+/**
+ * Every ACTIVE organization with digest sending enabled, across ALL
+ * tenants — the digest scheduler equivalent of `listOrgsEligibleForScoring`
+ * (same "enumerate every tenant" rationale, same unpaginated-is-fine
+ * justification for V1's small customer count). Never reachable from a
+ * per-request handler; only the hourly digest cron/queue-selection path
+ * calls this.
+ */
+export async function listOrgsWithDigestEnabled(db: Db): Promise<DigestEnabledOrg[]> {
+  const rows = await db
+    .select({
+      organizationId: digestPreferences.organizationId,
+      timezone: digestPreferences.timezone,
+      minClassification: digestPreferences.minClassification,
+      sendEmpty: digestPreferences.sendEmpty,
+    })
+    .from(digestPreferences)
+    .innerJoin(organizations, eq(organizations.id, digestPreferences.organizationId))
+    .where(and(eq(digestPreferences.enabled, 1), eq(organizations.status, 'active')));
+  return rows.map((row) => ({
+    organizationId: row.organizationId as OrganizationId,
+    timezone: row.timezone,
+    minClassification: row.minClassification as DigestMinClassification,
+    sendEmpty: row.sendEmpty === 1,
+  }));
 }
 
 // ---------------------------------------------------------------------------
