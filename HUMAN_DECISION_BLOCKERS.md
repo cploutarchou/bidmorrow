@@ -68,6 +68,17 @@ Human actions:
 Needed for: Phase 9 billing. All Phase 9 development uses Stripe **test mode**;
 test-mode keys are still human-provided (never invented).
 
+**No registered company needed** (owner question 2026-08-15): Stripe supports
+signing up as an **Individual / sole trader** — during activation pick
+business type "Individual" and use your personal tax ID instead of a company
+registration. Test mode requires no activation at all, so nothing blocks
+Phase 13 staging. Alternative for launch: a Merchant-of-Record platform
+(Paddle / Lemon Squeezy / Polar) that acts as the legal seller and handles
+EU VAT for you — but the billing package is built on Stripe, so switching
+is a Phase-9-sized rewrite; decide only if the tax burden of selling as an
+individual proves unacceptable. Default recommendation: stay on Stripe as
+Individual.
+
 Human actions:
 
 1. Create a Stripe account (or use existing). Activate test mode first.
