@@ -101,11 +101,9 @@ Human actions:
 ## 5. Auth secret — PROVIDED (2026-08-15)
 
 `BETTER_AUTH_SECRET` set by the owner in BOTH the `staging` and
-`production` GitHub environments. Owner to confirm the two values are
-DIFFERENT (one secret per environment — if the same value was pasted
-twice, regenerate one with `openssl rand -base64 32` and update it; cheap
-to do now, an incident-scope problem later). Local dev uses a
-checked-in-nowhere `.env` value the developer generates.
+`production` GitHub environments; owner confirmed 2026-08-15 the two
+values are different. Local dev uses a checked-in-nowhere `.env` value the
+developer generates.
 
 ## 6. Admin allowlist — PROVIDED (2026-08-15)
 
