@@ -81,6 +81,16 @@ export const tenderMatches = sqliteTable(
       t.classification,
       t.scoredAt,
     ),
+    // The hottest customer feed query (listFeedRows): org + latest engine
+    // version, ORDER BY score DESC, id DESC — this is a covering sort index
+    // so the DB avoids an in-memory sort on the default (no classification
+    // filter, no cursor) feed page.
+    index('idx_tender_matches__org_engine_score_id').on(
+      t.organizationId,
+      t.engineVersion,
+      sql`${t.score} desc`,
+      sql`${t.id} desc`,
+    ),
     // Retention purge walks matches from expiring lots; admin match-trace for a lot.
     index('idx_tender_matches__lot_id').on(t.lotId),
     check(
