@@ -5,9 +5,8 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 8 — Digest: implemented, review fixes applied.** Next: run
-`production-reviewer` + `security` sign-off on the fixed state, then the
-PILOT CHECKPOINT.
+**Phase 8 — Digest: COMPLETE (signed off). PILOT CHECKPOINT reached.**
+Next: Phase 9 — Billing (then STOP per user instruction).
 
 ## Completed
 
@@ -1367,9 +1366,24 @@ Nothing deployed. No Cloudflare resources exist yet.
   digest pricing mention depends on Phase 8 shipping before launch).
   Final gates: 419 tests green (2026-08-15, commit 3231b4c + close-out).
 
+- Phase 8: **Security agent SIGN-OFF** (email escaping/C2, secrets/C10,
+  delivery integrity, tenant isolation, abuse bounds all PASS; SEC-P8-01
+  LOW + 04 INFO fixed in batch; SEC-P8-02 at-least-once window accepted +
+  documented). **production-reviewer: FAIL → PASS after re-verification**
+  (P8-R-01 HIGH rich-content fix verified with strengthened tests;
+  P8-R-02 all-member delivery verified; 03 CTA guard; residuals accepted).
+  Final gates: 453 tests green (2026-08-15, commit dbf7857).
+
 ## Pilot checkpoint
 
-Not reached (after Phase 8).
+**REACHED (2026-08-15, post-Phase 8).** The product is functionally usable
+for founding-pilot participants behind manual provisioning: signup/verify/
+login, onboarding with presets, scoped TED ingestion, deterministic scored
+feed + detail + save/ignore/feedback, and daily digests (pending the
+Resend key — blocker 3 — and email DNS — blocker 2). Billing is not yet
+live (Phase 9 next). The human may start pilot recruitment while Phases
+9–13 proceed. Provisioning: create the account via normal signup; digest
+requires RESEND_API_KEY + verified domain.
 
 ## Notes
 
