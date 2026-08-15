@@ -91,11 +91,19 @@ for tidiness.
 
 Done when: both names appear in the Actions secrets list.
 
+> **As actually configured (2026-08-15)**: the owner stored these (and all
+> other secrets) in the GitHub **`staging` environment** instead of
+> repository-level — equally valid; the deploy workflows therefore declare
+> `environment: staging` / `environment: production`, and production values
+> must be added to the `production` environment before the first
+> production deploy.
+
 ---
 
 ## 3. GitHub — repository protection (~5 min)
 
-1. Repo → Settings → **Branches** → Add branch protection rule for `master`:
+1. Repo → Settings → **Branches** → Add branch protection rule for `main`
+   (the default branch — renamed from `master` on 2026-08-15):
    - Require a pull request before merging.
    - Require status checks to pass (select the CI workflow's check).
 2. Repo → Settings → **Environments** → New environment `production`:

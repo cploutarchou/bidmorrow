@@ -16,19 +16,17 @@ reachable, no D1/Workers resources exist yet). Claude can create/manage
 D1, R2, and KV resources through this connector when the deployment phases
 need them; resources will be created in their owning phases, not before.
 
+**Also provided 2026-08-15**: scoped CI API token created (per
+docs/setup-guide.md § 2a) and stored together with `CLOUDFLARE_ACCOUNT_ID`
+in the GitHub **`staging` environment** secrets — deploy workflows must
+declare `environment: staging` / `environment: production` to read them.
+A `production` GitHub environment also exists.
+
 Still human-required:
 
-1. Create a **scoped API token** for GitHub Actions CI (do NOT use the
-   Global API Key): Dashboard → My Profile → API Tokens → Create Token →
-   start from "Edit Cloudflare Workers" template and add: `Account / D1 /
-Edit`, `Account / Workers R2 Storage / Edit`, `Account / Workers Scripts
-/ Edit`, `Account / Queues / Edit`. The MCP connector serves this
-   session, not CI — CI needs its own least-privilege token.
-2. Add GitHub repository secrets: `CLOUDFLARE_API_TOKEN`,
-   `CLOUDFLARE_ACCOUNT_ID`.
-3. Workers Paid plan ($5/mo) is required for Cloudflare Queues — approve
+1. Workers Paid plan ($5/mo) is required for Cloudflare Queues — approve
    this spend on the connected account (inside the cost budget; see
-   docs/cost-model.md).
+   docs/cost-model.md). NOT yet confirmed as of 2026-08-15.
 
 ## 2. Domain & DNS for bidmorrow.com — PARTIALLY PROVIDED (2026-08-15)
 
@@ -51,22 +49,33 @@ Still human-required / deferred to Phase 13:
    - Recommended DMARC starting policy: `v=DMARC1; p=none; rua=mailto:postmaster@bidmorrow.com`
      then tighten to `p=quarantine` after monitoring.
 
-## 3. Resend account — OPEN
+## 3. Resend account — PARTIALLY PROVIDED (2026-08-15)
 
 Needed for: real email sending (Phase 8+). Local/test uses a mock provider.
 
-Human actions:
+**Provided**: Resend account created; `RESEND_API_KEY` stored in the GitHub
+`staging` environment secrets.
 
-1. Create a Resend account; verify domain bidmorrow.com (see item 2).
-2. Create an API key; provide as secret `RESEND_API_KEY` (staging + production,
-   separate keys per environment).
-3. Decide the sending addresses (suggested): `verify@bidmorrow.com` /
+Still human-required:
+
+1. Verify domain bidmorrow.com in Resend (SPF/DKIM/DMARC records into the
+   Cloudflare zone — see item 2.3). Unconfirmed as of 2026-08-15.
+2. A second, separate API key for production (never reuse staging's).
+3. Confirm sending addresses (suggested): `verify@bidmorrow.com` /
    `digest@bidmorrow.com`, support inbox `support@bidmorrow.com`.
 
-## 4. Stripe account & prices — OPEN
+## 4. Stripe account & prices — PARTIALLY PROVIDED (2026-08-15)
 
 Needed for: Phase 9 billing. All Phase 9 development uses Stripe **test mode**;
 test-mode keys are still human-provided (never invented).
+
+**Provided**: Stripe account created (test mode); Founding/Standard
+products+prices created; `STRIPE_SECRET_KEY`,
+`STRIPE_PRICE_FOUNDING_MONTHLY`, `STRIPE_PRICE_STANDARD_MONTHLY` stored in
+the GitHub `staging` environment secrets. Remaining: webhook endpoint +
+`STRIPE_WEBHOOK_SECRET` (needs the deployed staging URL — Phase 13; must be
+created with API version `2026-07-29.dahlia` and the 6-event set), Customer
+Portal activation (unconfirmed), live-mode repeat before launch.
 
 **No registered company needed** (owner question 2026-08-15): Stripe supports
 signing up as an **Individual / sole trader** — during activation pick
@@ -98,26 +107,33 @@ Human actions:
 (`openssl rand -base64 32`), stored via `wrangler secret put` / CI secrets.
 Local dev uses a checked-in-nowhere `.env` value the developer generates.
 
-## 6. Admin allowlist — OPEN
+## 6. Admin allowlist — PROVIDED (2026-08-15)
 
-`ADMIN_EMAILS`: comma-separated list of emails allowed INTERNAL_ADMIN access.
-Suggested initial value: cploutarchou@gmail.com — confirm.
+`ADMIN_EMAILS` = `cploutarchou@gmail.com`, set as a GitHub `staging`
+environment variable by the owner. Repeat in the `production` environment
+at production-deploy time.
 
-## 7. Business / legal information — OPEN
+## 7. Business / legal information — PARTIALLY PROVIDED (2026-08-15)
 
 Needed for: terms, privacy policy, Stripe account, invoices.
 
-- Legal entity name, registered address, VAT status/ID (affects Stripe Tax decision).
-- Contact email for privacy requests.
+**Decided by owner**: operate as an **Individual / sole trader** using a
+personal tax ID (no registered company) — Stripe business type "Individual".
+
+Still open:
+
+- Registered address + contact email for privacy requests (terms/privacy
+  pages need them before launch).
 - Decision: is Stripe Tax needed at launch (EU B2B reverse charge)? Default
   assumption: launch B2B-only, collect VAT ID at checkout via Stripe; confirm.
 
-## 8. GitHub settings — OPEN
+## 8. GitHub settings — PARTIALLY PROVIDED (2026-08-15)
 
-1. Protect `master` (or rename to `main` — decide; docs assume the default
-   branch is the production branch): require PR + green CI before merge.
-2. Create a GitHub "production" environment with required reviewers for the
-   production deploy workflow.
+1. ~~Rename default branch to `main`~~ DONE (renamed from `master`;
+   ci.yml trigger updated the same day). Branch protection on `main`
+   (require PR + green CI) still unconfirmed.
+2. ~~Create a GitHub "production" environment~~ DONE — confirm it has
+   **Required reviewers** set so production deploys need a human click.
 
 ---
 
