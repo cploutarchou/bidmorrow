@@ -5,10 +5,8 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 6 review fix batch: COMPLETE.** Stage B (matching pipeline wiring)
-was already done; this batch closed the stage-B review findings (SEC-P6-01/
-02/04, MATCH-P6-01/02/03/05/06). Next: Phase 6 remaining items
-(matching-audit skill/review, Phase 5 residual LOWs) or Phase 7.
+**Phase 6 — Matching: COMPLETE (signed off).** Next: Phase 7 — Customer
+Product.
 
 ## Completed
 
@@ -616,6 +614,10 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
 
 ## Next (Phase 7)
 
+0. Residual LOW from Phase 6 re-verify: route contract_nature/certification
+   exclusion-value casts in scoring-input.ts through union validation
+   (same pattern as parseSupportedContractNatures).
+
 1. On-demand LOW_FIT explanation recompute in tender detail (docs/
    matching-engine.md §Component persistence promise): LOW_FIT matches only
    persist score+classification, not the component breakdown, so opening a
@@ -794,6 +796,17 @@ Nothing deployed. No Cloudflare resources exist yet.
     **re-verification PASS** (2026-08-14, commit 8c76c07, all fixes verified
     with evidence, 205 tests green). Residual LOWs (XML_TOO_LARGE branch D1
     test, 50 KB cap unit test) carried into Phase 6 next-list.
+
+- Phase 6: **Matching audit** (matching-audit skill, all 8 items PASS with
+  evidence; worked example hand-recomputed to 84.5; initial BLOCKED on
+  format gate + MATCH-P6-01/02 dispositions). **Security agent SIGN-OFF**
+  (0 CRITICAL/HIGH; ReDoS/tenant-isolation/ECB/bounds verified; SEC-P6-01
+  MEDIUM continuation + 02/04 fixed). **production-reviewer re-verification
+  PASS** (2026-08-15, commit d4c0518: all 9 fixes confirmed with evidence,
+  362 tests green). Dispositions: CPV pre-filter accepted + documented with
+  Phase 7 disclosure/warning follow-ups; multilingual keywords FIXED
+  (matchable-language expansion); residual LOW (contract-nature/cert
+  exclusion-value casts) carried to Phase 7.
 
 ## Pilot checkpoint
 
