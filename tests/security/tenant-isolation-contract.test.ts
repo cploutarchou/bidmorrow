@@ -195,6 +195,16 @@ const TENANT_EXEMPT: Record<string, { name: string; reason: string }[]> = {
         'can never touch another org’s data by construction, even though the parameter order is ' +
         'userId-first rather than the usual single organizationId.',
     },
+    {
+      name: 'nullifyUserEmailDeliveries',
+      reason:
+        'account-deletion FK-safety helper (Phase 11 fix batch, P11-R-04): SET NULLs ' +
+        'email_deliveries.user_id for a departing user, keyed on userId ACROSS EVERY ' +
+        'organization — email_deliveries is explicitly NOT tenant-owned for auth mail (see this ' +
+        'file’s module doc: organization_id is null for verification/reset sends, only user_id ' +
+        'identifies the row), so a per-organization scope would be both wrong and incomplete, ' +
+        'unlike nullifyUserAuthorship above.',
+    },
   ],
   'ops.ts': [
     {

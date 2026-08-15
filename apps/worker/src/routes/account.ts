@@ -38,6 +38,7 @@ import {
   insertAuditEvent,
   nullifyOrganizationCreator,
   nullifyUserAuthorship,
+  nullifyUserEmailDeliveries,
   removeOrganizationMember,
   type NullifyUserAuthorshipCounts,
   type OrganizationForUser,
@@ -102,6 +103,12 @@ accountRoutes.delete('/', async (c) => {
   // hard-deleted, so the creator FK must be cleared too, for every org this
   // user created regardless of membership/status.
   await nullifyOrganizationCreator(db, session.user.id);
+  // FK safety, part 1c (P11-R-04): `email_deliveries.user_id` (auth mail
+  // attribution — see `packages/db` engagement.ts's doc on
+  // `nullifyUserEmailDeliveries`) is NOT org-scoped, so it is cleared
+  // globally for this user rather than per-membership like the two calls
+  // above.
+  await nullifyUserEmailDeliveries(db, session.user.id);
 
   // FK safety, part 2 (SEC-P4-04 / P4-R-03): organization_members.user_id
   // references users.id, so every membership must be removed before Better
@@ -116,7 +123,7 @@ accountRoutes.delete('/', async (c) => {
   // Deletes the users/auth_accounts/auth_sessions rows (verified from
   // installed source, `internal-adapter.mjs` `deleteUser`) and clears the
   // session cookie; requires `user.deleteUser.enabled` (packages/auth).
-  const auth = createRequestAuth(c.env, c.get('logger'));
+  const auth = createRequestAuth(c.env, c.get('logger'), c.executionCtx);
   try {
     await auth.api.deleteUser({ headers: c.req.raw.headers, body: {} });
   } catch (cause) {

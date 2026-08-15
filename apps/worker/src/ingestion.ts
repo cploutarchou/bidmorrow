@@ -13,12 +13,14 @@ import {
   refreshEcbRates,
   runIngestionCatchUp,
   runIngestionWindow,
+  runLedgerPurge,
   runOrgPurge,
   runPurge,
   scoreLotsForOrgs,
 } from '@bidmorrow/procurement';
 import type {
   RunCatchUpResult,
+  RunLedgerPurgeResult,
   RunOrgPurgeResult,
   RunPurgeResult,
   RunWindowResult,
@@ -170,6 +172,10 @@ export async function runRetentionPurgeJob(env: Env, logger: Logger): Promise<Ru
     limit: PURGE_BATCH_LIMIT,
   });
   await runOrgPurge({ db, logger });
+  // SEC-P11-04: time-based ledger purge (audit_events/email_deliveries/
+  // product_events) — independent of the two purges above, same
+  // "log the counts inside the job itself" pattern as `runOrgPurge`.
+  await runLedgerPurge({ db, logger });
   return result;
 }
 
@@ -177,6 +183,12 @@ export async function runRetentionPurgeJob(env: Env, logger: Logger): Promise<Ru
 export async function runOrgPurgeJob(env: Env, logger: Logger): Promise<RunOrgPurgeResult> {
   const db = createDb(env.DB);
   return runOrgPurge({ db, logger });
+}
+
+/** Exposed separately for the D1 test suite (asserting ledger-purge counts directly, not just the log line). */
+export async function runLedgerPurgeJob(env: Env, logger: Logger): Promise<RunLedgerPurgeResult> {
+  const db = createDb(env.DB);
+  return runLedgerPurge({ db, logger });
 }
 
 /**

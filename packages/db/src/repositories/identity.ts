@@ -106,6 +106,17 @@ export async function getOrganizationsForUser(
  * memberships in an org that was already soft-deleted, which
  * `getOrganizationsForUser`'s active-only filter would otherwise hide from
  * the FK-safety sweep — see that file's module doc).
+ *
+ * SEC-P11-01: ordered ACTIVE-first, then by id — NOT plain `id ASC`. A user
+ * can hold membership rows in more than one organization across their
+ * lifetime (e.g. they deleted org A and were later added to org B); until
+ * org A's 30-day purge grace period elapses, a plain id-ascending order
+ * would keep resolving the caller into the older, now-inaccessible deleted
+ * org A instead of their new active org B, wrongly blocking every
+ * organization-scoped route with `organization_deleted`. Deleted/suspended
+ * orgs are only resolved as a fallback when the caller has no active
+ * membership at all (so `middleware/organization.ts` can still distinguish
+ * "was in a deleted org" from "never had one").
  */
 export async function getFirstOrganizationForUserAnyStatus(
   db: Db,
@@ -116,7 +127,10 @@ export async function getFirstOrganizationForUserAnyStatus(
     .from(organizationMembers)
     .innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id))
     .where(eq(organizationMembers.userId, userId))
-    .orderBy(asc(organizations.id))
+    .orderBy(
+      sql`CASE WHEN ${organizations.status} = 'active' THEN 0 ELSE 1 END`,
+      asc(organizations.id),
+    )
     .limit(1);
   return rows[0] ?? null;
 }
@@ -132,9 +146,21 @@ export async function getFirstOrganizationForUserAnyStatus(
  * memberships / calling Better Auth's `deleteUser`.
  */
 export async function nullifyOrganizationCreator(db: Db, userId: string): Promise<number> {
+  // P11-R-02: `updated_at` on a `status = 'deleted'` organization is the
+  // purge grace clock (`listOrganizationsPendingPurge` measures `graceDays`
+  // off it, set once by `softDeleteOrganization`). This SET NULL runs from
+  // `routes/account.ts` on account deletion, independent of when the org
+  // itself was deleted — bumping `updated_at` here would silently restart
+  // (or first-start) that clock for an already-deleted org, indefinitely
+  // deferring its purge every time a member with attribution on it deletes
+  // their account. Only bump the clock for a still-`active` org, where
+  // `updated_at` has no purge-timing meaning.
   const updated = await db
     .update(organizations)
-    .set({ createdByUserId: null, updatedAt: Date.now() })
+    .set({
+      createdByUserId: null,
+      updatedAt: sql`CASE WHEN ${organizations.status} = 'active' THEN ${Date.now()} ELSE ${organizations.updatedAt} END`,
+    })
     .where(eq(organizations.createdByUserId, userId))
     .returning({ id: organizations.id });
   return updated.length;
@@ -335,11 +361,18 @@ const TOMBSTONE_NAME_PREFIX = 'deleted-';
 /**
  * Organizations eligible for hard purge: `status = 'deleted'`, older than
  * `graceDays` (measured off `updated_at`, set by `softDeleteOrganization`),
- * and not already tombstoned (`name` does not carry the `deleted-<id>`
- * prefix `purgeDeletedOrganizations` writes in its final step) — that
- * name-prefix check is what makes repeated cron runs idempotent without a
- * dedicated "purged_at" column: once an org's owned rows are gone and its
- * name is tombstoned, it is permanently excluded from every future scan.
+ * and not already tombstoned. P11-R-01: the eligibility check is an EXACT
+ * comparison against the specific tombstone name (`deleted-<id>`) this
+ * organization's own row would carry — `name != ('deleted-' || id)` — not a
+ * `LIKE 'deleted-%'` prefix scan. A `LIKE` prefix match is guessable/
+ * collidable: a genuine (non-tombstoned) organization legitimately named
+ * e.g. "Deleted-Data GmbH" would silently and permanently fall out of the
+ * purge scan forever, never having its owned rows purged, purely because
+ * its real name happened to start with the tombstone prefix. The exact
+ * per-row comparison can only ever match the tombstone this SAME row's
+ * `tombstoneOrganization` call would write, so it remains idempotent across
+ * repeated cron runs without a dedicated `purged_at` column, with no
+ * false-negative exposure from user-chosen names.
  * Bounded by `limit`; deterministic order (ascending id) for steady
  * progress across runs.
  */
@@ -356,7 +389,7 @@ export async function listOrganizationsPendingPurge(
       and(
         eq(organizations.status, 'deleted'),
         lte(organizations.updatedAt, cutoff),
-        sql`${organizations.name} NOT LIKE ${`${TOMBSTONE_NAME_PREFIX}%`}`,
+        sql`${organizations.name} != (${TOMBSTONE_NAME_PREFIX} || ${organizations.id})`,
       ),
     )
     .orderBy(asc(organizations.id))

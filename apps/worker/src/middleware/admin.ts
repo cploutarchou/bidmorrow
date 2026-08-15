@@ -43,7 +43,7 @@ export const requireInternalAdmin: MiddlewareHandler<AppBindings> = async (c, ne
   if (allowlist.size === 0) {
     return c.json({ error: 'not_found', request_id: c.get('requestId') }, 404);
   }
-  const auth = createRequestAuth(c.env, c.get('logger'));
+  const auth = createRequestAuth(c.env, c.get('logger'), c.executionCtx);
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (session === null || !allowlist.has(session.user.email.toLowerCase())) {
     return c.json({ error: 'not_found', request_id: c.get('requestId') }, 404);

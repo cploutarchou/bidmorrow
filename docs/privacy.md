@@ -150,18 +150,22 @@ user_id` etc. are `NOT NULL` FKs to `users`). Fixed: those three
    content is public-sector data, not something a portability request needs
    re-exported wholesale (see the TED procurement data row above).
 5. **Email preference deletion** [implemented Phase 8, org-deletion
-   cascade added Phase 11 stage A] — `digest_preferences.enabled = false`
-   disables sending immediately; the digest scheduler filters on it
+   cascade added Phase 11 stage A, `email_deliveries` FK edge fixed Phase 11
+   fix batch (P11-R-04)] — `digest_preferences.enabled = false` disables
+   sending immediately; the digest scheduler filters on it
    (`listOrgsWithDigestEnabled`). Org deletion cascades this the same way
    as every other preference table (commitment 3's purge). Transactional
    auth email (verification, password reset) follows the ACCOUNT lifecycle,
    not a separate preference — there is no opt-out for it, matching every
    SaaS's standard treatment of security-critical mail; it stops the moment
-   the account is deleted (Better Auth's `deleteUser` also removes the
-   `users` row those `email_deliveries.user_id` rows reference, though the
-   delivery-metadata rows themselves are `email_deliveries` history, not
-   opt-in preference state, and are governed by the 12-month retention row
-   in the data inventory above, not this commitment).
+   the account is deleted. Before Better Auth's `deleteUser` removes the
+   `users` row, `routes/account.ts` SET NULLs every `email_deliveries.
+user_id` row this user authored (`nullifyUserEmailDeliveries`, same
+   "anonymize the author, keep the row" pattern as `nullifyOrganizationCreator`
+   / `nullifyUserAuthorship`) — the delivery-metadata rows themselves are
+   `email_deliveries` history, not opt-in preference state, and are governed
+   by the 12-month retention row in the data inventory above (and the
+   time-based purge in commitment 3), not this commitment.
 6. **Log redaction** [implemented Phase 2] — observability package redacts
    secrets/tokens and never logs email bodies; request logs carry ids, not
    payloads (security.md C10).

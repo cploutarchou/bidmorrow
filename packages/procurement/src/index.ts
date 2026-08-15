@@ -28,6 +28,7 @@ export * from './run-window';
 export * from './catch-up';
 export * from './purge';
 export * from './org-purge';
+export * from './ledger-purge';
 export * from './health';
 export * from './ecb';
 export * from './scoring-input';

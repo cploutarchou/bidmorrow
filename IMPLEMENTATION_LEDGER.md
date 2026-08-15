@@ -5,8 +5,11 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 11 stage A — Privacy implementation: COMPLETE.** Next: Phase 11
-stage B or Phase 12 (see docs/production-checklist.md for what's left).
+**Phase 11 stage A — Privacy implementation: COMPLETE. Phase 11 fix batch
+(review findings SEC-P11-01..04, P11-R-01..05): COMPLETE**, gates green
+(589 tests). `production-reviewer`/`security` subagent re-review not yet
+run — next step before tagging. Next: that re-review, then Phase 11 stage B
+or Phase 12 (see docs/production-checklist.md for what's left).
 
 ## Completed
 
@@ -124,6 +127,151 @@ COLUMN`)**: relax three FKs from `NOT NULL` to nullable —
   `security` subagent review (per CLAUDE.md's "after every phase" rule) —
   not run in this session, recorded here as the explicit next step before
   tagging `phase-11-stage-a-complete`. No new HUMAN_DECISION_BLOCKERS items.
+
+### Phase 11 fix batch — review findings closed (2026-08-15)
+
+Closed the review-finding backlog from the Phase 11 stage A pass, one item
+per finding id.
+
+- **SEC-P11-01 (MEDIUM, org resolution must prefer ACTIVE membership)**:
+  `identity.ts`'s `getFirstOrganizationForUserAnyStatus` ordered by
+  `id ASC` only — a user who deletes org A and is later added to (or
+  creates) org B stayed shadowed into deleted org A for the full 30-day
+  purge grace window, wrongly 403ing every organization-scoped route with
+  `organization_deleted`. Fixed: order by `CASE WHEN status = 'active' THEN
+0 ELSE 1 END, id ASC` — active membership resolves first; deleted/
+  suspended only as a fallback when no active membership exists (so
+  `middleware/organization.ts` can still distinguish "was in a deleted org"
+  from "never had one"). D1 test in `org-lifecycle.d1.test.ts`: delete org
+  A, create org B, `GET /api/org/profile` resolves org B (asserted via a
+  distinct company-profile displayName, since `/profile` doesn't leak the
+  org id itself).
+- **SEC-P11-02 (MEDIUM, auth transactional email must use Resend when
+  configured)**: `apps/worker/src/auth-instance.ts` always used
+  `createLoggingEmailProvider`, even with `RESEND_API_KEY`/`EMAIL_FROM`
+  configured. **Mechanism chosen**: new `packages/notifications/src/
+auth-mail.ts` — `buildAuthEmailBody(kind, url)` composes the subject/text/
+  html body per kind (verification/password_reset), and
+  `createResendAuthEmailProvider` wraps the already-tested
+  `createResendEmailProvider` (digest path) to send it.
+  `resolveAuthEmailProvider` in `auth-instance.ts` picks Resend when both
+  env vars are set, else the logging stub (same "configured vs. logged
+  fallback" shape as `digest.ts`'s `resolveDigestProvider`). **SEC-P4-08
+  (droppable fire-and-forget) fixed via `ExecutionContext.waitUntil`, NOT by
+  awaiting inline**: Better Auth's own docs warn against awaiting
+  `sendResetPassword` (timing side channel reveals account existence via
+  response latency), so `packages/auth`'s `void deps.sendEmail(...)` call
+  shape had to stay fire-and-forget. `createRequestAuth` now takes a third
+  `ctx: WaitUntilCtx` param (`c.executionCtx` — verified available at every
+  call site since `apps/worker/src/index.ts`'s `export default { fetch: (r,
+e, ctx) => app.fetch(r, e, ctx) }` threads it through Hono); the
+  `sendEmail` wrapper registers the actual provider-send promise with
+  `ctx.waitUntil(sendPromise)` SYNCHRONOUSLY (before any `await`), so even a
+  `void`-called async function extends the isolate's lifetime until the send
+  settles, without reintroducing the timing side channel. Failures are
+  logged (kind/to only, never url/token — C10). Four call sites updated
+  (`index.ts`'s `/api/auth/*` mount, `middleware/session.ts`,
+  `middleware/admin.ts`, `routes/account.ts`). Tests: existing
+  `auth.test.ts` capture-provider suite green unchanged (logging-fallback
+  path in test env produces the same log shape); new
+  `packages/notifications/src/auth-mail.test.ts` (4 tests) — body composed
+  per kind with the url in text/html, Resend send posts the composed
+  body, API key never appears in a thrown error.
+- **P11-R-01 (MEDIUM, purge tombstone filter)**: `identity.ts`'s
+  `listOrganizationsPendingPurge` replaced `name NOT LIKE 'deleted-%'` with
+  an exact per-row comparison `name != ('deleted-' || id)` (drizzle `sql`
+  template) — the `LIKE` prefix scan could permanently exclude a genuine
+  org from ever being purged if its real name happened to start with
+  `deleted-` (e.g. "Deleted-Data GmbH"); the exact comparison can only ever
+  match a row's own would-be tombstone. Two D1 tests added: a
+  `Deleted-Data GmbH` org still gets purged; an already-tombstoned org stays
+  excluded on a second scan (idempotency unchanged).
+- **P11-R-02 (LOW, `nullifyOrganizationCreator` must not bump `updated_at`
+  for deleted orgs)**: `updated_at` on a `status = 'deleted'` org is the
+  purge grace clock; the SET NULL now conditionally preserves it via `CASE
+WHEN status = 'active' THEN <now> ELSE updated_at END` — bumping it for an
+  already-deleted org would silently restart the clock every time a member
+  with attribution on it deletes their account, indefinitely deferring
+  purge. D1 test: `updated_at` unchanged after `nullifyOrganizationCreator`
+  runs against a deleted org.
+- **P11-R-03 (MEDIUM, `packages/billing/src/cancellation.test.ts`)**: new
+  file, 5 unit tests against a stubbed Stripe client + mocked `@bidmorrow/db`
+  repository functions (`vi.mock('@bidmorrow/db')`, no D1 — pure
+  orchestration): `no_subscription` (missing row / null
+  `stripeSubscriptionId`, Stripe never called), `already_canceled`
+  short-circuit (Stripe never called), successful `cancel_at_period_end`
+  update + local-row mirror write (asserts the exact upsert args), and the
+  Stripe-error path — confirmed the function's actual contract (its own doc
+  comment: "best-effort" is the CALLER's `routes/org.ts` responsibility via
+  try/catch; the function itself propagates the error rather than
+  swallowing it) by asserting `rejects.toThrow` and that the failed attempt
+  is never mirrored into the local row.
+- **P11-R-04 (LOW, null `email_deliveries.user_id` before Better Auth
+  delete)**: new `packages/db/src/repositories/engagement.ts`
+  `nullifyUserEmailDeliveries(db, userId)` — global (documented exemption in
+  the tenant-isolation contract test, `engagement.ts` TENANT_EXEMPT list),
+  since `email_deliveries` is explicitly not tenant-owned for auth mail
+  (`organization_id` null, `user_id` set). Wired into `routes/account.ts`
+  alongside `nullifyUserAuthorship`/`nullifyOrganizationCreator`, before
+  membership removal. No current writer sets `email_deliveries.user_id`
+  (`createEmailDelivery` always nulls it — digest sends only), so this is
+  currently a no-op in practice but closes the FK edge for a future
+  auth-mail delivery-tracking writer; documented CHECK-constraint safety
+  note in-file. `docs/privacy.md` commitment 5 wording updated to match
+  reality. D1 test: a directly-inserted `email_deliveries` row with
+  `user_id` set survives account deletion with `user_id` nulled.
+- **SEC-P11-03 + P11-R-05 (docs/privacy.md + docs/threat-model.md)**:
+  documented that `audit_events` retains pre-deletion org names/actor ids
+  for up to 24 months as deliberate security-forensics retention (the
+  tombstone minimizes the LIVE `organizations` row; the ledger is
+  append-only by design) — and, per SEC-P11-04 below, that retention window
+  is now enforced, not open-ended.
+- **SEC-P11-04 (time-based ledger purges)**: new
+  `packages/db/src/repositories/retention.ts` functions
+  `purgeOldAuditEvents`/`purgeOldEmailDeliveries`/`purgeOldProductEvents`
+  (bounded `limit` per table per run; `email_deliveries` detaches
+  `digest_runs.email_delivery_id` first — FK-safe, same "detach before
+  delete" pattern as `digest_items.match_id`) + new
+  `packages/procurement/src/ledger-purge.ts` `runLedgerPurge` orchestrator
+  (24-month window for `audit_events`, 12-month for `email_deliveries`/
+  `product_events`, per docs/privacy.md's data inventory), wired into the
+  existing daily `runRetentionPurgeJob` (`apps/worker/src/ingestion.ts`)
+  after the tender-corpus and org purges. D1 tests (2): old rows purged
+  across all three tables while recent rows survive; an old-but-referenced
+  `email_deliveries` row is detached from its `digest_runs` row before
+  deletion rather than violating the FK.
+- **Threat-model refresh** (`docs/threat-model.md`, Last-reviewed bumped to
+  2026-08-15): all seven items from the security audit applied — new asset
+  A12 + threat T22 (organization deletion/purge lifecycle); rate-limit
+  fail-open residual risk + revisit trigger #11 added; T13's XML size-cap
+  mitigation concretized (`MAX_XML_BYTES` = 15,000,000, Content-Length
+  pre-check + actual-byte re-check, with the "not a true streaming cutoff"
+  residual stated honestly); T12's billing surface pattern concretized
+  (identity trusted from the signature-verified payload, mutable state
+  always re-fetched live from Stripe) + SEC-P9-02/03 residuals recorded
+  inline; T19 admin surface updated (Phase 10's generic per-request audit
+  row) and C5's `SameSite=Strict` admin-cookie claim corrected to reality
+  (one shared session cookie, Better Auth's default `Lax`, verified from
+  `packages/auth/src/index.ts`'s config — no `sameSite`/`cookies` override
+  anywhere); T21's GitHub Actions claim corrected from SHA-pinned to
+  tag-pinned (verified against `.github/workflows/*.yml`) + a residual-risk
+  row and deploy-hardening follow-up recorded; SEC-P4-09 deltas closed out
+  inline at T2 (cf-connecting-ip-only IP keying), T16 (global 128 KB body
+  limit covering the webhook route too), and T10 (account-deletion
+  membership-compensation-on-failure behavior).
+- **Gates, real counts**: `pnpm format:check` clean · `pnpm lint` clean ·
+  `pnpm typecheck` clean across all 14 workspace packages · `pnpm test`
+  (root vitest + worker + db, chained) — root vitest 57 test files / 405
+  tests green (incl. the updated tenant-isolation contract with the new
+  `nullifyUserEmailDeliveries` exemption), worker `pnpm --filter
+@bidmorrow/worker test` 12 files / 135 tests green (org-lifecycle.d1.test.ts
+  grew from 7 to 14 tests), db `pnpm --filter @bidmorrow/db test` 9 files /
+  49 tests green — 589 tests total across the three suites · `pnpm build`
+  (web + worker `wrangler deploy --dry-run`) green.
+- **Open items / not done this session**: `production-reviewer` and
+  `security` subagent re-review not run in this session — recorded here as
+  the explicit next step before tagging a `phase-11-fix-batch-complete` (or
+  equivalent) checkpoint. No new HUMAN_DECISION_BLOCKERS items.
 
 ### Phase 10 stage A — Internal admin API (2026-08-15)
 
@@ -2009,6 +2157,16 @@ requires RESEND_API_KEY + verified domain.
 - SEC-P9-03: concurrent double-checkout can orphan a Stripe customer and
   wedge the second webhook (owner-self-inflicted, no cross-tenant impact);
   pre-create the customer or add catch-and-reconcile.
+
+## Deploy-time hardening follow-ups (tracked, not yet actioned)
+
+- Pin GitHub Actions to commit SHAs (currently version tags, e.g.
+  `actions/checkout@v4` — verified against `.github/workflows/*.yml`;
+  docs/threat-model.md T21 corrected 2026-08-15 to stop overclaiming
+  SHA-pinning was already in place). A tag is mutable; a SHA is not.
+- SEC-P9-02 / SEC-P9-03 above (WAF/rate-limit rule for the Stripe webhook
+  route; concurrent double-checkout reconciliation) — carried forward here
+  as deploy-time items, not just Phase 10/13 follow-ups.
 
 ## Notes
 

@@ -14,7 +14,7 @@ import { createRequestAuth } from '../auth-instance';
 import type { AppBindings } from '../env';
 
 export const requireSession: MiddlewareHandler<AppBindings> = async (c, next) => {
-  const auth = createRequestAuth(c.env, c.get('logger'));
+  const auth = createRequestAuth(c.env, c.get('logger'), c.executionCtx);
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (session === null) {
     return c.json({ error: 'unauthenticated' }, 401);

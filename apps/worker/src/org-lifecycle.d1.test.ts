@@ -32,6 +32,7 @@ import {
   insertTenderMatches,
   listOrgsEligibleForScoring,
   listOrgsWithDigestEnabled,
+  nullifyOrganizationCreator,
   replaceCompanyCapabilities,
   replaceCompanyCertifications,
   replaceCompanyCpvPreferences,
@@ -52,7 +53,7 @@ import {
 import { organizationId as toOrganizationId } from '@bidmorrow/domain';
 import { createLogger } from '@bidmorrow/observability';
 import { ENGINE_VERSION } from '@bidmorrow/matching';
-import { runOrgPurge } from '@bidmorrow/procurement';
+import { runLedgerPurge, runOrgPurge } from '@bidmorrow/procurement';
 
 import './index';
 
@@ -284,6 +285,39 @@ describe('DELETE /api/org — organization deletion', () => {
       .bind(orgId)
       .first<{ action: string }>();
     expect(auditRow?.action).toBe('organization.deleted');
+  });
+
+  it('SEC-P11-01: resolves the caller into a newer ACTIVE org, not an older deleted one, within the purge grace window', async () => {
+    const { cookie, orgId: orgIdA, orgName: orgNameA } = await setUpOrg('resolve-active-a');
+
+    const deleted = await fetchApi('/api/org', {
+      method: 'DELETE',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({ confirm: orgNameA }),
+    });
+    expect(deleted.status).toBe(200);
+
+    // Deleted org A is still well within its 30-day purge grace period —
+    // this is the exact shadowing scenario SEC-P11-01 fixes.
+    const orgIdB = await createOrgForUser(cookie, `resolve-active-b Org ${uniqueSeq}`);
+    expect(orgIdB).not.toBe(orgIdA);
+    const db = createDb(env.DB);
+    await upsertCompanyProfile(db, toOrganizationId(orgIdB), {
+      displayName: 'Resolve Active B Co',
+      description: null,
+      website: null,
+      employeeBand: null,
+      presetKey: null,
+      onboardingCompletedAt: null,
+    });
+
+    // Without SEC-P11-01, `requireOrganization` would resolve the caller
+    // into the older, id-ascending deleted org A first and 403 with
+    // `organization_deleted` — org B (the current, active org) must win.
+    const profile = await fetchApi('/api/org/profile', { headers: { cookie } });
+    expect(profile.status).toBe(200);
+    const body = (await profile.json()) as { profile: { displayName: string } | null };
+    expect(body.profile?.displayName).toBe('Resolve Active B Co');
   });
 
   it('excludes the org from digest and scoring eligibility immediately after deletion', async () => {
@@ -575,6 +609,248 @@ describe('runOrgPurge — deleted-organization hard purge', () => {
     });
     expect(secondRun.organizationsPurged).toBe(0);
   });
+
+  it('P11-R-01: purges a deleted org whose real name happens to start with the tombstone prefix', async () => {
+    const db = createDb(env.DB);
+    const ownerEmail = uniqueEmail('tombstone-collision-owner');
+    await createVerifiedUser(ownerEmail);
+    const ownerId = await userIdForEmail(ownerEmail);
+    // A genuine org name that collides with the `deleted-%` LIKE prefix the
+    // old eligibility check used — must NOT be permanently excluded from
+    // the purge scan just because of its name.
+    const { organization } = await createOrganization(db, {
+      name: 'Deleted-Data GmbH',
+      createdByUserId: ownerId,
+    });
+    const organizationId = toOrganizationId(organization.id);
+    await softDeleteOrganization(db, organizationId);
+    await env.DB.prepare('UPDATE organizations SET updated_at = ? WHERE id = ?')
+      .bind(Date.now() - 31 * 86_400_000, organization.id)
+      .run();
+
+    const result = await runOrgPurge({
+      db,
+      logger: createLogger({ test: true }),
+      graceDays: 30,
+      limit: 500,
+    });
+    expect(result.organizationsPurged).toBe(1);
+
+    const orgRow = await getOrganization(db, organizationId);
+    expect(orgRow?.name).toBe(`deleted-${organization.id}`);
+  });
+
+  it('P11-R-01: an already-tombstoned org is excluded from a second scan (exact-match idempotency)', async () => {
+    const db = createDb(env.DB);
+    const ownerEmail = uniqueEmail('tombstone-idempotent-owner');
+    await createVerifiedUser(ownerEmail);
+    const ownerId = await userIdForEmail(ownerEmail);
+    const { organization } = await createOrganization(db, {
+      name: 'Tombstone Idempotency Org',
+      createdByUserId: ownerId,
+    });
+    const organizationId = toOrganizationId(organization.id);
+    await softDeleteOrganization(db, organizationId);
+    await env.DB.prepare('UPDATE organizations SET updated_at = ? WHERE id = ?')
+      .bind(Date.now() - 31 * 86_400_000, organization.id)
+      .run();
+
+    const first = await runOrgPurge({
+      db,
+      logger: createLogger({ test: true }),
+      graceDays: 30,
+      limit: 500,
+    });
+    expect(first.organizationsPurged).toBe(1);
+
+    const second = await runOrgPurge({
+      db,
+      logger: createLogger({ test: true }),
+      graceDays: 30,
+      limit: 500,
+    });
+    expect(second.organizationsPurged).toBe(0);
+  });
+});
+
+describe('nullifyOrganizationCreator — P11-R-02 grace-clock integrity', () => {
+  it('does not bump updated_at (the purge grace clock) for an already-deleted org', async () => {
+    const db = createDb(env.DB);
+    const ownerEmail = uniqueEmail('grace-clock-owner');
+    await createVerifiedUser(ownerEmail);
+    const ownerId = await userIdForEmail(ownerEmail);
+    const { organization } = await createOrganization(db, {
+      name: 'Grace Clock Org',
+      createdByUserId: ownerId,
+    });
+    const organizationId = toOrganizationId(organization.id);
+    await softDeleteOrganization(db, organizationId);
+
+    const beforeRow = await getOrganization(db, organizationId);
+    const originalUpdatedAt = beforeRow?.updatedAt;
+    expect(originalUpdatedAt).toBeDefined();
+
+    // Simulate the creator's account being deleted well after the org's own
+    // soft-delete — nullifyOrganizationCreator must not touch updated_at.
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await nullifyOrganizationCreator(db, ownerId);
+
+    const afterRow = await getOrganization(db, organizationId);
+    expect(afterRow?.createdByUserId).toBeNull();
+    expect(afterRow?.updatedAt).toBe(originalUpdatedAt);
+  });
+});
+
+describe('runLedgerPurge — SEC-P11-04 time-based ledger purge', () => {
+  it('purges audit_events/email_deliveries/product_events past their retention windows, leaves recent rows untouched', async () => {
+    const db = createDb(env.DB);
+    const ownerEmail = uniqueEmail('ledger-purge-owner');
+    await createVerifiedUser(ownerEmail);
+    const ownerId = await userIdForEmail(ownerEmail);
+    const { organization } = await createOrganization(db, {
+      name: 'Ledger Purge Org',
+      createdByUserId: ownerId,
+    });
+    const organizationId = toOrganizationId(organization.id);
+
+    const DAY_MS = 86_400_000;
+    const now = Date.now();
+    const oldAuditAt = now - (24 * 30 + 1) * DAY_MS; // just past 24 months
+    const recentAuditAt = now - 30 * DAY_MS;
+    const oldLedgerAt = now - (365 + 1) * DAY_MS; // just past 12 months
+    const recentLedgerAt = now - 30 * DAY_MS;
+
+    // audit_events: one old, one recent.
+    await insertAuditEvent(db, {
+      actorType: 'user',
+      actorId: ownerId,
+      organizationId,
+      action: 'ledger_purge_test.old',
+      targetType: 'organization',
+      targetId: organization.id,
+      occurredAt: oldAuditAt,
+    });
+    await insertAuditEvent(db, {
+      actorType: 'user',
+      actorId: ownerId,
+      organizationId,
+      action: 'ledger_purge_test.recent',
+      targetType: 'organization',
+      targetId: organization.id,
+      occurredAt: recentAuditAt,
+    });
+
+    // email_deliveries: one old, one recent (both digest-kind via the
+    // repository helper, then backdated directly).
+    const oldDelivery = await createEmailDelivery(db, organizationId, {
+      kind: 'digest',
+      toEmail: ownerEmail,
+      provider: 'resend',
+    });
+    await env.DB.prepare('UPDATE email_deliveries SET created_at = ? WHERE id = ?')
+      .bind(oldLedgerAt, oldDelivery.id)
+      .run();
+    const recentDelivery = await createEmailDelivery(db, organizationId, {
+      kind: 'digest',
+      toEmail: ownerEmail,
+      provider: 'resend',
+    });
+    await env.DB.prepare('UPDATE email_deliveries SET created_at = ? WHERE id = ?')
+      .bind(recentLedgerAt, recentDelivery.id)
+      .run();
+
+    // product_events: one old, one recent.
+    await insertProductEvent(db, {
+      organizationId,
+      userId: ownerId,
+      name: 'ledger_purge_test_old',
+    });
+    await insertProductEvent(db, {
+      organizationId,
+      userId: ownerId,
+      name: 'ledger_purge_test_recent',
+    });
+    const oldEventRow = await env.DB.prepare(
+      "SELECT id FROM product_events WHERE name = 'ledger_purge_test_old'",
+    ).first<{ id: string }>();
+    if (oldEventRow === null) throw new Error('test setup: product_events row missing');
+    await env.DB.prepare('UPDATE product_events SET created_at = ? WHERE id = ?')
+      .bind(oldLedgerAt, oldEventRow.id)
+      .run();
+
+    const result = await runLedgerPurge({ db, logger: createLogger({ test: true }) });
+    expect(result.auditEventsDeleted).toBeGreaterThanOrEqual(1);
+    expect(result.emailDeliveriesDeleted).toBeGreaterThanOrEqual(1);
+    expect(result.productEventsDeleted).toBeGreaterThanOrEqual(1);
+
+    expect(
+      await count("SELECT COUNT(*) as n FROM audit_events WHERE action = 'ledger_purge_test.old'"),
+    ).toBe(0);
+    expect(
+      await count(
+        "SELECT COUNT(*) as n FROM audit_events WHERE action = 'ledger_purge_test.recent'",
+      ),
+    ).toBe(1);
+
+    expect(
+      await count('SELECT COUNT(*) as n FROM email_deliveries WHERE id = ?', oldDelivery.id),
+    ).toBe(0);
+    expect(
+      await count('SELECT COUNT(*) as n FROM email_deliveries WHERE id = ?', recentDelivery.id),
+    ).toBe(1);
+
+    expect(
+      await count("SELECT COUNT(*) as n FROM product_events WHERE name = 'ledger_purge_test_old'"),
+    ).toBe(0);
+    expect(
+      await count(
+        "SELECT COUNT(*) as n FROM product_events WHERE name = 'ledger_purge_test_recent'",
+      ),
+    ).toBe(1);
+  });
+
+  it('detaches digest_runs.email_delivery_id before deleting an old-but-referenced email_deliveries row', async () => {
+    const db = createDb(env.DB);
+    const ownerEmail = uniqueEmail('ledger-purge-fk-owner');
+    await createVerifiedUser(ownerEmail);
+    const ownerId = await userIdForEmail(ownerEmail);
+    const { organization } = await createOrganization(db, {
+      name: 'Ledger Purge FK Org',
+      createdByUserId: ownerId,
+    });
+    const organizationId = toOrganizationId(organization.id);
+
+    const delivery = await createEmailDelivery(db, organizationId, {
+      kind: 'digest',
+      toEmail: ownerEmail,
+      provider: 'resend',
+    });
+    const DAY_MS = 86_400_000;
+    const oldAt = Date.now() - (365 + 1) * DAY_MS;
+    await env.DB.prepare('UPDATE email_deliveries SET created_at = ? WHERE id = ?')
+      .bind(oldAt, delivery.id)
+      .run();
+
+    const digestRun = await createDigestRun(db, organizationId, {
+      digestDate: '2024-01-01',
+      matchesCount: 0,
+    });
+    await env.DB.prepare('UPDATE digest_runs SET email_delivery_id = ? WHERE id = ?')
+      .bind(delivery.id, digestRun.id)
+      .run();
+
+    await runLedgerPurge({ db, logger: createLogger({ test: true }) });
+
+    expect(
+      await count('SELECT COUNT(*) as n FROM email_deliveries WHERE id = ?', delivery.id),
+    ).toBe(0);
+    const digestRunRow = await env.DB.prepare(
+      'SELECT email_delivery_id FROM digest_runs WHERE id = ?',
+    )
+      .bind(digestRun.id)
+      .first<{ email_delivery_id: string | null }>();
+    expect(digestRunRow?.email_delivery_id).toBeNull();
+  });
 });
 
 describe('DELETE /api/account — departing-MEMBER authored-row FK edge (migration 0005)', () => {
@@ -668,6 +944,41 @@ describe('DELETE /api/account — departing-MEMBER authored-row FK edge (migrati
         orgId,
       ),
     ).toBe(0);
+  });
+
+  it('P11-R-04: SET NULLs email_deliveries.user_id for the departing user, keeping the row', async () => {
+    const { orgId } = await setUpOrg('account-fk-email-owner');
+    const { cookie: memberCookie, userId: memberId } = await addMember(
+      orgId,
+      'account-fk-email-member',
+    );
+
+    // No current writer sets `email_deliveries.user_id` (see
+    // nullifyUserEmailDeliveries's doc) — insert a row directly to exercise
+    // the FK-safety path a future auth-mail delivery-tracking writer would
+    // create. `organization_id` is set too so the CHECK constraint
+    // (`organization_id IS NOT NULL OR user_id IS NOT NULL`) still holds
+    // after user_id is nulled.
+    const deliveryId = `test-delivery-${memberId}`;
+    await env.DB.prepare(
+      `INSERT INTO email_deliveries
+         (id, organization_id, user_id, kind, to_email, provider, provider_message_id, status, error, created_at, updated_at)
+       VALUES (?, ?, ?, 'verification', ?, 'resend', NULL, 'sent', NULL, ?, ?)`,
+    )
+      .bind(deliveryId, orgId, memberId, 'member@example.test', Date.now(), Date.now())
+      .run();
+
+    const deleteResponse = await fetchApi('/api/account', {
+      method: 'DELETE',
+      headers: jsonHeaders(memberCookie),
+    });
+    expect(deleteResponse.status).toBe(204);
+
+    const row = await env.DB.prepare('SELECT user_id FROM email_deliveries WHERE id = ?')
+      .bind(deliveryId)
+      .first<{ user_id: string | null }>();
+    expect(row).not.toBeNull();
+    expect(row?.user_id).toBeNull();
   });
 });
 
