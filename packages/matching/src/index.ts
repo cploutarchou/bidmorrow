@@ -51,3 +51,38 @@ export function classify(score: number): MatchClassification {
   if (score >= 45) return 'POSSIBLE_MATCH';
   return 'LOW_FIT';
 }
+
+export { scoreLotForOrg } from './engine';
+export { renderExplanation } from './explanation';
+export { evaluateExclusions } from './exclusions';
+export { detectRiskFlags } from './risk-flags';
+export { scoreCpv } from './components/cpv';
+export { scoreCapability, DEFAULT_MATCHABLE_LANGUAGES } from './components/capability';
+export { scoreGeography } from './components/geography';
+export { scoreValue } from './components/value';
+export { scoreBuyer } from './components/buyer';
+export { scoreProcedure } from './components/procedure';
+export { scoreDeadline, DEFAULT_MINIMUM_DAYS_REMAINING } from './components/deadline';
+export { scoreEligibility } from './components/eligibility';
+export { neighborsOf, areNeighbors } from './eu-adjacency';
+export type {
+  ComponentResult,
+  EngineInput,
+  ExcludedResult,
+  ExclusionRule,
+  LanguageTextMap,
+  LotCpv,
+  LotInput,
+  MatchResult,
+  OrgCertification,
+  OrgExclusions,
+  OrgGeographyPreferences,
+  OrgKeywords,
+  OrgProfile,
+  OrgValueRange,
+  RiskConfidence,
+  RiskFlag,
+  RiskFlagType,
+  ScoredResult,
+  SynonymGroup,
+} from './types';

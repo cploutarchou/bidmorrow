@@ -337,9 +337,10 @@ async function processOneNotice(
  * records that truncation happened so the operator knows more issues exist
  * (retrievable from the archived R2 snapshot via `snapshotR2Key`).
  */
-const MAX_ISSUES_DETAIL_JSON_CHARS = 50_000;
+export const MAX_ISSUES_DETAIL_JSON_CHARS = 50_000;
 
-function boundIssuesForErrorDetail(issues: readonly ParseIssue[]): readonly unknown[] {
+/** Exported for direct unit testing of the truncation cap; internal callers use it via `recordError`. */
+export function boundIssuesForErrorDetail(issues: readonly ParseIssue[]): readonly unknown[] {
   const fullJson = JSON.stringify(issues);
   if (fullJson.length <= MAX_ISSUES_DETAIL_JSON_CHARS) {
     return issues;
