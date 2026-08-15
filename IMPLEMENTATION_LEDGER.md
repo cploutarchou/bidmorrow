@@ -5,10 +5,125 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 10 — Admin/Operations: COMPLETE (signed off).** Next: Phase 11 —
-Security/Privacy.
+**Phase 11 stage A — Privacy implementation: COMPLETE.** Next: Phase 11
+stage B or Phase 12 (see docs/production-checklist.md for what's left).
 
 ## Completed
+
+### Phase 11 stage A — Privacy implementation (2026-08-15)
+
+Closed every remaining gap between docs/privacy.md's six implementation
+commitments and reality (account deletion + log redaction already shipped
+Phase 3/4/2; this session built organization deletion, the deleted-org purge
+job, data export, and fixed two FK edges account deletion had never been
+exercised against). Full reconciliation with `(implemented Phase N)`
+markers is in docs/privacy.md itself — this entry is the session summary.
+
+- **Migrations 0005/0006 (additive, table-rebuild — SQLite has no `ALTER
+COLUMN`)**: relax three FKs from `NOT NULL` to nullable —
+  `saved_tenders.saved_by_user_id`, `ignored_tenders.ignored_by_user_id`,
+  `customer_feedback.user_id` (0005), and `organizations.created_by_user_id`
+  (0006). **Why, and how it was found**: these are ORG-owned rows with a
+  `users` FK for attribution only; `organizations` rows are NEVER
+  hard-deleted (see the purge decision below). A D1 test deleting the
+  account of a MEMBER who had saved a tender in an org they remained a
+  member of hit a live FK violation on Better Auth's `deleteUser` — the
+  active-only `getOrganizationsForUser` account.ts previously used to
+  enumerate memberships also silently skipped a leftover membership row in
+  an ALREADY-deleted org, and even after fixing that, the sole creator of
+  a (tombstoned, never-hard-deleted) org could never delete their account
+  either, via `organizations.created_by_user_id`. All three findings fixed
+  the same way: nullable column + a targeted repository function
+  (`nullifyUserAuthorship` in engagement.ts, `nullifyOrganizationCreator` in
+  identity.ts) that SET NULLs the departing user's attribution — same
+  "anonymize the author, keep the row" pattern `audit_events.actor_id`
+  already used — called from `routes/account.ts` before
+  `removeOrganizationMember`/`deleteUser`. `account.ts` now enumerates
+  memberships via a new `getAllOrganizationsForUser` (ANY org status, not
+  just active) instead of the active-only `getOrganizationsForUser`, and the
+  sole-owner 409 guard only fires for an ACTIVE org (a deleted org has
+  nothing left to orphan).
+- **`DELETE /api/org`** (`routes/org.ts`, OWNER only, exact-match
+  `{confirm: <real org name>}` verified server-side): soft-deletes
+  (`organizations.status = 'deleted'`) immediately, best-effort Stripe
+  `cancel_at_period_end` cancellation (`packages/billing`'s new
+  `cancelSubscriptionForOrgDeletion` — never blocks the deletion; every
+  outcome incl. "not configured"/API error goes into the audit row's
+  `afterSummary` for manual follow-up), writes an `organization.deleted`
+  audit row. `middleware/organization.ts`'s `requireOrganization` now
+  resolves membership via a new `getFirstOrganizationForUserAnyStatus`
+  (any status, not just active) so a deleted org's members get a distinct
+  `organization_deleted` 403 instead of the onboarding-shaped
+  `no_organization`. **Bug fixed alongside**: `company.ts`'s
+  `listOrgsEligibleForScoring` was missing the `organizations.status =
+'active'` filter `listOrgsWithDigestEnabled` already had — a deleted org
+  with its company profile/CPV rows still intact (pre-purge) stayed
+  scoring-eligible; now both exclude deleted orgs identically.
+- **`packages/db/src/repositories/org-purge.ts`** (new, GLOBAL,
+  cross-tenant by design like `retention.ts`/`admin.ts`) +
+  **`packages/procurement/src/org-purge.ts`** (`runOrgPurge`, composes
+  `identity.ts`'s `listOrganizationsPendingPurge`/`tombstoneOrganization`
+  with the cascade): hard-deletes every owned row for organizations
+  `status = 'deleted'` for ≥30 days (config `graceDays`, bounded `limit`
+  per run), in FK-safe order — `customer_feedback`/`digest_items` first
+  (both reference `tender_matches` and would otherwise block deleting it),
+  then `match_components`/`match_risk_flags`/`tender_matches`,
+  `saved_tenders`/`ignored_tenders`, `digest_runs`, `email_deliveries`,
+  every `company_*`/`matching_preferences`/`digest_preferences` row,
+  `support_notes`, `product_events`, leftover `organization_members`.
+  **Retention decisions, documented in-file**: `subscriptions` (billing/
+  legal record) and `audit_events`/`billing_events` (append-only ledgers)
+  are NEVER purged — their `organization_id` FK is why the `organizations`
+  row itself is never hard-deleted either; instead it's tombstoned
+  (`name` → `deleted-<id>`, PII minimization) so those two ledgers' FKs
+  never dangle. A second run is idempotent (the tombstone name prefix
+  excludes it from the next scan — no dedicated `purged_at` column needed).
+  Wired into the existing daily retention cron (`runRetentionPurgeJob` in
+  `apps/worker/src/ingestion.ts` now runs both the tender-corpus sweep and
+  `runOrgPurge` back to back; `RunPurgeResult`'s return shape is unchanged
+  for the existing `queue.purge.completed` log field).
+- **`GET /api/org/export`** (`routes/org.ts`, OWNER only, rate-limited by
+  the existing `API_RATE_LIMITER` binding, audit-evented):
+  `packages/db/src/repositories/export.ts`'s `getOrgExportBundle` returns
+  profile/preferences/saved+ignored+feedback (with tender titles
+  denormalized on, capped at 500 rows/collection, `truncated: true`
+  signals a follow-up export) as one bounded JSON bundle — deliberately
+  excludes the global tender corpus (public TED content, not a portability
+  concern).
+- **Tests**: `apps/worker/src/org-lifecycle.d1.test.ts` (new, 7 tests, real
+  workerd+D1) — org deletion (MEMBER blocked, wrong-confirm 400, correct
+  confirm soft-deletes + blocks every member's context + excludes from
+  digest/scoring eligibility), `runOrgPurge` (pre-grace org fully intact;
+  full purge asserts EVERY owned table empty by direct COUNT query per
+  table, `subscriptions`/`audit_events` survive, the org row is a
+  tombstone, the global `tender_lots`/`tender_notices` rows for a
+  saved-and-purged tender survive untouched, a second run is a no-op), the
+  two account-deletion FK edges (member's saved/ignored/feedback rows
+  survive with NULL attribution; a sole owner of an already-deleted org can
+  now delete their account), and the export endpoint (shape, OWNER-only,
+  cross-org isolation via a second org's bundle + a direct repository call).
+  `packages/db/src/migrations.d1.test.ts` gained 3 tests (6-migration chain
+  applies; the three migration-0005 columns and the migration-0006 column
+  are nullable via `PRAGMA table_info`).
+  `tests/security/tenant-isolation-contract.test.ts` gained `export.ts` to
+  TENANT_FILES (conforms — `getOrgExportBundle(db, organizationId)`) and
+  `org-purge.ts` to GLOBAL_FILES with a written cross-tenant-schema
+  exemption, plus five new TENANT_EXEMPT entries for the
+  userId-first/cross-tenant-by-design new functions in `identity.ts` and
+  `engagement.ts`.
+- **Gates, real counts**: `pnpm format:check` clean · `pnpm lint` clean ·
+  `pnpm typecheck` clean across all 14 workspace packages · `pnpm test`
+  (root vitest + worker + db, chained) — root vitest 55 test files / 396
+  tests green (incl. the updated tenant-isolation contract), worker
+  `pnpm --filter @bidmorrow/worker test` 12 files / 128 tests green
+  (includes the new `org-lifecycle.d1.test.ts`'s 7 tests), db
+  `pnpm --filter @bidmorrow/db test` 9 files / 49 tests green (includes the
+  3 new migration tests) · `pnpm build` (web + worker `wrangler deploy
+--dry-run`) green.
+- **Open items / not done this session**: `production-reviewer` and
+  `security` subagent review (per CLAUDE.md's "after every phase" rule) —
+  not run in this session, recorded here as the explicit next step before
+  tagging `phase-11-stage-a-complete`. No new HUMAN_DECISION_BLOCKERS items.
 
 ### Phase 10 stage A — Internal admin API (2026-08-15)
 

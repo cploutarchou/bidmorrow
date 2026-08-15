@@ -8,7 +8,7 @@
  * may act in. Every row it returns is constrained through the caller's own
  * `organization_members` row.
  */
-import { and, asc, eq, gt } from 'drizzle-orm';
+import { and, asc, eq, gt, lte, sql } from 'drizzle-orm';
 import type { OrganizationId } from '@bidmorrow/domain';
 
 import type { Db } from '../client';
@@ -81,6 +81,80 @@ export async function getOrganizationsForUser(
     eq(organizationMembers.userId, args.userId),
     eq(organizations.status, 'active'),
   ];
+  if (args.cursor !== undefined) {
+    conditions.push(gt(organizations.id, args.cursor));
+  }
+  const rows = await db
+    .select({ organization: organizations, membership: organizationMembers })
+    .from(organizationMembers)
+    .innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id))
+    .where(and(...conditions))
+    .orderBy(asc(organizations.id))
+    .limit(limit + 1);
+  return toPage(rows, limit, (last) => last.organization.id);
+}
+
+/**
+ * The caller's first membership + organization row, REGARDLESS of the
+ * organization's `status` — the tenancy-bootstrap counterpart to
+ * `getOrganizationsForUser` (which deliberately filters to `active` for
+ * every normal request path). Used only where an already-non-active org
+ * must still be distinguishable from "no organization at all":
+ * `middleware/organization.ts` (so a deleted org's members see
+ * `organization_deleted`, not the onboarding-shaped `no_organization`) and
+ * `routes/account.ts` (so account deletion can find and clean up
+ * memberships in an org that was already soft-deleted, which
+ * `getOrganizationsForUser`'s active-only filter would otherwise hide from
+ * the FK-safety sweep — see that file's module doc).
+ */
+export async function getFirstOrganizationForUserAnyStatus(
+  db: Db,
+  userId: string,
+): Promise<OrganizationForUser | null> {
+  const rows = await db
+    .select({ organization: organizations, membership: organizationMembers })
+    .from(organizationMembers)
+    .innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id))
+    .where(eq(organizationMembers.userId, userId))
+    .orderBy(asc(organizations.id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/**
+ * SET NULLs `organizations.created_by_user_id` for every organization this
+ * user created, in ANY `status` — the account-deletion counterpart to
+ * `engagement.ts`'s `nullifyUserAuthorship`, for the one more FK to `users`
+ * a departing user can carry: `organizations` rows are NEVER hard-deleted
+ * (see `tombstoneOrganization`'s doc), so without this, the creator of ANY
+ * org — even a deleted, purged one — could never delete their own account
+ * (migration 0006). Called by `routes/account.ts` before removing
+ * memberships / calling Better Auth's `deleteUser`.
+ */
+export async function nullifyOrganizationCreator(db: Db, userId: string): Promise<number> {
+  const updated = await db
+    .update(organizations)
+    .set({ createdByUserId: null, updatedAt: Date.now() })
+    .where(eq(organizations.createdByUserId, userId))
+    .returning({ id: organizations.id });
+  return updated.length;
+}
+
+/**
+ * Every membership a user holds, in ANY organization `status` (paginated,
+ * caller accumulates pages) — the account-deletion enumeration
+ * (`routes/account.ts`) needs this, not `getOrganizationsForUser`'s
+ * active-only view: a membership row in an already-deleted org still holds
+ * an `organization_members.user_id -> users.id` FK that must be removed
+ * before Better Auth's `deleteUser` can succeed, exactly like an active
+ * org's membership.
+ */
+export async function getAllOrganizationsForUser(
+  db: Db,
+  args: { userId: string } & Pagination,
+): Promise<Page<OrganizationForUser>> {
+  const limit = normalizeLimit(args.limit);
+  const conditions = [eq(organizationMembers.userId, args.userId)];
   if (args.cursor !== undefined) {
     conditions.push(gt(organizations.id, args.cursor));
   }
@@ -253,4 +327,59 @@ export async function softDeleteOrganization(
     .where(and(eq(organizations.id, organizationId), eq(organizations.status, 'active')))
     .returning({ id: organizations.id });
   return updated.length > 0;
+}
+
+/** Tombstone name prefix (docs/data-model.md §11 org-purge reconciliation, PII minimization). */
+const TOMBSTONE_NAME_PREFIX = 'deleted-';
+
+/**
+ * Organizations eligible for hard purge: `status = 'deleted'`, older than
+ * `graceDays` (measured off `updated_at`, set by `softDeleteOrganization`),
+ * and not already tombstoned (`name` does not carry the `deleted-<id>`
+ * prefix `purgeDeletedOrganizations` writes in its final step) — that
+ * name-prefix check is what makes repeated cron runs idempotent without a
+ * dedicated "purged_at" column: once an org's owned rows are gone and its
+ * name is tombstoned, it is permanently excluded from every future scan.
+ * Bounded by `limit`; deterministic order (ascending id) for steady
+ * progress across runs.
+ */
+export async function listOrganizationsPendingPurge(
+  db: Db,
+  args: { graceDays: number; limit: number; now?: number },
+): Promise<Organization[]> {
+  const now = args.now ?? Date.now();
+  const cutoff = now - args.graceDays * 86_400_000;
+  const rows = await db
+    .select()
+    .from(organizations)
+    .where(
+      and(
+        eq(organizations.status, 'deleted'),
+        lte(organizations.updatedAt, cutoff),
+        sql`${organizations.name} NOT LIKE ${`${TOMBSTONE_NAME_PREFIX}%`}`,
+      ),
+    )
+    .orderBy(asc(organizations.id))
+    .limit(args.limit);
+  return rows;
+}
+
+/**
+ * Final step of `purgeDeletedOrganizations` (packages/procurement `purge.ts`
+ * composes this with the tenant-table cascade): replaces the organization's
+ * `name` with a tombstone (`deleted-<id>`) — PII minimization (an org name
+ * may identify a sole trader, docs/privacy.md data inventory) — while
+ * KEEPING the `organizations` row itself. The row is kept, never hard-
+ * deleted, because `subscriptions.organization_id` (billing/legal record,
+ * never purged) and `audit_events.organization_id` /
+ * `billing_events.organization_id` (append-only ledgers, never purged) all
+ * carry a FK to it; deleting the row would either violate those FKs or
+ * require nulling ledger columns that must stay attributable for security/
+ * legal retention. `status` stays `deleted` (already set).
+ */
+export async function tombstoneOrganization(db: Db, organizationId: OrganizationId): Promise<void> {
+  await db
+    .update(organizations)
+    .set({ name: `${TOMBSTONE_NAME_PREFIX}${organizationId}`, updatedAt: Date.now() })
+    .where(eq(organizations.id, organizationId));
 }

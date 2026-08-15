@@ -7,7 +7,7 @@
  * whether this call changed anything. `digest_runs` relies on the unique
  * `(organization_id, digest_date)` as the daily dedupe mechanism.
  */
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { OrganizationId } from '@bidmorrow/domain';
 
 import type { Db } from '../client';
@@ -487,4 +487,70 @@ export async function updateEmailDeliveryStatus(
     )
     .returning();
   return rows[0] ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Account-deletion FK safety (Phase 11 privacy reconciliation, migration
+// 0005): `saved_by_user_id`/`ignored_by_user_id`/`customer_feedback.user_id`
+// are attribution fields on ORG-owned rows, nullable so a departing member's
+// account can be deleted without either (a) violating the FK to `users`, or
+// (b) deleting org data another member still relies on.
+// ---------------------------------------------------------------------------
+
+export interface NullifyUserAuthorshipCounts {
+  readonly savedTendersNulled: number;
+  readonly ignoredTendersNulled: number;
+  readonly customerFeedbackNulled: number;
+}
+
+/**
+ * SET NULLs `userId`'s authorship attribution on `saved_tenders` /
+ * `ignored_tenders` / `customer_feedback` rows, restricted to the given
+ * organizations AND that user's own authored rows — never a bare `userId`
+ * match with no organization scope, so this can never touch another org's
+ * data by construction. Called by `routes/account.ts` immediately before
+ * removing the membership rows for those same organizations, so the FK to
+ * `users` is clear before Better Auth's `deleteUser` runs.
+ */
+export async function nullifyUserAuthorship(
+  db: Db,
+  userId: string,
+  organizationIds: readonly OrganizationId[],
+): Promise<NullifyUserAuthorshipCounts> {
+  if (organizationIds.length === 0) {
+    return { savedTendersNulled: 0, ignoredTendersNulled: 0, customerFeedbackNulled: 0 };
+  }
+  const now = Date.now();
+  const orgIds = [...organizationIds];
+  const [savedRows, ignoredRows, feedbackRows] = await db.batch([
+    db
+      .update(savedTenders)
+      .set({ savedByUserId: null })
+      .where(
+        and(inArray(savedTenders.organizationId, orgIds), eq(savedTenders.savedByUserId, userId)),
+      )
+      .returning({ id: savedTenders.id }),
+    db
+      .update(ignoredTenders)
+      .set({ ignoredByUserId: null })
+      .where(
+        and(
+          inArray(ignoredTenders.organizationId, orgIds),
+          eq(ignoredTenders.ignoredByUserId, userId),
+        ),
+      )
+      .returning({ id: ignoredTenders.id }),
+    db
+      .update(customerFeedback)
+      .set({ userId: null, updatedAt: now })
+      .where(
+        and(inArray(customerFeedback.organizationId, orgIds), eq(customerFeedback.userId, userId)),
+      )
+      .returning({ id: customerFeedback.id }),
+  ]);
+  return {
+    savedTendersNulled: savedRows.length,
+    ignoredTendersNulled: ignoredRows.length,
+    customerFeedbackNulled: feedbackRows.length,
+  };
 }

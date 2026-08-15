@@ -33,6 +33,7 @@ const TENANT_FILES = [
   'billing.ts',
   'company.ts',
   'engagement.ts',
+  'export.ts',
   'identity.ts',
   'matching.ts',
   'ops.ts',
@@ -43,6 +44,7 @@ const GLOBAL_FILES = [
   'admin.ts',
   'ingestion.ts',
   'ops-global.ts',
+  'org-purge.ts',
   'retention.ts',
   'tender-corpus.ts',
 ] as const;
@@ -77,6 +79,17 @@ const GLOBAL_FILES_TENANT_SCHEMA_EXEMPT: Record<string, string> = {
     'this phase ships, suspendOrganization/unsuspendOrganization, are contract-compliant and ' +
     'live in identity.ts instead, since they take a single organizationId like every other ' +
     'tenant function).',
+  'org-purge.ts':
+    'Phase 11 stage A deleted-organization hard-purge sweep (docs/privacy.md commitment 3), ' +
+    'composed by packages/procurement/src/org-purge.ts and reachable ONLY from the daily ' +
+    'retention cron path — never a customer-facing route. Its single exported function, ' +
+    'purgeOrganizationOwnedRows, DOES take a single organizationId (it purges ONE already-' +
+    'identified-eligible org per call), but the module is classified GLOBAL rather than added ' +
+    'to TENANT_FILES because its purpose — deciding WHICH orgs are eligible ' +
+    '(listOrganizationsPendingPurge, in identity.ts) and hard-deleting across every company/ ' +
+    'engagement schema table for that org in one sweep — is the same operates-outside-any-' +
+    "single-tenant's-own-request-path shape as retention.ts's exemption above, and it DELETEs " +
+    '(never INSERTs) tenant-owned rows exactly like retention.ts does.',
 };
 
 /** Infrastructure helpers/errors — no data access of their own. */
@@ -90,6 +103,39 @@ const TENANT_EXEMPT: Record<string, { name: string; reason: string }[]> = {
   'identity.ts': [
     { name: 'createOrganization', reason: 'creates the tenant — no organization exists yet' },
     { name: 'getOrganizationsForUser', reason: 'tenancy bootstrap: session user -> organizations' },
+    {
+      name: 'getFirstOrganizationForUserAnyStatus',
+      reason:
+        'tenancy bootstrap variant (Phase 11 stage A): resolves a user’s membership before ' +
+        'an organizationId is known, regardless of the org’s status — same rationale as ' +
+        'getOrganizationsForUser, used by middleware/organization.ts and routes/account.ts.',
+    },
+    {
+      name: 'getAllOrganizationsForUser',
+      reason:
+        'tenancy bootstrap variant (Phase 11 stage A): account deletion must enumerate every ' +
+        'membership a user holds, in ANY org status, to clear the organization_members.user_id ' +
+        'FK before Better Auth’s deleteUser — same "starts from a user id" shape as ' +
+        'getOrganizationsForUser, not an organizationId-scoped query.',
+    },
+    {
+      name: 'nullifyOrganizationCreator',
+      reason:
+        'account-deletion FK-safety helper (Phase 11 stage A, migration 0006): SET NULLs ' +
+        'organizations.created_by_user_id across every org a departing user created, keyed on ' +
+        'userId — organizations are never hard-deleted, so this is a user-keyed cleanup, not an ' +
+        'organizationId-scoped tenant read/write.',
+    },
+    {
+      name: 'listOrganizationsPendingPurge',
+      reason:
+        'deleted-organization purge scan (Phase 11 stage A, docs/privacy.md commitment 3): must ' +
+        'enumerate every eligible deleted org across ALL tenants for the daily retention cron — ' +
+        'the identity.ts equivalent of company.ts’s listOrgsEligibleForScoring/' +
+        'listOrgsWithDigestEnabled "list all tenants" exemptions, never reachable from a ' +
+        'per-request/per-tenant handler, returns organization rows only (no other tenant-owned ' +
+        'table data).',
+    },
   ],
   'company.ts': [
     {
@@ -135,6 +181,19 @@ const TENANT_EXEMPT: Record<string, { name: string; reason: string }[]> = {
         'organization on a plan, the billing equivalent of company.ts ' +
         'listOrgsEligibleForScoring/listOrgsWithDigestEnabled — reachable from per-tenant ' +
         'handlers but returns only a bare global count, no tenant-owned row data (SEC-P9-04).',
+    },
+  ],
+  'engagement.ts': [
+    {
+      name: 'nullifyUserAuthorship',
+      reason:
+        'account-deletion FK-safety helper (Phase 11 stage A, migration 0005): SET NULLs a ' +
+        'departing user’s authorship attribution on saved_tenders/ignored_tenders/' +
+        'customer_feedback, keyed on userId, RESTRICTED to an explicit organizationIds list ' +
+        '(every predicate is still AND-scoped by organization_id — never a bare userId match) — ' +
+        'the caller (routes/account.ts) supplies exactly the orgs the user is leaving, so this ' +
+        'can never touch another org’s data by construction, even though the parameter order is ' +
+        'userId-first rather than the usual single organizationId.',
     },
   ],
   'ops.ts': [

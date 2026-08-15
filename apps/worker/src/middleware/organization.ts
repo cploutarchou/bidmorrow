@@ -10,7 +10,11 @@
  * authenticated, just not onboarded yet).
  */
 import type { MiddlewareHandler } from 'hono';
-import { createDb, getOrganizationsForUser, type OrganizationMemberRole } from '@bidmorrow/db';
+import {
+  createDb,
+  getFirstOrganizationForUserAnyStatus,
+  type OrganizationMemberRole,
+} from '@bidmorrow/db';
 import { organizationId as toOrganizationId } from '@bidmorrow/domain';
 
 import type { AppBindings } from '../env';
@@ -22,10 +26,18 @@ export const requireOrganization: MiddlewareHandler<AppBindings> = async (c, nex
     return c.json({ error: 'unauthenticated' }, 401);
   }
   const db = createDb(c.env.DB);
-  const page = await getOrganizationsForUser(db, { userId: session.user.id, limit: 2 });
-  const first = page.items[0];
-  if (first === undefined) {
+  // Phase 11 stage A: resolves the caller's membership regardless of the
+  // organization's `status`, so a self-deleted org's members get a
+  // distinct `organization_deleted` response instead of the
+  // onboarding-shaped `no_organization` (docs/privacy.md commitment 2) —
+  // `getOrganizationsForUser` (the every-other-route default) deliberately
+  // filters to `active` only and would make the two cases indistinguishable.
+  const first = await getFirstOrganizationForUserAnyStatus(db, session.user.id);
+  if (first === null) {
     return c.json({ error: 'no_organization' }, 403);
+  }
+  if (first.organization.status === 'deleted') {
+    return c.json({ error: 'organization_deleted' }, 403);
   }
   // Phase 10 admin suspension (docs/security.md — INTERNAL_ADMIN
   // governance): a suspended org keeps its `active` status (retention/

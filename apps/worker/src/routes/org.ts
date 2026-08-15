@@ -15,6 +15,8 @@ import {
   getCompanyProfile,
   getDigestPreferences,
   getMatchingPreferences,
+  getOrganization,
+  getOrgExportBundle,
   getOrganizationsForUser,
   insertProductEvent,
   listCompanyCapabilities,
@@ -29,6 +31,7 @@ import {
   replaceCompanyExclusions,
   replaceCompanyGeographies,
   replaceCompanyKeywords,
+  softDeleteOrganization,
   upsertCompanyProfile,
   upsertDigestPreferences,
   upsertMatchingPreferences,
@@ -40,7 +43,9 @@ import {
   organizationId as toOrganizationId,
 } from '@bidmorrow/domain';
 import { loadIngestionScope } from '@bidmorrow/procurement';
+import { cancelSubscriptionForOrgDeletion } from '@bidmorrow/billing';
 
+import { resolveBillingConfig } from '../billing';
 import type { AppBindings } from '../env';
 import { requireOrganization, requireRole } from '../middleware/organization';
 import { rateLimitOrgApi } from '../middleware/rate-limit';
@@ -146,6 +151,15 @@ const digestPreferencesSchema = z
   })
   .strict();
 
+const deleteOrganizationSchema = z
+  .object({
+    // Exact-match confirmation, verified server-side against the
+    // organization's REAL name (never a client-supplied id/name) — never
+    // trust the frontend to have gotten it right (docs/security.md C6).
+    confirm: z.string().trim().min(1).max(200),
+  })
+  .strict();
+
 export const orgRoutes = new Hono<AppBindings>();
 
 orgRoutes.use('*', rateLimitOrgApi);
@@ -201,6 +215,7 @@ orgRoutes.use('/exclusions', requireOrganization);
 orgRoutes.use('/matching-preferences', requireOrganization);
 orgRoutes.use('/digest-preferences', requireOrganization);
 orgRoutes.use('/onboarding/complete', requireOrganization);
+orgRoutes.use('/export', requireOrganization);
 
 orgRoutes.get('/profile', async (c) => {
   const db = createDb(c.env.DB);
@@ -608,4 +623,124 @@ orgRoutes.post('/onboarding/complete', requireRole('ORGANIZATION_OWNER'), async 
   });
 
   return c.json({ profile, scopeOverlapWarning });
+});
+
+/**
+ * `DELETE /api/org` — self-service organization deletion (Phase 11 stage A,
+ * docs/privacy.md commitment 2).
+ *
+ * OWNER only. Requires the caller to type the organization's EXACT current
+ * name in `{ confirm }`, verified server-side against the real row (never a
+ * client-supplied id) — a mismatch is a 400, never a partial/fuzzy match.
+ *
+ * Effect: soft-deletes (`organizations.status = 'deleted'`) immediately —
+ * every member (including the caller) loses `/api/org/*` access on their
+ * very next request (`middleware/organization.ts`'s `organization_deleted`
+ * 403), and the org drops out of scoring/digest eligibility on the same
+ * request (`listOrgsEligibleForScoring`/`listOrgsWithDigestEnabled`, both
+ * filter `status = 'active'`). Data is NOT hard-deleted here — the daily
+ * retention cron's `runOrgPurge` hard-deletes owned rows after a 30-day
+ * grace period (docs/privacy.md commitment 3), giving support a window to
+ * reverse an accidental deletion before it becomes unrecoverable.
+ *
+ * Stripe: best-effort `cancel_at_period_end` cancellation. Never blocks the
+ * deletion itself — Stripe being unreachable/misconfigured must not prevent
+ * a privacy-motivated deletion. Every outcome (canceled / no subscription /
+ * already canceled / not configured / API error) is written into the audit
+ * row's `afterSummary` so an unconfigured or failed cancellation is always
+ * visible for manual follow-up (docs/privacy.md), never silently lost.
+ */
+orgRoutes.delete(
+  '/',
+  requireOrganization,
+  requireRole('ORGANIZATION_OWNER'),
+  zValidator('json', deleteOrganizationSchema),
+  async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+    const session = c.get('session');
+    if (organizationId === undefined || session === undefined) {
+      return c.json({ error: 'no_organization' }, 403);
+    }
+
+    const organization = await getOrganization(db, organizationId);
+    if (organization === null) {
+      return c.json({ error: 'no_organization' }, 404);
+    }
+    const { confirm } = c.req.valid('json');
+    if (confirm !== organization.name) {
+      return c.json({ error: 'confirm_mismatch' }, 400);
+    }
+
+    const deleted = await softDeleteOrganization(db, organizationId);
+    if (!deleted) {
+      return c.json({ error: 'organization_already_deleted' }, 409);
+    }
+
+    let billingSummary: string;
+    const billingConfig = resolveBillingConfig(c.env);
+    if (billingConfig === null) {
+      billingSummary = 'stripe_not_configured; manual cancellation required';
+      c.get('logger').warn('org.delete.stripe_not_configured', { organization_id: organizationId });
+    } else {
+      try {
+        const outcome = await cancelSubscriptionForOrgDeletion(
+          { db, stripe: billingConfig.stripe },
+          { organizationId },
+        );
+        billingSummary = `stripe:${outcome.kind}`;
+      } catch (cause) {
+        billingSummary = 'stripe_cancellation_failed; manual cancellation required';
+        c.get('logger').error('org.delete.stripe_cancellation_failed', {
+          organization_id: organizationId,
+          error: cause instanceof Error ? cause.message : String(cause),
+        });
+      }
+    }
+
+    await insertAuditEvent(db, {
+      actorType: 'user',
+      actorId: session.user.id,
+      organizationId,
+      action: 'organization.deleted',
+      targetType: 'organization',
+      targetId: organizationId,
+      beforeSummary: `name=${organization.name}`,
+      afterSummary: billingSummary,
+      occurredAt: Date.now(),
+    });
+
+    return c.json({ status: 'deleted', billing: billingSummary });
+  },
+);
+
+/**
+ * `GET /api/org/export` — self-service data export (Phase 11 stage A,
+ * docs/privacy.md commitment 4). OWNER only. Returns the org's own data as
+ * a single bounded JSON bundle (profile, preferences, saved/ignored/
+ * feedback with tender titles) — see `getOrgExportBundle`'s doc for the
+ * exact shape and per-collection cap. Deliberately excludes the global
+ * tender corpus (public TED content, not part of a portability request).
+ * Rate-limited by the same `API_RATE_LIMITER` binding as every other
+ * `/api/org/*` route (`orgRoutes.use('*', rateLimitOrgApi)` above).
+ */
+orgRoutes.get('/export', requireRole('ORGANIZATION_OWNER'), async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  const session = c.get('session');
+  if (organizationId === undefined || session === undefined) {
+    return c.json({ error: 'no_organization' }, 403);
+  }
+  const bundle = await getOrgExportBundle(db, organizationId);
+  await insertAuditEvent(db, {
+    actorType: 'user',
+    actorId: session.user.id,
+    organizationId,
+    action: 'organization.data_exported',
+    targetType: 'organization',
+    targetId: organizationId,
+    afterSummary: bundle.truncated ? 'truncated=true' : 'truncated=false',
+    occurredAt: Date.now(),
+  });
+  return c.json(bundle);
 });

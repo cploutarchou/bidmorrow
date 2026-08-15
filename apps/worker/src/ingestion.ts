@@ -13,11 +13,13 @@ import {
   refreshEcbRates,
   runIngestionCatchUp,
   runIngestionWindow,
+  runOrgPurge,
   runPurge,
   scoreLotsForOrgs,
 } from '@bidmorrow/procurement';
 import type {
   RunCatchUpResult,
+  RunOrgPurgeResult,
   RunPurgeResult,
   RunWindowResult,
   ScoreLotsResult,
@@ -145,9 +147,36 @@ export async function runBackfillWindowJob(
   return result;
 }
 
+/**
+ * Retention purge job. Runs TWO independent sweeps back to back — the
+ * tender-corpus retention purge (`runPurge`, unchanged from Phase 5) and
+ * the deleted-organization hard-purge (`runOrgPurge`, Phase 11 stage A,
+ * docs/privacy.md commitment 3). Neither depends on the other's outcome;
+ * a failure in one is never masked by the other silently succeeding — both
+ * run inside this function's own try/catch-free body, so an exception in
+ * either propagates to the caller (`index.ts`'s cron/queue handlers already
+ * catch-and-log at that layer). The RETURNED shape stays `RunPurgeResult`
+ * (tender-corpus counts only) for backward compatibility with existing
+ * callers (`queue.purge.completed`'s `notices_deleted` log field); the org
+ * purge's own counts are logged inside `runOrgPurge` itself
+ * (`org_purge.completed`), not threaded through this return value.
+ */
 export async function runRetentionPurgeJob(env: Env, logger: Logger): Promise<RunPurgeResult> {
   const db = createDb(env.DB);
-  return runPurge({ db, logger, retentionDays: RETENTION_DAYS, limit: PURGE_BATCH_LIMIT });
+  const result = await runPurge({
+    db,
+    logger,
+    retentionDays: RETENTION_DAYS,
+    limit: PURGE_BATCH_LIMIT,
+  });
+  await runOrgPurge({ db, logger });
+  return result;
+}
+
+/** Exposed separately for the D1 test suite (asserting org-purge counts directly, not just the log line). */
+export async function runOrgPurgeJob(env: Env, logger: Logger): Promise<RunOrgPurgeResult> {
+  const db = createDb(env.DB);
+  return runOrgPurge({ db, logger });
 }
 
 /**

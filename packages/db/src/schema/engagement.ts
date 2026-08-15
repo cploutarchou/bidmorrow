@@ -12,6 +12,20 @@
  * Conventions (docs/data-model.md): TEXT ULID ids, INTEGER epoch-millis
  * `*_at` timestamps, TEXT `YYYY-MM-DD` `*_date` columns, INTEGER 0/1
  * booleans, TEXT + CHECK enums, `_json` TEXT columns.
+ *
+ * `saved_tenders.saved_by_user_id`, `ignored_tenders.ignored_by_user_id`
+ * and `customer_feedback.user_id` are NULLABLE (migration 0005, Phase 11
+ * privacy reconciliation — docs/privacy.md commitment 1). All three rows
+ * are ORG data, not user data (a saved tender/ignore/feedback row is useful
+ * to every member of the org, not just its author); the FK to `users` is
+ * an attribution field only. Self-service account deletion
+ * (`apps/worker/src/routes/account.ts`) removes the departing user's
+ * `organization_members` row from every org they belong to but does NOT
+ * delete the org's data, so it SET NULLs these three columns for the
+ * departing user's authored rows first — otherwise the FK to `users` would
+ * block Better Auth's `deleteUser` (D1 runs with `PRAGMA foreign_keys=ON`).
+ * This is the same "anonymize the author, keep the row" pattern already
+ * used for `audit_events.actor_id`.
  */
 import { sql } from 'drizzle-orm';
 import {
@@ -46,9 +60,15 @@ export const savedTenders = sqliteTable(
     noticeId: text('notice_id')
       .notNull()
       .references(() => tenderNotices.id),
-    savedByUserId: text('saved_by_user_id')
-      .notNull()
-      .references(() => users.id),
+    /**
+     * Nullable (Phase 11 privacy reconciliation, migration 0005): the
+     * ORG owns this row (it pins tender data against retention purge for
+     * everyone in the org), the departing MEMBER's authorship attribution
+     * does not. Account deletion nulls this column for the departing
+     * user's authored rows instead of deleting them — deleting the row
+     * would silently drop a saved tender other org members still rely on.
+     */
+    savedByUserId: text('saved_by_user_id').references(() => users.id),
     createdAt: integer('created_at').notNull(),
   },
   (t) => [
@@ -78,9 +98,8 @@ export const ignoredTenders = sqliteTable(
     noticeId: text('notice_id')
       .notNull()
       .references(() => tenderNotices.id),
-    ignoredByUserId: text('ignored_by_user_id')
-      .notNull()
-      .references(() => users.id),
+    /** Nullable — same rationale as `saved_tenders.saved_by_user_id` above. */
+    ignoredByUserId: text('ignored_by_user_id').references(() => users.id),
     reason: text('reason'),
     createdAt: integer('created_at').notNull(),
   },
@@ -106,9 +125,8 @@ export const customerFeedback = sqliteTable(
     matchId: text('match_id')
       .notNull()
       .references(() => tenderMatches.id),
-    userId: text('user_id')
-      .notNull()
-      .references(() => users.id),
+    /** Nullable — same rationale as `saved_tenders.saved_by_user_id` above. */
+    userId: text('user_id').references(() => users.id),
     verdict: text('verdict').notNull(),
     /**
      * JSON array of structured reason codes (`wrong_cpv`, `wrong_geography`,
