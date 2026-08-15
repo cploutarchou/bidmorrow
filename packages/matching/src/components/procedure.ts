@@ -2,7 +2,7 @@
  * Procedure / contract nature (5 pts). docs/matching-engine.md
  * §Procedure/contract nature.
  */
-import { COMPONENT_MAX } from '../index';
+import { COMPONENT_MAX, UNKNOWN_NEUTRAL } from '../index';
 import type { ComponentResult, ContractNature, OrgProfile } from '../types';
 
 /** Procedure types accessible to newcomers (BT-105 codes), scoring +2. */
@@ -50,7 +50,7 @@ export function scoreProcedure(
   if (status === 'UNKNOWN') {
     return {
       key: 'procedure',
-      points: maxPoints * 0.5,
+      points: maxPoints * UNKNOWN_NEUTRAL,
       maxPoints,
       status,
       explanation:

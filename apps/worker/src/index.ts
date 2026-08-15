@@ -22,6 +22,7 @@ import { createRequestAuth } from './auth-instance';
 import type { AppBindings, Env, IngestQueueMessage, MatchQueueMessage } from './env';
 import {
   runIngestCatchUpJob,
+  runRecomputeContinuationJob,
   runRecomputeJob,
   runRetentionPurgeJob,
   runScoreJob,
@@ -236,6 +237,25 @@ async function queue(
             truncated: result.truncated,
           });
           break;
+        }
+        case 'recompute_continuation': {
+          const result = await runRecomputeContinuationJob(env, logger, message.body.lotIds);
+          logger.info('queue.recompute_continuation.completed', {
+            pairs_considered: result.pairsConsidered,
+            pairs_scored: result.pairsScored,
+            matches_written: result.matchesWritten,
+            truncated: result.truncated,
+          });
+          break;
+        }
+        default: {
+          // SEC-P6-02: an unrecognized `kind` is a poison message (a producer
+          // bug or a message from a version this consumer doesn't know about)
+          // — never silently ack it. Throwing routes it through the same
+          // catch below as any other failure: bounded `message.retry()` up to
+          // wrangler.jsonc `max_retries`, then the DLQ, so it is investigated
+          // rather than dropped.
+          throw new Error(`unrecognized MATCH_QUEUE/INGEST_QUEUE message kind`);
         }
       }
       message.ack();

@@ -5,12 +5,86 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 6 stage B — Matching pipeline wiring: COMPLETE.** Stage A (pure
-engine in packages/matching) was already done; this stage wired it into
-ingestion. Next: Phase 6 remaining items (matching-audit skill/review,
-Phase 5 residual LOWs) or Phase 7.
+**Phase 6 review fix batch: COMPLETE.** Stage B (matching pipeline wiring)
+was already done; this batch closed the stage-B review findings (SEC-P6-01/
+02/04, MATCH-P6-01/02/03/05/06). Next: Phase 6 remaining items
+(matching-audit skill/review, Phase 5 residual LOWs) or Phase 7.
 
 ## Completed
+
+### Phase 6 review fix batch (2026-08-15)
+
+- SEC-P6-01 (scoring continuation, real fix): `ScoreLotsResult` gains
+  `remainingLotIds` (packages/procurement/src/score.ts) — populated when
+  `MAX_PAIRS_PER_INVOCATION` truncates a run; includes the in-progress lot
+  plus every unprocessed lot (re-scoring the in-progress lot again is
+  idempotent-safe either way). `apps/worker/src/ingestion.ts` adds
+  `enqueueScoreContinuation` (chunked ≤100-id re-enqueue to `MATCH_QUEUE`),
+  wired into `runScoreJob`/`runRecomputeJob`. Recompute continuations use a
+  new `{kind:'recompute_continuation', lotIds}` message (env.ts) rather than
+  a fresh `recompute`/`score`, because the notice→current-lot resolution
+  already happened and re-resolving by lot id must still hard-replace, not
+  idempotent-skip — new `runRecomputeContinuationJob` handles it, dispatched
+  in `index.ts`'s `queue()`. Test: `apps/worker/src/ingestion.continuation.
+test.ts` (3 tests, fake `MATCH_QUEUE`, no D1 needed) proves batching,
+  kind selection, and the empty-remaining no-op.
+- SEC-P6-02 (poison-message DLQ routing): `index.ts` `queue()` gains a
+  `default` case for an unrecognized message `kind` — throws (never silently
+  acks) so it flows through the existing catch → `message.retry()` →
+  wrangler `max_retries` → DLQ path, same as any other handler failure.
+- MATCH-P6-01 (CPV pre-filter disclosure, documentation disposition):
+  docs/matching-engine.md new "CPV pre-filter (scoring eligibility)"
+  subsection — states the relevance+cost rationale, the false-negative
+  consequence (a pair with zero CPV division overlap is never scored even
+  if non-CPV components could reach 45–65), and the two required Phase 7
+  follow-ups (methodology disclosure, onboarding scope-overlap warning).
+  docs/cost-model.md's pre-filter mention now points at it.
+- MATCH-P6-02 (matchable languages beyond English, real fix): `OrgProfile`
+  gains `matchableLanguages: readonly string[]` (packages/matching/src/
+  types.ts); `capability.ts`/`exclusions.ts` derive the actual matchable set
+  as `{'eng'} ∪ org.matchableLanguages` via new `resolveMatchableLanguages`
+  (never trusts a caller to have already unioned `eng` in). packages/
+  procurement/src/scoring-input.ts maps `company_keywords.language` (BCP-47)
+  to ISO 639-2 (the code TED/eForms actually emits) via a small static
+  24-EU-language map (`BCP47_TO_ISO_639_2`); unrecognized subtags pass
+  through as-is. `listCompanyKeywords` already returned the `language`
+  column — no schema/repo change needed. Tests: capability.test.ts +
+  exclusions.test.ts (German-keyword org matches German lot text;
+  English-only org stays UNKNOWN against German-only text; excluded German
+  phrase fires only for the org with German in `matchableLanguages`);
+  scoring-input.test.ts (`toIso6392`/`parseSupportedContractNatures` pure
+  unit tests). `loadOrgProfile` — full DB-coupled path — stays covered at
+  the existing D1 integration level (apps/worker/src/scoring.d1.test.ts).
+- MATCH-P6-03: `pnpm format` run (IMPLEMENTATION_LEDGER.md/docs formatting
+  only; no code changes from the formatter).
+- MATCH-P6-05 (documentation, matches existing implementation):
+  docs/matching-engine.md's Procedure/contract nature section now states
+  explicitly that nature and procedure type are independent sub-signals —
+  the known half scores normally when only one is known, the unknown half
+  contributes 0 (not a further neutral half), and UNKNOWN (2.5) applies
+  only when both are absent.
+- MATCH-P6-06: `capability.ts`/`procedure.ts` UNKNOWN branches now import
+  and multiply by `UNKNOWN_NEUTRAL` (packages/matching/src/index.ts)
+  instead of a hardcoded `0.5` literal.
+- SEC-P6-04 (contract-nature cast, cheap fix): `scoring-input.ts`'s
+  `supportedContractNaturesJson` parse now goes through
+  `parseSupportedContractNatures` — validates each entry against
+  `CONTRACT_NATURES` (packages/domain), drops and logs anything invalid,
+  never a blind `as ContractNature[]` cast.
+- Real counts (2026-08-15, all executed): format PASS (2 files reformatted:
+  IMPLEMENTATION_LEDGER.md, docs/matching-engine.md — no source code diffs)
+  · format:check PASS · lint PASS · typecheck PASS (14/14 projects) · test
+  PASS (root vitest 41 files/280 tests incl. new ingestion.continuation.
+  test.ts 3, capability.test.ts +2, exclusions.test.ts +2,
+  scoring-input.test.ts +7; worker pool-workers 6 files/44 tests; packages/db
+  8 files/38 tests, unchanged) = 55 files/362 tests total · build PASS (web
+  - worker `wrangler deploy --dry-run`).
+- Open items carried forward: (1) lot title/description language-tagging
+  gap (Phase 6 stage B, still open — per-language map not reconstructible
+  from the current flattened-string storage); (2) stale pre-correction
+  match rows never purged/detached from the feed; (3) admin-triggered
+  bounded recompute (Phase 10) reuses `scoreLotsForOrgs` directly, no new
+  wrapper.
 
 ### Phase 6 stage B — Matching pipeline wiring (2026-08-15)
 
@@ -36,7 +110,7 @@ Phase 5 residual LOWs) or Phase 7.
   integration level, faking a drizzle chain would test the fake).
 - Scoring orchestration (packages/procurement/src/score.ts):
   `scoreLotsForOrgs({lotIds|noticeIds, engineVersion, recompute,
-  ingestionRunId})` — CPV DIVISION pre-filter (skip = no row of any kind,
+ingestionRunId})` — CPV DIVISION pre-filter (skip = no row of any kind,
   including EXCLUDED); component-persistence rule (EXCLUDED: rule+evidence
   only; LOW_FIT: score+classification only; ≥POSSIBLE_MATCH: full
   components+risk flags); bounded `MAX_PAIRS_PER_INVOCATION = 5000`
@@ -539,6 +613,22 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
 5. Phase 5 residual LOWs (re-verification): direct D1 test for the
    XML_TOO_LARGE → ingestion_errors window-proceeds branch; unit test for
    the 50 KB boundIssuesForErrorDetail cap.
+
+## Next (Phase 7)
+
+1. On-demand LOW_FIT explanation recompute in tender detail (docs/
+   matching-engine.md §Component persistence promise): LOW_FIT matches only
+   persist score+classification, not the component breakdown, so opening a
+   LOW_FIT lot must recompute its explanation on demand (deterministic +
+   versioned, per the engine contract) rather than reading stored rows that
+   don't exist.
+2. Methodology page: disclose the CPV pre-filter (docs/matching-engine.md
+   "CPV pre-filter (scoring eligibility)") — the `[disclosed: methodology
+page, Phase 7]` marker left in that doc section must be resolved by
+   actual customer-facing copy before ship.
+3. Onboarding: warn when an org's CPV preferences have zero overlap with the
+   ingestion scope (docs/ted-ingestion-scope.md `DEFAULT_INGESTION_SCOPE`) —
+   such an org would never see any matches (MATCH-P6-01 disposition).
 
 ## Architecture decisions
 

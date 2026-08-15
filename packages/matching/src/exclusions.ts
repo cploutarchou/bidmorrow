@@ -6,7 +6,7 @@
  * can only carry one exclusion evidence at a time).
  */
 import { capForScan, containsWholeTerm, matchableCorpus } from './text';
-import { DEFAULT_MATCHABLE_LANGUAGES } from './components/capability';
+import { resolveMatchableLanguages } from './components/capability';
 import type { ExcludedResult, LotInput, OrgProfile } from './types';
 
 export function evaluateExclusions(
@@ -38,12 +38,16 @@ export function evaluateExclusions(
     }
   }
 
-  // 3. Excluded phrase in matchable-language text.
+  // 3. Excluded phrase in matchable-language text (MATCH-P6-02: same
+  // org-specific matchable-language set as the capability component, not
+  // the English-only default — an excluded German phrase must fire for an
+  // org whose keywords are in German too).
   if (org.exclusions.phrases.length > 0) {
+    const matchableLanguages = resolveMatchableLanguages(org);
     const corpus = capForScan(
-      `${matchableCorpus(lot.titleByLang, DEFAULT_MATCHABLE_LANGUAGES)}\n${matchableCorpus(
+      `${matchableCorpus(lot.titleByLang, matchableLanguages)}\n${matchableCorpus(
         lot.descriptionByLang,
-        DEFAULT_MATCHABLE_LANGUAGES,
+        matchableLanguages,
       )}`,
     );
     for (const phrase of org.exclusions.phrases) {

@@ -22,6 +22,7 @@ export function baseOrg(overrides: Partial<OrgProfile> = {}): OrgProfile {
     },
     valueRange: {},
     supportedContractNatures: [],
+    matchableLanguages: [],
     ...overrides,
   };
 }

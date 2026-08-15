@@ -15,7 +15,9 @@
  * declared language. This is an honest best-effort, not a guarantee the
  * text is actually in that language — flagged as an open item.
  */
+import { CONTRACT_NATURES } from '@bidmorrow/domain';
 import type { ContractNature, OrganizationId } from '@bidmorrow/domain';
+import type { Logger } from '@bidmorrow/observability';
 import type { LotScoringBundle } from '@bidmorrow/db';
 import type { Db } from '@bidmorrow/db';
 import {
@@ -40,6 +42,82 @@ import type {
 const PROFILE_PAGE_LIMIT = 100;
 
 /**
+ * MATCH-P6-02: `company_keywords.language` is stored as BCP-47 (docs/
+ * data-model.md), but the engine's `LotInput.languages`/`titleByLang` keys
+ * are lowercased ISO 639-2 (per eForms — packages/ted/src/parser/parse-
+ * notice.ts). This maps each EU official language's BCP-47 primary subtag
+ * to the ISO 639-2 (terminology) code TED actually emits, so a keyword
+ * entered as `language: 'de'` makes German-language lot text matchable, not
+ * just English. Small and static by design (24 EU official languages,
+ * docs/matching-engine.md capability-fit section) — an unrecognized subtag
+ * is passed through as-is rather than dropped, so a lowercase 3-letter
+ * BCP-47 value (which often already IS the ISO 639-2 code, e.g. someone
+ * enters `eng` directly) still works.
+ */
+const BCP47_TO_ISO_639_2: Readonly<Record<string, string>> = {
+  bg: 'bul',
+  hr: 'hrv',
+  cs: 'ces',
+  da: 'dan',
+  nl: 'nld',
+  en: 'eng',
+  et: 'est',
+  fi: 'fin',
+  fr: 'fra',
+  de: 'deu',
+  el: 'ell',
+  hu: 'hun',
+  ga: 'gle',
+  it: 'ita',
+  lv: 'lav',
+  lt: 'lit',
+  mt: 'mlt',
+  pl: 'pol',
+  pt: 'por',
+  ro: 'ron',
+  sk: 'slk',
+  sl: 'slv',
+  es: 'spa',
+  sv: 'swe',
+};
+
+/** Maps a `company_keywords.language` BCP-47 value to the ISO 639-2 code the engine compares against. Exported for unit tests. */
+export function toIso6392(bcp47Language: string): string {
+  const primarySubtag = bcp47Language.trim().toLowerCase().split('-')[0] ?? '';
+  return BCP47_TO_ISO_639_2[primarySubtag] ?? primarySubtag;
+}
+
+/**
+ * @throws never — invalid `ContractNature` values are dropped and logged,
+ * never blindly cast (SEC-P6-04). Exported for unit tests.
+ */
+export function parseSupportedContractNatures(json: string, logger?: Logger): ContractNature[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    logger?.error('scoring_input.supported_contract_natures.invalid_json', {});
+    return [];
+  }
+  if (!Array.isArray(parsed)) {
+    logger?.error('scoring_input.supported_contract_natures.not_array', {});
+    return [];
+  }
+  const valid = new Set<string>(CONTRACT_NATURES);
+  const result: ContractNature[] = [];
+  for (const value of parsed) {
+    if (typeof value === 'string' && valid.has(value)) {
+      result.push(value as ContractNature);
+    } else {
+      logger?.error('scoring_input.supported_contract_natures.invalid_value', {
+        value: typeof value === 'string' ? value : typeof value,
+      });
+    }
+  }
+  return result;
+}
+
+/**
  * Loads and maps one organization's full preference bundle (profile,
  * capabilities, certifications, CPV preferences, geographies, keywords +
  * synonym groups, exclusions, matching preferences) into the engine's
@@ -49,7 +127,11 @@ const PROFILE_PAGE_LIMIT = 100;
  * incomplete but the org can still be scored on its CPV/keyword/geography
  * signals.
  */
-export async function loadOrgProfile(db: Db, organizationId: OrganizationId): Promise<OrgProfile> {
+export async function loadOrgProfile(
+  db: Db,
+  organizationId: OrganizationId,
+  logger?: Logger,
+): Promise<OrgProfile> {
   const [cpvPrefs, capabilities, certifications, geographies, keywords, exclusions, matchingPrefs] =
     await Promise.all([
       listCompanyCpvPreferences(db, organizationId, { limit: PROFILE_PAGE_LIMIT }),
@@ -63,7 +145,11 @@ export async function loadOrgProfile(db: Db, organizationId: OrganizationId): Pr
 
   const synonymGroups = new Map<string, SynonymGroup>();
   const positiveTerms: string[] = [];
+  const matchableLanguageSet = new Set<string>();
   for (const keyword of keywords.items) {
+    if (keyword.language !== null) {
+      matchableLanguageSet.add(toIso6392(keyword.language));
+    }
     if (keyword.kind === 'positive') {
       positiveTerms.push(keyword.term);
       continue;
@@ -103,13 +189,14 @@ export async function loadOrgProfile(db: Db, organizationId: OrganizationId): Pr
 
   const supportedContractNatures: ContractNature[] =
     matchingPrefs !== null
-      ? (JSON.parse(matchingPrefs.supportedContractNaturesJson) as ContractNature[])
+      ? parseSupportedContractNatures(matchingPrefs.supportedContractNaturesJson, logger)
       : [];
 
   return {
     cpvPreferences: cpvPrefs.items.map((c) => c.cpvCode),
     keywords: { positiveTerms, synonymGroups: [...synonymGroups.values()] },
     capabilities: capabilities.items.map((c) => c.label),
+    matchableLanguages: [...matchableLanguageSet],
     certifications: orgCertifications,
     geographies: { preferredNuts, opportunityCountries, countriesServed },
     exclusions: {

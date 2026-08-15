@@ -1,14 +1,11 @@
 /**
  * Capability/keyword fit (20 pts). docs/matching-engine.md §Capability/keyword
- * fit. Matchable languages = the languages the org's own keyword terms were
- * entered in, plus English always (V1 default matchable set: `eng` + any
- * language the org used). This is an interpretation of "practically English
- * + any language the customer entered keywords in" from the spec, since org
- * keyword terms don't carry a language tag in this package's input shape —
- * stage B is responsible for restricting `matchableLanguages` further if it
- * tracks per-term language.
+ * fit. Matchable languages = English always, plus `org.matchableLanguages`
+ * (MATCH-P6-02: ISO 639-2 codes derived from the org's own keyword terms'
+ * languages by stage B — packages/procurement/src/scoring-input.ts — since
+ * this package never touches `@bidmorrow/db` row types directly).
  */
-import { COMPONENT_MAX } from '../index';
+import { COMPONENT_MAX, UNKNOWN_NEUTRAL } from '../index';
 import { capForScan, containsWholeTerm, isPhrase, matchableCorpus } from '../text';
 import type { ComponentResult, LotInput, OrgProfile } from '../types';
 
@@ -19,6 +16,15 @@ const SYNONYM_GROUP_POINTS = 3;
 /** Default matchable language set: English is always matchable. */
 export const DEFAULT_MATCHABLE_LANGUAGES: ReadonlySet<string> = new Set(['eng']);
 
+/**
+ * The full matchable-language set for an org: `eng` always, plus every
+ * language in `org.matchableLanguages` — computed here (never trusting a
+ * caller to have already unioned `eng` in) so `eng` is a hard guarantee.
+ */
+export function resolveMatchableLanguages(org: OrgProfile): ReadonlySet<string> {
+  return new Set(['eng', ...org.matchableLanguages.map((lang) => lang.toLowerCase())]);
+}
+
 export interface CapabilityScoreResult {
   readonly component: ComponentResult;
   /** Set when the lot had no matchable-language text at all. */
@@ -27,16 +33,17 @@ export interface CapabilityScoreResult {
 
 export function scoreCapability(lot: LotInput, org: OrgProfile): CapabilityScoreResult {
   const maxPoints = COMPONENT_MAX.capability;
+  const matchableLanguages = resolveMatchableLanguages(org);
   const corpus = capForScan(
-    `${matchableCorpus(lot.titleByLang, DEFAULT_MATCHABLE_LANGUAGES)}\n${matchableCorpus(
+    `${matchableCorpus(lot.titleByLang, matchableLanguages)}\n${matchableCorpus(
       lot.descriptionByLang,
-      DEFAULT_MATCHABLE_LANGUAGES,
+      matchableLanguages,
     )}`,
   ).trim();
 
   if (corpus.length === 0) {
     const availableLang = [...lot.languages].sort()[0] ?? 'unknown';
-    const points = maxPoints * 0.5;
+    const points = maxPoints * UNKNOWN_NEUTRAL;
     return {
       component: {
         key: 'capability',

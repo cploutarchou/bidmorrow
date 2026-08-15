@@ -64,6 +64,15 @@ export interface OrgProfile {
   /** Null/undefined = threshold unset (deadline rule never hard-excludes). */
   readonly minimumDaysRemaining?: number;
   readonly supportedContractNatures: readonly ContractNature[];
+  /**
+   * ISO 639-2 language codes the capability/exclusion-phrase matchers scan,
+   * IN ADDITION to `eng` (always matchable — MATCH-P6-02, stage B maps this
+   * from `company_keywords.language` BCP-47 values; see
+   * `packages/procurement/src/scoring-input.ts`). Never mutates the
+   * always-`eng` guarantee — components union this set with `{'eng'}`
+   * themselves rather than trusting the caller supplied it.
+   */
+  readonly matchableLanguages: readonly string[];
 }
 
 export type LanguageTextMap = Readonly<Record<string, string>>;

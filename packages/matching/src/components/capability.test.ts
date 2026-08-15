@@ -98,6 +98,34 @@ describe('scoreCapability', () => {
     expect(result.component.status).toBe('MATCHED');
   });
 
+  it('MATCH-P6-02: an org with a German keyword matches German-language lot text', () => {
+    const lot = baseLot({
+      titleByLang: { deu: 'Sicherheitsüberprüfung und Penetrationstest' },
+      languages: ['deu'],
+    });
+    const org = baseOrg({
+      keywords: { positiveTerms: ['penetrationstest'], synonymGroups: [] },
+      matchableLanguages: ['deu'],
+    });
+    const result = scoreCapability(lot, org);
+    expect(result.component.points).toBe(2);
+    expect(result.component.status).toBe('PARTIAL');
+  });
+
+  it('MATCH-P6-02: an English-only org (no matchableLanguages configured) stays UNKNOWN against German-only lot text', () => {
+    const lot = baseLot({
+      titleByLang: { deu: 'Sicherheitsüberprüfung und Penetrationstest' },
+      languages: ['deu'],
+    });
+    const org = baseOrg({
+      keywords: { positiveTerms: ['penetrationstest'], synonymGroups: [] },
+      matchableLanguages: [],
+    });
+    const result = scoreCapability(lot, org);
+    expect(result.component.status).toBe('UNKNOWN');
+    expect(result.component.points).toBe(10);
+  });
+
   it('worked-example combination sums to 15', () => {
     const lot = baseLot({
       titleByLang: {

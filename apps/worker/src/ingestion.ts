@@ -88,6 +88,38 @@ export async function runRetentionPurgeJob(env: Env, logger: Logger): Promise<Ru
   return runPurge({ db, logger, retentionDays: RETENTION_DAYS, limit: PURGE_BATCH_LIMIT });
 }
 
+/**
+ * SEC-P6-01: re-enqueues `result.remainingLotIds` (set only when
+ * `MAX_PAIRS_PER_INVOCATION` truncated the run) to `MATCH_QUEUE` in
+ * ≤100-id batches, so a capped invocation always finishes rather than
+ * silently dropping the tail of a run. `messageKind`/`recompute` mirror
+ * the mode of the run that produced `result`, per env.ts's
+ * `MatchQueueMessage` doc (`recompute` continues as `recompute_continuation`,
+ * never as a fresh `score`/`recompute`, to preserve hard-replace semantics).
+ */
+export async function enqueueScoreContinuation(
+  env: Env,
+  logger: Logger,
+  result: ScoreLotsResult,
+  recompute: boolean,
+): Promise<void> {
+  if (result.remainingLotIds.length === 0) {
+    return;
+  }
+  const batches = chunk(result.remainingLotIds, SCORE_MESSAGE_LOT_BATCH);
+  for (const batch of batches) {
+    const message: MatchQueueMessage = recompute
+      ? { kind: 'recompute_continuation', lotIds: batch }
+      : { kind: 'score', lotIds: batch };
+    await env.MATCH_QUEUE.send(message);
+  }
+  logger.info('scoring.continuation.enqueued', {
+    remaining_lot_count: result.remainingLotIds.length,
+    messages: batches.length,
+    recompute,
+  });
+}
+
 /** `MATCH_QUEUE` `{kind:'score'}` consumer: scores exactly the given lot ids for every eligible org. */
 export async function runScoreJob(
   env: Env,
@@ -95,7 +127,9 @@ export async function runScoreJob(
   lotIds: readonly string[],
 ): Promise<ScoreLotsResult> {
   const db = createDb(env.DB);
-  return scoreLotsForOrgs({ db, logger }, { lotIds: [...lotIds] });
+  const result = await scoreLotsForOrgs({ db, logger }, { lotIds: [...lotIds] });
+  await enqueueScoreContinuation(env, logger, result, false);
+  return result;
 }
 
 /** `MATCH_QUEUE` `{kind:'recompute'}` consumer: re-scores (hard replace) the CURRENT-version lots of corrected notices. */
@@ -105,5 +139,26 @@ export async function runRecomputeJob(
   noticeIds: readonly string[],
 ): Promise<ScoreLotsResult> {
   const db = createDb(env.DB);
-  return scoreLotsForOrgs({ db, logger }, { noticeIds: [...noticeIds], recompute: true });
+  const result = await scoreLotsForOrgs(
+    { db, logger },
+    { noticeIds: [...noticeIds], recompute: true },
+  );
+  await enqueueScoreContinuation(env, logger, result, true);
+  return result;
+}
+
+/**
+ * `MATCH_QUEUE` `{kind:'recompute_continuation'}` consumer: continues a
+ * truncated recompute run by lot id (the notice->current-lot resolution
+ * already happened in the run that produced these ids) — still hard-replace.
+ */
+export async function runRecomputeContinuationJob(
+  env: Env,
+  logger: Logger,
+  lotIds: readonly string[],
+): Promise<ScoreLotsResult> {
+  const db = createDb(env.DB);
+  const result = await scoreLotsForOrgs({ db, logger }, { lotIds: [...lotIds], recompute: true });
+  await enqueueScoreContinuation(env, logger, result, true);
+  return result;
 }

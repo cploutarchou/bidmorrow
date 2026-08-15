@@ -54,10 +54,20 @@ export interface Env {
 /** Message shape carried on INGEST_QUEUE (src/index.ts `queue()` dispatches on `kind`). */
 export type IngestQueueMessage = { readonly kind: 'ingest' } | { readonly kind: 'purge' };
 
-/** Message shape carried on MATCH_QUEUE (src/index.ts `queue()` dispatches on `kind`). */
+/**
+ * Message shape carried on MATCH_QUEUE (src/index.ts `queue()` dispatches on
+ * `kind`). `recompute_continuation` is distinct from `recompute` (rather than
+ * an optional-field variant of it) so the discriminated union stays
+ * unambiguous: a truncated `{kind:'recompute'}` run (SEC-P6-01,
+ * `ScoreLotsResult.remainingLotIds`) already resolved notice ids to their
+ * CURRENT-version lot ids, so its continuation re-enqueues by lot id, not
+ * notice id, while still hard-replacing (`recompute: true` in
+ * `scoreLotsForOrgs`).
+ */
 export type MatchQueueMessage =
   | { readonly kind: 'score'; readonly lotIds: readonly string[] }
-  | { readonly kind: 'recompute'; readonly noticeIds: readonly string[] };
+  | { readonly kind: 'recompute'; readonly noticeIds: readonly string[] }
+  | { readonly kind: 'recompute_continuation'; readonly lotIds: readonly string[] };
 
 export interface Variables {
   requestId: string;

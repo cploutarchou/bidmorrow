@@ -17,7 +17,7 @@ import type {
   TenderLot,
 } from '@bidmorrow/db';
 
-import { mapLotToEngineInput } from './scoring-input';
+import { mapLotToEngineInput, parseSupportedContractNatures, toIso6392 } from './scoring-input';
 
 const NEVER_CALLED_DB = {} as Db;
 
@@ -150,5 +150,41 @@ describe('mapLotToEngineInput', () => {
     expect(result.kind).toBe('ok');
     if (result.kind !== 'ok') throw new Error('unreachable');
     expect(result.lot.descriptionByLang).toEqual({});
+  });
+});
+
+describe('toIso6392 (MATCH-P6-02)', () => {
+  it('maps a known EU BCP-47 primary subtag to its ISO 639-2 code', () => {
+    expect(toIso6392('de')).toBe('deu');
+    expect(toIso6392('fr')).toBe('fra');
+    expect(toIso6392('en')).toBe('eng');
+  });
+
+  it('is case-insensitive and strips BCP-47 region subtags', () => {
+    expect(toIso6392('DE-AT')).toBe('deu');
+  });
+
+  it('passes an unrecognized subtag through as-is rather than dropping it', () => {
+    expect(toIso6392('xx')).toBe('xx');
+  });
+});
+
+describe('parseSupportedContractNatures (SEC-P6-04)', () => {
+  it('keeps every valid ContractNature value', () => {
+    expect(parseSupportedContractNatures('["services","works"]')).toEqual(['services', 'works']);
+  });
+
+  it('filters out invalid values instead of blindly casting them', () => {
+    expect(parseSupportedContractNatures('["services","not-a-nature",123,null]')).toEqual([
+      'services',
+    ]);
+  });
+
+  it('returns [] for malformed JSON', () => {
+    expect(parseSupportedContractNatures('not json')).toEqual([]);
+  });
+
+  it('returns [] for valid JSON that is not an array', () => {
+    expect(parseSupportedContractNatures('{"services":true}')).toEqual([]);
   });
 });

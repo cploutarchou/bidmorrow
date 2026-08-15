@@ -51,6 +51,47 @@ Bonus: +2 (capped at 35) if ≥2 distinct org CPV preferences match at class
 level or better. Main CPV weighted as-is; additional CPVs scored at 85% of the
 table value (rounded half-up) before taking the max.
 
+### CPV pre-filter (scoring eligibility)
+
+BidMorrow only _scores_ an (org, lot) pair when the lot's CPV divisions
+(main + additional, first 2 digits) intersect at least one division of the
+org's declared CPV preferences (`packages/procurement/src/score.ts`
+`cpvDivisions`/`intersects`). A pair with zero division overlap is never
+handed to the engine — no `tender_matches` row of any kind (including
+EXCLUDED) is ever written for it.
+
+This is a deliberate product **and** cost decision, not an engine-accuracy
+one:
+
+- **Relevance promise**: BidMorrow's pitch is "find the tenders worth
+  pursuing, skip the rest" — an org that sells IT security services should
+  never see a construction tender in its feed, even one that happens to
+  score well on geography/value/buyer.
+- **Cost**: the pre-filter is the actual cost-cutter for the org×lot
+  cross-product (docs/cost-model.md removes ≥80% of pairs before any
+  per-pair work happens; without it, matching writes at 1,000 orgs would
+  blow the D1 write budget — see docs/cost-model.md's request-math section).
+
+**Consequence** (must be disclosed, not just implemented): a pair with zero
+CPV division overlap is never scored even though its non-CPV components
+(capability, geography, value, buyer, procedure, deadline, eligibility —
+65 points' worth) could theoretically sum to a POSSIBLE_MATCH or better
+(45–65) on their own. This is a real, if narrow, false-negative case: an org
+whose CPV preferences don't happen to cover a division a buyer used, but
+whose keywords/geography would otherwise fit, never sees that lot.
+
+Disposition (architect, Phase 6 review): accepted for V1, with two required
+follow-ups:
+
+- The pre-filter's existence and its trade-off MUST be stated in customer-
+  facing methodology copy — `[disclosed: methodology page, Phase 7]`.
+- Onboarding MUST warn when an org's CPV preferences have zero overlap with
+  the ingestion scope (docs/ted-ingestion-scope.md `DEFAULT_INGESTION_SCOPE`)
+  — an org that never sees any matches because it configured CPV
+  preferences outside the scoped divisions is a support/churn risk, not
+  just an accuracy footnote. Tracked as a Phase 7 item (see
+  IMPLEMENTATION_LEDGER.md "Next (Phase 7)").
+
 ### Capability/keyword fit (20)
 
 Inputs: org keywords, synonym groups, capabilities. Corpus: lot title +
@@ -106,6 +147,16 @@ cyber where org has matching capability keyword) = 5; recognized but neutral =
   exclusion if explicitly unsupported — see below).
 - Procedure type open/restricted (accessible to newcomers): +2; negotiated
   without prior publication / framework re-openings: +0.
+- Contract nature and procedure type are two **independent** sub-signals
+  (3 pts + 2 pts), not one blended input. UNKNOWN (2.5, the component's
+  `UNKNOWN_NEUTRAL` half) applies only when **both** are absent. When
+  exactly one is known, the known half scores normally against its own
+  rule (0–3 or 0–2) and the unknown half contributes **0**, not a further
+  neutral half — halving the unknown half again would double-count the
+  "unknown" discount and overweight a single known data point relative to
+  a lot where both fields are genuinely absent. E.g. contract nature known
+  and supported (+3), procedure type unpublished (+0) → 3/5, status
+  `PARTIAL`, never UNKNOWN.
 
 ### Deadline runway (5)
 

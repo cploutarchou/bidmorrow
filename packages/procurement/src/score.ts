@@ -90,6 +90,15 @@ export interface ScoreLotsResult {
   readonly matchesSkipped: number;
   /** True when `MAX_PAIRS_PER_INVOCATION` was hit — caller must enqueue a continuation. */
   readonly truncated: boolean;
+  /**
+   * Lot ids not processed because `MAX_PAIRS_PER_INVOCATION` was hit —
+   * includes the in-progress lot (re-scoring it is safe: `insertTenderMatches`
+   * skips existing rows, `replaceTenderMatches` hard-replaces) plus every
+   * subsequent unprocessed lot. Empty unless `truncated` is true. The caller
+   * (`apps/worker/src/ingestion.ts`) re-enqueues these to `MATCH_QUEUE` so a
+   * capped invocation always finishes the run, never silently drops lots.
+   */
+  readonly remainingLotIds: readonly string[];
 }
 
 /** CPV division = first 2 digits of an 8-digit CPV code. */
@@ -159,7 +168,7 @@ export async function scoreLotsForOrgs(
   const orgs = await Promise.all(
     orgIds.map(async (organizationId) => ({
       organizationId,
-      profile: await loadOrgProfile(deps.db, organizationId),
+      profile: await loadOrgProfile(deps.db, organizationId, deps.logger),
     })),
   );
   const orgsWithDivisions = orgs.map((org) => ({
@@ -172,8 +181,9 @@ export async function scoreLotsForOrgs(
   let matchesWritten = 0;
   let matchesSkipped = 0;
   let truncated = false;
+  let remainingLotIds: readonly string[] = [];
 
-  outer: for (const bundle of lotBundles) {
+  outer: for (const [bundleIndex, bundle] of lotBundles.entries()) {
     const mapped = await mapLotToEngineInput(deps.db, bundle, now());
     if (mapped.kind === 'missing_main_cpv') {
       const message = `lot ${bundle.lot.id} has no main CPV code — cannot be scored`;
@@ -200,6 +210,10 @@ export async function scoreLotsForOrgs(
       pairsConsidered += 1;
       if (pairsConsidered > MAX_PAIRS_PER_INVOCATION) {
         truncated = true;
+        // The in-progress lot is included even though some of its org pairs
+        // may already be written — re-scoring it in the continuation is
+        // idempotent-safe (see ScoreLotsResult.remainingLotIds doc).
+        remainingLotIds = lotBundles.slice(bundleIndex).map((b) => b.lot.id);
         break outer;
       }
       // CPV division pre-filter: disjoint divisions -> skip entirely, no
@@ -242,11 +256,19 @@ export async function scoreLotsForOrgs(
     matches_written: matchesWritten,
     matches_skipped: matchesSkipped,
     truncated,
+    remaining_lot_count: remainingLotIds.length,
     engine_version: engineVersion,
     recompute: args.recompute === true,
   });
 
-  return { pairsConsidered, pairsScored, matchesWritten, matchesSkipped, truncated };
+  return {
+    pairsConsidered,
+    pairsScored,
+    matchesWritten,
+    matchesSkipped,
+    truncated,
+    remainingLotIds,
+  };
 }
 
 function scoreOnePair(

@@ -126,6 +126,54 @@ describe('evaluateExclusions', () => {
     expect(result).toBeNull();
   });
 
+  it('MATCH-P6-02: excluded phrase in German fires for an org whose matchableLanguages includes German', () => {
+    const org = baseOrg({
+      exclusions: {
+        cpvFamilies: [],
+        countries: [],
+        nutsPrefixes: [],
+        phrases: ['nur vor ort'],
+        contractNatures: [],
+      },
+      matchableLanguages: ['deu'],
+    });
+    const result = evaluateExclusions(
+      baseLot({
+        titleByLang: { deu: 'Personal ist nur vor ort für die Dauer erforderlich' },
+        languages: ['deu'],
+      }),
+      org,
+      T0,
+    );
+    expect(result).toEqual({
+      kind: 'excluded',
+      rule: 'excluded_phrase',
+      evidence: 'nur vor ort',
+    });
+  });
+
+  it('MATCH-P6-02: excluded German phrase never fires for an org without German in matchableLanguages', () => {
+    const org = baseOrg({
+      exclusions: {
+        cpvFamilies: [],
+        countries: [],
+        nutsPrefixes: [],
+        phrases: ['nur vor ort'],
+        contractNatures: [],
+      },
+      matchableLanguages: [],
+    });
+    const result = evaluateExclusions(
+      baseLot({
+        titleByLang: { deu: 'Personal ist nur vor ort für die Dauer erforderlich' },
+        languages: ['deu'],
+      }),
+      org,
+      T0,
+    );
+    expect(result).toBeNull();
+  });
+
   it('unsupported contract nature', () => {
     const org = baseOrg({
       exclusions: {
