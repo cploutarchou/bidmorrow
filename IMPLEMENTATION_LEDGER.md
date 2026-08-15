@@ -5,9 +5,8 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 9 — Billing: implemented, gates green. production-reviewer/security
-sign-off NOT yet run this session (see Open items) — STOP per user
-instruction pending that review.**
+**Phase 9 — Billing: COMPLETE (signed off). STOPPED per user instruction** —
+awaiting go-ahead before Phase 10 (Admin/Operations).
 
 ## Completed
 
@@ -1558,6 +1557,17 @@ Nothing deployed. No Cloudflare resources exist yet.
   P8-R-02 all-member delivery verified; 03 CTA guard; residuals accepted).
   Final gates: 453 tests green (2026-08-15, commit dbf7857).
 
+- Phase 9: **Security agent SIGN-OFF** (C9 webhook integrity, tenant
+  guard, secrets, server-side entitlements, authz all PASS; SEC-P9-01/04
+  comment/wording fixes applied same day; SEC-P9-02 webhook rate limit →
+  WAF rule at deploy time and SEC-P9-03 concurrent-checkout double-customer
+  edge → follow-ups recorded below). **production-reviewer PASS** (all
+  gates re-run, 518 tests; P9-R-01 MEDIUM unknown-price-id silent-ack →
+  FIXED same day (now throws → failed row + Stripe retry, routed through
+  the tested failure path); P9-R-02 crypto-provider claim → FIXED
+  (explicit SubtleCrypto default at verification call site)). Post-fix
+  gates all green.
+
 ## Pilot checkpoint
 
 **REACHED (2026-08-15, post-Phase 8).** The product is functionally usable
@@ -1568,6 +1578,15 @@ Resend key — blocker 3 — and email DNS — blocker 2). Billing is not yet
 live (Phase 9 next). The human may start pilot recruitment while Phases
 9–13 proceed. Provisioning: create the account via normal signup; digest
 requires RESEND_API_KEY + verified domain.
+
+## Phase 9 follow-ups (tracked for Phase 10/13)
+
+- SEC-P9-02: add a WAF/rate-limit rule for POST /api/webhooks/stripe at
+  deployment time (unauthenticated endpoint; currently mitigated by body
+  limit + cheap pre-DB 400s).
+- SEC-P9-03: concurrent double-checkout can orphan a Stripe customer and
+  wedge the second webhook (owner-self-inflicted, no cross-tenant impact);
+  pre-create the customer or add catch-and-reconcile.
 
 ## Notes
 

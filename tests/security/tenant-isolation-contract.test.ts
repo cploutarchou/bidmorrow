@@ -112,10 +112,11 @@ const TENANT_EXEMPT: Record<string, { name: string; reason: string }[]> = {
     {
       name: 'countNonCanceledSubscriptionsByPlan',
       reason:
-        'founding-plan seat-cap enforcement (packages/billing createCheckoutSession) must count ' +
-        'across every organization on a plan, the billing equivalent of company.ts ' +
-        'listOrgsEligibleForScoring/listOrgsWithDigestEnabled — never reachable from a ' +
-        'per-tenant handler, returns a bare count with no tenant-owned row data.',
+        'founding-plan seat-cap enforcement (packages/billing createCheckoutSession, and ' +
+        'isFoundingPlanAvailable behind GET /api/billing/status) must count across every ' +
+        'organization on a plan, the billing equivalent of company.ts ' +
+        'listOrgsEligibleForScoring/listOrgsWithDigestEnabled — reachable from per-tenant ' +
+        'handlers but returns only a bare global count, no tenant-owned row data (SEC-P9-04).',
     },
   ],
   'ops.ts': [

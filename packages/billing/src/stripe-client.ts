@@ -24,11 +24,12 @@
  * - The package also ships a dedicated `workerd`/`worker` export condition
  *   (`stripe.esm.worker.js`, see package.json `exports`) that defaults its
  *   INTERNAL platform functions to the Web-safe implementations already —
- *   both `httpClient` and `cryptoProvider` are still passed explicitly here
- *   so behavior is identical and deterministic under every resolution
- *   condition (plain Node for this package's own unit tests, `workerd` for
- *   the real Worker and its D1 integration tests), not dependent on which
- *   build a bundler happens to pick.
+ *   `httpClient` is passed explicitly here, and the `cryptoProvider` is
+ *   defaulted explicitly at the verification call site
+ *   (`verifyStripeWebhookEvent`, webhook.ts), so behavior is identical and
+ *   deterministic under every resolution condition (plain Node for this
+ *   package's own unit tests, `workerd` for the real Worker and its D1
+ *   integration tests), not dependent on which build a bundler picks.
  *
  * Constructed once per request (Workers has no persistent process-level
  * state to safely cache a client across isolates) — cheap, no network call

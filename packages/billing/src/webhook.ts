@@ -37,7 +37,7 @@
  * retries); reprocessing is always safe because the write path re-fetches
  * current state rather than trusting anything about the failed attempt.
  */
-import type Stripe from 'stripe';
+import Stripe from 'stripe';
 import {
   getBillingEventByStripeId,
   getSubscription,
@@ -96,7 +96,11 @@ export async function verifyStripeWebhookEvent(
     signatureHeader,
     webhookSecret,
     undefined,
-    cryptoProvider,
+    // SEC-P9-01: default the Web Crypto provider explicitly so verification
+    // is deterministic under every module-resolution condition (plain Node
+    // for unit tests, `workerd` for the real Worker) instead of relying on
+    // the SDK's export-condition default.
+    cryptoProvider ?? Stripe.createSubtleCryptoProvider(),
   );
 }
 
@@ -183,11 +187,17 @@ async function syncSubscriptionState(
   const priceId = item?.price.id;
   const plan = priceId !== undefined ? planFromPriceId(deps.priceIds, priceId) : null;
   if (plan === null) {
+    // P9-R-01: an unknown price id means OUR env price-id config is wrong.
+    // Throwing marks the billing_events row `failed` and returns 500 so
+    // Stripe keeps retrying — once the config is fixed, the retry (or the
+    // failed-row reprocess path) syncs the subscription. Returning quietly
+    // here would ack the event as processed and silently never write the
+    // subscription.
     deps.logger?.error('billing.webhook.unknown_price_id', {
       subscriptionId,
       priceId: priceId ?? null,
     });
-    return;
+    throw new Error(`unknown Stripe price id for subscription ${subscriptionId}`);
   }
   const status = mapStripeSubscriptionStatus(subscription.status);
   const customerId =
