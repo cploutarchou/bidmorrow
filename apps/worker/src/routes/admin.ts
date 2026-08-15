@@ -91,6 +91,28 @@ const paginationQuerySchema = z
   })
   .strict();
 
+/**
+ * Writes the action-specific audit row for an admin mutation.
+ *
+ * ACCEPTED TRADE-OFF (non-atomic, mutation-then-audit): every call site in
+ * this file runs the mutation first (the `setFeatureFlag`/`suspendOrganization`/
+ * `.send()` etc. calls above each `writeAdminAction` call), then calls this
+ * function — the two are not wrapped in a single D1 transaction. If this
+ * insert throws (D1 hiccup, malformed args), the route handler's error
+ * propagates as a 500, but the mutation the audit row was meant to describe
+ * has already committed; there is no automatic rollback and no specific
+ * audit row recording exactly what changed. This is deliberate, not an
+ * oversight: rolling back an already-committed mutation (e.g. an
+ * already-sent `INGEST_QUEUE`/`MATCH_QUEUE` message, which cannot be
+ * un-sent at all) to satisfy audit-write atomicity is not achievable for
+ * every action this file performs, so no call site is held to it. The
+ * generic `admin.request` row written by `requireInternalAdmin`'s own
+ * try/finally (`middleware/admin.ts`, SEC-P10-02) still records that this
+ * admin, this route, happened — it is coarser (no action-specific
+ * before/after summary) but never lost to this failure mode, so a failed
+ * audit insert here degrades observability, it does not erase the access
+ * trail entirely.
+ */
 async function writeAdminAction(
   c: Context<AppBindings>,
   args: {

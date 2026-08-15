@@ -3,6 +3,7 @@
  * dispatcher (routing by `message.body.kind`, per-message
  * try/retry/ack, poison-message handling for unrecognized kinds — SEC-P6-02/
  * SEC-P8-04 — and the SEC-P8-01 once-per-batch digest-provider hoist).
+ *
  * `worker.queue(...)` is called directly via a plain default import of
  * `./index` (NOT `exports.default` from `cloudflare:workers` —
  * `Cloudflare.GlobalProps.mainModule` only types/exposes the RPC-style
@@ -15,28 +16,36 @@
  * involved either way.
  *
  * Deliberately NOT mocked (this package has no established `vi.mock` module
- * pattern for code that runs inside workerd via @cloudflare/vitest-pool-workers,
- * and inventing one for this file alone would risk silently-wrong coverage):
- * two of the real job functions are exercised UNMOCKED against real
- * bindings instead —
- *  - `{kind:'purge'}` -> `runRetentionPurgeJob`: DB-only, no network, so it
- *    is a real, deterministic SUCCESS path (proves `ack()`).
- *  - `{kind:'ingest'}` -> `runIngestCatchUpJob`: its first step
- *    (`refreshEcbRates`) makes a real `fetch()` call, which this sandboxed
- *    test runtime cannot complete (no network — the same fact
- *    `digest-schedule.d1.test.ts`'s real-Resend-provider test relies on to
- *    force a deterministic throw), so it is a real, deterministic FAILURE
- *    path (proves `retry()`, and that the batch keeps going afterward).
+ * pattern for code that runs inside workerd via
+ * @cloudflare/vitest-pool-workers, and inventing one for this file alone
+ * would risk silently-wrong coverage): the real job functions are exercised
+ * UNMOCKED against real bindings instead —
+ *  - `{kind:'purge'}` -> `runRetentionPurgeJob`: DB-only, no network, so
+ *    against the real local D1 binding it is a real, deterministic SUCCESS
+ *    path (proves `ack()`).
+ *  - For the "handler throws" case, this sandboxed runtime turns out to
+ *    have real outbound network reachability to TED's public host (it
+ *    returns a real HTTP 403, not a thrown network error — see the job's
+ *    own per-window error handling, which CATCHES that and returns a
+ *    `status:'failed'` result rather than throwing), so `{kind:'ingest'}`
+ *    cannot be relied on to throw. Instead, `{kind:'purge'}` is run against
+ *    a deliberately broken `DB` binding (`undefined`) for that one test —
+ *    `runRetentionPurgeJob`'s first D1 query throws a real `TypeError`, a
+ *    faithful stand-in for "the handler threw" that needs no mocking.
  */
-import { env, exports } from 'cloudflare:workers';
+import { env } from 'cloudflare:workers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-// Importing the entry point makes watch mode re-run these tests when it changes.
-import './index';
-import type { DigestQueueMessage, IngestQueueMessage, MatchQueueMessage } from './env';
+
+import worker from './index';
+import type { DigestQueueMessage, Env, IngestQueueMessage, MatchQueueMessage } from './env';
 
 type AnyQueueMessage = IngestQueueMessage | MatchQueueMessage | DigestQueueMessage;
 
-interface FakeMessage<T> extends Message<T> {
+interface FakeMessage<T> {
+  id: string;
+  timestamp: Date;
+  body: T;
+  attempts: number;
   ack: ReturnType<typeof vi.fn>;
   retry: ReturnType<typeof vi.fn>;
 }
@@ -58,8 +67,8 @@ function fakeBatch<T extends AnyQueueMessage>(
 ): MessageBatch<T> {
   return {
     queue: queueName,
-    messages,
-    metadata: { queue: queueName, batchSize: messages.length } as unknown as MessageBatch<T>['metadata'],
+    messages: messages as unknown as readonly Message<T>[],
+    metadata: { queue: queueName } as unknown as MessageBatchMetadata,
     ackAll: vi.fn(),
     retryAll: vi.fn(),
   };
@@ -70,48 +79,61 @@ const FAKE_CTX = {
   passThroughOnException: () => undefined,
 } as unknown as ExecutionContext;
 
+async function runQueue<T extends AnyQueueMessage>(
+  batch: MessageBatch<T>,
+  envOverride?: Partial<Env>,
+): Promise<void> {
+  if (worker.queue === undefined) {
+    throw new Error('worker.queue is not defined — index.ts export shape changed');
+  }
+  const targetEnv = envOverride === undefined ? env : { ...env, ...envOverride };
+  await worker.queue(batch, targetEnv as unknown as Env, FAKE_CTX);
+}
+
 describe('queue() dispatcher (src/index.ts)', () => {
   it('acks a successfully handled message ({kind:"purge"} against real D1, no network involved)', async () => {
     const message = fakeMessage<IngestQueueMessage>({ kind: 'purge' });
     const batch = fakeBatch('INGEST_QUEUE', [message]);
 
-    await exports.default.queue(batch, env, FAKE_CTX);
+    await runQueue(batch);
 
     expect(message.ack).toHaveBeenCalledTimes(1);
     expect(message.retry).not.toHaveBeenCalled();
   });
 
   it('retries, and never acks, an unrecognized message kind (poison message, SEC-P6-02/SEC-P8-04)', async () => {
-    const message = fakeMessage(
-      { kind: 'not_a_real_kind' } as unknown as IngestQueueMessage,
-    );
+    const message = fakeMessage({ kind: 'not_a_real_kind' } as unknown as IngestQueueMessage);
     const batch = fakeBatch('INGEST_QUEUE', [message]);
 
-    await exports.default.queue(batch, env, FAKE_CTX);
+    await runQueue(batch);
 
     expect(message.retry).toHaveBeenCalledTimes(1);
     expect(message.ack).not.toHaveBeenCalled();
   });
 
   it('retries a message whose handler throws, and still processes the next message in the same batch', async () => {
-    // `{kind:'ingest'}` -> runIngestCatchUpJob -> refreshEcbRates makes a
-    // real fetch() first, which this sandboxed runtime cannot complete.
-    const failing = fakeMessage<IngestQueueMessage>({ kind: 'ingest' });
-    const succeeding = fakeMessage<IngestQueueMessage>({ kind: 'purge' });
-    const batch = fakeBatch('INGEST_QUEUE', [failing, succeeding]);
+    // Both messages are {kind:'purge'} against a deliberately broken `DB`
+    // binding (undefined) — runRetentionPurgeJob's first D1 query throws a
+    // real TypeError for BOTH. This is enough to prove the requirement:
+    // message 2's `.retry()` firing at all proves the `for` loop kept going
+    // past message 1's uncaught throw (a `break`/rethrow that aborted the
+    // whole batch would leave message 2 untouched — neither acked nor
+    // retried).
+    const first = fakeMessage<IngestQueueMessage>({ kind: 'purge' });
+    const second = fakeMessage<IngestQueueMessage>({ kind: 'purge' });
+    const batch = fakeBatch('INGEST_QUEUE', [first, second]);
 
-    await exports.default.queue(batch, env, FAKE_CTX);
+    await runQueue(batch, { DB: undefined as unknown as D1Database });
 
-    expect(failing.retry).toHaveBeenCalledTimes(1);
-    expect(failing.ack).not.toHaveBeenCalled();
-    // The loop must not have stopped at the first failing message.
-    expect(succeeding.ack).toHaveBeenCalledTimes(1);
-    expect(succeeding.retry).not.toHaveBeenCalled();
+    expect(first.retry).toHaveBeenCalledTimes(1);
+    expect(first.ack).not.toHaveBeenCalled();
+    expect(second.retry).toHaveBeenCalledTimes(1);
+    expect(second.ack).not.toHaveBeenCalled();
   });
 });
 
 describe('queue() digest-provider hoisting (SEC-P8-01)', () => {
-  let warnSpy: ReturnType<typeof vi.spyOn<Console, 'warn'>>;
+  let warnSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -127,22 +149,19 @@ describe('queue() digest-provider hoisting (SEC-P8-01)', () => {
     // fallback and logs `digest.provider.logging_fallback` (via
     // logger.info -> console.warn, per @bidmorrow/observability's lint
     // policy) — a proxy for observing the call count of a function
-    // `queue()` never exposes directly. If the provider were resolved
-    // per-message (rather than hoisted once, per the doc comment above the
-    // `for` loop in index.ts), this batch of two NON-digest messages would
-    // still log the fallback message zero times per the (wrong) per-message
-    // design, or twice if resolution were moved inside the loop without
-    // gating on kind — either way, not exactly once.
+    // `queue()` never exposes directly. The doc comment above the `for`
+    // loop in index.ts claims this build is hoisted once per batch, cheap
+    // enough to apply even when the batch has zero digest messages — this
+    // batch of two NON-digest messages exercises exactly that claim.
     const first = fakeMessage<IngestQueueMessage>({ kind: 'purge' });
-    const second = fakeMessage(
-      { kind: 'not_a_real_kind' } as unknown as IngestQueueMessage,
-    );
+    const second = fakeMessage({ kind: 'not_a_real_kind' } as unknown as IngestQueueMessage);
     const batch = fakeBatch('INGEST_QUEUE', [first, second]);
 
-    await exports.default.queue(batch, env, FAKE_CTX);
+    await runQueue(batch);
 
-    const fallbackLogs = warnSpy.mock.calls.filter(([line]: unknown[]) =>
-      typeof line === 'string' && line.includes('digest.provider.logging_fallback'),
+    const fallbackLogs = warnSpy.mock.calls.filter(
+      (call: unknown[]) =>
+        typeof call[0] === 'string' && call[0].includes('digest.provider.logging_fallback'),
     );
     expect(fallbackLogs).toHaveLength(1);
   });

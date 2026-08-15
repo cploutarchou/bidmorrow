@@ -33,7 +33,9 @@ export const rateLimitOrgApi: MiddlewareHandler<AppBindings> = async (c, next) =
   const key = c.req.header('cf-connecting-ip') ?? 'unknown';
   const outcome = await limiter.limit({ key });
   if (!outcome.success) {
-    return c.json({ error: 'rate_limited' }, 429);
+    // Same envelope shape as every other error response (404/413/500 all
+    // carry request_id) so 429s are correlatable in support tickets too.
+    return c.json({ error: 'rate_limited', request_id: c.get('requestId') }, 429);
   }
   await next();
 };
