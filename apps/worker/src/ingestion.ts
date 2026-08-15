@@ -8,12 +8,19 @@ import { createDb } from '@bidmorrow/db';
 import type { Logger } from '@bidmorrow/observability';
 import { TedClient } from '@bidmorrow/ted';
 import {
+  loadIngestionScope,
   refreshEcbRates,
   runIngestionCatchUp,
+  runIngestionWindow,
   runPurge,
   scoreLotsForOrgs,
 } from '@bidmorrow/procurement';
-import type { RunCatchUpResult, RunPurgeResult, ScoreLotsResult } from '@bidmorrow/procurement';
+import type {
+  RunCatchUpResult,
+  RunPurgeResult,
+  RunWindowResult,
+  ScoreLotsResult,
+} from '@bidmorrow/procurement';
 
 import type { Env, MatchQueueMessage } from './env';
 
@@ -80,6 +87,49 @@ export async function runIngestCatchUpJob(env: Env, logger: Logger): Promise<Run
     });
   }
 
+  return result;
+}
+
+/**
+ * `INGEST_QUEUE` `{kind:'backfill_window'}` consumer (Phase 10 stage A,
+ * `POST /api/admin/ingestion/backfill`): runs `runIngestionWindow` — the
+ * SAME per-window function the daily catch-up cron uses — for exactly one
+ * admin-supplied `[windowFrom, windowTo]` day, using the CURRENT ingestion
+ * scope, then enqueues its new lots to `MATCH_QUEUE` (identical wiring to
+ * `runIngestCatchUpJob`). Deliberately does NOT touch the ingestion
+ * checkpoint's advance-only invariant path (`advanceCheckpoint` is still
+ * called by `runIngestionWindow` itself for whichever window it processes —
+ * an admin backfilling an OLDER day than the checkpoint would violate the
+ * advance-only rule and throw, which is correct: backfill is for filling a
+ * gap the automated catch-up has not reached yet, never for rewriting
+ * history behind the checkpoint).
+ */
+export async function runBackfillWindowJob(
+  env: Env,
+  logger: Logger,
+  window: { windowFrom: string; windowTo: string },
+): Promise<RunWindowResult> {
+  const db = createDb(env.DB);
+  const scope = await loadIngestionScope(db);
+  const client = new TedClient({
+    fetch: globalThis.fetch.bind(globalThis),
+    ...(env.TED_API_BASE_URL === undefined ? {} : { baseUrl: env.TED_API_BASE_URL }),
+    budget: { maxRequestsPerRun: MAX_REQUESTS_PER_RUN },
+    logger,
+  });
+  const result = await runIngestionWindow(
+    { db, client, snapshots: env.SNAPSHOTS, logger, scope },
+    window,
+  );
+  for (const batch of chunk(result.newLotIds, SCORE_MESSAGE_LOT_BATCH)) {
+    await env.MATCH_QUEUE.send({ kind: 'score', lotIds: batch });
+  }
+  logger.info('admin.backfill_window.completed', {
+    window_from: window.windowFrom,
+    window_to: window.windowTo,
+    status: result.status,
+    new_lot_count: result.newLotIds.length,
+  });
   return result;
 }
 

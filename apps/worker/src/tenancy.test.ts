@@ -324,7 +324,10 @@ describe('SEC-P3-04: INTERNAL_ADMIN gate', () => {
       headers: { cookie: adminCookie },
     });
     expect(adminResponse.status).toBe(200);
-    expect(await adminResponse.json()).toEqual({ ok: true, admin: true });
+    const body = (await adminResponse.json()) as Record<string, unknown>;
+    expect(body).toHaveProperty('ingestion');
+    expect(body).toHaveProperty('digest');
+    expect(body).toHaveProperty('flags');
   });
 });
 

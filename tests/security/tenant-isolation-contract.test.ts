@@ -39,7 +39,13 @@ const TENANT_FILES = [
 ] as const;
 
 /** Global (non-tenant) data: shared corpus, ingestion plumbing, ops config. */
-const GLOBAL_FILES = ['ingestion.ts', 'ops-global.ts', 'retention.ts', 'tender-corpus.ts'] as const;
+const GLOBAL_FILES = [
+  'admin.ts',
+  'ingestion.ts',
+  'ops-global.ts',
+  'retention.ts',
+  'tender-corpus.ts',
+] as const;
 
 /**
  * Global files that legitimately import a tenant schema module, with a
@@ -59,6 +65,18 @@ const GLOBAL_FILES_TENANT_SCHEMA_EXEMPT: Record<string, string> = {
     'It never INSERTs into a tenant-owned table. No request-handler path reaches this module; ' +
     'it runs only from the scheduled retention job (ADR-0003), which is why the per-request ' +
     'organizationId contract does not apply here.',
+  'admin.ts':
+    'Phase 10 stage A INTERNAL_ADMIN cross-tenant search/inspect surface ' +
+    '(apps/worker/src/routes/admin.ts, gated by requireInternalAdmin — 404 for every ' +
+    'non-admin caller, audit-logged on every request). Admins must be able to search orgs by ' +
+    "name, inspect a single org's profile/subscription/digest-preferences bundle, list " +
+    'subscriptions by status, and page through digest runs/email failures across every ' +
+    'tenant — none of that is expressible as a single organizationId-scoped query, and none of ' +
+    'it is reachable from any customer-facing route (only apps/worker/src/routes/admin.ts ' +
+    'imports this file). It never INSERTs/UPDATEs a tenant-owned row (the two admin mutations ' +
+    'this phase ships, suspendOrganization/unsuspendOrganization, are contract-compliant and ' +
+    'live in identity.ts instead, since they take a single organizationId like every other ' +
+    'tenant function).',
 };
 
 /** Infrastructure helpers/errors — no data access of their own. */

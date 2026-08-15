@@ -10,7 +10,7 @@
  * Caps (enforced here, before any statement runs): keywords ≤ 50, CPV
  * preferences ≤ 30 — violations throw `CapExceededError`.
  */
-import { and, asc, eq, gt } from 'drizzle-orm';
+import { and, asc, eq, gt, isNull } from 'drizzle-orm';
 import type { ContractNature, OrganizationId } from '@bidmorrow/domain';
 
 import type { Db } from '../client';
@@ -531,7 +531,13 @@ export async function listOrgsWithDigestEnabled(db: Db): Promise<DigestEnabledOr
     })
     .from(digestPreferences)
     .innerJoin(organizations, eq(organizations.id, digestPreferences.organizationId))
-    .where(and(eq(digestPreferences.enabled, 1), eq(organizations.status, 'active')));
+    .where(
+      and(
+        eq(digestPreferences.enabled, 1),
+        eq(organizations.status, 'active'),
+        isNull(organizations.suspendedAt),
+      ),
+    );
   return rows.map((row) => ({
     organizationId: row.organizationId as OrganizationId,
     timezone: row.timezone,

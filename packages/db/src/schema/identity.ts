@@ -150,6 +150,18 @@ export const organizations = sqliteTable(
     createdByUserId: text('created_by_user_id')
       .notNull()
       .references(() => users.id),
+    /**
+     * Phase 10 admin suspension (docs/security.md — INTERNAL_ADMIN
+     * governance). Deliberately NOT a third `status` CHECK value: SQLite
+     * cannot ALTER a CHECK constraint without a full create-new/copy/swap
+     * table rebuild (see migration-safety skill), and suspension is
+     * orthogonal to the active/deleted lifecycle (a suspended org is still
+     * `active` — it just loses feed/digest access while under review).
+     * Additive nullable column instead: null = not suspended, a timestamp =
+     * suspended since. `requireOrganization` (apps/worker) 403s when set;
+     * `listOrgsWithDigestEnabled` excludes it.
+     */
+    suspendedAt: integer('suspended_at'),
     createdAt: integer('created_at').notNull(),
     updatedAt: integer('updated_at').notNull(),
   },

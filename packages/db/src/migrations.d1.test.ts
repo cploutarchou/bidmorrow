@@ -76,7 +76,7 @@ describe('migrations apply from an empty database', () => {
     expect(tables.has('_bootstrap')).toBe(false);
   });
 
-  it('records all three migrations in d1_migrations', async () => {
+  it('records all four migrations in d1_migrations', async () => {
     const result = await env.DB.prepare('SELECT name FROM d1_migrations ORDER BY name').all<{
       name: string;
     }>();
@@ -84,6 +84,14 @@ describe('migrations apply from an empty database', () => {
       '0001_init.sql',
       '0002_core_schema.sql',
       '0003_auth_tables.sql',
+      '0004_admin_suspension.sql',
     ]);
+  });
+
+  it('0004 adds organizations.suspended_at (Phase 10 stage A)', async () => {
+    const columns = await env.DB.prepare('PRAGMA table_info(organizations)').all<{
+      name: string;
+    }>();
+    expect(columns.results.map((c) => c.name)).toContain('suspended_at');
   });
 });

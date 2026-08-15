@@ -90,8 +90,18 @@ export type DigestQueueMessage = {
   readonly localDate: string;
 };
 
-/** Message shape carried on INGEST_QUEUE (src/index.ts `queue()` dispatches on `kind`). */
-export type IngestQueueMessage = { readonly kind: 'ingest' } | { readonly kind: 'purge' };
+/**
+ * Message shape carried on INGEST_QUEUE (src/index.ts `queue()` dispatches
+ * on `kind`). `backfill_window` (Phase 10 stage A, `POST
+ * /api/admin/ingestion/backfill`) reuses `runIngestionWindow` — the SAME
+ * per-window pipeline the daily catch-up cron uses — for one explicit,
+ * admin-supplied `YYYY-MM-DD` day, so a backfill is never a second,
+ * divergent ingestion code path.
+ */
+export type IngestQueueMessage =
+  | { readonly kind: 'ingest' }
+  | { readonly kind: 'purge' }
+  | { readonly kind: 'backfill_window'; readonly windowFrom: string; readonly windowTo: string };
 
 /**
  * Message shape carried on MATCH_QUEUE (src/index.ts `queue()` dispatches on

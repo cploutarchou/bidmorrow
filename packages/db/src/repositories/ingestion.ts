@@ -152,6 +152,30 @@ export async function listRecentRuns(
   return toPage(rows, limit, (row) => row.id);
 }
 
+/**
+ * Row-level errors for one run, newest first (admin ingestion debugging —
+ * Phase 10 stage A). `id` is a time-sortable ULID, so PK-order is a stable
+ * cursor with no extra column.
+ */
+export async function listErrorsForRun(
+  db: Db,
+  args: { readonly ingestionRunId: string } & Pagination,
+): Promise<Page<IngestionError>> {
+  const limit = normalizeLimit(args.limit);
+  const rows = await db
+    .select()
+    .from(ingestionErrors)
+    .where(
+      and(
+        eq(ingestionErrors.ingestionRunId, args.ingestionRunId),
+        args.cursor === undefined ? undefined : lt(ingestionErrors.id, args.cursor),
+      ),
+    )
+    .orderBy(desc(ingestionErrors.id))
+    .limit(limit + 1);
+  return toPage(rows, limit, (row) => row.id);
+}
+
 // ---------------------------------------------------------------------------
 // Checkpoints
 // ---------------------------------------------------------------------------

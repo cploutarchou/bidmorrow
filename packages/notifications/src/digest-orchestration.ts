@@ -447,3 +447,63 @@ export async function generateDigest(
   });
   return { status: overallStatus, resumed, matchesCount: itemRows.length };
 }
+
+export interface PreviewDigestDeps {
+  readonly db: Db;
+  readonly appBaseUrl: string;
+  readonly engineVersion: string;
+}
+
+export type PreviewDigestResult =
+  | { readonly kind: 'no_organization' }
+  | { readonly kind: 'no_preferences' }
+  | { readonly kind: 'rendered'; readonly rendered: ReturnType<typeof renderDigest> };
+
+/**
+ * Phase 10 stage A (`GET /api/admin/digest/preview`): renders EXACTLY what
+ * `generateDigest`'s normal (non-resumed) send path would render for an
+ * org/date, WITHOUT any of `generateDigest`'s side effects — no
+ * `digest_runs` row is created or claimed, no `digest_items` are written, no
+ * email is sent. Reuses the same candidate query + fresh-path render-item
+ * mapping (`toRenderItemsFromCandidates`) so a preview is never a
+ * lookalike-but-different rendering path from the real send. `sinceMs`
+ * mirrors `generateDigest`'s own fallback lookback window (there is no prior
+ * `digest_runs` row to anchor a resume from — a preview is always the
+ * "fresh" shape).
+ */
+export async function previewDigest(
+  deps: PreviewDigestDeps,
+  organizationId: OrganizationId,
+  args: { localDate: string; utcNow: number },
+): Promise<PreviewDigestResult> {
+  const { db, appBaseUrl, engineVersion } = deps;
+
+  const [organization, prefs] = await Promise.all([
+    getOrganization(db, organizationId),
+    getDigestPreferences(db, organizationId),
+  ]);
+  if (organization === null) return { kind: 'no_organization' };
+  if (prefs === null) return { kind: 'no_preferences' };
+
+  const sinceMs = args.utcNow - FALLBACK_WINDOW_MS;
+  const candidates = await listDigestCandidateMatches(db, organizationId, {
+    engineVersion,
+    minClassification: prefs.minClassification as DigestClassification,
+    sinceMs,
+    untilMs: args.utcNow,
+    now: args.utcNow,
+    limit: MAX_DIGEST_ITEMS,
+  });
+  const renderItems = toRenderItemsFromCandidates(candidates);
+  const rendered = renderDigest({
+    items: renderItems,
+    counts: countsFromItems(
+      candidates.map((c) => ({ classificationSnapshot: c.classification as string })),
+    ),
+    orgName: organization.name,
+    digestDate: args.localDate,
+    appBaseUrl,
+    manageUrl: `${appBaseUrl}/app/settings`,
+  });
+  return { kind: 'rendered', rendered };
+}
