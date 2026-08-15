@@ -10,11 +10,13 @@ import { createDb } from '@bidmorrow/db';
 import {
   createLoggingEmailProvider,
   createResendAuthEmailProvider,
+  createTestMailboxProvider,
   type AuthEmailProvider,
 } from '@bidmorrow/notifications';
 import type { Logger } from '@bidmorrow/observability';
 
 import type { Env } from './env';
+import { isE2ETestHooksEnabled } from './test-hooks-gate';
 
 /** Maps `@bidmorrow/config` APP_ENV values to Better Auth's coarser split. */
 export function toAuthAppEnv(appEnv: string): AuthAppEnv {
@@ -29,9 +31,18 @@ export function toAuthAppEnv(appEnv: string): AuthAppEnv {
  * `RESEND_API_KEY` (and `EMAIL_FROM`) are configured, the logging stub
  * otherwise — same "configured vs. logged fallback" shape as
  * `resolveDigestProvider` (`apps/worker/src/digest.ts`), never a silent
- * misconfiguration (SEC-P11-02).
+ * misconfiguration (SEC-P11-02). Phase 12 stage A: the double-gated
+ * (`isE2ETestHooksEnabled`) capture mailbox takes priority over both when
+ * active — it exists specifically so Playwright E2E can read a real
+ * verification/reset URL that the logging stub deliberately never exposes
+ * (docs/security.md C10). The gate only ever evaluates true in `local`/
+ * `test` `APP_ENV` (never staging/production), so this ordering cannot leak
+ * into a real deploy even if `RESEND_API_KEY` were also set locally.
  */
 function resolveAuthEmailProvider(env: Env, logger: Logger): AuthEmailProvider {
+  if (isE2ETestHooksEnabled(env)) {
+    return createTestMailboxProvider();
+  }
   if (env.RESEND_API_KEY !== undefined && env.EMAIL_FROM !== undefined) {
     return createResendAuthEmailProvider({ apiKey: env.RESEND_API_KEY, from: env.EMAIL_FROM });
   }

@@ -24,7 +24,13 @@ export function Signup(): ReactElement {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        // callbackURL: Better Auth's verify-email endpoint redirects here
+        // (success and `?error=...` alike) after the link is followed —
+        // without it, it defaults to '/' and VerifyEmail's error banner
+        // (reads `?error=` from ITS OWN route) would never be reachable.
+        // Found via Phase 12 E2E: following a real captured verification
+        // link and asserting it lands back on /verify-email.
+        body: JSON.stringify({ name, email, password, callbackURL: '/verify-email' }),
       });
       if (!response.ok) {
         const body = (await response.json().catch(() => ({}))) as SignUpErrorBody;
