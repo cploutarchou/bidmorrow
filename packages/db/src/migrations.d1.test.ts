@@ -76,7 +76,7 @@ describe('migrations apply from an empty database', () => {
     expect(tables.has('_bootstrap')).toBe(false);
   });
 
-  it('records all six migrations in d1_migrations', async () => {
+  it('records all seven migrations in d1_migrations', async () => {
     const result = await env.DB.prepare('SELECT name FROM d1_migrations ORDER BY name').all<{
       name: string;
     }>();
@@ -87,6 +87,7 @@ describe('migrations apply from an empty database', () => {
       '0004_admin_suspension.sql',
       '0005_nullable_authorship.sql',
       '0006_org_created_by_nullable.sql',
+      '0007_tender_matches_score_index.sql',
     ]);
   });
 
@@ -120,5 +121,14 @@ describe('migrations apply from an empty database', () => {
     }>();
     const info = columns.results.find((c) => c.name === 'created_by_user_id');
     expect(info?.notnull).toBe(0);
+  });
+
+  it('0007 adds idx_tender_matches__org_engine_score_id (Phase 12 stage B fix P-1)', async () => {
+    const result = await env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'tender_matches' ORDER BY name",
+    ).all<{ name: string }>();
+    expect(result.results.map((row) => row.name)).toContain(
+      'idx_tender_matches__org_engine_score_id',
+    );
   });
 });

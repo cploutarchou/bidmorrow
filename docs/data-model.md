@@ -427,6 +427,10 @@ Recomputation inserts new-version rows; it never mutates old ones.
 - **Index** `(organization_id, engine_version, classification, scored_at)` —
   the feed query (org + latest engine version + classification tab, newest
   first).
+- **Index** `(organization_id, engine_version, score DESC, id DESC)` — the
+  default feed page (org + latest engine version, no classification filter,
+  `ORDER BY score DESC, id DESC`, keyset-paginated on the same columns) —
+  added migration 0007 so this hot path avoids an in-memory sort.
 - **Index** `(lot_id)` — retention purge walks matches from expiring lots;
   admin match-trace for a lot.
 
@@ -732,6 +736,7 @@ erDiagram
 | 16  | Admin: CPV scope analysis                                                       | tender_cpv_codes                                   | `(cpv_code)`                                                                 |
 | 17  | Feedback trend per org                                                          | customer_feedback                                  | `(organization_id, created_at)`                                              |
 | 18  | FX rate lookup for scoring; daily refresh upsert                                | exchange_rates                                     | `(rate_date, currency)` unique                                               |
+| 19  | Feed: org + latest engine version, no classification filter, `ORDER BY score DESC, id DESC`, keyset-paginated | tender_matches | `(organization_id, engine_version, score DESC, id DESC)` |
 
 Indexes not listed here should not exist — every index costs write throughput
 on the ingestion hot path and D1 storage.
