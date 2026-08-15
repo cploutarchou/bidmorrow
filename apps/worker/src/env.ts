@@ -41,10 +41,23 @@ export interface Env {
   SNAPSHOTS: R2Bucket;
   /** Ingestion-run queue producer (ADR-0006) — the daily cron enqueues `{kind:'ingest'}`/`{kind:'purge'}` messages. */
   INGEST_QUEUE: Queue<IngestQueueMessage>;
+  /**
+   * Scoring queue producer (Phase 6): the ingestion queue consumer enqueues
+   * `{kind:'score', lotIds}` batches (≤100 lot ids/message) after a
+   * successful/partial ingestion window, and `{kind:'recompute',
+   * noticeIds}` for the correction-recompute path (TED-P5-03). Bounded,
+   * retried, DLQ'd — never scored inline in the ingestion path.
+   */
+  MATCH_QUEUE: Queue<MatchQueueMessage>;
 }
 
 /** Message shape carried on INGEST_QUEUE (src/index.ts `queue()` dispatches on `kind`). */
 export type IngestQueueMessage = { readonly kind: 'ingest' } | { readonly kind: 'purge' };
+
+/** Message shape carried on MATCH_QUEUE (src/index.ts `queue()` dispatches on `kind`). */
+export type MatchQueueMessage =
+  | { readonly kind: 'score'; readonly lotIds: readonly string[] }
+  | { readonly kind: 'recompute'; readonly noticeIds: readonly string[] };
 
 export interface Variables {
   requestId: string;

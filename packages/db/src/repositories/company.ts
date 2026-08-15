@@ -499,3 +499,30 @@ export async function upsertDigestPreferences(
   }
   return row;
 }
+
+// ---------------------------------------------------------------------------
+// Scoring eligibility (Phase 6): which orgs the matching engine considers
+// ---------------------------------------------------------------------------
+
+/**
+ * Org ids eligible for scoring: has a `company_profiles` row AND at least
+ * one `company_cpv_preferences` row. An org that has not onboarded (no
+ * profile) or has not set any CPV preference (nothing for the CPV
+ * pre-filter to compare against — every pair would either need a full-text
+ * fallback or trivially match/skip everything) is never scored; this keeps
+ * the eligibility rule identical to the CPV pre-filter's own prerequisite.
+ * Unpaginated: V1 customer counts are small (docs/cost-model.md), so a
+ * single query is correct and simple; revisit if the org count grows past
+ * low thousands.
+ */
+export async function listOrgsEligibleForScoring(db: Db): Promise<OrganizationId[]> {
+  const rows = await db
+    .selectDistinct({ organizationId: companyProfiles.organizationId })
+    .from(companyProfiles)
+    .innerJoin(
+      companyCpvPreferences,
+      eq(companyCpvPreferences.organizationId, companyProfiles.organizationId),
+    )
+    .orderBy(asc(companyProfiles.organizationId));
+  return rows.map((row) => row.organizationId as OrganizationId);
+}

@@ -19,8 +19,13 @@ import { createLogger } from '@bidmorrow/observability';
 import { isIngestionStale, lastSuccessfulRunAt } from '@bidmorrow/procurement';
 
 import { createRequestAuth } from './auth-instance';
-import type { AppBindings, Env, IngestQueueMessage } from './env';
-import { runIngestCatchUpJob, runRetentionPurgeJob } from './ingestion';
+import type { AppBindings, Env, IngestQueueMessage, MatchQueueMessage } from './env';
+import {
+  runIngestCatchUpJob,
+  runRecomputeJob,
+  runRetentionPurgeJob,
+  runScoreJob,
+} from './ingestion';
 import { accountRoutes } from './routes/account';
 import { adminRoutes } from './routes/admin';
 import { orgRoutes } from './routes/org';
@@ -184,26 +189,54 @@ async function scheduled(
  * idempotent by construction (checkpointed upserts / unique constraints
  * downstream) — safe to `ack` every message that ran to completion and let
  * an unhandled throw retry (bounded by wrangler.jsonc `max_retries`, then
- * DLQ).
+ * DLQ). One handler serves both `INGEST_QUEUE` and `MATCH_QUEUE` — the
+ * message `kind` discriminates, not the queue binding name, so a single
+ * exported `queue` function (the only shape Workers allows per default
+ * export) can dispatch both.
  */
 async function queue(
-  batch: MessageBatch<IngestQueueMessage>,
+  batch: MessageBatch<IngestQueueMessage | MatchQueueMessage>,
   env: Env,
   _ctx: ExecutionContext,
 ): Promise<void> {
   const logger = createLogger({ queue: batch.queue });
   for (const message of batch.messages) {
     try {
-      if (message.body.kind === 'ingest') {
-        const result = await runIngestCatchUpJob(env, logger);
-        logger.info('queue.ingest.completed', {
-          paused: result.paused,
-          windows_processed: result.results.length,
-          statuses: result.results.map((r) => r.status),
-        });
-      } else {
-        const result = await runRetentionPurgeJob(env, logger);
-        logger.info('queue.purge.completed', { notices_deleted: result.noticesDeleted });
+      switch (message.body.kind) {
+        case 'ingest': {
+          const result = await runIngestCatchUpJob(env, logger);
+          logger.info('queue.ingest.completed', {
+            paused: result.paused,
+            windows_processed: result.results.length,
+            statuses: result.results.map((r) => r.status),
+          });
+          break;
+        }
+        case 'purge': {
+          const result = await runRetentionPurgeJob(env, logger);
+          logger.info('queue.purge.completed', { notices_deleted: result.noticesDeleted });
+          break;
+        }
+        case 'score': {
+          const result = await runScoreJob(env, logger, message.body.lotIds);
+          logger.info('queue.score.completed', {
+            pairs_considered: result.pairsConsidered,
+            pairs_scored: result.pairsScored,
+            matches_written: result.matchesWritten,
+            truncated: result.truncated,
+          });
+          break;
+        }
+        case 'recompute': {
+          const result = await runRecomputeJob(env, logger, message.body.noticeIds);
+          logger.info('queue.recompute.completed', {
+            pairs_considered: result.pairsConsidered,
+            pairs_scored: result.pairsScored,
+            matches_written: result.matchesWritten,
+            truncated: result.truncated,
+          });
+          break;
+        }
       }
       message.ack();
     } catch (cause) {

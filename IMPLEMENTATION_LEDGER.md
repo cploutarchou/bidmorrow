@@ -5,10 +5,97 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 5 — TED Ingestion: COMPLETE (signed off).** Next: Phase 6 —
-Matching.
+**Phase 6 stage B — Matching pipeline wiring: COMPLETE.** Stage A (pure
+engine in packages/matching) was already done; this stage wired it into
+ingestion. Next: Phase 6 remaining items (matching-audit skill/review,
+Phase 5 residual LOWs) or Phase 7.
 
 ## Completed
+
+### Phase 6 stage B — Matching pipeline wiring (2026-08-15)
+
+- ECB rates (packages/procurement/src/ecb.ts): `fetchEcbRates`/
+  `parseEcbDailyXml`/`refreshEcbRates`, fast-xml-parser added directly to
+  `procurement` (justified — `ted`'s xml.ts is an internal, non-exported
+  module; not reused across package boundaries). ecb.europa.eu confirmed
+  proxy-blocked from dev (`CONNECT tunnel failed, response 403`, same as
+  TED) — fixture built from the documented real feed shape
+  (tests/fixtures/ecb/eurofxref-daily.xml), 8 tests green. Wired into
+  `runIngestCatchUpJob` (apps/worker/src/ingestion.ts), before scoring,
+  non-fatal on failure (value scoring degrades to UNKNOWN — ADR-0004).
+- Engine input mapping (packages/procurement/src/scoring-input.ts):
+  `loadOrgProfile` (company repo bundle -> OrgProfile) and
+  `mapLotToEngineInput` (LotScoringBundle -> LotInput; EUR direct, non-EUR
+  via `getRate` ≤7d, rateDate returned alongside for the persisted
+  explanation, no rate -> null/UNKNOWN). Known carried-over gap: lot
+  title/description are flattened single strings from Phase 5 ingestion
+  (not per-language maps), keyed here under the notice's first declared
+  language — honest best-effort, not guaranteed-correct language tagging;
+  flagged, not fixed (would need a tender_lots schema change). 8 unit
+  tests (pure branches only — non-EUR/getRate branch proven at D1
+  integration level, faking a drizzle chain would test the fake).
+- Scoring orchestration (packages/procurement/src/score.ts):
+  `scoreLotsForOrgs({lotIds|noticeIds, engineVersion, recompute,
+  ingestionRunId})` — CPV DIVISION pre-filter (skip = no row of any kind,
+  including EXCLUDED); component-persistence rule (EXCLUDED: rule+evidence
+  only; LOW_FIT: score+classification only; ≥POSSIBLE_MATCH: full
+  components+risk flags); bounded `MAX_PAIRS_PER_INVOCATION = 5000`
+  (`truncated: true` when hit, caller must re-enqueue remainder — no
+  continuation-enqueue wired yet, open item). Missing-main-CPV lots ->
+  `ingestion_errors` (stage `score`) when an `ingestionRunId` is available,
+  else logged only (recompute path has no run to attach to — documented).
+- DB repo additions: `company.ts` `listOrgsEligibleForScoring` (profile +
+  ≥1 CPV pref; added to the tenant-isolation-contract test's documented
+  exemptions — global-scan-across-tenants, ids only); `matching.ts`
+  `replaceTenderMatches` (hard delete+reinsert, FK-safe, one batch — the
+  correction/recompute path); `tender-corpus.ts`
+  `loadLotScoringBundlesByIds`/`loadLotScoringBundlesForNotices` (bounded
+  join+batch queries feeding the mapper).
+- Recompute path: `run-window.ts`/`catch-up.ts` now return `newLotIds`
+  (every freshly-inserted lot id, new notices AND corrected-notice new
+  versions) instead of a fixed empty scoring count.
+  `ingestion_runs.matches_scored` accounting decision: stays honestly 0 —
+  scoring is fully decoupled/async (MATCH_QUEUE), so no ingestion run ever
+  scores anything itself; the scored-pair count is observable on scoring's
+  own `scoring.run.completed` structured log line instead (documented in
+  run-window.ts). `recomputeMatches`-for-admin (Phase 10) is
+  `scoreLotsForOrgs({noticeIds, recompute:true})` — already generically
+  usable, no separate wrapper needed.
+- Worker wiring: `MATCH_QUEUE` + `bidmorrow-match-dlq-*` producer/consumer
+  in wrangler.jsonc (top-level + staging + production, verified via
+  `wrangler deploy --dry-run` showing the binding in all three); `env.ts`
+  `MatchQueueMessage` (`score`/`recompute`); `index.ts` `queue()` extended
+  to dispatch by message `kind` (one handler serves both queues);
+  `ingestion.ts` `runIngestCatchUpJob` now refreshes ECB rates, then
+  enqueues new lot ids to MATCH_QUEUE in ≤100-id batches after catch-up;
+  `runScoreJob`/`runRecomputeJob` added as the queue-consumer entry points.
+- Tests (apps/worker/src/scoring.d1.test.ts, real D1 via pool-workers, fake
+  TedClient + real `tests/fixtures/ted` fixtures): 8 tests green —
+  STRONG_MATCH full component breakdown sums to score; LOW_FIT has zero
+  component/risk-flag rows; CPV-disjoint org gets no row; excluded-phrase
+  org gets rule+evidence only; non-EUR value UNKNOWN-then-converted via a
+  seeded exchange_rates row (explanation contains the rate date); scoring
+  idempotent (insert path, no dupes); recompute idempotent (replace path,
+  no dupes across repeated runs); a REAL correction (second ingested
+  version) recomputes against the new current-version lot. NOTE: these
+  tests share one D1 per file (existing project pattern) — assertions are
+  scoped to each test's own org id, never to a call's aggregate counters,
+  since other tests' orgs remain eligible and get harmlessly scored too.
+- Real counts (2026-08-15, all executed): format:check PASS · lint PASS ·
+  typecheck PASS (14/14 projects) · test PASS (root vitest 41 files/269
+  tests incl. new ecb.test.ts 8 + scoring-input.test.ts 8 + tenant-
+  isolation-contract exemption addition; worker pool-workers 5 files/41
+  tests incl. new scoring.d1.test.ts 8; packages/db 8 files/38 tests,
+  unchanged) · build PASS (web + worker `wrangler deploy --dry-run`, both
+  top-level and `--env staging` show `env.MATCH_QUEUE`).
+- Open items: (1) `truncated: true` pair-cap has no continuation-enqueue
+  wired yet (worker just logs it — Phase 10-ish follow-up); (2) lot title/
+  description language-tagging gap (above) not fixed, only carried
+  forward honestly; (3) stale pre-correction match rows (old lot id) are
+  never purged/detached from the feed — feed correctness across
+  corrections is a future-phase concern, out of scope here; (4) admin-
+  triggered bounded recompute (Phase 10) can reuse `scoreLotsForOrgs`
+  directly, no new wrapper built.
 
 ### Phase 0 — Research (2026-08-14)
 

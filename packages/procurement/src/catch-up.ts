@@ -21,12 +21,14 @@ export interface RunCatchUpResult {
   readonly results: readonly RunWindowResult[];
   /** True when `ingestion_paused` short-circuited the run before any window ran. */
   readonly paused: boolean;
+  /** Every freshly-created lot id across all windows this invocation processed — the worker enqueues these to `MATCH_QUEUE`. */
+  readonly newLotIds: readonly string[];
 }
 
 export async function runIngestionCatchUp(deps: RunCatchUpDeps): Promise<RunCatchUpResult> {
   if (await isIngestionPaused(deps.db, deps.logger)) {
     deps.logger.info('ingestion.paused', { source: TED_SOURCE_ID });
-    return { results: [], paused: true };
+    return { results: [], paused: true, newLotIds: [] };
   }
 
   const now = deps.now ?? Date.now;
@@ -39,14 +41,16 @@ export async function runIngestionCatchUp(deps: RunCatchUpDeps): Promise<RunCatc
 
   const scope = await loadIngestionScope(deps.db);
   const results: RunWindowResult[] = [];
+  const newLotIds: string[] = [];
   for (const window of windows) {
     const result = await runIngestionWindow({ ...deps, scope }, window);
     results.push(result);
+    newLotIds.push(...result.newLotIds);
     if (result.status === 'failed') {
       // A failed window means the checkpoint did not advance — further
       // windows would re-process (or worse, skip past) the same day.
       break;
     }
   }
-  return { results, paused: false };
+  return { results, paused: false, newLotIds };
 }

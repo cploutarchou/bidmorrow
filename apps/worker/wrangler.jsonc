@@ -48,14 +48,26 @@
   // Ingestion run queue (ADR-0006): the daily cron enqueues one `ingest`
   // message; `queue()` in src/index.ts processes it. Bounded batch + bounded
   // retries + DLQ so a poison message can never wedge the queue.
+  // MATCH_QUEUE (Phase 6): the ingest queue consumer enqueues `score`/
+  // `recompute` messages after a successful/partial ingestion window; its
+  // own consumer runs the matching engine. Same bounded-batch/DLQ shape.
   "queues": {
-    "producers": [{ "queue": "bidmorrow-ingest-local", "binding": "INGEST_QUEUE" }],
+    "producers": [
+      { "queue": "bidmorrow-ingest-local", "binding": "INGEST_QUEUE" },
+      { "queue": "bidmorrow-match-local", "binding": "MATCH_QUEUE" },
+    ],
     "consumers": [
       {
         "queue": "bidmorrow-ingest-local",
         "max_batch_size": 10,
         "max_retries": 3,
         "dead_letter_queue": "bidmorrow-ingest-dlq-local",
+      },
+      {
+        "queue": "bidmorrow-match-local",
+        "max_batch_size": 10,
+        "max_retries": 3,
+        "dead_letter_queue": "bidmorrow-match-dlq-local",
       },
     ],
   },
@@ -102,13 +114,22 @@
         },
       ],
       "queues": {
-        "producers": [{ "queue": "bidmorrow-ingest-staging", "binding": "INGEST_QUEUE" }],
+        "producers": [
+          { "queue": "bidmorrow-ingest-staging", "binding": "INGEST_QUEUE" },
+          { "queue": "bidmorrow-match-staging", "binding": "MATCH_QUEUE" },
+        ],
         "consumers": [
           {
             "queue": "bidmorrow-ingest-staging",
             "max_batch_size": 10,
             "max_retries": 3,
             "dead_letter_queue": "bidmorrow-ingest-dlq-staging",
+          },
+          {
+            "queue": "bidmorrow-match-staging",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "bidmorrow-match-dlq-staging",
           },
         ],
       },
@@ -149,13 +170,22 @@
         },
       ],
       "queues": {
-        "producers": [{ "queue": "bidmorrow-ingest-production", "binding": "INGEST_QUEUE" }],
+        "producers": [
+          { "queue": "bidmorrow-ingest-production", "binding": "INGEST_QUEUE" },
+          { "queue": "bidmorrow-match-production", "binding": "MATCH_QUEUE" },
+        ],
         "consumers": [
           {
             "queue": "bidmorrow-ingest-production",
             "max_batch_size": 10,
             "max_retries": 3,
             "dead_letter_queue": "bidmorrow-ingest-dlq-production",
+          },
+          {
+            "queue": "bidmorrow-match-production",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "bidmorrow-match-dlq-production",
           },
         ],
       },

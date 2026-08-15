@@ -266,6 +266,117 @@ export async function listTenderMatchesForFeed(
   return toPage(rows, limit, (last) => `${last.scoredAt}:${last.id}`);
 }
 
+/**
+ * Recompute path (corrected notices / admin-triggered re-score): replaces
+ * every existing `(organizationId, lotId ∈ lotIds, engineVersion)` match row
+ * — and its components/risk-flags — with a fresh set, atomically. Unlike
+ * `insertTenderMatches` (idempotent skip-if-exists), this is a hard
+ * replace: a corrected notice's re-scored result must always win over a
+ * stale pre-correction score. FK-safe delete order (children, then
+ * parents) followed by inserts, all in ONE `db.batch` — a partial replace
+ * can never be observed. Double-scoped: the delete filters on
+ * `organization_id` AND the matched `lot_id` set.
+ */
+export async function replaceTenderMatches(
+  db: Db,
+  organizationId: OrganizationId,
+  args: { lotIds: string[]; engineVersion: string; matches: TenderMatchInput[] },
+): Promise<{ deleted: number; inserted: number }> {
+  if (args.lotIds.length === 0) {
+    return { deleted: 0, inserted: 0 };
+  }
+
+  const existing = await db
+    .select({ id: tenderMatches.id })
+    .from(tenderMatches)
+    .where(
+      and(
+        eq(tenderMatches.organizationId, organizationId),
+        inArray(tenderMatches.lotId, args.lotIds),
+        eq(tenderMatches.engineVersion, args.engineVersion),
+      ),
+    );
+  const existingIds = existing.map((row) => row.id);
+
+  const now = Date.now();
+  const statements: SqliteBatchItem[] = [];
+  if (existingIds.length > 0) {
+    statements.push(
+      db.delete(matchComponents).where(inArray(matchComponents.matchId, existingIds)),
+    );
+    statements.push(db.delete(matchRiskFlags).where(inArray(matchRiskFlags.matchId, existingIds)));
+    statements.push(
+      db
+        .delete(tenderMatches)
+        .where(
+          and(
+            eq(tenderMatches.organizationId, organizationId),
+            inArray(tenderMatches.id, existingIds),
+          ),
+        ),
+    );
+  }
+
+  for (const match of args.matches) {
+    const matchId = newId(now);
+    statements.push(
+      db.insert(tenderMatches).values({
+        id: matchId,
+        organizationId,
+        lotId: match.lotId,
+        noticeId: match.noticeId,
+        engineVersion: match.engineVersion,
+        score: match.score,
+        classification: match.classification,
+        exclusionRule: match.exclusionRule ?? null,
+        exclusionEvidence: match.exclusionEvidence ?? null,
+        scoredAt: match.scoredAt,
+        createdAt: now,
+      }),
+    );
+    const components = match.components ?? [];
+    if (components.length > 0) {
+      statements.push(
+        db.insert(matchComponents).values(
+          components.map((component) => ({
+            id: newId(now),
+            matchId,
+            componentKey: component.componentKey,
+            points: component.points,
+            maxPoints: component.maxPoints,
+            status: component.status,
+            explanation: component.explanation,
+            createdAt: now,
+          })),
+        ),
+      );
+    }
+    const riskFlags = match.riskFlags ?? [];
+    if (riskFlags.length > 0) {
+      statements.push(
+        db.insert(matchRiskFlags).values(
+          riskFlags.map((flag) => ({
+            id: newId(now),
+            matchId,
+            type: flag.type,
+            evidence: flag.evidence,
+            sourceField: flag.sourceField,
+            confidence: flag.confidence,
+            explanation: flag.explanation,
+            createdAt: now,
+          })),
+        ),
+      );
+    }
+  }
+
+  if (statements.length === 0) {
+    return { deleted: 0, inserted: 0 };
+  }
+  await db.batch(toBatch(statements));
+  return { deleted: existingIds.length, inserted: args.matches.length };
+}
+
 export interface TenderMatchWithComponents {
   match: TenderMatch;
   /** Ordered by component key for stable rendering. */
