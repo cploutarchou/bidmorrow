@@ -50,27 +50,27 @@ export const requireInternalAdmin: MiddlewareHandler<AppBindings> = async (c, ne
   }
   c.set('session', session);
 
-  await next();
-
-  // Written AFTER the handler runs so the audit row can carry the actual
-  // response status — never blocks/aborts the response on an audit-write
-  // failure path (an admin action must not become invisible AND
-  // un-actionable at once, but a logging failure also must not itself 500
-  // an otherwise-successful admin request; a thrown error here would still
-  // surface via the app-level onError handler, which is the accepted
-  // behavior — audit writes are never silently swallowed).
-  const db = createDb(c.env.DB);
-  const query = c.req.query();
-  const querySummary = Object.keys(query).length > 0 ? JSON.stringify(query) : null;
-  await insertAuditEvent(db, {
-    actorType: 'admin',
-    actorId: session.user.id,
-    organizationId: null,
-    action: 'admin.request',
-    targetType: 'http_request',
-    targetId: `${c.req.method} ${c.req.path}`.slice(0, MAX_SUMMARY_LEN),
-    beforeSummary: querySummary === null ? null : querySummary.slice(0, MAX_SUMMARY_LEN),
-    afterSummary: `status=${c.res.status}`,
-    occurredAt: Date.now(),
-  });
+  // SEC-P10-02: try/finally so the generic audit row is written even when
+  // the handler THROWS (500 via onError) — C8 "every admin action audited"
+  // must hold on error paths too. Written after the handler so the row can
+  // carry the actual response status; a failing audit write still surfaces
+  // via the app-level onError handler (never silently swallowed).
+  try {
+    await next();
+  } finally {
+    const db = createDb(c.env.DB);
+    const query = c.req.query();
+    const querySummary = Object.keys(query).length > 0 ? JSON.stringify(query) : null;
+    await insertAuditEvent(db, {
+      actorType: 'admin',
+      actorId: session.user.id,
+      organizationId: null,
+      action: 'admin.request',
+      targetType: 'http_request',
+      targetId: `${c.req.method} ${c.req.path}`.slice(0, MAX_SUMMARY_LEN),
+      beforeSummary: querySummary === null ? null : querySummary.slice(0, MAX_SUMMARY_LEN),
+      afterSummary: c.error !== undefined ? 'status=error' : `status=${c.res.status}`,
+      occurredAt: Date.now(),
+    });
+  }
 };

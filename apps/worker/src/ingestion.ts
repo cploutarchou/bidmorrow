@@ -8,6 +8,7 @@ import { createDb } from '@bidmorrow/db';
 import type { Logger } from '@bidmorrow/observability';
 import { TedClient } from '@bidmorrow/ted';
 import {
+  isIngestionPaused,
   loadIngestionScope,
   refreshEcbRates,
   runIngestionCatchUp,
@@ -108,8 +109,19 @@ export async function runBackfillWindowJob(
   env: Env,
   logger: Logger,
   window: { windowFrom: string; windowTo: string },
-): Promise<RunWindowResult> {
+): Promise<RunWindowResult | null> {
   const db = createDb(env.DB);
+  // P10-R-02: second enforcement layer — windows already queued when the
+  // pause flag flips must not keep fetching/persisting TED data. `null`
+  // means skipped-because-paused (logged); the message is acked, not
+  // retried — the admin re-enqueues the backfill after resuming.
+  if (await isIngestionPaused(db, logger)) {
+    logger.warn('admin.backfill_window.skipped_paused', {
+      window_from: window.windowFrom,
+      window_to: window.windowTo,
+    });
+    return null;
+  }
   const scope = await loadIngestionScope(db);
   const client = new TedClient({
     fetch: globalThis.fetch.bind(globalThis),

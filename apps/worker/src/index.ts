@@ -273,8 +273,8 @@ async function queue(
             windowTo: message.body.windowTo,
           });
           logger.info('queue.backfill_window.completed', {
-            status: result.status,
-            new_lot_count: result.newLotIds.length,
+            status: result === null ? 'skipped_paused' : result.status,
+            new_lot_count: result === null ? 0 : result.newLotIds.length,
           });
           break;
         }

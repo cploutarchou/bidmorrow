@@ -27,6 +27,9 @@ import { z } from 'zod';
 import {
   FEATURE_FLAG_KEYS,
   FLAG_DIGEST_PAUSED,
+  FLAG_ENTITLEMENT_ENFORCED,
+  FLAG_FOUNDING_CAP,
+  FLAG_FOUNDING_PLAN_OPEN,
   FLAG_INGESTION_CPV_SCOPE,
   FLAG_INGESTION_PAUSED,
 } from '@bidmorrow/config';
@@ -56,7 +59,7 @@ import {
   suspendOrganization,
   unsuspendOrganization,
 } from '@bidmorrow/db';
-import { organizationId as toOrganizationId } from '@bidmorrow/domain';
+import { assertNever, organizationId as toOrganizationId } from '@bidmorrow/domain';
 import { ENGINE_VERSION, scoreLotForOrg } from '@bidmorrow/matching';
 import { isDigestPaused, previewDigest } from '@bidmorrow/notifications';
 import {
@@ -382,6 +385,15 @@ adminRoutes.post('/ingestion/backfill', zValidator('json', backfillSchema), asyn
   const body = c.req.valid('json');
   if (body.toDate < body.fromDate) {
     return c.json({ error: 'invalid_range', message: 'toDate must be >= fromDate' }, 400);
+  }
+  // P10-R-02: the emergency pause covers backfills too — reject enqueue
+  // while paused so an admin can't (accidentally) run 90 windows of TED
+  // traffic during an incident. The consumer re-checks as a second layer.
+  if (await isIngestionPaused(createDb(c.env.DB), c.get('logger'))) {
+    return c.json(
+      { error: 'ingestion_paused', message: 'resume ingestion before backfilling' },
+      409,
+    );
   }
   const days = enumerateDays(body.fromDate, body.toDate);
   if (days.length > MAX_BACKFILL_DAYS) {
@@ -760,6 +772,34 @@ const flagUpdateSchema = z
   })
   .strict();
 
+// SEC-P10-01: the generic PUT must never persist a value shape the
+// consuming pipeline fails to load (a malformed ingestion scope would break
+// the daily cron until manually fixed). Per-key value validation; the
+// ingestion scope reuses the SAME parser the pipeline loads with.
+function validateFlagValue(key: FeatureFlagKey, value: unknown): string | null {
+  const valueJson = JSON.stringify(value);
+  switch (key) {
+    case FLAG_FOUNDING_PLAN_OPEN:
+    case FLAG_INGESTION_PAUSED:
+    case FLAG_DIGEST_PAUSED:
+    case FLAG_ENTITLEMENT_ENFORCED:
+      return typeof value === 'boolean' ? valueJson : null;
+    case FLAG_FOUNDING_CAP:
+      return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 10_000
+        ? valueJson
+        : null;
+    case FLAG_INGESTION_CPV_SCOPE:
+      try {
+        parseIngestionScope(valueJson);
+        return valueJson;
+      } catch {
+        return null;
+      }
+    default:
+      return assertNever(key);
+  }
+}
+
 adminRoutes.put(
   '/flags/:key',
   zValidator('param', flagKeyParamSchema),
@@ -769,7 +809,10 @@ adminRoutes.put(
     const session = c.get('session');
     const { key } = c.req.valid('param') as { key: FeatureFlagKey };
     const body = c.req.valid('json');
-    const valueJson = JSON.stringify(body.value);
+    const valueJson = validateFlagValue(key, body.value);
+    if (valueJson === null) {
+      return c.json({ error: 'invalid_flag_value', key }, 400);
+    }
     const updated = await setFeatureFlag(db, {
       key,
       valueJson,

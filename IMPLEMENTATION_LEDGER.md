@@ -5,8 +5,8 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 10 stage B — Admin UI: implemented this session (gates green;
-production-reviewer/security sign-off NOT yet run).**
+**Phase 10 — Admin/Operations: COMPLETE (signed off).** Next: Phase 11 —
+Security/Privacy.
 
 ## Completed
 
@@ -287,7 +287,7 @@ eslint-disable-next-line react-hooks/exhaustive-deps` comments in
   stage); packages/db pool-workers **9 files/47 tests** (unchanged) = **75
   files/562 tests total** · `build` PASS (`vite build` 80 modules, 356.65
   kB JS / 99.57 kB gzip, up from 307 KB/91 KB pre-admin-UI; `wrangler
-  deploy --dry-run` — top-level clean, all pre-existing bindings present,
+deploy --dry-run` — top-level clean, all pre-existing bindings present,
   no new binding required for a static-assets-only frontend addition).
 - **Open items**: (1) production-reviewer + security sign-off not yet run
   for this stage; (2) no DOM/E2E coverage of the admin pages yet —
@@ -1863,6 +1863,17 @@ Nothing deployed. No Cloudflare resources exist yet.
   the tested failure path); P9-R-02 crypto-provider claim → FIXED
   (explicit SubtleCrypto default at verification call site)). Post-fix
   gates all green.
+
+- Phase 10: **Security agent SIGN-OFF** (gate integrity, audit
+  completeness, confirmations, suspension end-to-end, cross-tenant admin
+  surface all PASS; SEC-P10-01 MEDIUM flag-PUT shape validation FIXED same
+  day + tests; SEC-P10-02 LOW audit-on-error FIXED (try/finally);
+  SEC-P10-03/04/05 tracked LOW/INFO). **production-reviewer FAIL → fixes
+  applied** (P10-R-01 format gate fixed; P10-R-02 MEDIUM backfill now
+  honors the ingestion pause at BOTH enqueue (409) and consumer (skip)
+  layers + tests; P10-R-04 LOW tracked: admin rate limit + live PRAGMA
+  verification at deploy). Post-fix gates all green: 566 tests
+  (2026-08-15). P10-R-03 satisfied by the security SIGN-OFF above.
 
 ## Pilot checkpoint
 

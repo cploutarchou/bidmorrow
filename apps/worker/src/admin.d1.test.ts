@@ -372,6 +372,32 @@ describe('ingestion scope update', () => {
 });
 
 describe('ingestion backfill bounds', () => {
+  it('rejects a backfill while ingestion is paused (P10-R-02)', async () => {
+    const cookie = await adminCookie();
+    const pause = await fetchApi('/api/admin/ingestion/pause', {
+      method: 'POST',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({ confirm: 'PAUSE_INGESTION' }),
+    });
+    expect(pause.status).toBe(200);
+    const response = await fetchApi('/api/admin/ingestion/backfill', {
+      method: 'POST',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({
+        fromDate: '2026-01-01',
+        toDate: '2026-01-02',
+        confirm: 'RUN_BACKFILL',
+      }),
+    });
+    expect(response.status).toBe(409);
+    const resume = await fetchApi('/api/admin/ingestion/resume', {
+      method: 'POST',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({ confirm: 'RESUME_INGESTION' }),
+    });
+    expect(resume.status).toBe(200);
+  });
+
   it('rejects a range over 90 days', async () => {
     const cookie = await adminCookie();
     const response = await fetchApi('/api/admin/ingestion/backfill', {
@@ -500,6 +526,30 @@ describe('feature flags PUT', () => {
     const body = (await list.json()) as { items: { key: string; value: string | null }[] };
     const flag = body.items.find((f) => f.key === 'founding_plan_open');
     expect(flag?.value).toBe('true');
+  });
+
+  it('rejects value shapes the consuming pipeline could not load (SEC-P10-01)', async () => {
+    const cookie = await adminCookie();
+    // Malformed ingestion scope through the generic PUT must be rejected by
+    // the same parser the ingestion cron loads with — not persisted.
+    const badScope = await fetchApi('/api/admin/flags/ingestion_cpv_scope', {
+      method: 'PUT',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({ value: { nonsense: true }, confirm: 'UPDATE_FLAG' }),
+    });
+    expect(badScope.status).toBe(400);
+    const badBool = await fetchApi('/api/admin/flags/ingestion_paused', {
+      method: 'PUT',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({ value: 'yes', confirm: 'UPDATE_FLAG' }),
+    });
+    expect(badBool.status).toBe(400);
+    const badCap = await fetchApi('/api/admin/flags/founding_cap', {
+      method: 'PUT',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({ value: 12.5, confirm: 'UPDATE_FLAG' }),
+    });
+    expect(badCap.status).toBe(400);
   });
 });
 
