@@ -5,8 +5,8 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 4 — Auth/Tenancy: COMPLETE (signed off).** Next: Phase 5 — TED
-Ingestion.
+**Phase 5 — TED Ingestion: COMPLETE (signed off).** Next: Phase 6 —
+Matching.
 
 ## Completed
 
@@ -379,16 +379,79 @@ no refactors, each read-before-edit.
 deploy --dry-run` for the top-level env AND `--env staging` both list
   `env.API_RATE_LIMITER`).
 
+### Phase 5 — TED Ingestion (2026-08-14)
+
+- **Stage A (packages/ted)**: TedClient (anonymous Search API v3,
+  sequential, 500 ms spacing, exp backoff + jitter honoring Retry-After,
+  max 4 retries, hard request budget → TedBudgetExceededError, ITERATION
+  iterator with stalled-token guard, fetchNoticeXml host-allowlisted to
+  https *.ted.europa.eu + 15 MB size cap SEC-P5-01). eForms parser
+  (fast-xml-parser 5.10; DTD rejected + strict validator — XXE/billion-
+  laughs closed; namespace-prefix-agnostic navigation; OPT-300 buyer
+  resolution; lot→procedure CPV/NUTS fallback; multilingual {lang→text}
+  maps preserved; UTC deadlines; CPV check-digit stripping; version-
+  tolerant 1.13–1.15 with warnings outside; TedParseError carries
+  ParseIssue[] with 1 KB message truncation SEC-P5-04; 100k text caps;
+  never fabricates — explicit nulls).
+- **Fixtures**: 12 sanitized official OP-TED SDK examples under
+  tests/fixtures/ted/{1.15,1.13}/ with meta.json (provenance, sdk tag,
+  sanitization): normal, multi-lot, missing-value, missing-deadline,
+  non-english, multilingual (24 langs), unexpected-optional-fields,
+  published-publication-id, malformed-truncated (derived, documented),
+  normal-corrected (derived), second-schema-version (1.13.2). Live
+  published-TED fixtures pending network access (TED-P5-02).
+- **Stage B (packages/procurement + worker)**: feature-flag-driven
+  IngestionScope (default 72/48/79417000) + pause flag (fail-open on
+  malformed JSON, warn-logged P5-R-03); buildScopeQuery (syntax pending
+  live checkQuerySyntax — see gates below); bounded day-window catch-up
+  (≤3 windows/run, stops at first failure); runIngestionWindow: search →
+  fetch XML → sha-256 + gzip → R2 snapshot (ADR-0005 deterministic keys;
+  publication-number validated two-tier SEC-P5-02) → parse → Search-row
+  overrides → alpha-3→alpha-2 country map → upsert notice/version/lots/
+  cpv/geo; TedParseError/XML_TOO_LARGE → ingestion_errors (detail_json
+  capped 50 KB) + partial status, window proceeds; checkpoint advances
+  only on full success (SQL-guarded advance-only). Retention purge:
+  deadline+90d / no-deadline publication+180d, saved/feedback-pinned
+  exempt, notice-granular, batch-bounded 500, FK-safe order, snapshots
+  retained (R2 lifecycle owns objects); repositories/retention.ts global
+  exemption documented + insert-ban asserted (SEC-P5-03). Worker: queues
+  (INGEST_QUEUE + DLQ) / R2 (SNAPSHOTS) / crons (ingest 05:00, retention
+  06:30, stale watchdog 09:00 UTC) in top-level AND both env blocks;
+  scheduled()/queue() dispatch; /api/health/ready reports
+  lastSuccessfulIngestionAt + stale (>36 h).
+- **Deferred to Phase 6** (TED-P5-03): match recompute on new notice
+  versions — listLotsForScoring already keys on current version; Phase 6
+  scores post-ingestion.
+- **OPEN honesty flags** (also in docs/deployment.md pre-first-ingestion
+  gates): (1) composed expert-query syntax NOT validated against live
+  checkQuerySyntax (TED API proxy-blocked from dev env) — must pass on
+  staging before the production cron is enabled (TED-P5-01); (2) scoped
+  daily volume UNMEASURED — planning number 150–300/day stands unverified;
+  measure on first staging window, record in cost model, tighten-before-
+  widen if >2× (ADR-0003); (3) purge eligibility scan is in-memory —
+  fine ≤~50k lots, keyset pagination past that (P5-R-04).
+
 ## In progress
 
 - Nothing mid-flight. Working tree committed at each checkpoint.
 
-## Next (Phase 5)
+## Next (Phase 6 — Matching)
 
-1. Security agent review + production-reviewer sign-off for the full
-   Phase 4 (stage A + B together, incl. this review-fix batch) — not yet
-   run this session.
-2. TED ingestion scope work per docs/ted-ingestion-scope.md.
+1. Deterministic engine in packages/matching per docs/matching-engine.md:
+   hierarchical CPV gradient, capability/keyword matching (diacritic-fold,
+   synonym groups), geography, value bands (ECB rates via exchange_rates),
+   buyer/procedure/deadline/eligibility components; UNKNOWN=50% policy;
+   hard exclusions (known values only); risk flags with evidence +
+   confidence; ENGINE_VERSION stamped.
+2. Scoring pipeline: post-ingestion enqueue → score (org × new/changed
+   current-version lots, CPV-scope pre-filter), persist via
+   insertTenderMatches (components only ≥ POSSIBLE_MATCH per spec).
+3. Recompute path for corrected notices (TED-P5-03).
+4. Unit tests per master spec list incl. worked example 84.5 as fixture;
+   determinism property test; matching-audit skill + reviews.
+5. Phase 5 residual LOWs (re-verification): direct D1 test for the
+   XML_TOO_LARGE → ingestion_errors window-proceeds branch; unit test for
+   the 50 KB boundIssuesForErrorDetail cap.
 
 ## Architecture decisions
 
@@ -543,6 +606,17 @@ Nothing deployed. No Cloudflare resources exist yet.
   SEC-P4-07 admin auditing scheduled with Phase 10 tooling; SEC-P4-08
   email waitUntil requirement recorded for Phase 8; SEC-P4-09 threat-model
   deltas noted for next touch. Final post-fix gates: 128 tests green.
+- Phase 5: **ted-data agent SIGN-OFF** (ingestion-audit skill, all 8 items
+  PASS with evidence; TED-P5-01 live query validation → deployment gate;
+  TED-P5-02 live fixtures pending network; TED-P5-03 recompute → Phase 6;
+  TED-P5-04 watchdog is log-line + uptime monitor note). **Security agent
+  SIGN-OFF** (0 CRITICAL/HIGH; XXE/SSRF/ReDoS/resource-exhaustion posture
+  verified; SEC-P5-01/02 MEDIUMs + 03/04 LOWs FIXED same day).
+  **production-reviewer**: initial FAIL on P5-R-01 HIGH (ledger unflushed)
+  - P5-R-02 MEDIUM (paused-flag untested) → fixes applied →
+    **re-verification PASS** (2026-08-14, commit 8c76c07, all fixes verified
+    with evidence, 205 tests green). Residual LOWs (XML_TOO_LARGE branch D1
+    test, 50 KB cap unit test) carried into Phase 6 next-list.
 
 ## Pilot checkpoint
 

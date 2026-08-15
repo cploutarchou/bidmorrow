@@ -14,10 +14,13 @@
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
+import { createDb } from '@bidmorrow/db';
 import { createLogger } from '@bidmorrow/observability';
+import { isIngestionStale, lastSuccessfulRunAt } from '@bidmorrow/procurement';
 
 import { createRequestAuth } from './auth-instance';
-import type { AppBindings, Env } from './env';
+import type { AppBindings, Env, IngestQueueMessage } from './env';
+import { runIngestCatchUpJob, runRetentionPurgeJob } from './ingestion';
 import { accountRoutes } from './routes/account';
 import { adminRoutes } from './routes/admin';
 import { orgRoutes } from './routes/org';
@@ -86,11 +89,22 @@ app.get('/api/health/live', (c) => c.json({ status: 'ok' }));
 app.get('/api/health/ready', async (c) => {
   try {
     await c.env.DB.prepare('SELECT 1').first();
-    return c.json({ status: 'ok', db: 'ok' });
   } catch (cause) {
     c.get('logger').error('readiness check failed: D1 unreachable', { cause });
     return c.json({ status: 'degraded', db: 'error' }, 503);
   }
+  // Ingestion staleness never fails readiness (it is a background-pipeline
+  // signal, not a request-path dependency) — it is surfaced alongside `ok`
+  // for the admin surface / uptime monitor to alert on separately.
+  let lastSuccessfulIngestionAt: number | null = null;
+  let stale = true;
+  try {
+    lastSuccessfulIngestionAt = await lastSuccessfulRunAt(createDb(c.env.DB));
+    stale = isIngestionStale(lastSuccessfulIngestionAt, Date.now());
+  } catch (cause) {
+    c.get('logger').error('readiness: ingestion staleness check failed', { cause });
+  }
+  return c.json({ status: 'ok', db: 'ok', lastSuccessfulIngestionAt, stale });
 });
 
 // Better Auth core (ADR-0002, ADR-0007: authentication only, no org
@@ -117,8 +131,95 @@ app.onError((err, c) => {
   return c.json({ error: 'internal_error', request_id: c.get('requestId') }, 500);
 });
 
+// Cron patterns (wrangler.jsonc `triggers.crons`, UTC): daily ingestion
+// catch-up (05:00), daily retention purge (06:30), stale-ingestion watchdog
+// (09:00). Dispatch by exact pattern string — see ADR-0006.
+const CRON_INGEST = '0 5 * * *';
+const CRON_RETENTION = '30 6 * * *';
+const CRON_WATCHDOG = '0 9 * * *';
+
+/**
+ * Cron entry point. Ingestion is enqueued (bounded, retried, DLQ'd via
+ * Queues — ADR-0006) rather than run inline, so a slow TED response never
+ * risks the cron's own execution-time limit. Retention runs inline: it is a
+ * bounded, single D1 transaction-shaped job with no external HTTP calls.
+ * The watchdog only reads and logs — no mutation.
+ */
+async function scheduled(
+  event: ScheduledController,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<void> {
+  const logger = createLogger({ cron: event.cron });
+  switch (event.cron) {
+    case CRON_INGEST:
+      await env.INGEST_QUEUE.send({ kind: 'ingest' });
+      logger.info('cron.ingest.enqueued', {});
+      return;
+    case CRON_RETENTION:
+      ctx.waitUntil(
+        runRetentionPurgeJob(env, logger).catch((cause: unknown) => {
+          logger.error('cron.retention.failed', {
+            error: cause instanceof Error ? cause.message : String(cause),
+          });
+        }),
+      );
+      return;
+    case CRON_WATCHDOG: {
+      const lastSuccess = await lastSuccessfulRunAt(createDb(env.DB));
+      if (isIngestionStale(lastSuccess, Date.now())) {
+        logger.error('ingestion.stale', { last_successful_run_at: lastSuccess });
+      } else {
+        logger.info('ingestion.watchdog.ok', { last_successful_run_at: lastSuccess });
+      }
+      return;
+    }
+    default:
+      logger.error('cron.unrecognized_pattern', { cron: event.cron });
+  }
+}
+
+/**
+ * Queue consumer (ADR-0006): delivery is at-least-once, so every handler is
+ * idempotent by construction (checkpointed upserts / unique constraints
+ * downstream) — safe to `ack` every message that ran to completion and let
+ * an unhandled throw retry (bounded by wrangler.jsonc `max_retries`, then
+ * DLQ).
+ */
+async function queue(
+  batch: MessageBatch<IngestQueueMessage>,
+  env: Env,
+  _ctx: ExecutionContext,
+): Promise<void> {
+  const logger = createLogger({ queue: batch.queue });
+  for (const message of batch.messages) {
+    try {
+      if (message.body.kind === 'ingest') {
+        const result = await runIngestCatchUpJob(env, logger);
+        logger.info('queue.ingest.completed', {
+          paused: result.paused,
+          windows_processed: result.results.length,
+          statuses: result.results.map((r) => r.status),
+        });
+      } else {
+        const result = await runRetentionPurgeJob(env, logger);
+        logger.info('queue.purge.completed', { notices_deleted: result.noticesDeleted });
+      }
+      message.ack();
+    } catch (cause) {
+      logger.error('queue.message.failed', {
+        kind: message.body.kind,
+        error: cause instanceof Error ? cause.message : String(cause),
+      });
+      message.retry();
+    }
+  }
+}
+
 const worker = {
   fetch: (request, env, ctx) => app.fetch(request, env, ctx),
+  scheduled,
+  queue: queue as ExportedHandlerQueueHandler<Env>,
 } satisfies ExportedHandler<Env>;
 
 export default worker;

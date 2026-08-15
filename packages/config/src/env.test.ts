@@ -94,6 +94,11 @@ describe('parseEnv', () => {
 
 describe('feature flag keys', () => {
   it('exposes the admin-editable flag keys', () => {
-    expect(FEATURE_FLAG_KEYS).toEqual(['founding_plan_open', 'ingestion_paused', 'digest_paused']);
+    expect(FEATURE_FLAG_KEYS).toEqual([
+      'founding_plan_open',
+      'ingestion_paused',
+      'digest_paused',
+      'ingestion_cpv_scope',
+    ]);
   });
 });

@@ -1,0 +1,11 @@
+{
+  "source": "https://github.com/OP-TED/eForms-SDK/blob/1.15.1/examples/notices/cn_24_minimal.xml",
+  "sourceNoticeId": null,
+  "publicationDate": null,
+  "retrievalDate": "2026-08-14",
+  "sdkVersion": "1.15",
+  "sdkGitTag": "1.15.1",
+  "case": "Minimal-but-valid cn-standard notice: no estimated value at lot or procedure level (explicit null), deadline present, procedure-level CPV/NUTS fall through to the lot.",
+  "origin": "Official OP-TED eForms-SDK example notice (not a TED-published notice; live TED API unreachable from this environment \u2014 see IMPLEMENTATION_LEDGER Phase 5 notes). Example notices carry no OJS publication number unless stated; the parser falls back to the notice-id UUID with a warning issue.",
+  "sanitization": "Contact emails/phone/fax values replaced with obviously fake equivalents (contact@example-buyer.example, +00 0000 000000). No structural changes; field paths, language codes, CPV/NUTS codes untouched. Contact org-unit names in the source are role names, not personal names, and were left as-is."
+}

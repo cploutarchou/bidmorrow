@@ -21,6 +21,8 @@ export interface Env {
   APP_BASE_URL: string;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL: string;
+  /** TED Search API origin (docs/dependency-versions.md); optional — TedClient defaults to TED_API_BASE. */
+  TED_API_BASE_URL?: string;
   /**
    * Comma-separated allowlist of INTERNAL_ADMIN emails (docs/security.md
    * C6). Never a wrangler.jsonc `vars` entry (those are committed,
@@ -35,7 +37,14 @@ export interface Env {
    * once and skips limiting).
    */
   API_RATE_LIMITER?: RateLimit;
+  /** Raw eForms XML snapshot bucket (ADR-0005), private, per-environment. */
+  SNAPSHOTS: R2Bucket;
+  /** Ingestion-run queue producer (ADR-0006) — the daily cron enqueues `{kind:'ingest'}`/`{kind:'purge'}` messages. */
+  INGEST_QUEUE: Queue<IngestQueueMessage>;
 }
+
+/** Message shape carried on INGEST_QUEUE (src/index.ts `queue()` dispatches on `kind`). */
+export type IngestQueueMessage = { readonly kind: 'ingest' } | { readonly kind: 'purge' };
 
 export interface Variables {
   requestId: string;

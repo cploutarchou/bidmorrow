@@ -24,6 +24,7 @@ export * from './repositories/errors';
 export * from './repositories/tender-corpus';
 export * from './repositories/ingestion';
 export * from './repositories/ops-global';
+export * from './repositories/retention';
 
 // Tenant-scoped repositories (every function REQUIRES organizationId per
 // the TENANT RULE below; the two nullable-org ledgers take an explicit
