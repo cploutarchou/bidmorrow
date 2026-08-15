@@ -32,6 +32,17 @@ export default tseslint.config(
         'error',
         { allowInterfaces: 'with-single-extends' },
       ],
+      // SEC-P7-02: never render source-derived procurement/user content as
+      // HTML (docs/security.md C2) — ban the JSX attribute outright rather
+      // than relying on reviewer vigilance.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'JSXAttribute[name.name="dangerouslySetInnerHTML"]',
+          message:
+            'dangerouslySetInnerHTML is banned for source-derived data per docs/security.md C2.',
+        },
+      ],
     },
   },
   {

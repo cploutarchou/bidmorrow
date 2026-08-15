@@ -87,6 +87,64 @@ export function toIso6392(bcp47Language: string): string {
   return BCP47_TO_ISO_639_2[primarySubtag] ?? primarySubtag;
 }
 
+const VALID_CONTRACT_NATURES = new Set<string>(CONTRACT_NATURES);
+const VALID_CERTIFICATION_CODES = new Set<string>(['ISO_27001', 'ISO_9001', 'SOC2', 'OTHER']);
+
+/**
+ * Validates a single `company_exclusions.value` row of kind `contract_nature`
+ * against the known union — never a blind cast (Phase 7 residual of
+ * SEC-P6-04, same pattern as `parseSupportedContractNatures`). Invalid
+ * values are dropped and logged, never silently included in the exclusion
+ * set (a bad exclusion value must never accidentally hard-exclude every
+ * lot). Exported for unit tests.
+ */
+export function parseExclusionContractNature(
+  value: string,
+  logger?: Logger,
+): ContractNature | null {
+  if (VALID_CONTRACT_NATURES.has(value)) {
+    return value as ContractNature;
+  }
+  logger?.error('scoring_input.exclusion_contract_nature.invalid_value', { value });
+  return null;
+}
+
+/**
+ * Validates a single `company_certifications.certification_code` row against
+ * the engine's `OrgCertification['code']` union — never a blind cast (Phase 7
+ * residual of SEC-P6-04). Invalid values are dropped and logged. Exported
+ * for unit tests.
+ */
+export function parseCertificationCode(
+  value: string,
+  logger?: Logger,
+): OrgCertification['code'] | null {
+  if (VALID_CERTIFICATION_CODES.has(value)) {
+    return value as OrgCertification['code'];
+  }
+  logger?.error('scoring_input.certification_code.invalid_value', { value });
+  return null;
+}
+
+/**
+ * Validates a `tender_lots.contract_nature` value against the known union —
+ * never a blind cast (P7-R-04, same pattern as `parseExclusionContractNature`
+ * / `parseCertificationCode`). An invalid stored value maps to `null`
+ * (engine treats it as UNKNOWN) rather than fabricating a nature that was
+ * never actually true. Exported for unit tests.
+ */
+export function parseLotContractNature(
+  value: string | null,
+  logger?: Logger,
+): ContractNature | null {
+  if (value === null) return null;
+  if (VALID_CONTRACT_NATURES.has(value)) {
+    return value as ContractNature;
+  }
+  logger?.error('scoring_input.lot_contract_nature.invalid_value', { value });
+  return null;
+}
+
 /**
  * @throws never — invalid `ContractNature` values are dropped and logged,
  * never blindly cast (SEC-P6-04). Exported for unit tests.
@@ -178,14 +236,17 @@ export async function loadOrgProfile(
     else if (exclusion.kind === 'country') excludedCountries.push(exclusion.value);
     else if (exclusion.kind === 'nuts') nutsPrefixes.push(exclusion.value);
     else if (exclusion.kind === 'phrase') phrases.push(exclusion.value);
-    else if (exclusion.kind === 'contract_nature')
-      excludedNatures.push(exclusion.value as ContractNature);
+    else if (exclusion.kind === 'contract_nature') {
+      const nature = parseExclusionContractNature(exclusion.value, logger);
+      if (nature !== null) excludedNatures.push(nature);
+    }
   }
 
-  const orgCertifications: OrgCertification[] = certifications.items.map((cert) => ({
-    code: cert.certificationCode as OrgCertification['code'],
-    ...(cert.label !== null ? { label: cert.label } : {}),
-  }));
+  const orgCertifications: OrgCertification[] = certifications.items.flatMap((cert) => {
+    const code = parseCertificationCode(cert.certificationCode, logger);
+    if (code === null) return [];
+    return [{ code, ...(cert.label !== null ? { label: cert.label } : {}) }];
+  });
 
   const supportedContractNatures: ContractNature[] =
     matchingPrefs !== null
@@ -235,6 +296,7 @@ export async function mapLotToEngineInput(
   db: Db,
   bundle: LotScoringBundle,
   asOfMs: number,
+  logger?: Logger,
 ): Promise<LotMappingResult> {
   const mainCpv = bundle.cpvCodes.find((c) => c.isMain === 1)?.cpvCode;
   if (mainCpv === undefined) {
@@ -274,7 +336,7 @@ export async function mapLotToEngineInput(
     deadlineAt: bundle.lot.deadlineAt,
     buyerLegalType: bundle.buyerLegalType,
     procedureType: bundle.procedureType,
-    contractNature: (bundle.lot.contractNature as ContractNature | null) ?? null,
+    contractNature: parseLotContractNature(bundle.lot.contractNature, logger),
     languages: languages.length > 0 ? languages : [primaryLanguage],
   };
   return { kind: 'ok', lot, rateDate };

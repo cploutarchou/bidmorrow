@@ -17,7 +17,12 @@ import type {
   TenderLot,
 } from '@bidmorrow/db';
 
-import { mapLotToEngineInput, parseSupportedContractNatures, toIso6392 } from './scoring-input';
+import {
+  mapLotToEngineInput,
+  parseLotContractNature,
+  parseSupportedContractNatures,
+  toIso6392,
+} from './scoring-input';
 
 const NEVER_CALLED_DB = {} as Db;
 
@@ -150,6 +155,41 @@ describe('mapLotToEngineInput', () => {
     expect(result.kind).toBe('ok');
     if (result.kind !== 'ok') throw new Error('unreachable');
     expect(result.lot.descriptionByLang).toEqual({});
+  });
+
+  it('P7-R-04: passes a valid stored contractNature through unchanged', async () => {
+    const bundle = makeBundle({ lot: makeLot({ contractNature: 'supplies' }) });
+    const result = await mapLotToEngineInput(NEVER_CALLED_DB, bundle, NOW);
+    expect(result.kind).toBe('ok');
+    if (result.kind !== 'ok') throw new Error('unreachable');
+    expect(result.lot.contractNature).toBe('supplies');
+  });
+
+  it('P7-R-04: maps an invalid stored contractNature to null (never a blind cast)', async () => {
+    const bundle = makeBundle({ lot: makeLot({ contractNature: 'not-a-real-nature' }) });
+    const result = await mapLotToEngineInput(NEVER_CALLED_DB, bundle, NOW);
+    expect(result.kind).toBe('ok');
+    if (result.kind !== 'ok') throw new Error('unreachable');
+    expect(result.lot.contractNature).toBeNull();
+  });
+});
+
+describe('parseLotContractNature (P7-R-04)', () => {
+  it('passes a known ContractNature through', () => {
+    expect(parseLotContractNature('works')).toBe('works');
+  });
+
+  it('maps null to null', () => {
+    expect(parseLotContractNature(null)).toBeNull();
+  });
+
+  it('maps an unknown value to null and logs', () => {
+    const errors: unknown[] = [];
+    const logger = { error: (...args: unknown[]) => errors.push(args) } as unknown as Parameters<
+      typeof parseLotContractNature
+    >[1];
+    expect(parseLotContractNature('bogus', logger)).toBeNull();
+    expect(errors).toHaveLength(1);
   });
 });
 

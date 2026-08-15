@@ -535,6 +535,80 @@ export async function listLotsForScoring(
 }
 
 // ---------------------------------------------------------------------------
+// Tender detail (Phase 7): the full lot + notice bundle for the customer
+// detail view. GLOBAL (no organizationId) — the caller (apps/worker route)
+// resolves lotId from an org-checked `tender_matches` row first, so tenancy
+// is enforced one layer up, exactly like `loadLotScoringBundlesByIds`.
+// ---------------------------------------------------------------------------
+
+export interface TenderDetailBundle {
+  readonly lot: TenderLot;
+  readonly cpvCodes: readonly TenderCpvCode[];
+  readonly geographies: readonly TenderGeography[];
+  readonly notice: {
+    readonly id: string;
+    readonly sourceNoticeId: string;
+    readonly source: string;
+    readonly sourceUrl: string;
+    readonly publicationDate: string;
+    readonly procedureType: string | null;
+    readonly noticeType: string;
+    readonly sourceLanguagesJson: string;
+  };
+  readonly buyerName: string | null;
+}
+
+/** Loads the full lot + notice + buyer + CPV/geography bundle for one lot. Null when the lot no longer resolves (purged/deleted). */
+export async function getTenderDetailBundle(
+  db: Db,
+  args: { lotId: string },
+): Promise<TenderDetailBundle | null> {
+  const rows = await db
+    .select({
+      lot: tenderLots,
+      noticeId: tenderNotices.id,
+      sourceNoticeId: tenderNotices.sourceNoticeId,
+      source: tenderNotices.source,
+      sourceUrl: tenderNotices.sourceUrl,
+      publicationDate: tenderNotices.publicationDate,
+      procedureType: tenderNotices.procedureType,
+      noticeType: tenderNotices.noticeType,
+      sourceLanguagesJson: tenderNotices.sourceLanguagesJson,
+      buyerName: buyers.name,
+    })
+    .from(tenderLots)
+    .innerJoin(tenderNoticeVersions, eq(tenderLots.noticeVersionId, tenderNoticeVersions.id))
+    .innerJoin(tenderNotices, eq(tenderNoticeVersions.noticeId, tenderNotices.id))
+    .leftJoin(buyers, eq(tenderNotices.buyerId, buyers.id))
+    .where(eq(tenderLots.id, args.lotId))
+    .limit(1);
+  const row = rows[0];
+  if (row === undefined) return null;
+
+  const [cpvRows, geoRows] = await db.batch([
+    db.select().from(tenderCpvCodes).where(eq(tenderCpvCodes.lotId, args.lotId)),
+    db.select().from(tenderGeographies).where(eq(tenderGeographies.lotId, args.lotId)),
+  ]);
+
+  return {
+    lot: row.lot,
+    cpvCodes: cpvRows,
+    geographies: geoRows,
+    notice: {
+      id: row.noticeId,
+      sourceNoticeId: row.sourceNoticeId,
+      source: row.source,
+      sourceUrl: row.sourceUrl,
+      publicationDate: row.publicationDate,
+      procedureType: row.procedureType,
+      noticeType: row.noticeType,
+      sourceLanguagesJson: row.sourceLanguagesJson,
+    },
+    buyerName: row.buyerName,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Scoring input bundles (Phase 6): everything the engine-input mapper needs
 // for a set of lots, in a small fixed number of queries.
 // ---------------------------------------------------------------------------

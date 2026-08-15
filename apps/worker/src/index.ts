@@ -29,7 +29,9 @@ import {
 } from './ingestion';
 import { accountRoutes } from './routes/account';
 import { adminRoutes } from './routes/admin';
+import { feedRoutes } from './routes/feed';
 import { orgRoutes } from './routes/org';
+import { tendersRoutes } from './routes/tenders';
 
 export type { Env, Variables } from './env';
 
@@ -122,6 +124,11 @@ app.on(['GET', 'POST'], '/api/auth/*', (c) => {
 
 // Phase 4 stage B: tenant-scoped, admin, and account routes.
 app.route('/api/org', orgRoutes);
+// Phase 7: feed + tender detail/actions, mounted at the same /api/org prefix
+// as distinct sub-routers (each carries its own requireSession/
+// requireOrganization chain) so org.ts stays focused on the profile bundle.
+app.route('/api/org', feedRoutes);
+app.route('/api/org', tendersRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api/account', accountRoutes);
 

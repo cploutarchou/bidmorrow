@@ -184,7 +184,7 @@ export async function scoreLotsForOrgs(
   let remainingLotIds: readonly string[] = [];
 
   outer: for (const [bundleIndex, bundle] of lotBundles.entries()) {
-    const mapped = await mapLotToEngineInput(deps.db, bundle, now());
+    const mapped = await mapLotToEngineInput(deps.db, bundle, now(), deps.logger);
     if (mapped.kind === 'missing_main_cpv') {
       const message = `lot ${bundle.lot.id} has no main CPV code — cannot be scored`;
       if (args.ingestionRunId !== undefined) {

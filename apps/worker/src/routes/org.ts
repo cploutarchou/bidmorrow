@@ -16,12 +16,30 @@ import {
   getDigestPreferences,
   getMatchingPreferences,
   getOrganizationsForUser,
+  insertProductEvent,
+  listCompanyCapabilities,
+  listCompanyCertifications,
+  listCompanyCpvPreferences,
+  listCompanyExclusions,
+  listCompanyGeographies,
   listCompanyKeywords,
+  replaceCompanyCapabilities,
+  replaceCompanyCertifications,
+  replaceCompanyCpvPreferences,
+  replaceCompanyExclusions,
+  replaceCompanyGeographies,
   replaceCompanyKeywords,
   upsertCompanyProfile,
+  upsertDigestPreferences,
+  upsertMatchingPreferences,
   insertAuditEvent,
 } from '@bidmorrow/db';
-import { organizationId as toOrganizationId } from '@bidmorrow/domain';
+import {
+  CONTRACT_NATURES,
+  COMPANY_PRESETS,
+  organizationId as toOrganizationId,
+} from '@bidmorrow/domain';
+import { loadIngestionScope } from '@bidmorrow/procurement';
 
 import type { AppBindings } from '../env';
 import { requireOrganization, requireRole } from '../middleware/organization';
@@ -67,6 +85,67 @@ const replaceKeywordsSchema = z
   })
   .strict();
 
+const cpvPreferencesSchema = z
+  .object({
+    // Sanity bound distinct from the repository's business cap (30) — the
+    // 422 CapExceededError path below is what actually enforces the cap.
+    cpvCodes: z.array(z.string().trim().min(1).max(20)).max(200),
+  })
+  .strict();
+
+const geographyInputSchema = z
+  .object({
+    kind: z.enum(['preferred_nuts', 'opportunity_country', 'country_served']),
+    code: z.string().trim().min(1).max(20),
+  })
+  .strict();
+
+const geographiesSchema = z
+  .object({ geographies: z.array(geographyInputSchema).max(200) })
+  .strict();
+
+const capabilitiesSchema = z
+  .object({ labels: z.array(z.string().trim().min(1).max(200)).max(200) })
+  .strict();
+
+const certificationInputSchema = z
+  .object({
+    certificationCode: z.enum(['ISO_27001', 'ISO_9001', 'SOC2', 'OTHER']),
+    label: z.string().trim().min(1).max(200).nullable().optional(),
+  })
+  .strict();
+
+const certificationsSchema = z
+  .object({ certifications: z.array(certificationInputSchema).max(50) })
+  .strict();
+
+const exclusionInputSchema = z
+  .object({
+    kind: z.enum(['cpv_family', 'country', 'nuts', 'phrase', 'contract_nature']),
+    value: z.string().trim().min(1).max(200),
+  })
+  .strict();
+
+const exclusionsSchema = z.object({ exclusions: z.array(exclusionInputSchema).max(200) }).strict();
+
+const matchingPreferencesSchema = z
+  .object({
+    minValueEur: z.number().nonnegative().nullable(),
+    maxValueEur: z.number().nonnegative().nullable(),
+    supportedContractNatures: z.array(z.enum(CONTRACT_NATURES)).max(CONTRACT_NATURES.length),
+    minimumDaysRemaining: z.number().int().nonnegative().nullable(),
+  })
+  .strict();
+
+const digestPreferencesSchema = z
+  .object({
+    enabled: z.boolean(),
+    sendEmpty: z.boolean(),
+    minClassification: z.enum(['STRONG_MATCH', 'WORTH_REVIEWING', 'POSSIBLE_MATCH', 'LOW_FIT']),
+    timezone: z.string().trim().min(1).max(64),
+  })
+  .strict();
+
 export const orgRoutes = new Hono<AppBindings>();
 
 orgRoutes.use('*', rateLimitOrgApi);
@@ -104,10 +183,24 @@ orgRoutes.post('/', zValidator('json', createOrganizationSchema), async (c) => {
   return c.json({ organization }, 201);
 });
 
+// Public shape (session-authenticated only, no organization needed):
+// onboarding presets are static, fully editable pre-fill data — applying one
+// is a client-side operation via the PUT endpoints below, never a hidden
+// server-side effect.
+orgRoutes.get('/presets', (c) => c.json({ presets: COMPANY_PRESETS }));
+
 // Everything below requires an existing organization, resolved server-side
 // from the session's membership only.
 orgRoutes.use('/profile', requireOrganization);
 orgRoutes.use('/keywords', requireOrganization);
+orgRoutes.use('/cpv-preferences', requireOrganization);
+orgRoutes.use('/geographies', requireOrganization);
+orgRoutes.use('/capabilities', requireOrganization);
+orgRoutes.use('/certifications', requireOrganization);
+orgRoutes.use('/exclusions', requireOrganization);
+orgRoutes.use('/matching-preferences', requireOrganization);
+orgRoutes.use('/digest-preferences', requireOrganization);
+orgRoutes.use('/onboarding/complete', requireOrganization);
 
 orgRoutes.get('/profile', async (c) => {
   const db = createDb(c.env.DB);
@@ -134,6 +227,7 @@ orgRoutes.put(
       return c.json({ error: 'no_organization' }, 403);
     }
     const args = c.req.valid('json');
+    const existedBefore = (await getCompanyProfile(db, organizationId)) !== null;
     const profile = await upsertCompanyProfile(db, organizationId, args);
     await insertAuditEvent(db, {
       actorType: 'user',
@@ -144,6 +238,13 @@ orgRoutes.put(
       targetId: profile.id,
       occurredAt: Date.now(),
     });
+    if (!existedBefore) {
+      await insertProductEvent(db, {
+        organizationId,
+        userId: session.user.id,
+        name: 'onboarding_started',
+      });
+    }
     return c.json({ profile });
   },
 );
@@ -195,3 +296,316 @@ orgRoutes.put(
     return c.json({ keywords: page.items });
   },
 );
+
+orgRoutes.get('/cpv-preferences', async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
+  const page = await listCompanyCpvPreferences(db, organizationId, { limit: 100 });
+  return c.json({ cpvPreferences: page.items });
+});
+
+orgRoutes.put(
+  '/cpv-preferences',
+  requireRole('ORGANIZATION_OWNER'),
+  zValidator('json', cpvPreferencesSchema),
+  async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+    const session = c.get('session');
+    if (organizationId === undefined || session === undefined) {
+      return c.json({ error: 'no_organization' }, 403);
+    }
+    const { cpvCodes } = c.req.valid('json');
+    try {
+      await replaceCompanyCpvPreferences(db, organizationId, { cpvCodes });
+    } catch (cause) {
+      if (cause instanceof CapExceededError) {
+        return c.json({ error: 'cap_exceeded', cap: cause.cap }, 422);
+      }
+      throw cause;
+    }
+    await insertAuditEvent(db, {
+      actorType: 'user',
+      actorId: session.user.id,
+      organizationId,
+      action: 'cpv_preferences.replaced',
+      targetType: 'company_cpv_preferences',
+      targetId: null,
+      occurredAt: Date.now(),
+    });
+    const page = await listCompanyCpvPreferences(db, organizationId, { limit: 100 });
+    return c.json({ cpvPreferences: page.items });
+  },
+);
+
+orgRoutes.get('/geographies', async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
+  const page = await listCompanyGeographies(db, organizationId, { limit: 100 });
+  return c.json({ geographies: page.items });
+});
+
+orgRoutes.put(
+  '/geographies',
+  requireRole('ORGANIZATION_OWNER'),
+  zValidator('json', geographiesSchema),
+  async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+    const session = c.get('session');
+    if (organizationId === undefined || session === undefined) {
+      return c.json({ error: 'no_organization' }, 403);
+    }
+    const { geographies } = c.req.valid('json');
+    await replaceCompanyGeographies(db, organizationId, { geographies });
+    await insertAuditEvent(db, {
+      actorType: 'user',
+      actorId: session.user.id,
+      organizationId,
+      action: 'geographies.replaced',
+      targetType: 'company_geographies',
+      targetId: null,
+      occurredAt: Date.now(),
+    });
+    const page = await listCompanyGeographies(db, organizationId, { limit: 100 });
+    return c.json({ geographies: page.items });
+  },
+);
+
+orgRoutes.get('/capabilities', async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
+  const page = await listCompanyCapabilities(db, organizationId, { limit: 100 });
+  return c.json({ capabilities: page.items });
+});
+
+orgRoutes.put(
+  '/capabilities',
+  requireRole('ORGANIZATION_OWNER'),
+  zValidator('json', capabilitiesSchema),
+  async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+    const session = c.get('session');
+    if (organizationId === undefined || session === undefined) {
+      return c.json({ error: 'no_organization' }, 403);
+    }
+    const { labels } = c.req.valid('json');
+    await replaceCompanyCapabilities(db, organizationId, { labels });
+    await insertAuditEvent(db, {
+      actorType: 'user',
+      actorId: session.user.id,
+      organizationId,
+      action: 'capabilities.replaced',
+      targetType: 'company_capabilities',
+      targetId: null,
+      occurredAt: Date.now(),
+    });
+    const page = await listCompanyCapabilities(db, organizationId, { limit: 100 });
+    return c.json({ capabilities: page.items });
+  },
+);
+
+orgRoutes.get('/certifications', async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
+  const page = await listCompanyCertifications(db, organizationId, { limit: 100 });
+  return c.json({ certifications: page.items });
+});
+
+orgRoutes.put(
+  '/certifications',
+  requireRole('ORGANIZATION_OWNER'),
+  zValidator('json', certificationsSchema),
+  async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+    const session = c.get('session');
+    if (organizationId === undefined || session === undefined) {
+      return c.json({ error: 'no_organization' }, 403);
+    }
+    const { certifications } = c.req.valid('json');
+    const normalized = certifications.map((cert) => ({
+      certificationCode: cert.certificationCode,
+      label: cert.label ?? null,
+    }));
+    await replaceCompanyCertifications(db, organizationId, { certifications: normalized });
+    await insertAuditEvent(db, {
+      actorType: 'user',
+      actorId: session.user.id,
+      organizationId,
+      action: 'certifications.replaced',
+      targetType: 'company_certifications',
+      targetId: null,
+      occurredAt: Date.now(),
+    });
+    const page = await listCompanyCertifications(db, organizationId, { limit: 100 });
+    return c.json({ certifications: page.items });
+  },
+);
+
+orgRoutes.get('/exclusions', async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
+  const page = await listCompanyExclusions(db, organizationId, { limit: 100 });
+  return c.json({ exclusions: page.items });
+});
+
+orgRoutes.put(
+  '/exclusions',
+  requireRole('ORGANIZATION_OWNER'),
+  zValidator('json', exclusionsSchema),
+  async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+    const session = c.get('session');
+    if (organizationId === undefined || session === undefined) {
+      return c.json({ error: 'no_organization' }, 403);
+    }
+    const { exclusions } = c.req.valid('json');
+    await replaceCompanyExclusions(db, organizationId, { exclusions });
+    await insertAuditEvent(db, {
+      actorType: 'user',
+      actorId: session.user.id,
+      organizationId,
+      action: 'exclusions.replaced',
+      targetType: 'company_exclusions',
+      targetId: null,
+      occurredAt: Date.now(),
+    });
+    const page = await listCompanyExclusions(db, organizationId, { limit: 100 });
+    return c.json({ exclusions: page.items });
+  },
+);
+
+orgRoutes.get('/matching-preferences', async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
+  const matching = await getMatchingPreferences(db, organizationId);
+  return c.json({ matching });
+});
+
+orgRoutes.put(
+  '/matching-preferences',
+  requireRole('ORGANIZATION_OWNER'),
+  zValidator('json', matchingPreferencesSchema),
+  async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+    const session = c.get('session');
+    if (organizationId === undefined || session === undefined) {
+      return c.json({ error: 'no_organization' }, 403);
+    }
+    const args = c.req.valid('json');
+    const matching = await upsertMatchingPreferences(db, organizationId, args);
+    await insertAuditEvent(db, {
+      actorType: 'user',
+      actorId: session.user.id,
+      organizationId,
+      action: 'matching_preferences.updated',
+      targetType: 'matching_preferences',
+      targetId: matching.id,
+      occurredAt: Date.now(),
+    });
+    return c.json({ matching });
+  },
+);
+
+orgRoutes.get('/digest-preferences', async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
+  const digest = await getDigestPreferences(db, organizationId);
+  return c.json({ digest });
+});
+
+orgRoutes.put(
+  '/digest-preferences',
+  requireRole('ORGANIZATION_OWNER'),
+  zValidator('json', digestPreferencesSchema),
+  async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+    const session = c.get('session');
+    if (organizationId === undefined || session === undefined) {
+      return c.json({ error: 'no_organization' }, 403);
+    }
+    const args = c.req.valid('json');
+    const digest = await upsertDigestPreferences(db, organizationId, args);
+    await insertAuditEvent(db, {
+      actorType: 'user',
+      actorId: session.user.id,
+      organizationId,
+      action: 'digest_preferences.updated',
+      targetType: 'digest_preferences',
+      targetId: digest.id,
+      occurredAt: Date.now(),
+    });
+    return c.json({ digest });
+  },
+);
+
+/**
+ * Marks onboarding complete (`company_profiles.onboarding_completed_at`) and
+ * reports whether the org's CPV preferences have zero overlap with the
+ * ingestion scope (docs/matching-engine.md "CPV pre-filter" — MATCH-P6-01
+ * Phase 7 follow-up): such an org would never see any matches, since the
+ * scoring pre-filter requires a shared CPV division.
+ */
+orgRoutes.post('/onboarding/complete', requireRole('ORGANIZATION_OWNER'), async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  const session = c.get('session');
+  if (organizationId === undefined || session === undefined) {
+    return c.json({ error: 'no_organization' }, 403);
+  }
+  const existingProfile = await getCompanyProfile(db, organizationId);
+  if (existingProfile === null) {
+    return c.json({ error: 'profile_required' }, 409);
+  }
+
+  const now = Date.now();
+  const profile = await upsertCompanyProfile(db, organizationId, {
+    displayName: existingProfile.displayName,
+    description: existingProfile.description,
+    website: existingProfile.website,
+    employeeBand: existingProfile.employeeBand,
+    presetKey: existingProfile.presetKey,
+    onboardingCompletedAt: now,
+  });
+
+  const [cpvPrefs, scope] = await Promise.all([
+    listCompanyCpvPreferences(db, organizationId, { limit: 100 }),
+    loadIngestionScope(db),
+  ]);
+  const scopeDivisions = new Set(
+    scope.cpvFamilies.map((entry) => (entry.length >= 8 ? entry.slice(0, 2) : entry)),
+  );
+  const orgDivisions = new Set(cpvPrefs.items.map((c) => c.cpvCode.slice(0, 2)));
+  const overlaps = [...orgDivisions].some((division) => scopeDivisions.has(division));
+  const scopeOverlapWarning = !overlaps;
+
+  await insertAuditEvent(db, {
+    actorType: 'user',
+    actorId: session.user.id,
+    organizationId,
+    action: 'onboarding.completed',
+    targetType: 'company_profile',
+    targetId: profile.id,
+    occurredAt: now,
+  });
+  await insertProductEvent(db, {
+    organizationId,
+    userId: session.user.id,
+    name: 'onboarding_completed',
+    propertiesJson: JSON.stringify({ scopeOverlapWarning }),
+  });
+
+  return c.json({ profile, scopeOverlapWarning });
+});
