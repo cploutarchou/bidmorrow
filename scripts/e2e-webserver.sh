@@ -28,4 +28,6 @@ echo "[e2e] applying demo seed..."
 npx wrangler d1 execute bidmorrow --local --file "$ROOT_DIR/scripts/seed-demo.sql"
 
 echo "[e2e] starting wrangler dev on :8787..."
-exec npx wrangler dev --port 8787
+# SEC-P12-01: bind loopback explicitly — the gated /api/test/* hooks must
+# never be reachable from LAN peers even on a developer machine.
+exec npx wrangler dev --port 8787 --ip 127.0.0.1

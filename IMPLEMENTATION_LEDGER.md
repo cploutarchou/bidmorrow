@@ -40,12 +40,46 @@ pending).** State as of 2026-08-16:
   sequential round trips (informational, cost model accepts); P-6 admin
   COUNT(*) (LOW). P-2 note: `listTenderMatchesForFeed` appears dead for
   the customer feed (only a test calls it) — flag for cleanup review.
-- **In flight**: scoring N+1 batch refactor (P-4 HIGH — background agent:
-  bulk existence check + chunked match writes, semantics preserved).
-- **Remaining to close Phase 12**: land N+1 refactor → full gates →
-  security + production-reviewer sign-offs → record here → tag
-  phase-12-complete → PR → merge to main (default branch renamed from
-  master 2026-08-15; ci.yml updated) → Phase 13.
+- **P-4 scoring N+1 refactor LANDED** (25300b6): bulk existence check
+  (chunked `lot_id IN` per engine version, 90/chunk), one `db.batch` per
+  flush with shrinking race-retry (genuine integrity errors rethrown),
+  per-org 150-match flush buffers + final flush on the truncation path;
+  counters/continuation/replace semantics preserved; 155-match and
+  150-lot scale tests in both layers. Follow-on fix (c8d4c9d): the
+  scoring-bundle READ path (`loadLotScoringBundlesByIds`/`ForNotices`/
+  `attachCpvAndGeography`) had unchunked IN-lists that failed at exactly
+  the MATCH_QUEUE's 100-id batch size — chunked at 90.
+
+### Phase 12 sign-offs (2026-08-16)
+
+- **security: SIGN-OFF** (independent re-run of lint/root/worker/db/
+  tenant-isolation suites — all green). Verified: test-hook double gate
+  airtight in every deployed config with real negative tests; E2E
+  rate-limit relaxations unreachable outside `isE2ETestHooksEnabled`
+  (grep-verified single caller); staging/production keep 100/60 and
+  Better Auth defaults; tenant scoping intact through the batch refactor
+  (org-scoped existence/insert/delete + structural & behavioral tests);
+  no secrets, `.dev.vars` gitignored, mailbox never logs URLs/tokens.
+  Findings: SEC-P12-01 LOW (dev server LAN exposure — FIXED same day:
+  `wrangler dev --ip 127.0.0.1` in scripts/e2e-webserver.sh);
+  SEC-P12-02..05 INFO accepted/recorded (score-now cross-tenant-but-
+  production-identical; actions tag-pinned not SHA-pinned; `--env`
+  deploy reliance mitigated by placeholder database_id; own-org profile
+  response not yet DTO-minimized).
+- **production-reviewer: PASS** (every gate re-run with real outputs:
+  format/lint/typecheck clean, root 405, worker 152, db 52, build clean,
+  **E2E 25/25 by its own execution**, drizzle zero-drift re-proven
+  empirically, migrations 0001–0007 from empty verified twice). DoD
+  spot-checks all confirmed against code: axe 9 pages no exclusions,
+  queue-dispatch/rate-limit tests behavioral not tautological, P-4
+  semantics preserved, deferred items recorded, no forbidden patterns.
+  Findings: P12-R-01 LOW (ledger staleness — resolved by this entry);
+  P12-R-02/03 INFO accepted.
+
+**Phase 12 — Quality: COMPLETE (signed off).** Tag: phase-12-complete
+(local; tag pushes are 403 for this session's credentials — see Notes).
+Next: Phase 13 — Deployment (staging fully unblocked; see
+HUMAN_DECISION_BLOCKERS.md owner-provided list below).
 
 Owner-provided since Phase 11 (see HUMAN_DECISION_BLOCKERS.md): Workers
 Paid plan, CI Cloudflare token + account id, BETTER_AUTH_SECRET (distinct
