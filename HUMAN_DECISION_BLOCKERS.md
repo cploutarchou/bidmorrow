@@ -219,9 +219,12 @@ terms/general, `privacy@bidmorrow.com` for data requests). Implemented in
 Terms.tsx/Privacy.tsx the same day. Known trade-off (owner informed): some
 EU member states' e-commerce rules (strictest: German-style Impressum)
 expect an address; can be added later with a one-line edit if ever needed.
-⚠️ Consequence: item 2's email-forwarding test is now REQUIRED, not
-optional — the published support@/privacy@ inboxes must actually deliver
-(Cloudflare Email Routing if the old Namecheap forwarding is dead).
+~~⚠️ Consequence: item 2's email-forwarding test is now REQUIRED~~
+**DONE 2026-08-16** (owner confirmed): Cloudflare Email Routing set up —
+support@/privacy@bidmorrow.com route to the owner's Gmail; Cloudflare's
+MX records installed (Resend's send/DKIM records unaffected). **The
+owner-side launch checklist is now EMPTY** — every numbered item in the
+snapshot above is closed.
 
 **FINAL owner decision 2026-08-16 — NO VAT at launch**: the owner has
 **no VAT registration** (Cyprus sole trader), so VAT cannot legally be
