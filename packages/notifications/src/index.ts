@@ -22,6 +22,7 @@ export * from './digest-renderer';
 export * from './digest-orchestration';
 export * from './resend';
 export * from './auth-mail';
+export * from './test-mailbox';
 
 export const PACKAGE = '@bidmorrow/notifications';
 

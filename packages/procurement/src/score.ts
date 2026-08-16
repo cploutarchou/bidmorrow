@@ -16,7 +16,7 @@ import {
   replaceTenderMatches,
 } from '@bidmorrow/db';
 import type { LotScoringBundle } from '@bidmorrow/db';
-import type { MatchClassification } from '@bidmorrow/domain';
+import type { MatchClassification, OrganizationId } from '@bidmorrow/domain';
 import { ENGINE_VERSION, scoreLotForOrg } from '@bidmorrow/matching';
 import type { ComponentResult, MatchComponentId, OrgProfile, RiskFlag } from '@bidmorrow/matching';
 
@@ -31,6 +31,18 @@ import { loadOrgProfile, mapLotToEngineInput } from './scoring-input';
  * interactive request or a single invocation running unbounded.
  */
 export const MAX_PAIRS_PER_INVOCATION = 5_000;
+
+/**
+ * Per-organization write-batching size (P-4 fix,
+ * docs/phase12-quality-findings.md): `insertTenderMatches`/
+ * `replaceTenderMatches` already accept a whole `TenderMatchInput[]` per
+ * call and resolve existence in bulk, so scored pairs are buffered per org
+ * and flushed in chunks of this size instead of one repository round trip
+ * per pair. Kept well under D1's per-statement bound-parameter cap (the
+ * repository layer chunks its own IN-lists independently — see
+ * `ID_CHUNK_SIZE` in `packages/db/src/repositories/matching.ts`).
+ */
+const FLUSH_CHUNK_SIZE = 150;
 
 /** docs/matching-engine.md component-persistence rule: only these classifications get component/risk-flag rows. */
 const CLASSIFICATIONS_WITH_COMPONENTS: readonly MatchClassification[] = [
@@ -183,6 +195,39 @@ export async function scoreLotsForOrgs(
   let truncated = false;
   let remainingLotIds: readonly string[] = [];
 
+  /**
+   * Per-org accumulation buffer for the P-4 write-batching fix: matches for
+   * a given org accumulate across lots (the outer loop) and flush once the
+   * buffer reaches `FLUSH_CHUNK_SIZE`, so `insertTenderMatches`/
+   * `replaceTenderMatches` are called with many matches per call instead of
+   * one call per scored pair.
+   */
+  const pendingByOrg = new Map<OrganizationId, TenderMatchInput[]>();
+
+  async function flushOrg(organizationId: OrganizationId): Promise<void> {
+    const pending = pendingByOrg.get(organizationId);
+    if (pending === undefined || pending.length === 0) return;
+    pendingByOrg.set(organizationId, []);
+    if (args.recompute === true) {
+      const result = await replaceTenderMatches(deps.db, organizationId, {
+        lotIds: pending.map((match) => match.lotId),
+        engineVersion,
+        matches: pending,
+      });
+      matchesWritten += result.inserted;
+    } else {
+      const result = await insertTenderMatches(deps.db, organizationId, { matches: pending });
+      matchesWritten += result.inserted;
+      matchesSkipped += result.skipped;
+    }
+  }
+
+  async function flushAllOrgs(): Promise<void> {
+    for (const organizationId of pendingByOrg.keys()) {
+      await flushOrg(organizationId);
+    }
+  }
+
   outer: for (const [bundleIndex, bundle] of lotBundles.entries()) {
     const mapped = await mapLotToEngineInput(deps.db, bundle, now(), deps.logger);
     if (mapped.kind === 'missing_main_cpv') {
@@ -233,22 +278,19 @@ export async function scoreLotsForOrgs(
         mapped.rateDate,
       );
 
-      if (args.recompute === true) {
-        const result = await replaceTenderMatches(deps.db, org.organizationId, {
-          lotIds: [bundle.lot.id],
-          engineVersion,
-          matches: [matchInput],
-        });
-        matchesWritten += result.inserted;
-      } else {
-        const result = await insertTenderMatches(deps.db, org.organizationId, {
-          matches: [matchInput],
-        });
-        matchesWritten += result.inserted;
-        matchesSkipped += result.skipped;
+      const buffer = pendingByOrg.get(org.organizationId) ?? [];
+      buffer.push(matchInput);
+      pendingByOrg.set(org.organizationId, buffer);
+      if (buffer.length >= FLUSH_CHUNK_SIZE) {
+        await flushOrg(org.organizationId);
       }
     }
   }
+
+  // Flush every org's remaining buffered matches — including the truncated
+  // path (`break outer` above jumps straight here), so a capped invocation
+  // never loses matches already scored before the cap was hit.
+  await flushAllOrgs();
 
   deps.logger.info('scoring.run.completed', {
     pairs_considered: pairsConsidered,

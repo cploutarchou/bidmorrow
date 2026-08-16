@@ -80,6 +80,16 @@ export interface Env {
   STRIPE_PRICE_FOUNDING_MONTHLY?: string;
   /** Stripe Price id for `BIDMORROW_STANDARD_MONTHLY` ($49/mo). Never invented (HUMAN_DECISION_BLOCKERS.md item 4). */
   STRIPE_PRICE_STANDARD_MONTHLY?: string;
+  /**
+   * Phase 12 stage A: second half of the double-gate (alongside `APP_ENV ===
+   * 'local' | 'test'`) that activates the test-only auth-email mailbox
+   * capture provider and the `/api/test/*` routes (`routes/test-hooks.ts`).
+   * Must be the exact string `'true'` — absent/anything else means the
+   * routes 404 and the real provider selection (`auth-instance.ts`) is
+   * unaffected. NEVER set in staging/production `wrangler.jsonc` `vars` or
+   * secrets — local-only, via `.dev.vars`.
+   */
+  E2E_TEST_HOOKS?: string;
 }
 
 /** Message shape carried on DIGEST_QUEUE. */

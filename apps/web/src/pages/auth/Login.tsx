@@ -52,7 +52,8 @@ export function Login(): ReactElement {
       method: 'POST',
       credentials: 'include',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email }),
+      // Same callbackURL fix as Signup.tsx — see its comment.
+      body: JSON.stringify({ email, callbackURL: '/verify-email' }),
     });
     void navigate('/verify-email');
   }

@@ -75,6 +75,14 @@ export interface CreateAuthDeps {
   baseUrl: string;
   appEnv: AppEnv;
   sendEmail: AuthSendEmail;
+  /**
+   * Raise Better Auth's rate-limit ceiling far above its defaults. ONLY the
+   * composition root's E2E double-gate (`isE2ETestHooksEnabled`: APP_ENV
+   * local/test AND E2E_TEST_HOOKS==='true') may set this — a Playwright run
+   * performs many signup/login flows per minute from one IP, which trips
+   * the production-tuned defaults. Never set in staging/production.
+   */
+  testRelaxedRateLimit?: boolean;
 }
 
 /**
@@ -148,6 +156,22 @@ export function createAuth(deps: CreateAuthDeps) {
       enabled: true,
       storage: 'database',
       modelName: 'auth_rate_limits',
+      // E2E only (see CreateAuthDeps.testRelaxedRateLimit): keep the limiter
+      // ENABLED so its code path stays exercised, but with a ceiling a
+      // Playwright run can't hit. A `customRules` wildcard is required, not
+      // just global window/max — Better Auth's built-in special rules
+      // (sign-in/sign-up: 3 per 10s; verified in the installed package's
+      // dist/api/rate-limiter/index.mjs `getDefaultSpecialRules`) override
+      // the globals, and customRules are the only config that overrides the
+      // special rules. Omitted entirely outside E2E, so staging/production
+      // keep Better Auth's own tuned defaults.
+      // The pattern must be '**' — Better Auth's wildcard matcher is
+      // '/'-separated ('*' never crosses a segment, so it matches NO auth
+      // path; '**' matches all of them — verified empirically against the
+      // installed dist/utils/wildcard.mjs).
+      ...(deps.testRelaxedRateLimit === true
+        ? { window: 60, max: 10_000, customRules: { '**': { window: 60, max: 10_000 } } }
+        : {}),
     },
     advanced: {
       database: {

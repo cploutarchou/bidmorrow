@@ -11,9 +11,13 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
   async function signOut(): Promise<void> {
     setSignOutError(null);
     try {
+      // Better Auth requires a JSON content type + body on sign-out — a bare
+      // POST is rejected with 415 (caught by the E2E logout spec).
       const response = await fetch('/api/auth/sign-out', {
         method: 'POST',
         credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
       });
       if (!response.ok) throw new Error(`sign-out failed: ${String(response.status)}`);
       await refresh();

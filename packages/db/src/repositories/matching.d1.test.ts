@@ -8,11 +8,13 @@
  * per FILE), so every test uses its own org + a distinct `source_notice_id`
  * prefix to stay independent.
  */
+import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { Db } from '../client';
 import { T0, insertTestOrganization, testDb } from '../test/helpers';
 import { insertSnapshotIfNewHash } from './ingestion';
+import { matchComponents, tenderMatches } from '../schema/matching';
 import {
   insertCpvCodes,
   insertGeographies,
@@ -21,7 +23,12 @@ import {
   upsertNoticeWithVersion,
 } from './tender-corpus';
 import { ignoreTender, saveTender } from './engagement';
-import { insertTenderMatches, listFeedRows, type TenderMatchInput } from './matching';
+import {
+  insertTenderMatches,
+  listFeedRows,
+  replaceTenderMatches,
+  type TenderMatchInput,
+} from './matching';
 
 const SOURCE = 'ted';
 const ENGINE_VERSION = '1';
@@ -352,5 +359,156 @@ describe('listFeedRows', () => {
     // Without ESCAPE handling, `_` acts as a SQL single-char wildcard and
     // would also match "72A00000". Only the literal "72_" prefix must match.
     expect(page.items.map((r) => r.lotId)).toEqual([literalMatch.lotId]);
+  });
+});
+
+/**
+ * P-4 write-batching scale tests (docs/phase12-quality-findings.md): prove
+ * `insertTenderMatches`/`replaceTenderMatches` handle a batch of matches
+ * comfortably larger than `ID_CHUNK_SIZE` (90, the repository's own D1
+ * bound-parameter chunk size for the bulk existence check) in ONE call,
+ * with exact insert/skip/delete counts and no duplicate or missing rows —
+ * the scenario `scoreLotsForOrgs`'s per-org flush buffer (`FLUSH_CHUNK_SIZE`
+ * in `@bidmorrow/procurement`) produces in production.
+ */
+describe('insertTenderMatches / replaceTenderMatches at scale (P-4)', () => {
+  let db: Db;
+
+  beforeEach(() => {
+    db = testDb();
+  });
+
+  // Comfortably larger than ID_CHUNK_SIZE (90): the bulk existence check
+  // must issue 2 chunked queries (90 + 65) and correctly resolve both.
+  const MATCH_COUNT = 155;
+
+  it('insertTenderMatches: one call with 155 matches inserts every one, with correct components; re-running skips all 155', async () => {
+    const { orgId } = await insertTestOrganization(db, 'Scale Insert Org');
+    const seeds: SeededLot[] = [];
+    for (let i = 0; i < MATCH_COUNT; i++) {
+      seeds.push(await seedLot(db, `scale-insert-${String(i)}`));
+    }
+
+    // Every 10th match scores STRONG_MATCH (carries components/risk flags —
+    // exercises the FK-safe parent-then-children statement ordering within
+    // the single combined `db.batch` across many candidates).
+    const matches: TenderMatchInput[] = seeds.map((seed, i) => {
+      const strong = i % 10 === 0;
+      return {
+        lotId: seed.lotId,
+        noticeId: seed.noticeId,
+        engineVersion: ENGINE_VERSION,
+        score: strong ? 90 : 50,
+        classification: strong ? 'STRONG_MATCH' : 'POSSIBLE_MATCH',
+        scoredAt: T0,
+        ...(strong
+          ? {
+              components: [
+                {
+                  componentKey: 'cpv',
+                  points: 30,
+                  maxPoints: 30,
+                  status: 'MATCHED',
+                  explanation: 'CPV matched',
+                },
+              ],
+              riskFlags: [
+                {
+                  type: 'certification',
+                  evidence: 'ISO 9001 required',
+                  sourceField: 'description',
+                  confidence: 'HIGH',
+                  explanation: 'Certification risk',
+                },
+              ],
+            }
+          : {}),
+      };
+    });
+
+    const first = await insertTenderMatches(db, orgId, { matches });
+    expect(first).toEqual({ inserted: MATCH_COUNT, skipped: 0 });
+
+    const countRow = await db
+      .select({ id: tenderMatches.id })
+      .from(tenderMatches)
+      .where(eq(tenderMatches.organizationId, orgId));
+    expect(countRow).toHaveLength(MATCH_COUNT);
+
+    const strongCount = seeds.filter((_, i) => i % 10 === 0).length;
+    const componentRows = await db
+      .select({ id: matchComponents.id })
+      .from(matchComponents)
+      .innerJoin(tenderMatches, eq(matchComponents.matchId, tenderMatches.id))
+      .where(eq(tenderMatches.organizationId, orgId));
+    expect(componentRows).toHaveLength(strongCount);
+
+    // Re-run with the SAME 155 matches: the bulk existence check (chunked at
+    // ID_CHUNK_SIZE=90) must resolve every one as already existing — nothing
+    // in the second 65-id chunk is missed, and nothing is double-inserted.
+    const second = await insertTenderMatches(db, orgId, { matches });
+    expect(second).toEqual({ inserted: 0, skipped: MATCH_COUNT });
+
+    const countAfterRerun = await db
+      .select({ id: tenderMatches.id })
+      .from(tenderMatches)
+      .where(eq(tenderMatches.organizationId, orgId));
+    expect(countAfterRerun).toHaveLength(MATCH_COUNT);
+  });
+
+  it('replaceTenderMatches: one call hard-replaces 155 existing matches with a fresh set, deleting exactly the old rows', async () => {
+    const { orgId } = await insertTestOrganization(db, 'Scale Replace Org');
+    const seeds: SeededLot[] = [];
+    for (let i = 0; i < MATCH_COUNT; i++) {
+      seeds.push(await seedLot(db, `scale-replace-${String(i)}`));
+    }
+    const lotIds = seeds.map((seed) => seed.lotId);
+
+    const originalMatches = seeds.map((seed, i) => matchInput(seed, 50 + (i % 30), T0));
+    const seeded = await insertTenderMatches(db, orgId, { matches: originalMatches });
+    expect(seeded).toEqual({ inserted: MATCH_COUNT, skipped: 0 });
+
+    const originalIds = await db
+      .select({ id: tenderMatches.id })
+      .from(tenderMatches)
+      .where(eq(tenderMatches.organizationId, orgId));
+    expect(originalIds).toHaveLength(MATCH_COUNT);
+
+    // Corrected re-score: every match's score changes. `lotIds` spans all
+    // 155 lots — the delete-lookup select is chunked at ID_CHUNK_SIZE=90.
+    const correctedMatches = seeds.map((seed, i) => matchInput(seed, 60 + (i % 30), T0 + 1000));
+    const replaced = await replaceTenderMatches(db, orgId, {
+      lotIds,
+      engineVersion: ENGINE_VERSION,
+      matches: correctedMatches,
+    });
+    expect(replaced).toEqual({ deleted: MATCH_COUNT, inserted: MATCH_COUNT });
+
+    const rows = await db
+      .select({
+        id: tenderMatches.id,
+        score: tenderMatches.score,
+      })
+      .from(tenderMatches)
+      .where(eq(tenderMatches.organizationId, orgId));
+    expect(rows).toHaveLength(MATCH_COUNT);
+    // Every original id was replaced — no old row survives the hard replace.
+    const originalIdSet = new Set(originalIds.map((row) => row.id));
+    expect(rows.every((row) => !originalIdSet.has(row.id))).toBe(true);
+    expect(rows.every((row) => (row.score ?? 0) >= 60)).toBe(true);
+
+    // Repeated recompute never leaves duplicate rows.
+    const replacedAgain = await replaceTenderMatches(db, orgId, {
+      lotIds,
+      engineVersion: ENGINE_VERSION,
+      matches: correctedMatches,
+    });
+    expect(replacedAgain).toEqual({ deleted: MATCH_COUNT, inserted: MATCH_COUNT });
+
+    const finalRows = await db
+      .select({ id: tenderMatches.id })
+      .from(tenderMatches)
+      .where(eq(tenderMatches.organizationId, orgId));
+    expect(finalRows).toHaveLength(MATCH_COUNT);
   });
 });

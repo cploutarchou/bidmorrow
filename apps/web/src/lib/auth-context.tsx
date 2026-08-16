@@ -40,8 +40,10 @@ async function fetchSession(): Promise<SessionUser | null> {
   if (!response.ok) return null;
   const text = await response.text();
   if (text.length === 0) return null;
-  const body = JSON.parse(text) as GetSessionResponse;
-  if (body.user === null || body.session === null) return null;
+  // Better Auth returns a bare JSON `null` body (not `{user: null}`) when
+  // there is no session — e.g. immediately after sign-out.
+  const body = JSON.parse(text) as GetSessionResponse | null;
+  if (body === null || body.user === null || body.session === null) return null;
   return {
     id: body.user.id,
     email: body.user.email,

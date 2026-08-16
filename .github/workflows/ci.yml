@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [master]
+    branches: [main]
 
 # Least-privilege token: gitleaks-action needs to read PR commits on
 # pull_request events; nothing in CI ever writes.

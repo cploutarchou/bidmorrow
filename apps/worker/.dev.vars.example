@@ -36,3 +36,11 @@ STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 STRIPE_PRICE_FOUNDING_MONTHLY=
 STRIPE_PRICE_STANDARD_MONTHLY=
+
+# Phase 12 stage A: E2E test-only hooks (routes/test-hooks.ts). Double-gated
+# with APP_ENV=local — set to exactly `true` ONLY in a local .dev.vars used
+# for running the Playwright suite against `wrangler dev`. NEVER set for a
+# normal local dev session you're using to browse the app manually (it
+# activates the auth-email mailbox capture, replacing real/logged email
+# delivery), and NEVER a staging/production var or secret.
+E2E_TEST_HOOKS=

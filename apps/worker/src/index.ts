@@ -41,6 +41,7 @@ import { billingRoutes } from './routes/billing';
 import { feedRoutes } from './routes/feed';
 import { orgRoutes } from './routes/org';
 import { tendersRoutes } from './routes/tenders';
+import { testHookRoutes } from './routes/test-hooks';
 import { webhookRoutes } from './routes/webhooks';
 
 export type { Env, Variables } from './env';
@@ -145,6 +146,9 @@ app.route('/api/account', accountRoutes);
 // deliberately unauthenticated-by-session route — see routes/webhooks.ts).
 app.route('/api/billing', billingRoutes);
 app.route('/api/webhooks', webhookRoutes);
+// Phase 12 stage A: E2E test-only hooks, double-gated to 404 everywhere
+// except a local/test env with E2E_TEST_HOOKS=true — see routes/test-hooks.ts.
+app.route('/api/test', testHookRoutes);
 
 // Unknown routes: run_worker_first routes only /api/* to this Worker in
 // production (everything else is served by Static Assets with SPA fallback),

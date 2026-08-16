@@ -26,6 +26,17 @@ export default defineConfig({
           bindings: {
             // Test-only binding so the setup file can apply migrations.
             TEST_MIGRATIONS: migrations,
+            // Pin the vars this suite depends on EXPLICITLY: wrangler config
+            // loading also reads apps/worker/.dev.vars when present (e.g.
+            // the Playwright run's generated one, scripts/e2e-write-dev-vars
+            // .mjs — BETTER_AUTH_URL=http://127.0.0.1:8787, E2E_TEST_HOOKS=
+            // true), and without these overrides a leftover .dev.vars flips
+            // trusted origins / test-hook gating and fails 80+ tests with
+            // "Invalid origin". Explicit miniflare bindings always win.
+            APP_ENV: 'local',
+            APP_BASE_URL: 'http://localhost:8787',
+            BETTER_AUTH_URL: 'http://localhost:8787',
+            E2E_TEST_HOOKS: '',
             // Clearly-fake test secret (never a real value) — Better Auth
             // requires >= 32 chars. wrangler.jsonc `vars` never carries this.
             BETTER_AUTH_SECRET: 'test-only-secret-do-not-use-in-prod-00000000',

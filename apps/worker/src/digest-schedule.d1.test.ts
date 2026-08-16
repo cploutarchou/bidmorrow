@@ -67,12 +67,11 @@ describe('runDigestScheduleJob', () => {
     const { sent, queue } = makeFakeDigestQueue();
     const fakeEnv = { DB: env.DB, DIGEST_QUEUE: queue } as unknown as Env;
 
-    // Fixed clock isn't injectable into runDigestScheduleJob (it calls
-    // Date.now() internally, matching the other cron job compositions in
-    // this file) — assert on the ORG being present, not the exact localDate,
-    // since the real Date.now() at test-run time determines it.
-    const result = await runDigestScheduleJob(fakeEnv, createLogger({ test: true }));
-    void utcNow;
+    // Injected fixed clock (12:00 UTC — past the 06:00 local send hour in
+    // UTC itself) so this test is deterministic regardless of when the
+    // suite runs; with the real clock it failed for real between midnight
+    // and the send hour UTC.
+    const result = await runDigestScheduleJob(fakeEnv, createLogger({ test: true }), utcNow);
 
     expect(result.enqueued).toBeGreaterThanOrEqual(1);
     const orgIds = sent.map((m) => m.organizationId);

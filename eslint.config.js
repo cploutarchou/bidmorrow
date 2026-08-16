@@ -50,5 +50,16 @@ export default tseslint.config(
     files: ['apps/web/**/*.{ts,tsx}'],
     rules: {},
   },
+  {
+    // Node CLI helper scripts (E2E dev-vars writer, etc.): run under plain
+    // node, so node globals exist and stdout logging is their job.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { console: 'readonly', process: 'readonly', URL: 'readonly' },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
   prettier,
 );

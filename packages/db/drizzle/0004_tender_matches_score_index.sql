@@ -1,0 +1,1 @@
+CREATE INDEX `idx_tender_matches__org_engine_score_id` ON `tender_matches` (`organization_id`,`engine_version`,"score" desc,"id" desc);

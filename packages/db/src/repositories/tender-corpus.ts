@@ -638,19 +638,26 @@ export async function loadLotScoringBundlesByIds(
   lotIds: readonly string[],
 ): Promise<LotScoringBundle[]> {
   if (lotIds.length === 0) return [];
-  const rows = await db
-    .select({
-      lot: tenderLots,
-      noticeId: tenderNotices.id,
-      sourceLanguagesJson: tenderNotices.sourceLanguagesJson,
-      procedureType: tenderNotices.procedureType,
-      buyerLegalType: buyers.buyerLegalType,
-    })
-    .from(tenderLots)
-    .innerJoin(tenderNoticeVersions, eq(tenderLots.noticeVersionId, tenderNoticeVersions.id))
-    .innerJoin(tenderNotices, eq(tenderNoticeVersions.noticeId, tenderNotices.id))
-    .leftJoin(buyers, eq(tenderNotices.buyerId, buyers.id))
-    .where(inArray(tenderLots.id, [...lotIds]));
+  // IN-lists chunked at ID_CHUNK_SIZE (D1 bound-parameter cap ~100): the
+  // MATCH_QUEUE sends up to 100 lot ids per message, which sits exactly at
+  // the cap — an unchunked IN-list here fails at real queue batch sizes.
+  const rows: ScoringBundleRow[] = [];
+  for (const idsChunk of chunkIds(lotIds)) {
+    const chunkRows = await db
+      .select({
+        lot: tenderLots,
+        noticeId: tenderNotices.id,
+        sourceLanguagesJson: tenderNotices.sourceLanguagesJson,
+        procedureType: tenderNotices.procedureType,
+        buyerLegalType: buyers.buyerLegalType,
+      })
+      .from(tenderLots)
+      .innerJoin(tenderNoticeVersions, eq(tenderLots.noticeVersionId, tenderNoticeVersions.id))
+      .innerJoin(tenderNotices, eq(tenderNoticeVersions.noticeId, tenderNotices.id))
+      .leftJoin(buyers, eq(tenderNotices.buyerId, buyers.id))
+      .where(inArray(tenderLots.id, idsChunk));
+    rows.push(...chunkRows);
+  }
 
   return attachCpvAndGeography(db, rows);
 }
@@ -665,45 +672,73 @@ export async function loadLotScoringBundlesForNotices(
   noticeIds: readonly string[],
 ): Promise<LotScoringBundle[]> {
   if (noticeIds.length === 0) return [];
-  const rows = await db
-    .select({
-      lot: tenderLots,
-      noticeId: tenderNotices.id,
-      sourceLanguagesJson: tenderNotices.sourceLanguagesJson,
-      procedureType: tenderNotices.procedureType,
-      buyerLegalType: buyers.buyerLegalType,
-    })
-    .from(tenderLots)
-    .innerJoin(
-      tenderNoticeVersions,
-      and(
-        eq(tenderLots.noticeVersionId, tenderNoticeVersions.id),
-        eq(tenderNoticeVersions.id, tenderNotices.currentVersionId),
-      ),
-    )
-    .innerJoin(tenderNotices, eq(tenderNoticeVersions.noticeId, tenderNotices.id))
-    .leftJoin(buyers, eq(tenderNotices.buyerId, buyers.id))
-    .where(inArray(tenderNotices.id, [...noticeIds]));
+  // Chunked for the same D1 bound-parameter reason as
+  // loadLotScoringBundlesByIds — recompute batches of corrected notices
+  // are unbounded by any queue message size.
+  const rows: ScoringBundleRow[] = [];
+  for (const idsChunk of chunkIds(noticeIds)) {
+    const chunkRows = await db
+      .select({
+        lot: tenderLots,
+        noticeId: tenderNotices.id,
+        sourceLanguagesJson: tenderNotices.sourceLanguagesJson,
+        procedureType: tenderNotices.procedureType,
+        buyerLegalType: buyers.buyerLegalType,
+      })
+      .from(tenderLots)
+      .innerJoin(
+        tenderNoticeVersions,
+        and(
+          eq(tenderLots.noticeVersionId, tenderNoticeVersions.id),
+          eq(tenderNoticeVersions.id, tenderNotices.currentVersionId),
+        ),
+      )
+      .innerJoin(tenderNotices, eq(tenderNoticeVersions.noticeId, tenderNotices.id))
+      .leftJoin(buyers, eq(tenderNotices.buyerId, buyers.id))
+      .where(inArray(tenderNotices.id, idsChunk));
+    rows.push(...chunkRows);
+  }
 
   return attachCpvAndGeography(db, rows);
 }
 
+/** IN-list chunk bound shared with matching.ts/retention.ts (D1 bound-parameter cap ~100). */
+const ID_CHUNK_SIZE = 90;
+
+function chunkIds(ids: readonly string[]): string[][] {
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += ID_CHUNK_SIZE) {
+    chunks.push(ids.slice(i, i + ID_CHUNK_SIZE));
+  }
+  return chunks;
+}
+
+interface ScoringBundleRow {
+  lot: TenderLot;
+  noticeId: string;
+  sourceLanguagesJson: string;
+  procedureType: string | null;
+  buyerLegalType: string | null;
+}
+
 async function attachCpvAndGeography(
   db: Db,
-  rows: {
-    lot: TenderLot;
-    noticeId: string;
-    sourceLanguagesJson: string;
-    procedureType: string | null;
-    buyerLegalType: string | null;
-  }[],
+  rows: ScoringBundleRow[],
 ): Promise<LotScoringBundle[]> {
   if (rows.length === 0) return [];
   const lotIds = rows.map((row) => row.lot.id);
-  const [cpvRows, geoRows] = await db.batch([
-    db.select().from(tenderCpvCodes).where(inArray(tenderCpvCodes.lotId, lotIds)),
-    db.select().from(tenderGeographies).where(inArray(tenderGeographies.lotId, lotIds)),
-  ]);
+  // Same chunking as above — a 150-lot bundle load must not put 150 bound
+  // parameters into one IN-list.
+  const cpvRows: TenderCpvCode[] = [];
+  const geoRows: TenderGeography[] = [];
+  for (const idsChunk of chunkIds(lotIds)) {
+    const [cpvChunk, geoChunk] = await db.batch([
+      db.select().from(tenderCpvCodes).where(inArray(tenderCpvCodes.lotId, idsChunk)),
+      db.select().from(tenderGeographies).where(inArray(tenderGeographies.lotId, idsChunk)),
+    ]);
+    cpvRows.push(...cpvChunk);
+    geoRows.push(...geoChunk);
+  }
   const cpvByLot = new Map<string, TenderCpvCode[]>();
   for (const cpv of cpvRows) {
     const list = cpvByLot.get(cpv.lotId) ?? [];

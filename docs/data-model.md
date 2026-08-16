@@ -427,6 +427,10 @@ Recomputation inserts new-version rows; it never mutates old ones.
 - **Index** `(organization_id, engine_version, classification, scored_at)` —
   the feed query (org + latest engine version + classification tab, newest
   first).
+- **Index** `(organization_id, engine_version, score DESC, id DESC)` — the
+  default feed page (org + latest engine version, no classification filter,
+  `ORDER BY score DESC, id DESC`, keyset-paginated on the same columns) —
+  added migration 0007 so this hot path avoids an in-memory sort.
 - **Index** `(lot_id)` — retention purge walks matches from expiring lots;
   admin match-trace for a lot.
 
@@ -712,26 +716,27 @@ erDiagram
 
 ## 13. Query patterns → indexes
 
-| #   | Query (hot path)                                                                | Table                                              | Index / constraint used                                                      |
-| --- | ------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------- |
-| 1   | Resolve session user's org(s) on every request                                  | organization_members                               | `(user_id)`                                                                  |
-| 2   | Feed: org + latest engine version + classification tab, newest first, paginated | tender_matches                                     | `(organization_id, engine_version, classification, scored_at)`               |
-| 3   | Feed expiry filter: hide lots past deadline                                     | tender_lots                                        | `(deadline_at)`                                                              |
-| 4   | Tender detail: components + risk flags for a match                              | match_components / match_risk_flags                | `(match_id, component_key)` unique / `(match_id)`                            |
-| 5   | Saved / Ignored tabs; "is lot saved/ignored?"                                   | saved_tenders / ignored_tenders                    | `(organization_id, lot_id)` unique                                           |
-| 6   | Ingestion upsert: does this notice exist? changed?                              | tender_notices                                     | `(source, source_notice_id)` unique + `content_hash` compare                 |
-| 7   | Ingestion resume point                                                          | ingestion_checkpoints                              | `(source)` unique                                                            |
-| 8   | Version insert idempotency                                                      | tender_notice_versions                             | `(notice_id, version_number)` unique                                         |
-| 9   | Scoring idempotency / recompute                                                 | tender_matches                                     | `(organization_id, lot_id, engine_version)` unique                           |
-| 10  | Digest dedupe (one per org per day)                                             | digest_runs                                        | `(organization_id, digest_date)` unique                                      |
-| 11  | Stripe webhook idempotency                                                      | billing_events                                     | `(stripe_event_id)` unique                                                   |
-| 12  | Stripe webhook → org resolution                                                 | subscriptions                                      | `(stripe_customer_id)` / `(stripe_subscription_id)` unique                   |
-| 13  | Email provider status webhook → row                                             | email_deliveries                                   | partial unique `(provider, provider_message_id)`                             |
-| 14  | Purge scan: expired lots, then owned rows                                       | tender_lots / tender_matches / saved_tenders       | `(deadline_at)` / `(lot_id)` / `(lot_id)`                                    |
-| 15  | Admin: notices per window, run history, notice errors                           | tender_notices / ingestion_runs / ingestion_errors | `(publication_date)` / `(source, started_at)` / `(source, source_notice_id)` |
-| 16  | Admin: CPV scope analysis                                                       | tender_cpv_codes                                   | `(cpv_code)`                                                                 |
-| 17  | Feedback trend per org                                                          | customer_feedback                                  | `(organization_id, created_at)`                                              |
-| 18  | FX rate lookup for scoring; daily refresh upsert                                | exchange_rates                                     | `(rate_date, currency)` unique                                               |
+| #   | Query (hot path)                                                                                              | Table                                              | Index / constraint used                                                      |
+| --- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------- |
+| 1   | Resolve session user's org(s) on every request                                                                | organization_members                               | `(user_id)`                                                                  |
+| 2   | Feed: org + latest engine version + classification tab, newest first, paginated                               | tender_matches                                     | `(organization_id, engine_version, classification, scored_at)`               |
+| 3   | Feed expiry filter: hide lots past deadline                                                                   | tender_lots                                        | `(deadline_at)`                                                              |
+| 4   | Tender detail: components + risk flags for a match                                                            | match_components / match_risk_flags                | `(match_id, component_key)` unique / `(match_id)`                            |
+| 5   | Saved / Ignored tabs; "is lot saved/ignored?"                                                                 | saved_tenders / ignored_tenders                    | `(organization_id, lot_id)` unique                                           |
+| 6   | Ingestion upsert: does this notice exist? changed?                                                            | tender_notices                                     | `(source, source_notice_id)` unique + `content_hash` compare                 |
+| 7   | Ingestion resume point                                                                                        | ingestion_checkpoints                              | `(source)` unique                                                            |
+| 8   | Version insert idempotency                                                                                    | tender_notice_versions                             | `(notice_id, version_number)` unique                                         |
+| 9   | Scoring idempotency / recompute                                                                               | tender_matches                                     | `(organization_id, lot_id, engine_version)` unique                           |
+| 10  | Digest dedupe (one per org per day)                                                                           | digest_runs                                        | `(organization_id, digest_date)` unique                                      |
+| 11  | Stripe webhook idempotency                                                                                    | billing_events                                     | `(stripe_event_id)` unique                                                   |
+| 12  | Stripe webhook → org resolution                                                                               | subscriptions                                      | `(stripe_customer_id)` / `(stripe_subscription_id)` unique                   |
+| 13  | Email provider status webhook → row                                                                           | email_deliveries                                   | partial unique `(provider, provider_message_id)`                             |
+| 14  | Purge scan: expired lots, then owned rows                                                                     | tender_lots / tender_matches / saved_tenders       | `(deadline_at)` / `(lot_id)` / `(lot_id)`                                    |
+| 15  | Admin: notices per window, run history, notice errors                                                         | tender_notices / ingestion_runs / ingestion_errors | `(publication_date)` / `(source, started_at)` / `(source, source_notice_id)` |
+| 16  | Admin: CPV scope analysis                                                                                     | tender_cpv_codes                                   | `(cpv_code)`                                                                 |
+| 17  | Feedback trend per org                                                                                        | customer_feedback                                  | `(organization_id, created_at)`                                              |
+| 18  | FX rate lookup for scoring; daily refresh upsert                                                              | exchange_rates                                     | `(rate_date, currency)` unique                                               |
+| 19  | Feed: org + latest engine version, no classification filter, `ORDER BY score DESC, id DESC`, keyset-paginated | tender_matches                                     | `(organization_id, engine_version, score DESC, id DESC)`                     |
 
 Indexes not listed here should not exist — every index costs write throughput
 on the ingestion hot path and D1 storage.

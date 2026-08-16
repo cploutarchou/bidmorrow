@@ -5,8 +5,87 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 11 — Security/Privacy: COMPLETE (signed off).** Next: Phase 12 —
-Quality.
+**Phase 12 — Quality: IN PROGRESS (stages A+B implemented, sign-offs
+pending).** State as of 2026-08-16:
+
+- **Stage A (E2E + accessibility) COMPLETE, 25/25 green** (`pnpm test:e2e`):
+  critical-path journey (signup → mailbox-hook verification → login →
+  10-step onboarding → score-now hook → feed → detail → save/ignore/
+  feedback → settings incl. real 422 keyword-cap → sole-owner-deletion 409
+  → logout/login), 9-page axe scans (0 serious/critical, no exclusions),
+  keyboard traversal (real-Tab focus-visible checks), marketing specs.
+  Double-gated test hooks (`isE2ETestHooksEnabled`): mailbox capture +
+  score-now, both with ungated-404 tests. docs/accessibility-review.md
+  written with honest not-checked scope.
+- **The E2E suite caught and we fixed 3 REAL product bugs** (commit
+  8ff1ce9): (1) org list GETs returned raw DB rows → every Settings list
+  save 400'd against `.strict()` schemas — responses now DTO-mapped (also
+  response minimization); (2) logout was broken — Better Auth sign-out
+  415s without a JSON body; (3) auth-context crashed on Better Auth's
+  bare-`null` get-session response. Plus infra fixes: E2E-gated auth rate
+  limits (customRules `'**'` — `'*'` matches nothing multi-segment),
+  local-dev wrangler ratelimit 5000/60 (shared 'unknown' key), vitest
+  vars pinned against `.dev.vars` leakage, dev-vars writer omits empty
+  keys (empty string ≠ undefined flipped provider checks), digest
+  schedule job clock now injectable (test failed for real 00:00–06:00
+  UTC), keyboard spec drives focus via real Tab (`:focus-visible`).
+- **Stage B (analysis + fixes)**: docs/phase12-quality-findings.md
+  (query-plan pass, testing-gap sweep, E2E-in-CI decision). Applied:
+  migration 0007 feed covering index (P-1, zero-drift proven); queue-
+  dispatcher + rate-limit middleware tests (both HIGH gaps closed; 429
+  now carries request_id); admin audit non-atomicity doc comment;
+  `.github/workflows/e2e-nightly.yml` (nightly, per §3 decision).
+  Deliberately deferred: classification-variant index + tender_geographies
+  composite (speculative, per P-1/P-3's own advice); P-5 ingestion
+  sequential round trips (informational, cost model accepts); P-6 admin
+  COUNT(*) (LOW). P-2 note: `listTenderMatchesForFeed` appears dead for
+  the customer feed (only a test calls it) — flag for cleanup review.
+- **P-4 scoring N+1 refactor LANDED** (25300b6): bulk existence check
+  (chunked `lot_id IN` per engine version, 90/chunk), one `db.batch` per
+  flush with shrinking race-retry (genuine integrity errors rethrown),
+  per-org 150-match flush buffers + final flush on the truncation path;
+  counters/continuation/replace semantics preserved; 155-match and
+  150-lot scale tests in both layers. Follow-on fix (c8d4c9d): the
+  scoring-bundle READ path (`loadLotScoringBundlesByIds`/`ForNotices`/
+  `attachCpvAndGeography`) had unchunked IN-lists that failed at exactly
+  the MATCH_QUEUE's 100-id batch size — chunked at 90.
+
+### Phase 12 sign-offs (2026-08-16)
+
+- **security: SIGN-OFF** (independent re-run of lint/root/worker/db/
+  tenant-isolation suites — all green). Verified: test-hook double gate
+  airtight in every deployed config with real negative tests; E2E
+  rate-limit relaxations unreachable outside `isE2ETestHooksEnabled`
+  (grep-verified single caller); staging/production keep 100/60 and
+  Better Auth defaults; tenant scoping intact through the batch refactor
+  (org-scoped existence/insert/delete + structural & behavioral tests);
+  no secrets, `.dev.vars` gitignored, mailbox never logs URLs/tokens.
+  Findings: SEC-P12-01 LOW (dev server LAN exposure — FIXED same day:
+  `wrangler dev --ip 127.0.0.1` in scripts/e2e-webserver.sh);
+  SEC-P12-02..05 INFO accepted/recorded (score-now cross-tenant-but-
+  production-identical; actions tag-pinned not SHA-pinned; `--env`
+  deploy reliance mitigated by placeholder database_id; own-org profile
+  response not yet DTO-minimized).
+- **production-reviewer: PASS** (every gate re-run with real outputs:
+  format/lint/typecheck clean, root 405, worker 152, db 52, build clean,
+  **E2E 25/25 by its own execution**, drizzle zero-drift re-proven
+  empirically, migrations 0001–0007 from empty verified twice). DoD
+  spot-checks all confirmed against code: axe 9 pages no exclusions,
+  queue-dispatch/rate-limit tests behavioral not tautological, P-4
+  semantics preserved, deferred items recorded, no forbidden patterns.
+  Findings: P12-R-01 LOW (ledger staleness — resolved by this entry);
+  P12-R-02/03 INFO accepted.
+
+**Phase 12 — Quality: COMPLETE (signed off).** Tag: phase-12-complete
+(local; tag pushes are 403 for this session's credentials — see Notes).
+Next: Phase 13 — Deployment (staging fully unblocked; see
+HUMAN_DECISION_BLOCKERS.md owner-provided list below).
+
+Owner-provided since Phase 11 (see HUMAN_DECISION_BLOCKERS.md): Workers
+Paid plan, CI Cloudflare token + account id, BETTER_AUTH_SECRET (distinct
+per env), Stripe test keys + prices, Resend API key, ADMIN_EMAILS — all in
+GitHub `staging`/`production` environment secrets. Staging deploy is fully
+unblocked; STRIPE_WEBHOOK_SECRET waits for the staging URL by design.
 
 ## Completed
 

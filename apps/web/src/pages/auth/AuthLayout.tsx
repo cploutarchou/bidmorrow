@@ -12,6 +12,12 @@ export function AuthLayout({
   return (
     <>
       <title>{`${title} — ${PRODUCT_NAME}`}</title>
+      {/* Phase 12 stage A: AppShell already had a skip-link; AuthLayout
+          (login/signup/verify/reset) didn't — found via the keyboard
+          traversal E2E spec, fixed for consistency across every page shell. */}
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
       <header className="site-header">
         <Link className="product-name" to="/">
           {PRODUCT_NAME}

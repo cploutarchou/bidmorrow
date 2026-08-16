@@ -92,53 +92,93 @@ function isConstraintViolation(error: unknown): boolean {
   return error instanceof Error && /UNIQUE constraint|FOREIGN KEY constraint/i.test(error.message);
 }
 
-async function matchExists(
-  db: Db,
-  organizationId: OrganizationId,
-  match: TenderMatchInput,
-): Promise<boolean> {
-  const rows = await db
-    .select({ id: tenderMatches.id })
-    .from(tenderMatches)
-    .where(
-      and(
-        eq(tenderMatches.organizationId, organizationId),
-        eq(tenderMatches.lotId, match.lotId),
-        eq(tenderMatches.engineVersion, match.engineVersion),
-      ),
-    )
-    .limit(1);
-  return rows.length > 0;
+/**
+ * D1 chunk size for `inArray(...)` in the matching repository — stays well
+ * under SQLite's bound-parameter cap, matching the `ID_CHUNK_SIZE`
+ * convention used elsewhere (`retention.ts`, `org-purge.ts`).
+ */
+const ID_CHUNK_SIZE = 90;
+
+function chunk<T>(items: readonly T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+/** `${engineVersion}:${lotId}` — the same shape as the unique index, minus `organizationId` (already the query scope). */
+function matchKey(match: Pick<TenderMatchInput, 'lotId' | 'engineVersion'>): string {
+  return `${match.engineVersion}:${match.lotId}`;
 }
 
 /**
- * Inserts scored matches with their components and risk flags. Idempotent:
- * a match whose `(organization_id, lot_id, engine_version)` already exists
- * is skipped (its previously written decomposition is kept — earlier writes
- * were atomic). Uses `onConflictDoNothing` on that unique; a concurrent
- * duplicate scorer loses the insert and is counted as skipped.
+ * Bulk existence check for a batch of candidate matches — replaces N
+ * individual `SELECT ... LIMIT 1` round trips with one `lot_id IN (...)`
+ * query per distinct `engineVersion` present in `matches` (chunked to
+ * `ID_CHUNK_SIZE` lot ids per query for D1's bound-parameter cap). Matches
+ * within one call normally share a single `engineVersion` (the caller scores
+ * one engine version per invocation), so in practice this is one query;
+ * grouping by `engineVersion` keeps the function correct even if that ever
+ * changes, since the unique index is `(organization_id, lot_id,
+ * engine_version)`.
  */
-export async function insertTenderMatches(
+async function findExistingMatchKeys(
   db: Db,
   organizationId: OrganizationId,
-  args: { matches: TenderMatchInput[] },
-): Promise<{ inserted: number; skipped: number }> {
-  let inserted = 0;
-  let skipped = 0;
+  matches: readonly TenderMatchInput[],
+): Promise<Set<string>> {
+  const lotIdsByEngineVersion = new Map<string, Set<string>>();
+  for (const match of matches) {
+    const lotIds = lotIdsByEngineVersion.get(match.engineVersion) ?? new Set<string>();
+    lotIds.add(match.lotId);
+    lotIdsByEngineVersion.set(match.engineVersion, lotIds);
+  }
 
-  for (const match of args.matches) {
-    if (await matchExists(db, organizationId, match)) {
-      skipped += 1;
-      continue;
+  const existing = new Set<string>();
+  for (const [engineVersion, lotIdSet] of lotIdsByEngineVersion) {
+    for (const lotIdsChunk of chunk([...lotIdSet], ID_CHUNK_SIZE)) {
+      const rows = await db
+        .select({ lotId: tenderMatches.lotId })
+        .from(tenderMatches)
+        .where(
+          and(
+            eq(tenderMatches.organizationId, organizationId),
+            eq(tenderMatches.engineVersion, engineVersion),
+            inArray(tenderMatches.lotId, lotIdsChunk),
+          ),
+        );
+      for (const row of rows) {
+        existing.add(matchKey({ lotId: row.lotId, engineVersion }));
+      }
     }
+  }
+  return existing;
+}
 
-    const now = Date.now();
-    const matchId = newId(now);
-    const statements: SqliteBatchItem[] = [
+interface InsertCandidate {
+  readonly input: TenderMatchInput;
+  readonly matchId: string;
+  /** Index into the per-attempt `statements`/`results` arrays of this candidate's `tenderMatches` insert. */
+  parentStatementIndex: number;
+}
+
+/** Builds the FK-safe (parent-before-children) statement list for one attempt at inserting `candidates`. */
+function buildInsertStatements(
+  db: Db,
+  organizationId: OrganizationId,
+  candidates: InsertCandidate[],
+  now: number,
+): SqliteBatchItem[] {
+  const statements: SqliteBatchItem[] = [];
+  for (const candidate of candidates) {
+    const match = candidate.input;
+    candidate.parentStatementIndex = statements.length;
+    statements.push(
       db
         .insert(tenderMatches)
         .values({
-          id: matchId,
+          id: candidate.matchId,
           organizationId,
           lotId: match.lotId,
           noticeId: match.noticeId,
@@ -154,14 +194,14 @@ export async function insertTenderMatches(
           target: [tenderMatches.organizationId, tenderMatches.lotId, tenderMatches.engineVersion],
         })
         .returning({ id: tenderMatches.id }),
-    ];
+    );
     const components = match.components ?? [];
     if (components.length > 0) {
       statements.push(
         db.insert(matchComponents).values(
           components.map((component) => ({
             id: newId(now),
-            matchId,
+            matchId: candidate.matchId,
             componentKey: component.componentKey,
             points: component.points,
             maxPoints: component.maxPoints,
@@ -178,7 +218,7 @@ export async function insertTenderMatches(
         db.insert(matchRiskFlags).values(
           riskFlags.map((flag) => ({
             id: newId(now),
-            matchId,
+            matchId: candidate.matchId,
             type: flag.type,
             evidence: flag.evidence,
             sourceField: flag.sourceField,
@@ -189,31 +229,116 @@ export async function insertTenderMatches(
         ),
       );
     }
+  }
+  return statements;
+}
 
-    try {
-      const results = await db.batch(toBatch(statements));
-      const insertedRows = results[0] as { id: string }[];
-      if (insertedRows.length > 0) {
+/**
+ * Attempts to insert every candidate's match + components + risk flags in
+ * ONE `db.batch` (one D1 transaction — same atomicity guarantee as before:
+ * a match row can never exist without its decomposition). Two race outcomes
+ * are possible against a concurrent scorer that wins between the caller's
+ * bulk existence check and this batch:
+ *
+ * - A childless candidate (no components/risk flags) loses only its own
+ *   `onConflictDoNothing` insert — no exception, `returning()` is empty for
+ *   it, detected via `insertedIds` below.
+ * - A candidate WITH components/risk flags loses its parent insert the same
+ *   way, but its child inserts then fail their FK (the parent id never
+ *   materialized), which rolls back the WHOLE batch (D1 batch = one
+ *   transaction). That case is caught below: the exact set of candidates
+ *   that now verifiably exist is re-resolved in bulk and excluded, then the
+ *   remaining candidates are retried recursively — bounded because each
+ *   retry strictly shrinks the candidate set. If a batch fails with an
+ *   integrity error and NONE of its candidates verifiably exist, that's a
+ *   real bug, not a benign race, and is rethrown.
+ */
+async function attemptInsertBatch(
+  db: Db,
+  organizationId: OrganizationId,
+  candidates: InsertCandidate[],
+  now: number,
+): Promise<{ inserted: number; skipped: number }> {
+  if (candidates.length === 0) return { inserted: 0, skipped: 0 };
+
+  const statements = buildInsertStatements(db, organizationId, candidates, now);
+
+  try {
+    const results = await db.batch(toBatch(statements));
+    const insertedIds = new Set<string>();
+    for (const candidate of candidates) {
+      const rows = results[candidate.parentStatementIndex] as { id: string }[];
+      if (rows.length > 0) insertedIds.add(candidate.matchId);
+    }
+    let inserted = 0;
+    let skipped = 0;
+    for (const candidate of candidates) {
+      if (insertedIds.has(candidate.matchId)) {
         inserted += 1;
       } else {
         // Childless match lost the insert to a concurrent scorer.
         skipped += 1;
       }
-    } catch (error) {
-      // A concurrent scorer can win between the existence check and the
-      // batch: our match insert no-ops, the child inserts then fail their FK
-      // (parent id never materialized) and the batch rolls back atomically.
-      // Only swallow when the row verifiably exists now — anything else is a
-      // real integrity error and must surface.
-      if (isConstraintViolation(error) && (await matchExists(db, organizationId, match))) {
-        skipped += 1;
-        continue;
-      }
+    }
+    return { inserted, skipped };
+  } catch (error) {
+    if (!isConstraintViolation(error)) throw error;
+    const raced = await findExistingMatchKeys(
+      db,
+      organizationId,
+      candidates.map((c) => c.input),
+    );
+    const stillPending = candidates.filter((c) => !raced.has(matchKey(c.input)));
+    const racedCount = candidates.length - stillPending.length;
+    if (racedCount === 0) {
+      // The constraint violation isn't explained by any candidate already
+      // existing — a real integrity error, must surface.
       throw error;
     }
+    const retryResult = await attemptInsertBatch(db, organizationId, stillPending, now);
+    return { inserted: retryResult.inserted, skipped: retryResult.skipped + racedCount };
+  }
+}
+
+/**
+ * Inserts scored matches with their components and risk flags. Idempotent:
+ * a match whose `(organization_id, lot_id, engine_version)` already exists
+ * is skipped (its previously written decomposition is kept — earlier writes
+ * were atomic). Existence is resolved in bulk (one `lot_id IN (...)` query
+ * per engine version, not one `SELECT` per match — P-4,
+ * docs/phase12-quality-findings.md), and every non-existing match's row +
+ * components + risk flags are written in ONE `db.batch` covering the WHOLE
+ * `args.matches` array, not one batch per match. A concurrent duplicate
+ * scorer loses its insert and is counted as skipped either way.
+ */
+export async function insertTenderMatches(
+  db: Db,
+  organizationId: OrganizationId,
+  args: { matches: TenderMatchInput[] },
+): Promise<{ inserted: number; skipped: number }> {
+  if (args.matches.length === 0) {
+    return { inserted: 0, skipped: 0 };
   }
 
-  return { inserted, skipped };
+  const existingKeys = await findExistingMatchKeys(db, organizationId, args.matches);
+
+  let skipped = 0;
+  const now = Date.now();
+  const candidates: InsertCandidate[] = [];
+  for (const match of args.matches) {
+    if (existingKeys.has(matchKey(match))) {
+      skipped += 1;
+      continue;
+    }
+    candidates.push({ input: match, matchId: newId(now), parentStatementIndex: -1 });
+  }
+
+  if (candidates.length === 0) {
+    return { inserted: 0, skipped };
+  }
+
+  const batchResult = await attemptInsertBatch(db, organizationId, candidates, now);
+  return { inserted: batchResult.inserted, skipped: skipped + batchResult.skipped };
 }
 
 /** Feed cursor: `${scoredAt}:${id}` of the last row (order is stable). */
@@ -294,32 +419,37 @@ export async function replaceTenderMatches(
     return { deleted: 0, inserted: 0 };
   }
 
-  const existing = await db
-    .select({ id: tenderMatches.id })
-    .from(tenderMatches)
-    .where(
-      and(
-        eq(tenderMatches.organizationId, organizationId),
-        inArray(tenderMatches.lotId, args.lotIds),
-        eq(tenderMatches.engineVersion, args.engineVersion),
-      ),
-    );
-  const existingIds = existing.map((row) => row.id);
+  // Bulk existence lookup, chunked to `ID_CHUNK_SIZE` lot ids per query —
+  // `args.lotIds` can span many buffered (org, lot) pairs in one call now
+  // (P-4, docs/phase12-quality-findings.md), so this can no longer assume a
+  // single unchunked `IN (...)` stays under D1's bound-parameter cap.
+  const existingIds: string[] = [];
+  for (const lotIdsChunk of chunk(args.lotIds, ID_CHUNK_SIZE)) {
+    const rows = await db
+      .select({ id: tenderMatches.id })
+      .from(tenderMatches)
+      .where(
+        and(
+          eq(tenderMatches.organizationId, organizationId),
+          inArray(tenderMatches.lotId, lotIdsChunk),
+          eq(tenderMatches.engineVersion, args.engineVersion),
+        ),
+      );
+    existingIds.push(...rows.map((row) => row.id));
+  }
 
   const now = Date.now();
   const statements: SqliteBatchItem[] = [];
-  if (existingIds.length > 0) {
-    statements.push(
-      db.delete(matchComponents).where(inArray(matchComponents.matchId, existingIds)),
-    );
-    statements.push(db.delete(matchRiskFlags).where(inArray(matchRiskFlags.matchId, existingIds)));
+  for (const idsChunk of chunk(existingIds, ID_CHUNK_SIZE)) {
+    statements.push(db.delete(matchComponents).where(inArray(matchComponents.matchId, idsChunk)));
+    statements.push(db.delete(matchRiskFlags).where(inArray(matchRiskFlags.matchId, idsChunk)));
     statements.push(
       db
         .delete(tenderMatches)
         .where(
           and(
             eq(tenderMatches.organizationId, organizationId),
-            inArray(tenderMatches.id, existingIds),
+            inArray(tenderMatches.id, idsChunk),
           ),
         ),
     );
