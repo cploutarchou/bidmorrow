@@ -1,0 +1,1567 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><ContractNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+   <ext:UBLExtensions>
+      <ext:UBLExtension>
+         <ext:ExtensionContent>
+            <efext:EformsExtension>
+               <efac:Changes>
+                  <efbc:ChangedNoticeIdentifier>555742-2026</efbc:ChangedNoticeIdentifier>
+                  <efac:Change>
+                     <efbc:ChangeDescription languageID="POL"> zmiana w 5.1.12. Warunki udzielenia zamówienia: 
+było: Termin składania ofert: 19/08/2026 12:00:00 
+jest: Termin składania ofert: 27/08/2026 12:00:00 
+było: Data otwarcia: 19/08/2026 12:30:00
+ jest: Data otwarcia: 27/08/2026 12:30:00</efbc:ChangeDescription>
+                     <efac:ChangedSection>
+                        <efbc:ChangedSectionIdentifier>LOT-0001</efbc:ChangedSectionIdentifier>
+                     </efac:ChangedSection>
+                     <efac:ChangedSection>
+                        <efbc:ChangedSectionIdentifier>LOT-0002</efbc:ChangedSectionIdentifier>
+                     </efac:ChangedSection>
+                     <efac:ChangedSection>
+                        <efbc:ChangedSectionIdentifier>LOT-0003</efbc:ChangedSectionIdentifier>
+                     </efac:ChangedSection>
+                     <efac:ChangedSection>
+                        <efbc:ChangedSectionIdentifier>LOT-0004</efbc:ChangedSectionIdentifier>
+                     </efac:ChangedSection>
+                     <efac:ChangedSection>
+                        <efbc:ChangedSectionIdentifier>LOT-0005</efbc:ChangedSectionIdentifier>
+                     </efac:ChangedSection>
+                     <efac:ChangedSection>
+                        <efbc:ChangedSectionIdentifier>LOT-0006</efbc:ChangedSectionIdentifier>
+                     </efac:ChangedSection>
+                  </efac:Change>
+                  <efac:ChangeReason>
+                     <cbc:ReasonCode listName="change-corrig-justification">cor-pub</cbc:ReasonCode>
+                     <efbc:ReasonDescription languageID="POL">zmiana w zakresie: 5.1.12. Warunki udzielenia zamówienia: Termin składania ofert i Data otwarcia</efbc:ReasonDescription>
+                  </efac:ChangeReason>
+               </efac:Changes>
+               <efac:NoticeSubType>
+                  <cbc:SubTypeCode listName="notice-subtype">16</cbc:SubTypeCode>
+               </efac:NoticeSubType>
+               <efac:Organizations>
+                  <efac:Organization>
+                     <efac:Company>
+                        <cbc:WebsiteURI>https://przetargi.bieganski.org</cbc:WebsiteURI>
+                        <cbc:EndpointID>https://platformazakupowa.pl/pn/bieganski</cbc:EndpointID>
+                        <cac:PartyIdentification>
+                           <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+                        </cac:PartyIdentification>
+                        <cac:PartyName>
+                           <cbc:Name languageID="POL">Regionalny Szpital Specjalistyczny im. dr Władysława Biegańskiego</cbc:Name>
+                        </cac:PartyName>
+                        <cac:PostalAddress>
+                           <cbc:StreetName>ul. Rydygiera 15/17</cbc:StreetName>
+                           <cbc:CityName>Grudziądz</cbc:CityName>
+                           <cbc:PostalZone>86-300</cbc:PostalZone>
+                           <cbc:CountrySubentityCode listName="nuts">PL616</cbc:CountrySubentityCode>
+                           <cac:Country>
+                              <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+                           </cac:Country>
+                        </cac:PostalAddress>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>8762008352</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:Contact>
+                           <cbc:Telephone>566413460</cbc:Telephone>
+                           <cbc:ElectronicMail>przetargi@bieganski.org</cbc:ElectronicMail>
+                        </cac:Contact>
+                     </efac:Company>
+                  </efac:Organization>
+                  <efac:Organization>
+                     <efac:Company>
+                        <cbc:WebsiteURI>www.uzp.gov.pl</cbc:WebsiteURI>
+                        <cac:PartyIdentification>
+                           <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                        </cac:PartyIdentification>
+                        <cac:PartyName>
+                           <cbc:Name languageID="POL">Krajowa Izba Odwoławcza</cbc:Name>
+                        </cac:PartyName>
+                        <cac:PostalAddress>
+                           <cbc:StreetName>ul. Postępu 17 a</cbc:StreetName>
+                           <cbc:CityName>Warszawa</cbc:CityName>
+                           <cbc:PostalZone>02-676</cbc:PostalZone>
+                           <cbc:CountrySubentityCode listName="nuts">PL911</cbc:CountrySubentityCode>
+                           <cac:Country>
+                              <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+                           </cac:Country>
+                        </cac:PostalAddress>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>010828091</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:Contact>
+                           <cbc:Telephone>+48 224587801</cbc:Telephone>
+                           <cbc:Telefax>+48 224587700</cbc:Telefax>
+                           <cbc:ElectronicMail>odwolania@uzp.gov.pl</cbc:ElectronicMail>
+                        </cac:Contact>
+                     </efac:Company>
+                  </efac:Organization>
+                  <efac:Organization>
+                     <efac:Company>
+                        <cbc:WebsiteURI>https://op.europa.eu</cbc:WebsiteURI>
+                        <cac:PartyIdentification>
+                           <cbc:ID schemeName="organization">ORG-0000</cbc:ID>
+                        </cac:PartyIdentification>
+                        <cac:PartyName>
+                           <cbc:Name languageID="POL">Publications Office of the European Union</cbc:Name>
+                        </cac:PartyName>
+                        <cac:PostalAddress>
+                           <cbc:CityName>Luxembourg</cbc:CityName>
+                           <cbc:PostalZone>2417</cbc:PostalZone>
+                           <cbc:CountrySubentityCode listName="nuts">LU000</cbc:CountrySubentityCode>
+                           <cac:Country>
+                              <cbc:IdentificationCode listName="country">LUX</cbc:IdentificationCode>
+                           </cac:Country>
+                        </cac:PostalAddress>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>PUBL</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:Contact>
+                           <cbc:Telephone>+352 29291</cbc:Telephone>
+                           <cbc:ElectronicMail>ted@publications.europa.eu</cbc:ElectronicMail>
+                        </cac:Contact>
+                     </efac:Company>
+                  </efac:Organization>
+               </efac:Organizations>
+            <efac:Publication><efbc:NoticePublicationID schemeName="ojs-notice-id">00568668-2026</efbc:NoticePublicationID><efbc:GazetteID schemeName="ojs-id">157/2026</efbc:GazetteID><efbc:PublicationDate>2026-08-17+02:00</efbc:PublicationDate></efac:Publication></efext:EformsExtension>
+         </ext:ExtensionContent>
+      </ext:UBLExtension>
+   </ext:UBLExtensions>
+   <cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+   <cbc:CustomizationID>eforms-sdk-1.14</cbc:CustomizationID>
+   <cbc:ID schemeName="notice-id">63e14f6d-d7bb-42c8-9afa-c4cbdf8cd9e3</cbc:ID>
+   <cbc:ContractFolderID>cddae667-cc46-4f65-8ee0-4434811e737b</cbc:ContractFolderID>
+   <cbc:IssueDate>2026-08-13Z</cbc:IssueDate>
+   <cbc:IssueTime>10:33:42Z</cbc:IssueTime>
+   <cbc:VersionID>01</cbc:VersionID>
+   <cbc:RequestedPublicationDate>2026-08-17Z</cbc:RequestedPublicationDate>
+   <cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+   <cbc:NoticeTypeCode listName="competition">cn-standard</cbc:NoticeTypeCode>
+   <cbc:NoticeLanguageCode listName="language">POL</cbc:NoticeLanguageCode>
+   <cac:ContractingParty>
+      <cbc:BuyerProfileURI>https://platformazakupowa.pl/pn/bieganski</cbc:BuyerProfileURI>
+      <cac:ContractingPartyType>
+         <cbc:PartyTypeCode listName="buyer-legal-type">body-pl</cbc:PartyTypeCode>
+      </cac:ContractingPartyType>
+      <cac:ContractingActivity>
+         <cbc:ActivityTypeCode listName="authority-activity">health</cbc:ActivityTypeCode>
+      </cac:ContractingActivity>
+      <cac:Party>
+         <cac:PartyIdentification>
+            <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+         </cac:PartyIdentification>
+         <cac:ServiceProviderParty>
+            <cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode>
+            <cac:Party>
+               <cac:PartyIdentification>
+                  <cbc:ID schemeName="organization">ORG-0000</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:Party>
+         </cac:ServiceProviderParty>
+      </cac:Party>
+   </cac:ContractingParty>
+   <cac:TenderingTerms>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-grounds-source">epo-notice</cbc:TendererRequirementTypeCode>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-liq-admin</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 109 ust. 1 
+pkt 4 ustawy Pzp, w zakresie w jakim dotyczy ona 
+zarządzania aktywami wykonawcy przez likwidatora 
+lub sąd</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-prep-confl</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 108 ust. 1 pkt 6 ustawy Pzp</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-as-susp</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 109 ust. 1 
+pkt 4 ustawy Pzp, w zakresie w jakim dotyczy ona 
+zawieszenia prowadzonej działalności</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-other</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 109 ust. 1 
+pkt 4 ustawy Pzp, w zakresie w jakim dotyczy ona w 
+podobnej sytuacji jak określone art. 109 ust. 1 pkt 4 
+ustawy Pzp, wynikającej z podobnej procedury, 
+przewidzianej w przepisach miejsca wszczęcia tej 
+procedury</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-corrpt</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 108 ust. 1 
+pkt 1 i 2 ustawy Pzp w odniesieniu do przestępstw 
+wymienionych w art. 228-230a lub 250a Kodeksu 
+karnego, art. 46 lub art. 48 ustawy o sporcie lub art. 
+54 ust. 1-4 ustawy o refundacji leków, środków 
+spożywczych specjalnego przeznaczenia 
+żywieniowego oraz wyrobów medycznych</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-fraud</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 108 ust. 1 pkt 1 i 2 ustawy Pzp 
+w odniesieniu do przestępstwa, o którym mowa w 
+art. 286 Kodeksu karnego, jak również przestępstw 
+skarbowych, o których mowa w art. 108 ust. 1 pkt 1 
+lit. g) ustawy</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-bre-lab-law</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL"> art. 108 ust. 1 pkt 1 lit h i pkt 2 ustawy Pzp, jeśli 
+osoby występujące po jego stronie zamawiającego 
+zostały ukarane za przestępstwo, o którym mowa w 
+art. 9 ust. 1 i 3 lub art. 10 ustawy z dnia 15 czerwca 
+2012 r. o skutkach powierzania wykonywania pracy 
+cudzoziemcom przebywającym wbrew przepisom 
+na terytorium Rzeczypospolitej Polskiej (Dz. U. poz. 
+769)</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-insolvency</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 109 ust. 1 
+pkt 4 ustawy Pzp, w zakresie w jakim dotyczy ona 
+do otwarcia likwidacji wykonawcy</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-pmt-bre-ssc</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 108 ust. 1 pkt 3 ustawy Pzp 
+oraz art. 109 ust. 1 pkt 1 ustawy Pzp w zakresie w 
+jakim dotyczą one opłat lub składek na 
+ubezpieczenie społeczne lub zdrowotne</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-pmt-bre-tax</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 108 ust. 1 pkt 3 ustawy Pzp oraz art. 109 ust. 1 
+pkt 1 ustawy Pzp w zakresie w jakim dotyczą one 
+podatków i opłat</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-natl</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">Przesłanki te dotyczą:
+1) wykluczenia wykonawcy w przypadku 
+skazania za przestępstwo, o którym mowa w 
+art. 47 ustawy o sporcie;
+2) wykluczenia wykonawcy w przypadku 
+skazania za przestępstwa przeciwko 
+wiarygodności dokumentów i przestępstwa 
+przeciwko obrotowi gospodarczemu (art. 
+108 ust. 1 pkt 1 lit. g) i pkt 2 ustawy Pzp), tj. 
+za przestępstwa, o których mowa w art. 
+270- 277d Kodeksu karnego [przestępstwa 
+wiarygodności dokumentów] i przestępstwa, 
+o których mowa w art. 296-307 Kodeksu 
+karnego [przestępstwa przeciwko obrotowi 
+gospodarczemu] , z wyjątkiem przestępstwa 
+udaremniania lub utrudniania stwierdzenia 
+przestępnego pochodzenia pieniędzy lub 
+ukrywania ich pochodzenia, o którym mowa 
+w art. 299 Kodeksu karnego.
+3) wykluczenia wykonawcy, wobec którego 
+prawomocnie orzeczono zakaz ubiegania się 
+o zamówieni a publiczne (art. 108 ust. 1 pkt 
+4 ustawy Pzp); zakaz orzekany jest wobec 
+podmiotu zbiorowego w oparciu o przepisy 
+ustawy z dnia 28 października 2002 r. o 
+odpowiedzialności podmiotów zbiorowych 
+za czyny zabronione pod groźbą kary (Dz. U. 
+z 2016 r. poz. 1541 oraz z 2017 r. poz. 724 i 
+933 ), a wobec osoby fizycznej w oparciu o 
+przepisy Kodeks u postępowania karnego .
+4) art. 108 ust. 2 ustawy Pzp,
+5) postawy wykluczenia wskazanych art. 7 ust. 
+1 ustawy z dnia 13 kwietnia 2022 – o 
+szczególnych rozwiązaniach w zakresie 
+przeciwdziałania wspieraniu agresji na 
+Ukrainę oraz służących ochronie 
+bezpieczeństwa narodowego (Dz.U. poz. 
+835)</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-distortion</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 108 ust. 1 
+pkt 5 ustawy Pzp</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-traffick</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 108 ust. 1 pkt 1 i 2 ustawy Pzp 
+w odniesieniu do przestępstwa powierzenia 
+wykonywania pracy małoletniemu cudzoziemcowi, 
+o którym mowa w art. 9 ust. 2 ustawy z dnia 15 
+czerwca 2012 r. - o skutkach powierzania
+wykonywania pracy cudzoziemcom przebywającym 
+wbrew przepisom na terytorium Rzeczypospolitej 
+Polskiej, oraz handlu ludźmi, o którym mowa w art. 
+189a Kodeksu karnego</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-laund</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 108 ust. 1 
+pkt 1 i 2 ustawy Pzp w odniesieniu do przestępstw 
+wskazanych w 299 lub art. 165a Kodeksu karnego</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-terror</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 108 ust. 1 
+pkt 1 i 2 ustawy Pzp, która dotyczy przestępstwa
+przestępstwa terrorystyczne lub przestępstwa 
+związane z działalnością terrorystyczną, czyli 
+przestępstwa o charakterze terrorystycznym, o 
+których mowa w art. 115 par. 20 Kodeksu karnego</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-part</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 108 ust. 1 
+pkt 1 i 2 ustawy Pzp w odniesieniu do przestępstwa 
+wskazanego w art. 258 Kodeksu karnego</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-cred-arran</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 109 ust. 1 
+pkt 4 ustawy Pzp, w zakresie w jakim dotyczy ona 
+układu z wierzycielami</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-bankr</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="POL">art. 109 ust. 1 
+pkt 4 ustawy Pzp, w zakresie w jakim dotyczy ona 
+ogłoszenia upadłości</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:LotDistribution>
+         <cbc:MaximumLotsAwardedNumeric>6</cbc:MaximumLotsAwardedNumeric>
+         <cbc:MaximumLotsSubmittedNumeric>6</cbc:MaximumLotsSubmittedNumeric>
+      </cac:LotDistribution>
+   </cac:TenderingTerms>
+   <cac:TenderingProcess>
+      <cbc:ProcedureCode listName="procurement-procedure-type">open</cbc:ProcedureCode>
+      <cac:ProcessJustification>
+         <cbc:ProcessReasonCode listName="accelerated-procedure">true</cbc:ProcessReasonCode>
+         <cbc:ProcessReason languageID="POL">Konieczne jest zachowanie ciągłości przeprowadzanych zabiegów ratujących zdrowie i życie pacjentów. 
+W związku z powyższym zasadnym jest skorzystanie z art. 138 ust. 2 pkt 2 ustawy p.z.p. </cbc:ProcessReason>
+      </cac:ProcessJustification>
+   </cac:TenderingProcess>
+   <cac:ProcurementProject>
+      <cbc:ID schemeName="InternalID">Z/38/PN/26</cbc:ID>
+      <cbc:Name languageID="POL">Dostawy specjalistycznego sprzętu jednorazowego dla Pracowni Hemodynamiczno-Koronarograficznej wraz z dzierżawą systemu OCT na okres 24 miesięcy - znak sprawy: Z/38/PN/26</cbc:Name>
+      <cbc:Description languageID="POL">1. Przedmiotem zamówienia są sukcesywne dostawy specjalistycznego sprzętu jednorazowego dla Pracowni Hemodynamiczno-Koronarograficznej (dalej jako: towar lub asortyment) w rodzaju i w ilościach określonych w Formularzu Cenowym stanowiącym Załącznik nr 2 do SWZ wraz z dzierżawą systemu OCT  (dalej zamiennie jako: sprzęt lub przedmiot dzierżawy), szczegółowo opisanego w Zestawieniu Wymaganych Funkcji i Parametrów Technicznych, stanowiącym Załącznik nr 6 do SWZ, oraz zgodnie z projektowanymi postanowieniami umowy stanowiącymi Załącznik nr 4 do niniejszej SWZ ( zapis dzierżawy dotyczy zadania nr 1).
+2.	Na czas realizacji umowy Wykonawca zapewni w siedzibie Zamawiającego bezpłatny depozyt towarów, o których mowa w ust. 1, zwany w dalszej części umowy „komisem”. Na warunkach określonych niniejszą umową Wykonawca zobowiązuje się dostarczać towary do Zamawiającego w formie uzupełnienia komisu, o którym mowa powyżej oraz przenieść na Zamawiającego własność towarów z chwilą ich pobrania przez Zamawiającego z komisu, a Zamawiający zobowiązuje się odebrać towar i zapłacić umówioną cenę za towar pobrany z komisu.- dotyczy: zadania nr 1 poz. 1, 2; zadania nr 2 poz. 1, 2; zdania nr 6 poz. 1
+3.	Szczegółowy opis przedmiotu zamówienia wg zadań: 
+Zadanie nr 1: Dostawy sprzętu do PTCA;
+Zadanie nr 2: Dostawy sprzętu pomocniczego do PTCA;
+Zadanie nr 3: Dostawy pomp aktywnie wspomagających krążenie implantowane przezskórnie;
+Zadanie nr 4: Dostawy urządzeń do inwazyjnego pomiaru przezzwężeniowego gradientu ciśnień;
+Zadanie nr 5: Dostawy zestawów do zamykania przetrwałych przewodów tętniczych PDA;
+Zadanie nr 6: Dostawy zestawów do embolizacji naczyń i malformacji naczyniowej;
+zgodnie ze szczegółowym opisem przedmiotu zamówienia zawartym w treści Formularza cenowego stanowiącego Załącznik nr 2 do SWZ oraz z Załącznikiem nr 6 do SWZ (dotyczy zadania nr 1 i 3).
+Zamawiający informuje, iż w przedmiotowym postępowaniu prowadzonym w trybie przetargu nieograniczonego przewiduje możliwość zastosowania procedury, o której mowa w art. 139 ust. 1 ustawy p.z.p. Zamawiający przy zastosowaniu wymienionej procedury najpierw dokona badania i oceny ofert, a następnie dokona kwalifikacji podmiotowej Wykonawcy, którego oferta została najwyżej oceniona w zakresie braku podstaw do wykluczenia oraz spełniania warunków udziału 
+w postępowaniu.</cbc:Description>
+      <cbc:ProcurementTypeCode listName="contract-nature">supplies</cbc:ProcurementTypeCode>
+      <cbc:Note languageID="POL">Ofertę oraz oświadczenie JEDZ sporządza się, pod rygorem nieważności, w formie elektronicznej.
+1.	Do oferty Wykonawca musi dołączyć:
+a)	formularz ofertowy – stanowiący Załącznik nr 1 do niniejszej SWZ;
+b)	formularz cenowy – stanowiący Załącznik nr 2 do niniejszej SWZ;
+c)	aktualne na dzień składania ofert oświadczenie, o którym mowa w art. 125 ust. 1 i 2 p.z.p. o niepodleganiu wykluczeniu oraz o spełnieniu warunków udziału w postępowaniu w formie Jednolitego Europejskiego Dokumentu Zamówienia (JEDZ)
+Wykonawca (w tym każdy Wykonawca wspólnie ubiegający się o udzielenie zamówienia publicznego również każdy wspólnik spółki cywilnej) zobowiązany jest przekazać Zamawiającemu wraz z ofertą oświadczenie stanowiące wstępne potwierdzenie, że Wykonawca nie podlega wykluczeniu oraz spełnia warunki udziału w postępowaniu - Jednolity Dokument Zamówienia sporządzony według Rozporządzenia Wykonawczego Komisji (UE) 2016/7 z dnia 5 stycznia 2016 r. ustanawiającego standardowy formularz jednolitego europejskiego dokumentu zamówienia (Dz. Urz. UE. L. 3 z 06.01.2016, str. 16) w postaci elektronicznej opatrzonej kwalifikowanym podpisem elektronicznym.
+Zamawiający dopuszcza w szczególności następujący format przesłanych danych: pdf., doc., docx., rtf., xps., odt., xml. Wykonawca wypełnia JEDZ, tworząc dokument elektroniczny. Może korzystać z narzędzia ESPD (http://espd.uzp.gov.pl) lub innych dostępnych narzędzi lub oprogramowania, które umożliwia wypełnienie JEDZ i utworzenie dokumentu elektronicznego w jednym z ww. formatów. (Zamawiający załącza pomocniczo na swojej stronie internetowej postępowania wygenerowany JEDZ – Wykonawca w systemie ESPD może skorzystać z przedmiotowego wzoru oraz zaimportować przygotowany dokument w celu dalszego wypełnienia).
+Po wypełnieniu i wygenerowaniu przez Wykonawcę elektronicznego JEDZ, Wykonawca podpisuje przedmiotowy dokument kwalifikowanym podpisem elektronicznym, wystawionym przez dostawcę kwalifikowanej usługi zaufania, będącego podmiotem świadczącym usługi certyfikacyjne – podpis elektroniczny musi spełniać wymogi bezpieczeństwa określone w ustawie z dnia 5 września 2016 r. o usługach zaufania oraz identyfikacji elektronicznej (Dz. U. z 2024 r., poz. 1725 ze zm.).
+Wykonawca w razie wątpliwości przy wypełnianiu danego oświadczenia może skorzystać z aktualnej instrukcji wypełniania JEDZ/ESPD zamieszczonej na stronie Urzędu Zamówień Publicznych (https://www.uzp.gov.pl/aktualnosci/aktualna-wersja-instrukcji-wypelniania-jedzespd).
+(w części IV wymagana jest do zaznaczenia część alfa)
+Wykonawca może wykorzystać jednolity dokument złożony w odrębnym postępowaniu o udzielenie zamówienia, jeżeli potwierdzi, że informacje w nim zawarte pozostają prawidłowe.
+d)	pełnomocnictwo do działania innych/ej osób/y w imieniu Wykonawcy/ Wykonawców wspólnie ubiegających się o udzielenie zamówienia lub podwykonawcy – o ile dotyczy
+Pełnomocnictwo do reprezentacji musi być złożone w oryginale w postaci elektronicznej opatrzonej podpisem kwalifikowanym.
+Dopuszcza  się także złożenie cyfrowego odwzorowania (skanu) pełnomocnictwa sporządzonego uprzednio w formie pisemnej pod warunkiem poświadczenia jego zgodności poprzez opatrzone go kwalifikowanym podpisem elektronicznym przez mocodawcę. Poświadczenia zgodności cyfrowego odwzorowania z pełnomocnictwem w postaci papierowej może dokonać również notariusz na zasadach określonych w ustawie z dnia 14 lutego 1991 r. Prawo o notariacie (Dz. U. z 2026 r., poz. 614 ze zm.).
+e)	przedmiotowe środki dowodowe na potwierdzenie, że oferowane dostawy spełniają określone przez Zamawiającego wymagania, które należy złożyć wraz z ofertą: 
+	aktualne na dzień otwarcia ofert dokumenty potwierdzające dopuszczenie oferowanego przedmiotu zamówienia do obrotu i do używania w Polsce zgodnie z Ustawą o wyrobach medycznych (Dz. U. z 2024 r., poz. 1620 ze zm.) tj. deklaracji zgodności wyrobu medycznego i jeżeli dotyczy certyfikatu wydanego przez jednostkę notyfikowaną (w zależności od klasy danego wyrobu).
+	aktualne szczegółowe katalogi produktu lub foldery lub opisy oferowanego przedmiotu zamówienia lub oświadczenie, itp., potwierdzające spełnianie wszystkich wymagań określonych przez Zamawiającego w formularzu cenowym stanowiącym Załącznik nr 2 do SWZ oraz w Zestawieniu Wymaganych Funkcji i Parametrów Technicznych stanowiącym Załączniku nr 6 do SWZ.. 
+Zamawiający dopuszcza wykazanie spełnienia powyższego warunku (tj. potwierdzenia spełnienia wszystkich wymagań określonych przez Zamawiającego w formularzu cenowym stanowiącym Załącznik nr 2 do SWZ oraz Zestawieniu Wymaganych Funkcji i Parametrów Technicznych stanowiącym Załączniku nr 6 do SWZ.) poprzez więcej niż jeden przedmiotowy środek dowodowy jak powyżej.
+Nadmienia się, iż wszystkie wskazane powyżej dokumenty musza pochodzić od producenta zaoferowanego asortymentu;
+Przedmiotowe środki dowodowe sporządzone w języku obcym przekazuje się wraz z tłumaczeniem na język polski, z uwagi na fakt, że środek ten i tłumaczenia stanowią nierozerwalną całość.
+Jeżeli Wykonawca nie złoży przedmiotowych środków dowodowych lub złożone przedmiotowe środki dowodowe okażą się niekompletne, Zamawiający wezwie do ich złożenia lub uzupełnienia  w wyznaczonym terminie.
+f)	przedmiotowe środki dowodowe na potwierdzenie, że oferowane dostawy spełniają określone przez Zamawiającego wymagania, które należy złożyć wraz z ofertą: 
+Wykonawca, który powołuje się na rozwiązania równoważne opisywanym przez Zamawiającego, jest obowiązany wykazać, że oferowany przedmiot zamówienia spełnia wymagania określone przez Zamawiającego poprzez złożenie opisu zaoferowanych produktów wraz z wykazaniem cech równoważności w stosunku do wymagań opisanych przez Zamawiającego oraz podanie nazwy handlowej i producenta.
+W celu wykazania cech równoważności Zamawiający dopuszcza załączenie do opisu etykiet, zdjęć, kart katalogowych itp., z dopiskiem której pozycji asortymentowej dotyczy dana informacja z zastrzeżeniem, że z tych dokumentów muszą wynikać parametry co najmniej określone przez Zamawiającego i dane identyfikujące produkt.
+Wykonawca, który nie oferuje równoważności nie ma obowiązku przedkładania opisów i materiałów jak powyżej. 
+Zamawiający nie przewiduje wezwania Wykonawcy do złożenia lub uzupełnienia przedmiotowego środka dowodowego, gdyż niezłożenie przez Wykonawcę dokumentów wskazanych powyżej tj. potwierdzających, że oferowany przedmiot zamówienia spełnia wymagania określone przez Zamawiającego będzie jednoznaczne z zaoferowaniem przedmiotu zamówienia określonego w Załączniku nr 2 do SWZ lub Załączniku nr 6 do SWZ.
+g)	  Oświadczenie Wykonawcy dotyczące odrębnych przesłanek wykluczenia tj. potwierdzające brak podstaw wykluczenia z postępowania na podstawie art. 5 k rozporządzenia Rady (UE) nr 833/2014 – wzór Załącznik nr 7 do SWZ.
+2.	Zamawiający przed wyborem najkorzystniejszej oferty wzywa Wykonawcę, którego oferta została najwyżej oceniona, do złożenia w wyznaczonym terminie, nie krótszym niż 10 dni od dnia wezwania, podmiotowych środków dowodowych, aktualnych na dzień ich złożenia. Zamawiający wymaga złożenia następujących dokumentów podmiotowych:
+1)	oświadczenia Wykonawcy, w zakresie art. 108 ust. 1 pkt 5 ustawy p.z.p., o braku przynależności do tej samej grupy kapitałowej w rozumieniu ustawy z dnia 16 lutego 2007 r. o ochronie konkurencji i konsumentów (Dz. U. z 2025 r. poz. 1714 ze zm.), z innym Wykonawcą, który złożył odrębną ofertę, ofertę częściową albo oświadczenie o przynależności do tej samej grupy kapitałowej wraz z dokumentami lub informacjami potwierdzającymi przygotowanie oferty, oferty częściowej niezależnie od innego Wykonawcy należącego do tej samej grupy kapitałowej.  
+Wykonawca może złożyć ww. oświadczenie na wzorze stanowiącym Załącznik nr 3 do SWZ.
+2)	informacji z Krajowego Rejestru Karnego w zakresie określonym w art. 108 ust. 1 pkt 1, 2 ustawy p.z.p. oraz art. 108 ust. 1 pkt 4 ustawy p.z.p. dotyczącej orzeczenia zakazu ubiegania się o zamówienie publiczne tytułem środka karnego, sporządzonej nie wcześniej niż 6 miesięcy przed terminem jej złożenia;
+3)	zaświadczenia właściwego naczelnika urzędu skarbowego potwierdzającego, że Wykonawca nie zalega z opłacaniem podatków i opłat, w zakresie art. 109 ust. 1 pkt 1 ustawy p.z.p., wystawionego nie wcześniej niż 3 miesiące przed jego złożeniem, a w przypadku zalegania z opłacaniem podatków lub opłat wraz z zaświadczeniem Zamawiający żąda złożenia dokumentów potwierdzających, że odpowiednio przed upływem terminu składania ofert Wykonawca dokonał płatności należnych podatków lub opłat wraz z odsetkami lub grzywnami lub zawarł wiążące porozumienie w sprawie spłat tych należności;
+4)	zaświadczenia albo innego dokumentu właściwej terenowej jednostki organizacyjnej Zakładu Ubezpieczeń Społecznych lub właściwego oddziału regionalnego lub właściwej placówki terenowej Kasy Rolniczego Ubezpieczenia Społecznego potwierdzającego, że Wykonawca nie zalega z opłacaniem składek na ubezpieczenia społeczne i zdrowotne, w zakresie art. 109 ust. 1 pkt 1 ustawy p.z.p., wystawionego nie wcześniej niż 3 miesiące przed jego złożeniem, a w przypadku zalegania z opłacaniem składek na ubezpieczenia społeczne lub zdrowotne wraz z zaświadczeniem albo innym dokumentem Zamawiający żąda złożenia dokumentów potwierdzających, że przed upływem terminu składania ofert Wykonawca dokonał płatności należnych składek 
+na ubezpieczenia społeczne lub zdrowotne wraz odsetkami lub grzywnami lub zawarł wiążące porozumienie w sprawie spłat tych należności.
+5)	odpisu lub informacji z Krajowego Rejestru Sądowego lub z Centralnej Ewidencji i Informacji o Działalności Gospodarczej, w zakresie art. 109 ust. 1 pkt 4 ustawy  p.z.p., sporządzonych nie wcześniej niż 3 miesiące przed ich złożeniem, jeżeli odrębne przepisy wymagają wpisu do rejestru lub ewidencji;
+6)	oświadczenia Wykonawcy o aktualności informacji zawartych w oświadczeniu, o którym mowa w art. 125 ust. 1 ustawy p.z.p. (JEDZ), w zakresie podstaw wykluczenia PEŁNA TREŚĆ W SWZ</cbc:Note>
+      <cac:MainCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">33111730</cbc:ItemClassificationCode>
+      </cac:MainCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">33186000</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">33100000</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">33141620</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:RealizedLocation>
+         <cbc:Description languageID="POL">Regionalny Szpital Specjalistyczny im. dr. Władysława Biegańskiego, ul. Rydygiera 15/17 w Grudziądzu, w tym:
+−	dostawa, instalacja i uruchomienie przedmiotu dzierżawy: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	utworzenie komisu: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	sukcesywne dostawy towaru: Magazyn Medyczny, budynek  „O”, poziom – 1.</cbc:Description>
+         <cac:Address>
+            <cbc:CityName>Grudziądz</cbc:CityName>
+            <cbc:PostalZone>86-300</cbc:PostalZone>
+            <cbc:CountrySubentityCode listName="nuts">PL616</cbc:CountrySubentityCode>
+            <cac:Country>
+               <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+            </cac:Country>
+         </cac:Address>
+      </cac:RealizedLocation>
+   </cac:ProcurementProject>
+   <cac:ProcurementProjectLot>
+      <cbc:ID schemeName="Lot">LOT-0001</cbc:ID>
+      <cac:TenderingTerms>
+         <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+         <cac:CallForTendersDocumentReference>
+            <ext:UBLExtensions>
+               <ext:UBLExtension>
+                  <ext:ExtensionContent>
+                     <efext:EformsExtension>
+                        <efac:OfficialLanguages>
+                           <cac:Language>
+                              <cbc:ID>POL</cbc:ID>
+                           </cac:Language>
+                        </efac:OfficialLanguages>
+                     </efext:EformsExtension>
+                  </ext:ExtensionContent>
+               </ext:UBLExtension>
+            </ext:UBLExtensions>
+            <cbc:ID>Z/38/PN/26</cbc:ID>
+            <cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+            <cac:Attachment>
+               <cac:ExternalReference>
+                  <cbc:URI>https://platformazakupowa.pl/pn/bieganski</cbc:URI>
+               </cac:ExternalReference>
+            </cac:Attachment>
+         </cac:CallForTendersDocumentReference>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="conditions">performance</cbc:ExecutionRequirementCode>
+            <cbc:Description languageID="POL">1.	Przedmiot zamówienia będzie realizowany przez okres:
+	24 miesięcy od daty zawarcia umowy lub do momentu osiągnięcia maksymalnej wartości wynagrodzenia Wykonawcy określonej w  niniejszej umowie, jeżeli nastąpi to przed upływem powyższego okresu, 
+	24 miesięcy od daty dostawy do Zamawiającego przedmiotu dzierżawy lub do momentu wcześniejszego osiągnięcia maksymalnej wartości wynagrodzenia Wykonawcy określonej w umowie, jeśli nastąpi to przed upływem powyższego okresu. – dotyczy zadania z dzierżawą – zadania nr 1.
+W zadaniach z prawem opcji - w zadaniach nr 3,6 - Maksymalna wartość wynagrodzenia Wykonawcy, której osiągnięcie skutkuje wygaśnięciem umowy, obejmuje wynagrodzenie za zakres podstawowy oraz, w przypadku skorzystania przez Zamawiającego z prawa opcji, również wynagrodzenie za zakres objęty prawem opcji.
+2.	Dostawa, instalacja i uruchomienie przez Wykonawcę przedmiotu dzierżawy nastąpi w terminie 7 dni roboczych od daty zawarcia umowy. – dotyczy zadania </cbc:Description>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="einvoicing">allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:AwardingTerms>
+            <cac:AwardingCriterion>
+               <cbc:CalculationExpression languageID="POL">1.	Zamawiający dokona wyboru najkorzystniejszej oferty z ofert ważnych przy zastosowaniu kryterium: Cena   100 %.
+2.	Do kryterium została przypisana waga określona udziałem procentowym. Zamawiający bę-dzie oceniał oferty odpowiadające wyżej wymienionemu kryterium, przy czym oferty w da-nym kryterium podlegać będą ocenie w oparciu o podane niżej zasady przyznawania punk-tów.
+Kryterium cena - 100 % (Wok)
+     C of.n.
+Cn = ----------------------- x  Wok    x 100 pkt
+      Cof.b.
+gdzie: 
+Cn – liczba punktów za kryterium cena
+Cof.n. – cena oferty najniższej
+Cof.b. – cena oferty badanej
+Wok - waga ocenianego kryterium w procentach, w tym przypadku to 100%
+3.	Ocenie będą podlegać wyłącznie oferty nie podlegające odrzuceniu.
+4.	Oferta z najniższą ceną otrzymuje 100 punktów, każda następna będzie przeliczana  
+w  stosunku  do  oferty  z  ceną  najniższą według wzoru powyżej.
+PEŁNA TREŚĆ W SWZ</cbc:CalculationExpression>
+               <cac:SubordinateAwardingCriterion>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                  <cbc:Description languageID="POL">Cena 100%</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+            </cac:AwardingCriterion>
+         </cac:AwardingTerms>
+         <cac:AdditionalInformationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:AdditionalInformationParty>
+         <cac:TenderRecipientParty>
+            <cbc:EndpointID>https://platformazakupowa.pl/pn/bieganski</cbc:EndpointID>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderRecipientParty>
+         <cac:TenderEvaluationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderEvaluationParty>
+         <cac:TenderValidityPeriod>
+            <cbc:DurationMeasure unitCode="DAY">90</cbc:DurationMeasure>
+         </cac:TenderValidityPeriod>
+         <cac:AppealTerms>
+            <cac:PresentationPeriod>
+               <cbc:Description languageID="POL">W toku postępowania o udzielenie zamówienia Wykonawcom przysługują środki ochrony prawnej szczegółowo określone w Dziale IX ustawy Prawo Zamówień Publicznych „Środki ochrony prawnej”. 1. Środki ochrony prawnej określone w niniejszym dziale przysługują wykonawcy, uczestnikowi konkursu oraz innemu podmiotowi, jeżeli ma lub miał interes w uzyskaniu zamówienia lub nagrody w konkursie oraz poniósł lub może ponieść szkodę w wyniku naruszenia przez zamawiającego przepisów ustawy. 1a. Środki ochrony prawnej określone w niniejszym dziale nie przysługują wykonawcy, uczestnikowi konkursu ani innemu podmiotowi, o którym mowa w ust. 1, pochodzącym z państw trzecich niebędących stronami umów między narodowych. 2. Środki ochrony prawnej wobec ogłoszenia wszczynającego postępowanie o udzielenie zamówienia lub ogłoszenia o konkursie oraz dokumentów zamówienia przysługują również organizacjom wpisanym na listę, o której mowa w art. 469 pkt 15, oraz Rzecznikowi Małych i Średnich Przedsiębiorców. 3. Postępowanie odwoławcze jest prowadzone w języku polskim. 4. Wszystkie dokumenty przedstawia się w języku polskim, a jeżeli zostały sporządzone w języku obcym, strona oraz uczestnik postępowania odwoławczego, który się na nie powołuje, przedstawia ich tłumaczenie na język polski. W uzasadnionych przypadkach Izba może żądać przedstawienia tłumaczenia dokumentu na język polski poświadczonego przez tłumacza przysięgłego. 5. Odwołanie przysługuje na: 1) niezgodną z przepisami ustawy czynność zamawiającego, podjętą w postępowaniu o udzielenie zamówienia, w tym na projektowane postanowienie umowy; 2) zaniechanie czynności w postępowaniu o udzielenie zamówienia, do której zamawiający był obowiązany na podstawie ustawy; 3) zaniechanie przeprowadzenia postępowania o udzielenie zamówienia lub zorganizowania konkursu na podstawie ustawy, mimo że zamawiający był do tego obowiązany. 6. Odwołanie wnosi się do Prezesa Izby. 7. Odwołujący przekazuje zamawiającemu odwołanie wniesione w formie elektronicznej albo postaci elektronicznej albo kopię tego odwołania, jeżeli zostało ono wniesione w formie pisemnej, przed upływem terminu do wniesienia odwołania w taki sposób, aby mógł on zapoznać się z jego treścią przed upływem tego terminu. 8. Domniemywa się, że zamawiający mógł zapoznać się z treścią odwołania przed upływem terminu do jego wniesienia, jeżeli przekazanie odpowiednio odwołania albo jego kopii nastąpiło przed upływem terminu do jego wniesienia przy użyciu środków komunikacji elektronicznej. 9. Odwołanie wnosi się w przypadku zamówień, których wartość jest równa albo przekracza progi unijne, w terminie: a) 10 dni od dnia przekazania informacji o czynności zamawiającego stanowiącej podstawę jego wniesienia, jeżeli informacja została przekazana przy użyciu środków komunikacji elektronicznej, b) 15 dni od dnia przekazania informacji o czynności zamawiającego stanowiącej podstawę jego wniesienia, jeżeli informacja została przekazana w sposób inny niż określony w lit. a; 10. Odwołanie wobec treści ogłoszenia wszczynającego postępowanie o udzielenie zamówienia lub wobec treści dokumentów zamówienia wnosi się w terminie 10 dni od dnia publikacji ogłoszenia w Dzienniku Urzędowym Unii Europejskiej lub zamieszczenia dokumentów zamówienia na stronie internetowej, w przypadku zamówień, których wartość jest równa albo przekracza progi unijne; 11. Odwołanie w przypadkach innych niż określone w pkt 9 i 10 wnosi się w terminie 10 dni od dnia, w którym powzięto lub przy zachowaniu należytej staranności można było powziąć wiadomość o okolicznościach stanowiących podstawę jego wniesienia, w przypadku zamówień, których wartość jest równa albo przekracza progi unijne; 12. Jeżeli zamawiający nie opublikował ogłoszenia o zamiarze zawarcia umowy lub mimo takiego obowiązku nie przesłał wykonawcy zawiadomienia o wyborze najkorzystniejszej oferty, odwołanie wnosi się nie później niż w terminie: 1) 30 dni od dnia publikacji w Dzienniku Urzędowym Unii Europejskiej ogłoszenia o udzieleniu zamówienia, 2) 6 miesięcy od dnia zawarcia umowy, jeżeli zamawiający nie opublikował w Dzienniku Urzędowym Unii Europejskiej ogłoszenia o udzieleniu zamówienia</cbc:Description>
+            </cac:PresentationPeriod>
+            <cac:AppealInformationParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealInformationParty>
+            <cac:AppealReceiverParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealReceiverParty>
+            <cac:MediationParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:MediationParty>
+         </cac:AppealTerms>
+         <cac:Language>
+            <cbc:ID>POL</cbc:ID>
+         </cac:Language>
+         <cac:PostAwardProcess>
+            <cbc:ElectronicOrderUsageIndicator>true</cbc:ElectronicOrderUsageIndicator>
+            <cbc:ElectronicPaymentUsageIndicator>true</cbc:ElectronicPaymentUsageIndicator>
+         </cac:PostAwardProcess>
+      </cac:TenderingTerms>
+      <cac:TenderingProcess>
+         <cbc:SubmissionMethodCode listName="esubmission">required</cbc:SubmissionMethodCode>
+         <cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+         <cac:TenderSubmissionDeadlinePeriod>
+            <cbc:EndDate>2026-08-27+02:00</cbc:EndDate>
+            <cbc:EndTime>12:00:00+02:00</cbc:EndTime>
+         </cac:TenderSubmissionDeadlinePeriod>
+         <cac:OpenTenderEvent>
+            <cbc:OccurrenceDate>2026-08-27+02:00</cbc:OccurrenceDate>
+            <cbc:OccurrenceTime>12:30:00+02:00</cbc:OccurrenceTime>
+            <cac:OccurenceLocation>
+               <cbc:Description languageID="POL">Zamawiający przewiduje otwarcie ofert w Regionalnym Szpitalu Specjalistycznym im. dr. Władysława Biegańskiego w Grudziądzu, ul. L. Rydygiera 15/17, Budynek N, parter, pokój nr 18, Dział Zamówień Publicznych </cbc:Description>
+            </cac:OccurenceLocation>
+         </cac:OpenTenderEvent>
+         <cac:AuctionTerms>
+            <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+         </cac:AuctionTerms>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+      </cac:TenderingProcess>
+      <cac:ProcurementProject>
+         <cbc:ID schemeName="InternalID">Zadanie nr 1</cbc:ID>
+         <cbc:Name languageID="POL">Zadanie nr 1 – Dostawy sprzętu do PTCA</cbc:Name>
+         <cbc:Description languageID="POL">Przedmiotem zamówienia są sukcesywne dostawy sprzętu do PTCA (dalej jako: towar lub asortyment) w rodzaju i w ilościach określonych w Formularzu Cenowym stanowiącym Załącznik nr 2 do SWZ wraz z dzierżawą systemu OCT (dalej zamiennie jako: sprzęt lub przedmiot dzierżawy), szczegółowo opisanego w Zestawieniu Wymaganych Funkcji i Parametrów Technicznych, stanowiącym Załącznik nr 6  do SWZ, oraz zgodnie z projektowanymi postanowieniami umowy stanowiącymi Załącznik nr 4 do niniejszej SWZ 
+Zadanie nr 1 – Dostawy sprzętu do PTCA</cbc:Description>
+         <cbc:ProcurementTypeCode listName="contract-nature">supplies</cbc:ProcurementTypeCode>
+         <cbc:Note languageID="POL">Z postępowania o udzielenie zamówienia publicznego wyklucza się Wykonawcę w stosunku do którego zachodzi którakolwiek z okoliczności, o których mowa w art. 108 ustawy p.z.p. i art. 109 ust. 1 pkt 1 i 4 ustawy p.z.p. oraz art. 7 ustawy z dnia 13 kwietnia 2022 o szczególnych rozwiązaniach w zakresie przeciwdziałania
+wspieraniu agresji na Ukrainę oraz służących ochronie bezpieczeństwa narodowego oraz art. 5k rozporządzenia Rady (UE) nr 833/2014. 
+Zamawiający nie dopuszcza ofert z udziałem dostaw pochodzących z „państw trzecich niebędących stronami umów międzynarodowych”.</cbc:Note>
+         <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">33111730</cbc:ItemClassificationCode>
+         </cac:MainCommodityClassification>
+         <cac:RealizedLocation>
+            <cbc:Description languageID="POL">Regionalny Szpital Specjalistyczny im. dr. Władysława Biegańskiego, ul. Rydygiera 15/17 w Grudziądzu, w tym:
+−	dostawa, instalacja i uruchomienie przedmiotu dzierżawy: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	utworzenie komisu: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	sukcesywne dostawy towaru: Magazyn Medyczny, budynek  „O”, poziom – 1.</cbc:Description>
+            <cac:Address>
+               <cbc:CityName>Grudziądz</cbc:CityName>
+               <cbc:PostalZone>86-300</cbc:PostalZone>
+               <cbc:CountrySubentityCode listName="nuts">PL616</cbc:CountrySubentityCode>
+               <cac:Country>
+                  <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+               </cac:Country>
+            </cac:Address>
+         </cac:RealizedLocation>
+         <cac:PlannedPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">24</cbc:DurationMeasure>
+         </cac:PlannedPeriod>
+      </cac:ProcurementProject>
+   </cac:ProcurementProjectLot>
+   <cac:ProcurementProjectLot>
+      <cbc:ID schemeName="Lot">LOT-0002</cbc:ID>
+      <cac:TenderingTerms>
+         <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+         <cac:CallForTendersDocumentReference>
+            <ext:UBLExtensions>
+               <ext:UBLExtension>
+                  <ext:ExtensionContent>
+                     <efext:EformsExtension>
+                        <efac:OfficialLanguages>
+                           <cac:Language>
+                              <cbc:ID>POL</cbc:ID>
+                           </cac:Language>
+                        </efac:OfficialLanguages>
+                     </efext:EformsExtension>
+                  </ext:ExtensionContent>
+               </ext:UBLExtension>
+            </ext:UBLExtensions>
+            <cbc:ID>Z/38/PN/26</cbc:ID>
+            <cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+            <cac:Attachment>
+               <cac:ExternalReference>
+                  <cbc:URI>https://platformazakupowa.pl/pn/bieganski</cbc:URI>
+               </cac:ExternalReference>
+            </cac:Attachment>
+         </cac:CallForTendersDocumentReference>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="conditions">performance</cbc:ExecutionRequirementCode>
+            <cbc:Description languageID="POL">1.	Przedmiot zamówienia będzie realizowany przez okres:
+	24 miesięcy od daty zawarcia umowy lub do momentu osiągnięcia maksymalnej wartości wynagrodzenia Wykonawcy określonej w  niniejszej umowie, jeżeli nastąpi to przed upływem powyższego okresu, 
+	24 miesięcy od daty dostawy do Zamawiającego przedmiotu dzierżawy lub do momentu wcześniejszego osiągnięcia maksymalnej wartości wynagrodzenia Wykonawcy określonej w umowie, jeśli nastąpi to przed upływem powyższego okresu. – dotyczy zadania z dzierżawą – zadania nr 1.
+W zadaniach z prawem opcji - w zadaniach nr 3,6 - Maksymalna wartość wynagrodzenia Wykonawcy, której osiągnięcie skutkuje wygaśnięciem umowy, obejmuje wynagrodzenie za zakres podstawowy oraz, w przypadku skorzystania przez Zamawiającego z prawa opcji, również wynagrodzenie za zakres objęty prawem opcji.
+2.	Dostawa, instalacja i uruchomienie przez Wykonawcę przedmiotu dzierżawy nastąpi w terminie 7 dni roboczych od daty zawarcia umowy. – dotyczy zadania </cbc:Description>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="einvoicing">allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:AwardingTerms>
+            <cac:AwardingCriterion>
+               <cbc:CalculationExpression languageID="POL">1.	Zamawiający dokona wyboru najkorzystniejszej oferty z ofert ważnych przy zastosowaniu kryterium: Cena   100 %.
+2.	Do kryterium została przypisana waga określona udziałem procentowym. Zamawiający bę-dzie oceniał oferty odpowiadające wyżej wymienionemu kryterium, przy czym oferty w da-nym kryterium podlegać będą ocenie w oparciu o podane niżej zasady przyznawania punk-tów.
+Kryterium cena - 100 % (Wok)
+     C of.n.
+Cn = ----------------------- x  Wok    x 100 pkt
+      Cof.b.
+gdzie: 
+Cn – liczba punktów za kryterium cena
+Cof.n. – cena oferty najniższej
+Cof.b. – cena oferty badanej
+Wok - waga ocenianego kryterium w procentach, w tym przypadku to 100%
+3.	Ocenie będą podlegać wyłącznie oferty nie podlegające odrzuceniu.
+4.	Oferta z najniższą ceną otrzymuje 100 punktów, każda następna będzie przeliczana  
+w  stosunku  do  oferty  z  ceną  najniższą według wzoru powyżej.
+PEŁNA TREŚĆ W SWZ</cbc:CalculationExpression>
+               <cac:SubordinateAwardingCriterion>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                  <cbc:Description languageID="POL">Cena 100%</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+            </cac:AwardingCriterion>
+         </cac:AwardingTerms>
+         <cac:AdditionalInformationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:AdditionalInformationParty>
+         <cac:TenderRecipientParty>
+            <cbc:EndpointID>https://platformazakupowa.pl/pn/bieganski</cbc:EndpointID>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderRecipientParty>
+         <cac:TenderEvaluationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderEvaluationParty>
+         <cac:TenderValidityPeriod>
+            <cbc:DurationMeasure unitCode="DAY">90</cbc:DurationMeasure>
+         </cac:TenderValidityPeriod>
+         <cac:AppealTerms>
+            <cac:PresentationPeriod>
+               <cbc:Description languageID="POL">W toku postępowania o udzielenie zamówienia Wykonawcom przysługują środki ochrony prawnej szczegółowo określone w Dziale IX ustawy Prawo Zamówień Publicznych „Środki ochrony prawnej”. 1. Środki ochrony prawnej określone w niniejszym dziale przysługują wykonawcy, uczestnikowi konkursu oraz innemu podmiotowi, jeżeli ma lub miał interes w uzyskaniu zamówienia lub nagrody w konkursie oraz poniósł lub może ponieść szkodę w wyniku naruszenia przez zamawiającego przepisów ustawy. 1a. Środki ochrony prawnej określone w niniejszym dziale nie przysługują wykonawcy, uczestnikowi konkursu ani innemu podmiotowi, o którym mowa w ust. 1, pochodzącym z państw trzecich niebędących stronami umów między narodowych. 2. Środki ochrony prawnej wobec ogłoszenia wszczynającego postępowanie o udzielenie zamówienia lub ogłoszenia o konkursie oraz dokumentów zamówienia przysługują również organizacjom wpisanym na listę, o której mowa w art. 469 pkt 15, oraz Rzecznikowi Małych i Średnich Przedsiębiorców. 3. Postępowanie odwoławcze jest prowadzone w języku polskim. 4. Wszystkie dokumenty przedstawia się w języku polskim, a jeżeli zostały sporządzone w języku obcym, strona oraz uczestnik postępowania odwoławczego, który się na nie powołuje, przedstawia ich tłumaczenie na język polski. W uzasadnionych przypadkach Izba może żądać przedstawienia tłumaczenia dokumentu na język polski poświadczonego przez tłumacza przysięgłego. 5. Odwołanie przysługuje na: 1) niezgodną z przepisami ustawy czynność zamawiającego, podjętą w postępowaniu o udzielenie zamówienia, w tym na projektowane postanowienie umowy; 2) zaniechanie czynności w postępowaniu o udzielenie zamówienia, do której zamawiający był obowiązany na podstawie ustawy; 3) zaniechanie przeprowadzenia postępowania o udzielenie zamówienia lub zorganizowania konkursu na podstawie ustawy, mimo że zamawiający był do tego obowiązany. 6. Odwołanie wnosi się do Prezesa Izby. 7. Odwołujący przekazuje zamawiającemu odwołanie wniesione w formie elektronicznej albo postaci elektronicznej albo kopię tego odwołania, jeżeli zostało ono wniesione w formie pisemnej, przed upływem terminu do wniesienia odwołania w taki sposób, aby mógł on zapoznać się z jego treścią przed upływem tego terminu. 8. Domniemywa się, że zamawiający mógł zapoznać się z treścią odwołania przed upływem terminu do jego wniesienia, jeżeli przekazanie odpowiednio odwołania albo jego kopii nastąpiło przed upływem terminu do jego wniesienia przy użyciu środków komunikacji elektronicznej. 9. Odwołanie wnosi się w przypadku zamówień, których wartość jest równa albo przekracza progi unijne, w terminie: a) 10 dni od dnia przekazania informacji o czynności zamawiającego stanowiącej podstawę jego wniesienia, jeżeli informacja została przekazana przy użyciu środków komunikacji elektronicznej, b) 15 dni od dnia przekazania informacji o czynności zamawiającego stanowiącej podstawę jego wniesienia, jeżeli informacja została przekazana w sposób inny niż określony w lit. a; 10. Odwołanie wobec treści ogłoszenia wszczynającego postępowanie o udzielenie zamówienia lub wobec treści dokumentów zamówienia wnosi się w terminie 10 dni od dnia publikacji ogłoszenia w Dzienniku Urzędowym Unii Europejskiej lub zamieszczenia dokumentów zamówienia na stronie internetowej, w przypadku zamówień, których wartość jest równa albo przekracza progi unijne; 11. Odwołanie w przypadkach innych niż określone w pkt 9 i 10 wnosi się w terminie 10 dni od dnia, w którym powzięto lub przy zachowaniu należytej staranności można było powziąć wiadomość o okolicznościach stanowiących podstawę jego wniesienia, w przypadku zamówień, których wartość jest równa albo przekracza progi unijne; 12. Jeżeli zamawiający nie opublikował ogłoszenia o zamiarze zawarcia umowy lub mimo takiego obowiązku nie przesłał wykonawcy zawiadomienia o wyborze najkorzystniejszej oferty, odwołanie wnosi się nie później niż w terminie: 1) 30 dni od dnia publikacji w Dzienniku Urzędowym Unii Europejskiej ogłoszenia o udzieleniu zamówienia, 2) 6 miesięcy od dnia zawarcia umowy, jeżeli zamawiający nie opublikował w Dzienniku Urzędowym Unii Europejskiej ogłoszenia o udzieleniu zamówienia</cbc:Description>
+            </cac:PresentationPeriod>
+            <cac:AppealInformationParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealInformationParty>
+            <cac:AppealReceiverParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealReceiverParty>
+            <cac:MediationParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:MediationParty>
+         </cac:AppealTerms>
+         <cac:Language>
+            <cbc:ID>POL</cbc:ID>
+         </cac:Language>
+         <cac:PostAwardProcess>
+            <cbc:ElectronicOrderUsageIndicator>true</cbc:ElectronicOrderUsageIndicator>
+            <cbc:ElectronicPaymentUsageIndicator>true</cbc:ElectronicPaymentUsageIndicator>
+         </cac:PostAwardProcess>
+      </cac:TenderingTerms>
+      <cac:TenderingProcess>
+         <cbc:SubmissionMethodCode listName="esubmission">required</cbc:SubmissionMethodCode>
+         <cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+         <cac:TenderSubmissionDeadlinePeriod>
+            <cbc:EndDate>2026-08-27+02:00</cbc:EndDate>
+            <cbc:EndTime>12:00:00+02:00</cbc:EndTime>
+         </cac:TenderSubmissionDeadlinePeriod>
+         <cac:OpenTenderEvent>
+            <cbc:OccurrenceDate>2026-08-27+02:00</cbc:OccurrenceDate>
+            <cbc:OccurrenceTime>12:30:00+02:00</cbc:OccurrenceTime>
+            <cac:OccurenceLocation>
+               <cbc:Description languageID="POL">Zamawiający przewiduje otwarcie ofert w Regionalnym Szpitalu Specjalistycznym im. dr. Władysława Biegańskiego w Grudziądzu, ul. L. Rydygiera 15/17, Budynek N, parter, pokój nr 18, Dział Zamówień Publicznych </cbc:Description>
+            </cac:OccurenceLocation>
+         </cac:OpenTenderEvent>
+         <cac:AuctionTerms>
+            <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+         </cac:AuctionTerms>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+      </cac:TenderingProcess>
+      <cac:ProcurementProject>
+         <cbc:ID schemeName="InternalID">Zadanie nr 2</cbc:ID>
+         <cbc:Name languageID="POL">Zadanie nr 2 – Dostawy sprzętu pomocniczego do PTCA</cbc:Name>
+         <cbc:Description languageID="POL">Przedmiotem zamówienia są sukcesywne dostawy sprzętu pomocniczego do PTCA (dalej jako: towar lub asortyment) w rodzaju i w ilościach określonych w Formularzu Cenowym stanowiącym Załącznik nr 2 do SWZ wraz z dzierżawą systemu OCT (dalej zamiennie jako: sprzęt lub przedmiot dzierżawy), szczegółowo opisanego w Zestawieniu Wymaganych Funkcji i Parametrów Technicznych, stanowiącym Załącznik nr 6  do SWZ, oraz zgodnie z projektowanymi postanowieniami umowy stanowiącymi Załącznik nr 4 do niniejszej SWZ 
+Zadanie nr 2 – Dostawy sprzętu pomocniczego do PTCA</cbc:Description>
+         <cbc:ProcurementTypeCode listName="contract-nature">supplies</cbc:ProcurementTypeCode>
+         <cbc:Note languageID="POL">Z postępowania o udzielenie zamówienia publicznego wyklucza się Wykonawcę w stosunku do którego zachodzi którakolwiek z okoliczności, o których mowa w art. 108 ustawy p.z.p. i art. 109 ust. 1 pkt 1 i 4 ustawy p.z.p. oraz art. 7 ustawy z dnia 13 kwietnia 2022 o szczególnych rozwiązaniach w zakresie przeciwdziałania
+wspieraniu agresji na Ukrainę oraz służących ochronie bezpieczeństwa narodowego oraz art. 5k rozporządzenia Rady (UE) nr 833/2014. 
+Zamawiający nie dopuszcza ofert z udziałem dostaw pochodzących z „państw trzecich niebędących stronami umów międzynarodowych”.</cbc:Note>
+         <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">33111730</cbc:ItemClassificationCode>
+         </cac:MainCommodityClassification>
+         <cac:RealizedLocation>
+            <cbc:Description languageID="POL">Regionalny Szpital Specjalistyczny im. dr. Władysława Biegańskiego, ul. Rydygiera 15/17 w Grudziądzu, w tym:
+−	dostawa, instalacja i uruchomienie przedmiotu dzierżawy: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	utworzenie komisu: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	sukcesywne dostawy towaru: Magazyn Medyczny, budynek  „O”, poziom – 1.</cbc:Description>
+            <cac:Address>
+               <cbc:CityName>Grudziądz</cbc:CityName>
+               <cbc:PostalZone>86-300</cbc:PostalZone>
+               <cbc:CountrySubentityCode listName="nuts">PL616</cbc:CountrySubentityCode>
+               <cac:Country>
+                  <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+               </cac:Country>
+            </cac:Address>
+         </cac:RealizedLocation>
+         <cac:PlannedPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">24</cbc:DurationMeasure>
+         </cac:PlannedPeriod>
+      </cac:ProcurementProject>
+   </cac:ProcurementProjectLot>
+   <cac:ProcurementProjectLot>
+      <cbc:ID schemeName="Lot">LOT-0003</cbc:ID>
+      <cac:TenderingTerms>
+         <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+         <cac:CallForTendersDocumentReference>
+            <ext:UBLExtensions>
+               <ext:UBLExtension>
+                  <ext:ExtensionContent>
+                     <efext:EformsExtension>
+                        <efac:OfficialLanguages>
+                           <cac:Language>
+                              <cbc:ID>POL</cbc:ID>
+                           </cac:Language>
+                        </efac:OfficialLanguages>
+                     </efext:EformsExtension>
+                  </ext:ExtensionContent>
+               </ext:UBLExtension>
+            </ext:UBLExtensions>
+            <cbc:ID>Z/38/PN/26</cbc:ID>
+            <cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+            <cac:Attachment>
+               <cac:ExternalReference>
+                  <cbc:URI>https://platformazakupowa.pl/pn/bieganski</cbc:URI>
+               </cac:ExternalReference>
+            </cac:Attachment>
+         </cac:CallForTendersDocumentReference>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="conditions">performance</cbc:ExecutionRequirementCode>
+            <cbc:Description languageID="POL">1.	Przedmiot zamówienia będzie realizowany przez okres:
+	24 miesięcy od daty zawarcia umowy lub do momentu osiągnięcia maksymalnej wartości wynagrodzenia Wykonawcy określonej w  niniejszej umowie, jeżeli nastąpi to przed upływem powyższego okresu, 
+	24 miesięcy od daty dostawy do Zamawiającego przedmiotu dzierżawy lub do momentu wcześniejszego osiągnięcia maksymalnej wartości wynagrodzenia Wykonawcy określonej w umowie, jeśli nastąpi to przed upływem powyższego okresu. – dotyczy zadania z dzierżawą – zadania nr 1.
+W zadaniach z prawem opcji - w zadaniach nr 3,6 - Maksymalna wartość wynagrodzenia Wykonawcy, której osiągnięcie skutkuje wygaśnięciem umowy, obejmuje wynagrodzenie za zakres podstawowy oraz, w przypadku skorzystania przez Zamawiającego z prawa opcji, również wynagrodzenie za zakres objęty prawem opcji.
+2.	Dostawa, instalacja i uruchomienie przez Wykonawcę przedmiotu dzierżawy nastąpi w terminie 7 dni roboczych od daty zawarcia umowy. – dotyczy zadania </cbc:Description>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="einvoicing">allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:AwardingTerms>
+            <cac:AwardingCriterion>
+               <cbc:CalculationExpression languageID="POL">1.	Zamawiający dokona wyboru najkorzystniejszej oferty z ofert ważnych przy zastosowaniu kryterium: Cena   100 %.
+2.	Do kryterium została przypisana waga określona udziałem procentowym. Zamawiający bę-dzie oceniał oferty odpowiadające wyżej wymienionemu kryterium, przy czym oferty w da-nym kryterium podlegać będą ocenie w oparciu o podane niżej zasady przyznawania punk-tów.
+Kryterium cena - 100 % (Wok)
+     C of.n.
+Cn = ----------------------- x  Wok    x 100 pkt
+      Cof.b.
+gdzie: 
+Cn – liczba punktów za kryterium cena
+Cof.n. – cena oferty najniższej
+Cof.b. – cena oferty badanej
+Wok - waga ocenianego kryterium w procentach, w tym przypadku to 100%
+3.	Ocenie będą podlegać wyłącznie oferty nie podlegające odrzuceniu.
+4.	Oferta z najniższą ceną otrzymuje 100 punktów, każda następna będzie przeliczana  
+w  stosunku  do  oferty  z  ceną  najniższą według wzoru powyżej.
+PEŁNA TREŚĆ W SWZ</cbc:CalculationExpression>
+               <cac:SubordinateAwardingCriterion>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                  <cbc:Description languageID="POL">Cena 100%</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+            </cac:AwardingCriterion>
+         </cac:AwardingTerms>
+         <cac:AdditionalInformationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:AdditionalInformationParty>
+         <cac:TenderRecipientParty>
+            <cbc:EndpointID>https://platformazakupowa.pl/pn/bieganski</cbc:EndpointID>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderRecipientParty>
+         <cac:TenderEvaluationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderEvaluationParty>
+         <cac:TenderValidityPeriod>
+            <cbc:DurationMeasure unitCode="DAY">90</cbc:DurationMeasure>
+         </cac:TenderValidityPeriod>
+         <cac:AppealTerms>
+            <cac:PresentationPeriod>
+               <cbc:Description languageID="POL">W toku postępowania o udzielenie zamówienia Wykonawcom przysługują środki ochrony prawnej szczegółowo określone w Dziale IX ustawy Prawo Zamówień Publicznych „Środki ochrony prawnej”. 1. Środki ochrony prawnej określone w niniejszym dziale przysługują wykonawcy, uczestnikowi konkursu oraz innemu podmiotowi, jeżeli ma lub miał interes w uzyskaniu zamówienia lub nagrody w konkursie oraz poniósł lub może ponieść szkodę w wyniku naruszenia przez zamawiającego przepisów ustawy. 1a. Środki ochrony prawnej określone w niniejszym dziale nie przysługują wykonawcy, uczestnikowi konkursu ani innemu podmiotowi, o którym mowa w ust. 1, pochodzącym z państw trzecich niebędących stronami umów między narodowych. 2. Środki ochrony prawnej wobec ogłoszenia wszczynającego postępowanie o udzielenie zamówienia lub ogłoszenia o konkursie oraz dokumentów zamówienia przysługują również organizacjom wpisanym na listę, o której mowa w art. 469 pkt 15, oraz Rzecznikowi Małych i Średnich Przedsiębiorców. 3. Postępowanie odwoławcze jest prowadzone w języku polskim. 4. Wszystkie dokumenty przedstawia się w języku polskim, a jeżeli zostały sporządzone w języku obcym, strona oraz uczestnik postępowania odwoławczego, który się na nie powołuje, przedstawia ich tłumaczenie na język polski. W uzasadnionych przypadkach Izba może żądać przedstawienia tłumaczenia dokumentu na język polski poświadczonego przez tłumacza przysięgłego. 5. Odwołanie przysługuje na: 1) niezgodną z przepisami ustawy czynność zamawiającego, podjętą w postępowaniu o udzielenie zamówienia, w tym na projektowane postanowienie umowy; 2) zaniechanie czynności w postępowaniu o udzielenie zamówienia, do której zamawiający był obowiązany na podstawie ustawy; 3) zaniechanie przeprowadzenia postępowania o udzielenie zamówienia lub zorganizowania konkursu na podstawie ustawy, mimo że zamawiający był do tego obowiązany. 6. Odwołanie wnosi się do Prezesa Izby. 7. Odwołujący przekazuje zamawiającemu odwołanie wniesione w formie elektronicznej albo postaci elektronicznej albo kopię tego odwołania, jeżeli zostało ono wniesione w formie pisemnej, przed upływem terminu do wniesienia odwołania w taki sposób, aby mógł on zapoznać się z jego treścią przed upływem tego terminu. 8. Domniemywa się, że zamawiający mógł zapoznać się z treścią odwołania przed upływem terminu do jego wniesienia, jeżeli przekazanie odpowiednio odwołania albo jego kopii nastąpiło przed upływem terminu do jego wniesienia przy użyciu środków komunikacji elektronicznej. 9. Odwołanie wnosi się w przypadku zamówień, których wartość jest równa albo przekracza progi unijne, w terminie: a) 10 dni od dnia przekazania informacji o czynności zamawiającego stanowiącej podstawę jego wniesienia, jeżeli informacja została przekazana przy użyciu środków komunikacji elektronicznej, b) 15 dni od dnia przekazania informacji o czynności zamawiającego stanowiącej podstawę jego wniesienia, jeżeli informacja została przekazana w sposób inny niż określony w lit. a; 10. Odwołanie wobec treści ogłoszenia wszczynającego postępowanie o udzielenie zamówienia lub wobec treści dokumentów zamówienia wnosi się w terminie 10 dni od dnia publikacji ogłoszenia w Dzienniku Urzędowym Unii Europejskiej lub zamieszczenia dokumentów zamówienia na stronie internetowej, w przypadku zamówień, których wartość jest równa albo przekracza progi unijne; 11. Odwołanie w przypadkach innych niż określone w pkt 9 i 10 wnosi się w terminie 10 dni od dnia, w którym powzięto lub przy zachowaniu należytej staranności można było powziąć wiadomość o okolicznościach stanowiących podstawę jego wniesienia, w przypadku zamówień, których wartość jest równa albo przekracza progi unijne; 12. Jeżeli zamawiający nie opublikował ogłoszenia o zamiarze zawarcia umowy lub mimo takiego obowiązku nie przesłał wykonawcy zawiadomienia o wyborze najkorzystniejszej oferty, odwołanie wnosi się nie później niż w terminie: 1) 30 dni od dnia publikacji w Dzienniku Urzędowym Unii Europejskiej ogłoszenia o udzieleniu zamówienia, 2) 6 miesięcy od dnia zawarcia umowy, jeżeli zamawiający nie opublikował w Dzienniku Urzędowym Unii Europejskiej ogłoszenia o udzieleniu zamówienia</cbc:Description>
+            </cac:PresentationPeriod>
+            <cac:AppealInformationParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealInformationParty>
+            <cac:AppealReceiverParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealReceiverParty>
+            <cac:MediationParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:MediationParty>
+         </cac:AppealTerms>
+         <cac:Language>
+            <cbc:ID>POL</cbc:ID>
+         </cac:Language>
+         <cac:PostAwardProcess>
+            <cbc:ElectronicOrderUsageIndicator>true</cbc:ElectronicOrderUsageIndicator>
+            <cbc:ElectronicPaymentUsageIndicator>true</cbc:ElectronicPaymentUsageIndicator>
+         </cac:PostAwardProcess>
+      </cac:TenderingTerms>
+      <cac:TenderingProcess>
+         <cbc:SubmissionMethodCode listName="esubmission">required</cbc:SubmissionMethodCode>
+         <cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+         <cac:TenderSubmissionDeadlinePeriod>
+            <cbc:EndDate>2026-08-27+02:00</cbc:EndDate>
+            <cbc:EndTime>12:00:00+02:00</cbc:EndTime>
+         </cac:TenderSubmissionDeadlinePeriod>
+         <cac:OpenTenderEvent>
+            <cbc:OccurrenceDate>2026-08-27+02:00</cbc:OccurrenceDate>
+            <cbc:OccurrenceTime>12:30:00+02:00</cbc:OccurrenceTime>
+            <cac:OccurenceLocation>
+               <cbc:Description languageID="POL">Zamawiający przewiduje otwarcie ofert w Regionalnym Szpitalu Specjalistycznym im. dr. Władysława Biegańskiego w Grudziądzu, ul. L. Rydygiera 15/17, Budynek N, parter, pokój nr 18, Dział Zamówień Publicznych </cbc:Description>
+            </cac:OccurenceLocation>
+         </cac:OpenTenderEvent>
+         <cac:AuctionTerms>
+            <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+         </cac:AuctionTerms>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+      </cac:TenderingProcess>
+      <cac:ProcurementProject>
+         <cbc:ID schemeName="InternalID">Zadanie nr 3</cbc:ID>
+         <cbc:Name languageID="POL">Zadanie nr 3 – Dostawy pomp aktywnie wspomagających krążenie implantowane przezskórnie;</cbc:Name>
+         <cbc:Description languageID="POL">Przedmiotem zamówienia są sukcesywne dostawy pomp aktywnie wspomagających krążenie implantowane przezskórnie (dalej jako: towar lub asortyment) w rodzaju i w ilościach określonych w Formularzu Cenowym stanowiącym Załącznik nr 2 do SWZ wraz z dzierżawą systemu OCT (dalej zamiennie jako: sprzęt lub przedmiot dzierżawy), szczegółowo opisanego w Zestawieniu Wymaganych Funkcji i Parametrów Technicznych, stanowiącym Załącznik nr 6  do SWZ, oraz zgodnie z projektowanymi postanowieniami umowy stanowiącymi Załącznik nr 4 do niniejszej SWZ 
+Zadanie nr 3 – Dostawy pomp aktywnie wspomagających krążenie implantowane przezskórnie;</cbc:Description>
+         <cbc:ProcurementTypeCode listName="contract-nature">supplies</cbc:ProcurementTypeCode>
+         <cbc:Note languageID="POL">Z postępowania o udzielenie zamówienia publicznego wyklucza się Wykonawcę w stosunku do którego zachodzi którakolwiek z okoliczności, o których mowa w art. 108 ustawy p.z.p. i art. 109 ust. 1 pkt 1 i 4 ustawy p.z.p. oraz art. 7 ustawy z dnia 13 kwietnia 2022 o szczególnych rozwiązaniach w zakresie przeciwdziałania
+wspieraniu agresji na Ukrainę oraz służących ochronie bezpieczeństwa narodowego oraz art. 5k rozporządzenia Rady (UE) nr 833/2014. 
+Zamawiający nie dopuszcza ofert z udziałem dostaw pochodzących z „państw trzecich niebędących stronami umów międzynarodowych”.</cbc:Note>
+         <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">33186000</cbc:ItemClassificationCode>
+         </cac:MainCommodityClassification>
+         <cac:RealizedLocation>
+            <cbc:Description languageID="POL">Regionalny Szpital Specjalistyczny im. dr. Władysława Biegańskiego, ul. Rydygiera 15/17 w Grudziądzu, w tym:
+−	dostawa, instalacja i uruchomienie przedmiotu dzierżawy: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	utworzenie komisu: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	sukcesywne dostawy towaru: Magazyn Medyczny, budynek  „O”, poziom – 1.</cbc:Description>
+            <cac:Address>
+               <cbc:CityName>Grudziądz</cbc:CityName>
+               <cbc:PostalZone>86-300</cbc:PostalZone>
+               <cbc:CountrySubentityCode listName="nuts">PL616</cbc:CountrySubentityCode>
+               <cac:Country>
+                  <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+               </cac:Country>
+            </cac:Address>
+         </cac:RealizedLocation>
+         <cac:PlannedPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">24</cbc:DurationMeasure>
+         </cac:PlannedPeriod>
+         <cac:ContractExtension>
+            <cbc:OptionsDescription languageID="POL">1.	Zamawiający jest uprawniony do skorzystania z prawa opcji określonego w art. 441 ustawy Prawo zamówień publicznych (dalej jako: „prawo opcji”) tj: opcji ilościowej  polegającej na możliwości zwiększenia ilości towaru objętego przedmiotem umowy względem ilości podanych w Załączniku nr 1 do umowy (Formularzu cenowym)                                                                       w kolumnie „Ilość  szt. (zakres podstawowy)” maksymalnie o ilości określone w Załączniku nr 1 do umowy (Formularzu cenowym) w kolumnie „Ilość szt. (prawo opcji)”. - dotyczy zadania nr 3, 6
+2.	Możliwość skorzystania z opcji jest jedynie prawem Zamawiającego i nie stanowi dla Zamawiającego wiążącego zobowiązania. Wykonawcy nie przysługują żadne roszczenia w stosunku do Zamawiającego w przypadku nieskorzystania przez Zamawiającego z prawa opcji. Zamawiający jest uprawniony do skorzystania z prawa opcji zgodnie z zapotrzebowaniem, w szczególności: 
+1)	gdy wymagać tego będzie prawidłowa, ciągła i nieprzerwana realizacja zadań Zamawiającego polegających na udzielaniu świadczeń zdrowotnych, w tym zapewnienie odpowiedniego poziomu zabezpieczenia medycznego pacjentów,
+2)	w przypadku zwiększonego zapotrzebowania Zamawiającego na dany asortyment wynikającego z nieprzewidzianego wzrostu liczby pacjentów, liczby hospitalizacji lub procedur medycznych, 
+3)	w przypadku realizacji przez Zamawiającego nowych lub rozszerzonych procedur medycznych tj. gdy Zamawiający rozpocznie wykonywanie nowych świadczeń zdrowotnych lub zwiększy liczbę wykonywanych procedur, co wymaga zwiększonych ilości asortymentu objętego przedmiotem umowy,
+4)	w przypadku wzrostu zapotrzebowania na asortyment objęty przedmiotem umowy wynikającego z decyzji lub zezwoleń określonych organów, w szczególności NFZ, Ministerstwa Zdrowia, konsultantów krajowych/wojewódzkich itp., które wprowadzają określone standardy lub obowiązki,
+5)	w przypadku, gdy wystąpi konieczność zwiększenia stanów magazynowych Zamawiającego lub utrzymywania podwyższonego poziomu zapasów asortymentu objętego przedmiotem umowy celem zapobieżenia ryzyku przerwania ciągłości udzielania świadczeń zdrowotnych m.in. w związku z ryzykiem przerw w dostawach, ryzykiem opóźnień logistycznych, problemami z dostępnością asortymentu,
+6)	w przypadku, gdy ze względów organizacyjnych lub technicznych zaistnieje potrzeba zwiększenia intensywności wykorzystania asortymentu objętego przedmiotem umowy np.  na skutek planowanego zwiększenia liczby zabiegów, zmiany organizacji pracy oddziałów lub uruchomienia przez Zamawiającego nowych oddziałów/jednostek, przekształcenia oddziału, uruchomienia dodatkowych łóżek, zwiększenia liczby stanowisk zabiegowych, realizacji projektów medycznych lub programów zdrowotnych,
+7)	w przypadku zwiększenia zapotrzebowania na asortyment objęty przedmiotem umowy ze względu na realizację projektów finansowanych ze środków zewnętrznych np. grantów lub programów krajowych, unijnych, które generują dodatkowe procedury i zużycie asortymentu,
+8)	w innych przypadkach, niż przewidziane powyżej, wynikających z okoliczności, których Zamawiający nie mógł przewidzieć na etapie postępowania o udzielenie zamówienia publicznego, w wyniku którego została zawarta niniejsza umowa.
+-	dotyczy zadania nr 3, 6
+3.	Prawo opcji może być realizowane przez Zamawiającego częściowo. - dotyczy zadania nr 3, 6
+4.	Zamawiający może korzystać z prawa opcji wielokrotnie, aż do momentu wyczerpania w całości ilości asortymentu przewidzianego w zakresie opcjonalnym. - dotyczy zadania nr 3, 6
+5.	Skorzystanie przez Zamawiającego z prawa opcji nie stanowi zmiany umowy i nie będzie wymagało sporządzenia aneksu do umowy. - dotyczy zadania nr 3, 6
+6.	Zamawiający może skorzystać z prawa opcji w dowolnym momencie obowiązywania umowy poprzez złożenie Wykonawcy oświadczenia o skorzystaniu z prawa opcji w formie pisemnej na adres Wykonawcy wskazany w komparycji niniejszej Umowy, w formie elektronicznej w rozumieniu art. 781 Kodeksu cywilnego lub w formie dokumentowej za pośrednictwem poczty elektronicznej na  adres e-mail Wykonawcy, jednak nie później niż na 10 dni przed upływem terminu obowiązywania umowy. W oświadczeniu, o którym mowa powyżej Zamawiający wskaże każdorazowo rodzaj i ilość asortymentu, który zamierza nabyć  w ramach prawa opcji. Niezłożenie oświadczenia w powyższym terminie będzie oznaczało, że Zamawiający rezygnuje ze skorzystania z prawa opcji. - dotyczy zadania nr 3, 6
+7.	W przypadku skorzystania przez Zamawiającego z prawa opcji wynagrodzenie Wykonawcy za zwiększoną ilość towaru zostanie ustalone na podstawie cen jednostkowych określonych w Formularzu Cenowym stanowiącym Załącznik nr 1 do umowy. - dotyczy zadania nr 3, 6
+</cbc:OptionsDescription>
+         </cac:ContractExtension>
+      </cac:ProcurementProject>
+   </cac:ProcurementProjectLot>
+   <cac:ProcurementProjectLot>
+      <cbc:ID schemeName="Lot">LOT-0004</cbc:ID>
+      <cac:TenderingTerms>
+         <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+         <cac:CallForTendersDocumentReference>
+            <ext:UBLExtensions>
+               <ext:UBLExtension>
+                  <ext:ExtensionContent>
+                     <efext:EformsExtension>
+                        <efac:OfficialLanguages>
+                           <cac:Language>
+                              <cbc:ID>POL</cbc:ID>
+                           </cac:Language>
+                        </efac:OfficialLanguages>
+                     </efext:EformsExtension>
+                  </ext:ExtensionContent>
+               </ext:UBLExtension>
+            </ext:UBLExtensions>
+            <cbc:ID>Z/38/PN/26</cbc:ID>
+            <cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+            <cac:Attachment>
+               <cac:ExternalReference>
+                  <cbc:URI>https://platformazakupowa.pl/pn/bieganski</cbc:URI>
+               </cac:ExternalReference>
+            </cac:Attachment>
+         </cac:CallForTendersDocumentReference>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="conditions">performance</cbc:ExecutionRequirementCode>
+            <cbc:Description languageID="POL">1.	Przedmiot zamówienia będzie realizowany przez okres:
+	24 miesięcy od daty zawarcia umowy lub do momentu osiągnięcia maksymalnej wartości wynagrodzenia Wykonawcy określonej w  niniejszej umowie, jeżeli nastąpi to przed upływem powyższego okresu, 
+	24 miesięcy od daty dostawy do Zamawiającego przedmiotu dzierżawy lub do momentu wcześniejszego osiągnięcia maksymalnej wartości wynagrodzenia Wykonawcy określonej w umowie, jeśli nastąpi to przed upływem powyższego okresu. – dotyczy zadania z dzierżawą – zadania nr 1.
+W zadaniach z prawem opcji - w zadaniach nr 3,6 - Maksymalna wartość wynagrodzenia Wykonawcy, której osiągnięcie skutkuje wygaśnięciem umowy, obejmuje wynagrodzenie za zakres podstawowy oraz, w przypadku skorzystania przez Zamawiającego z prawa opcji, również wynagrodzenie za zakres objęty prawem opcji.
+2.	Dostawa, instalacja i uruchomienie przez Wykonawcę przedmiotu dzierżawy nastąpi w terminie 7 dni roboczych od daty zawarcia umowy. – dotyczy zadania </cbc:Description>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="einvoicing">allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:AwardingTerms>
+            <cac:AwardingCriterion>
+               <cbc:CalculationExpression languageID="POL">1.	Zamawiający dokona wyboru najkorzystniejszej oferty z ofert ważnych przy zastosowaniu kryterium: Cena   100 %.
+2.	Do kryterium została przypisana waga określona udziałem procentowym. Zamawiający bę-dzie oceniał oferty odpowiadające wyżej wymienionemu kryterium, przy czym oferty w da-nym kryterium podlegać będą ocenie w oparciu o podane niżej zasady przyznawania punk-tów.
+Kryterium cena - 100 % (Wok)
+     C of.n.
+Cn = ----------------------- x  Wok    x 100 pkt
+      Cof.b.
+gdzie: 
+Cn – liczba punktów za kryterium cena
+Cof.n. – cena oferty najniższej
+Cof.b. – cena oferty badanej
+Wok - waga ocenianego kryterium w procentach, w tym przypadku to 100%
+3.	Ocenie będą podlegać wyłącznie oferty nie podlegające odrzuceniu.
+4.	Oferta z najniższą ceną otrzymuje 100 punktów, każda następna będzie przeliczana  
+w  stosunku  do  oferty  z  ceną  najniższą według wzoru powyżej.
+PEŁNA TREŚĆ W SWZ</cbc:CalculationExpression>
+               <cac:SubordinateAwardingCriterion>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                  <cbc:Description languageID="POL">Cena 100%</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+            </cac:AwardingCriterion>
+         </cac:AwardingTerms>
+         <cac:AdditionalInformationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:AdditionalInformationParty>
+         <cac:TenderRecipientParty>
+            <cbc:EndpointID>https://platformazakupowa.pl/pn/bieganski</cbc:EndpointID>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderRecipientParty>
+         <cac:TenderEvaluationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderEvaluationParty>
+         <cac:TenderValidityPeriod>
+            <cbc:DurationMeasure unitCode="DAY">90</cbc:DurationMeasure>
+         </cac:TenderValidityPeriod>
+         <cac:AppealTerms>
+            <cac:PresentationPeriod>
+               <cbc:Description languageID="POL">W toku postępowania o udzielenie zamówienia Wykonawcom przysługują środki ochrony prawnej szczegółowo określone w Dziale IX ustawy Prawo Zamówień Publicznych „Środki ochrony prawnej”. 1. Środki ochrony prawnej określone w niniejszym dziale przysługują wykonawcy, uczestnikowi konkursu oraz innemu podmiotowi, jeżeli ma lub miał interes w uzyskaniu zamówienia lub nagrody w konkursie oraz poniósł lub może ponieść szkodę w wyniku naruszenia przez zamawiającego przepisów ustawy. 1a. Środki ochrony prawnej określone w niniejszym dziale nie przysługują wykonawcy, uczestnikowi konkursu ani innemu podmiotowi, o którym mowa w ust. 1, pochodzącym z państw trzecich niebędących stronami umów między narodowych. 2. Środki ochrony prawnej wobec ogłoszenia wszczynającego postępowanie o udzielenie zamówienia lub ogłoszenia o konkursie oraz dokumentów zamówienia przysługują również organizacjom wpisanym na listę, o której mowa w art. 469 pkt 15, oraz Rzecznikowi Małych i Średnich Przedsiębiorców. 3. Postępowanie odwoławcze jest prowadzone w języku polskim. 4. Wszystkie dokumenty przedstawia się w języku polskim, a jeżeli zostały sporządzone w języku obcym, strona oraz uczestnik postępowania odwoławczego, który się na nie powołuje, przedstawia ich tłumaczenie na język polski. W uzasadnionych przypadkach Izba może żądać przedstawienia tłumaczenia dokumentu na język polski poświadczonego przez tłumacza przysięgłego. 5. Odwołanie przysługuje na: 1) niezgodną z przepisami ustawy czynność zamawiającego, podjętą w postępowaniu o udzielenie zamówienia, w tym na projektowane postanowienie umowy; 2) zaniechanie czynności w postępowaniu o udzielenie zamówienia, do której zamawiający był obowiązany na podstawie ustawy; 3) zaniechanie przeprowadzenia postępowania o udzielenie zamówienia lub zorganizowania konkursu na podstawie ustawy, mimo że zamawiający był do tego obowiązany. 6. Odwołanie wnosi się do Prezesa Izby. 7. Odwołujący przekazuje zamawiającemu odwołanie wniesione w formie elektronicznej albo postaci elektronicznej albo kopię tego odwołania, jeżeli zostało ono wniesione w formie pisemnej, przed upływem terminu do wniesienia odwołania w taki sposób, aby mógł on zapoznać się z jego treścią przed upływem tego terminu. 8. Domniemywa się, że zamawiający mógł zapoznać się z treścią odwołania przed upływem terminu do jego wniesienia, jeżeli przekazanie odpowiednio odwołania albo jego kopii nastąpiło przed upływem terminu do jego wniesienia przy użyciu środków komunikacji elektronicznej. 9. Odwołanie wnosi się w przypadku zamówień, których wartość jest równa albo przekracza progi unijne, w terminie: a) 10 dni od dnia przekazania informacji o czynności zamawiającego stanowiącej podstawę jego wniesienia, jeżeli informacja została przekazana przy użyciu środków komunikacji elektronicznej, b) 15 dni od dnia przekazania informacji o czynności zamawiającego stanowiącej podstawę jego wniesienia, jeżeli informacja została przekazana w sposób inny niż określony w lit. a; 10. Odwołanie wobec treści ogłoszenia wszczynającego postępowanie o udzielenie zamówienia lub wobec treści dokumentów zamówienia wnosi się w terminie 10 dni od dnia publikacji ogłoszenia w Dzienniku Urzędowym Unii Europejskiej lub zamieszczenia dokumentów zamówienia na stronie internetowej, w przypadku zamówień, których wartość jest równa albo przekracza progi unijne; 11. Odwołanie w przypadkach innych niż określone w pkt 9 i 10 wnosi się w terminie 10 dni od dnia, w którym powzięto lub przy zachowaniu należytej staranności można było powziąć wiadomość o okolicznościach stanowiących podstawę jego wniesienia, w przypadku zamówień, których wartość jest równa albo przekracza progi unijne; 12. Jeżeli zamawiający nie opublikował ogłoszenia o zamiarze zawarcia umowy lub mimo takiego obowiązku nie przesłał wykonawcy zawiadomienia o wyborze najkorzystniejszej oferty, odwołanie wnosi się nie później niż w terminie: 1) 30 dni od dnia publikacji w Dzienniku Urzędowym Unii Europejskiej ogłoszenia o udzieleniu zamówienia, 2) 6 miesięcy od dnia zawarcia umowy, jeżeli zamawiający nie opublikował w Dzienniku Urzędowym Unii Europejskiej ogłoszenia o udzieleniu zamówienia</cbc:Description>
+            </cac:PresentationPeriod>
+            <cac:AppealInformationParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealInformationParty>
+            <cac:AppealReceiverParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealReceiverParty>
+            <cac:MediationParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:MediationParty>
+         </cac:AppealTerms>
+         <cac:Language>
+            <cbc:ID>POL</cbc:ID>
+         </cac:Language>
+         <cac:PostAwardProcess>
+            <cbc:ElectronicOrderUsageIndicator>true</cbc:ElectronicOrderUsageIndicator>
+            <cbc:ElectronicPaymentUsageIndicator>true</cbc:ElectronicPaymentUsageIndicator>
+         </cac:PostAwardProcess>
+      </cac:TenderingTerms>
+      <cac:TenderingProcess>
+         <cbc:SubmissionMethodCode listName="esubmission">required</cbc:SubmissionMethodCode>
+         <cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+         <cac:TenderSubmissionDeadlinePeriod>
+            <cbc:EndDate>2026-08-27+02:00</cbc:EndDate>
+            <cbc:EndTime>12:00:00+02:00</cbc:EndTime>
+         </cac:TenderSubmissionDeadlinePeriod>
+         <cac:OpenTenderEvent>
+            <cbc:OccurrenceDate>2026-08-27+02:00</cbc:OccurrenceDate>
+            <cbc:OccurrenceTime>12:30:00+02:00</cbc:OccurrenceTime>
+            <cac:OccurenceLocation>
+               <cbc:Description languageID="POL">Zamawiający przewiduje otwarcie ofert w Regionalnym Szpitalu Specjalistycznym im. dr. Władysława Biegańskiego w Grudziądzu, ul. L. Rydygiera 15/17, Budynek N, parter, pokój nr 18, Dział Zamówień Publicznych </cbc:Description>
+            </cac:OccurenceLocation>
+         </cac:OpenTenderEvent>
+         <cac:AuctionTerms>
+            <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+         </cac:AuctionTerms>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+      </cac:TenderingProcess>
+      <cac:ProcurementProject>
+         <cbc:ID schemeName="InternalID">Zadanie nr 4</cbc:ID>
+         <cbc:Name languageID="POL">Zadanie nr 4 – Dostawy urządzeń do inwazyjnego pomiaru przezzwężeniowego gradientu ciśnień;</cbc:Name>
+         <cbc:Description languageID="POL">Przedmiotem zamówienia są sukcesywne dostawy urządzeń do inwazyjnego pomiaru przezzwężeniowego gradientu ciśnień (dalej jako: towar lub asortyment) w rodzaju i w ilościach określonych w Formularzu Cenowym stanowiącym Załącznik nr 2 do SWZ wraz z dzierżawą systemu OCT (dalej zamiennie jako: sprzęt lub przedmiot dzierżawy), szczegółowo opisanego w Zestawieniu Wymaganych Funkcji i Parametrów Technicznych, stanowiącym Załącznik nr 6  do SWZ, oraz zgodnie z projektowanymi postanowieniami umowy stanowiącymi Załącznik nr 4 do niniejszej SWZ 
+Zadanie nr 4 – Dostawy urządzeń do inwazyjnego pomiaru przezzwężeniowego gradientu ciśnień;</cbc:Description>
+         <cbc:ProcurementTypeCode listName="contract-nature">supplies</cbc:ProcurementTypeCode>
+         <cbc:Note languageID="POL">Z postępowania o udzielenie zamówienia publicznego wyklucza się Wykonawcę w stosunku do którego zachodzi którakolwiek z okoliczności, o których mowa w art. 108 ustawy p.z.p. i art. 109 ust. 1 pkt 1 i 4 ustawy p.z.p. oraz art. 7 ustawy z dnia 13 kwietnia 2022 o szczególnych rozwiązaniach w zakresie przeciwdziałania
+wspieraniu agresji na Ukrainę oraz służących ochronie bezpieczeństwa narodowego oraz art. 5k rozporządzenia Rady (UE) nr 833/2014. 
+Zamawiający nie dopuszcza ofert z udziałem dostaw pochodzących z „państw trzecich niebędących stronami umów międzynarodowych”.</cbc:Note>
+         <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">33100000</cbc:ItemClassificationCode>
+         </cac:MainCommodityClassification>
+         <cac:RealizedLocation>
+            <cbc:Description languageID="POL">Regionalny Szpital Specjalistyczny im. dr. Władysława Biegańskiego, ul. Rydygiera 15/17 w Grudziądzu, w tym:
+−	dostawa, instalacja i uruchomienie przedmiotu dzierżawy: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	utworzenie komisu: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	sukcesywne dostawy towaru: Magazyn Medyczny, budynek  „O”, poziom – 1.</cbc:Description>
+            <cac:Address>
+               <cbc:CityName>Grudziądz</cbc:CityName>
+               <cbc:PostalZone>86-300</cbc:PostalZone>
+               <cbc:CountrySubentityCode listName="nuts">PL616</cbc:CountrySubentityCode>
+               <cac:Country>
+                  <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+               </cac:Country>
+            </cac:Address>
+         </cac:RealizedLocation>
+         <cac:PlannedPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">24</cbc:DurationMeasure>
+         </cac:PlannedPeriod>
+      </cac:ProcurementProject>
+   </cac:ProcurementProjectLot>
+   <cac:ProcurementProjectLot>
+      <cbc:ID schemeName="Lot">LOT-0005</cbc:ID>
+      <cac:TenderingTerms>
+         <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+         <cac:CallForTendersDocumentReference>
+            <ext:UBLExtensions>
+               <ext:UBLExtension>
+                  <ext:ExtensionContent>
+                     <efext:EformsExtension>
+                        <efac:OfficialLanguages>
+                           <cac:Language>
+                              <cbc:ID>POL</cbc:ID>
+                           </cac:Language>
+                        </efac:OfficialLanguages>
+                     </efext:EformsExtension>
+                  </ext:ExtensionContent>
+               </ext:UBLExtension>
+            </ext:UBLExtensions>
+            <cbc:ID>Z/38/PN/26</cbc:ID>
+            <cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+            <cac:Attachment>
+               <cac:ExternalReference>
+                  <cbc:URI>https://platformazakupowa.pl/pn/bieganski</cbc:URI>
+               </cac:ExternalReference>
+            </cac:Attachment>
+         </cac:CallForTendersDocumentReference>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="conditions">performance</cbc:ExecutionRequirementCode>
+            <cbc:Description languageID="POL">1.	Przedmiot zamówienia będzie realizowany przez okres:
+	24 miesięcy od daty zawarcia umowy lub do momentu osiągnięcia maksymalnej wartości wynagrodzenia Wykonawcy określonej w  niniejszej umowie, jeżeli nastąpi to przed upływem powyższego okresu, 
+	24 miesięcy od daty dostawy do Zamawiającego przedmiotu dzierżawy lub do momentu wcześniejszego osiągnięcia maksymalnej wartości wynagrodzenia Wykonawcy określonej w umowie, jeśli nastąpi to przed upływem powyższego okresu. – dotyczy zadania z dzierżawą – zadania nr 1.
+W zadaniach z prawem opcji - w zadaniach nr 3,6 - Maksymalna wartość wynagrodzenia Wykonawcy, której osiągnięcie skutkuje wygaśnięciem umowy, obejmuje wynagrodzenie za zakres podstawowy oraz, w przypadku skorzystania przez Zamawiającego z prawa opcji, również wynagrodzenie za zakres objęty prawem opcji.
+2.	Dostawa, instalacja i uruchomienie przez Wykonawcę przedmiotu dzierżawy nastąpi w terminie 7 dni roboczych od daty zawarcia umowy. – dotyczy zadania </cbc:Description>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="einvoicing">allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:AwardingTerms>
+            <cac:AwardingCriterion>
+               <cbc:CalculationExpression languageID="POL">1.	Zamawiający dokona wyboru najkorzystniejszej oferty z ofert ważnych przy zastosowaniu kryterium: Cena   100 %.
+2.	Do kryterium została przypisana waga określona udziałem procentowym. Zamawiający bę-dzie oceniał oferty odpowiadające wyżej wymienionemu kryterium, przy czym oferty w da-nym kryterium podlegać będą ocenie w oparciu o podane niżej zasady przyznawania punk-tów.
+Kryterium cena - 100 % (Wok)
+     C of.n.
+Cn = ----------------------- x  Wok    x 100 pkt
+      Cof.b.
+gdzie: 
+Cn – liczba punktów za kryterium cena
+Cof.n. – cena oferty najniższej
+Cof.b. – cena oferty badanej
+Wok - waga ocenianego kryterium w procentach, w tym przypadku to 100%
+3.	Ocenie będą podlegać wyłącznie oferty nie podlegające odrzuceniu.
+4.	Oferta z najniższą ceną otrzymuje 100 punktów, każda następna będzie przeliczana  
+w  stosunku  do  oferty  z  ceną  najniższą według wzoru powyżej.
+PEŁNA TREŚĆ W SWZ</cbc:CalculationExpression>
+               <cac:SubordinateAwardingCriterion>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                  <cbc:Description languageID="POL">Cena 100%</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+            </cac:AwardingCriterion>
+         </cac:AwardingTerms>
+         <cac:AdditionalInformationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:AdditionalInformationParty>
+         <cac:TenderRecipientParty>
+            <cbc:EndpointID>https://platformazakupowa.pl/pn/bieganski</cbc:EndpointID>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderRecipientParty>
+         <cac:TenderEvaluationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderEvaluationParty>
+         <cac:TenderValidityPeriod>
+            <cbc:DurationMeasure unitCode="DAY">90</cbc:DurationMeasure>
+         </cac:TenderValidityPeriod>
+         <cac:AppealTerms>
+            <cac:PresentationPeriod>
+               <cbc:Description languageID="POL">W toku postępowania o udzielenie zamówienia Wykonawcom przysługują środki ochrony prawnej szczegółowo określone w Dziale IX ustawy Prawo Zamówień Publicznych „Środki ochrony prawnej”. 1. Środki ochrony prawnej określone w niniejszym dziale przysługują wykonawcy, uczestnikowi konkursu oraz innemu podmiotowi, jeżeli ma lub miał interes w uzyskaniu zamówienia lub nagrody w konkursie oraz poniósł lub może ponieść szkodę w wyniku naruszenia przez zamawiającego przepisów ustawy. 1a. Środki ochrony prawnej określone w niniejszym dziale nie przysługują wykonawcy, uczestnikowi konkursu ani innemu podmiotowi, o którym mowa w ust. 1, pochodzącym z państw trzecich niebędących stronami umów między narodowych. 2. Środki ochrony prawnej wobec ogłoszenia wszczynającego postępowanie o udzielenie zamówienia lub ogłoszenia o konkursie oraz dokumentów zamówienia przysługują również organizacjom wpisanym na listę, o której mowa w art. 469 pkt 15, oraz Rzecznikowi Małych i Średnich Przedsiębiorców. 3. Postępowanie odwoławcze jest prowadzone w języku polskim. 4. Wszystkie dokumenty przedstawia się w języku polskim, a jeżeli zostały sporządzone w języku obcym, strona oraz uczestnik postępowania odwoławczego, który się na nie powołuje, przedstawia ich tłumaczenie na język polski. W uzasadnionych przypadkach Izba może żądać przedstawienia tłumaczenia dokumentu na język polski poświadczonego przez tłumacza przysięgłego. 5. Odwołanie przysługuje na: 1) niezgodną z przepisami ustawy czynność zamawiającego, podjętą w postępowaniu o udzielenie zamówienia, w tym na projektowane postanowienie umowy; 2) zaniechanie czynności w postępowaniu o udzielenie zamówienia, do której zamawiający był obowiązany na podstawie ustawy; 3) zaniechanie przeprowadzenia postępowania o udzielenie zamówienia lub zorganizowania konkursu na podstawie ustawy, mimo że zamawiający był do tego obowiązany. 6. Odwołanie wnosi się do Prezesa Izby. 7. Odwołujący przekazuje zamawiającemu odwołanie wniesione w formie elektronicznej albo postaci elektronicznej albo kopię tego odwołania, jeżeli zostało ono wniesione w formie pisemnej, przed upływem terminu do wniesienia odwołania w taki sposób, aby mógł on zapoznać się z jego treścią przed upływem tego terminu. 8. Domniemywa się, że zamawiający mógł zapoznać się z treścią odwołania przed upływem terminu do jego wniesienia, jeżeli przekazanie odpowiednio odwołania albo jego kopii nastąpiło przed upływem terminu do jego wniesienia przy użyciu środków komunikacji elektronicznej. 9. Odwołanie wnosi się w przypadku zamówień, których wartość jest równa albo przekracza progi unijne, w terminie: a) 10 dni od dnia przekazania informacji o czynności zamawiającego stanowiącej podstawę jego wniesienia, jeżeli informacja została przekazana przy użyciu środków komunikacji elektronicznej, b) 15 dni od dnia przekazania informacji o czynności zamawiającego stanowiącej podstawę jego wniesienia, jeżeli informacja została przekazana w sposób inny niż określony w lit. a; 10. Odwołanie wobec treści ogłoszenia wszczynającego postępowanie o udzielenie zamówienia lub wobec treści dokumentów zamówienia wnosi się w terminie 10 dni od dnia publikacji ogłoszenia w Dzienniku Urzędowym Unii Europejskiej lub zamieszczenia dokumentów zamówienia na stronie internetowej, w przypadku zamówień, których wartość jest równa albo przekracza progi unijne; 11. Odwołanie w przypadkach innych niż określone w pkt 9 i 10 wnosi się w terminie 10 dni od dnia, w którym powzięto lub przy zachowaniu należytej staranności można było powziąć wiadomość o okolicznościach stanowiących podstawę jego wniesienia, w przypadku zamówień, których wartość jest równa albo przekracza progi unijne; 12. Jeżeli zamawiający nie opublikował ogłoszenia o zamiarze zawarcia umowy lub mimo takiego obowiązku nie przesłał wykonawcy zawiadomienia o wyborze najkorzystniejszej oferty, odwołanie wnosi się nie później niż w terminie: 1) 30 dni od dnia publikacji w Dzienniku Urzędowym Unii Europejskiej ogłoszenia o udzieleniu zamówienia, 2) 6 miesięcy od dnia zawarcia umowy, jeżeli zamawiający nie opublikował w Dzienniku Urzędowym Unii Europejskiej ogłoszenia o udzieleniu zamówienia</cbc:Description>
+            </cac:PresentationPeriod>
+            <cac:AppealInformationParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealInformationParty>
+            <cac:AppealReceiverParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealReceiverParty>
+            <cac:MediationParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:MediationParty>
+         </cac:AppealTerms>
+         <cac:Language>
+            <cbc:ID>POL</cbc:ID>
+         </cac:Language>
+         <cac:PostAwardProcess>
+            <cbc:ElectronicOrderUsageIndicator>true</cbc:ElectronicOrderUsageIndicator>
+            <cbc:ElectronicPaymentUsageIndicator>true</cbc:ElectronicPaymentUsageIndicator>
+         </cac:PostAwardProcess>
+      </cac:TenderingTerms>
+      <cac:TenderingProcess>
+         <cbc:SubmissionMethodCode listName="esubmission">required</cbc:SubmissionMethodCode>
+         <cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+         <cac:TenderSubmissionDeadlinePeriod>
+            <cbc:EndDate>2026-08-27+02:00</cbc:EndDate>
+            <cbc:EndTime>12:00:00+02:00</cbc:EndTime>
+         </cac:TenderSubmissionDeadlinePeriod>
+         <cac:OpenTenderEvent>
+            <cbc:OccurrenceDate>2026-08-27+02:00</cbc:OccurrenceDate>
+            <cbc:OccurrenceTime>12:30:00+02:00</cbc:OccurrenceTime>
+            <cac:OccurenceLocation>
+               <cbc:Description languageID="POL">Zamawiający przewiduje otwarcie ofert w Regionalnym Szpitalu Specjalistycznym im. dr. Władysława Biegańskiego w Grudziądzu, ul. L. Rydygiera 15/17, Budynek N, parter, pokój nr 18, Dział Zamówień Publicznych </cbc:Description>
+            </cac:OccurenceLocation>
+         </cac:OpenTenderEvent>
+         <cac:AuctionTerms>
+            <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+         </cac:AuctionTerms>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+      </cac:TenderingProcess>
+      <cac:ProcurementProject>
+         <cbc:ID schemeName="InternalID">Zadanie nr 5</cbc:ID>
+         <cbc:Name languageID="POL">Zadanie nr 5 – Dostawy pomp aktywnie wspomagających krążenie implantowane przezskórnie;</cbc:Name>
+         <cbc:Description languageID="POL">Przedmiotem zamówienia są sukcesywne dostawy pomp aktywnie wspomagających krążenie implantowane przezskórnie (dalej jako: towar lub asortyment) w rodzaju i w ilościach określonych w Formularzu Cenowym stanowiącym Załącznik nr 2 do SWZ wraz z dzierżawą systemu OCT (dalej zamiennie jako: sprzęt lub przedmiot dzierżawy), szczegółowo opisanego w Zestawieniu Wymaganych Funkcji i Parametrów Technicznych, stanowiącym Załącznik nr 6  do SWZ, oraz zgodnie z projektowanymi postanowieniami umowy stanowiącymi Załącznik nr 4 do niniejszej SWZ 
+Zadanie nr 5 – Dostawy pomp aktywnie wspomagających krążenie implantowane przezskórnie;</cbc:Description>
+         <cbc:ProcurementTypeCode listName="contract-nature">supplies</cbc:ProcurementTypeCode>
+         <cbc:Note languageID="POL">Z postępowania o udzielenie zamówienia publicznego wyklucza się Wykonawcę w stosunku do którego zachodzi którakolwiek z okoliczności, o których mowa w art. 108 ustawy p.z.p. i art. 109 ust. 1 pkt 1 i 4 ustawy p.z.p. oraz art. 7 ustawy z dnia 13 kwietnia 2022 o szczególnych rozwiązaniach w zakresie przeciwdziałania
+wspieraniu agresji na Ukrainę oraz służących ochronie bezpieczeństwa narodowego oraz art. 5k rozporządzenia Rady (UE) nr 833/2014. 
+Zamawiający nie dopuszcza ofert z udziałem dostaw pochodzących z „państw trzecich niebędących stronami umów międzynarodowych”.</cbc:Note>
+         <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">33141620</cbc:ItemClassificationCode>
+         </cac:MainCommodityClassification>
+         <cac:RealizedLocation>
+            <cbc:Description languageID="POL">Regionalny Szpital Specjalistyczny im. dr. Władysława Biegańskiego, ul. Rydygiera 15/17 w Grudziądzu, w tym:
+−	dostawa, instalacja i uruchomienie przedmiotu dzierżawy: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	utworzenie komisu: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	sukcesywne dostawy towaru: Magazyn Medyczny, budynek  „O”, poziom – 1.</cbc:Description>
+            <cac:Address>
+               <cbc:CityName>Grudziądz</cbc:CityName>
+               <cbc:PostalZone>86-300</cbc:PostalZone>
+               <cbc:CountrySubentityCode listName="nuts">PL616</cbc:CountrySubentityCode>
+               <cac:Country>
+                  <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+               </cac:Country>
+            </cac:Address>
+         </cac:RealizedLocation>
+         <cac:PlannedPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">24</cbc:DurationMeasure>
+         </cac:PlannedPeriod>
+      </cac:ProcurementProject>
+   </cac:ProcurementProjectLot>
+   <cac:ProcurementProjectLot>
+      <cbc:ID schemeName="Lot">LOT-0006</cbc:ID>
+      <cac:TenderingTerms>
+         <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+         <cac:CallForTendersDocumentReference>
+            <ext:UBLExtensions>
+               <ext:UBLExtension>
+                  <ext:ExtensionContent>
+                     <efext:EformsExtension>
+                        <efac:OfficialLanguages>
+                           <cac:Language>
+                              <cbc:ID>POL</cbc:ID>
+                           </cac:Language>
+                        </efac:OfficialLanguages>
+                     </efext:EformsExtension>
+                  </ext:ExtensionContent>
+               </ext:UBLExtension>
+            </ext:UBLExtensions>
+            <cbc:ID>Z/38/PN/26</cbc:ID>
+            <cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+            <cac:Attachment>
+               <cac:ExternalReference>
+                  <cbc:URI>https://platformazakupowa.pl/pn/bieganski</cbc:URI>
+               </cac:ExternalReference>
+            </cac:Attachment>
+         </cac:CallForTendersDocumentReference>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="conditions">performance</cbc:ExecutionRequirementCode>
+            <cbc:Description languageID="POL">1.	Przedmiot zamówienia będzie realizowany przez okres:
+	24 miesięcy od daty zawarcia umowy lub do momentu osiągnięcia maksymalnej wartości wynagrodzenia Wykonawcy określonej w  niniejszej umowie, jeżeli nastąpi to przed upływem powyższego okresu, 
+	24 miesięcy od daty dostawy do Zamawiającego przedmiotu dzierżawy lub do momentu wcześniejszego osiągnięcia maksymalnej wartości wynagrodzenia Wykonawcy określonej w umowie, jeśli nastąpi to przed upływem powyższego okresu. – dotyczy zadania z dzierżawą – zadania nr 1.
+W zadaniach z prawem opcji - w zadaniach nr 3,6 - Maksymalna wartość wynagrodzenia Wykonawcy, której osiągnięcie skutkuje wygaśnięciem umowy, obejmuje wynagrodzenie za zakres podstawowy oraz, w przypadku skorzystania przez Zamawiającego z prawa opcji, również wynagrodzenie za zakres objęty prawem opcji.
+2.	Dostawa, instalacja i uruchomienie przez Wykonawcę przedmiotu dzierżawy nastąpi w terminie 7 dni roboczych od daty zawarcia umowy. – dotyczy zadania </cbc:Description>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="einvoicing">allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:AwardingTerms>
+            <cac:AwardingCriterion>
+               <cbc:CalculationExpression languageID="POL">1.	Zamawiający dokona wyboru najkorzystniejszej oferty z ofert ważnych przy zastosowaniu kryterium: Cena   100 %.
+2.	Do kryterium została przypisana waga określona udziałem procentowym. Zamawiający bę-dzie oceniał oferty odpowiadające wyżej wymienionemu kryterium, przy czym oferty w da-nym kryterium podlegać będą ocenie w oparciu o podane niżej zasady przyznawania punk-tów.
+Kryterium cena - 100 % (Wok)
+     C of.n.
+Cn = ----------------------- x  Wok    x 100 pkt
+      Cof.b.
+gdzie: 
+Cn – liczba punktów za kryterium cena
+Cof.n. – cena oferty najniższej
+Cof.b. – cena oferty badanej
+Wok - waga ocenianego kryterium w procentach, w tym przypadku to 100%
+3.	Ocenie będą podlegać wyłącznie oferty nie podlegające odrzuceniu.
+4.	Oferta z najniższą ceną otrzymuje 100 punktów, każda następna będzie przeliczana  
+w  stosunku  do  oferty  z  ceną  najniższą według wzoru powyżej.
+PEŁNA TREŚĆ W SWZ</cbc:CalculationExpression>
+               <cac:SubordinateAwardingCriterion>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                  <cbc:Description languageID="POL">Cena 100%</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+            </cac:AwardingCriterion>
+         </cac:AwardingTerms>
+         <cac:AdditionalInformationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:AdditionalInformationParty>
+         <cac:TenderRecipientParty>
+            <cbc:EndpointID>https://platformazakupowa.pl/pn/bieganski</cbc:EndpointID>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderRecipientParty>
+         <cac:TenderEvaluationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderEvaluationParty>
+         <cac:TenderValidityPeriod>
+            <cbc:DurationMeasure unitCode="DAY">90</cbc:DurationMeasure>
+         </cac:TenderValidityPeriod>
+         <cac:AppealTerms>
+            <cac:PresentationPeriod>
+               <cbc:Description languageID="POL">W toku postępowania o udzielenie zamówienia Wykonawcom przysługują środki ochrony prawnej szczegółowo określone w Dziale IX ustawy Prawo Zamówień Publicznych „Środki ochrony prawnej”. 1. Środki ochrony prawnej określone w niniejszym dziale przysługują wykonawcy, uczestnikowi konkursu oraz innemu podmiotowi, jeżeli ma lub miał interes w uzyskaniu zamówienia lub nagrody w konkursie oraz poniósł lub może ponieść szkodę w wyniku naruszenia przez zamawiającego przepisów ustawy. 1a. Środki ochrony prawnej określone w niniejszym dziale nie przysługują wykonawcy, uczestnikowi konkursu ani innemu podmiotowi, o którym mowa w ust. 1, pochodzącym z państw trzecich niebędących stronami umów między narodowych. 2. Środki ochrony prawnej wobec ogłoszenia wszczynającego postępowanie o udzielenie zamówienia lub ogłoszenia o konkursie oraz dokumentów zamówienia przysługują również organizacjom wpisanym na listę, o której mowa w art. 469 pkt 15, oraz Rzecznikowi Małych i Średnich Przedsiębiorców. 3. Postępowanie odwoławcze jest prowadzone w języku polskim. 4. Wszystkie dokumenty przedstawia się w języku polskim, a jeżeli zostały sporządzone w języku obcym, strona oraz uczestnik postępowania odwoławczego, który się na nie powołuje, przedstawia ich tłumaczenie na język polski. W uzasadnionych przypadkach Izba może żądać przedstawienia tłumaczenia dokumentu na język polski poświadczonego przez tłumacza przysięgłego. 5. Odwołanie przysługuje na: 1) niezgodną z przepisami ustawy czynność zamawiającego, podjętą w postępowaniu o udzielenie zamówienia, w tym na projektowane postanowienie umowy; 2) zaniechanie czynności w postępowaniu o udzielenie zamówienia, do której zamawiający był obowiązany na podstawie ustawy; 3) zaniechanie przeprowadzenia postępowania o udzielenie zamówienia lub zorganizowania konkursu na podstawie ustawy, mimo że zamawiający był do tego obowiązany. 6. Odwołanie wnosi się do Prezesa Izby. 7. Odwołujący przekazuje zamawiającemu odwołanie wniesione w formie elektronicznej albo postaci elektronicznej albo kopię tego odwołania, jeżeli zostało ono wniesione w formie pisemnej, przed upływem terminu do wniesienia odwołania w taki sposób, aby mógł on zapoznać się z jego treścią przed upływem tego terminu. 8. Domniemywa się, że zamawiający mógł zapoznać się z treścią odwołania przed upływem terminu do jego wniesienia, jeżeli przekazanie odpowiednio odwołania albo jego kopii nastąpiło przed upływem terminu do jego wniesienia przy użyciu środków komunikacji elektronicznej. 9. Odwołanie wnosi się w przypadku zamówień, których wartość jest równa albo przekracza progi unijne, w terminie: a) 10 dni od dnia przekazania informacji o czynności zamawiającego stanowiącej podstawę jego wniesienia, jeżeli informacja została przekazana przy użyciu środków komunikacji elektronicznej, b) 15 dni od dnia przekazania informacji o czynności zamawiającego stanowiącej podstawę jego wniesienia, jeżeli informacja została przekazana w sposób inny niż określony w lit. a; 10. Odwołanie wobec treści ogłoszenia wszczynającego postępowanie o udzielenie zamówienia lub wobec treści dokumentów zamówienia wnosi się w terminie 10 dni od dnia publikacji ogłoszenia w Dzienniku Urzędowym Unii Europejskiej lub zamieszczenia dokumentów zamówienia na stronie internetowej, w przypadku zamówień, których wartość jest równa albo przekracza progi unijne; 11. Odwołanie w przypadkach innych niż określone w pkt 9 i 10 wnosi się w terminie 10 dni od dnia, w którym powzięto lub przy zachowaniu należytej staranności można było powziąć wiadomość o okolicznościach stanowiących podstawę jego wniesienia, w przypadku zamówień, których wartość jest równa albo przekracza progi unijne; 12. Jeżeli zamawiający nie opublikował ogłoszenia o zamiarze zawarcia umowy lub mimo takiego obowiązku nie przesłał wykonawcy zawiadomienia o wyborze najkorzystniejszej oferty, odwołanie wnosi się nie później niż w terminie: 1) 30 dni od dnia publikacji w Dzienniku Urzędowym Unii Europejskiej ogłoszenia o udzieleniu zamówienia, 2) 6 miesięcy od dnia zawarcia umowy, jeżeli zamawiający nie opublikował w Dzienniku Urzędowym Unii Europejskiej ogłoszenia o udzieleniu zamówienia</cbc:Description>
+            </cac:PresentationPeriod>
+            <cac:AppealInformationParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealInformationParty>
+            <cac:AppealReceiverParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealReceiverParty>
+            <cac:MediationParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0002</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:MediationParty>
+         </cac:AppealTerms>
+         <cac:Language>
+            <cbc:ID>POL</cbc:ID>
+         </cac:Language>
+         <cac:PostAwardProcess>
+            <cbc:ElectronicOrderUsageIndicator>true</cbc:ElectronicOrderUsageIndicator>
+            <cbc:ElectronicPaymentUsageIndicator>true</cbc:ElectronicPaymentUsageIndicator>
+         </cac:PostAwardProcess>
+      </cac:TenderingTerms>
+      <cac:TenderingProcess>
+         <cbc:SubmissionMethodCode listName="esubmission">required</cbc:SubmissionMethodCode>
+         <cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+         <cac:TenderSubmissionDeadlinePeriod>
+            <cbc:EndDate>2026-08-27+02:00</cbc:EndDate>
+            <cbc:EndTime>12:00:00+02:00</cbc:EndTime>
+         </cac:TenderSubmissionDeadlinePeriod>
+         <cac:OpenTenderEvent>
+            <cbc:OccurrenceDate>2026-08-27+02:00</cbc:OccurrenceDate>
+            <cbc:OccurrenceTime>12:30:00+02:00</cbc:OccurrenceTime>
+            <cac:OccurenceLocation>
+               <cbc:Description languageID="POL">Zamawiający przewiduje otwarcie ofert w Regionalnym Szpitalu Specjalistycznym im. dr. Władysława Biegańskiego w Grudziądzu, ul. L. Rydygiera 15/17, Budynek N, parter, pokój nr 18, Dział Zamówień Publicznych </cbc:Description>
+            </cac:OccurenceLocation>
+         </cac:OpenTenderEvent>
+         <cac:AuctionTerms>
+            <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+         </cac:AuctionTerms>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+      </cac:TenderingProcess>
+      <cac:ProcurementProject>
+         <cbc:ID schemeName="InternalID">Zadanie nr 6</cbc:ID>
+         <cbc:Name languageID="POL">Zadanie nr 6– Dostawy pomp aktywnie wspomagających krążenie implantowane przezskórnie;</cbc:Name>
+         <cbc:Description languageID="POL">Przedmiotem zamówienia są sukcesywne dostawy pomp aktywnie wspomagających krążenie implantowane przezskórnie; (dalej jako: towar lub asortyment) w rodzaju i w ilościach określonych w Formularzu Cenowym stanowiącym Załącznik nr 2 do SWZ wraz z dzierżawą systemu OCT (dalej zamiennie jako: sprzęt lub przedmiot dzierżawy), szczegółowo opisanego w Zestawieniu Wymaganych Funkcji i Parametrów Technicznych, stanowiącym Załącznik nr 6  do SWZ, oraz zgodnie z projektowanymi postanowieniami umowy stanowiącymi Załącznik nr 4 do niniejszej SWZ 
+Zadanie nr 6 – Dostawy pomp aktywnie wspomagających krążenie implantowane przezskórnie;</cbc:Description>
+         <cbc:ProcurementTypeCode listName="contract-nature">supplies</cbc:ProcurementTypeCode>
+         <cbc:Note languageID="POL">Z postępowania o udzielenie zamówienia publicznego wyklucza się Wykonawcę w stosunku do którego zachodzi którakolwiek z okoliczności, o których mowa w art. 108 ustawy p.z.p. i art. 109 ust. 1 pkt 1 i 4 ustawy p.z.p. oraz art. 7 ustawy z dnia 13 kwietnia 2022 o szczególnych rozwiązaniach w zakresie przeciwdziałania
+wspieraniu agresji na Ukrainę oraz służących ochronie bezpieczeństwa narodowego oraz art. 5k rozporządzenia Rady (UE) nr 833/2014. 
+Zamawiający nie dopuszcza ofert z udziałem dostaw pochodzących z „państw trzecich niebędących stronami umów międzynarodowych”.</cbc:Note>
+         <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">33111730</cbc:ItemClassificationCode>
+         </cac:MainCommodityClassification>
+         <cac:RealizedLocation>
+            <cbc:Description languageID="POL">Regionalny Szpital Specjalistyczny im. dr. Władysława Biegańskiego, ul. Rydygiera 15/17 w Grudziądzu, w tym:
+−	dostawa, instalacja i uruchomienie przedmiotu dzierżawy: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	utworzenie komisu: Pracownia Hemodynamiczno – Koronarograficzna, budynek B, piętro 1
+−	sukcesywne dostawy towaru: Magazyn Medyczny, budynek  „O”, poziom – 1.</cbc:Description>
+            <cac:Address>
+               <cbc:CityName>Grudziądz</cbc:CityName>
+               <cbc:PostalZone>86-300</cbc:PostalZone>
+               <cbc:CountrySubentityCode listName="nuts">PL616</cbc:CountrySubentityCode>
+               <cac:Country>
+                  <cbc:IdentificationCode listName="country">POL</cbc:IdentificationCode>
+               </cac:Country>
+            </cac:Address>
+         </cac:RealizedLocation>
+         <cac:PlannedPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">24</cbc:DurationMeasure>
+         </cac:PlannedPeriod>
+         <cac:ContractExtension>
+            <cbc:OptionsDescription languageID="POL">1.	Zamawiający jest uprawniony do skorzystania z prawa opcji określonego w art. 441 ustawy Prawo zamówień publicznych (dalej jako: „prawo opcji”) tj: opcji ilościowej  polegającej na możliwości zwiększenia ilości towaru objętego przedmiotem umowy względem ilości podanych w Załączniku nr 1 do umowy (Formularzu cenowym)                                                                       w kolumnie „Ilość  szt. (zakres podstawowy)” maksymalnie o ilości określone w Załączniku nr 1 do umowy (Formularzu cenowym) w kolumnie „Ilość szt. (prawo opcji)”. - dotyczy zadania nr 3, 6
+2.	Możliwość skorzystania z opcji jest jedynie prawem Zamawiającego i nie stanowi dla Zamawiającego wiążącego zobowiązania. Wykonawcy nie przysługują żadne roszczenia w stosunku do Zamawiającego w przypadku nieskorzystania przez Zamawiającego z prawa opcji. Zamawiający jest uprawniony do skorzystania z prawa opcji zgodnie z zapotrzebowaniem, w szczególności: 
+1)	gdy wymagać tego będzie prawidłowa, ciągła i nieprzerwana realizacja zadań Zamawiającego polegających na udzielaniu świadczeń zdrowotnych, w tym zapewnienie odpowiedniego poziomu zabezpieczenia medycznego pacjentów,
+2)	w przypadku zwiększonego zapotrzebowania Zamawiającego na dany asortyment wynikającego z nieprzewidzianego wzrostu liczby pacjentów, liczby hospitalizacji lub procedur medycznych, 
+3)	w przypadku realizacji przez Zamawiającego nowych lub rozszerzonych procedur medycznych tj. gdy Zamawiający rozpocznie wykonywanie nowych świadczeń zdrowotnych lub zwiększy liczbę wykonywanych procedur, co wymaga zwiększonych ilości asortymentu objętego przedmiotem umowy,
+4)	w przypadku wzrostu zapotrzebowania na asortyment objęty przedmiotem umowy wynikającego z decyzji lub zezwoleń określonych organów, w szczególności NFZ, Ministerstwa Zdrowia, konsultantów krajowych/wojewódzkich itp., które wprowadzają określone standardy lub obowiązki,
+5)	w przypadku, gdy wystąpi konieczność zwiększenia stanów magazynowych Zamawiającego lub utrzymywania podwyższonego poziomu zapasów asortymentu objętego przedmiotem umowy celem zapobieżenia ryzyku przerwania ciągłości udzielania świadczeń zdrowotnych m.in. w związku z ryzykiem przerw w dostawach, ryzykiem opóźnień logistycznych, problemami z dostępnością asortymentu,
+6)	w przypadku, gdy ze względów organizacyjnych lub technicznych zaistnieje potrzeba zwiększenia intensywności wykorzystania asortymentu objętego przedmiotem umowy np.  na skutek planowanego zwiększenia liczby zabiegów, zmiany organizacji pracy oddziałów lub uruchomienia przez Zamawiającego nowych oddziałów/jednostek, przekształcenia oddziału, uruchomienia dodatkowych łóżek, zwiększenia liczby stanowisk zabiegowych, realizacji projektów medycznych lub programów zdrowotnych,
+7)	w przypadku zwiększenia zapotrzebowania na asortyment objęty przedmiotem umowy ze względu na realizację projektów finansowanych ze środków zewnętrznych np. grantów lub programów krajowych, unijnych, które generują dodatkowe procedury i zużycie asortymentu,
+8)	w innych przypadkach, niż przewidziane powyżej, wynikających z okoliczności, których Zamawiający nie mógł przewidzieć na etapie postępowania o udzielenie zamówienia publicznego, w wyniku którego została zawarta niniejsza umowa.
+-	dotyczy zadania nr 3, 6
+3.	Prawo opcji może być realizowane przez Zamawiającego częściowo. - dotyczy zadania nr 3, 6
+4.	Zamawiający może korzystać z prawa opcji wielokrotnie, aż do momentu wyczerpania w całości ilości asortymentu przewidzianego w zakresie opcjonalnym. - dotyczy zadania nr 3, 6
+5.	Skorzystanie przez Zamawiającego z prawa opcji nie stanowi zmiany umowy i nie będzie wymagało sporządzenia aneksu do umowy. - dotyczy zadania nr 3, 6
+6.	Zamawiający może skorzystać z prawa opcji w dowolnym momencie obowiązywania umowy poprzez złożenie Wykonawcy oświadczenia o skorzystaniu z prawa opcji w formie pisemnej na adres Wykonawcy wskazany w komparycji niniejszej Umowy, w formie elektronicznej w rozumieniu art. 781 Kodeksu cywilnego lub w formie dokumentowej za pośrednictwem poczty elektronicznej na  adres e-mail Wykonawcy, jednak nie później niż na 10 dni przed upływem terminu obowiązywania umowy. W oświadczeniu, o którym mowa powyżej Zamawiający wskaże każdorazowo rodzaj i ilość asortymentu, który zamierza nabyć  w ramach prawa opcji. Niezłożenie oświadczenia w powyższym terminie będzie oznaczało, że Zamawiający rezygnuje ze skorzystania z prawa opcji. - dotyczy zadania nr 3, 6
+7.	W przypadku skorzystania przez Zamawiającego z prawa opcji wynagrodzenie Wykonawcy za zwiększoną ilość towaru zostanie ustalone na podstawie cen jednostkowych określonych w Formularzu Cenowym stanowiącym Załącznik nr 1 do umowy. - dotyczy zadania nr 3, 6
+</cbc:OptionsDescription>
+         </cac:ContractExtension>
+      </cac:ProcurementProject>
+   </cac:ProcurementProjectLot>
+</ContractNotice>

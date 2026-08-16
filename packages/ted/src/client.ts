@@ -48,6 +48,18 @@ const BACKOFF_BASE_MS = 1_000;
 const BACKOFF_JITTER_MS = 250;
 const DEFAULT_SPACING_MS = 500;
 
+/**
+ * Identifying User-Agent, sent on every TED request. Empirically REQUIRED
+ * for notice-XML downloads (2026-08-16, fixture-fetch CI runs 31976779119
+ * vs 31977377822): the ted.europa.eu website front-end answers a bare
+ * fetch of `links.xml.MUL` with HTTP 200 and an EMPTY body, and serves the
+ * real XML once the client states an Accept and identifies itself. The
+ * search API never showed this, but gets the same identification —
+ * transparency toward the data provider costs nothing.
+ */
+export const TED_USER_AGENT = 'BidMorrow/1.0 (+https://bidmorrow.com; support@bidmorrow.com)';
+const XML_ACCEPT = 'application/xml, text/xml;q=0.9, */*;q=0.5';
+
 /** Hosts we allow notice-XML fetches from (links come from TED responses, but never trust data-driven URLs blindly). */
 const ALLOWED_XML_HOST_SUFFIX = '.ted.europa.eu';
 const ALLOWED_XML_HOST = 'ted.europa.eu';
@@ -107,7 +119,11 @@ export class TedClient {
     const url = `${this.baseUrl}/v3/notices/search`;
     const response = await this.requestWithRetry(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'User-Agent': TED_USER_AGENT,
+      },
       body: JSON.stringify(request),
     });
     let body: unknown;
@@ -158,7 +174,10 @@ export class TedClient {
         url,
       });
     }
-    const response = await this.requestWithRetry(url, { method: 'GET' });
+    const response = await this.requestWithRetry(url, {
+      method: 'GET',
+      headers: { Accept: XML_ACCEPT, 'User-Agent': TED_USER_AGENT },
+    });
     // Content-Length is checked first to reject an oversized body before
     // buffering it, but it is untrusted (can lie or be absent) — the actual
     // decoded size is checked below regardless.
@@ -170,6 +189,16 @@ export class TedClient {
       }
     }
     const xml = await response.text();
+    if (xml.trim().length === 0) {
+      // HTTP 200 with an empty body is how ted.europa.eu refuses requests it
+      // does not like (observed for unidentified clients) — surface it as a
+      // failed fetch, never as valid "empty XML" for parsing/snapshotting.
+      throw new TedRequestError('TED notice XML response body was empty', {
+        status: response.status,
+        attempts: 1,
+        url,
+      });
+    }
     const actualBytes = new TextEncoder().encode(xml).length;
     if (actualBytes > MAX_XML_BYTES) {
       throw new TedXmlTooLargeError(url, actualBytes, MAX_XML_BYTES);

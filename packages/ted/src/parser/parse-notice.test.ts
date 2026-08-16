@@ -304,6 +304,251 @@ describe('parseEformsNotice — schema version handling', () => {
   });
 });
 
+/**
+ * Fixtures below are REAL TED-published notices (2026-08-16 fixture refresh;
+ * see each fixture's meta.json for source, retrieval provenance and the
+ * sanitization applied). Expected values were derived by reading the XML
+ * source of truth first, independently of the parser.
+ *
+ * Cross-cutting realities these notices exposed:
+ * - `efbc:NoticePublicationID` is zero-padded ("00569058-2026") while the
+ *   Search API `publication-number` is unpadded ("569058-2026") — the
+ *   assertions pin the parser's verbatim (padded) form.
+ * - Corrected notices carry `efac:Changes` / `efac:ChangedSection`; the
+ *   parser exposes NO correction signal on NormalizedNotice today (version
+ *   detection rides on the Search API during ingestion), so these tests can
+ *   only assert that corrected notices still normalize correctly.
+ */
+describe('parseEformsNotice — real published notices (2026-08-16 refresh)', () => {
+  it('real-normal (1.13, SPA): single lot, procedure-level value only, padded publication id', () => {
+    const notice = parseEformsNotice(loadFixture('1.13/real-normal.xml'));
+    expect(notice.sourceNoticeId).toBe('00569058-2026');
+    expect(notice.eformsSdkVersion).toBe('1.13');
+    expect(notice.formType).toBe('competition');
+    expect(notice.noticeType).toBe('cn-standard');
+    expect(notice.noticeSubtype).toBe('16');
+    expect(notice.languages).toEqual(['spa']);
+    expect(notice.publicationDate).toBe('2026-08-17');
+    expect(notice.procedureType).toBe('open');
+    expect(notice.buyer).toEqual({
+      name: 'Gerencia del Centro de Investigación Biomédica en Red (CIBER)',
+      nameByLanguage: { spa: 'Gerencia del Centro de Investigación Biomédica en Red (CIBER)' },
+      country: 'ESP',
+      legalTypeCode: 'body-pl-cga',
+      organizationId: 'ORG-0001',
+    });
+    expect(notice.procedureEstimatedValue).toEqual({ amount: 458_000, currency: 'EUR' });
+    expect(notice.lots).toHaveLength(1);
+    expect(notice.lots[0]?.lotId).toBe('LOT-0000');
+    expect(notice.lots[0]?.cpv).toEqual({ main: '79211110', additional: [] });
+    expect(notice.lots[0]?.nuts).toEqual(['ES300']);
+    // Value exists at PROCEDURE level only — lot value stays null.
+    expect(notice.lots[0]?.estimatedValue).toBeNull();
+    // BT-131: 2026-09-18 23:59:00 +02:00 → 21:59 UTC.
+    expect(notice.lots[0]?.deadline).toBe(Date.UTC(2026, 8, 18, 21, 59, 0));
+    // A published notice inside the supported SDK range: zero issues.
+    expect(notice.issues).toEqual([]);
+  });
+
+  it('real-missing-value-deadline (1.14, ENG): no value, no submission deadline, no ProcedureCode', () => {
+    const notice = parseEformsNotice(loadFixture('1.14/real-missing-value-deadline.xml'));
+    expect(notice.sourceNoticeId).toBe('00566363-2026');
+    expect(notice.eformsSdkVersion).toBe('1.14');
+    expect(notice.noticeType).toBe('cn-standard');
+    expect(notice.noticeSubtype).toBe('19');
+    expect(notice.languages).toEqual(['eng']);
+    expect(notice.buyer?.name).toBe('Malta International Airport plc');
+    expect(notice.buyer?.country).toBe('MLT');
+    // Real cn-standard notice WITHOUT BT-105 — explicit null, not an error.
+    expect(notice.procedureType).toBeNull();
+    expect(notice.procedureEstimatedValue).toBeNull();
+    expect(notice.lots).toHaveLength(1);
+    expect(notice.lots[0]?.lotId).toBe('LOT-0001');
+    expect(notice.lots[0]?.cpv).toEqual({ main: '55000000', additional: [] });
+    expect(notice.lots[0]?.estimatedValue).toBeNull();
+    // The notice has EndDate/EndTime under AdditionalInformationRequestPeriod
+    // and PlannedPeriod but NO TenderSubmissionDeadlinePeriod → null, silently.
+    expect(notice.lots[0]?.deadline).toBeNull();
+    expect(notice.issues).toEqual([]);
+  });
+
+  it('real-missing-deadline (1.12, SLV): below-range SDK parses best-effort with a version warning', () => {
+    const notice = parseEformsNotice(loadFixture('1.12/real-missing-deadline.xml'));
+    expect(notice.sourceNoticeId).toBe('00566469-2026');
+    expect(notice.eformsSdkVersion).toBe('1.12');
+    expect(notice.noticeSubtype).toBe('17');
+    expect(notice.languages).toEqual(['slv']);
+    expect(notice.procedureType).toBe('neg-w-call');
+    expect(notice.buyer?.legalTypeCode).toBe('pub-undert');
+    expect(notice.buyer?.country).toBe('SVN');
+    expect(notice.lots).toHaveLength(1);
+    expect(notice.lots[0]?.cpv).toEqual({ main: '66514110', additional: [] });
+    expect(notice.lots[0]?.nuts).toEqual(['SI043']);
+    // neg-w-call: ParticipationRequestReceptionPeriod only — deadline null.
+    expect(notice.lots[0]?.deadline).toBeNull();
+    expect(notice.procedureEstimatedValue).toBeNull();
+    expect(notice.lots[0]?.estimatedValue).toBeNull();
+    expect(notice.issues.map((issue) => issue.code)).toEqual(['untested-sdk-version']);
+  });
+
+  it('real-multi-lot (1.12, FRA): seven lots with per-lot values; buyer is ORG-0002', () => {
+    const notice = parseEformsNotice(loadFixture('1.12/real-multi-lot.xml'));
+    expect(notice.sourceNoticeId).toBe('00568795-2026');
+    expect(notice.eformsSdkVersion).toBe('1.12');
+    expect(notice.languages).toEqual(['fra']);
+    // OPT-300 resolution against a non-first organization id.
+    expect(notice.buyer).toEqual({
+      name: 'Conseil Départemental du Nord',
+      nameByLanguage: { fra: 'Conseil Départemental du Nord' },
+      country: 'FRA',
+      legalTypeCode: 'la',
+      organizationId: 'ORG-0002',
+    });
+    expect(notice.procedureEstimatedValue).toEqual({ amount: 16_666_667, currency: 'EUR' });
+    expect(notice.lots.map((lot) => lot.lotId)).toEqual([
+      'LOT-0001',
+      'LOT-0002',
+      'LOT-0003',
+      'LOT-0004',
+      'LOT-0005',
+      'LOT-0006',
+      'LOT-0007',
+    ]);
+    expect(notice.lots.map((lot) => lot.estimatedValue?.amount)).toEqual([
+      575_000, 425_000, 375_000, 700_000, 1_116_666, 625_000, 350_000,
+    ]);
+    // Real-world quirk kept verbatim: the lot repeats its own main CPV inside
+    // AdditionalCommodityClassification (dedupe against main is stage-B).
+    expect(notice.lots[0]?.cpv).toEqual({
+      main: '90900000',
+      additional: ['90900000', '90911300', '90919200'],
+    });
+    // Shared BT-131: 2026-09-14 16:30 +02:00 → 14:30 UTC on every lot.
+    for (const lot of notice.lots) {
+      expect(lot.deadline).toBe(Date.UTC(2026, 8, 14, 14, 30, 0));
+      expect(lot.nuts).toEqual(['FRE11']);
+    }
+    expect(notice.issues.map((issue) => issue.code)).toEqual(['untested-sdk-version']);
+  });
+
+  it('real-corrected-multi-lot (1.13, EST): efac:Changes notice normalizes; NUTS duplicates dedupe', () => {
+    const notice = parseEformsNotice(loadFixture('1.13/real-corrected-multi-lot.xml'));
+    expect(notice.sourceNoticeId).toBe('00567156-2026');
+    expect(notice.eformsSdkVersion).toBe('1.13');
+    expect(notice.languages).toEqual(['est']);
+    expect(notice.buyer?.name).toBe('Transpordiamet');
+    expect(notice.contractNature).toBe('supplies');
+    expect(notice.procedureEstimatedValue).toEqual({ amount: 315_000, currency: 'EUR' });
+    expect(notice.lots.map((lot) => lot.lotId)).toEqual([
+      'LOT-0001',
+      'LOT-0002',
+      'LOT-0003',
+      'LOT-0004',
+    ]);
+    // Lot-level CPV (34110000) wins over the procedure main (34100000).
+    expect(notice.lots.map((lot) => lot.cpv.main)).toEqual([
+      '34110000',
+      '34110000',
+      '34110000',
+      '34110000',
+    ]);
+    expect(notice.lots.map((lot) => lot.estimatedValue?.amount)).toEqual([
+      75_000, 120_000, 70_000, 50_000,
+    ]);
+    // Source lists each lot NUTS code once but repeats the procedure set 4x;
+    // extraction dedupes while preserving order.
+    expect(notice.lots[0]?.nuts).toEqual(['EE009', 'EE00A', 'EE004', 'EE008', 'EE001']);
+    // BT-131 with fractional seconds: 2026-09-02 15:00:00.000 +03:00 → 12:00 UTC.
+    expect(notice.lots[0]?.deadline).toBe(Date.UTC(2026, 8, 2, 12, 0, 0));
+    // Corrected notice (efac:Changes, ChangedSection PROCEDURE) parses clean;
+    // no correction signal is exposed on NormalizedNotice (see block docs).
+    expect(notice.issues).toEqual([]);
+  });
+
+  it('real-namespace-quirk (1.13, LIT): redundant xmlns="" on top-level elements is tolerated', () => {
+    const notice = parseEformsNotice(loadFixture('1.13/real-namespace-quirk.xml'));
+    expect(notice.sourceNoticeId).toBe('00566500-2026');
+    expect(notice.eformsSdkVersion).toBe('1.13');
+    expect(notice.languages).toEqual(['lit']);
+    expect(notice.buyer?.name).toBe('Lietuvos Respublikos Seimo kanceliarija');
+    expect(notice.buyer?.country).toBe('LTU');
+    expect(notice.lots).toHaveLength(1);
+    expect(notice.lots[0]?.cpv).toEqual({ main: '63510000', additional: [] });
+    expect(notice.lots[0]?.nuts).toEqual(['LT011']);
+    // Identical value declared at procedure AND lot level — both kept.
+    expect(notice.procedureEstimatedValue).toEqual({ amount: 991_735.54, currency: 'EUR' });
+    expect(notice.lots[0]?.estimatedValue).toEqual({ amount: 991_735.54, currency: 'EUR' });
+    // BT-131: 2026-09-17 10:00 +03:00 → 07:00 UTC.
+    expect(notice.lots[0]?.deadline).toBe(Date.UTC(2026, 8, 17, 7, 0, 0));
+    expect(notice.issues).toEqual([]);
+  });
+
+  it('real-corrected-greek (1.14, ELL): Greek script preserved; source value anomaly kept verbatim', () => {
+    const notice = parseEformsNotice(loadFixture('1.14/real-corrected-greek.xml'));
+    expect(notice.sourceNoticeId).toBe('00566489-2026');
+    expect(notice.eformsSdkVersion).toBe('1.14');
+    expect(notice.languages).toEqual(['ell']);
+    expect(notice.buyer).toEqual({
+      name: 'ΓΕΝΙΚΟ ΝΟΣΟΚΟΜΕΙΟ ΣΕΡΡΩΝ',
+      nameByLanguage: { ell: 'ΓΕΝΙΚΟ ΝΟΣΟΚΟΜΕΙΟ ΣΕΡΡΩΝ' },
+      country: 'GRC',
+      legalTypeCode: 'body-pl',
+      organizationId: 'ORG-0001',
+    });
+    expect(notice.lots).toHaveLength(1);
+    expect(notice.lots[0]?.title).toEqual({ ell: 'Τμήμα 1' });
+    expect(notice.lots[0]?.cpv).toEqual({ main: '33140000', additional: [] });
+    expect(notice.lots[0]?.nuts).toEqual(['EL526']);
+    // REAL source anomaly (never "fixed" by the parser): the procedure-level
+    // amount is 931557860 while the lot says 931557.86 — the buyer dropped
+    // the decimal separator at procedure level. Both are reported verbatim.
+    expect(notice.procedureEstimatedValue).toEqual({ amount: 931_557_860, currency: 'EUR' });
+    expect(notice.lots[0]?.estimatedValue).toEqual({ amount: 931_557.86, currency: 'EUR' });
+    // BT-131: 2026-09-16 11:00 +03:00 → 08:00 UTC.
+    expect(notice.lots[0]?.deadline).toBe(Date.UTC(2026, 8, 16, 8, 0, 0));
+    // Corrigendum (efac:Changes referencing 517841-2026, reason cor-buy)
+    // parses clean; no correction signal on NormalizedNotice.
+    expect(notice.issues).toEqual([]);
+  });
+
+  it('real-large-multi-lot (1.14, POL): 140 KB corrected six-lot notice, no values anywhere', () => {
+    const notice = parseEformsNotice(loadFixture('1.14/real-large-multi-lot.xml'));
+    expect(notice.sourceNoticeId).toBe('00568668-2026');
+    expect(notice.eformsSdkVersion).toBe('1.14');
+    expect(notice.languages).toEqual(['pol']);
+    expect(notice.buyer?.name).toBe(
+      'Regionalny Szpital Specjalistyczny im. dr Władysława Biegańskiego',
+    );
+    expect(notice.contractNature).toBe('supplies');
+    expect(notice.lots.map((lot) => lot.lotId)).toEqual([
+      'LOT-0001',
+      'LOT-0002',
+      'LOT-0003',
+      'LOT-0004',
+      'LOT-0005',
+      'LOT-0006',
+    ]);
+    // Per-lot main CPV varies (medical-equipment families).
+    expect(notice.lots.map((lot) => lot.cpv.main)).toEqual([
+      '33111730',
+      '33111730',
+      '33186000',
+      '33100000',
+      '33141620',
+      '33111730',
+    ]);
+    // No estimated value at ANY level — explicit nulls, never 0.
+    expect(notice.procedureEstimatedValue).toBeNull();
+    for (const lot of notice.lots) {
+      expect(lot.estimatedValue).toBeNull();
+      // Deadline moved to 2026-08-27 12:00 +02:00 by the correction → 10:00 UTC.
+      expect(lot.deadline).toBe(Date.UTC(2026, 7, 27, 10, 0, 0));
+      expect(lot.nuts).toEqual(['PL616']);
+    }
+    expect(notice.issues).toEqual([]);
+  });
+});
+
 describe('parseEformsNotice — adversarial input safety', () => {
   it('script/HTML content in text nodes is preserved as inert plain text', () => {
     // replaceAll: the title appears at procedure AND lot level.
