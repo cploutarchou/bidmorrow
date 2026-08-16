@@ -53,6 +53,19 @@ UTC), fixture refresh from the ingestion's R2 snapshots, then security
 
 ### Phase 13 progress (2026-08-16)
 
+**FIRST PRODUCTION DEPLOY: 90% — blocked only on apex DNS (run
+31964441161, 18:23 UTC)**: production D1 CREATED
+(`cd5f6ceb-3262-4ba9-a5f4-4c1ed43e27bb`, WEUR — id now committed in
+wrangler.jsonc), all 7 migrations applied, `ingestion_paused='true'`
+seeded (rows_written 3), all 6 queues + R2 bucket ensured, Worker
+`bidmorrow-production` uploaded with 4 crons + 3 producer/consumer
+pairs. FAILED at custom-domain attach: API 100117 — the zone has
+pre-existing externally-managed address records on the apex; Cloudflare
+refuses to overwrite. Secrets push + smoke never ran (post-deploy
+steps). FIX = owner deletes the apex A/AAAA/CNAME record(s) in the
+zone's DNS (TXT/MX fine to keep), then re-dispatch Deploy production —
+every prior step is idempotent.
+
 **PRODUCTION CREDENTIALS COMPLETE + PRICING CURRENCY = EUR
 (2026-08-16 ~14:45 UTC)**: owner set ALL `production` environment
 secrets (CLOUDFLARE_*, BETTER_AUTH_SECRET, live STRIPE_SECRET_KEY +
