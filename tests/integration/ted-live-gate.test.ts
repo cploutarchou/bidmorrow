@@ -18,7 +18,11 @@
  * volume.
  */
 import { describe, expect, it } from 'vitest';
-import { buildScopeQuery, DEFAULT_INGESTION_SCOPE } from '@bidmorrow/procurement';
+// Relative import — the root tests/ tree is not a workspace package, so
+// the @bidmorrow/* aliases don't resolve here (same pattern as
+// tests/security). Module resolution inside scope.ts still uses
+// packages/procurement's own dependencies.
+import { buildScopeQuery, DEFAULT_INGESTION_SCOPE } from '../../packages/procurement/src/scope';
 
 const TED_SEARCH_URL = 'https://api.ted.europa.eu/v3/notices/search';
 const LIVE = process.env.TED_LIVE === '1';
