@@ -17,7 +17,18 @@
 name: Deploy production
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      confirm:
+        # Environment "Required reviewers" needs GitHub Enterprise on
+        # private repos (discovered 2026-08-16, owner is on Pro), so the
+        # human gate is this typed confirmation + the environment's
+        # "Protected branches only" policy (main is ruleset-protected)
+        # + the standing convention that Claude never dispatches a
+        # production deploy without an explicit owner instruction.
+        description: 'Type "deploy-production" to confirm'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -35,6 +46,12 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
+      - name: Require typed confirmation
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          [ "$CONFIRM" = "deploy-production" ] || { echo 'refusing: confirm input must be exactly "deploy-production"'; exit 1; }
+
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
