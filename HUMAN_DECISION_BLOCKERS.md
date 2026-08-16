@@ -88,8 +88,10 @@ Still human-required / deferred to Phase 13:
    MX records — they don't conflict. Then re-run "Deploy production".
    ~~DONE 2026-08-16~~ — domain attached on deploy run #2.
 
-   **OPEN console action #2 (found at deploy run #4, 2026-08-16)**: the
-   zone serves a Cloudflare **Managed Challenge** (`cf-mitigated:
+   ~~OPEN console action #2~~ **DONE 2026-08-16** (owner disabled the
+   challenge; deploy run #5 green — bidmorrow.com LIVE). Original
+   finding kept for the record: the zone served a **Managed Challenge**
+   (`cf-mitigated:
 challenge`, "Just a moment…" interstitial) on EVERY request — this
    blocks health checks, the Stripe webhook endpoint, and the SPA's own
    API fetches. Dashboard → bidmorrow.com → **Security**: turn **Bot
