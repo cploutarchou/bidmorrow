@@ -53,7 +53,8 @@ jobs:
           for q in bidmorrow-ingest-staging bidmorrow-match-staging bidmorrow-digest-staging \
                    bidmorrow-ingest-dlq-staging bidmorrow-match-dlq-staging bidmorrow-digest-dlq-staging; do
             out=$(pnpm exec wrangler queues create "$q" 2>&1) && echo "created $q" || {
-              if echo "$out" | grep -qi 'already exists\|already been taken\|duplicate'; then
+              # wrangler's exact wording: "Queue name '…' is already taken." [code: 11009]
+              if echo "$out" | grep -qi 'already exists\|already taken\|duplicate\|11009'; then
                 echo "$q already exists"
               else
                 echo "$out"; exit 1
