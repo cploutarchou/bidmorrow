@@ -75,10 +75,17 @@ env-specific resource names/ids — wrangler does not inherit bindings.
    `wrangler d1 migrations apply bidmorrow-staging --env staging --remote`
    then `wrangler deploy --env staging`, then automated smoke tests
    (health endpoint, login, one API round-trip).
-3. **Production deploy**: manually triggered protected workflow (GitHub
-   `production` environment, required reviewers). Steps: verify staging
-   smoke green → capture D1 Time Travel bookmark (see below) → apply
-   migrations → `wrangler deploy --env production` → post-deploy smoke.
+3. **Production deploy**: `.github/workflows/deploy-production.yml` —
+   dispatch-only, gated by the GitHub `production` environment (set
+   Required reviewers there). Steps: ensure queues/R2/D1 idempotently
+   (first run creates them; the resolved D1 id is patched into the
+   checkout and printed as `PRODUCTION_D1_ID` for committing) → capture
+   D1 Time Travel bookmark → apply migrations → seed
+   `ingestion_paused=true` (unpausing is a deliberate go-live step) →
+   build SPA → `wrangler deploy --env production` (attaches
+   bidmorrow.com on first run) → push runtime secrets → post-deploy
+   smoke against `https://bidmorrow.com` (with a provisioning retry for
+   the first-run domain/cert).
 
 ### Pre-first-ingestion gates (from Phase 5 audits — MUST close on staging before the production ingestion cron is enabled)
 
@@ -94,6 +101,12 @@ verifications could only be deferred to the first staging deploy:
    reality exceeds 2× projection per ADR-0003).
 3. Refresh fixtures from live published notices (ted-fixture-refresh skill)
    to complement the OP-TED SDK example fixtures (TED-P5-02 audit note).
+   Plan: source them from the first staging ingestion's R2 snapshots
+   (real notices our own pipeline stored) rather than separate API pulls.
+
+Status 2026-08-16: gates 1–2 CLOSED (ted-gates workflow run #3 — two
+grammar fixes landed, volume measured ≈143/day weekday avg); gate 3
+pending the first staging ingestion window.
 
 ## Migration deployment procedure
 
@@ -172,5 +185,8 @@ Phase 8 going live.
   `d1-time-travel-info` (capture bookmark), `d1-time-travel-restore`
   (point-in-time restore + prints the `ingestion_paused` row as a
   verification marker).
-- Rollback drill on staging is part of Phase 13 sign-off
-  [validate: Phase 13].
+- Rollback drill on staging is part of Phase 13 sign-off — **executed
+  2026-08-16**: worker rollback to the previous version with live health
+  green, roll-forward redeploy, and a D1 Time Travel restore to a
+  pre-change timestamp verified via the `ingestion_paused` marker (see
+  IMPLEMENTATION_LEDGER.md Phase 13 for run ids and bookmarks).

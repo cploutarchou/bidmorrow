@@ -189,7 +189,10 @@
         {
           "binding": "DB",
           "database_name": "bidmorrow-production",
-          // set real IDs per HUMAN_DECISION_BLOCKERS.md item 1; never share databases across envs
+          // The deploy-production workflow creates the database on first run
+          // and patches this placeholder with the resolved id in its checkout
+          // (printed as PRODUCTION_D1_ID in the run log — commit it here
+          // after the first deploy). Never share databases across envs.
           "database_id": "production-placeholder",
           "migrations_dir": "../../migrations",
         },
