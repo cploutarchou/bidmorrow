@@ -69,6 +69,28 @@ describe.runIf(LIVE)('TED live pre-first-ingestion gates', () => {
     expect(status, `checkQuerySyntax response: ${JSON.stringify(json)}`).toBe(200);
   });
 
+  it('diagnostic: probes sort-clause variants against checkQuerySyntax (prints, never fails)', async () => {
+    const base = buildScopeQuery(DEFAULT_INGESTION_SCOPE, {
+      windowFrom: isoDaysAgo(3),
+      windowTo: isoDaysAgo(3),
+    }).replace(/ SORT BY.*$/, '');
+    for (const suffix of ['', ' SORT BY publication-date', ' SORT BY publication-date DESC']) {
+      const { status, json } = await tedSearch({
+        query: `${base}${suffix}`,
+        fields: ['publication-number'],
+        limit: 1,
+        checkQuerySyntax: true,
+      });
+      console.warn(
+        `TED_SYNTAX_PROBE suffix=${JSON.stringify(suffix)} status=${String(status)} ${
+          status === 200 ? 'ACCEPTED' : `REJECTED: ${JSON.stringify(json['message'] ?? json)}`
+        }`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+    expect(true).toBe(true);
+  }, 30_000);
+
   it('gate 2: measures scoped notices/day for the last 7 full days (prints, never volume-fails)', async () => {
     const counts: { day: string; count: number }[] = [];
     for (let daysAgo = 9; daysAgo >= 3; daysAgo -= 1) {
