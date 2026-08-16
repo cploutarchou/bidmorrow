@@ -168,12 +168,23 @@
       },
       "vars": {
         "APP_ENV": "staging",
-        // set real URLs before first staging deploy
-        "APP_BASE_URL": "https://staging.bidmorrow.com",
-        "BETTER_AUTH_URL": "https://staging.bidmorrow.com",
+        // Documentation only: the deploy workflow overrides both URLs at
+        // every deploy (--var) with the workers.dev origin it resolves from
+        // the account subdomain. Staging has no custom domain in V1.
+        "APP_BASE_URL": "https://bidmorrow-staging.cploutarchou.workers.dev",
+        "BETTER_AUTH_URL": "https://bidmorrow-staging.cploutarchou.workers.dev",
       },
     },
     "production": {
+      // bidmorrow.com attaches as a Workers custom domain automatically at
+      // the FIRST production deploy — wrangler creates the zone's DNS record
+      // and certificate itself (docs/deployment.md "Custom domain & DNS").
+      // Until that deploy, the zone Overview showing "No Workers connected"
+      // is expected, not an error. Never connect the staging worker to the
+      // zone. workers_dev off: production is reachable only on the canonical
+      // origin (auth cookies, CSP, no duplicate workers.dev origin).
+      "workers_dev": false,
+      "routes": [{ "pattern": "bidmorrow.com", "custom_domain": true }],
       "d1_databases": [
         {
           "binding": "DB",

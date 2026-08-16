@@ -43,6 +43,26 @@ pending).** State as of 2026-08-16:
 
 ### Phase 13 progress (2026-08-16)
 
+**INGESTION UNPAUSED (13:23 UTC)**: "Staging flag" workflow run #1
+(31949665848) green; its verification SELECT returned
+`ingestion_paused = "false"` (updated_at 1786886616000) on the staging
+D1. First real TED window runs at the next 05:00 UTC ingest cron
+(bounded first-run window). Owner flagged the zone dashboard showing
+"No Workers connected" on bidmorrow.com — **expected**: the apex is
+production-only; it attaches automatically at the first production
+deploy, now codified as `routes: [{pattern: bidmorrow.com,
+custom_domain: true}]` + `workers_dev: false` in wrangler.jsonc
+env.production. Never connect the staging worker to the zone (would
+serve test-mode Stripe + staging DB on the real domain).
+`.github/workflows/staging-ops.yml` added for the remaining drills —
+`deployments-list` / `rollback-previous` (+ live health check) /
+`d1-time-travel-info` / `d1-time-travel-restore` (+ prints
+ingestion_paused as restore marker) — wrangler syntax verified against
+the pinned 4.123.0 CLI (`rollback -y` non-interactive; restore takes
+`--timestamp` RFC3339 or `--bookmark`). Drill plan: capture bookmark →
+rollback → health → roll forward via Deploy staging → restore to
+13:00 UTC (pre-flip, flag reads 'true' = proof) → re-flip to 'false'.
+
 **PRE-FIRST-INGESTION GATES: PASSED** (ted-gates workflow run #3, live
 TED API from GitHub runners). The gate caught and we fixed TWO real
 query-grammar bugs before any ingestion ran (both would have broken the
