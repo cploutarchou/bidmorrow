@@ -20,19 +20,21 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
    `STRIPE_WEBHOOK_SECRET` (item 4), production `RESEND_API_KEY`
    (item 3.2). Variables: `ADMIN_EMAILS`; `EMAIL_FROM` after item 2.3.
    (`BETTER_AUTH_SECRET` already set ✓.)
-2. **Required reviewers on `production` + branch ruleset on `main`** —
-   **CONFIGURED 2026-08-16 but NOT ENFORCED**: the repo is PRIVATE on a
-   personal GitHub Free plan, and GitHub only enforces environment
-   protection rules and branch rulesets on private repos with **GitHub
-   Pro** (public repos: free). The owner observed exactly this (deploy
-   approval never prompted). Owner decision needed, one of:
-   (a) upgrade to GitHub Pro (~$4/mo — note: outside the Cloudflare
-   infra budget line, it's a tooling cost), (b) make the repo public,
-   or (c) accept procedural-only gating (Claude never dispatches a
-   production deploy without an explicit owner instruction — already
-   the working convention). The saved config activates automatically
-   the moment (a) or (b) happens.
-3. ~~Branch protection~~ merged into item 2 above (same root cause).
+2. **Production deploy gating — RESOLVED 2026-08-16 (with a plan-limit
+   discovery)**: the owner HAS GitHub Pro, which enforces the `main`
+   branch **ruleset** (PR + green `checks`/`secret-scan`, no force-push)
+   on this private repo — but environment **Required reviewers** turned
+   out to need GitHub **Enterprise** on private repos (the section
+   simply doesn't render on the owner's environment page; Pro is not
+   enough — an earlier note here claiming Pro suffices was wrong).
+   Adopted gate instead: (a) production environment "Deployment
+   branches" set to **Protected branches only** (owner console action —
+   deploys only ever run ruleset-protected main), (b) deploy-production
+   requires a typed `confirm: deploy-production` dispatch input, and
+   (c) standing convention: Claude never dispatches a production deploy
+   without an explicit owner instruction.
+3. ~~Branch protection~~ DONE — enforced by the imported `main-protection`
+   ruleset (Pro covers rulesets on private repos).
 4. **Resend domain verification** — ~~verification~~ **VERIFIED
    2026-08-16** (owner screenshot: bidmorrow.com Verified in Resend,
    DKIM + SPF-send + tracking CNAME all green; "Enable Receiving"
