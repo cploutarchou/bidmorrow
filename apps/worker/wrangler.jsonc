@@ -109,6 +109,14 @@
   },
   "env": {
     "staging": {
+      // staging.bidmorrow.com attaches as a Workers custom domain
+      // automatically at deploy (wrangler creates the zone's DNS record +
+      // certificate itself — same mechanism as production's apex; error
+      // 100117 means a pre-existing `staging` DNS record must be deleted
+      // first). workers_dev off: one canonical origin per environment
+      // (auth cookies, Stripe webhook URL stability).
+      "workers_dev": false,
+      "routes": [{ "pattern": "staging.bidmorrow.com", "custom_domain": true }],
       "d1_databases": [
         {
           "binding": "DB",
@@ -168,11 +176,8 @@
       },
       "vars": {
         "APP_ENV": "staging",
-        // Documentation only: the deploy workflow overrides both URLs at
-        // every deploy (--var) with the workers.dev origin it resolves from
-        // the account subdomain. Staging has no custom domain in V1.
-        "APP_BASE_URL": "https://bidmorrow-staging.cploutarchou.workers.dev",
-        "BETTER_AUTH_URL": "https://bidmorrow-staging.cploutarchou.workers.dev",
+        "APP_BASE_URL": "https://staging.bidmorrow.com",
+        "BETTER_AUTH_URL": "https://staging.bidmorrow.com",
       },
     },
     "production": {

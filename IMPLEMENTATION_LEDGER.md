@@ -53,6 +53,21 @@ UTC), fixture refresh from the ingestion's R2 snapshots, then security
 
 ### Phase 13 progress (2026-08-16)
 
+**STAGING CUSTOM DOMAIN (owner request, evening)**: staging moves from
+workers.dev to **https://staging.bidmorrow.com** — `workers_dev: false`
+
+- `routes` custom_domain in wrangler.jsonc env.staging (same auto-attach
+  mechanism as production's apex; 100117 at deploy = delete a conflicting
+  `staging` DNS record), static staging vars (no more per-deploy `--var`
+  workers.dev injection; the resolve-URL steps removed from
+  deploy-staging.yml and staging-ops.yml), smoke tests target the custom
+  domain with the same first-run provisioning retry as production. OWNER
+  ACTION recorded (blockers snapshot item 7): edit the test-mode Stripe
+  webhook endpoint URL to https://staging.bidmorrow.com/api/webhooks/stripe
+  (same signing secret, no rotation). First deploy on merge attaches the
+  domain; old workers.dev origin stops serving. Existing staging sessions
+  invalidate (origin change) — expected.
+
 **TRACKED HARDENING CLOSED (evening, PR #26)** — every follow-up carried
 in "Phase 9 follow-ups" / "Deploy-time hardening follow-ups" below plus
 the P-2/P10-R-04 review follow-up items:

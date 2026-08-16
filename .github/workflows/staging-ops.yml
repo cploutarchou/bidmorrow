@@ -103,10 +103,7 @@ jobs:
       - name: Health check after rollback
         if: ${{ inputs.operation == 'rollback-previous' }}
         run: |
-          sub=$(curl -sf -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
-            | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{const j=JSON.parse(d);if(!j.result||!j.result.subdomain){console.error("no workers.dev subdomain");process.exit(1)}console.log(j.result.subdomain)})')
-          base="https://bidmorrow-staging.${sub}.workers.dev"
+          base="https://staging.bidmorrow.com"
           echo "health check: $base"
           curl -sf "$base/api/health/live" | grep -q '"ok"'
           curl -sf "$base/api/health/ready" | grep -q '"ok"'
