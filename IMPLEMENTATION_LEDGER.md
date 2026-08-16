@@ -53,6 +53,46 @@ UTC), fixture refresh from the ingestion's R2 snapshots, then security
 
 ### Phase 13 progress (2026-08-16)
 
+**TRACKED HARDENING CLOSED (evening, PR #26)** — every follow-up carried
+in "Phase 9 follow-ups" / "Deploy-time hardening follow-ups" below plus
+the P-2/P10-R-04 review follow-up items:
+
+- **GitHub Actions SHA-pinned** (all 6 actions × 7 workflows; SHAs
+  resolved live via `git ls-remote` from each action repo's v4/v2 tag,
+  tag kept as trailing comment). threat-model T21 updated to match.
+- **SEC-P9-02 CLOSED in-worker** (no zone WAF console action needed):
+  `rate-limit.ts` → `createIpRateLimit(routeGroup)` factory;
+  `POST /api/webhooks/stripe` limiter-gated BEFORE signature
+  verification; `/api/admin/*` (before auth) and `/api/account/*` now
+  covered too (P10-R-04 admin half). Wiring tests assert the ordering
+  (429 before 503/401).
+- **P10-R-04 deploy half**: both deploy workflows verify
+  `PRAGMA foreign_keys` = 1 on the live DB right after migrations
+  (PRAGMA empirically confirmed queryable on remote D1 via MCP first).
+- **P-2 RESOLVED**: `listTenderMatchesForFeed` confirmed dead (no barrel
+  export, no app caller) and deleted (+ its private cursor helper +
+  args type); tenant-isolation tests ported to `listFeedRows` — the
+  isolation suite now exercises the real customer feed query.
+- **SEC-P9-03 CLOSED (catch-and-reconcile)**: confirmed root cause —
+  `upsertSubscriptionByStripeCustomerId`'s `ON CONFLICT` targets
+  `stripe_customer_id` only, so a duplicate checkout's second webhook
+  (new customer id, same org) fell through to a raw
+  `uq_subscriptions__organization_id` violation → 500 → Stripe
+  forever-retry. Now `syncSubscriptionState` detects a pre-fetch row
+  with a DIFFERENT customer id in a `blocksNewCheckout` status, cancels
+  the duplicate Stripe subscription (`subscriptions.cancel` verified
+  from the installed SDK's Subscriptions.d.ts, cancellation_details
+  comment set), logs `billing.webhook.duplicate_checkout_reconciled`
+  with both ids, records the event `processed` with new outcome
+  `'duplicate_reconciled'`, acks 200; kept row untouched. Checkout side
+  re-reads `getSubscription` just before the Stripe call (narrows the
+  race; residual closed by the webhook path). 3 new D1 tests (duplicate
+  reconciles + same-customer redelivery + reactivation unchanged).
+- Gates: format/lint/typecheck/build green; root tests 406 pass, worker
+  157 (3 new), db 52. threat-model §4.3 residuals + T21 + changelog
+  updated; deployment.md CI/CD step 3 updated; phase12-quality-findings
+  P-2 marked resolved.
+
 **PRODUCTION IS LIVE: https://bidmorrow.com (deploy run #5, 31966643429,
 19:08 UTC, all steps green incl. smoke)**. The road there took 5 runs,
 each failure real and owner-fixable: run #1 — apex DNS conflict (100117,
@@ -2403,24 +2443,21 @@ live (Phase 9 next). The human may start pilot recruitment while Phases
 9–13 proceed. Provisioning: create the account via normal signup; digest
 requires RESEND_API_KEY + verified domain.
 
-## Phase 9 follow-ups (tracked for Phase 10/13)
+## Phase 9 follow-ups — ALL CLOSED 2026-08-16 (Phase 13 hardening, PR #26)
 
-- SEC-P9-02: add a WAF/rate-limit rule for POST /api/webhooks/stripe at
-  deployment time (unauthenticated endpoint; currently mitigated by body
-  limit + cheap pre-DB 400s).
-- SEC-P9-03: concurrent double-checkout can orphan a Stripe customer and
-  wedge the second webhook (owner-self-inflicted, no cross-tenant impact);
-  pre-create the customer or add catch-and-reconcile.
+- ~~SEC-P9-02~~ CLOSED: in-worker IP rate limit on POST
+  /api/webhooks/stripe, applied before signature verification (no zone
+  WAF rule needed; see "Phase 13 progress").
+- ~~SEC-P9-03~~ CLOSED: webhook catch-and-reconcile — duplicate
+  subscription canceled via Stripe API, event acked 200, kept row
+  untouched (see "Phase 13 progress").
 
-## Deploy-time hardening follow-ups (tracked, not yet actioned)
+## Deploy-time hardening follow-ups — ALL CLOSED 2026-08-16 (PR #26)
 
-- Pin GitHub Actions to commit SHAs (currently version tags, e.g.
-  `actions/checkout@v4` — verified against `.github/workflows/*.yml`;
-  docs/threat-model.md T21 corrected 2026-08-15 to stop overclaiming
-  SHA-pinning was already in place). A tag is mutable; a SHA is not.
-- SEC-P9-02 / SEC-P9-03 above (WAF/rate-limit rule for the Stripe webhook
-  route; concurrent double-checkout reconciliation) — carried forward here
-  as deploy-time items, not just Phase 10/13 follow-ups.
+- ~~Pin GitHub Actions to commit SHAs~~ DONE: every `uses:` in
+  `.github/workflows/*.yml` now carries a full commit SHA (tag as
+  trailing comment); threat-model T21 updated.
+- ~~SEC-P9-02 / SEC-P9-03~~ closed as above.
 
 ## Notes
 

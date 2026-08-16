@@ -472,16 +472,30 @@ function fakeSubscription(
   } as unknown as Stripe.Subscription;
 }
 
-/** A fake `WebhookStripeClient` whose `retrieve` is scriptable per-call, so tests can prove re-fetch (never payload) drives the stored state. */
+/**
+ * A fake `WebhookStripeClient` whose `retrieve` is scriptable per-call, so
+ * tests can prove re-fetch (never payload) drives the stored state.
+ * `cancel` calls are recorded (never actually reach Stripe — this tier is
+ * zero-network) so SEC-P9-03 reconciliation tests can assert exactly which
+ * subscription id got canceled without a real Stripe key.
+ */
 function makeFakeStripeClient(
   retrieveImpl: (id: string) => Promise<Stripe.Subscription>,
-): WebhookStripeClient & { retrieveCallCount: number } {
+): WebhookStripeClient & {
+  retrieveCallCount: number;
+  cancelCalls: { id: string; params: Stripe.SubscriptionCancelParams }[];
+} {
   const fake = {
     retrieveCallCount: 0,
+    cancelCalls: [] as { id: string; params: Stripe.SubscriptionCancelParams }[],
     subscriptions: {
       async retrieve(id: string) {
         fake.retrieveCallCount += 1;
         return retrieveImpl(id);
+      },
+      async cancel(id: string, params: Stripe.SubscriptionCancelParams) {
+        fake.cancelCalls.push({ id, params });
+        return { id, status: 'canceled' } as unknown as Stripe.Subscription;
       },
     },
   };
@@ -714,6 +728,106 @@ describe('processStripeEvent (fake Stripe client, real D1)', () => {
     expect(await getSubscription(db, toOrganizationId(orgA.orgId))).toBeNull();
     const untouchedB = await getSubscription(db, toOrganizationId(orgB.orgId));
     expect(untouchedB?.organizationId).toBe(orgB.orgId);
+  });
+
+  // -------------------------------------------------------------------------
+  // SEC-P9-03: concurrent double-checkout reconciliation. A duplicate
+  // Checkout completion mints a SECOND Stripe customer/subscription for an
+  // organization that already has a non-canceled one on file
+  // (`uq_subscriptions__organization_id` is 1:1, docs/data-model.md §9) —
+  // the webhook for that second one must cancel it and reconcile, not
+  // throw/wedge Stripe's retry loop.
+  // -------------------------------------------------------------------------
+
+  it('duplicate non-canceled customer: cancels the duplicate subscription, records the event, keeps the existing row untouched', async () => {
+    const { orgId } = await setUpOrg('WebhookDupNonCanceled');
+    const db = createDb(env.DB);
+    const kept = await seedSubscription(db, orgId, { status: 'active' });
+
+    const stripe = makeFakeStripeClient(async (id) =>
+      fakeSubscription({ id, customer: 'cus_double_checkout', status: 'active' }),
+    );
+    const event = checkoutCompletedEvent({
+      id: 'evt_double_checkout',
+      organizationId: orgId,
+      subscriptionId: 'sub_double_checkout',
+    });
+
+    const outcome = await processStripeEvent({ db, stripe, priceIds: PRICE_IDS }, event);
+    expect(outcome).toBe('duplicate_reconciled');
+
+    // The duplicate subscription — not the kept one — was canceled.
+    expect(stripe.cancelCalls).toEqual([expect.objectContaining({ id: 'sub_double_checkout' })]);
+
+    // The event is recorded as handled (not left `failed`/`received` to
+    // wedge Stripe's retry loop).
+    const row = await getBillingEventByStripeId(db, 'evt_double_checkout');
+    expect(row?.status).toBe('processed');
+
+    // The org's one-and-only row is exactly what it was before — the
+    // duplicate never got written.
+    const after = await getSubscription(db, toOrganizationId(orgId));
+    expect(after).toMatchObject({
+      stripeCustomerId: kept.stripeCustomerId,
+      stripeSubscriptionId: kept.stripeSubscriptionId,
+      status: 'active',
+    });
+  });
+
+  it('same-customer re-delivery (a different event id for the SAME Stripe customer) still updates the existing row normally, no reconciliation', async () => {
+    const { orgId } = await setUpOrg('WebhookSameCustomer');
+    const db = createDb(env.DB);
+    const seeded = await seedSubscription(db, orgId, { status: 'active' });
+
+    const stripe = makeFakeStripeClient(async (id) =>
+      fakeSubscription({ id, customer: seeded.stripeCustomerId, status: 'past_due' }),
+    );
+    const event = subscriptionUpdatedEvent({
+      id: 'evt_same_customer_update',
+      organizationId: orgId,
+      subscriptionId: seeded.stripeSubscriptionId ?? 'sub_missing',
+      payloadStatus: 'past_due',
+    });
+
+    const outcome = await processStripeEvent({ db, stripe, priceIds: PRICE_IDS }, event);
+    expect(outcome).toBe('processed');
+    expect(stripe.cancelCalls).toEqual([]);
+
+    const after = await getSubscription(db, toOrganizationId(orgId));
+    expect(after).toMatchObject({
+      stripeCustomerId: seeded.stripeCustomerId,
+      status: 'past_due',
+    });
+  });
+
+  it('canceled-row reactivation is unchanged: a new subscription on the SAME (reused) customer updates the row, no reconciliation', async () => {
+    const { orgId } = await setUpOrg('WebhookReactivate');
+    const db = createDb(env.DB);
+    const canceled = await seedSubscription(db, orgId, { status: 'canceled' });
+
+    // Mirrors checkout.ts's real reactivation flow: a canceled row's
+    // `stripe_customer_id` is always passed back as Checkout's `customer`
+    // param, so the reactivating subscription is a NEW subscription id on
+    // the SAME (reused) customer — never a brand-new customer.
+    const stripe = makeFakeStripeClient(async (id) =>
+      fakeSubscription({ id, customer: canceled.stripeCustomerId, status: 'active' }),
+    );
+    const event = checkoutCompletedEvent({
+      id: 'evt_reactivate',
+      organizationId: orgId,
+      subscriptionId: 'sub_reactivated',
+    });
+
+    const outcome = await processStripeEvent({ db, stripe, priceIds: PRICE_IDS }, event);
+    expect(outcome).toBe('processed');
+    expect(stripe.cancelCalls).toEqual([]);
+
+    const after = await getSubscription(db, toOrganizationId(orgId));
+    expect(after).toMatchObject({
+      stripeCustomerId: canceled.stripeCustomerId,
+      stripeSubscriptionId: 'sub_reactivated',
+      status: 'active',
+    });
   });
 });
 

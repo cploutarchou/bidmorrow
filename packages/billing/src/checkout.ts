@@ -133,10 +133,37 @@ export async function createCheckoutSession(
 
   const priceId = priceIdForPlan(deps.priceIds, args.plan);
   const metadata = { organizationId: args.organizationId, plan: args.plan };
+
+  // SEC-P9-03: re-read immediately before the Stripe network call. This
+  // narrows — but cannot close — the classic check-then-act race: two
+  // concurrent requests can both pass the FIRST `getSubscription` guard
+  // above (neither sees a row yet), and both still reach this point before
+  // either's Checkout session is completed by the owner. This second read
+  // shrinks the window from "guard + the full Stripe API round trip" down
+  // to just this DB round trip, which is not zero but is the cheapest
+  // narrowing available without a distributed lock or a schema change (both
+  // out of scope here). The residual race is closed authoritatively
+  // server-side in the webhook processor, not here: if the owner completes
+  // BOTH sessions anyway, `webhook.ts`'s `syncSubscriptionState` detects the
+  // second webhook's Stripe customer id doesn't match this organization's
+  // existing (still non-canceled) row and cancels+reconciles the duplicate
+  // Stripe subscription automatically, so a still-open window here can
+  // never wedge a webhook or orphan a live subscription undetected.
+  const recheck = await getSubscription(deps.db, args.organizationId);
+  if (recheck !== null && blocksNewCheckout(recheck.status)) {
+    throw new SubscriptionAlreadyExistsError(args.organizationId);
+  }
+
+  // Deliberately reads off `recheck` (the freshest row), not `existing`
+  // (the first, staler read) — if a row appeared between the two reads
+  // (e.g. a canceled row written by a webhook that raced this request),
+  // reusing its `stripe_customer_id` here is exactly the reactivation
+  // behavior described in this file's header, and it also means the
+  // second read above is not wasted on the happy path.
   const session = await deps.stripe.checkout.sessions.create({
     mode: 'subscription',
     client_reference_id: args.organizationId,
-    ...(existing?.stripeCustomerId !== undefined ? { customer: existing.stripeCustomerId } : {}),
+    ...(recheck?.stripeCustomerId !== undefined ? { customer: recheck.stripeCustomerId } : {}),
     line_items: [{ price: priceId, quantity: 1 }],
     metadata,
     subscription_data: { metadata },

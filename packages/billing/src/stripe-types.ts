@@ -20,6 +20,16 @@ export interface BillingPortalSessionsClient {
 
 export interface SubscriptionsClient {
   retrieve(id: string): Promise<Stripe.Subscription>;
+  /**
+   * SEC-P9-03 reconciliation: cancels a duplicate Stripe subscription
+   * created by a concurrent double-checkout. Signature copied from the
+   * installed SDK's `esm/resources/Subscriptions.d.ts`:
+   * `cancel(id: string, params?: SubscriptionCancelParams, options?:
+   * RequestOptions): Promise<Response<Subscription>>` — `params` is
+   * optional there but this client always passes `cancellation_details` for
+   * an auditable trail in the Stripe dashboard, so it is required here.
+   */
+  cancel(id: string, params: Stripe.SubscriptionCancelParams): Promise<Stripe.Subscription>;
 }
 
 /** The slice of `Stripe` used by createCheckoutSession/createPortalSession. */

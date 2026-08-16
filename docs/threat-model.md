@@ -252,17 +252,23 @@ verbatim off the webhook body's mutable fields), so a webhook body crafted
 with a real, currently-valid signature but stale/tampered mutable fields
 still cannot write state Stripe itself doesn't currently hold.
 `cancelSubscriptionForOrgDeletion` (Phase 11, org-deletion cancellation)
-follows the identical "trust identity, re-fetch state" shape. **Residuals
-carried from the Phase 9 security review, not yet closed**: SEC-P9-02 — the
-unauthenticated `POST /api/webhooks/stripe` endpoint has no dedicated
-WAF/rate-limit rule yet, mitigated only by the global body-size limit (see
-SEC-P4-09 below) and cheap pre-DB 400s on an invalid signature; add a
-Cloudflare WAF/rate-limit rule at deploy time. SEC-P9-03 — a user who
-double-submits Stripe Checkout (e.g. a slow network retry) can create two
-Stripe customers for the same organization; the second webhook then updates
-the wrong/orphaned customer row and "wedges" rather than reconciling
-(owner-self-inflicted, no cross-tenant impact) — pre-create the Stripe
-customer server-side or add catch-and-reconcile logic.
+follows the identical "trust identity, re-fetch state" shape. **Phase 9
+residuals, CLOSED 2026-08-16 (Phase 13 hardening)**: SEC-P9-02 — the
+unauthenticated `POST /api/webhooks/stripe` endpoint is now gated by the
+same IP-keyed native rate-limit binding as the rest of the API surface
+(`createIpRateLimit`, applied BEFORE signature verification spends CPU on
+attacker-supplied bodies; Stripe retries deliveries that hit a 429), in
+addition to the global body-size limit (SEC-P4-09 below) and cheap pre-DB
+400s on an invalid signature — an in-worker control, so it needs no
+per-zone WAF console configuration and cannot drift from the deploy.
+SEC-P9-03 — a user who double-submits Stripe Checkout (e.g. a slow network
+retry) could create two Stripe customers for the same organization and
+wedge the second webhook on the org-unique subscription row: the webhook
+processor now catch-and-reconciles (detects a subscription-bearing event
+for an org whose non-canceled row holds a DIFFERENT `stripe_customer_id`,
+cancels the duplicate Stripe subscription so the owner is not
+double-charged, records the event, and acks 200 so Stripe stops retrying —
+logged loudly; see `packages/billing/src/webhook.ts`).
 
 ### 4.4 TED ingestion & matching (A4, A5, and the engine) — Tampering / DoS
 
@@ -464,14 +470,13 @@ GitHub Action exfiltrating CI secrets — currently the most active real-world
 attack class. **L: M / I: H.** Mitigations: lockfile committed and CI installs
 with frozen lockfile; Dependabot/`npm audit` gating with prompt patching of
 critical advisories; minimal dependency posture (V1 explicitly avoids
-analytics SDKs, LLM SDKs, session replay — see product scope); **correction
-(2026-08-15 review): GitHub Actions workflows are currently pinned to version
-TAGS (e.g. `actions/checkout@v4`), NOT commit SHAs** — a prior version of this
-document claimed SHA-pinning, which does not match the actual workflow files;
-tag-pinning is weaker (a republished/compromised tag changes what CI runs
-without a new commit in this repo) — tracked as a residual risk above and a
-deploy-hardening follow-up ("pin GitHub Actions to commit SHAs",
-IMPLEMENTATION_LEDGER.md); C11 — read-only reviewer agents and scoped tokens
+analytics SDKs, LLM SDKs, session replay — see product scope); **GitHub
+Actions workflows are pinned to commit SHAs as of 2026-08-16** (Phase 13
+hardening; every `uses:` in `.github/workflows/*.yml` carries the full
+commit SHA with the tag as a trailing comment — a 2026-08-15 review had
+found only mutable tag-pinning and tracked this as a follow-up, now
+closed; keep new workflow steps SHA-pinned); C11 — read-only reviewer
+agents and scoped tokens
 limit what compromised tooling can reach; C10 — CI secrets exposed only to
 the deploy job in the protected environment; C3 means even a compromised
 frontend dependency cannot load remote script or beacon to arbitrary origins;
@@ -531,6 +536,12 @@ admin surface updated + C5's `SameSite=Strict` claim corrected to reality
 (single shared session cookie, Better Auth default `Lax`); T21's GitHub
 Actions claim corrected from SHA-pinned to tag-pinned + ledger follow-up
 recorded; SEC-P4-09 deltas closed out (cf-connecting-ip keying, global body
-limit, account-deletion compensation)). Status: V1 baseline — written against
+limit, account-deletion compensation)). 2026-08-16 (Phase 13 hardening):
+SEC-P9-02 closed (in-worker IP rate limit on the Stripe webhook route,
+before signature verification), SEC-P9-03 closed (webhook double-checkout
+catch-and-reconcile), T21 GitHub Actions now genuinely SHA-pinned, T12/T16
+rate-limit coverage extended to `/api/admin/*` and `/api/account/*`
+(P10-R-04), and FK enforcement is verified live (`PRAGMA foreign_keys`) at
+every deploy. Status: V1 baseline — written against
 the assumed architecture; reconcile with docs/architecture.md when it lands
 (trigger #1 applies if they diverge)._
