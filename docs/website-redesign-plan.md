@@ -151,6 +151,81 @@ The one visual move no competitor can copy without changing their
 product: making the deterministic score breakdown the hero image — in
 Direction D, a floating frosted-glass score card.
 
+### 4a. Premium-2026 treatment (owner's expanded brief, 2026-08-17)
+
+- **Motion design** (all behind `prefers-reduced-motion`, CSS-first, no
+  animation libraries): one orchestrated hero entrance (staggered
+  fade/rise, 300–500 ms, once), scroll-triggered section reveals
+  (IntersectionObserver toggling a class — CSP-safe), hover/press states
+  on every interactive element (150 ms ease-out; defined per component
+  in the system: hover raise on cards, press scale on buttons), a
+  count-up on the hero score figure (deterministic number animating to
+  84.5 — motion that _demonstrates the product's identity_), skeleton
+  shimmer for loading. No parallax, no scroll-jacking.
+- **Gradients/textures**: subtle only — a soft radial wash on the hero
+  ground (lavender→blue tint at ≤ 6% saturation, macOS-wallpaper
+  register) and optional ultra-fine noise on large surfaces; never
+  behind body text, never as the accent's competitor. No loud
+  multi-color gradient heroes (the 2023–24 SaaS cliché).
+- **Interaction states**: full matrix specced per component in M0 —
+  default/hover/active/focus-visible/disabled/loading — with tokens for
+  each, so states are designed once, not improvised per page.
+
+### 4b. Interactive & rich elements policy (what's in, what's not, why)
+
+IN this cycle (each improves clarity for a skeptical technical buyer):
+
+- **Interactive scoring demo** (D9 — now recommended YES per the
+  owner's expanded brief): a marketing-page widget with static bundled
+  sample data (sanitized real fixtures) — pick one of the 4 preset
+  profiles, watch 3–4 real notices score live with visible point
+  breakdowns. Pure client-side, no backend, no analytics, CSP-safe.
+  Deterministic scoring makes this uniquely cheap for us and impossible
+  for LLM competitors to ship as a static page.
+- **Animated feature previews**: CSS/SVG-animated UI vignettes (digest
+  email arriving, feed reordering by score) — hand-authored, no video.
+- **FAQ accordions**: native `<details>/<summary>` (accessible,
+  zero-JS), on Home — objection handling (coverage, "is this AI?",
+  cancellation, no-relevant-tenders case). The pricing page stays
+  frozen per directive, so the FAQ lives on Home/How-it-works.
+- **Honest comparison module**: "BidMorrow vs typical tender-alert
+  services" — attribute rows (price transparency, monthly vs annual
+  upfront, explainable scoring, methodology published, trackers) with
+  UNNAMED "typical" column, every row sourced from the documented
+  research. Naming competitors would require re-verified per-claim
+  evidence (decision D11 if the owner wants a named table).
+
+OUT this cycle, with reasons:
+
+- **Testimonials/logos**: zero customers + product-truth rules ban
+  fabrication. The section ships as a design slot only when real pilot
+  customers exist and consent (D10). Never faked, never "coming soon".
+- **Sliders/carousels**: documented clarity anti-pattern (hidden
+  content, poor a11y); the brief itself says "only where they improve
+  clarity" — they don't here.
+- **Video sections**: heavy assets + production cost; CSS/SVG animation
+  delivers the same clarity within CSP/self-host constraints. Revisit
+  post-launch if real product video is produced.
+- **Stock photography / decorative AI imagery**: never — real UI only.
+
+### 4c. Visual assets strategy (original or licensed, all self-hosted)
+
+- **Icons**: a single consistent open-source set (Lucide, ISC license),
+  subset to what's used, inlined as React SVG components — no icon
+  font, no CDN. Covers UI + marketing.
+- **Illustrations/diagrams**: original geometric SVGs authored in-repo
+  (data-flow: TED → parse → score → shortlist → digest; coverage map
+  motif), drawn from the design tokens so they theme automatically.
+- **Product imagery**: REAL screenshots only, generated reproducibly by
+  a Playwright capture script against seeded local data (both themes,
+  retina scale) once M1/M2 restyles land — marketing images regenerate
+  whenever the UI changes, so they never lie.
+- **Background visuals**: the §4a gradient wash + optional noise,
+  generated CSS/SVG, no raster downloads.
+- **OG/social image**: designed static asset, self-hosted.
+- Licensing rule: OFL/ISC/MIT assets only, licenses recorded in
+  docs/dependency-versions.md; no unlicensed or "found" assets.
+
 ## 5. UI design system (M0 deliverable)
 
 Vanilla CSS custom properties — **no Tailwind, no CSS-in-JS** (CSP-safe by
@@ -377,13 +452,15 @@ the owner-gated production workflow (bundled with go-live, or on owner
 request in between).
 
 **M0 — Design foundations & platform hygiene** (est. 1 session)
-Tokens + type scale + fonts + layout-width fix + themed status colors +
-wordmark/favicon/OG assets + robots/sitemap/meta/titles + `noindex` on
-app shells. All pages restyled by tokens only (no structural rewrites).
-Accept: all suites + axe green; width bug gone (header/main/footer share
-one max-width at 360/768/1024/1440px); both themes AA-contrast for every
-token pair; fonts self-hosted ≤ 90 KB; CSP tests byte-identical; no new
-runtime deps.
+Tokens (incl. motion tokens + full interaction-state matrix per §4a) +
+type scale + fonts + layout-width fix + themed status colors + icon set
+(Lucide subset, inlined SVG) + wordmark/favicon/OG assets +
+robots/sitemap/meta/titles + `noindex` on app shells. All pages restyled
+by tokens only (no structural rewrites). Accept: all suites + axe green;
+width bug gone (header/main/footer share one max-width at
+360/768/1024/1440px); both themes AA-contrast for every token pair;
+fonts self-hosted ≤ 90 KB; icon licenses recorded; CSP tests
+byte-identical; no new runtime deps beyond static SVG components.
 
 **M1 — Client onboarding overhaul** (est. 1–2 sessions; **owner
 priority 2026-08-17**) — the §6a setup-assistant experience: automatic
@@ -407,16 +484,22 @@ including new 402 + success-route assertions; keyboard spec green
 (segmented control keyboard model); axe green on app states; optimistic
 save/ignore behavior unchanged; no server authz logic moved client-side.
 
-**M3 — Marketing site redesign** (est. 1–2 sessions) —
+**M3 — Marketing site redesign** (est. 2 sessions) —
 Home/How-it-works/Methodology/Pilot/Contact per §7 in the Mac Modern
 system; **Pricing/Privacy/Terms visual restyle only, zero content
-changes** (owner directive); ScoreBreakdownTable worked-example hero;
-copy updates (non-pricing pages) with their locked tests. Accept: every
-claim traceable to a doc or guardrail (product agent sign-off on copy);
-marketing spec + new assertions green; pricing copy assertions untouched
-and green; axe green on all marketing pages; responsive at 4 widths; OG
-cards render (manual check); disclaimers/attribution present exactly as
-before.
+changes** (owner directive); ScoreBreakdownTable worked-example hero
+with count-up + hero entrance; **interactive scoring demo** (§4b, D9);
+FAQ accordions; honest unnamed comparison module; animated feature
+previews; original SVG diagrams; real-screenshot capture pipeline
+(Playwright against seeded local data, both themes); copy updates
+(non-pricing pages) with their locked tests. Accept: every claim
+traceable to a doc or guardrail (product agent sign-off on copy — demo
+data traceable to sanitized fixtures); marketing spec + new assertions
+green (incl. demo interaction + FAQ semantics); pricing copy assertions
+untouched and green; axe green on all marketing pages incl. the demo
+widget; responsive at 4 widths; all motion inert under
+`prefers-reduced-motion`; OG cards render (manual check);
+disclaimers/attribution present exactly as before.
 
 **M4 — Performance, QA hardening & reviews** (est. 1–2 sessions) — code
 splitting (marketing/app/admin; ≤ 150 KB marketing entry, admin absent
@@ -431,11 +514,14 @@ tag → Phase 14 audit → owner go-live).
 
 ## 12. Workstream/role mapping
 
-UX research (done) · product/UI design (Direction A system + page specs —
-lead session with `product` copy sign-off) · frontend (`frontend` agent,
+UX research (done — snippets + owner screenshot + CI rendered-page
+capture) · product/UI design (Direction D system + page specs — lead
+session with `product` copy sign-off) · **visual design** (icons,
+original SVG illustrations, gradient/texture system, OG image,
+screenshot pipeline — §4c) · frontend (`frontend` agent,
 implementation) · backend (`backend` agent, only if D6/D7 approved) ·
 security (`security` agent, read-only reviews M0/M1/M2) · accessibility/
-performance (dedicated pass in M4 + budgets in M0/M3) · QA (`qa` agent,
+performance (dedicated pass in M4 + budgets in M0/M4) · QA (`qa` agent,
 spec extensions + visual baselines) · `production-reviewer` at every
 milestone end. All specialists operate as senior reviewers of their own
 lane; no fabricated credentials or employment claims anywhere.
@@ -472,6 +558,15 @@ accepts these as stated):
   cookies): default NO for this cycle.
 - **D8 — Founder note on Pilot page** (named, honest solo framing):
   owner's personal call; default NO until owner opts in.
-- **D9 — Interactive scoring demo widget** (static bundled sample data,
-  no backend): guardrail review says the static worked example delivers
-  most of the value; default NO this cycle.
+- **D9 — Interactive scoring demo widget**: RESOLVED YES by the owner's
+  expanded brief (interactive product demos requested) — static bundled
+  sample data from sanitized real fixtures, pure client-side, §4b.
+- **D10 — Testimonials/customer logos**: NO until real pilot customers
+  exist AND consent — product-truth rules ban fabrication; the design
+  reserves the slot, ships nothing fake. Revisit after the first
+  consenting pilot customers.
+- **D11 — Named-competitor comparison table**: default NO — the
+  comparison module ships with an unnamed "typical tender-alert
+  service" column (every row sourced from the research). Naming
+  competitors requires re-verified per-claim evidence; owner may opt in
+  later.
