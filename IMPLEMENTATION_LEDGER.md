@@ -43,6 +43,23 @@ pending).** State as of 2026-08-16:
 
 ### Phase 13 progress (2026-08-16)
 
+**PRE-FIRST-INGESTION GATES: PASSED** (ted-gates workflow run #3, live
+TED API from GitHub runners). The gate caught and we fixed TWO real
+query-grammar bugs before any ingestion ran (both would have broken the
+first window): (1) `SORT BY publication-date ASC` rejected — no direction
+token allowed (probe: bare/`SORT BY field`/`DESC` all accepted, only
+`ASC` invalid); (2) ISO `YYYY-MM-DD` dates rejected — pattern is
+`[0-9]{8}|today(±N)`, now converted at the query boundary (`toTedDate`).
+PRs #16/#17. **Volume measured** (2026-08-07..13): 141/0/0/173/149/119/
+132 → weekday avg ≈143/day, incl-weekend ≈102/day — inside the
+150–300/day assumption, no tightening (ADR-0003 trigger >600); recorded
+in docs/cost-model.md. Weekend days are 0 (TED publishes weekdays only).
+Unpause: MCP connector d1_database_query 403s (account not authorized
+for data-plane queries), so `.github/workflows/staging-flag.yml`
+(dispatchable, key/value choice inputs, staging environment creds) flips
+`ingestion_paused` from CI. Ingest cron: daily 05:00 UTC; first unpaused
+run is a bounded first-run window.
+
 **STAGING IS LIVE: https://bidmorrow-staging.cploutarchou.workers.dev**
 (deploy run #3, workflow "Deploy staging", all 14 steps green, ~65s).
 Timeline: run #1 created all 6 queues then failed on R2-not-enabled
