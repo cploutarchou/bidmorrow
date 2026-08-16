@@ -198,10 +198,18 @@ Needed for: terms, privacy policy, Stripe account, invoices.
 **Decided by owner**: operate as an **Individual / sole trader** using a
 personal tax ID (no registered company) — Stripe business type "Individual".
 
+**Decided by owner 2026-08-16**: the terms/privacy pages publish **no
+postal address** — contact is **email-only** (`support@bidmorrow.com` for
+terms/general, `privacy@bidmorrow.com` for data requests). Implemented in
+Terms.tsx/Privacy.tsx the same day. Known trade-off (owner informed): some
+EU member states' e-commerce rules (strictest: German-style Impressum)
+expect an address; can be added later with a one-line edit if ever needed.
+⚠️ Consequence: item 2's email-forwarding test is now REQUIRED, not
+optional — the published support@/privacy@ inboxes must actually deliver
+(Cloudflare Email Routing if the old Namecheap forwarding is dead).
+
 Still open:
 
-- Registered address + contact email for privacy requests (terms/privacy
-  pages need them before launch).
 - Decision: is Stripe Tax needed at launch (EU B2B reverse charge)? Default
   assumption: launch B2B-only, collect VAT ID at checkout via Stripe; confirm.
 

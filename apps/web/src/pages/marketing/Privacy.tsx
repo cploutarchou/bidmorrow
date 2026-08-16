@@ -44,6 +44,14 @@ export function Privacy(): ReactElement {
         You can delete your account and its data from Settings at any time, subject to organization
         transfer/ownership constraints described there.
       </p>
+      <h2>Contact &amp; data requests</h2>
+      {/* Owner decision 2026-08-16: contact is email-only — no postal
+          address published (HUMAN_DECISION_BLOCKERS item 7). */}
+      <p>
+        Privacy questions and data requests (access, correction, deletion):{' '}
+        <a href="mailto:privacy@bidmorrow.com">privacy@bidmorrow.com</a>. General support:{' '}
+        <a href="mailto:support@bidmorrow.com">support@bidmorrow.com</a>.
+      </p>
     </>
   );
 }
