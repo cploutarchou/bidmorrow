@@ -166,13 +166,21 @@ jobs:
           base='https://bidmorrow.com'
           echo "smoke: $base"
           # First deploy: DNS record + certificate for the custom domain are
-          # provisioned during the deploy — allow up to ~2 minutes.
+          # provisioned during the deploy — allow up to ~2 minutes. Each
+          # attempt prints status + body head so a failure is diagnosable
+          # from the log instead of a blind curl -sf.
           ok=""
           for i in $(seq 1 12); do
-            if curl -sf "$base/api/health/live" | grep -q '"ok"'; then ok=1; break; fi
-            echo "health not up yet (attempt $i) — domain/cert may still be provisioning"; sleep 10
+            code=$(curl -s -o /tmp/health.out -w '%{http_code}' --max-time 15 "$base/api/health/live" 2>/dev/null || true)
+            if [ "$code" = "200" ] && grep -q '"ok"' /tmp/health.out; then ok=1; break; fi
+            echo "attempt $i: status=${code:-connection-error} body=$(head -c 200 /tmp/health.out 2>/dev/null | tr -d '\n')"
+            sleep 10
           done
-          [ -n "$ok" ] || { echo "production health check failed"; exit 1; }
+          [ -n "$ok" ] || {
+            echo "production health check failed — verbose diagnostics follow:"
+            curl -v --max-time 20 "$base/api/health/live" 2>&1 | tail -50 || true
+            exit 1
+          }
           curl -sf "$base/api/health/ready" | grep -q '"ok"'
           curl -sfI "$base/" | grep -qi 'content-security-policy'
           # E2E test hooks MUST be dead on production (double gate).
