@@ -8,6 +8,42 @@ Status legend: `OPEN` (needs human), `PROVIDED` (done), `DEFERRED` (not needed y
 
 ---
 
+## OPEN ITEMS SNAPSHOT — 2026-08-16 (production launch checklist)
+
+Everything below is detailed in the numbered items further down; this is
+the consolidated to-do. Nothing else blocks launch on the owner side.
+
+1. **`production` GitHub environment secrets** (repo → Settings →
+   Environments → production): `CLOUDFLARE_API_TOKEN` +
+   `CLOUDFLARE_ACCOUNT_ID` (item 1), live-mode `STRIPE_SECRET_KEY` +
+   `STRIPE_PRICE_FOUNDING_MONTHLY` + `STRIPE_PRICE_STANDARD_MONTHLY` +
+   `STRIPE_WEBHOOK_SECRET` (item 4), production `RESEND_API_KEY`
+   (item 3.2). Variables: `ADMIN_EMAILS`; `EMAIL_FROM` after item 2.3.
+   (`BETTER_AUTH_SECRET` already set ✓.)
+2. **Required reviewers on the `production` environment** (item 8.2) so
+   every production deploy needs a human click.
+3. **Branch protection on `main`** (item 8.1): require PR + green status
+   checks (`checks`, `secret-scan`); leave required approvals at 0 unless
+   the owner wants to hand-approve every Claude PR.
+4. **Resend domain verification** (items 2.3/3.1): SPF/DKIM/DMARC records
+   from the Resend console into the Cloudflare zone — gates ALL real
+   email (staging signup verification too). Then create the production
+   API key and set `EMAIL_FROM`.
+5. **Stripe live mode** (item 4): activate as Individual, recreate
+   products/prices, register the live webhook for
+   `https://bidmorrow.com/api/webhooks/stripe` (can be done BEFORE the
+   first deploy — the URL is fixed), enable Customer Portal (both modes).
+6. **Legal inputs** (item 7): postal/registered address + privacy contact
+   email for the terms/privacy pages; confirm the default VAT approach
+   (B2B-only, collect VAT ID at checkout) or ask for Stripe Tax.
+
+Then launch = dispatch the **Deploy production** workflow (Actions tab)
+and approve it; it bootstraps prod D1/queues/R2, migrates, deploys,
+attaches bidmorrow.com, pushes secrets, and smoke-tests. Production
+comes up with ingestion paused — unpausing is the final deliberate step.
+
+---
+
 ## 1. Cloudflare account & deployment credentials — PROVIDED (2026-08-15)
 
 **Provided**: the Cloudflare account is connected to the Claude session via
@@ -25,12 +61,12 @@ A `production` GitHub environment also exists.
 **Workers Paid plan ($5/mo) purchased 2026-08-15** (dashboard shows
 "Current plan: Paid") — Queues available.
 
-**One remaining console action (found 2026-08-16 at first provisioning):
-enable R2 once** — Dashboard → **R2** → Enable/accept terms. Bucket
-creation via API returns 403 code 10042 ("Please enable R2 through the
-Cloudflare Dashboard") until this is done; the free tier (10 GB) covers
-staging+production snapshots. After enabling, re-run the "Deploy staging"
-GitHub workflow — it creates the bucket itself.
+~~One remaining console action: enable R2 once~~ **DONE 2026-08-16**
+(owner enabled R2 in the dashboard; the staging deploy then created the
+bucket itself). **Item 1 fully PROVIDED for staging.** For production:
+confirm `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` are also set in
+the GitHub **`production` environment** secrets (same token is fine, or
+mint a second one with identical scopes per docs/setup-guide.md § 2a).
 
 ## 2. Domain & DNS for bidmorrow.com — PARTIALLY PROVIDED (2026-08-15)
 
@@ -76,10 +112,15 @@ test-mode keys are still human-provided (never invented).
 **Provided**: Stripe account created (test mode); Founding/Standard
 products+prices created; `STRIPE_SECRET_KEY`,
 `STRIPE_PRICE_FOUNDING_MONTHLY`, `STRIPE_PRICE_STANDARD_MONTHLY` stored in
-the GitHub `staging` environment secrets. Remaining: webhook endpoint +
-`STRIPE_WEBHOOK_SECRET` (needs the deployed staging URL — Phase 13; must be
-created with API version `2026-07-29.dahlia` and the 6-event set), Customer
-Portal activation (unconfirmed), live-mode repeat before launch.
+the GitHub `staging` environment secrets. **Test-mode webhook +
+`STRIPE_WEBHOOK_SECRET` PROVIDED 2026-08-16** (registered against the
+staging workers.dev URL, API version `2026-07-29.dahlia`, 6-event set;
+secret pushed to the staging Worker). Remaining for launch: **live-mode
+repeat** — activate the account (business type Individual), recreate the
+two products/prices in live mode, live webhook against
+`https://bidmorrow.com/api/webhooks/stripe`, live keys into the
+`production` environment secrets — and Customer Portal activation in
+BOTH modes (unconfirmed).
 
 **No registered company needed** (owner question 2026-08-15): Stripe supports
 signing up as an **Individual / sole trader** — during activation pick

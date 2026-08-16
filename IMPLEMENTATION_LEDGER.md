@@ -12,12 +12,13 @@ Time Travel drills passed, production deploy workflow merged (see
 "Phase 13 progress" below). Remaining in phase: verify the first real
 ingestion (05:00 UTC cron on 2026-08-17; self check-in armed for 05:40
 UTC), fixture refresh from the ingestion's R2 snapshots, then security
-+ production-reviewer sign-offs and the phase tag. Production launch
-itself is blocked on owner items (production environment secrets,
-required reviewers, Resend domain DNS). Phase 12's state record kept
-below:
 
-- **Stage A (E2E + accessibility) COMPLETE, 25/25 green** (`pnpm test:e2e`):
+- production-reviewer sign-offs and the phase tag. Production launch
+  itself is blocked on owner items (production environment secrets,
+  required reviewers, Resend domain DNS). Phase 12's state record kept
+  below:
+
+* **Stage A (E2E + accessibility) COMPLETE, 25/25 green** (`pnpm test:e2e`):
   critical-path journey (signup → mailbox-hook verification → login →
   10-step onboarding → score-now hook → feed → detail → save/ignore/
   feedback → settings incl. real 422 keyword-cap → sole-owner-deletion 409
@@ -26,7 +27,7 @@ below:
   Double-gated test hooks (`isE2ETestHooksEnabled`): mailbox capture +
   score-now, both with ungated-404 tests. docs/accessibility-review.md
   written with honest not-checked scope.
-- **The E2E suite caught and we fixed 3 REAL product bugs** (commit
+* **The E2E suite caught and we fixed 3 REAL product bugs** (commit
   8ff1ce9): (1) org list GETs returned raw DB rows → every Settings list
   save 400'd against `.strict()` schemas — responses now DTO-mapped (also
   response minimization); (2) logout was broken — Better Auth sign-out
@@ -38,7 +39,7 @@ below:
   keys (empty string ≠ undefined flipped provider checks), digest
   schedule job clock now injectable (test failed for real 00:00–06:00
   UTC), keyboard spec drives focus via real Tab (`:focus-visible`).
-- **Stage B (analysis + fixes)**: docs/phase12-quality-findings.md
+* **Stage B (analysis + fixes)**: docs/phase12-quality-findings.md
   (query-plan pass, testing-gap sweep, E2E-in-CI decision). Applied:
   migration 0007 feed covering index (P-1, zero-drift proven); queue-
   dispatcher + rate-limit middleware tests (both HIGH gaps closed; 429
