@@ -13,8 +13,8 @@ export function Pilot(): ReactElement {
       <h1>Founding pilot</h1>
       <p>
         We're opening BidMorrow to a first cohort of up to 20 customers at the founding price of
-        €29/month. In exchange, we ask for your honest feedback — what's useful, what's noise, and
-        what would make you actually rely on this every day.
+        €29/month (excl. VAT). In exchange, we ask for your honest feedback — what's useful, what's
+        noise, and what would make you actually rely on this every day.
       </p>
       <h2>What you get</h2>
       <ul>

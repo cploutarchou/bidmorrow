@@ -33,9 +33,12 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
    products/prices, register the live webhook for
    `https://bidmorrow.com/api/webhooks/stripe` (can be done BEFORE the
    first deploy — the URL is fixed), enable Customer Portal (both modes).
-6. **Legal inputs** (item 7): postal/registered address + privacy contact
-   email for the terms/privacy pages; confirm the default VAT approach
-   (B2B-only, collect VAT ID at checkout) or ask for Stripe Tax.
+6. **Legal inputs** (item 7): ~~postal address + privacy email~~ DECIDED
+   2026-08-16 (email-only contact, implemented). ~~VAT approach~~ DECIDED
+   2026-08-16: **Stripe Tax** — remaining owner action: activate Stripe
+   Tax in the Dashboard (BOTH modes: origin address + registrations +
+   default tax behavior "Exclusive"), then tell Claude to flip the
+   `stripe_tax_enabled` flag (details in item 7).
 7. **Test-mode Stripe webhook URL update** (added 2026-08-16, after the
    staging custom-domain switch): Stripe Dashboard → test mode →
    Webhooks → the `bidmorrow` staging endpoint → **edit the endpoint
@@ -198,12 +201,35 @@ Needed for: terms, privacy policy, Stripe account, invoices.
 **Decided by owner**: operate as an **Individual / sole trader** using a
 personal tax ID (no registered company) — Stripe business type "Individual".
 
-Still open:
+**Decided by owner 2026-08-16**: the terms/privacy pages publish **no
+postal address** — contact is **email-only** (`support@bidmorrow.com` for
+terms/general, `privacy@bidmorrow.com` for data requests). Implemented in
+Terms.tsx/Privacy.tsx the same day. Known trade-off (owner informed): some
+EU member states' e-commerce rules (strictest: German-style Impressum)
+expect an address; can be added later with a one-line edit if ever needed.
+⚠️ Consequence: item 2's email-forwarding test is now REQUIRED, not
+optional — the published support@/privacy@ inboxes must actually deliver
+(Cloudflare Email Routing if the old Namecheap forwarding is dead).
 
-- Registered address + contact email for privacy requests (terms/privacy
-  pages need them before launch).
-- Decision: is Stripe Tax needed at launch (EU B2B reverse charge)? Default
-  assumption: launch B2B-only, collect VAT ID at checkout via Stripe; confirm.
+**Decided by owner 2026-08-16**: **use Stripe Tax** (over the B2B-only
+reverse-charge default). Prices are tax-exclusive; Checkout calculates
+VAT automatically and collects VAT IDs from business customers. Code side
+implemented behind the `stripe_tax_enabled` feature flag (default OFF so
+checkout keeps working until activation). **Owner console actions
+required before the flag is turned on — in BOTH test and live modes**:
+
+1. Stripe Dashboard → Settings → **Tax** → activate Stripe Tax. Set the
+   **origin address** (your address — used internally by Stripe for tax
+   calculation; it is NOT published on our pages).
+2. **Add your tax registration(s)** under Tax → Registrations — at
+   minimum your home-country VAT registration (or OSS). Stripe Tax only
+   collects for jurisdictions with a registration; it monitors
+   thresholds elsewhere.
+3. Set the **default product tax behavior to "Exclusive"** (Tax
+   settings) so €29/€49 stay net prices with VAT added on top — OR set
+   tax_behavior=exclusive on each of the 4 prices (2 test, 2 live).
+4. Tell Claude — the `stripe_tax_enabled` flag is then flipped on
+   (staging first, production at go-live) via the admin flags endpoint.
 
 ## 8. GitHub settings — PARTIALLY PROVIDED (2026-08-15)
 

@@ -27,6 +27,6 @@ test('pricing page renders both plans', async ({ page }) => {
   await page.goto('/pricing');
   await expect(page.getByRole('heading', { name: 'Founding plan' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Standard plan' })).toBeVisible();
-  await expect(page.getByText('€29 / month')).toBeVisible();
-  await expect(page.getByText('€49 / month')).toBeVisible();
+  await expect(page.getByText('€29 / month excl. VAT')).toBeVisible();
+  await expect(page.getByText('€49 / month excl. VAT')).toBeVisible();
 });

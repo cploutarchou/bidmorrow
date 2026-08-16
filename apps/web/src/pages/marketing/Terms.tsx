@@ -41,6 +41,13 @@ export function Terms(): ReactElement {
         the founding price, it's retained for the life of your subscription — it never auto-migrates
         to the standard price.
       </p>
+      <h2>Contact</h2>
+      {/* Owner decision 2026-08-16: contact is email-only — no postal
+          address published (HUMAN_DECISION_BLOCKERS item 7). */}
+      <p>
+        Questions about these terms:{' '}
+        <a href="mailto:support@bidmorrow.com">support@bidmorrow.com</a>.
+      </p>
     </>
   );
 }

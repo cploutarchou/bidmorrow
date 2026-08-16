@@ -28,6 +28,18 @@ export const FLAG_INGESTION_CPV_SCOPE = 'ingestion_cpv_scope';
  * `entitlement.active`.
  */
 export const FLAG_ENTITLEMENT_ENFORCED = 'entitlement_enforced';
+/**
+ * Stripe Tax switch for Checkout (2026-08-16 owner decision: automatic tax
+ * via Stripe Tax replaces the earlier B2B-only-default plan). Value shape: a
+ * bare JSON boolean, e.g. `"true"`. Default (absent) is `false` — Checkout
+ * keeps creating sessions with today's params (no `automatic_tax`/
+ * `tax_id_collection`) until the owner has activated Stripe Tax in the
+ * Stripe Dashboard for BOTH test and live mode (registrations, origin
+ * address, price `tax_behavior` — none of which this flag or any code path
+ * can configure) and flips this flag on. See
+ * `packages/billing/src/checkout.ts` for the Checkout-side wiring.
+ */
+export const FLAG_STRIPE_TAX = 'stripe_tax_enabled';
 
 export const FEATURE_FLAG_KEYS = [
   FLAG_FOUNDING_PLAN_OPEN,
@@ -36,6 +48,7 @@ export const FEATURE_FLAG_KEYS = [
   FLAG_DIGEST_PAUSED,
   FLAG_INGESTION_CPV_SCOPE,
   FLAG_ENTITLEMENT_ENFORCED,
+  FLAG_STRIPE_TAX,
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
