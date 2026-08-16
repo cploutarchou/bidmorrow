@@ -20,11 +20,13 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
    `STRIPE_WEBHOOK_SECRET` (item 4), production `RESEND_API_KEY`
    (item 3.2). Variables: `ADMIN_EMAILS`; `EMAIL_FROM` after item 2.3.
    (`BETTER_AUTH_SECRET` already set ✓.)
-2. **Required reviewers on the `production` environment** (item 8.2) so
-   every production deploy needs a human click.
-3. **Branch protection on `main`** (item 8.1): require PR + green status
-   checks (`checks`, `secret-scan`); leave required approvals at 0 unless
-   the owner wants to hand-approve every Claude PR.
+2. ~~**Required reviewers on the `production` environment**~~ **DONE
+   2026-08-16** (owner confirmed): every production deploy now waits for
+   the owner's Approve click in the Actions tab.
+3. ~~**Branch protection on `main`**~~ **DONE 2026-08-16** (owner
+   imported the `main-protection` ruleset: PR required, `checks` +
+   `secret-scan` status checks required, approvals 0, force-push and
+   deletion blocked).
 4. **Resend domain verification** (items 2.3/3.1): SPF/DKIM/DMARC records
    from the Resend console into the Cloudflare zone — gates ALL real
    email (staging signup verification too). Then create the production
@@ -39,13 +41,10 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
    Tax in the Dashboard (BOTH modes: origin address + registrations +
    default tax behavior "Exclusive"), then tell Claude to flip the
    `stripe_tax_enabled` flag (details in item 7).
-7. **Test-mode Stripe webhook URL update** (added 2026-08-16, after the
-   staging custom-domain switch): Stripe Dashboard → test mode →
-   Webhooks → the `bidmorrow` staging endpoint → **edit the endpoint
-   URL** to `https://staging.bidmorrow.com/api/webhooks/stripe`. Editing
-   the URL keeps the same signing secret — no secret rotation, no
-   redeploy needed. The old workers.dev URL stopped serving when
-   `workers_dev: false` deployed.
+7. ~~**Test-mode Stripe webhook URL update**~~ **DONE 2026-08-16**
+   (owner confirmed): the test-mode endpoint now targets
+   `https://staging.bidmorrow.com/api/webhooks/stripe`; signing secret
+   unchanged.
 
 Then launch = dispatch the **Deploy production** workflow (Actions tab)
 and approve it; it bootstraps prod D1/queues/R2, migrates, deploys,
@@ -234,10 +233,13 @@ required before the flag is turned on — in BOTH test and live modes**:
 ## 8. GitHub settings — PARTIALLY PROVIDED (2026-08-15)
 
 1. ~~Rename default branch to `main`~~ DONE (renamed from `master`;
-   ci.yml trigger updated the same day). Branch protection on `main`
-   (require PR + green CI) still unconfirmed.
-2. ~~Create a GitHub "production" environment~~ DONE — confirm it has
-   **Required reviewers** set so production deploys need a human click.
+   ci.yml trigger updated the same day). ~~Branch protection~~ DONE
+   2026-08-16: owner imported the `main-protection` ruleset (PR + green
+   `checks`/`secret-scan` required, approvals 0, force-push/deletion
+   blocked).
+2. ~~Create a GitHub "production" environment~~ DONE — ~~Required
+   reviewers~~ DONE 2026-08-16: production deploys now pause for the
+   owner's approval in the Actions tab.
 
 ---
 
