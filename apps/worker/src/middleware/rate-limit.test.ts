@@ -149,7 +149,8 @@ describe('route-group wiring (SEC-P9-02 / P10-R-04)', () => {
 
   it('P10-R-04: /api/admin/* is limiter-gated BEFORE the admin auth check', async () => {
     const app = mountApp(adminRoutes, '/api/admin');
-    // No session at all: if auth ran first this would be a 401; a 429
+    // No session at all: if auth ran first this would be a 404
+    // (requireInternalAdmin hides admin routes from non-admins); a 429
     // proves failed-auth hammering is throttled too.
     const response = await app.request(
       '/api/admin/flags',

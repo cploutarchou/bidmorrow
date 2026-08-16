@@ -103,6 +103,7 @@ describe('TedClient.searchNotices', () => {
       fields: ['publication-number'],
       limit: 250,
     });
+    expect(calls[0]?.headers['User-Agent']).toBe(TED_USER_AGENT);
     expect(response.notices).toEqual([{ 'publication-number': '00001-2026' }]);
     expect(response.totalNoticeCount).toBe(1);
     expect(response.iterationNextToken).toBeUndefined();

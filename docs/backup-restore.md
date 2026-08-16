@@ -1,9 +1,10 @@
 # Backup & Restore
 
-Definitive backup/restore procedure. **Status: Phase 0/1 — no production
-database exists; nothing here has been executed yet.** The staging restore
-test [validate: Phase 13] is mandatory before this document may be treated
-as proven.
+Definitive backup/restore procedure. **Status: PROVEN on staging —
+the mandatory Phase 13 drill PASSED on 2026-08-16** (execution record in
+"Staging restore test" below; RPO demonstrated at minute granularity,
+RTO ~11 min vs the 1 h target). Production (bidmorrow-production) uses
+the identical Time Travel mechanics; next drill due quarterly (2026-11).
 
 ## What protects what
 
@@ -32,13 +33,19 @@ as proven.
 
 ## Objectives
 
-Stated targets, to be validated by the Phase 13 staging drill — not yet
-demonstrated:
+Stated targets — **validated by the Phase 13 staging drill on 2026-08-16**
+(execution record in "Staging restore test" below):
 
 - **RPO ≤ 5 minutes effective** (Time Travel granularity is ~per-minute
-  within the 30-day window). [validate: Phase 13]
+  within the 30-day window). DEMONSTRATED 2026-08-16: restore targeted
+  `--timestamp 2026-08-16T13:00:00Z` exactly and verifiably undid a
+  13:23 UTC write (marker row returned with its original pre-13:00
+  `updated_at`).
 - **RTO ≤ 1 hour** for a full D1 restore including decision time, restore
-  execution, and smoke verification. [validate: Phase 13]
+  execution, and smoke verification. DEMONSTRATED 2026-08-16: the whole
+  drill sequence (bookmark → rollback → roll-forward deploy incl. smoke →
+  restore → verify → re-flip) took **~11 minutes** (13:44–13:55 UTC),
+  well inside the 1-hour target.
 - Anything older than 30 days is unrecoverable from Time Travel — long-term
   archival of TED content is R2's job; long-term archival of customer data
   beyond 30-day recovery is explicitly out of scope for V1.
@@ -112,3 +119,25 @@ Run on staging before the production launch, then quarterly:
 6. Record measured restore duration → confirms or corrects the RTO target;
    file results in the ops log. A failed or never-run drill blocks the
    production-readiness checklist (docs/production-checklist.md).
+
+### Execution record — 2026-08-16 (Phase 13 drill: PASSED)
+
+Run via the `staging-ops` workflow against `bidmorrow-staging`, evidence in
+IMPLEMENTATION_LEDGER.md ("ROLLBACK + TIME TRAVEL DRILLS"), 13:44–13:55 UTC:
+
+1. Bookmark captured `0000001e-00000000-000050c9-09eead…` (Actions run
+   31950678315).
+2. Rollback drill (run 31950784770): `wrangler rollback -y` moved staging
+   from version 0abde046 back to 65ce2bbf; post-rollback live health check
+   (live+ready) passed.
+3. Roll-forward: Deploy staging dispatch (run 31950899451) green incl.
+   smoke tests.
+4. Restore drill (run 31951034559): `d1 time-travel restore --timestamp
+2026-08-16T13:00:00Z` → bookmark `00000015-…`; marker SELECT returned
+   `ingestion_paused="true"` with the ORIGINAL seed `updated_at`
+   (1786843493000) — the 13:23 UTC flip was genuinely undone
+   (point-in-time recovery proven at minute granularity → RPO target met).
+5. Re-flip (staging-flag run 31951148876): `ingestion_paused="false"`.
+
+Measured end-to-end duration ~11 minutes → **RTO ≤ 1 h confirmed**. Next
+drill due quarterly (2026-11).

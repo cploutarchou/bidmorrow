@@ -74,8 +74,13 @@ env-specific resource names/ids — wrangler does not inherit bindings.
    then `wrangler deploy --env staging`, then automated smoke tests
    (health endpoint, login, one API round-trip).
 3. **Production deploy**: `.github/workflows/deploy-production.yml` —
-   dispatch-only, gated by the GitHub `production` environment (set
-   Required reviewers there). Steps: ensure queues/R2/D1 idempotently
+   dispatch-only, gated three ways (GitHub Required reviewers need
+   Enterprise on private repos, so they are NOT used): the `production`
+   environment is restricted to protected branches only, the dispatch
+   requires typing `confirm: deploy-production` (validated as the job's
+   first step), and by convention Claude never dispatches a production
+   deploy without explicit owner instruction. Steps: ensure
+   queues/R2/D1 idempotently
    (first run creates them; the resolved D1 id is patched into the
    checkout and printed as `PRODUCTION_D1_ID` for committing) → capture
    D1 Time Travel bookmark → apply migrations → verify FK enforcement
