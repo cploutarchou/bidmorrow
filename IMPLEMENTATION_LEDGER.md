@@ -53,6 +53,21 @@ UTC), fixture refresh from the ingestion's R2 snapshots, then security
 
 ### Phase 13 progress (2026-08-16)
 
+**STAGING CUSTOM DOMAIN (owner request, evening)**: staging moves from
+workers.dev to **https://staging.bidmorrow.com** — `workers_dev: false`
+
+- `routes` custom_domain in wrangler.jsonc env.staging (same auto-attach
+  mechanism as production's apex; 100117 at deploy = delete a conflicting
+  `staging` DNS record), static staging vars (no more per-deploy `--var`
+  workers.dev injection; the resolve-URL steps removed from
+  deploy-staging.yml and staging-ops.yml), smoke tests target the custom
+  domain with the same first-run provisioning retry as production. OWNER
+  ACTION recorded (blockers snapshot item 7): edit the test-mode Stripe
+  webhook endpoint URL to https://staging.bidmorrow.com/api/webhooks/stripe
+  (same signing secret, no rotation). First deploy on merge attaches the
+  domain; old workers.dev origin stops serving. Existing staging sessions
+  invalidate (origin change) — expected.
+
 **TRACKED HARDENING CLOSED (evening, PR #26)** — every follow-up carried
 in "Phase 9 follow-ups" / "Deploy-time hardening follow-ups" below plus
 the P-2/P10-R-04 review follow-up items:
@@ -92,6 +107,12 @@ the P-2/P10-R-04 review follow-up items:
   157 (3 new), db 52. threat-model §4.3 residuals + T21 + changelog
   updated; deployment.md CI/CD step 3 updated; phase12-quality-findings
   P-2 marked resolved.
+- **Hardening DEPLOYED to both environments**: staging auto-deploy
+  (31968470313) green on merge — first CI execution of the FK-verify
+  step and the SHA-pinned actions; production deploy **run #6**
+  (31968811076, dispatched from main @ bd2c2f6) green end-to-end incl.
+  live `PRAGMA foreign_keys`=1 and full smoke. Webhook/admin/account
+  rate limits + SEC-P9-03 reconcile are LIVE on bidmorrow.com.
 
 **PRODUCTION IS LIVE: https://bidmorrow.com (deploy run #5, 31966643429,
 19:08 UTC, all steps green incl. smoke)**. The road there took 5 runs,

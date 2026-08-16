@@ -1,17 +1,15 @@
 # Deployment
 
 Definitive deployment procedure for BidMorrow. **Status: Phase 13 —
-staging LIVE (2026-08-16)** at
-`https://bidmorrow-staging.cploutarchou.workers.dev`:
-`.github/workflows/deploy-staging.yml` auto-deploys every merge to `main`
-(queues/R2 ensured idempotently in the workflow), migrations applied to
-the remote D1 (WEUR), secrets pushed, CI smoke tests green, ingestion
-unpaused after the pre-first-ingestion gates passed. Staging runs on
-workers.dev only — the URL is computed per-deploy from the account
-subdomain and injected via `--var` (the staging vars in wrangler.jsonc
-are documentation). `bidmorrow.com` is production-only (see "Custom
-domain & DNS"). Remaining prerequisites live in
-HUMAN_DECISION_BLOCKERS.md.
+staging AND production LIVE (2026-08-16)**. Staging serves at
+`https://staging.bidmorrow.com` (custom domain since 2026-08-16;
+previously workers.dev): `.github/workflows/deploy-staging.yml`
+auto-deploys every merge to `main` (queues/R2 ensured idempotently in
+the workflow), migrations applied to the remote D1 (WEUR), secrets
+pushed, CI smoke tests green, ingestion unpaused after the
+pre-first-ingestion gates passed. Production serves at
+`https://bidmorrow.com` (see "Custom domain & DNS"). Remaining
+prerequisites live in HUMAN_DECISION_BLOCKERS.md.
 
 ## Environments
 
@@ -144,10 +142,14 @@ emergency path only.
 - `www.bidmorrow.com` → apex: one Cloudflare **Redirect Rule**
   (Dashboard → Rules → Redirect Rules), owner action at production
   cutover. Recorded on the production cutover checklist.
-- **Staging** stays on workers.dev
-  (`https://bidmorrow-staging.<account-subdomain>.workers.dev`); no
-  staging hostname on the zone in V1. The deploy workflow injects the
-  resolved workers.dev URL via `--var` at every deploy.
+- **Staging** serves on `staging.bidmorrow.com` (custom domain, decided
+  by the owner 2026-08-16; workers.dev disabled). Attached automatically
+  the same way as the apex — wrangler creates the `staging` DNS record +
+  certificate at deploy; error 100117 means a conflicting pre-existing
+  `staging` record must be deleted from the zone first. The old
+  workers.dev origin stops serving once `workers_dev: false` deploys —
+  update the test-mode Stripe webhook endpoint URL accordingly
+  (see "Stripe webhook registration").
 - HSTS and CSP come from the Worker (security.md C3/C4), not DNS.
 
 ## Stripe webhook registration [validate: Phase 13]
@@ -158,8 +160,13 @@ route — see apps/worker/src/routes/webhooks.ts), API version
 `2026-07-29.dahlia`, events per docs/dependency-versions.md Stripe set;
 copy the signing secret into the GitHub `production` environment secret
 `STRIPE_WEBHOOK_SECRET` (the deploy workflow pushes it to the Worker).
-Repeat in test mode against `<staging workers.dev URL>/api/webhooks/stripe`
-with the staging secret. (Blocker 4.)
+Repeat in test mode against
+`https://staging.bidmorrow.com/api/webhooks/stripe` with the staging
+secret. The test-mode webhook was originally registered against the
+staging workers.dev URL — after the 2026-08-16 custom-domain switch the
+owner must EDIT that endpoint's URL in the Stripe Dashboard (test mode);
+editing the URL keeps the same signing secret, so no secret rotation is
+needed. (Blocker 4.)
 
 ## Resend domain authentication (blocker 2/3)
 

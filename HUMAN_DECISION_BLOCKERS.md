@@ -36,6 +36,13 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
 6. **Legal inputs** (item 7): postal/registered address + privacy contact
    email for the terms/privacy pages; confirm the default VAT approach
    (B2B-only, collect VAT ID at checkout) or ask for Stripe Tax.
+7. **Test-mode Stripe webhook URL update** (added 2026-08-16, after the
+   staging custom-domain switch): Stripe Dashboard → test mode →
+   Webhooks → the `bidmorrow` staging endpoint → **edit the endpoint
+   URL** to `https://staging.bidmorrow.com/api/webhooks/stripe`. Editing
+   the URL keeps the same signing secret — no secret rotation, no
+   redeploy needed. The old workers.dev URL stopped serving when
+   `workers_dev: false` deployed.
 
 Then launch = dispatch the **Deploy production** workflow (Actions tab)
 and approve it; it bootstraps prod D1/queues/R2, migrates, deploys,
@@ -73,7 +80,10 @@ mint a second one with identical scopes per docs/setup-guide.md § 2a).
 Needed for: production URLs and email deliverability (Phases 8/13).
 
 **Provided**: bidmorrow.com DNS is on Cloudflare, on the account connected
-to Claude via the MCP connector. Staging needs no DNS (workers.dev).
+to Claude via the MCP connector. Staging serves on the
+`staging.bidmorrow.com` custom domain since 2026-08-16 (owner request;
+attached automatically at deploy, no console action — but see snapshot
+item 7 for the test-mode Stripe webhook URL update it requires).
 
 Still human-required / deferred to Phase 13:
 
