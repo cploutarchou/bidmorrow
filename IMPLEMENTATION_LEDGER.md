@@ -43,6 +43,38 @@ pending).** State as of 2026-08-16:
 
 ### Phase 13 progress (2026-08-16)
 
+**ROLLBACK + TIME TRAVEL DRILLS: PASSED (13:44–13:55 UTC)**, all via the
+staging-ops workflow (PR #19, merge bcca9bc). Sequence and evidence:
+(1) bookmark captured: `0000001e-00000000-000050c9-09eead…` (run
+31950678315); (2) rollback drill (run 31950784770): `wrangler rollback
+-y` moved staging from the secret-change version 0abde046 back to deploy
+version 65ce2bbf with the drill message in the deployment log, and the
+post-rollback live health check (live+ready) passed; (3) roll-forward:
+Deploy staging dispatch (run 31950899451) green incl. smoke; (4) restore
+drill (run 31951034559): `d1 time-travel restore --timestamp
+2026-08-16T13:00:00Z` → restored to bookmark `00000015-…`, and the
+marker SELECT returned `ingestion_paused="true"` with the ORIGINAL seed
+updated_at (1786843493000) — the 13:23 flip was genuinely undone,
+point-in-time recovery proven; (5) re-flip (staging-flag run
+31951148876): `ingestion_paused="false"`, updated_at 1786888479000.
+End state: staging on latest version, ingestion unpaused, first real TED
+window at the next 05:00 UTC cron.
+
+**PRODUCTION DEPLOY PREP LANDED**: `.github/workflows/
+deploy-production.yml` — dispatch-only, `production` environment gate
+(owner must confirm Required reviewers, blockers item 8.2). First run
+bootstraps queues/R2/D1 (D1 created in CI with `--location weur`; the
+resolved id is patched into the checkout and printed as
+PRODUCTION_D1_ID to be committed afterward — the session's MCP
+connector was denied resource creation by the permission classifier
+this session, so D1 creation moved into CI beside the existing
+queue/R2 pattern), captures a pre-migration Time Travel bookmark,
+seeds `ingestion_paused=true`, deploys (attaches bidmorrow.com
+automatically), pushes production-environment secrets, smokes
+https://bidmorrow.com with a domain/cert provisioning retry. NOT
+dispatched — blocked on production secrets (Stripe live keys, second
+Resend key) and the required-reviewers confirmation.
+
 **INGESTION UNPAUSED (13:23 UTC)**: "Staging flag" workflow run #1
 (31949665848) green; its verification SELECT returned
 `ingestion_paused = "false"` (updated_at 1786886616000) on the staging
