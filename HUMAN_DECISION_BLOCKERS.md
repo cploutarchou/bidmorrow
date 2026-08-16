@@ -20,17 +20,28 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
    `STRIPE_WEBHOOK_SECRET` (item 4), production `RESEND_API_KEY`
    (item 3.2). Variables: `ADMIN_EMAILS`; `EMAIL_FROM` after item 2.3.
    (`BETTER_AUTH_SECRET` already set ✓.)
-2. ~~**Required reviewers on the `production` environment**~~ **DONE
-   2026-08-16** (owner confirmed): every production deploy now waits for
-   the owner's Approve click in the Actions tab.
-3. ~~**Branch protection on `main`**~~ **DONE 2026-08-16** (owner
-   imported the `main-protection` ruleset: PR required, `checks` +
-   `secret-scan` status checks required, approvals 0, force-push and
-   deletion blocked).
-4. **Resend domain verification** (items 2.3/3.1): SPF/DKIM/DMARC records
-   from the Resend console into the Cloudflare zone — gates ALL real
-   email (staging signup verification too). Then create the production
-   API key and set `EMAIL_FROM`.
+2. **Required reviewers on `production` + branch ruleset on `main`** —
+   **CONFIGURED 2026-08-16 but NOT ENFORCED**: the repo is PRIVATE on a
+   personal GitHub Free plan, and GitHub only enforces environment
+   protection rules and branch rulesets on private repos with **GitHub
+   Pro** (public repos: free). The owner observed exactly this (deploy
+   approval never prompted). Owner decision needed, one of:
+   (a) upgrade to GitHub Pro (~$4/mo — note: outside the Cloudflare
+   infra budget line, it's a tooling cost), (b) make the repo public,
+   or (c) accept procedural-only gating (Claude never dispatches a
+   production deploy without an explicit owner instruction — already
+   the working convention). The saved config activates automatically
+   the moment (a) or (b) happens.
+3. ~~Branch protection~~ merged into item 2 above (same root cause).
+4. **Resend domain verification** — ~~verification~~ **VERIFIED
+   2026-08-16** (owner screenshot: bidmorrow.com Verified in Resend,
+   DKIM + SPF-send + tracking CNAME all green; "Enable Receiving"
+   correctly OFF — inbound mail is item 5's Cloudflare Email Routing,
+   not Resend). REMAINING: create the separate production API key →
+   GitHub `production` env secret `RESEND_API_KEY`, and set the
+   `EMAIL_FROM` variable (e.g. `BidMorrow <verify@bidmorrow.com>`) in
+   BOTH `staging` and `production` environments → then Claude redeploys
+   both and real email goes live.
 5. **Stripe live mode** (item 4): activate as Individual, recreate
    products/prices, register the live webhook for
    `https://bidmorrow.com/api/webhooks/stripe` (can be done BEFORE the
