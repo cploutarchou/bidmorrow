@@ -76,9 +76,9 @@ export interface Env {
   STRIPE_SECRET_KEY?: string;
   /** Stripe webhook signing secret (`whsec_...`) — verifies `stripe-signature`. */
   STRIPE_WEBHOOK_SECRET?: string;
-  /** Stripe Price id for `BIDMORROW_FOUNDING_MONTHLY` ($29/mo, capped). Never invented (HUMAN_DECISION_BLOCKERS.md item 4). */
+  /** Stripe Price id for `BIDMORROW_FOUNDING_MONTHLY` (€29/mo, capped). Never invented (HUMAN_DECISION_BLOCKERS.md item 4). */
   STRIPE_PRICE_FOUNDING_MONTHLY?: string;
-  /** Stripe Price id for `BIDMORROW_STANDARD_MONTHLY` ($49/mo). Never invented (HUMAN_DECISION_BLOCKERS.md item 4). */
+  /** Stripe Price id for `BIDMORROW_STANDARD_MONTHLY` (€49/mo). Never invented (HUMAN_DECISION_BLOCKERS.md item 4). */
   STRIPE_PRICE_STANDARD_MONTHLY?: string;
   /**
    * Phase 12 stage A: second half of the double-gate (alongside `APP_ENV ===

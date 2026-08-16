@@ -15,7 +15,7 @@ export function Pricing(): ReactElement {
       <div className="pricing-grid">
         <section className="pricing-card" aria-labelledby="founding-plan-heading">
           <h2 id="founding-plan-heading">Founding plan</h2>
-          <p className="price">$29 / month</p>
+          <p className="price">€29 / month</p>
           <p>Limited to our first 20 customers, while we run the founding pilot.</p>
           <Link className="cta" to="/pilot">
             Join the founding pilot
@@ -23,7 +23,7 @@ export function Pricing(): ReactElement {
         </section>
         <section className="pricing-card" aria-labelledby="standard-plan-heading">
           <h2 id="standard-plan-heading">Standard plan</h2>
-          <p className="price">$49 / month</p>
+          <p className="price">€49 / month</p>
           <p>Full access once the founding plan is full, or any time after.</p>
           <Link className="cta" to="/signup">
             Sign up

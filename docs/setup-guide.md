@@ -129,8 +129,8 @@ Create two products (Product catalog → Add product):
 
 | Product            | Price  | Billing period |
 | ------------------ | ------ | -------------- |
-| BidMorrow Founding | $29.00 | Monthly        |
-| BidMorrow Standard | $49.00 | Monthly        |
+| BidMorrow Founding | €29.00 | Monthly        |
+| BidMorrow Standard | €49.00 | Monthly        |
 
 After creating each, open the price and copy its **Price ID**
 (`price_...`). Price IDs are configuration, not secrets, but we store them

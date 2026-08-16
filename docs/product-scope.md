@@ -44,8 +44,8 @@ generic tender search.
    automatic opaque score adjustment.
 7. **Daily digest email**: one per org per day, only when meaningful matches
    exist (unless the org opts into empty digests), DB-enforced dedupe.
-8. **Billing**: Stripe Checkout + Customer Portal. Founding $29/mo (first 20,
-   flag-controlled) and Standard $49/mo. Server-side entitlements.
+8. **Billing**: Stripe Checkout + Customer Portal. Founding €29/mo (first 20,
+   flag-controlled) and Standard €49/mo. Server-side entitlements.
 9. **Internal admin**: org/user/subscription search, ingestion & digest
    debugging, match trace, feature flags, ingestion scope config, pause
    switches, audit log.
@@ -87,9 +87,12 @@ generic tender search.
 
 ## Pricing
 
-- Founding: $29/month, limited to first 20 customers (feature flag
+- Founding: €29/month, limited to first 20 customers (feature flag
   `founding_plan_open`, configurable cap).
-- Standard: $49/month.
+- Standard: €49/month.
+- Currency is **EUR** — decided by the owner 2026-08-16 when creating the
+  live-mode Stripe prices (natural fit for an EU procurement product);
+  all customer-facing copy must state EUR amounts.
 - The founding price is retained for the life of the subscription — a
   founding customer's plan never auto-migrates to the standard price
   (PROD-P7-01, Phase 7 review). Any future price change to an existing

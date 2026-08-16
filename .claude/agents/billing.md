@@ -25,6 +25,6 @@ Rules:
   past_due, canceled, unpaid.
 - Test mode credentials only outside production; never mix test/live; never
   invent keys or price IDs (see HUMAN_DECISION_BLOCKERS.md).
-- Products: BIDMORROW_FOUNDING_MONTHLY ($29), BIDMORROW_STANDARD_MONTHLY ($49).
+- Products: BIDMORROW_FOUNDING_MONTHLY (€29), BIDMORROW_STANDARD_MONTHLY (€49).
   Founding capped via feature flag.
 - Run quality gates before declaring done.

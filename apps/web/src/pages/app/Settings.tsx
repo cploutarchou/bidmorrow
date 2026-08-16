@@ -339,7 +339,7 @@ export function Settings(): ReactElement {
                       disabled={billingBusy}
                       onClick={() => void startCheckout('founding')}
                     >
-                      Subscribe — Founding ($29/mo, limited spots)
+                      Subscribe — Founding (€29/mo, limited spots)
                     </button>
                   )}
                   <button
@@ -348,7 +348,7 @@ export function Settings(): ReactElement {
                     disabled={billingBusy}
                     onClick={() => void startCheckout('standard')}
                   >
-                    Subscribe — Standard ($49/mo)
+                    Subscribe — Standard (€49/mo)
                   </button>
                 </div>
               </>
