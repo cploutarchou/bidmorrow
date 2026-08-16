@@ -189,11 +189,10 @@
         {
           "binding": "DB",
           "database_name": "bidmorrow-production",
-          // The deploy-production workflow creates the database on first run
-          // and patches this placeholder with the resolved id in its checkout
-          // (printed as PRODUCTION_D1_ID in the run log — commit it here
-          // after the first deploy). Never share databases across envs.
-          "database_id": "production-placeholder",
+          // Real production DB, created by deploy-production run #1
+          // (2026-08-16, WEUR primary; id from the run's PRODUCTION_D1_ID
+          // log line). Never share databases across envs.
+          "database_id": "cd5f6ceb-3262-4ba9-a5f4-4c1ed43e27bb",
           "migrations_dir": "../../migrations",
         },
       ],

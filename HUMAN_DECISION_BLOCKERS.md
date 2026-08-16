@@ -79,8 +79,13 @@ Still human-required / deferred to Phase 13:
 
 1. ~~Confirm bidmorrow.com registration and move DNS to Cloudflare.~~ DONE.
 2. App custom-domain attach (`bidmorrow.com` → Worker) happens at
-   production deploy time via wrangler routes (`custom_domain: true`) —
-   no manual DNS record needed now that the zone is on the account.
+   production deploy time via wrangler routes (`custom_domain: true`).
+   **OPEN console action (found at first production deploy 2026-08-16,
+   API error 100117)**: the zone has pre-existing address records on the
+   apex — Cloudflare refuses to overwrite them. Dashboard →
+   bidmorrow.com → DNS → Records: **delete the A / AAAA / CNAME
+   record(s) whose name is `bidmorrow.com`** (root/apex). Keep TXT and
+   MX records — they don't conflict. Then re-run "Deploy production".
 3. Email authentication (required before any digest email is sent to customers —
    deliverability depends on it):
    - Add the SPF, DKIM and DMARC records that Resend displays under
