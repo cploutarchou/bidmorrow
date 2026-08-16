@@ -37,11 +37,11 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
    2026-08-16** (owner screenshot: bidmorrow.com Verified in Resend,
    DKIM + SPF-send + tracking CNAME all green; "Enable Receiving"
    correctly OFF — inbound mail is item 5's Cloudflare Email Routing,
-   not Resend). REMAINING: create the separate production API key →
-   GitHub `production` env secret `RESEND_API_KEY`, and set the
-   `EMAIL_FROM` variable (e.g. `BidMorrow <verify@bidmorrow.com>`) in
-   BOTH `staging` and `production` environments → then Claude redeploys
-   both and real email goes live.
+   not Resend). ~~REMAINING~~ **ALL DONE 2026-08-16** (owner confirmed):
+   production `RESEND_API_KEY` created + stored, `EMAIL_FROM` variable
+   set in BOTH `staging` and `production` environments. Both
+   environments redeployed the same evening to push the new values —
+   real signup-verification + digest email is LIVE.
 5. **Stripe live mode** (item 4): activate as Individual, recreate
    products/prices, register the live webhook for
    `https://bidmorrow.com/api/webhooks/stripe` (can be done BEFORE the
