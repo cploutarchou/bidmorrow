@@ -40,6 +40,29 @@ pending).** State as of 2026-08-16:
   sequential round trips (informational, cost model accepts); P-6 admin
   COUNT(*) (LOW). P-2 note: `listTenderMatchesForFeed` appears dead for
   the customer feed (only a test calls it) — flag for cleanup review.
+
+### Phase 13 progress (2026-08-16)
+
+**STAGING IS LIVE: https://bidmorrow-staging.cploutarchou.workers.dev**
+(deploy run #3, workflow "Deploy staging", all 14 steps green, ~65s).
+Timeline: run #1 created all 6 queues then failed on R2-not-enabled
+(expected; owner enabled R2 in the dashboard); run #2 exposed a
+queue-exists idempotency wording bug (wrangler says "already taken", the
+grep expected "already been taken") — fixed via PR #14; run #3 green
+end-to-end: R2 bucket created, migrations 0001–0007 applied to remote D1
+(cd51fe7b…, WEUR), `ingestion_paused=true` seeded, SPA built, Worker
+deployed with `--var` workers.dev URLs, runtime secrets pushed
+(BETTER_AUTH_SECRET, RESEND_API_KEY, STRIPE_SECRET_KEY, both price IDs,
+ADMIN_EMAILS; STRIPE_WEBHOOK_SECRET/EMAIL_FROM intentionally absent →
+documented fallbacks), CI smoke tests passed (health live+ready, CSP
+header on SPA, /api/test/* 404 = double gate sealed, JSON 404 envelope).
+Session-container egress cannot reach workers.dev (proxy 403), so live
+verification is CI-executed, not session-local — honest flag.
+Remaining in phase: owner's Stripe webhook (staging URL now known) →
+re-run deploy to push STRIPE_WEBHOOK_SECRET; pre-first-ingestion gates
+(live checkQuerySyntax, bounded volume window, fixture refresh) after
+unpausing; rollback drill + Time Travel restore test; production prep.
+
 - **P-4 scoring N+1 refactor LANDED** (25300b6): bulk existence check
   (chunked `lot_id IN` per engine version, 90/chunk), one `db.batch` per
   flush with shrinking race-retry (genuine integrity errors rethrown),
