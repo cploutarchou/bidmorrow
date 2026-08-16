@@ -33,13 +33,13 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: pnpm
@@ -78,6 +78,15 @@ jobs:
       - name: Apply D1 migrations (remote)
         working-directory: apps/worker
         run: pnpm exec wrangler d1 migrations apply bidmorrow-staging --env staging --remote
+
+      - name: Verify foreign key enforcement on the live database (P10-R-04)
+        # docs/data-model.md relies on FK enforcement being ON in D1. Verify
+        # it against the real database at every deploy instead of trusting
+        # platform defaults (verified queryable on remote D1, 2026-08-16).
+        working-directory: apps/worker
+        run: |
+          pnpm exec wrangler d1 execute bidmorrow-staging --env staging --remote --command "PRAGMA foreign_keys" --json \
+            | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{const j=JSON.parse(d);const v=j[0]?.results?.[0]?.foreign_keys;if(v!==1){console.error("PRAGMA foreign_keys returned",JSON.stringify(v),"— foreign key enforcement is OFF on the live database");process.exit(1)}console.log("foreign_keys=1 (enforced)")})'
 
       - name: Seed ingestion_paused flag (first-deploy safety, idempotent)
         # Pre-first-ingestion gates (docs/deployment.md) must pass before the

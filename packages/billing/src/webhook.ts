@@ -50,6 +50,7 @@ import {
 import { organizationId as toOrganizationId, type OrganizationId } from '@bidmorrow/domain';
 import type { Logger } from '@bidmorrow/observability';
 
+import { blocksNewCheckout } from './checkout';
 import { mapStripeSubscriptionStatus, planFromPriceId, type PriceIds } from './plans';
 import type { WebhookStripeClient, WebhookVerifierClient } from './stripe-types';
 
@@ -165,7 +166,57 @@ export interface WebhookDeps {
   readonly logger?: Logger;
 }
 
-export type ProcessOutcome = 'processed' | 'duplicate' | 'ignored';
+export type ProcessOutcome = 'processed' | 'duplicate' | 'ignored' | 'duplicate_reconciled';
+
+/**
+ * SEC-P9-03: an organization with no subscription row yet can open two
+ * concurrent Checkout sessions — both pass `createCheckoutSession`'s
+ * `getSubscription` guard (see checkout.ts's residual-race comment there)
+ * because neither sees the other's not-yet-committed row, and BOTH create
+ * their session without a `customer` param (Stripe then mints a brand-new
+ * Customer per session). If the owner completes both, Stripe ends up with
+ * two live Customers + two live Subscriptions for one organization, but our
+ * `subscriptions` table has room for exactly one row per org
+ * (`uq_subscriptions__organization_id`, docs/data-model.md §9, 1:1).
+ *
+ * Whichever webhook is processed SECOND (for the subscription that lost the
+ * race to already be the org's on-file row) hits this function with a
+ * `stripe_customer_id` that differs from the existing row's. If the
+ * existing row is still non-canceled (`blocksNewCheckout`), the existing
+ * row is authoritative and untouched, and the INCOMING subscription is
+ * treated as the duplicate: cancel it via the Stripe API, log loudly (both
+ * customer/subscription ids, for manual Stripe-dashboard/billing follow-up
+ * — this is an owner-self-inflicted double-charge, not a security breach,
+ * but it IS a live Stripe subscription nobody asked us to keep), and return
+ * `'duplicate_reconciled'` so the caller acks 200 instead of throwing (a
+ * constraint violation) and stranding the event in Stripe's forever-retry
+ * loop. When the existing row IS canceled, `blocksNewCheckout` is false and
+ * this function falls through to the normal reactivation path unchanged
+ * (see checkout.ts's header: reactivation always reuses the existing
+ * `stripe_customer_id` in the Checkout `customer` param, so a genuinely
+ * differing customer id on a canceled row should not occur in practice —
+ * this guard only ever fires for the non-canceled duplicate-checkout case).
+ */
+async function reconcileDuplicateCustomer(
+  deps: WebhookDeps,
+  organizationId: OrganizationId,
+  before: { readonly stripeCustomerId: string; readonly status: string },
+  duplicateSubscription: Stripe.Subscription,
+  duplicateCustomerId: string,
+): Promise<void> {
+  deps.logger?.error('billing.webhook.duplicate_checkout_reconciled', {
+    organizationId,
+    keptStripeCustomerId: before.stripeCustomerId,
+    duplicateStripeCustomerId: duplicateCustomerId,
+    duplicateStripeSubscriptionId: duplicateSubscription.id,
+  });
+  await deps.stripe.subscriptions.cancel(duplicateSubscription.id, {
+    cancellation_details: {
+      comment:
+        'BidMorrow SEC-P9-03: auto-canceled duplicate subscription from a concurrent double-checkout; see billing_events for the reconciling event.',
+    },
+  });
+}
 
 /**
  * Re-fetches the subscription's CURRENT state from Stripe (never the event
@@ -174,12 +225,19 @@ export type ProcessOutcome = 'processed' | 'duplicate' | 'ignored';
  * computed from the PRE-upsert row's status vs. the newly-fetched one — the
  * single place that comparison happens, so both packages/billing's own
  * tests and the Worker's D1 integration tests exercise the same logic.
+ *
+ * SEC-P9-03: before writing anything, checks whether the PRE-fetch row
+ * already belongs to a DIFFERENT, still-live Stripe customer — see
+ * {@link reconcileDuplicateCustomer}'s doc comment for the full scenario.
+ * That check happens here (after the live re-fetch, so the duplicate
+ * subscription's own id/customer are known) rather than in `handleEvent`,
+ * keeping the "never trust the payload, always re-fetch" invariant intact.
  */
 async function syncSubscriptionState(
   deps: WebhookDeps,
   organizationId: OrganizationId,
   subscriptionId: string,
-): Promise<void> {
+): Promise<ProcessOutcome> {
   const before = await getSubscription(deps.db, organizationId);
 
   const subscription = await deps.stripe.subscriptions.retrieve(subscriptionId);
@@ -202,6 +260,15 @@ async function syncSubscriptionState(
   const status = mapStripeSubscriptionStatus(subscription.status);
   const customerId =
     typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
+
+  if (
+    before !== null &&
+    before.stripeCustomerId !== customerId &&
+    blocksNewCheckout(before.status)
+  ) {
+    await reconcileDuplicateCustomer(deps, organizationId, before, subscription, customerId);
+    return 'duplicate_reconciled';
+  }
 
   await upsertSubscriptionByStripeCustomerId(deps.db, organizationId, {
     stripeCustomerId: customerId,
@@ -235,6 +302,7 @@ async function syncSubscriptionState(
       name: 'subscription_canceled',
     });
   }
+  return 'processed';
 }
 
 async function handleEvent(deps: WebhookDeps, event: HandledEvent): Promise<ProcessOutcome> {
@@ -249,8 +317,7 @@ async function handleEvent(deps: WebhookDeps, event: HandledEvent): Promise<Proc
     });
     return 'ignored';
   }
-  await syncSubscriptionState(deps, organizationId, subscriptionId);
-  return 'processed';
+  return syncSubscriptionState(deps, organizationId, subscriptionId);
 }
 
 /**
@@ -300,10 +367,15 @@ export async function processStripeEvent(
 
   try {
     const outcome = await handleEvent(deps, event);
+    // `billing_events.status` (docs/data-model.md §9 CHECK) has no
+    // dedicated value for `duplicate_reconciled` — it is a `processed`
+    // outcome (the event WAS successfully handled; the side effect taken
+    // was canceling the duplicate rather than upserting a row) rather than
+    // a schema change, per this fix's no-migration constraint.
     await markBillingEventStatus(
       deps.db,
       event.id,
-      outcome === 'processed' ? 'processed' : 'ignored',
+      outcome === 'ignored' ? 'ignored' : 'processed',
     );
     return outcome;
   } catch (cause) {

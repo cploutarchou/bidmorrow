@@ -74,9 +74,13 @@ import { TED_SOURCE_ID } from '@bidmorrow/ted';
 
 import type { AppBindings, IngestQueueMessage, MatchQueueMessage } from '../env';
 import { requireInternalAdmin } from '../middleware/admin';
+import { createIpRateLimit } from '../middleware/rate-limit';
 
 export const adminRoutes = new Hono<AppBindings>();
 
+// P10-R-04: same IP-keyed limiter as the rest of the API surface, applied
+// BEFORE the admin auth check so failed-auth hammering is throttled too.
+adminRoutes.use('*', createIpRateLimit('/api/admin/*'));
 adminRoutes.use('*', requireInternalAdmin);
 
 // ---------------------------------------------------------------------------

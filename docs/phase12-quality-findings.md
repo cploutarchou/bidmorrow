@@ -115,7 +115,14 @@ first (broader) index and re-evaluating the second once the classification
 tabs show up as slow in production observability — do not create both
 speculatively.
 
-### P-2 [MEDIUM] `listTenderMatchesForFeed`'s doc comment references an index that doesn't match its own ORDER BY either
+### P-2 [MEDIUM] `listTenderMatchesForFeed`'s doc comment references an index that doesn't match its own ORDER BY either — RESOLVED 2026-08-16 (removed)
+
+**Resolution (Phase 13 hardening)**: confirmed dead for production — not in
+the package barrel, no app caller; `feed.ts` uses `listFeedRows`. The
+function (plus its private `decodeFeedCursor` and `ListMatchesForFeedArgs`)
+was deleted and the two `tenant-isolation.d1.test.ts` usages ported to
+`listFeedRows`, so the isolation suite now exercises the feed query
+customers actually hit. Original finding kept below for the record.
 
 `matching.ts:239-243`'s doc comment claims it's "Backed by
 `idx_tender_matches__organization_id_engine_version_classification_scored_at`"
