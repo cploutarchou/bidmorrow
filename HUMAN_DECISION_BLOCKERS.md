@@ -247,9 +247,16 @@ the registration threshold is their/their accountant's responsibility.
    2026-08-16: owner imported the `main-protection` ruleset (PR + green
    `checks`/`secret-scan` required, approvals 0, force-push/deletion
    blocked).
-2. ~~Create a GitHub "production" environment~~ DONE — ~~Required
-   reviewers~~ DONE 2026-08-16: production deploys now pause for the
-   owner's approval in the Actions tab.
+2. ~~Create a GitHub "production" environment~~ DONE — Required
+   reviewers: NOT AVAILABLE (needs GitHub Enterprise on private repos;
+   an earlier note here claiming this was done was wrong — see snapshot
+   item 2 above for the full story). Adopted gate instead (2026-08-16):
+   environment restricted to protected branches only + typed
+   `confirm: deploy-production` workflow input validated in-job +
+   convention that Claude never dispatches production deploys without
+   explicit owner instruction. Accepted residual: any repo-write
+   principal can technically dispatch a production deploy — recorded in
+   docs/threat-model.md §5.
 
 ---
 

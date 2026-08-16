@@ -1,8 +1,11 @@
-# Production deploy (docs/deployment.md "CI/CD flow" step 3): DISPATCH-ONLY,
-# gated by the GitHub `production` environment (set Required reviewers there
-# so every production deploy needs a human click — HUMAN_DECISION_BLOCKERS
-# item 8.2). Reads deploy credentials + runtime secrets from that
-# environment. Never triggered by pushes.
+# Production deploy (docs/deployment.md "CI/CD flow" step 3): DISPATCH-ONLY.
+# GitHub Required reviewers need Enterprise on private repos, so the gate is:
+# `production` environment restricted to protected branches only + the typed
+# `confirm` input validated as the first step below + the convention that no
+# automated agent dispatches this without explicit owner instruction
+# (HUMAN_DECISION_BLOCKERS item 8.2; accepted residual in threat-model §5).
+# Reads deploy credentials + runtime secrets from that environment. Never
+# triggered by pushes.
 #
 # First deploy bootstraps everything: queues + R2 bucket + the D1 database
 # are created idempotently, the resolved D1 id is patched into the checkout's

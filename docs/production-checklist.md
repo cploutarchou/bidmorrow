@@ -1,9 +1,11 @@
 # Production Readiness Checklist
 
-Checkable mirror of the project's Definition of Done. **Nothing is checked:
-the project is at Phase 0/1 and no item below has been done.** An item may
-only be checked with evidence (test run, command output, recorded drill) —
-never on intention. This list gates the production launch (Phase 13 review).
+Checkable mirror of the project's Definition of Done. Boxes are checked
+ONLY during the Phase 14 production-readiness audit, each with evidence
+(test run, command output, recorded drill) — never on intention. Work for
+most items landed in Phases 1–13 (see IMPLEMENTATION_LEDGER.md); an
+unchecked box means "not yet audit-verified", not "not done". This list
+gates the production launch.
 
 ## Build & quality gates
 
@@ -103,7 +105,11 @@ never on intention. This list gates the production launch (Phase 13 review).
 ## Deployment
 
 - [ ] Staging deployed via CI; smoke tests green on staging
-- [ ] Production deploy workflow protected (GitHub environment + reviewers)
+- [ ] Production deploy workflow protected (GitHub environment +
+      deploy gate). ACCEPTED DEVIATION 2026-08-16: environment Required
+      reviewers need GitHub Enterprise on private repos — gate is
+      protected-branches-only + typed `confirm` input validated in-job +
+      no-agent-dispatch convention (threat-model §5 residual)
 - [ ] **D1 restore test performed on staging and documented**
       (docs/backup-restore.md drill — mandatory)
 - [ ] Rollback drill performed (`wrangler rollback` on staging)
