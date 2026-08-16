@@ -53,6 +53,43 @@ UTC), fixture refresh from the ingestion's R2 snapshots, then security
 
 ### Phase 13 progress (2026-08-16)
 
+**FIXTURE REFRESH FROM REAL TED NOTICES + CRITICAL CLIENT FIX (night)**:
+the last Phase 13 data-quality gate, executed via CI because the sandbox
+cannot reach ted.europa.eu. Sequence: fixture-fetch run #1 (31976779119)
+"succeeded" but saved **40 zero-byte XMLs** — `links.xml.MUL`
+(`ted.europa.eu/<lang>/notice/<id>/xml`) returns **HTTP 200 with an
+empty body to any client that does not identify itself**. PR #32
+hardened the fetch script (Accept + User-Agent, empty/HTML bodies
+rejected + full per-notice diagnostics); run #2 (31977377822) then saved
+all 40/40 real notices. Consequences shipped in the same cycle:
+(a) **`TedClient` fix** — sends `Accept` + `User-Agent`
+(`TED_USER_AGENT`) on every request and throws `TedRequestError` on an
+empty 200 body instead of treating it as valid XML. Without this,
+tomorrow's first real staging ingestion would have fetched 0-byte
+notices for every row. Recorded in docs/ted-data-source.md with run IDs.
+(b) **8 real-notice fixtures** (ted-data agent, verified independently):
+SDK **1.12/1.13/1.14** (wild mix from 40 sampled: 7/17/16; no 1.15 in
+production TED yet — SDK-example fixtures keep covering it), Greek
+script, English, 7-lot + corrected-4-lot + 143 KB 6-lot cases,
+missing value/deadline/ProcedureCode cases, an `xmlns=""` eSender
+artifact case. Sanitization = natural-person data only (3 files, all
+replacements enumerated in meta.json); institutional mailboxes kept.
+New contract tests: `parse-notice.test.ts` "real published notices"
+block, 8 tests, expected values derived from XML first. Full gates:
+634 tests pass (425+157+52), build clean.
+Data-quality findings pinned: in-XML publication id is zero-padded
+(`00569058-2026`) vs unpadded Search API form — VERIFIED harmless
+(ingestion keys identity exclusively on the Search row,
+run-window.ts:278, parser id never enters identity paths — do not
+"fix" this into a bug); duplicate main-CPV-in-additional VERIFIED
+harmless for scoring (cpv component takes best single relationship,
+not a sum); real-world decimal anomaly (566489: procedure value
+931,557,860 vs lot 931,557.86 — buyer typo, parser reports verbatim,
+value logic already prefers lot values); parser exposes no
+`efac:Changes` correction signal by design (versioning rides on the
+Search API) — noted as a future field if version-aware ingestion ever
+needs in-document change references.
+
 **VAT DECISION REVERSED TO "NO VAT AT LAUNCH" (night, PR #30)**: while
 activating Stripe Tax the owner hit "Cyprus — Needs attention"
 (registration number required) and confirmed they have **no VAT

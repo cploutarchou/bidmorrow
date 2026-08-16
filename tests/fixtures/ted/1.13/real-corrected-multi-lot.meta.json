@@ -1,0 +1,11 @@
+{
+  "source": "https://ted.europa.eu/en/notice/567156-2026",
+  "sourceNoticeId": "567156-2026",
+  "publicationDate": "2026-08-17",
+  "retrievalDate": "2026-08-16",
+  "sdkVersion": "1.13",
+  "sdkGitTag": null,
+  "case": "Corrected four-lot cn-standard notice (EST, subtype 16, open) with efac:Changes/efac:ChangedSection (ChangedNoticeIdentifier 4f509ddb-...-01, section PROCEDURE): per-lot values summing to the 315000 EUR procedure value, shared deadline 2026-09-02 15:00:00.000+03:00 (fractional-second EndTime), procedure NUTS list contains each code 4x (parser dedupes), lot CPV 34110000 vs procedure main 34100000.",
+  "origin": "Real TED-published notice fetched from the TED Search API (links.xml.MUL) by CI workflow run 31977377822 on 2026-08-16, because the session sandbox cannot reach ted.europa.eu. Verbatim source XML apart from the documented sanitization.",
+  "sanitization": "Only values identifying a natural person were replaced (personal contact names -> \"Contact Example\", personal emails -> contact@example-buyer.example, their direct phone/fax -> +00 0000 000000). Replacements: cbc:Name (contact person): 1 occurrence(s) replaced; cbc:Telephone (direct number in personal contact block): 1 occurrence(s) replaced. Remaining emails/phones are institutional (info@transpordiamet.ee, review-body numbers) — kept. No structural changes; field paths, language codes, CPV/NUTS codes, public-body names and URLs untouched."
+}

@@ -1,0 +1,11 @@
+{
+  "source": "https://ted.europa.eu/en/notice/566500-2026",
+  "sourceNoticeId": "566500-2026",
+  "publicationDate": "2026-08-17",
+  "retrievalDate": "2026-08-16",
+  "sdkVersion": "1.13",
+  "sdkGitTag": null,
+  "case": "Single-lot cn-standard notice (LIT, subtype 16, open) whose eSender emitted a redundant xmlns=\"\" attribute on 16 top-level elements (cbc:CustomizationID, cbc:NoticeTypeCode, cac:ContractingParty, ...) — a real-world serialization artifact the parser must tolerate. Value 991735.54 EUR at procedure AND lot level, deadline 2026-09-17 10:00+03:00, CPV 63510000, NUTS LT011, buyer Seimas chancellery (LTU, cga).",
+  "origin": "Real TED-published notice fetched from the TED Search API (links.xml.MUL) by CI workflow run 31977377822 on 2026-08-16, because the session sandbox cannot reach ted.europa.eu. Verbatim source XML apart from the documented sanitization.",
+  "sanitization": "Only values identifying a natural person were replaced (personal contact names -> \"Contact Example\", personal emails -> contact@example-buyer.example, their direct phone/fax -> +00 0000 000000). Replacements: cbc:ElectronicMail (personal-name mailbox): 1 occurrence(s) replaced; cbc:Telephone (direct number in personal contact block): 1 occurrence(s) replaced. Remaining emails/phones are institutional (court, eSender eurodyn) — kept. No structural changes; field paths, language codes, CPV/NUTS codes, public-body names and URLs untouched."
+}

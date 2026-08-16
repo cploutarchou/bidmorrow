@@ -1,0 +1,11 @@
+{
+  "source": "https://ted.europa.eu/en/notice/566469-2026",
+  "sourceNoticeId": "566469-2026",
+  "publicationDate": "2026-08-17",
+  "retrievalDate": "2026-08-16",
+  "sdkVersion": "1.12",
+  "sdkGitTag": null,
+  "case": "SDK 1.12 (below the verified 1.13-1.15 range; parser records an untested-sdk-version warning) single-lot cn-standard notice (SLV, subtype 17, neg-w-call): NO cac:TenderSubmissionDeadlinePeriod (only ParticipationRequestReceptionPeriod / AdditionalInformationRequestPeriod dates, with 7-fractional-digit EndTime values), NO estimated value, CPV main 66514110, NUTS SI043, buyer pub-undert (SVN).",
+  "origin": "Real TED-published notice fetched from the TED Search API (links.xml.MUL) by CI workflow run 31977377822 on 2026-08-16, because the session sandbox cannot reach ted.europa.eu. Verbatim source XML apart from the documented sanitization.",
+  "sanitization": "Only values identifying a natural person were replaced (personal contact names -> \"Contact Example\", personal emails -> contact@example-buyer.example, their direct phone/fax -> +00 0000 000000). No natural-person identifiers found; no replacements. All contact emails/phones are institutional mailboxes/switchboards (info@, dkom@); nothing replaced. No structural changes; field paths, language codes, CPV/NUTS codes, public-body names and URLs untouched."
+}
