@@ -110,5 +110,11 @@ export function buildScopeQuery(scope: IngestionScope, window: PublicationWindow
   if (scope.countries.length > 0) {
     clauses.push(`buyer-country IN (${scope.countries.join(', ')})`);
   }
-  return `${clauses.join(' AND ')} SORT BY publication-date ASC`;
+  // No direction token: the live API rejects `SORT BY publication-date ASC`
+  // ("extraneous input 'ASC' expecting <EOF>", verified via the Phase 13
+  // ted-gates workflow's checkQuerySyntax run 2026-08-16) — the grammar is
+  // `SORT BY <field>` only, matching docs/ted-data-source.md's example.
+  // Order within a single-day window is not correctness-relevant anyway:
+  // every window is fully iterated and upserts are idempotent.
+  return `${clauses.join(' AND ')} SORT BY publication-date`;
 }
