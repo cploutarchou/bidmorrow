@@ -61,14 +61,12 @@ describe('isE2ETestHooksEnabled (pure gate predicate)', () => {
   });
 
   it('true only when both conditions hold', () => {
-    expect(isE2ETestHooksEnabled(fakeEnv({ APP_ENV: 'local', E2E_TEST_HOOKS: 'true' }))).toBe(
-      true,
-    );
+    expect(isE2ETestHooksEnabled(fakeEnv({ APP_ENV: 'local', E2E_TEST_HOOKS: 'true' }))).toBe(true);
     expect(isE2ETestHooksEnabled(fakeEnv({ APP_ENV: 'test', E2E_TEST_HOOKS: 'true' }))).toBe(true);
   });
 });
 
-describe('/api/test/* with E2E_TEST_HOOKS unset (this suite\'s real worker env)', () => {
+describe("/api/test/* with E2E_TEST_HOOKS unset (this suite's real worker env)", () => {
   it('GET /api/test/mailbox 404s exactly like an unknown route', async () => {
     const [hooksResponse, unknownResponse] = await Promise.all([
       fetchApi('/api/test/mailbox'),

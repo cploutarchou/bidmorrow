@@ -57,9 +57,13 @@ export function resolveDigestProvider(env: Env, logger: Logger): DigestEmailProv
 export async function runDigestScheduleJob(
   env: Env,
   logger: Logger,
+  // Injectable clock (defaults to the real one) so tests are deterministic —
+  // with a hardwired Date.now() the schedule test fails for real whenever
+  // the suite runs between midnight and the send hour UTC.
+  utcNow: number = Date.now(),
 ): Promise<{ enqueued: number }> {
   const db = createDb(env.DB);
-  const due = await selectDigestOrgs(db, { utcNow: Date.now() });
+  const due = await selectDigestOrgs(db, { utcNow });
   const messages: DigestQueueMessage[] = due.map((org) => ({
     kind: 'digest',
     organizationId: org.organizationId,

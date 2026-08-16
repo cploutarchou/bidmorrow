@@ -288,7 +288,7 @@ Inventory (verified by reading/grepping, not assumed):
 - Webhook replay/idempotency: **covered** —
   `apps/worker/src/billing.d1.test.ts` has an explicit
   `'replaying the same event id is idempotent: 200 + single row, no
-  duplicate insert'` test plus out-of-order/duplicate-delivery cases.
+duplicate insert'` test plus out-of-order/duplicate-delivery cases.
 - ECB rate staleness fallback: **covered** — confirmed
   `packages/db/src/repositories/ops-global.d1.test.ts` directly tests
   `getRate` at exactly `RATE_MAX_AGE_DAYS` (fresh, passes) and
@@ -399,6 +399,7 @@ Inventory (verified by reading/grepping, not assumed):
 per-PR blocking or non-blocking job.**
 
 Reasoning:
+
 - The existing `ci.yml` `checks` job already runs
   format/lint/typecheck/test/build sequentially in one job on every PR —
   adding `wrangler dev` + local D1 + seed + Playwright to that job (option
@@ -422,7 +423,7 @@ Reasoning:
   cost to once/day instead of once/PR, still catches E2E regressions
   within a bounded (worst-case ~24h) window, and — critically — a
   single-worker, non-parallel, ordered spec suite (`workers: 1,
-  fullyParallel: false` — this is explicit in `playwright.config.ts`,
+fullyParallel: false` — this is explicit in `playwright.config.ts`,
   because the critical-path spec is one ordered signup→onboarding→feed
   journey against one seeded worker) is inherently a worse fit for
   "gate every PR" than for "run once, alert if it breaks."
@@ -441,8 +442,8 @@ name: E2E (nightly)
 
 on:
   schedule:
-    - cron: '0 3 * * *'   # 03:00 UTC daily
-  workflow_dispatch: {}    # manual trigger for pre-release verification
+    - cron: '0 3 * * *' # 03:00 UTC daily
+  workflow_dispatch: {} # manual trigger for pre-release verification
 
 permissions:
   contents: read

@@ -16,10 +16,10 @@ is the _how_.
 2. Every secret has exactly **one place you put it**, and the pipeline
    distributes it from there:
 
-| Destination                                                                    | What goes there                                        | Who reads it                          |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------ | ------------------------------------- |
-| **GitHub → repo → Settings → Secrets and variables → Actions**                 | ALL secrets (deploy credentials AND runtime secrets)   | CI only; deploy workflow forwards runtime secrets to Cloudflare via `wrangler secret put` |
-| **Cloudflare dashboard → Workers & Pages → (worker) → Settings → Variables**   | Optional manual alternative for runtime secrets        | The deployed Worker                   |
+| Destination                                                                  | What goes there                                      | Who reads it                                                                              |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **GitHub → repo → Settings → Secrets and variables → Actions**               | ALL secrets (deploy credentials AND runtime secrets) | CI only; deploy workflow forwards runtime secrets to Cloudflare via `wrangler secret put` |
+| **Cloudflare dashboard → Workers & Pages → (worker) → Settings → Variables** | Optional manual alternative for runtime secrets      | The deployed Worker                                                                       |
 
 Recommended: use **GitHub Actions secrets as the single source of truth**.
 You enter each value once; the deploy workflow pushes runtime secrets to the
@@ -127,10 +127,10 @@ before real launch.
 
 Create two products (Product catalog → Add product):
 
-| Product           | Price     | Billing period |
-| ----------------- | --------- | -------------- |
-| BidMorrow Founding | $29.00    | Monthly        |
-| BidMorrow Standard | $49.00    | Monthly        |
+| Product            | Price  | Billing period |
+| ------------------ | ------ | -------------- |
+| BidMorrow Founding | $29.00 | Monthly        |
+| BidMorrow Standard | $49.00 | Monthly        |
 
 After creating each, open the price and copy its **Price ID**
 (`price_...`). Price IDs are configuration, not secrets, but we store them
@@ -138,12 +138,12 @@ alongside the other Stripe values.
 
 ### 4c. Keys and secrets → GitHub Actions secrets
 
-| GitHub secret name              | Where to find it (test mode)                                    |
-| ------------------------------- | --------------------------------------------------------------- |
-| `STRIPE_SECRET_KEY`             | Developers → API keys → **Secret key** (`sk_test_...`)          |
-| `STRIPE_PRICE_FOUNDING_MONTHLY` | Product catalog → Founding product → price → Price ID           |
-| `STRIPE_PRICE_STANDARD_MONTHLY` | Product catalog → Standard product → price → Price ID           |
-| `STRIPE_WEBHOOK_SECRET`         | **Not yet** — created in 4d, AFTER the first staging deploy     |
+| GitHub secret name              | Where to find it (test mode)                                |
+| ------------------------------- | ----------------------------------------------------------- |
+| `STRIPE_SECRET_KEY`             | Developers → API keys → **Secret key** (`sk_test_...`)      |
+| `STRIPE_PRICE_FOUNDING_MONTHLY` | Product catalog → Founding product → price → Price ID       |
+| `STRIPE_PRICE_STANDARD_MONTHLY` | Product catalog → Standard product → price → Price ID       |
+| `STRIPE_WEBHOOK_SECRET`         | **Not yet** — created in 4d, AFTER the first staging deploy |
 
 ### 4d. Webhook endpoint (after Phase 13 staging deploy)
 
@@ -196,8 +196,8 @@ Generate locally in any terminal — do not reuse values across environments:
 openssl rand -base64 32
 ```
 
-| GitHub secret name   | Value                                            |
-| -------------------- | ------------------------------------------------ |
+| GitHub secret name   | Value                                             |
+| -------------------- | ------------------------------------------------- |
 | `BETTER_AUTH_SECRET` | output of the command above (one per environment) |
 
 Also confirm the admin allowlist (a variable, not a secret):
@@ -207,18 +207,18 @@ Also confirm the admin allowlist (a variable, not a secret):
 
 ## 7. What is already connected to Claude (no action needed)
 
-| Connection            | Status | What Claude can do with it                                                    |
-| --------------------- | ------ | ----------------------------------------------------------------------------- |
-| GitHub (`cploutarchou/bidmorrow`) | ✅ connected | Branches, commits, PRs, CI status, merges                          |
-| Cloudflare MCP connector | ✅ connected | Create/manage D1 databases, R2 buckets, KV; query D1; inspect Workers — used in Phase 13 to provision staging/production resources |
-| bidmorrow.com zone on Cloudflare | ✅ done | Custom-domain attach can happen automatically at deploy time (wrangler route with `custom_domain: true`) |
+| Connection                        | Status       | What Claude can do with it                                                                                                         |
+| --------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub (`cploutarchou/bidmorrow`) | ✅ connected | Branches, commits, PRs, CI status, merges                                                                                          |
+| Cloudflare MCP connector          | ✅ connected | Create/manage D1 databases, R2 buckets, KV; query D1; inspect Workers — used in Phase 13 to provision staging/production resources |
+| bidmorrow.com zone on Cloudflare  | ✅ done      | Custom-domain attach can happen automatically at deploy time (wrangler route with `custom_domain: true`)                           |
 
 ## 8. What you can OPTIONALLY connect to automate more
 
-| Connector | How | What it automates | Worth it? |
-| --------- | --- | ----------------- | --------- |
+| Connector                                           | How                                                                                               | What it automates                                                                                      | Worth it?                                                    |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
 | **Stripe MCP** (official, `https://mcp.stripe.com`) | claude.ai → Settings → Connectors → Add custom connector → paste URL → authorize via Stripe OAuth | Claude creates the test-mode products/prices itself and reads the price IDs — removes step 4b entirely | Yes, if you'd rather not click through the Stripe catalog UI |
-| Resend MCP | Resend publishes an MCP server for _sending_ email only | Nothing in this guide — account, domain, API key stay manual | No |
+| Resend MCP                                          | Resend publishes an MCP server for _sending_ email only                                           | Nothing in this guide — account, domain, API key stay manual                                           | No                                                           |
 
 Everything else is **deliberately not automatable**: plan/billing approvals,
 API-token creation, and secret entry must stay in your hands — Claude never

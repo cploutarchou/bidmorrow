@@ -111,5 +111,10 @@ export function createRequestAuth(env: Env, logger: Logger, ctx: WaitUntilCtx) {
     baseUrl: env.BETTER_AUTH_URL || env.APP_BASE_URL,
     appEnv: toAuthAppEnv(env.APP_ENV),
     sendEmail,
+    // Same double gate as every E2E test-only capability: a Playwright run
+    // performs many signup/login flows per minute against Better Auth's
+    // sign-in/sign-up special rules (3 per 10s, shared bucket without a
+    // client IP locally) — relax under E2E only, never staging/production.
+    testRelaxedRateLimit: isE2ETestHooksEnabled(env),
   });
 }

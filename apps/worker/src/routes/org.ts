@@ -36,6 +36,12 @@ import {
   upsertDigestPreferences,
   upsertMatchingPreferences,
   insertAuditEvent,
+  type CompanyCapability,
+  type CompanyCertification,
+  type CompanyCpvPreference,
+  type CompanyExclusion,
+  type CompanyGeography,
+  type CompanyKeyword,
 } from '@bidmorrow/db';
 import {
   CONTRACT_NATURES,
@@ -264,12 +270,38 @@ orgRoutes.put(
   },
 );
 
+/**
+ * Response DTO mappers (Phase 12 E2E finding): every list GET/PUT below
+ * returns ONLY the fields the client contract defines
+ * (apps/web/src/lib/onboarding-types.ts) — never the raw repository row.
+ * Two reasons: (a) response minimization — `id`/`organization_id`/timestamps
+ * are internal and must not leak; (b) the client's load → edit → PUT
+ * round trip must stay valid against the `.strict()` input schemas above —
+ * raw rows PUT back verbatim used to 400 as "unrecognized keys", which
+ * broke every Settings list save (caught by the Playwright keyword-cap
+ * spec: the real 422 cap error could never be reached).
+ */
+const toKeywordDto = (row: CompanyKeyword) => ({
+  kind: row.kind,
+  term: row.term,
+  synonymGroup: row.synonymGroup,
+  language: row.language,
+});
+const toCpvPreferenceDto = (row: CompanyCpvPreference) => ({ cpvCode: row.cpvCode });
+const toGeographyDto = (row: CompanyGeography) => ({ kind: row.kind, code: row.code });
+const toCapabilityDto = (row: CompanyCapability) => ({ label: row.label });
+const toCertificationDto = (row: CompanyCertification) => ({
+  certificationCode: row.certificationCode,
+  label: row.label,
+});
+const toExclusionDto = (row: CompanyExclusion) => ({ kind: row.kind, value: row.value });
+
 orgRoutes.get('/keywords', async (c) => {
   const db = createDb(c.env.DB);
   const organizationId = c.get('organizationId');
   if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
   const page = await listCompanyKeywords(db, organizationId, { limit: 100 });
-  return c.json({ keywords: page.items });
+  return c.json({ keywords: page.items.map(toKeywordDto) });
 });
 
 orgRoutes.put(
@@ -308,7 +340,7 @@ orgRoutes.put(
       occurredAt: Date.now(),
     });
     const page = await listCompanyKeywords(db, organizationId, { limit: 100 });
-    return c.json({ keywords: page.items });
+    return c.json({ keywords: page.items.map(toKeywordDto) });
   },
 );
 
@@ -317,7 +349,7 @@ orgRoutes.get('/cpv-preferences', async (c) => {
   const organizationId = c.get('organizationId');
   if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
   const page = await listCompanyCpvPreferences(db, organizationId, { limit: 100 });
-  return c.json({ cpvPreferences: page.items });
+  return c.json({ cpvPreferences: page.items.map(toCpvPreferenceDto) });
 });
 
 orgRoutes.put(
@@ -350,7 +382,7 @@ orgRoutes.put(
       occurredAt: Date.now(),
     });
     const page = await listCompanyCpvPreferences(db, organizationId, { limit: 100 });
-    return c.json({ cpvPreferences: page.items });
+    return c.json({ cpvPreferences: page.items.map(toCpvPreferenceDto) });
   },
 );
 
@@ -359,7 +391,7 @@ orgRoutes.get('/geographies', async (c) => {
   const organizationId = c.get('organizationId');
   if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
   const page = await listCompanyGeographies(db, organizationId, { limit: 100 });
-  return c.json({ geographies: page.items });
+  return c.json({ geographies: page.items.map(toGeographyDto) });
 });
 
 orgRoutes.put(
@@ -385,7 +417,7 @@ orgRoutes.put(
       occurredAt: Date.now(),
     });
     const page = await listCompanyGeographies(db, organizationId, { limit: 100 });
-    return c.json({ geographies: page.items });
+    return c.json({ geographies: page.items.map(toGeographyDto) });
   },
 );
 
@@ -394,7 +426,7 @@ orgRoutes.get('/capabilities', async (c) => {
   const organizationId = c.get('organizationId');
   if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
   const page = await listCompanyCapabilities(db, organizationId, { limit: 100 });
-  return c.json({ capabilities: page.items });
+  return c.json({ capabilities: page.items.map(toCapabilityDto) });
 });
 
 orgRoutes.put(
@@ -420,7 +452,7 @@ orgRoutes.put(
       occurredAt: Date.now(),
     });
     const page = await listCompanyCapabilities(db, organizationId, { limit: 100 });
-    return c.json({ capabilities: page.items });
+    return c.json({ capabilities: page.items.map(toCapabilityDto) });
   },
 );
 
@@ -429,7 +461,7 @@ orgRoutes.get('/certifications', async (c) => {
   const organizationId = c.get('organizationId');
   if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
   const page = await listCompanyCertifications(db, organizationId, { limit: 100 });
-  return c.json({ certifications: page.items });
+  return c.json({ certifications: page.items.map(toCertificationDto) });
 });
 
 orgRoutes.put(
@@ -459,7 +491,7 @@ orgRoutes.put(
       occurredAt: Date.now(),
     });
     const page = await listCompanyCertifications(db, organizationId, { limit: 100 });
-    return c.json({ certifications: page.items });
+    return c.json({ certifications: page.items.map(toCertificationDto) });
   },
 );
 
@@ -468,7 +500,7 @@ orgRoutes.get('/exclusions', async (c) => {
   const organizationId = c.get('organizationId');
   if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
   const page = await listCompanyExclusions(db, organizationId, { limit: 100 });
-  return c.json({ exclusions: page.items });
+  return c.json({ exclusions: page.items.map(toExclusionDto) });
 });
 
 orgRoutes.put(
@@ -494,7 +526,7 @@ orgRoutes.put(
       occurredAt: Date.now(),
     });
     const page = await listCompanyExclusions(db, organizationId, { limit: 100 });
-    return c.json({ exclusions: page.items });
+    return c.json({ exclusions: page.items.map(toExclusionDto) });
   },
 );
 

@@ -22,10 +22,14 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        // In the sandboxed dev environment, Chromium is preinstalled at
-        // /opt/pw-browsers/chromium; PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
-        // is set in the environment, so Playwright resolves it without
-        // `playwright install`. No executablePath override needed here.
+        // Prefer a preinstalled Chromium when the environment provides one
+        // (sandboxed dev containers set PLAYWRIGHT_CHROMIUM_PATH or ship
+        // /opt/pw-browsers/chromium at a revision that may not match this
+        // @playwright/test version's expected download). In CI/local runs
+        // without one, Playwright resolves its own installed browser.
+        ...(process.env.PLAYWRIGHT_CHROMIUM_PATH !== undefined
+          ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } }
+          : {}),
       },
     },
   ],

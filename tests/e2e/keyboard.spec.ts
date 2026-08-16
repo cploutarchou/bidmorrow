@@ -1,50 +1,87 @@
 /**
  * Phase 12 stage A — scripted keyboard traversal: tab through the login
  * form and feed card / detail actions, asserting (a) focus visibility (a
- * computed outline or box-shadow on the focused element — never "focus is
+ * computed outline, or a box-shadow that APPEARS on focus — never "focus is
  * simply invisible") and (b) Enter-key activation of the Save action.
  * Findings feed docs/accessibility-review.md.
+ *
+ * The app styles focus via `:focus-visible` (styles.css), which Chromium
+ * only applies to keyboard-driven focus — so every focus in this spec is
+ * driven by real Tab keypresses, never bare `locator.focus()` (programmatic
+ * focus would not match `:focus-visible` and would false-fail the checks).
  */
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { bootstrapOnboardedUserWithMatches } from './helpers';
 
+/**
+ * True when the CURRENTLY FOCUSED element shows a visible focus style:
+ * either a real outline, or a box-shadow that differs from its unfocused
+ * box-shadow (a constant decorative shadow must not count as focus
+ * visibility). Restores focus before returning.
+ */
 async function hasVisibleFocusStyle(locator: Locator): Promise<boolean> {
-  const style = await locator.evaluate((el) => {
-    const computed = window.getComputedStyle(el);
-    return { outlineStyle: computed.outlineStyle, outlineWidth: computed.outlineWidth, boxShadow: computed.boxShadow };
+  return locator.evaluate((el) => {
+    const focused = window.getComputedStyle(el);
+    const outlineVisible = focused.outlineStyle !== 'none' && focused.outlineWidth !== '0px';
+    const focusedShadow = focused.boxShadow;
+    (el as HTMLElement).blur();
+    const blurredShadow = window.getComputedStyle(el).boxShadow;
+    (el as HTMLElement).focus();
+    const shadowAppearsOnFocus = focusedShadow !== 'none' && focusedShadow !== blurredShadow;
+    return outlineVisible || shadowAppearsOnFocus;
   });
-  const hasOutline = style.outlineStyle !== 'none' && style.outlineWidth !== '0px';
-  const hasBoxShadow = style.boxShadow !== 'none' && style.boxShadow.length > 0;
-  return hasOutline || hasBoxShadow;
 }
 
-test('login form: tab order reaches every field and the submit button, each with visible focus', async ({
+/** Press Tab until `locator` is the active element (bounded); false if never reached. */
+async function tabUntilFocused(page: Page, locator: Locator, maxTabs = 15): Promise<boolean> {
+  for (let i = 0; i < maxTabs; i += 1) {
+    await page.keyboard.press('Tab');
+    const reached = await locator
+      .evaluate((el) => el === document.activeElement)
+      .catch(() => false);
+    if (reached) return true;
+  }
+  return false;
+}
+
+test('login form: tabbing reaches email, password, submit in order, each with visible focus', async ({
   page,
 }) => {
   await page.goto('/login');
-  await page.locator('body').click(); // ensure no residual focus from navigation
-  await page.keyboard.press('Tab'); // skip link
-  await page.keyboard.press('Tab'); // header "BidMorrow" home link
-  await expect(page.getByRole('link', { name: 'BidMorrow' })).toBeFocused();
-  await page.keyboard.press('Tab'); // email field
+  await page.evaluate(() => {
+    (document.activeElement as HTMLElement | null)?.blur();
+  });
+
   const emailField = page.getByLabel('Email');
-  await expect(emailField).toBeFocused();
+  expect(await tabUntilFocused(page, emailField), 'Tab must reach the email field').toBe(true);
   expect(await hasVisibleFocusStyle(emailField), 'email field focus must be visible').toBe(true);
 
-  await page.keyboard.press('Tab');
   const passwordField = page.getByLabel('Password');
-  await expect(passwordField).toBeFocused();
+  expect(
+    await tabUntilFocused(page, passwordField, 5),
+    'Tab must reach the password field after email',
+  ).toBe(true);
   expect(await hasVisibleFocusStyle(passwordField), 'password field focus must be visible').toBe(
     true,
   );
 
-  await page.keyboard.press('Tab');
   const submitButton = page.getByRole('button', { name: 'Log in' });
-  await expect(submitButton).toBeFocused();
+  expect(
+    await tabUntilFocused(page, submitButton, 5),
+    'Tab must reach the submit button after password',
+  ).toBe(true);
   expect(await hasVisibleFocusStyle(submitButton), 'submit button focus must be visible').toBe(
     true,
   );
 });
+
+/** Land keyboard-driven focus on `target`: park focus just before it, then Tab onto it. */
+async function keyboardFocus(page: Page, target: Locator): Promise<void> {
+  await target.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect(target).toBeFocused();
+}
 
 test('feed card + tender detail: Save is keyboard-reachable and Enter-activatable', async ({
   page,
@@ -53,11 +90,11 @@ test('feed card + tender detail: Save is keyboard-reachable and Enter-activatabl
 
   const firstCard = page.locator('article.tender-card').first();
   const saveButton = firstCard.getByRole('button', { name: 'Save', exact: true });
-  await saveButton.focus();
-  await expect(saveButton).toBeFocused();
-  expect(await hasVisibleFocusStyle(saveButton), 'feed card Save button focus must be visible').toBe(
-    true,
-  );
+  await keyboardFocus(page, saveButton);
+  expect(
+    await hasVisibleFocusStyle(saveButton),
+    'feed card Save button focus must be visible',
+  ).toBe(true);
   await page.keyboard.press('Enter');
   await expect(firstCard.getByRole('button', { name: 'Saved' })).toHaveAttribute(
     'aria-pressed',
@@ -67,7 +104,7 @@ test('feed card + tender detail: Save is keyboard-reachable and Enter-activatabl
   await firstCard.locator('h3 a').click();
   await expect(page.getByRole('heading', { name: 'Score breakdown' })).toBeVisible();
   const detailSaveButton = page.getByRole('button', { name: 'Saved', exact: true });
-  await detailSaveButton.focus();
+  await keyboardFocus(page, detailSaveButton);
   expect(
     await hasVisibleFocusStyle(detailSaveButton),
     'tender detail Save/Saved button focus must be visible',

@@ -72,10 +72,7 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     // Step 5: capabilities + certifications (two "Add" buttons on this step
     // — target each by proximity to its own input, not by role name alone).
     await page.locator('#capability-input').fill('Critical infrastructure audits');
-    await page
-      .locator('#capability-input')
-      .locator('xpath=following-sibling::button[1]')
-      .click();
+    await page.locator('#capability-input').locator('xpath=following-sibling::button[1]').click();
     await expect(page.getByText('Critical infrastructure audits')).toBeVisible();
     await page.getByLabel('Certification').selectOption('ISO_27001');
     await page.locator('#cert-code').locator('xpath=following-sibling::button[1]').click();
@@ -119,9 +116,7 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
 
     await expect(page.getByRole('heading', { name: 'Score breakdown' })).toBeVisible();
     await expect(page.getByRole('table', { name: 'Score component breakdown' })).toBeVisible();
-    const rows = page.locator(
-      'table:has(caption:has-text("Score component breakdown")) tbody tr',
-    );
+    const rows = page.locator('table:has(caption:has-text("Score component breakdown")) tbody tr');
     expect(await rows.count()).toBeGreaterThan(0);
 
     const tedLink = page.getByRole('link', { name: 'Open original TED notice' });
@@ -146,10 +141,10 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
 
   test('feed: ignoring an item moves it to the Ignored tab', async () => {
     await page.getByRole('tab', { name: "Today's matches" }).click();
-    await expect(page.locator('article.tender-card').first()).toBeVisible();
+    // Retrying assertion, not an instant count() — the tab switch refetches
+    // and re-renders the list, and an instant count can race the refetch.
     const ignoreButtons = page.getByRole('button', { name: 'Ignore', exact: true });
-    const total = await ignoreButtons.count();
-    expect(total).toBeGreaterThan(0);
+    await expect(ignoreButtons.first()).toBeVisible();
     await ignoreButtons.first().click();
     await expect(page.getByText('Ignored.')).toBeVisible();
 
@@ -172,9 +167,7 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     await expect(page.getByRole('heading', { name: 'Company profile' })).toBeVisible();
 
     const input = page.getByLabel('Add keyword');
-    const addButton = page
-      .locator('#new-keyword')
-      .locator('xpath=following-sibling::button[1]');
+    const addButton = page.locator('#new-keyword').locator('xpath=following-sibling::button[1]');
     // Existing keywords from onboarding (preset + 1 manual) plus these must
     // exceed the 50-item cap (docs: COMPANY_KEYWORDS_CAP = 50).
     for (let i = 0; i < 55; i += 1) {
@@ -182,30 +175,26 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
       await addButton.click();
     }
     await page.getByRole('button', { name: 'Save keywords' }).click();
-    await expect(
-      page.getByText(/reached the limit of 50 items for this list/),
-    ).toBeVisible();
+    await expect(page.getByText(/reached the limit of 50 items for this list/)).toBeVisible();
   });
 
   test('settings: billing renders the honest no-subscription empty state', async () => {
     await expect(page.getByText('No active subscription.')).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: /Subscribe — Standard/ }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /Subscribe — Standard/ })).toBeVisible();
   });
 
   test('settings: account deletion blocked as sole org owner (409)', async () => {
     await page.getByLabel('Type DELETE to confirm').fill('DELETE');
     await page.getByRole('button', { name: 'Permanently delete my account' }).click();
-    await expect(
-      page.getByText(/sole owner of an organization/),
-    ).toBeVisible();
+    await expect(page.getByText(/sole owner of an organization/)).toBeVisible();
   });
 
   test('logout, then login again', async () => {
     await page.getByRole('button', { name: 'Log out' }).click();
     await expect(page).toHaveURL(/\/login/);
     await login(page, email, TEST_PASSWORD);
-    await expect(page.getByRole('heading', { name: 'What should you investigate today?' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'What should you investigate today?' }),
+    ).toBeVisible();
   });
 });

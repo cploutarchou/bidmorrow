@@ -100,9 +100,7 @@ async function bootstrapOnboardedUserWithMatchesForAxe(
   await page.getByLabel('Password').fill(TEST_PASSWORD);
   await page.getByRole('button', { name: 'Create account' }).click();
 
-  const mailResponse = await page.request.get(
-    `/api/test/mailbox?to=${encodeURIComponent(email)}`,
-  );
+  const mailResponse = await page.request.get(`/api/test/mailbox?to=${encodeURIComponent(email)}`);
   const mailBody = (await mailResponse.json()) as { mails: { kind: string; url: string }[] };
   const verification = mailBody.mails.find((m) => m.kind === 'verification');
   if (verification === undefined) throw new Error('no verification mail captured');

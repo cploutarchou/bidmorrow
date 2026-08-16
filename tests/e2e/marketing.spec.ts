@@ -18,7 +18,9 @@ test('methodology page discloses the unknown-value scoring policy', async ({ pag
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   // Every score component's unknown-field policy is disclosed as text.
   await expect(page.getByText('CPV fit')).toBeVisible();
-  await expect(page.getByText(/50% \(10 pts\) when no matchable-language text exists/)).toBeVisible();
+  await expect(
+    page.getByText(/50% \(10 pts\) when no matchable-language text exists/),
+  ).toBeVisible();
 });
 
 test('pricing page renders both plans', async ({ page }) => {
