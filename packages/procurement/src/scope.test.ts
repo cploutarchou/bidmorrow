@@ -9,7 +9,7 @@ describe('buildScopeQuery', () => {
       windowTo: '2026-08-10',
     });
     expect(query).toBe(
-      'classification-cpv IN (72*, 48*, 79417000) AND form-type = competition AND publication-date >= 2026-08-10 AND publication-date <= 2026-08-10 SORT BY publication-date',
+      'classification-cpv IN (72*, 48*, 79417000) AND form-type = competition AND publication-date >= 20260810 AND publication-date <= 20260810 SORT BY publication-date',
     );
   });
 
