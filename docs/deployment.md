@@ -1,14 +1,17 @@
 # Deployment
 
 Definitive deployment procedure for BidMorrow. **Status: Phase 13 —
-staging being provisioned (2026-08-16):** D1 `bidmorrow-staging` created
-(WEUR); `.github/workflows/deploy-staging.yml` auto-deploys every merge to
-`main` (queues/R2 ensured idempotently in the workflow; R2 needs one-time
-account enablement in the Dashboard). Staging runs on workers.dev — the
-URL is computed per-deploy from the account subdomain and injected via
-`--var`; the `staging.bidmorrow.com` vars in wrangler.jsonc are
-placeholders until a custom domain is attached. Remaining prerequisites
-live in HUMAN_DECISION_BLOCKERS.md.
+staging LIVE (2026-08-16)** at
+`https://bidmorrow-staging.cploutarchou.workers.dev`:
+`.github/workflows/deploy-staging.yml` auto-deploys every merge to `main`
+(queues/R2 ensured idempotently in the workflow), migrations applied to
+the remote D1 (WEUR), secrets pushed, CI smoke tests green, ingestion
+unpaused after the pre-first-ingestion gates passed. Staging runs on
+workers.dev only — the URL is computed per-deploy from the account
+subdomain and injected via `--var` (the staging vars in wrangler.jsonc
+are documentation). `bidmorrow.com` is production-only (see "Custom
+domain & DNS"). Remaining prerequisites live in
+HUMAN_DECISION_BLOCKERS.md.
 
 ## Environments
 
@@ -110,11 +113,26 @@ Migrations are **roll-forward by default** — write a new corrective
 migration rather than editing an applied one; Time Travel restore is the
 emergency path only.
 
-## Custom domain & DNS (blocker 2)
+## Custom domain & DNS
 
-- DNS on Cloudflare; `bidmorrow.com` + `app.bidmorrow.com` attached as
-  Workers **custom domains** (Dashboard → Worker → Settings → Domains &
-  Routes). Staging on a separate hostname (e.g. `staging.bidmorrow.com`).
+- The `bidmorrow.com` zone is on Cloudflare (Full setup, active —
+  confirmed 2026-08-16).
+- **Production**: `wrangler.jsonc` `env.production` declares
+  `routes: [{ pattern: "bidmorrow.com", custom_domain: true }]` and
+  `workers_dev: false`. The **first** `wrangler deploy --env production`
+  attaches the domain — wrangler creates the DNS record and certificate
+  itself; there are no dashboard steps. Until that deploy, the zone
+  Overview showing **"No Workers connected" is expected**, not an error.
+  Never use the dashboard's "Connect Worker" button to attach the staging
+  worker to the zone — that would serve the staging environment (test
+  Stripe, staging DB) on the production domain.
+- `www.bidmorrow.com` → apex: one Cloudflare **Redirect Rule**
+  (Dashboard → Rules → Redirect Rules), owner action at production
+  cutover. Recorded on the production cutover checklist.
+- **Staging** stays on workers.dev
+  (`https://bidmorrow-staging.<account-subdomain>.workers.dev`); no
+  staging hostname on the zone in V1. The deploy workflow injects the
+  resolved workers.dev URL via `--var` at every deploy.
 - HSTS and CSP come from the Worker (security.md C3/C4), not DNS.
 
 ## Stripe webhook registration [validate: Phase 13]
@@ -147,5 +165,12 @@ Phase 8 going live.
   loss of writes made after the bookmark.
 - **Combined** (bad deploy + bad migration): roll back the Worker version
   first to stop damage, then decide forward-fix vs restore.
+- **CI lever**: `.github/workflows/staging-ops.yml` (workflow_dispatch,
+  staging environment creds) runs these without local Cloudflare access:
+  `deployments-list`, `rollback-previous` (rollback + live health check;
+  roll forward afterwards by dispatching Deploy staging),
+  `d1-time-travel-info` (capture bookmark), `d1-time-travel-restore`
+  (point-in-time restore + prints the `ingestion_paused` row as a
+  verification marker).
 - Rollback drill on staging is part of Phase 13 sign-off
   [validate: Phase 13].
