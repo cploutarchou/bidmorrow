@@ -16,9 +16,26 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-// Node 18+ global fetch, referenced via globalThis because this repo's
+// Node 18+ globals, referenced via globalThis because this repo's
 // flat ESLint config declares no runtime globals for scripts/.
-const { fetch } = globalThis;
+const { fetch, AbortSignal } = globalThis;
+
+// Run #1 (2026-08-16, 31976779119) got HTTP 200 with a ZERO-BYTE body for
+// every notice XML when fetching links.xml.MUL bare. The website front-end
+// (ted.europa.eu, not api.ted.europa.eu) evidently expects a client that
+// identifies itself and states what it accepts, so send both and record
+// full diagnostics for any response that still is not XML.
+const XML_REQUEST_HEADERS = {
+  accept: 'application/xml, text/xml;q=0.9, */*;q=0.5',
+  'user-agent': 'BidMorrow-fixture-fetch/1.0 (+https://bidmorrow.com; support@bidmorrow.com)',
+};
+
+/** True when the body looks like an HTML page rather than notice XML. */
+function looksLikeHtml(contentType, body) {
+  if (typeof contentType === 'string' && contentType.toLowerCase().includes('html')) return true;
+  const head = body.trimStart().slice(0, 15).toLowerCase();
+  return head.startsWith('<!doctype') || head.startsWith('<html');
+}
 
 const DAYS_BACK = Number(process.env.DAYS_BACK ?? '5');
 const MAX_NOTICES = Number(process.env.MAX_NOTICES ?? '40');
@@ -81,6 +98,7 @@ const step = Math.max(1, Math.floor(notices.length / MAX_NOTICES));
 const picked = notices.filter((_, i) => i % step === 0).slice(0, MAX_NOTICES);
 
 let saved = 0;
+const failures = [];
 for (const notice of picked) {
   const number = notice['publication-number'];
   const xmlUrl = notice.links?.xml?.MUL;
@@ -88,18 +106,49 @@ for (const notice of picked) {
     console.log(`skipping row without publication-number/links.xml.MUL`);
     continue;
   }
-  const xmlResponse = await fetch(xmlUrl);
-  if (!xmlResponse.ok) {
-    console.log(`skip ${number}: XML fetch HTTP ${xmlResponse.status}`);
-    continue;
+  const xmlResponse = await fetch(xmlUrl, {
+    headers: XML_REQUEST_HEADERS,
+    redirect: 'follow',
+    signal: AbortSignal.timeout(30_000),
+  });
+  const body = await xmlResponse.text();
+  const summary = {
+    notice: number,
+    url: xmlUrl,
+    finalUrl: xmlResponse.url,
+    status: xmlResponse.status,
+    contentType: xmlResponse.headers.get('content-type'),
+    bytes: body.length,
+  };
+  // A zero-byte or HTML body written to disk would silently poison the raw
+  // material (run #1 failure mode) — only real XML counts as saved.
+  if (!xmlResponse.ok || body.trim().length === 0 || looksLikeHtml(summary.contentType, body)) {
+    failures.push({
+      ...summary,
+      responseHeaders: Object.fromEntries(xmlResponse.headers.entries()),
+      bodyPreview: body.slice(0, 400),
+    });
+    console.log(
+      `skip ${number}: status=${String(summary.status)} type=${String(summary.contentType)} bytes=${String(summary.bytes)} finalUrl=${summary.finalUrl}`,
+    );
+  } else {
+    await writeFile(`raw-fixtures/raw/${number}.xml`, body);
+    saved += 1;
+    console.log(`saved ${number}: ${String(summary.bytes)} bytes (${String(summary.contentType)})`);
   }
-  await writeFile(`raw-fixtures/raw/${number}.xml`, await xmlResponse.text());
-  saved += 1;
   // Polite pacing — no documented quota exists, we do not assume unlimited.
   await sleep(300);
 }
-console.log(`saved ${saved} raw notice XMLs`);
+
+await writeFile(
+  'raw-fixtures/raw/diagnostics.json',
+  JSON.stringify({ fetchedAt: new Date().toISOString(), saved, failures }, null, 2),
+);
+console.log(`saved ${saved} raw notice XMLs, ${failures.length} failures`);
 if (saved === 0) {
-  console.error('no XMLs saved — inspect the skip logs above');
+  // The push step never runs on failure, so surface the first failure's full
+  // diagnostics in the job log — that must be enough to debug from.
+  console.error('no XMLs saved — first failure diagnostics:');
+  console.error(JSON.stringify(failures[0] ?? null, null, 2));
   process.exit(1);
 }
