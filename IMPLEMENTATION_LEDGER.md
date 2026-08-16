@@ -53,8 +53,23 @@ UTC), fixture refresh from the ingestion's R2 snapshots, then security
 
 ### Phase 13 progress (2026-08-16)
 
-**FIRST PRODUCTION DEPLOY: 90% — blocked only on apex DNS (run
-31964441161, 18:23 UTC)**: production D1 CREATED
+**PRODUCTION IS LIVE: https://bidmorrow.com (deploy run #5, 31966643429,
+19:08 UTC, all steps green incl. smoke)**. The road there took 5 runs,
+each failure real and owner-fixable: run #1 — apex DNS conflict (100117,
+parking A record; owner deleted apex A + www parking CNAME, also fixed a
+duplicate-DMARC record); run #2 — domain attached + all 7 secrets
+pushed, smoke failed (cert provisioning window); run #3 — same, beyond
+cert timing; run #4 — WITH new smoke diagnostics (PR #24): every request
+got 403 `cf-mitigated: challenge` ("Just a moment…" Managed Challenge) —
+a zone security toggle was challenging ALL non-browser traffic, which
+would also have broken Stripe webhooks and the SPA's API calls; owner
+disabled it; run #5 — GREEN end-to-end. Production state: worker live on
+bidmorrow.com (custom domain + cert), D1 migrated, all secrets set,
+`ingestion_paused='true'` — unpausing is the deliberate go-live step
+after Phase 14. Lesson recorded: zone-level challenge features must stay
+off the app origin (the worker carries its own rate limits/headers).
+
+**FIRST PRODUCTION DEPLOY (run #1 details, 18:23 UTC)**: production D1 CREATED
 (`cd5f6ceb-3262-4ba9-a5f4-4c1ed43e27bb`, WEUR — id now committed in
 wrangler.jsonc), all 7 migrations applied, `ingestion_paused='true'`
 seeded (rows_written 3), all 6 queues + R2 bucket ensured, Worker

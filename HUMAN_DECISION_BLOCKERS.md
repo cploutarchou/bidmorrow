@@ -86,6 +86,22 @@ Still human-required / deferred to Phase 13:
    bidmorrow.com → DNS → Records: **delete the A / AAAA / CNAME
    record(s) whose name is `bidmorrow.com`** (root/apex). Keep TXT and
    MX records — they don't conflict. Then re-run "Deploy production".
+   ~~DONE 2026-08-16~~ — domain attached on deploy run #2.
+
+   ~~OPEN console action #2~~ **DONE 2026-08-16** (owner disabled the
+   challenge; deploy run #5 green — bidmorrow.com LIVE). Original
+   finding kept for the record: the zone served a **Managed Challenge**
+   (`cf-mitigated:
+challenge`, "Just a moment…" interstitial) on EVERY request — this
+   blocks health checks, the Stripe webhook endpoint, and the SPA's own
+   API fetches. Dashboard → bidmorrow.com → **Security**: turn **Bot
+   Fight Mode OFF** (it challenges all non-browser clients and cannot
+   be scoped/bypassed on Free), ensure **Security Level is not "I'm
+   Under Attack"**, and disable any Quick-Start one-click feature whose
+   action is "challenge". The Worker already enforces its own rate
+   limiting + security headers (docs/security.md); zone-level
+   challenges must stay off the app origin.
+
 3. Email authentication (required before any digest email is sent to customers —
    deliverability depends on it):
    - Add the SPF, DKIM and DMARC records that Resend displays under
