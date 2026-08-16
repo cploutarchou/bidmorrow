@@ -53,6 +53,26 @@ UTC), fixture refresh from the ingestion's R2 snapshots, then security
 
 ### Phase 13 progress (2026-08-16)
 
+**LEGAL/VAT DECISIONS IMPLEMENTED (late evening, PR #28)**: owner decided
+(a) email-only contact on terms/privacy (no postal address — pages +
+blockers updated; email-forwarding test now REQUIRED) and (b) **Stripe
+Tax** for VAT. Implementation: new `stripe_tax_enabled` feature flag
+(default OFF, admin-flippable like other boolean flags); when ON,
+`createCheckoutSession` adds `automatic_tax: {enabled:true}`,
+`tax_id_collection: {enabled:true}`, and — only on the
+existing-customer reactivation path — `customer_update: {address:
+'auto', name:'auto'}` (param shapes verified from the installed SDK's
+Checkout/Sessions.d.ts; the customer_update-required-for-tax runtime
+behavior could only be cross-checked via WebSearch because
+docs.stripe.com is egress-blocked — flagged in the code comment;
+validate on staging test-mode before flipping the flag in production).
+Flag OFF = params byte-identical to before (exact-object tests). All
+customer-facing prices now say "excl. VAT" (Pricing/Pilot/Settings +
+E2E assertion); product-scope records the decision. OWNER ACTIONS
+(blockers item 7): activate Stripe Tax in BOTH modes (origin address,
+registrations, price tax_behavior=exclusive), then ask to flip the
+flag (staging first). Gates green: root 414, worker 157, db 52.
+
 **STAGING CUSTOM DOMAIN (owner request, evening)**: staging moves from
 workers.dev to **https://staging.bidmorrow.com** — `workers_dev: false`
 

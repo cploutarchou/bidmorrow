@@ -32,6 +32,7 @@ import {
   FLAG_FOUNDING_PLAN_OPEN,
   FLAG_INGESTION_CPV_SCOPE,
   FLAG_INGESTION_PAUSED,
+  FLAG_STRIPE_TAX,
 } from '@bidmorrow/config';
 import type { FeatureFlagKey } from '@bidmorrow/config';
 import {
@@ -809,6 +810,7 @@ function validateFlagValue(key: FeatureFlagKey, value: unknown): string | null {
     case FLAG_INGESTION_PAUSED:
     case FLAG_DIGEST_PAUSED:
     case FLAG_ENTITLEMENT_ENFORCED:
+    case FLAG_STRIPE_TAX:
       return typeof value === 'boolean' ? valueJson : null;
     case FLAG_FOUNDING_CAP:
       return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 10_000

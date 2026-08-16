@@ -30,9 +30,44 @@
  * existing customer when one is supplied), so the eventual webhook upsert
  * still resolves via the SAME unique `stripe_customer_id` and updates the
  * same row rather than colliding on `organization_id`.
+ *
+ * Stripe Tax (2026-08-16 owner decision, gated by `FLAG_STRIPE_TAX`): when
+ * on, the session additionally carries `automatic_tax: { enabled: true }`
+ * and `tax_id_collection: { enabled: true }` (B2B customers can enter a VAT
+ * ID for reverse charge). Both params, and `customer_update`, are declared
+ * on `SessionCreateParams` in the installed SDK's
+ * `esm/resources/Checkout/Sessions.d.ts` (`automatic_tax?:
+ * SessionCreateParams.AutomaticTax`, `tax_id_collection?:
+ * SessionCreateParams.TaxIdCollection`, `customer_update?:
+ * SessionCreateParams.CustomerUpdate` — the latter's own doc comment: "Can
+ * only be provided when `customer` is provided"). The .d.ts doc comments do
+ * NOT themselves spell out that automatic tax additionally REQUIRES
+ * `customer_update` when reusing an existing `customer` (that requirement
+ * lives in Stripe's runtime validation / docs.stripe.com, not the type
+ * declarations — docs.stripe.com was unreachable from this sandbox's
+ * network policy when this was written, so this is cross-checked from
+ * Stripe's own published API reference content and confirmed third-party
+ * integration reports instead of a live fetch): with an existing customer,
+ * automatic tax needs to know whether it may treat the billing address
+ * Checkout collects as authoritative (`customer_update.address: 'auto'`),
+ * and enabling `tax_id_collection` for an existing customer separately
+ * requires permission to save the business name Stripe derives from the tax
+ * ID back onto that customer (`customer_update.name: 'auto'`) — so both are
+ * set (only when `customer` is passed; `customer_update` is invalid without
+ * it, per the doc comment above) rather than left for Stripe to reject.
+ * Flag OFF is byte-identical to pre-Stripe-Tax params (no automatic_tax/
+ * tax_id_collection/customer_update key at all) — see `checkout.test.ts`.
+ *
+ * NOT settable in code — dashboard-only prerequisites before turning the
+ * flag on, in BOTH test and live mode: Stripe Tax must be activated
+ * (origin/business address configured), tax registrations added for every
+ * jurisdiction being charged VAT in, and each Price's `tax_behavior`
+ * (inclusive/exclusive) set. None of this is a Checkout Session param this
+ * file can pass — see the report accompanying this change for the full
+ * list.
  */
 import { getFeatureFlag, getSubscription, type Db } from '@bidmorrow/db';
-import { FLAG_FOUNDING_CAP, FLAG_FOUNDING_PLAN_OPEN } from '@bidmorrow/config';
+import { FLAG_FOUNDING_CAP, FLAG_FOUNDING_PLAN_OPEN, FLAG_STRIPE_TAX } from '@bidmorrow/config';
 import type { OrganizationId } from '@bidmorrow/domain';
 import { countNonCanceledSubscriptionsByPlan } from '@bidmorrow/db';
 
@@ -83,6 +118,18 @@ export function resolveFoundingCap(flag: { readonly valueJson: string } | null):
   if (flag === null) return DEFAULT_FOUNDING_CAP;
   const parsed = Number(JSON.parse(flag.valueJson));
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : DEFAULT_FOUNDING_CAP;
+}
+
+/**
+ * `flag.value_json` for `FLAG_STRIPE_TAX` is a bare JSON boolean, e.g.
+ * `"true"`. Pure, no DB. Identical semantics to {@link isFoundingPlanOpenFlag}
+ * (absent row, explicit `false`, or any non-boolean-`true` JSON value all
+ * resolve to "off" — today's Checkout params, unchanged); a malformed
+ * non-JSON `value_json` still throws from `JSON.parse` rather than being
+ * silently swallowed, matching that function's established behavior too.
+ */
+export function isStripeTaxEnabledFlag(flag: { readonly valueJson: string } | null): boolean {
+  return flag !== null && JSON.parse(flag.valueJson) === true;
 }
 
 /**
@@ -154,6 +201,14 @@ export async function createCheckoutSession(
     throw new SubscriptionAlreadyExistsError(args.organizationId);
   }
 
+  // Same read style as `assertFoundingPlanOpen` above: `getFeatureFlag`
+  // against `deps.db`, default (row absent or not exactly JSON `true`) is
+  // OFF — see `isStripeTaxEnabledFlag` and this file's header for the full
+  // Stripe Tax rationale and the .d.ts citation for every param below.
+  const stripeTaxFlag = await getFeatureFlag(deps.db, FLAG_STRIPE_TAX);
+  const stripeTaxEnabled = isStripeTaxEnabledFlag(stripeTaxFlag);
+  const reactivatingCustomer = recheck?.stripeCustomerId;
+
   // Deliberately reads off `recheck` (the freshest row), not `existing`
   // (the first, staler read) — if a row appeared between the two reads
   // (e.g. a canceled row written by a webhook that raced this request),
@@ -163,12 +218,24 @@ export async function createCheckoutSession(
   const session = await deps.stripe.checkout.sessions.create({
     mode: 'subscription',
     client_reference_id: args.organizationId,
-    ...(recheck?.stripeCustomerId !== undefined ? { customer: recheck.stripeCustomerId } : {}),
+    ...(reactivatingCustomer !== undefined ? { customer: reactivatingCustomer } : {}),
     line_items: [{ price: priceId, quantity: 1 }],
     metadata,
     subscription_data: { metadata },
     success_url: `${deps.appBaseUrl}/app/settings?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${deps.appBaseUrl}/app/settings?checkout=cancelled`,
+    ...(stripeTaxEnabled
+      ? {
+          automatic_tax: { enabled: true },
+          tax_id_collection: { enabled: true },
+          // `customer_update` is only valid alongside `customer` (see this
+          // file's header) — omitted entirely on the brand-new-customer
+          // path rather than sent with nothing meaningful to update.
+          ...(reactivatingCustomer !== undefined
+            ? { customer_update: { address: 'auto', name: 'auto' } as const }
+            : {}),
+        }
+      : {}),
   });
 
   if (session.url === null) {
