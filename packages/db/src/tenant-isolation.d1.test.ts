@@ -43,7 +43,7 @@ import { TenantMismatchError } from './repositories/errors';
 import {
   getTenderMatchWithComponents,
   insertTenderMatches,
-  listTenderMatchesForFeed,
+  listFeedRows,
 } from './repositories/matching';
 import { billingEvents } from './schema/billing';
 import { customerFeedback, digestRuns, savedTenders } from './schema/engagement';
@@ -179,10 +179,17 @@ async function seedMatch(
     ],
   });
   expect(result.inserted).toBe(1);
-  const page = await listTenderMatchesForFeed(db, orgId, { engineVersion: ENGINE_VERSION });
+  // The production feed path (`listFeedRows`, the query `GET /api/org/feed`
+  // actually runs — P-2, docs/phase12-quality-findings.md): the freshly
+  // scored match is on the `today` tab, and its id comes back as `matchId`.
+  const page = await listFeedRows(db, orgId, {
+    tab: 'today',
+    engineVersion: ENGINE_VERSION,
+    now: Date.now(),
+  });
   const match = page.items.find((m) => m.lotId === lot.lotId);
   if (match === undefined) throw new Error('seedMatch: inserted match not found in own feed');
-  return match.id;
+  return match.matchId;
 }
 
 const db = createDb(env.DB);
@@ -259,12 +266,15 @@ describe('tender_matches isolation', () => {
     const matchIdA = await seedMatch(db, orgA.orgId, lot);
     const matchIdB = await seedMatch(db, orgB.orgId, lot);
 
-    const feedA = await listTenderMatchesForFeed(db, orgA.orgId, {
+    const feedA = await listFeedRows(db, orgA.orgId, {
+      tab: 'today',
       engineVersion: ENGINE_VERSION,
+      now: Date.now(),
     });
-    expect(feedA.items.map((m) => m.id)).toEqual([matchIdA]);
-    expect(feedA.items.every((m) => m.organizationId === orgA.orgId)).toBe(true);
-    expect(feedA.items.map((m) => m.id)).not.toContain(matchIdB);
+    // Exactly A's match and nothing else — the id-set equality IS the
+    // isolation assertion (FeedRow deliberately carries no organizationId).
+    expect(feedA.items.map((m) => m.matchId)).toEqual([matchIdA]);
+    expect(feedA.items.map((m) => m.matchId)).not.toContain(matchIdB);
   });
 
   it("A reading B's match by id gets null — components never leak through the parent", async () => {

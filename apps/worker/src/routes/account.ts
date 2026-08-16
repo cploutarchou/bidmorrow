@@ -48,10 +48,13 @@ import { organizationId as toOrganizationId } from '@bidmorrow/domain';
 
 import { createRequestAuth } from '../auth-instance';
 import type { AppBindings } from '../env';
+import { createIpRateLimit } from '../middleware/rate-limit';
 import { requireSession } from '../middleware/session';
 
 export const accountRoutes = new Hono<AppBindings>();
 
+// P10-R-04 sweep: every API route group shares the IP-keyed limiter.
+accountRoutes.use('*', createIpRateLimit('/api/account/*'));
 accountRoutes.use('*', requireSession);
 
 accountRoutes.delete('/', async (c) => {

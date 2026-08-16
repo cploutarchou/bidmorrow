@@ -341,64 +341,6 @@ export async function insertTenderMatches(
   return { inserted: batchResult.inserted, skipped: skipped + batchResult.skipped };
 }
 
-/** Feed cursor: `${scoredAt}:${id}` of the last row (order is stable). */
-function decodeFeedCursor(cursor: string): { scoredAt: number; id: string } {
-  const separator = cursor.indexOf(':');
-  const scoredAt = separator > 0 ? Number(cursor.slice(0, separator)) : Number.NaN;
-  const id = separator > 0 ? cursor.slice(separator + 1) : '';
-  if (!Number.isFinite(scoredAt) || id.length === 0) {
-    throw new Error('listTenderMatchesForFeed: malformed cursor');
-  }
-  return { scoredAt, id };
-}
-
-export interface ListMatchesForFeedArgs extends Pagination {
-  /** The engine version whose scores the feed shows (e.g. `1`). */
-  engineVersion: string;
-  /** Classification tab filter; omit for all classifications. */
-  classifications?: MatchClassification[];
-  /** Minimum score; rows with null score (EXCLUDED) never pass this filter. */
-  minScore?: number;
-}
-
-/**
- * The feed query: org + engine version (+ classification tab, + min score),
- * newest `scored_at` first, id as deterministic tiebreaker. Backed by
- * `idx_tender_matches__organization_id_engine_version_classification_scored_at`.
- */
-export async function listTenderMatchesForFeed(
-  db: Db,
-  organizationId: OrganizationId,
-  args: ListMatchesForFeedArgs,
-): Promise<Page<TenderMatch>> {
-  const limit = normalizeLimit(args.limit);
-  const conditions = [
-    eq(tenderMatches.organizationId, organizationId),
-    eq(tenderMatches.engineVersion, args.engineVersion),
-  ];
-  if (args.classifications !== undefined && args.classifications.length > 0) {
-    conditions.push(inArray(tenderMatches.classification, args.classifications));
-  }
-  if (args.minScore !== undefined) {
-    conditions.push(gte(tenderMatches.score, args.minScore));
-  }
-  if (args.cursor !== undefined) {
-    const cursor = decodeFeedCursor(args.cursor);
-    const keyset = or(
-      lt(tenderMatches.scoredAt, cursor.scoredAt),
-      and(eq(tenderMatches.scoredAt, cursor.scoredAt), lt(tenderMatches.id, cursor.id)),
-    );
-    if (keyset !== undefined) conditions.push(keyset);
-  }
-  const rows = await db
-    .select()
-    .from(tenderMatches)
-    .where(and(...conditions))
-    .orderBy(desc(tenderMatches.scoredAt), desc(tenderMatches.id))
-    .limit(limit + 1);
-  return toPage(rows, limit, (last) => `${last.scoredAt}:${last.id}`);
-}
-
 /**
  * Recompute path (corrected notices / admin-triggered re-score): replaces
  * every existing `(organizationId, lotId ∈ lotIds, engineVersion)` match row

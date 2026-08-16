@@ -21,6 +21,8 @@ import { createLogger } from '@bidmorrow/observability';
 
 import { rateLimitOrgApi } from './rate-limit';
 import type { AppBindings } from '../env';
+import { adminRoutes } from '../routes/admin';
+import { webhookRoutes } from '../routes/webhooks';
 
 function buildApp(): Hono<AppBindings> {
   const app = new Hono<AppBindings>();
@@ -117,5 +119,43 @@ describe('rateLimitOrgApi', () => {
         consoleWarnSpy.mockRestore();
       }
     });
+  });
+});
+
+describe('route-group wiring (SEC-P9-02 / P10-R-04)', () => {
+  function mountApp(routes: Hono<AppBindings>, basePath: string): Hono<AppBindings> {
+    const app = new Hono<AppBindings>();
+    app.use('*', async (c, next) => {
+      c.set('requestId', 'test-request-id');
+      c.set('logger', createLogger({ request_id: 'test-request-id' }));
+      await next();
+    });
+    app.route(basePath, routes);
+    return app;
+  }
+
+  it('SEC-P9-02: the Stripe webhook route is limiter-gated BEFORE signature handling', async () => {
+    const app = mountApp(webhookRoutes, '/api/webhooks');
+    // No Stripe env config at all: if the request reached the handler it
+    // would 503 (not_configured); a 429 proves the limiter rejected first.
+    const response = await app.request(
+      '/api/webhooks/stripe',
+      { method: 'POST', body: '{}' },
+      { API_RATE_LIMITER: stubLimiter(false) },
+    );
+    expect(response.status).toBe(429);
+    expect(await response.json()).toEqual({ error: 'rate_limited', request_id: 'test-request-id' });
+  });
+
+  it('P10-R-04: /api/admin/* is limiter-gated BEFORE the admin auth check', async () => {
+    const app = mountApp(adminRoutes, '/api/admin');
+    // No session at all: if auth ran first this would be a 401; a 429
+    // proves failed-auth hammering is throttled too.
+    const response = await app.request(
+      '/api/admin/flags',
+      {},
+      { API_RATE_LIMITER: stubLimiter(false) },
+    );
+    expect(response.status).toBe(429);
   });
 });

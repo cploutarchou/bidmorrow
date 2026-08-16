@@ -29,8 +29,15 @@ import { createDb } from '@bidmorrow/db';
 
 import { resolveBillingConfig } from '../billing';
 import type { AppBindings } from '../env';
+import { createIpRateLimit } from '../middleware/rate-limit';
 
 export const webhookRoutes = new Hono<AppBindings>();
+
+// SEC-P9-02: throttle the unauthenticated webhook endpoint BEFORE signature
+// verification spends CPU on attacker-supplied bodies. Keyed per client IP;
+// Stripe's real delivery volume for this app is far below the limit, and
+// Stripe retries deliveries that hit a 429.
+webhookRoutes.use('*', createIpRateLimit('/api/webhooks/stripe'));
 
 webhookRoutes.post('/stripe', async (c) => {
   const config = resolveBillingConfig(c.env);

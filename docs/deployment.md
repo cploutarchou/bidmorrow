@@ -80,7 +80,9 @@ env-specific resource names/ids — wrangler does not inherit bindings.
    Required reviewers there). Steps: ensure queues/R2/D1 idempotently
    (first run creates them; the resolved D1 id is patched into the
    checkout and printed as `PRODUCTION_D1_ID` for committing) → capture
-   D1 Time Travel bookmark → apply migrations → seed
+   D1 Time Travel bookmark → apply migrations → verify FK enforcement
+   live (`PRAGMA foreign_keys` must return 1 — P10-R-04; the staging
+   deploy runs the same check) → seed
    `ingestion_paused=true` (unpausing is a deliberate go-live step) →
    build SPA → `wrangler deploy --env production` (attaches
    bidmorrow.com on first run) → push runtime secrets → post-deploy
