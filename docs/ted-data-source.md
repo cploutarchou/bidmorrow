@@ -26,6 +26,15 @@ could not be fully verified.
   Multilingual fields are objects keyed by ISO 639-2 codes (`eng`, `deu`…).
   `links.xml.MUL` is the authoritative multilingual source XML per notice —
   ingestion fetches this for parsing + R2 snapshot.
+- **XML downloads require an identifying client** (empirical, 2026-08-16,
+  fixture-fetch CI runs 31976779119 vs 31977377822): a bare GET of a
+  `links.xml.MUL` URL (`ted.europa.eu/<lang>/notice/<id>/xml`) returns
+  **HTTP 200 with an empty body**; with `Accept: application/xml, …` and a
+  `User-Agent` identifying the client it returns the real XML. The search
+  API (api.ted.europa.eu) never showed this. `TedClient` therefore sends
+  both headers on every request (`TED_USER_AGENT` in
+  `packages/ted/src/client.ts`) and treats an empty 200 body as a failed
+  fetch, never as valid XML.
 - No documented req/s or daily quota exists in the official spec. We do NOT
   assume unlimited: polite throttling, exponential backoff on 429/5xx, and
   an admin-configurable request budget per run are mandatory.

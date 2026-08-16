@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createLogger } from '@bidmorrow/observability';
 
-import { TedClient } from './client';
+import { TED_USER_AGENT, TedClient } from './client';
 import type { TedFetch } from './client';
 import { TedBudgetExceededError, TedRequestError, TedXmlTooLargeError } from './errors';
 
@@ -21,6 +21,7 @@ interface RecordedCall {
   readonly url: string;
   readonly at: number;
   readonly body: unknown;
+  readonly headers: Record<string, string>;
 }
 
 /** Queue-driven fake fetch recording call times (fake-timer clock). */
@@ -31,6 +32,7 @@ function makeFakeFetch(specs: (FakeResponseSpec | Error)[]) {
       url,
       at: Date.now(),
       body: init?.body === undefined ? null : JSON.parse(init.body),
+      headers: init?.headers ?? {},
     });
     const spec = specs.shift();
     if (spec === undefined) {
@@ -284,6 +286,27 @@ describe('TedClient.fetchNoticeXml', () => {
     const xml = await client.fetchNoticeXml('https://ted.europa.eu/en/notice/1-2026/xml');
     expect(xml).toBe('<xml/>');
     expect(calls[0]?.url).toBe('https://ted.europa.eu/en/notice/1-2026/xml');
+  });
+
+  it('identifies the client with Accept and User-Agent (ted.europa.eu serves an empty 200 without them)', async () => {
+    const { fetchImpl, calls } = makeFakeFetch([{ status: 200, body: '<xml/>' }]);
+    const client = makeClient(fetchImpl);
+    await client.fetchNoticeXml('https://ted.europa.eu/en/notice/1-2026/xml');
+    expect(calls[0]?.headers['Accept']).toContain('application/xml');
+    expect(calls[0]?.headers['User-Agent']).toBe(TED_USER_AGENT);
+    expect(TED_USER_AGENT).toContain('BidMorrow');
+  });
+
+  it('rejects an HTTP 200 response with an empty body as a failed fetch, not valid XML', async () => {
+    // Fresh client per case — a second request on one client would park on
+    // the 500 ms spacing sleep under fake timers.
+    for (const emptyBody of ['', '  \n\t ']) {
+      const { fetchImpl } = makeFakeFetch([{ status: 200, body: emptyBody }]);
+      const client = makeClient(fetchImpl);
+      await expect(
+        client.fetchNoticeXml('https://ted.europa.eu/en/notice/1-2026/xml'),
+      ).rejects.toMatchObject({ name: 'TedRequestError', status: 200 });
+    }
   });
 
   it('refuses non-TED hosts and non-https URLs without spending budget', async () => {
