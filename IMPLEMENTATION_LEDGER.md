@@ -92,6 +92,12 @@ the P-2/P10-R-04 review follow-up items:
   157 (3 new), db 52. threat-model §4.3 residuals + T21 + changelog
   updated; deployment.md CI/CD step 3 updated; phase12-quality-findings
   P-2 marked resolved.
+- **Hardening DEPLOYED to both environments**: staging auto-deploy
+  (31968470313) green on merge — first CI execution of the FK-verify
+  step and the SHA-pinned actions; production deploy **run #6**
+  (31968811076, dispatched from main @ bd2c2f6) green end-to-end incl.
+  live `PRAGMA foreign_keys`=1 and full smoke. Webhook/admin/account
+  rate limits + SEC-P9-03 reconcile are LIVE on bidmorrow.com.
 
 **PRODUCTION IS LIVE: https://bidmorrow.com (deploy run #5, 31966643429,
 19:08 UTC, all steps green incl. smoke)**. The road there took 5 runs,
