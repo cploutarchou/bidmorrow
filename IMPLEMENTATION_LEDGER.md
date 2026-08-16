@@ -53,6 +53,16 @@ UTC), fixture refresh from the ingestion's R2 snapshots, then security
 
 ### Phase 13 progress (2026-08-16)
 
+**VAT DECISION REVERSED TO "NO VAT AT LAUNCH" (night, PR #30)**: while
+activating Stripe Tax the owner hit "Cyprus — Needs attention"
+(registration number required) and confirmed they have **no VAT
+registration** → collecting VAT is not legally possible. Final state:
+flat €29/€49 prices, plain-price copy restored everywhere ("excl. VAT"
+removed from Pricing/Pilot/Settings + E2E), `stripe_tax_enabled` OFF in
+all environments (staging's brief ON flipped back via staging-flag run),
+Stripe Tax integration dormant behind the flag with a documented revisit
+trigger (VAT registration). product-scope + blockers item 7 updated.
+
 **LEGAL/VAT DECISIONS IMPLEMENTED (late evening, PR #28)**: owner decided
 (a) email-only contact on terms/privacy (no postal address — pages +
 blockers updated; email-forwarding test now REQUIRED) and (b) **Stripe

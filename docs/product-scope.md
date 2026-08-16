@@ -93,13 +93,15 @@ generic tender search.
 - Currency is **EUR** — decided by the owner 2026-08-16 when creating the
   live-mode Stripe prices (natural fit for an EU procurement product);
   all customer-facing copy must state EUR amounts.
-- **VAT via Stripe Tax** — decided by the owner 2026-08-16 (over the
-  B2B-only reverse-charge default): prices are **tax-exclusive** — €29/€49
-  plus VAT, calculated at checkout by Stripe Tax; business customers can
-  enter a VAT ID. All customer-facing prices must say "excl. VAT".
-  Checkout's automatic tax is gated by the `stripe_tax_enabled` feature
-  flag until the owner activates Stripe Tax in the Stripe Dashboard
-  (both modes — see HUMAN_DECISION_BLOCKERS item 7).
+- **No VAT collected at launch** — final owner decision 2026-08-16
+  (superseding a brief same-day Stripe Tax decision): the owner is a
+  sole trader with **no VAT registration**, so no VAT may legally be
+  collected. Prices are flat (€29/€49, no tax line, no VAT ID field)
+  and customer-facing copy shows plain prices. The flag-gated Stripe
+  Tax integration (`stripe_tax_enabled`, OFF in every environment)
+  stays dormant: when the owner registers for VAT (e.g. on crossing
+  the threshold), the switch is add-registration-in-Stripe + flip the
+  flag + restore "excl. VAT" copy — no rebuild.
 - The founding price is retained for the life of the subscription — a
   founding customer's plan never auto-migrates to the standard price
   (PROD-P7-01, Phase 7 review). Any future price change to an existing
