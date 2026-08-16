@@ -73,6 +73,12 @@ Scope per docs/ted-ingestion-scope.md (~IT/cyber CPV superset): assume
 ≈ 12–20 KB/notice (notice + versions + lots + CPV/geo rows + FTS-free text
 columns; raw XML goes to R2, NOT D1).
 
+**MEASURED 2026-08-16** (live TED API, ted-gates workflow run #3, one
+`totalNoticeCount` query per day for 2026-08-07..13): 141 / 0 / 0 / 173 /
+149 / 119 / 132 — weekday avg ≈ **143/day**, incl-weekend avg ≈ 102/day
+(TED publishes nothing on weekends). The 150–300/day assumption holds
+with margin; no scope tightening needed (ADR-0003 trigger is >600/day).
+
 - Worst case unpruned: 300/day × 20 KB × 365 ≈ **2.2 GB/year** + match rows.
 - Match rows dominate at scale: matches ≈ orgs × active lots. With 90-day
   retention (deadline-passed + 90d purge) the active window is ~9–18k lots;
