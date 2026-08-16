@@ -137,8 +137,9 @@ Human actions:
 
 1. Create a Stripe account (or use existing). Activate test mode first.
 2. Create Products/Prices in test mode (repeat in live mode before launch):
-   - `BIDMORROW_FOUNDING_MONTHLY` — $29/month recurring
-   - `BIDMORROW_STANDARD_MONTHLY` — $49/month recurring
+   - `BIDMORROW_FOUNDING_MONTHLY` — €29/month recurring
+   - `BIDMORROW_STANDARD_MONTHLY` — €49/month recurring (currency EUR
+     per the owner's live-mode products, 2026-08-16)
 3. Provide secrets per environment (test keys for staging, live for production —
    never mixed): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
    `STRIPE_PRICE_FOUNDING_MONTHLY`, `STRIPE_PRICE_STANDARD_MONTHLY`.

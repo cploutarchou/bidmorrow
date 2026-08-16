@@ -53,6 +53,23 @@ UTC), fixture refresh from the ingestion's R2 snapshots, then security
 
 ### Phase 13 progress (2026-08-16)
 
+**PRODUCTION CREDENTIALS COMPLETE + PRICING CURRENCY = EUR
+(2026-08-16 ~14:45 UTC)**: owner set ALL `production` environment
+secrets (CLOUDFLARE_*, BETTER_AUTH_SECRET, live STRIPE_SECRET_KEY +
+both live price ids + STRIPE_WEBHOOK_SECRET, RESEND_API_KEY) and
+ADMIN_EMAILS var; live Stripe webhook "bidmorrow-prod" registered
+(https://bidmorrow.com/api/webhooks/stripe, 2026-07-29.dahlia,
+6 events); live products created. Live prices are **EUR €29/€49** —
+copy said "$" in 5 customer-facing spots (Pricing, Pilot, Settings ×2)
+
+- the marketing E2E assertion; ALL price mentions switched to € (copy,
+  tests, product-scope with the currency decision recorded, setup-guide,
+  blockers, env.ts comments, agent files). First production deploy
+  dispatched right after this merge — attaches bidmorrow.com. Still
+  open owner-side: required reviewers on the production environment,
+  branch protection, Resend domain DNS (email), legal address/VAT
+  inputs. Production comes up with ingestion paused.
+
 **ROLLBACK + TIME TRAVEL DRILLS: PASSED (13:44–13:55 UTC)**, all via the
 staging-ops workflow (PR #19, merge bcca9bc). Sequence and evidence:
 (1) bookmark captured: `0000001e-00000000-000050c9-09eead…` (run
