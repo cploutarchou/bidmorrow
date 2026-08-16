@@ -14,6 +14,11 @@
  * authoritative multilingual XML per notice.
  */
 import { mkdir, writeFile } from 'node:fs/promises';
+import { setTimeout as sleep } from 'node:timers/promises';
+
+// Node 18+ global fetch, referenced via globalThis because this repo's
+// flat ESLint config declares no runtime globals for scripts/.
+const { fetch } = globalThis;
 
 const DAYS_BACK = Number(process.env.DAYS_BACK ?? '5');
 const MAX_NOTICES = Number(process.env.MAX_NOTICES ?? '40');
@@ -91,7 +96,7 @@ for (const notice of picked) {
   await writeFile(`raw-fixtures/raw/${number}.xml`, await xmlResponse.text());
   saved += 1;
   // Polite pacing — no documented quota exists, we do not assume unlimited.
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  await sleep(300);
 }
 console.log(`saved ${saved} raw notice XMLs`);
 if (saved === 0) {
