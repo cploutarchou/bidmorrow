@@ -19,6 +19,7 @@ import {
 import {
   createDb,
   createOrganization,
+  insertCpvCodes,
   insertLots,
   insertSnapshotIfNewHash,
   newId,
@@ -163,6 +164,56 @@ async function makeOrg(db: ReturnType<typeof createDb>, label: string): Promise<
     createdByUserId: userId,
   });
   return organization.id;
+}
+
+/**
+ * Seeds a minimal notice + lot with one main CPV code — bypasses full TED
+ * XML ingestion (unneeded for the P-4 write-batching scale test below,
+ * which only cares about org×lot pair volume) the same way
+ * `matching.d1.test.ts`'s `seedLot` does.
+ */
+async function seedBareLot(
+  db: ReturnType<typeof createDb>,
+  sourceNoticeId: string,
+  cpvCode: string,
+): Promise<{ noticeId: string; lotId: string }> {
+  const snapshot = await insertSnapshotIfNewHash(db, {
+    source: 'ted',
+    sourceNoticeId,
+    versionNumber: 1,
+    r2Key: `ted/2026/${sourceNoticeId}/1.xml.gz`,
+    contentHash: `hash-${sourceNoticeId}`,
+    sizeBytes: 10,
+    contentType: 'application/xml',
+  });
+  const upsert = await upsertNoticeWithVersion(db, {
+    source: 'ted',
+    sourceNoticeId,
+    noticeType: 'cn-standard',
+    sourceLanguagesJson: '["eng"]',
+    sourceUrl: `https://example.test/${sourceNoticeId}`,
+    publicationDate: '2026-08-10',
+    contentHash: `hash-${sourceNoticeId}`,
+    snapshotId: snapshot.snapshot.id,
+  });
+  const [lot] = await insertLots(db, {
+    noticeVersionId: upsert.versionId,
+    lots: [
+      {
+        lotNumber: '1',
+        title: `Scale test lot ${sourceNoticeId}`,
+        contractNature: 'services',
+        estimatedValueAmount: 100_000,
+        estimatedValueCurrency: 'EUR',
+        estimatedValueEur: 100_000,
+        valueIsDerived: false,
+        deadlineAt: SCORING_TIME + 30 * 86_400_000,
+      },
+    ],
+  });
+  if (lot === undefined) throw new Error('seedBareLot: lot insert failed');
+  await insertCpvCodes(db, { entries: [{ lotId: lot.id, cpvCode, isMain: true }] });
+  return { noticeId: upsert.noticeId, lotId: lot.id };
 }
 
 describe('scoreLotsForOrgs', () => {
@@ -616,4 +667,70 @@ describe('scoreLotsForOrgs', () => {
       .first<{ lot_id: string }>();
     expect(match?.lot_id).toBe(currentVersionLotId);
   });
+
+  it('P-4 write batching, multi-pair scale: one org scored against many lots in a single invocation writes exactly one match per pair, idempotently', async () => {
+    const db = createDb(env.DB);
+    const orgId = await makeOrg(db, 'Scale Org');
+    await upsertCompanyProfile(db, orgId as never, {
+      displayName: 'Scale Org',
+      description: null,
+      website: null,
+      employeeBand: null,
+      presetKey: null,
+      onboardingCompletedAt: Date.now(),
+    });
+    // CPV division 77 is unused by every other test in this shared-D1 file,
+    // so this org — and ONLY this org — passes the pre-filter for the lots
+    // seeded below, keeping `result.matchesWritten`/`pairsScored` exact
+    // even though `scoreLotsForOrgs` still considers every other org
+    // created earlier in the file.
+    await replaceCompanyCpvPreferences(db, orgId as never, { cpvCodes: ['77000000'] });
+
+    // Kept comfortably under D1's per-statement bound-parameter cap for
+    // `loadLotScoringBundlesByIds`'s own (unchunked, unrelated to P-4)
+    // `lot_id IN (...)` lookup — the write-side batching this test targets
+    // (`insertTenderMatches`'s bulk existence check chunked at
+    // `ID_CHUNK_SIZE`, and `scoreLotsForOrgs`'s per-org flush buffer) is
+    // exercised at full scale (>90 matches, >150 for the flush chunk) by
+    // `insertTenderMatches`'s own dedicated scale test in
+    // `matching.d1.test.ts`.
+    const LOT_COUNT = 40;
+    const lotIds: string[] = [];
+    for (let i = 0; i < LOT_COUNT; i++) {
+      const { lotId } = await seedBareLot(db, `scale-lot-${String(i)}`, '77100000');
+      lotIds.push(lotId);
+    }
+
+    const result = await scoreLotsForOrgs(
+      { db, logger: createLogger({ test: true }), now: () => SCORING_TIME },
+      { lotIds },
+    );
+    expect(result.truncated).toBe(false);
+    expect(result.pairsScored).toBe(LOT_COUNT);
+    expect(result.matchesWritten).toBe(LOT_COUNT);
+    expect(result.matchesSkipped).toBe(0);
+
+    const countRow = await env.DB.prepare(
+      'SELECT COUNT(*) as n FROM tender_matches WHERE organization_id = ?',
+    )
+      .bind(orgId)
+      .first<{ n: number }>();
+    expect(countRow?.n).toBe(LOT_COUNT);
+
+    // Re-run: every pair already exists — no duplicate/changed rows.
+    const rerun = await scoreLotsForOrgs(
+      { db, logger: createLogger({ test: true }), now: () => SCORING_TIME },
+      { lotIds },
+    );
+    expect(rerun.pairsScored).toBe(LOT_COUNT);
+    expect(rerun.matchesWritten).toBe(0);
+    expect(rerun.matchesSkipped).toBe(LOT_COUNT);
+
+    const countAfterRerun = await env.DB.prepare(
+      'SELECT COUNT(*) as n FROM tender_matches WHERE organization_id = ?',
+    )
+      .bind(orgId)
+      .first<{ n: number }>();
+    expect(countAfterRerun?.n).toBe(LOT_COUNT);
+  }, 30_000);
 });
