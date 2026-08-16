@@ -5,8 +5,53 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 11 — Security/Privacy: COMPLETE (signed off).** Next: Phase 12 —
-Quality.
+**Phase 12 — Quality: IN PROGRESS (stages A+B implemented, sign-offs
+pending).** State as of 2026-08-16:
+
+- **Stage A (E2E + accessibility) COMPLETE, 25/25 green** (`pnpm test:e2e`):
+  critical-path journey (signup → mailbox-hook verification → login →
+  10-step onboarding → score-now hook → feed → detail → save/ignore/
+  feedback → settings incl. real 422 keyword-cap → sole-owner-deletion 409
+  → logout/login), 9-page axe scans (0 serious/critical, no exclusions),
+  keyboard traversal (real-Tab focus-visible checks), marketing specs.
+  Double-gated test hooks (`isE2ETestHooksEnabled`): mailbox capture +
+  score-now, both with ungated-404 tests. docs/accessibility-review.md
+  written with honest not-checked scope.
+- **The E2E suite caught and we fixed 3 REAL product bugs** (commit
+  8ff1ce9): (1) org list GETs returned raw DB rows → every Settings list
+  save 400'd against `.strict()` schemas — responses now DTO-mapped (also
+  response minimization); (2) logout was broken — Better Auth sign-out
+  415s without a JSON body; (3) auth-context crashed on Better Auth's
+  bare-`null` get-session response. Plus infra fixes: E2E-gated auth rate
+  limits (customRules `'**'` — `'*'` matches nothing multi-segment),
+  local-dev wrangler ratelimit 5000/60 (shared 'unknown' key), vitest
+  vars pinned against `.dev.vars` leakage, dev-vars writer omits empty
+  keys (empty string ≠ undefined flipped provider checks), digest
+  schedule job clock now injectable (test failed for real 00:00–06:00
+  UTC), keyboard spec drives focus via real Tab (`:focus-visible`).
+- **Stage B (analysis + fixes)**: docs/phase12-quality-findings.md
+  (query-plan pass, testing-gap sweep, E2E-in-CI decision). Applied:
+  migration 0007 feed covering index (P-1, zero-drift proven); queue-
+  dispatcher + rate-limit middleware tests (both HIGH gaps closed; 429
+  now carries request_id); admin audit non-atomicity doc comment;
+  `.github/workflows/e2e-nightly.yml` (nightly, per §3 decision).
+  Deliberately deferred: classification-variant index + tender_geographies
+  composite (speculative, per P-1/P-3's own advice); P-5 ingestion
+  sequential round trips (informational, cost model accepts); P-6 admin
+  COUNT(*) (LOW). P-2 note: `listTenderMatchesForFeed` appears dead for
+  the customer feed (only a test calls it) — flag for cleanup review.
+- **In flight**: scoring N+1 batch refactor (P-4 HIGH — background agent:
+  bulk existence check + chunked match writes, semantics preserved).
+- **Remaining to close Phase 12**: land N+1 refactor → full gates →
+  security + production-reviewer sign-offs → record here → tag
+  phase-12-complete → PR → merge to main (default branch renamed from
+  master 2026-08-15; ci.yml updated) → Phase 13.
+
+Owner-provided since Phase 11 (see HUMAN_DECISION_BLOCKERS.md): Workers
+Paid plan, CI Cloudflare token + account id, BETTER_AUTH_SECRET (distinct
+per env), Stripe test keys + prices, Resend API key, ADMIN_EMAILS — all in
+GitHub `staging`/`production` environment secrets. Staging deploy is fully
+unblocked; STRIPE_WEBHOOK_SECRET waits for the staging URL by design.
 
 ## Completed
 
