@@ -49,11 +49,11 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
    `https://bidmorrow.com/api/webhooks/stripe` (can be done BEFORE the
    first deploy — the URL is fixed), enable Customer Portal (both modes).
 6. **Legal inputs** (item 7): ~~postal address + privacy email~~ DECIDED
-   2026-08-16 (email-only contact, implemented). ~~VAT approach~~ DECIDED
-   2026-08-16: **Stripe Tax** — remaining owner action: activate Stripe
-   Tax in the Dashboard (BOTH modes: origin address + registrations +
-   default tax behavior "Exclusive"), then tell Claude to flip the
-   `stripe_tax_enabled` flag (details in item 7).
+   2026-08-16 (email-only contact, implemented). ~~VAT approach~~ FINAL
+   2026-08-16: **no VAT at launch** — owner has no VAT registration, so
+   flat prices, no tax line, no VAT ID field; the flag-gated Stripe Tax
+   integration stays dormant until VAT registration (details in item 7).
+   No owner action needed.
 7. ~~**Test-mode Stripe webhook URL update**~~ **DONE 2026-08-16**
    (owner confirmed): the test-mode endpoint now targets
    `https://staging.bidmorrow.com/api/webhooks/stripe`; signing secret
@@ -223,25 +223,19 @@ expect an address; can be added later with a one-line edit if ever needed.
 optional — the published support@/privacy@ inboxes must actually deliver
 (Cloudflare Email Routing if the old Namecheap forwarding is dead).
 
-**Decided by owner 2026-08-16**: **use Stripe Tax** (over the B2B-only
-reverse-charge default). Prices are tax-exclusive; Checkout calculates
-VAT automatically and collects VAT IDs from business customers. Code side
-implemented behind the `stripe_tax_enabled` feature flag (default OFF so
-checkout keeps working until activation). **Owner console actions
-required before the flag is turned on — in BOTH test and live modes**:
-
-1. Stripe Dashboard → Settings → **Tax** → activate Stripe Tax. Set the
-   **origin address** (your address — used internally by Stripe for tax
-   calculation; it is NOT published on our pages).
-2. **Add your tax registration(s)** under Tax → Registrations — at
-   minimum your home-country VAT registration (or OSS). Stripe Tax only
-   collects for jurisdictions with a registration; it monitors
-   thresholds elsewhere.
-3. Set the **default product tax behavior to "Exclusive"** (Tax
-   settings) so €29/€49 stay net prices with VAT added on top — OR set
-   tax_behavior=exclusive on each of the 4 prices (2 test, 2 live).
-4. Tell Claude — the `stripe_tax_enabled` flag is then flipped on
-   (staging first, production at go-live) via the admin flags endpoint.
+**FINAL owner decision 2026-08-16 — NO VAT at launch**: the owner has
+**no VAT registration** (Cyprus sole trader), so VAT cannot legally be
+collected; Stripe Tax activation stalled on exactly that ("Cyprus —
+Needs attention" wants a registration number that doesn't exist). This
+supersedes the same-day "use Stripe Tax" decision. Current state:
+flat prices (€29/€49), no VAT line, no VAT ID field, plain-price copy;
+`stripe_tax_enabled` flag OFF in every environment (staging was briefly
+ON for testing, flipped back the same evening). The Stripe Tax
+integration stays built and dormant. **Revisit trigger**: when the
+owner registers for VAT (threshold or voluntary) — then: add the
+registration in Stripe (both modes) + set price tax_behavior + flip
+the flag + restore "excl. VAT" copy. Owner informed that monitoring
+the registration threshold is their/their accountant's responsibility.
 
 ## 8. GitHub settings — PARTIALLY PROVIDED (2026-08-15)
 
