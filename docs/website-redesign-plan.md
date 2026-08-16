@@ -1,11 +1,18 @@
 # Website & Interface Overhaul — Implementation Plan
 
-Status: **AWAITING OWNER APPROVAL** (2026-08-17). No implementation begins
-until the owner approves this plan. Produced by three research workstreams
-(frontend inventory, live competitor/UX research, product-truth guardrails)
-plus design/security/accessibility/QA synthesis. Launch pipeline (Phase 13
-tag → Phase 14 audit → go-live) is ON HOLD behind this task per owner
-instruction (see IMPLEMENTATION_LEDGER.md).
+Status: **AWAITING OWNER APPROVAL** (2026-08-17, rev. 2 after owner
+feedback: macOS-style direction with Tendify as visual benchmark,
+onboarding prioritized, pricing untouched). No implementation begins
+until the owner approves this plan. Produced by three research
+workstreams (frontend inventory, competitor/UX research, product-truth
+guardrails) plus design/security/accessibility/QA synthesis. Competitor
+browsing: the sandbox egress proxy blocks competitor hosts, so rendered-
+page evidence is captured by the `competitor-screenshots` CI workflow
+(Playwright on a GitHub runner → scratch branch `competitor-shots`) and
+reviewed from those screenshots; §1a records what the rendered pages
+show. Launch pipeline (Phase 13 tag → Phase 14 audit → go-live) is ON
+HOLD behind this task per owner instruction (see
+IMPLEMENTATION_LEDGER.md).
 
 Goal: an interface that feels premium, simple, fast, secure, and more
 compelling than competitors — without unnecessary complexity, and without
@@ -21,14 +28,15 @@ third-party teardowns — labeled as such in the full research report. A
 30-minute owner eyeball of the five main competitor homepages is a cheap
 validation step before M1 copy is finalized.
 
-| Competitor             | Position                                        | Pricing                         | Beatable weakness                                                                  |
-| ---------------------- | ----------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------- |
-| Stotles (UK benchmark) | "Win public sector contracts", AI-heavy suite   | Free tier → ~£50/user → £475/mo | UK-centric; enterprise sprawl; black-box "AI" scoring                              |
-| Mercell (pan-EU)       | "Open the World of Public Business", 800k users | Demo-gated, no public prices    | Zero price transparency; two-sided identity confusion; dated fragmented web estate |
-| Tenders Direct         | "Never miss a tender", human-curated            | From £1,359/yr **paid upfront** | Price/commitment gap; recall framing solves the wrong problem for our ICP          |
-| OpenOpps               | "860+ sources, 193 countries"                   | ~£55/mo self-serve trial        | Breadth-not-relevance; no vertical focus; low design polish                        |
-| Tenderlake             | "Total Tender Visibility", LLM explanations     | £249–546/mo                     | Priced out of SME; probabilistic explanations vs our deterministic ones            |
-| TED (free baseline)    | Official journal, 3,000+ notices/day            | Free                            | Not a competitor — the raw-material story: "we read all 3,000 daily so you don't"  |
+| Competitor                                                               | Position                                                                                                                           | Pricing                                                 | Beatable weakness                                                                                                                                                                                                                                                                |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stotles (UK benchmark)                                                   | "Win public sector contracts", AI-heavy suite                                                                                      | Free tier → ~£50/user → £475/mo                         | UK-centric; enterprise sprawl; black-box "AI" scoring                                                                                                                                                                                                                            |
+| Mercell (pan-EU)                                                         | "Open the World of Public Business", 800k users                                                                                    | Demo-gated, no public prices                            | Zero price transparency; two-sided identity confusion; dated fragmented web estate                                                                                                                                                                                               |
+| Tenders Direct                                                           | "Never miss a tender", human-curated                                                                                               | From £1,359/yr **paid upfront**                         | Price/commitment gap; recall framing solves the wrong problem for our ICP                                                                                                                                                                                                        |
+| OpenOpps                                                                 | "860+ sources, 193 countries"                                                                                                      | ~£55/mo self-serve trial                                | Breadth-not-relevance; no vertical focus; low design polish                                                                                                                                                                                                                      |
+| Tenderlake                                                               | "Total Tender Visibility", LLM explanations                                                                                        | £249–546/mo                                             | Priced out of SME; probabilistic explanations vs our deterministic ones                                                                                                                                                                                                          |
+| TED (free baseline)                                                      | Official journal, 3,000+ notices/day                                                                                               | Free                                                    | Not a competitor — the raw-material story: "we read all 3,000 daily so you don't"                                                                                                                                                                                                |
+| Tendify (owner-supplied screenshot, 2026-08-17 — direct visual evidence) | "Find, monitor, understand and manage tenders in one workflow"; AI chat ("Riko"); by-feature/role/market mega-menu; free-trial CTA | Free trial motion; prices not visible on the shown page | **The owner's design benchmark**: soft light ground, floating rounded product-UI cards embedded in marketing pages, pill CTAs. Weaknesses we beat: cookie banner/trackers (we run none — CSP-enforced), generic multi-role targeting, AI-chat framing vs our deterministic story |
 
 Market-wide gaps BidMorrow can own, all with zero customers and zero fake
 anything:
@@ -96,18 +104,42 @@ naming CPV 72*/48*/79417000, UNKNOWN-policy and hard-exclusion wording,
 
 ## 4. Visual direction
 
-Three directions were developed; recommendation is **A**, borrowing B's
-monospace-data discipline. A rendered mockup of Direction A accompanies
-this plan for approval.
+**Owner directive (2026-08-17): modern macOS-style design language,
+benchmarked against an owner-supplied Tendify screenshot** ("for example
+that page"). The adopted direction is **D — "Mac Modern"** (Apple
+HIG-inspired, Tendify-level polish), superseding the initial Direction A
+recommendation. A rendered mockup of Direction D accompanies this plan
+for approval. Concrete benchmark cues taken from the screenshot: soft
+lavender-tinted light ground, white floating cards with large radii and
+diffuse shadows, real product-UI previews embedded in marketing pages
+(their pipeline card ↔ our score card), pill-shaped CTAs, quiet
+hairlines. Deliberately NOT copied: their cookie banner/trackers (we run
+none), mega-menu (our IA is 8 pages), "AI chat" framing (our story is
+deterministic), any Tendify branding or copy.
 
-- **A — "Ledger" (recommended).** Swiss/editorial precision: the site as
-  an audit document. Near-white paper ground, ink text, ONE deep-blue
-  accent reserved for scores/CTAs; hairline rules and visible table
-  structure; a grotesque sans for headings + **tabular monospace for
-  every number, score, CPV code and date**. Reads as regulator-grade
-  trustworthiness — "we show our work". Rhymes with (and massively
-  upgrades) TED's official-journal seriousness; differentiates from both
-  corporate-gloss incumbents and the AI-hype cluster.
+- **D — "Mac Modern" (adopted).** Character: the calm, layered clarity of
+  a modern macOS app. Frosted translucent surfaces (`backdrop-filter`
+  vibrancy — pure CSS, CSP-safe), soft diffuse elevation, rounded
+  geometry (10–16px radii), generous whitespace, restrained neutrals
+  with one system-blue accent, first-class light AND dark themes
+  (macOS's own strength — fixes the current unthemed status colors by
+  construction). Typography: Apple system stack first
+  (`-apple-system, BlinkMacSystemFont, …` → SF Pro on Apple devices,
+  which cannot legally be self-hosted) with **self-hosted Inter** as the
+  metric-compatible face everywhere else, plus a mono face for scores/
+  CPV/dates. Controls follow HIG idioms: segmented control for the feed
+  tabs, pill buttons, sheet-style dialogs, setup-assistant onboarding.
+  Subtle motion (150–250ms ease-out transitions), always behind
+  `prefers-reduced-motion`. The deterministic score breakdown stays the
+  hero artifact — presented as a floating frosted card.
+
+Directions considered and not adopted (kept for the record):
+
+- **A — "Ledger".** Swiss/editorial audit-document precision; paper
+  ground, hairline rules, monospace data. Was the initial
+  recommendation; superseded by the owner's macOS-style directive. Its
+  best discipline — tabular monospace for every number, score, CPV code
+  and date — is carried into Direction D.
 - **B — "Control Room".** Linear-adjacent dark technical authority.
   Strong pull for cyber/dev ICP; risk: reads startup-trendy to
   conservative DACH/Benelux buyers, and dark marketing sites are now a
@@ -116,7 +148,8 @@ this plan for approval.
   Ages well with 40–60-year-old consultancy owners; less distinctive.
 
 The one visual move no competitor can copy without changing their
-product: making the deterministic score breakdown the hero image.
+product: making the deterministic score breakdown the hero image — in
+Direction D, a floating frosted-glass score card.
 
 ## 5. UI design system (M0 deliverable)
 
@@ -124,30 +157,37 @@ Vanilla CSS custom properties — **no Tailwind, no CSS-in-JS** (CSP-safe by
 construction, zero new runtime deps, preserves the existing test suite and
 the "simple, fast, secure" brief).
 
-- **Tokens**: full semantic scale replacing the current 6 —
-  color (bg/surface/raised, text/muted/subtle, border/hairline, accent +
-  on-accent, and THEMED status colors: strong/worth-reviewing/possible/
-  excluded/danger/warning/success — fixing the 5 unthemed hexes), spacing
-  scale (4px base: 1–24), type scale (fluid via `clamp()`, 12→40px),
-  radii (2/4/8/999), shadows (2 elevations, subtle), z-index scale,
-  measure (65ch reading width).
-- **Typography**: self-hosted, subset woff2, OFL-licensed — **Inter
-  variable** (UI + headings) and **IBM Plex Mono** (all numerals, scores,
-  CPV codes, dates, prices; tabular figures). Budget ≤ ~90 KB combined;
-  `font-display: swap`; system-stack fallbacks. (Owner may decline fonts
-  → system stack with `font-variant-numeric: tabular-nums` as fallback
-  plan; decision point D2.)
+- **Tokens** (macOS-style semantics): full scale replacing the current 6 —
+  color (bg/surface/raised + a TRANSLUCENT surface tier with
+  `backdrop-filter` vibrancy and solid fallback, text/muted/subtle,
+  border/hairline, system-blue accent + on-accent, and THEMED status
+  colors: strong/worth-reviewing/possible/excluded/danger/warning/
+  success — fixing the 5 unthemed hexes), spacing scale (4px base:
+  1–24), type scale (fluid via `clamp()`, 12→40px), radii (6/10/16/999 —
+  HIG-soft geometry), shadows (3 soft diffuse elevations), blur tokens,
+  z-index scale, measure (65ch reading width), motion tokens
+  (150/250ms ease-out, all behind `prefers-reduced-motion`).
+- **Typography**: Apple system stack first (`-apple-system,
+BlinkMacSystemFont, "Segoe UI", …` — SF Pro renders natively on Apple
+  devices and cannot legally be self-hosted) with **self-hosted Inter
+  variable** (OFL, subset woff2) covering non-Apple platforms, plus a
+  mono face for all numerals, scores, CPV codes, dates and prices
+  (tabular figures). Budget ≤ ~90 KB combined; `font-display: swap`.
+  (Owner may decline fonts → pure system stack with
+  `font-variant-numeric: tabular-nums`; decision point D2.)
 - **Dark mode**: keep `prefers-color-scheme` auto as the base; ALL tokens
   themed including status colors (WCAG AA in both themes); optional
   manual toggle deferred to M3 (decision D5).
 - **Components** (in `apps/web/src/components/`, `packages/ui` stays
-  empty until a second consumer exists): Button (primary/secondary/
-  danger/quiet), ScoreBadge v2 (size variants, themed, text always
-  present), ScoreBreakdownTable (the hero asset — renders component
-  rows + points + status + explanation), Card, SectionHeading, Chip(+
-  remove), Disclosure (for feed filters), Stepper (onboarding progress),
-  SkeletonRow, EmptyState, Callout (info/warning/danger), StickySectionNav
-  (settings), PageIntro. All keyboard-first, all status text+color.
+  empty until a second consumer exists), HIG-idiom set: Button (pill,
+  primary/secondary/danger/quiet), **SegmentedControl** (feed tabs),
+  ScoreBadge v2 (size variants, themed, text always present),
+  ScoreBreakdownTable (the hero asset — frosted card presentation),
+  Card (soft elevation), FrostedPanel, SectionHeading, Chip(+remove),
+  Disclosure (feed filters), **SetupAssistant frame + Stepper**
+  (onboarding — see §6a), SkeletonRow, EmptyState, Callout
+  (info/warning/danger), StickySectionNav (settings), Sheet-style
+  dialog, PageIntro. All keyboard-first, all status text+color.
 - **Layout**: single `--layout-max` (72rem marketing / 64rem app) applied
   consistently to header/main/footer — fixes the width bug; consistent
   page gutters; breakpoints 40/64/90rem; mobile nav = simple disclosure
@@ -172,14 +212,46 @@ Flow fixes (app):
 2. **402 paywall state**: Feed (and any entitlement-gated surface) renders
    a dedicated "subscription required" state with a Subscribe CTA that
    deep-links to Settings→Billing — never a generic error.
-3. **Onboarding**: visual Stepper (progress bar + step labels), same
-   10-step structure, presets promoted visually; completion screen keeps
-   the honest scope-overlap warning.
+3. **Onboarding**: full overhaul — see §6a (owner priority).
 4. **Post-checkout return**: dedicated `/app/billing/success` route
    (confirmation + "go to your feed"), replacing the silent return.
 5. **Settings**: sticky in-page section nav (11 anchors), sections grouped
    into cards; per-section save preserved (no risky refactor of working
    forms).
+
+### 6a. Client onboarding overhaul (owner priority, 2026-08-17)
+
+The current wizard is 10 flat steps with text-only progress ("Step 3 of
+10"), no visual structure, a flat list of 30 country checkboxes, and no
+routing into it — new users land on a 403 message. Target: a
+**macOS-setup-assistant experience** that gets a consultancy from signup
+to a scoring-ready profile in minutes.
+
+- **Entry**: automatic — after login/verification with no org, the user
+  lands in onboarding, never on an error state.
+- **Frame**: centered assistant card (frosted panel), one focused topic
+  per screen, large friendly heading + one-line explanation of WHY each
+  input improves scoring (e.g. "CPV codes drive 35 of your 100 points"),
+  visible progress (stepper with labeled phases), Back always available,
+  smooth step transitions behind `prefers-reduced-motion`.
+- **Structure**: the 10 data steps regroup into 4 phases —
+  1. Company (org + basics), 2) What you do (presets as rich selectable
+     cards → CPV codes, keywords, capabilities/certifications),
+  2. Where & what size (countries as grouped region picker with
+     search, value range, deadline threshold, exclusions),
+  3. Digest & review (digest prefs, review summary, complete).
+     Server API unchanged — the same per-resource PUTs fire per phase;
+     Skip preserved per phase (skippable without data loss).
+- **Presets first-class**: the 4 presets rendered as selectable cards
+  with a preview of what they prefill — defeating the cold start is the
+  single highest-leverage onboarding feature (it already exists in
+  domain; the UI undersells it).
+- **Completion**: "You're all set" with the honest scope-overlap warning
+  when applicable, then a guided first-feed moment (empty-state explains
+  that ingestion runs daily and what to expect tomorrow).
+- **Guardrails**: no dark patterns, all inputs keyboard-first, every
+  step meets the axe gate; copy explains scoring truthfully (component
+  weights from docs/matching-engine.md, never invented).
 
 ## 7. Page-by-page plan (public site, M1)
 
@@ -199,14 +271,12 @@ Flow fixes (app):
   cancel anytime, no demo calls, price on the page, no third-party
   trackers), pricing teaser, founding-pilot CTA. TED statistics quoted
   are about TED (true, sourced), never fabricated product stats.
-- **Pricing** — both prices in large type; founding card marked "First 20
-  customers — €29/mo locked for the life of your subscription"; explicit
-  "what happens when founding is full"; billing-honesty microcopy under
-  CTAs ("Monthly. Cancel anytime in the customer portal. The price shown
-  is the total amount charged."); short concrete feature list (same
-  product both tiers — say so); "No enterprise tier. No sales calls.";
-  pricing FAQ (coverage, score calculation, "Is this AI?" → honest
-  deterministic answer, cancellation, no-relevant-tenders case).
+- **Pricing** — **owner directive 2026-08-17: no pricing changes.**
+  Visual restyle within the design system ONLY: existing copy, prices,
+  structure and CTAs stay exactly as they are (the copy-lock tests for
+  this page stay untouched). The earlier proposals for this page
+  (FAQ, extra microcopy, "what happens when founding is full") are
+  withdrawn from this cycle.
 - **How it works** — 5 steps kept, each with a visual (UI crop or small
   diagram: TED → parse → score → shortlist → digest); closing CTA block.
 - **Methodology** — promote from compliance doc to trust asset: add the
@@ -315,39 +385,49 @@ one max-width at 360/768/1024/1440px); both themes AA-contrast for every
 token pair; fonts self-hosted ≤ 90 KB; CSP tests byte-identical; no new
 runtime deps.
 
-**M1 — Marketing site redesign** (est. 1–2 sessions; highest conversion
-impact) — Home/Pricing/How-it-works/Methodology/Pilot/Contact per §7,
-ScoreBreakdownTable component + worked-example content, copy updates with
-their locked tests. Accept: every claim traceable to a doc or guardrail
-(product agent sign-off on copy); marketing spec + new assertions green;
-axe green on all marketing pages; responsive at 4 widths; OG cards render
-(manual check); CTA present on every page end; disclaimers/attribution
-present exactly as before.
+**M1 — Client onboarding overhaul** (est. 1–2 sessions; **owner
+priority 2026-08-17**) — the §6a setup-assistant experience: automatic
+entry routing + `returnTo`, assistant frame (frosted panel, labeled
+stepper, per-step "why this improves scoring"), 4-phase regrouping of
+the 10 data steps, presets as rich preview cards, grouped-region country
+picker with search, completion + guided first-feed empty state. Server
+API unchanged. Accept: critical-path spec updated (new-user login lands
+in onboarding, wizard completes through the new UI, skips still work,
+scope-overlap warning preserved); axe green on every onboarding phase
+(closing the "steps 2–10 unscanned" gap); keyboard-only completion
+possible; no new endpoints; per-resource PUT payloads byte-compatible.
 
-**M2 — App experience** (est. 1–2 sessions) — Feed (filters →
-Disclosure with active-count badge, card hierarchy: score prominent,
-title weight up, Strong accent border; skeleton loading; 402 paywall
-state; `<title>`), TenderDetail polish (facts grid, breakdown table
-restyle), onboarding redirect + `returnTo` + Stepper, `/app/billing/
-success`, Settings sticky section nav + card grouping. Accept:
-critical-path spec green including new 402 + redirect + success-route
-assertions; keyboard spec green; axe green on app states; optimistic
+**M2 — App experience** (est. 1–2 sessions) — Feed (tabs → HIG
+segmented control, filters → Disclosure with active-count badge, card
+hierarchy: score prominent, title weight up, Strong accent treatment;
+skeleton loading; 402 paywall state; `<title>`), TenderDetail polish
+(facts grid, frosted breakdown card), `/app/billing/success`, Settings
+sticky section nav + card grouping. Accept: critical-path spec green
+including new 402 + success-route assertions; keyboard spec green
+(segmented control keyboard model); axe green on app states; optimistic
 save/ignore behavior unchanged; no server authz logic moved client-side.
 
-**M3 — Performance & polish** (est. 1 session) — code splitting
-(marketing/app/admin), bundle budget enforcement, focus-on-route-change,
-`aria-current`, feed-tab keyboard model, reduced-motion, optional dark
-toggle (D5). Accept: marketing entry ≤ 150 KB and admin absent from it
-(verified from build output); no regression in any suite; keyboard spec
-extended for tabs.
+**M3 — Marketing site redesign** (est. 1–2 sessions) —
+Home/How-it-works/Methodology/Pilot/Contact per §7 in the Mac Modern
+system; **Pricing/Privacy/Terms visual restyle only, zero content
+changes** (owner directive); ScoreBreakdownTable worked-example hero;
+copy updates (non-pricing pages) with their locked tests. Accept: every
+claim traceable to a doc or guardrail (product agent sign-off on copy);
+marketing spec + new assertions green; pricing copy assertions untouched
+and green; axe green on all marketing pages; responsive at 4 widths; OG
+cards render (manual check); disclaimers/attribution present exactly as
+before.
 
-**M4 — QA hardening & reviews** (est. 1 session) — mobile-viewport
-Playwright project, manual zoom/reflow pass, visual-regression baselines,
-full gates, `security` + `production-reviewer` + accessibility review,
-docs updated (accessibility-review.md, deployment notes), ledger updated.
-Accept: all suites incl. new projects green in CI; reviewer sign-offs
-recorded; then the paused launch pipeline resumes (first-ingestion
-verification evidence → phase tag → Phase 14 audit → owner go-live).
+**M4 — Performance, QA hardening & reviews** (est. 1–2 sessions) — code
+splitting (marketing/app/admin; ≤ 150 KB marketing entry, admin absent
+from it), focus-on-route-change, `aria-current`, reduced-motion audit,
+optional dark toggle (D5); mobile-viewport Playwright project, manual
+zoom/reflow pass, visual-regression baselines, full gates, `security` +
+`production-reviewer` + accessibility review, docs + ledger updated.
+Accept: budgets verified from build output; all suites incl. new
+projects green in CI; reviewer sign-offs recorded; then the paused
+launch pipeline resumes (first-ingestion verification evidence → phase
+tag → Phase 14 audit → owner go-live).
 
 ## 12. Workstream/role mapping
 
@@ -360,29 +440,38 @@ spec extensions + visual baselines) · `production-reviewer` at every
 milestone end. All specialists operate as senior reviewers of their own
 lane; no fabricated credentials or employment claims anywhere.
 
-## 13. Decisions needed from the owner (approval gate)
+## 13. Decisions — resolved by owner feedback + remaining defaults
 
-- **D1 — Visual direction**: A "Ledger" (recommended; mockup provided),
-  B dark, or C civic?
-- **D2 — Self-hosted webfonts** (Inter + IBM Plex Mono subsets, ≤ 90 KB,
-  OFL, CSP-compliant): yes (recommended) / no (system fonts + tabular
-  numerals).
-- **D3 — Copy changes to locked constants** (subhead, section copy; tests
-  updated in the same PRs; headline/tagline itself unchanged): approve?
+Resolved by the owner (2026-08-17):
+
+- **D1 — Visual direction: RESOLVED — Direction D "Mac Modern"**,
+  benchmarked against the owner-supplied Tendify screenshot; mockup
+  updated accordingly.
+- **D-pricing — RESOLVED: no pricing changes.** Pricing page and all
+  pricing copy stay exactly as they are; visual restyle only.
+- **Priority — RESOLVED: client onboarding first** (M1).
+
+Remaining, with recommended defaults (approving the plan with "defaults"
+accepts these as stated):
+
+- **D2 — Self-hosted webfonts** (Inter + mono subsets, ≤ 90 KB, OFL,
+  CSP-compliant, Apple devices render SF Pro natively): default YES.
+- **D3 — Copy changes to locked constants on NON-pricing pages**
+  (subhead, section copy; tests updated in the same PRs; the headline
+  tagline itself unchanged): default YES.
 - **D4 — Vertical landing pages** ("/for/cybersecurity-consultancies"
-  etc.): new public pages beyond the fixed V1 marketing list → default
-  NO this cycle; revisit post-launch.
-- **D5 — Dark-mode manual toggle** (localStorage, M3): default defer to
-  auto-only; approve if wanted.
-- **D6 — Live founding-spots counter** on pricing (needs a small public
-  API wired to the real cap): default NO (static "first 20" wording).
+  etc. — Tendify does the by-market equivalent): new public pages beyond
+  the fixed V1 marketing list → default NO this cycle; revisit
+  post-launch.
+- **D5 — Dark-mode manual toggle** (localStorage, M4): default NO —
+  auto `prefers-color-scheme` only (both themes fully designed either
+  way).
+- **D6 — Live founding-spots counter** (needs a small public API wired
+  to the real cap): default NO.
 - **D7 — First-party page-view counter** (privacy-preserving, no
   cookies): default NO for this cycle.
 - **D8 — Founder note on Pilot page** (named, honest solo framing):
   owner's personal call; default NO until owner opts in.
 - **D9 — Interactive scoring demo widget** (static bundled sample data,
-  no backend): guardrail review says static worked example delivers most
-  of the value; default NO this cycle.
-
-Defaults require no action — approving the plan with "defaults" means:
-Direction A, fonts yes, copy yes, D4–D9 no.
+  no backend): guardrail review says the static worked example delivers
+  most of the value; default NO this cycle.

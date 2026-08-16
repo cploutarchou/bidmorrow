@@ -1,0 +1,55 @@
+# Competitor research capture (website redesign plan, one-shot): renders
+# public competitor marketing pages with Playwright on a CI runner (the
+# session sandbox's egress proxy blocks these hosts) and force-pushes the
+# screenshots to the transient scratch branch `competitor-shots`. Same
+# pattern as ted-fixture-fetch.yml; the branch is deleted after use.
+name: Competitor screenshots
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: competitor-screenshots
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Capture competitor pages
+        run: node scripts/capture-competitor-pages.mjs
+
+      - name: Push screenshots to the competitor-shots scratch branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd competitor-shots
+          git init -b competitor-shots
+          git config user.name "bidmorrow-ci"
+          git config user.email "ci@users.noreply.github.com"
+          git add -A
+          git commit -m "competitor page screenshots for redesign research ($(date -u +%FT%TZ))"
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" competitor-shots
+          echo "pushed $(git ls-files raw/ | grep -c '\.png$') screenshots to branch competitor-shots"
