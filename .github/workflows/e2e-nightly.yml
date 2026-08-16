@@ -1,0 +1,63 @@
+# Nightly Playwright E2E run (Phase 12 stage B decision, documented in
+# docs/phase12-quality-findings.md §3): a scheduled workflow, NOT a per-PR
+# job — the suite is a single-worker, ordered journey against a seeded
+# `wrangler dev` (chromium download + cold start per run), which fits
+# "run once a day, alert if it breaks" better than gating every PR. Once
+# it has proven stable, promoting critical-path.spec.ts alone to a
+# non-blocking per-PR job is the documented next step.
+name: E2E (nightly)
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # 03:00 UTC daily
+  workflow_dispatch: {} # manual trigger for pre-release verification
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        # Version is resolved from the "packageManager" field in package.json — do not hardcode.
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        # Avoids the ~120MB chromium download on every nightly run.
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E suite
+        # scripts/e2e-webserver.sh (playwright.config.ts webServer) builds
+        # the SPA, writes .dev.vars, migrates + seeds local D1, and starts
+        # wrangler dev — everything local, no external network or secrets.
+        run: pnpm test:e2e
+        env:
+          CI: 'true'
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
