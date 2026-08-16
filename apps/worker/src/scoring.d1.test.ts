@@ -686,15 +686,12 @@ describe('scoreLotsForOrgs', () => {
     // created earlier in the file.
     await replaceCompanyCpvPreferences(db, orgId as never, { cpvCodes: ['77000000'] });
 
-    // Kept comfortably under D1's per-statement bound-parameter cap for
-    // `loadLotScoringBundlesByIds`'s own (unchunked, unrelated to P-4)
-    // `lot_id IN (...)` lookup — the write-side batching this test targets
-    // (`insertTenderMatches`'s bulk existence check chunked at
-    // `ID_CHUNK_SIZE`, and `scoreLotsForOrgs`'s per-org flush buffer) is
-    // exercised at full scale (>90 matches, >150 for the flush chunk) by
-    // `insertTenderMatches`'s own dedicated scale test in
-    // `matching.d1.test.ts`.
-    const LOT_COUNT = 40;
+    // 150 lots: past the 90-id IN-list chunk bound (so
+    // `loadLotScoringBundlesByIds`'s chunked reads AND
+    // `insertTenderMatches`'s chunked bulk existence check both split), at
+    // `scoreLotsForOrgs`'s 150-match flush-buffer boundary, and past the
+    // 100-id MATCH_QUEUE message batch size this loader really receives.
+    const LOT_COUNT = 150;
     const lotIds: string[] = [];
     for (let i = 0; i < LOT_COUNT; i++) {
       const { lotId } = await seedBareLot(db, `scale-lot-${String(i)}`, '77100000');
