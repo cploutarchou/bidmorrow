@@ -113,8 +113,9 @@
         {
           "binding": "DB",
           "database_name": "bidmorrow-staging",
-          // set real IDs per HUMAN_DECISION_BLOCKERS.md item 1; never share databases across envs
-          "database_id": "staging-placeholder",
+          // Real staging DB, created 2026-08-16 via the Cloudflare MCP
+          // connector (WEUR primary). Never share databases across envs.
+          "database_id": "cd51fe7b-6b12-48b4-ae94-84205c3de99a",
           "migrations_dir": "../../migrations",
         },
       ],

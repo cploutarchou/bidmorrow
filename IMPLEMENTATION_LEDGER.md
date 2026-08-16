@@ -76,10 +76,31 @@ pending).** State as of 2026-08-16:
   Findings: P12-R-01 LOW (ledger staleness — resolved by this entry);
   P12-R-02/03 INFO accepted.
 
-**Phase 12 — Quality: COMPLETE (signed off).** Tag: phase-12-complete
-(local; tag pushes are 403 for this session's credentials — see Notes).
-Next: Phase 13 — Deployment (staging fully unblocked; see
-HUMAN_DECISION_BLOCKERS.md owner-provided list below).
+**Phase 12 — Quality: COMPLETE (signed off, merged to main via PR #12,
+merge commit d37a514, CI green).** Tag: phase-12-complete (local; tag
+pushes are 403 for this session's credentials — see Notes).
+
+**Phase 13 — Deployment: IN PROGRESS (started 2026-08-16).** Plan of
+record = docs/deployment.md. Stage A (staging): (1) provision — D1
+`bidmorrow-staging` CREATED via MCP connector (id
+cd51fe7b-6b12-48b4-ae94-84205c3de99a, WEUR); R2 blocked on one-time
+account enablement (owner console action, recorded in blockers item 1);
+queues + bucket are created idempotently by the workflow itself. (2)
+`.github/workflows/deploy-staging.yml` — auto-deploy on merge to main +
+workflow_dispatch, GitHub `staging` environment, steps: ensure
+queues/bucket → remote migrations → seed `ingestion_paused=true`
+(pre-first-ingestion gates) → build SPA → resolve workers.dev URL from
+account subdomain (injected via `--var APP_BASE_URL/BETTER_AUTH_URL`,
+overriding the custom-domain placeholders) → deploy → `secret bulk`
+(non-empty values only, so absent optionals keep documented fallbacks) →
+smoke tests (health live/ready, CSP header, test-hooks 404, JSON 404
+envelope). (3) After first green deploy: hand owner the staging URL +
+Stripe webhook wizard values (`/api/webhooks/stripe`, API version
+2026-07-29.dahlia, 6 events). (4) Then pre-first-ingestion gates on
+staging: live `checkQuerySyntax`, one bounded volume-measurement window,
+fixture refresh; then rollback drill + D1 Time Travel restore test; then
+production prep. docs/deployment.md webhook path corrected
+(`/api/billing/webhook` → the real `/api/webhooks/stripe`).
 
 Owner-provided since Phase 11 (see HUMAN_DECISION_BLOCKERS.md): Workers
 Paid plan, CI Cloudflare token + account id, BETTER_AUTH_SECRET (distinct

@@ -1,10 +1,14 @@
 # Deployment
 
-Definitive deployment procedure for BidMorrow. **Status: Phase 0/1 — no
-environment exists yet.** Every procedure here is the plan of record, to be
-executed and validated in the named phase (deployment itself is Phase 13).
-Blocked prerequisites live in HUMAN_DECISION_BLOCKERS.md (items 1, 2, 3, 4,
-5, 8).
+Definitive deployment procedure for BidMorrow. **Status: Phase 13 —
+staging being provisioned (2026-08-16):** D1 `bidmorrow-staging` created
+(WEUR); `.github/workflows/deploy-staging.yml` auto-deploys every merge to
+`main` (queues/R2 ensured idempotently in the workflow; R2 needs one-time
+account enablement in the Dashboard). Staging runs on workers.dev — the
+URL is computed per-deploy from the account subdomain and injected via
+`--var`; the `staging.bidmorrow.com` vars in wrangler.jsonc are
+placeholders until a custom domain is attached. Remaining prerequisites
+live in HUMAN_DECISION_BLOCKERS.md.
 
 ## Environments
 
@@ -116,10 +120,13 @@ emergency path only.
 ## Stripe webhook registration [validate: Phase 13]
 
 After first production deploy, register in the Stripe Dashboard (live mode):
-endpoint `https://app.bidmorrow.com/api/billing/webhook`, events per
-docs/dependency-versions.md Stripe set; copy the signing secret into
-`wrangler secret put STRIPE_WEBHOOK_SECRET --env production`. Repeat in test
-mode against the staging URL with the staging secret. (Blocker 4.)
+endpoint `https://bidmorrow.com/api/webhooks/stripe` (the implemented
+route — see apps/worker/src/routes/webhooks.ts), API version
+`2026-07-29.dahlia`, events per docs/dependency-versions.md Stripe set;
+copy the signing secret into the GitHub `production` environment secret
+`STRIPE_WEBHOOK_SECRET` (the deploy workflow pushes it to the Worker).
+Repeat in test mode against `<staging workers.dev URL>/api/webhooks/stripe`
+with the staging secret. (Blocker 4.)
 
 ## Resend domain authentication (blocker 2/3)
 

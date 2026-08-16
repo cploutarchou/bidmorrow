@@ -23,7 +23,14 @@ declare `environment: staging` / `environment: production` to read them.
 A `production` GitHub environment also exists.
 
 **Workers Paid plan ($5/mo) purchased 2026-08-15** (dashboard shows
-"Current plan: Paid") — Queues available. Nothing remains on this item.
+"Current plan: Paid") — Queues available.
+
+**One remaining console action (found 2026-08-16 at first provisioning):
+enable R2 once** — Dashboard → **R2** → Enable/accept terms. Bucket
+creation via API returns 403 code 10042 ("Please enable R2 through the
+Cloudflare Dashboard") until this is done; the free tier (10 GB) covers
+staging+production snapshots. After enabling, re-run the "Deploy staging"
+GitHub workflow — it creates the bucket itself.
 
 ## 2. Domain & DNS for bidmorrow.com — PARTIALLY PROVIDED (2026-08-15)
 
