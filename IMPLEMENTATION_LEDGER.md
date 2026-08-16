@@ -5,8 +5,17 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 12 — Quality: IN PROGRESS (stages A+B implemented, sign-offs
-pending).** State as of 2026-08-16:
+**Phase 13 — Deployment/Launch: IN PROGRESS.** Phase 12 is COMPLETE
+(sign-offs recorded below, merged via PR #12). Phase 13 as of
+2026-08-16 late afternoon: staging live, ingestion unpaused, rollback +
+Time Travel drills passed, production deploy workflow merged (see
+"Phase 13 progress" below). Remaining in phase: verify the first real
+ingestion (05:00 UTC cron on 2026-08-17; self check-in armed for 05:40
+UTC), fixture refresh from the ingestion's R2 snapshots, then security
++ production-reviewer sign-offs and the phase tag. Production launch
+itself is blocked on owner items (production environment secrets,
+required reviewers, Resend domain DNS). Phase 12's state record kept
+below:
 
 - **Stage A (E2E + accessibility) COMPLETE, 25/25 green** (`pnpm test:e2e`):
   critical-path journey (signup → mailbox-hook verification → login →
