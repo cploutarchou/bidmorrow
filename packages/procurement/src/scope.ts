@@ -90,22 +90,31 @@ export interface PublicationWindow {
 }
 
 /**
+ * The live API's `publication-date` value pattern is
+ * `[0-9]{8}|today([+-]?[0-9]*)` (QUERY_INVALID_FIELD_FORMAT response,
+ * verified via the ted-gates checkQuerySyntax run 2026-08-16) — dates must
+ * be compact `YYYYMMDD`, never ISO `YYYY-MM-DD`. Internal window handling
+ * (checkpoints, R2 keys, logs) stays ISO; conversion happens only here at
+ * the query boundary.
+ */
+function toTedDate(isoDate: string): string {
+  return isoDate.replaceAll('-', '');
+}
+
+/**
  * Composes the TED expert query for one bounded ingestion window
- * (docs/ted-data-source.md §Expert query language). SYNTAX PENDING LIVE
- * VALIDATION: the exact `classification-cpv IN (...)` wildcard/family-root
- * form and field names below follow the documented grammar but have not
- * been round-tripped through the live `checkQuerySyntax` endpoint (TED API
- * unreachable from this environment — see IMPLEMENTATION_LEDGER Phase 5
- * notes). The ted-data agent must validate this against staging before the
- * first production cron run.
+ * (docs/ted-data-source.md §Expert query language). LIVE-VALIDATED
+ * 2026-08-16 via the Phase 13 ted-gates workflow (checkQuerySyntax): two
+ * corrections came out of that run — no `ASC` after `SORT BY`, and
+ * compact `YYYYMMDD` dates (see `toTedDate`).
  */
 export function buildScopeQuery(scope: IngestionScope, window: PublicationWindow): string {
   const cpvTerms = scope.cpvFamilies.map((entry) => (entry.length >= 8 ? entry : `${entry}*`));
   const clauses = [
     `classification-cpv IN (${cpvTerms.join(', ')})`,
     'form-type = competition',
-    `publication-date >= ${window.windowFrom}`,
-    `publication-date <= ${window.windowTo}`,
+    `publication-date >= ${toTedDate(window.windowFrom)}`,
+    `publication-date <= ${toTedDate(window.windowTo)}`,
   ];
   if (scope.countries.length > 0) {
     clauses.push(`buyer-country IN (${scope.countries.join(', ')})`);
