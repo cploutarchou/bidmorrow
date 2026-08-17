@@ -6,6 +6,8 @@
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+const { console, process } = globalThis;
+
 const root = process.cwd();
 const agentsDir = join(root, '.claude', 'agents');
 const skillsDir = join(root, '.claude', 'skills');
@@ -79,4 +81,4 @@ if (problems.length) {
   for (const p of problems) console.error(`  - ${p}`);
   process.exit(1);
 }
-console.log('All .claude agent and skill files are valid.');
+process.stdout.write('All .claude agent and skill files are valid.\n');
