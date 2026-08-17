@@ -400,8 +400,14 @@ header {
 
 .product-name {
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: 0.01em;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  color: var(--text-1);
+  text-decoration: none;
 }
 
 main {
@@ -416,27 +422,56 @@ h1 {
 }
 
 .subheadline {
-  margin: 0 0 2rem;
-  font-size: 1.125rem;
-  color: var(--color-muted);
+  margin: 0 0 var(--s5);
+  font-size: 1.1rem;
+  color: var(--text-2);
+  max-width: 42rem;
 }
 
 a {
   color: var(--color-link);
 }
 
+/* `.cta` is rendered by marketing, auth (submit buttons), the internal
+   admin surface, and several already-Strata app screens that haven't been
+   migrated to the app-only `.btn-solar` utility yet (styles.css ~L1219
+   boundary comment) — so it's deliberately upgraded to the SAME pill/
+   gradient treatment as `.btn-solar` in place, rather than renamed into
+   the `.mkt-*` namespace, to stay visually coherent everywhere it's used. */
 .cta {
-  display: inline-block;
-  padding: 0.75rem 1.25rem;
-  border-radius: 0.375rem;
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   text-decoration: none;
+  cursor: pointer;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.65rem 1.3rem;
+  border: 1px solid transparent;
+  background: var(--accent-grad);
+  color: var(--accent-ink);
+  box-shadow: 0 10px 26px -12px rgba(255, 140, 110, 0.5);
+  transition:
+    transform 200ms var(--ease),
+    box-shadow 200ms var(--ease),
+    border-color 200ms var(--ease);
 }
 
 .cta:hover {
-  text-decoration: underline;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.cta:active {
+  transform: translateY(0);
+}
+
+.cta[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Keep keyboard focus clearly visible everywhere — never suppress outlines. */
@@ -472,15 +507,39 @@ footer p {
   top: 0.5rem;
 }
 
-/* --- Header nav --- */
-.site-header nav {
+/* --- Header nav ---
+   `.site-header` escapes the generic `header { max-width: 44rem; ... }`
+   box above (its own class selector outranks that bare-element one) so it
+   can run edge to edge and sticky, Strata's `.nav.glass` treatment.
+   `.mkt-wrap` (defined below, in the marketing-site section) then
+   re-centers its actual content at the Strata content width — applied to
+   MarketingLayout's `<nav class="mkt-wrap">` (Pricing/How it works/…
+   links + actions) AND AuthLayout's plain `<div class="mkt-wrap">`
+   (wordmark only), so both shells get the same header chrome from one
+   rule. Only `.site-header` — never `.admin-header`/`.app-header`, which
+   stay on their own existing rules. */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: 0;
+  padding-block: var(--s3);
+  /* Overrides ALL sides of `.glass`'s border shorthand (combined on the
+     same element, `class="site-header glass"`) — a hairline on the bottom
+     edge only, never a full box (same pattern as `.app-header` below). */
+  border: none;
+  border-bottom: 1px solid var(--stroke-faint);
+}
+
+.site-header > .mkt-wrap {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: var(--s5);
   flex-wrap: wrap;
-  max-width: 64rem;
-  margin-inline: auto;
-  padding: 1rem 1.5rem;
+  min-height: 2.5rem;
 }
 
 .nav-list {
@@ -492,6 +551,19 @@ footer p {
   flex-wrap: wrap;
 }
 
+.nav-list a {
+  text-decoration: none;
+  color: var(--text-2);
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 0.4rem 0.2rem;
+  transition: color 180ms var(--ease);
+}
+
+.nav-list a:hover {
+  color: var(--text-1);
+}
+
 .nav-actions {
   margin-left: auto;
   display: flex;
@@ -499,9 +571,21 @@ footer p {
   align-items: center;
 }
 
+.nav-actions > a:not(.cta) {
+  text-decoration: none;
+  color: var(--text-2);
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: color 180ms var(--ease);
+}
+
+.nav-actions > a:not(.cta):hover {
+  color: var(--text-1);
+}
+
 .cta-small {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.95rem;
 }
 
 /* --- Layout containers --- */
@@ -555,12 +639,10 @@ button {
   cursor: pointer;
 }
 
-button.cta {
-  border: none;
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  font-weight: 600;
-}
+/* No `button.cta` override: `.cta` alone (specificity 0,1,0) already beats
+   the bare `button` element rule above (0,0,1) for every property it sets,
+   for both `<a class="cta">` and `<button class="cta">` — an extra
+   `button.cta` rule would only re-specialize and diverge from it. */
 
 button.danger {
   border-color: var(--status-danger-text);
@@ -1103,9 +1185,32 @@ td {
   font-weight: 700;
 }
 
-.feature-list,
 .steps-list {
   padding-left: 1.25rem;
+}
+
+/* `.feature-list` is Home-only — upgraded in place from a bulleted list
+   into a Strata card grid (docs/redesign/mockups/direction-g-strata.html
+   `.truth-cards`/`.trust-grid` language), split out of the shared rule
+   above so `.steps-list` (How it works, unrelated, untouched) keeps its
+   own plain list treatment. */
+.feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--s4);
+}
+
+.feature-list li {
+  border-radius: var(--r-m);
+  padding: var(--s5);
+  background: var(--surface-1);
+  border: 1px solid var(--stroke);
+  color: var(--text-2);
+  font-size: 0.95rem;
+  line-height: 1.55;
 }
 
 .visually-hidden-status {
@@ -1202,7 +1307,7 @@ td {
 }
 
 @media (max-width: 40rem) {
-  .site-header nav {
+  .site-header > .mkt-wrap {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -1217,13 +1322,463 @@ td {
 }
 
 /* ============================================================
+   MARKETING SITE — Strata (Slice 1: shell — MarketingLayout header/
+   footer/theme toggle; Slice 2: Home page hero + teaser sections).
+   docs/redesign/mockups/direction-g-strata.html is the visual target;
+   this is its language migrated into the token layer above, never its
+   inline <style> copied wholesale (CSP: style-src 'self', no
+   unsafe-inline). Deliberately its OWN `.mkt-*` namespace for every NEW
+   element — `.site-header`/`.hero`/`.feature-list`/`.cta` are upgraded
+   IN PLACE instead (they're shared with auth, admin, and several
+   already-Strata app screens; see the comments at each of those rules
+   above for why). Builds on the M0.1 token layer and the `.glass`
+   utility merged above. Other marketing pages (Pricing, How it works,
+   Methodology, Pilot, Contact, Privacy, Terms) are unchanged this slice
+   — they still render inside the shared, centered `#main-content` box.
+   ============================================================ */
+
+/* Shared Strata content-width utility (mockup's `.wrap`): used by the
+   header nav, the footer, and every full-bleed Home section. */
+.mkt-wrap {
+  width: min(1160px, 100% - 2 * var(--s5));
+  margin-inline: auto;
+}
+
+/* Home opts its `<main>` out of the shared centered text column (the
+   `#main-content` rule under "Layout containers" above) so its own
+   full-bleed sections (each with its own `.mkt-wrap`) can run edge to
+   edge with the hero wash background. Higher specificity than the plain
+   `#main-content` ID rule via the extra class, so it wins without
+   touching that rule (still used, unchanged, by every other marketing
+   page and by `AuthLayout`). */
+#main-content.mkt-main--full {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mkt-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0 0 var(--s4);
+}
+
+.mkt-eyebrow::before {
+  content: '';
+  width: 22px;
+  height: 1px;
+  background: var(--accent-edge);
+}
+
+/* --- Hero (`.hero` itself is upgraded in place; everything inside it
+   that's new to this slice is `.mkt-*`) --- */
+.hero {
+  position: relative;
+  background: var(--wash-hero);
+  padding: var(--s8) 0 var(--s7);
+  overflow: clip;
+}
+
+.mkt-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: var(--s7);
+  align-items: center;
+}
+
+.hero h1 {
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
+  font-weight: 700;
+  margin: 0 0 var(--s5);
+  text-wrap: balance;
+}
+
+.mkt-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  margin-bottom: var(--s4);
+}
+
+/* Secondary/quiet button — `.cta` above already covers the primary
+   accent-filled action everywhere it's shared; this ghost variant is new
+   to marketing, so it stays `.mkt-*`-namespaced rather than colliding
+   with the app-only `.btn-quiet` (styles.css `APP INTERFACE` section). */
+.mkt-btn-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.65rem 1.3rem;
+  background: var(--surface-1);
+  color: var(--text-1);
+  border: 1px solid var(--stroke);
+  transition:
+    border-color 200ms var(--ease),
+    transform 200ms var(--ease);
+}
+
+.mkt-btn-quiet:hover {
+  border-color: var(--stroke-strong);
+  transform: translateY(-1px);
+}
+
+.mkt-hero-panel {
+  border-radius: var(--r-l);
+  padding: var(--s5);
+  display: grid;
+  gap: var(--s4);
+  align-content: start;
+}
+
+.mkt-hero-panel__caption {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0;
+}
+
+.mkt-hero-panel__note {
+  font-size: 0.92rem;
+  color: var(--text-2);
+  margin: 0;
+}
+
+.mkt-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.mkt-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: var(--surface-1);
+  color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.28rem 0.7rem;
+  white-space: nowrap;
+}
+
+.mkt-chip--mono {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.mkt-chip--solar {
+  background: var(--accent-soft);
+  border-color: var(--accent-edge);
+  color: var(--accent-text);
+}
+
+.mkt-tier-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-2);
+}
+
+.mkt-tier-list li:not(:last-child)::after {
+  content: '\2192';
+  margin-inline-start: var(--s2);
+  color: var(--stroke-strong);
+}
+
+/* --- Section rhythm (value / how it works / methodology / pricing) --- */
+.mkt-section {
+  padding: var(--s8) 0;
+}
+
+.mkt-section + .mkt-section {
+  border-top: 1px solid var(--stroke-faint);
+}
+
+.mkt-section--deep {
+  background: var(--wash-deep);
+}
+
+.mkt-section-head {
+  max-width: 46rem;
+  margin-bottom: var(--s6);
+}
+
+.mkt-section-head h2 {
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  margin: 0 0 var(--s3);
+}
+
+.mkt-section-lede {
+  color: var(--text-2);
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.mkt-section-link {
+  margin-top: var(--s5);
+}
+
+.mkt-section-link a {
+  color: var(--accent-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mkt-section-link a:hover {
+  text-decoration: underline;
+}
+
+/* --- How it works teaser --- */
+.mkt-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s4);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.mkt-step {
+  border-radius: var(--r-m);
+  padding: var(--s5);
+  background: var(--surface-1);
+  border: 1px solid var(--stroke);
+  display: grid;
+  gap: var(--s2);
+  align-content: start;
+}
+
+.mkt-step__num {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-text);
+  border: 1px solid var(--accent-edge);
+  border-radius: 999px;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mkt-step h3 {
+  font-size: 1.02rem;
+  margin: 0;
+}
+
+.mkt-step p {
+  font-size: 0.9rem;
+  color: var(--text-2);
+  margin: 0;
+}
+
+/* --- Methodology teaser --- */
+.mkt-truth-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s4);
+}
+
+.mkt-truth-card {
+  border-radius: var(--r-m);
+  padding: var(--s5);
+}
+
+.mkt-truth-card h3 {
+  font-size: 1.05rem;
+  margin: 0 0 var(--s2);
+}
+
+.mkt-truth-card p {
+  font-size: 0.92rem;
+  color: var(--text-2);
+  margin: 0;
+}
+
+/* --- Pricing teaser (substance frozen — see copy.ts/Pricing.tsx: €29
+   founding for the first 50 customers, €49 standard) --- */
+.mkt-plan-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+}
+
+.mkt-plan-chip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  border-radius: var(--r-m);
+  padding: var(--s5);
+  background: var(--surface-1);
+  border: 1px solid var(--stroke);
+  min-width: 14rem;
+  flex: 1 1 14rem;
+}
+
+.mkt-plan-chip--founding {
+  background: var(--glass-solid);
+  border-color: var(--accent-edge);
+  box-shadow: var(--shadow-m), var(--edge-lit);
+}
+
+.mkt-plan-chip__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.mkt-plan-chip--founding .mkt-plan-chip__label {
+  color: var(--accent-text);
+}
+
+.mkt-plan-chip__price {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+.mkt-plan-chip__per {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: var(--text-3);
+  margin-left: 0.35rem;
+}
+
+/* --- Footer --- */
+.mkt-footer {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: 0;
+  padding-block: var(--s7) var(--s6);
+  background: var(--ground-deep);
+  border-top: 1px solid var(--stroke-faint);
+  font-size: 0.86rem;
+  color: var(--text-3);
+}
+
+.mkt-footer__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: var(--s6);
+}
+
+.mkt-footer__wordmark {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-1);
+  text-decoration: none;
+  margin-bottom: var(--s3);
+}
+
+.mkt-footer p {
+  font-size: 0.82rem;
+  max-width: 58ch;
+  margin: 0.35rem 0;
+}
+
+.mkt-footer .nav-list {
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* --- Theme toggle (header) --- */
+.mkt-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  background: var(--surface-1);
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition:
+    border-color 180ms var(--ease),
+    color 180ms var(--ease);
+}
+
+.mkt-theme-toggle:hover {
+  border-color: var(--stroke-strong);
+  color: var(--text-1);
+}
+
+.mkt-theme-toggle__icon {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+@media (max-width: 64rem) {
+  .mkt-hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .mkt-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 48rem) {
+  .mkt-truth-grid {
+    grid-template-columns: 1fr;
+  }
+  .mkt-footer__inner {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 30rem) {
+  .hero {
+    padding: var(--s6) 0 var(--s7);
+  }
+  .mkt-section {
+    padding: var(--s7) 0;
+  }
+  .mkt-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
    APP INTERFACE — Strata (M2: Feed, Tender detail, Settings)
    docs/redesign/ux-strategy.md §5. Deliberately its OWN class
    namespace (`.app-*`, `.feed-*`, `.tender-detail__*`, `.settings-*`,
    `.btn-*`) — never a redeclaration of `.site-header`/`.nav-list`/
-   `.cta`/`.filter-bar`/`.detail-facts`, which marketing (M3, untouched)
-   and the internal admin surface (untouched) also use. Builds on the
-   M0.1 token layer and the `.glass` utility already merged above.
+   `.cta`/`.filter-bar`/`.detail-facts`, which marketing (M3 shell/Home
+   done; other marketing pages untouched) and the internal admin surface
+   (untouched) also use. Builds on the M0.1 token layer and the `.glass`
+   utility already merged above.
    ============================================================ */
 
 /* --- General-purpose Strata button utilities (app screens only —

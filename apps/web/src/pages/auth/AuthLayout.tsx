@@ -18,10 +18,12 @@ export function AuthLayout({
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
-      <header className="site-header">
-        <Link className="product-name" to="/">
-          {PRODUCT_NAME}
-        </Link>
+      <header className="site-header glass">
+        <div className="mkt-wrap">
+          <Link className="product-name" to="/">
+            {PRODUCT_NAME}
+          </Link>
+        </div>
       </header>
       <main id="main-content" className="auth-main">
         <h1>{title}</h1>
