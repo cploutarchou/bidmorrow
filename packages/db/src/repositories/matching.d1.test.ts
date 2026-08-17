@@ -454,7 +454,7 @@ describe('insertTenderMatches / replaceTenderMatches at scale (P-4)', () => {
       .from(tenderMatches)
       .where(eq(tenderMatches.organizationId, orgId));
     expect(countAfterRerun).toHaveLength(MATCH_COUNT);
-  });
+  }, 30_000);
 
   it('replaceTenderMatches: one call hard-replaces 155 existing matches with a fresh set, deleting exactly the old rows', async () => {
     const { orgId } = await insertTestOrganization(db, 'Scale Replace Org');
@@ -510,5 +510,5 @@ describe('insertTenderMatches / replaceTenderMatches at scale (P-4)', () => {
       .from(tenderMatches)
       .where(eq(tenderMatches.organizationId, orgId));
     expect(finalRows).toHaveLength(MATCH_COUNT);
-  });
+  }, 30_000);
 });

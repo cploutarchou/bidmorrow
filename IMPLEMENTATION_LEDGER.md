@@ -24,7 +24,38 @@ REQUIRED before any implementation. The 05:40 UTC self check-in remains
 armed but downgraded to a SILENT read-only health check of the first
 real staging ingestion (record results here; do NOT advance the phase
 pipeline). Production ingestion stays PAUSED until the owner's explicit
-go-live. Phase 12's state record kept below:
+go-live.
+
+**Website redesign RESTART (owner instruction, 2026-08-17)**: the owner
+REJECTED all three initial design directions (Ledger / Control Room /
+Mac Modern rev.1 — registry in
+`.claude/skills/website-redesign/requirements.md`) and expanded scope
+(content strategy, i18n readiness, imagery/motion workstream, full SEO,
+13-item approval package). A reusable multi-agent system was
+bootstrapped per owner instruction: 9 new specialist agents in
+`.claude/agents/` (competitor-researcher, ux-strategist,
+ui-visual-designer, content-seo-strategist, frontend-engineer,
+backend-security-engineer, accessibility-performance-engineer,
+internationalization-engineer, qa-reviewer) + the `/website-redesign`
+skill (SKILL.md, requirements.md, templates, checklists,
+validate-config.mjs + review-mockup.mjs — all validated). Earlier
+in-flight SEO/dependency subagents were stopped by the owner mid-run;
+their scopes were re-covered by the new workflow.
+
+**Stages 1–2 COMPLETE, Stage 3 checkpoint PRESENTED (2026-08-17,
+~01:45 UTC)**: Stage-1 research done via an 11-agent workflow (7
+rendered-page competitor profiles from CI Playwright captures + UX/SEO/
+i18n/dependency strategies — all in `docs/redesign/`, merged via PR
+#36). Stage-2 round-2 directions built by three ui-visual-designer
+agents, harness-verified, published as artifacts: E "Verdict"
+(claude.ai/code/artifact/4b25b255-84ff-46ce-8495-35a599ec106d), F
+"Daylight" (…/cb5f516a-5edf-41cb-a82d-d510439b8dce), G "Strata"
+(…/d841bf21-aafa-4634-bbb8-0ca92f280ff5). 13-item approval package
+presented; NOW WAITING for the owner's direction selection (MANDATORY
+STOP — no production-code changes until then). Known caveat for
+implementation: mockup score-anatomy labels are illustrative — re-base
+on the real engine components (docs/matching-engine.md) in M0. Phase
+12's state record kept below:
 
 - **Stage A (E2E + accessibility) COMPLETE, 25/25 green** (`pnpm test:e2e`):
   critical-path journey (signup → mailbox-hook verification → login →

@@ -1,12 +1,13 @@
 # Website & Interface Overhaul — Implementation Plan
 
-Status: **AWAITING OWNER APPROVAL** (2026-08-17, rev. 4 — final owner
-brief incorporated: macOS-style direction with Tendify as visual
-benchmark, onboarding prioritized, pricing untouched, premium-2026
-treatment, interactive elements, original/generated/licensed assets,
-Claude Design exploration + migration path, nine specialist workstreams
-with cross-review). No implementation begins until the owner approves
-this plan. Produced by three research
+Status: **AWAITING OWNER APPROVAL** (2026-08-17, rev. 5 — round-1
+directions REJECTED by owner and direction selection reopened; Stage-1
+research complete via the reusable `/website-redesign` multi-agent
+system: rendered-page competitor profiles, UX strategy, SEO/content
+strategy, i18n architecture, and dependency vetting all live under
+`docs/redesign/`; round-2 concepts E/F/G in exploration). No
+implementation begins until the owner approves a direction at the
+Stage 3 checkpoint. Produced by three research
 workstreams (frontend inventory, competitor/UX research, product-truth
 guardrails) plus design/security/accessibility/QA synthesis. Competitor
 browsing: the sandbox egress proxy blocks competitor hosts, so rendered-
@@ -25,11 +26,13 @@ violating a single product-truth rule.
 
 ## 1. Competitor & UX analysis (summary)
 
-Method caveat: the sandbox proxy blocks direct access to external sites, so
-competitor observations come from search-index snippets, cached titles, and
-third-party teardowns — labeled as such in the full research report. A
-30-minute owner eyeball of the five main competitor homepages is a cheap
-validation step before M1 copy is finalized.
+**Method: Rendered-page analysis (2026-08-17).** Stage-1 competitor research
+is complete: Playwright CI captured 18 full-page screenshots (7 competitor
+profiles, desktop 1440×900 + mobile 390×844, branch `competitor-shots`)
+analyzed by seven specialist agents. Evidence-based observations on
+positioning, conversion flows, visual identity, and weaknesses documented
+in `docs/redesign/competitor-findings.md`. A 30-minute owner eyeball of the
+five main profiles is a cheap validation step before M1 copy is finalized.
 
 | Competitor                                                               | Position                                                                                                                           | Pricing                                                 | Beatable weakness                                                                                                                                                                                                                                                                |
 | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -40,6 +43,25 @@ validation step before M1 copy is finalized.
 | Tenderlake                                                               | "Total Tender Visibility", LLM explanations                                                                                        | £249–546/mo                                             | Priced out of SME; probabilistic explanations vs our deterministic ones                                                                                                                                                                                                          |
 | TED (free baseline)                                                      | Official journal, 3,000+ notices/day                                                                                               | Free                                                    | Not a competitor — the raw-material story: "we read all 3,000 daily so you don't"                                                                                                                                                                                                |
 | Tendify (owner-supplied screenshot, 2026-08-17 — direct visual evidence) | "Find, monitor, understand and manage tenders in one workflow"; AI chat ("Riko"); by-feature/role/market mega-menu; free-trial CTA | Free trial motion; prices not visible on the shown page | **The owner's design benchmark**: soft light ground, floating rounded product-UI cards embedded in marketing pages, pill CTAs. Weaknesses we beat: cookie banner/trackers (we run none — CSP-enforced), generic multi-role targeting, AI-chat framing vs our deterministic story |
+
+**Convergent positioning insights from rendered-page evidence**:
+
+1. **Own the verdict, not the workflow**: Tendify and BidMorrow both lead with
+   "find the tenders worth pursuing"; broader vendors (Stotles, Mercell) sell
+   entire suites — an opening for sharp focus.
+2. **Determinism vs. vague "AI"**: Tendify's mascot-chat framing masks a black
+   box; BidMorrow can own explicit, inspectable scoring ("same inputs + same
+   engine = identical score").
+3. **Radical pricing honesty**: BidMorrow's €29/€49 flat EUR on-page is unique;
+   every competitor either hides pricing or gates it.
+4. **TED provenance as trust**: No competitor mentions data source on homepage;
+   BidMorrow leads with Commission Decision 2011/833/EU attribution.
+5. **Conversion grammar lessons**: Tendify's one-CTA discipline + company-website
+   form makes trial feel like personalization; single verb repeated everywhere
+   removes friction.
+
+Full evidence-based analysis with design lessons and differentiation strategies:
+`docs/redesign/competitor-findings.md`.
 
 Market-wide gaps BidMorrow can own, all with zero customers and zero fake
 anything:
@@ -107,52 +129,67 @@ naming CPV 72*/48*/79417000, UNKNOWN-policy and hard-exclusion wording,
 
 ## 4. Visual direction
 
-**Owner directive (2026-08-17): modern macOS-style design language,
-benchmarked against an owner-supplied Tendify screenshot** ("for example
-that page"). The adopted direction is **D — "Mac Modern"** (Apple
-HIG-inspired, Tendify-level polish), superseding the initial Direction A
-recommendation. A rendered mockup of Direction D accompanies this plan
-for approval. Concrete benchmark cues taken from the screenshot: soft
-lavender-tinted light ground, white floating cards with large radii and
-diffuse shadows, real product-UI previews embedded in marketing pages
-(their pipeline card ↔ our score card), pill-shaped CTAs, quiet
-hairlines. Deliberately NOT copied: their cookie banner/trackers (we run
-none), mega-menu (our IA is 8 pages), "AI chat" framing (our story is
+**Owner directive (2026-08-17): modern macOS-INSPIRED design language**,
+originally benchmarked against an owner-supplied Tendify screenshot ("for
+example that page"). **The visual direction is OPEN**: the owner reviewed
+and rejected all three round-1 mockups on 2026-08-17, so no direction is
+adopted until the owner selects one of the round-2 concepts at the Stage 3
+approval checkpoint. What stands regardless of direction (recorded in
+`.claude/skills/website-redesign/requirements.md`): macOS-inspired
+character — refined typography, generous spacing, layered surfaces,
+elegant depth, tasteful translucency, soft shadows, controlled gradients,
+polished icons, smooth meaningful micro-interactions — as inspiration
+only (no Apple asset/layout copying; SF Pro cannot be self-hosted; system
+stack + a self-hosted licensed face instead), first-class light AND dark
+themes, motion behind `prefers-reduced-motion`. Deliberately NOT copied
+from the Tendify benchmark: their cookie banner/trackers (we run none),
+mega-menu (our IA is 8 pages), "AI chat" framing (our story is
 deterministic), any Tendify branding or copy.
 
-- **D — "Mac Modern" (adopted).** Character: the calm, layered clarity of
-  a modern macOS app. Frosted translucent surfaces (`backdrop-filter`
-  vibrancy — pure CSS, CSP-safe), soft diffuse elevation, rounded
-  geometry (10–16px radii), generous whitespace, restrained neutrals
-  with one system-blue accent, first-class light AND dark themes
-  (macOS's own strength — fixes the current unthemed status colors by
-  construction). Typography: Apple system stack first
-  (`-apple-system, BlinkMacSystemFont, …` → SF Pro on Apple devices,
-  which cannot legally be self-hosted) with **self-hosted Inter** as the
-  metric-compatible face everywhere else, plus a mono face for scores/
-  CPV/dates. Controls follow HIG idioms: segmented control for the feed
-  tabs, pill buttons, sheet-style dialogs, setup-assistant onboarding.
-  Subtle motion (150–250ms ease-out transitions), always behind
-  `prefers-reduced-motion`. The deterministic score breakdown stays the
-  hero artifact — presented as a floating frosted card.
-
-Directions considered and not adopted (kept for the record):
+**Rejected round-1 directions** (owner decision, 2026-08-17 — registry in
+`.claude/skills/website-redesign/requirements.md`; never revive or
+lightly re-skin):
 
 - **A — "Ledger".** Swiss/editorial audit-document precision; paper
-  ground, hairline rules, monospace data. Was the initial
-  recommendation; superseded by the owner's macOS-style directive. Its
-  best discipline — tabular monospace for every number, score, CPV code
-  and date — is carried into Direction D.
-- **B — "Control Room".** Linear-adjacent dark technical authority.
-  Strong pull for cyber/dev ICP; risk: reads startup-trendy to
-  conservative DACH/Benelux buyers, and dark marketing sites are now a
-  dev-tool convention.
-- **C — "Civic Modern".** GOV.UK-influenced warm institutional clarity.
-  Ages well with 40–60-year-old consultancy owners; less distinctive.
+  ground, hairline rules, monospace data. REJECTED.
+- **B — "Control Room".** Linear-adjacent dark technical authority; teal
+  on near-black, grid texture, glow readouts. REJECTED.
+- **D (rev. 1) — "Mac Modern" (literal).** Frosted sticky nav, macOS
+  window chrome with traffic-light dots, #0071e3 accent. REJECTED as too
+  literal a macOS treatment.
+- (**C — "Civic Modern"**, GOV.UK-influenced institutional clarity, was
+  considered and not mocked up in round 1.)
+
+**Round-2 concepts** (substantially different from each other and from
+every rejected direction; briefs in
+`docs/redesign/design-concepts-round2.md`). All three are built as
+high-fidelity responsive single-file mockups (desktop + framed-mobile
+composition, both themes, reduced-motion static states), verified by the
+skill's review harness (zero horizontal overflow, zero console errors at
+1440/390px, all four variants) and published as artifacts for owner
+review. Caveat recorded by the designers: the 8-component score anatomy
+shown in all three mockups is a shared illustrative set for
+cross-direction comparability — the real engine's components in
+`docs/matching-engine.md` differ, so the approved direction re-bases its
+breakdown on a real `ScoreBreakdown` fixture before implementation.
+
+- **E — "Verdict".** The product demo IS the homepage: hero shows a working
+  sample-data demo with real-shaped TED notice card, live score computation
+  (count-up + staged breakdown bars), verdict landing (Pursue / Skip).
+  Visitor flips through 3 sample notices. Kinetic-precise, luminous.
+- **F — "Daylight".** Calm as the product. Anti-dashboard argument: "2,400
+  notices/week → 14 matched → 3 worth a meeting" rendered as animated
+  funnel-reduction sequence. Serene gallery-light: warm-white ground with
+  dawn gradient, floating cards, enormous whitespace, humanist display type.
+- **G — "Strata".** Filtering depth made spatial. Scroll descends through
+  layered translucent panes (Discover → Qualify → Decide). Ink-navy ground,
+  warm solar accent (apricot→rose), glass effect, dark-first with daylight
+  twin. Z-depth journey as metaphor.
 
 The one visual move no competitor can copy without changing their
-product: making the deterministic score breakdown the hero image — in
-Direction D, a floating frosted-glass score card.
+product: making the deterministic score breakdown the hero image. Every
+round-2 concept keeps it central — E performs it live, F places it inside
+the reduction narrative, G reveals it at the deepest stratum.
 
 ### 4a. Premium-2026 treatment (owner's expanded brief, 2026-08-17)
 
@@ -308,6 +345,64 @@ BlinkMacSystemFont, "Segoe UI", …` — SF Pro renders natively on Apple
   (no JS-heavy drawer).
 - **Brand basics**: SVG wordmark + minimal favicon set (SVG + PNG +
   apple-touch), `theme-color`, self-hosted static OG image (1200×630).
+
+### 5a. Dependencies & library verdicts (verified Stage-1 evaluation)
+
+All new dependencies evaluated in `docs/redesign/dependency-evaluation.md`
+(CSP-compliant empirical testing, verified against published dist, no unsafe
+patterns).
+
+**Adopt**:
+
+- **lucide-react 1.31.0** (ISC) — UI icon glyphs only (~8–15KB gz for 20–30
+  icons); zero style injection verified. Original inline SVG for brand/
+  illustrative art. Import syntax to verify via `verify-current-docs`.
+- **@fontsource-variable/inter + @fontsource/ibm-plex-mono** (OFL-1.1) —
+  measured 47.1KB (Inter wght) + 14.4KB (Plex Mono) = 61.5KB, comfortably
+  under 90KB budget. `font-display: swap`; no italic files unless design uses
+  them; skip latin-ext for English-only launch (re-add at i18n activation).
+  Hand-written `@font-face` in styles.css only (never wholesale Fontsource CSS).
+- **Pure CSS transitions + View Transitions API** — 0KB runtime cost. Covers
+  ~90% of macOS feel: hover lifts, focus rings, fades, spring easing via
+  `linear()`, scroll-driven reveals via `animation-timeline: view()` (progressive).
+- **Native `<dialog>` + `popover` attribute** — free, CSP-perfect, excellent
+  support. `<dialog>` for modals (focus containment, Esc, `::backdrop`),
+  `popover` for menus/tooltips/mobile nav (Baseline 2024, light-dismiss).
+  Small ~60-line internal roving-tabindex (tabs), internal popover-based
+  tooltip. Reject radix-ui (verified CSP violation: react-style-singleton
+  injects `<style>` text, blocked by `style-src 'self'`).
+- **vite-imagetools 12.0.0** (devDependency) + sharp — build-time responsive
+  variants (AVIF → WebP → PNG via import directives), zero runtime bundle.
+- **Static designed OG PNGs** — 1200×630, ≤ 300KB each, pixel-perfect brand
+  control. Reject satori/resvg pipeline for V1 (revisit if locales ×
+  routes demand automation).
+
+**Adopt-if**:
+
+- **`motion` 13.1.0** (full) — reject; ~34KB (23% of marketing budget). Use
+  only if a concrete approved interaction needs interruptible springs.
+  **motion/mini** (~2.3KB) or **LazyMotion** (~4.6KB) if complex orchestration
+  needed; CSP caveat: ban `AnimatePresence mode="popLayout"` (sole style-
+  injection site; ESLint rule + manual console check in security tests).
+- **vite-prerender-plugin 0.5.13** OR custom post-build script — build-time
+  SSG of 8 marketing routes to `dist/{route}/index.html` (fixes T1/T5/T6).
+  Hydrate client-side. JSON-LD delivered as `<script type="application/ld+json">`
+  with SHA-256 hash in `script-src` (CSP-compatible, no unsafe-inline).
+- **react-aria-components** — shelf for future complex app widgets only (combobox/
+  select); do not adopt for V1 marketing. Heavyweight even tree-shaken.
+
+**i18n library (separate evaluation, `docs/redesign/i18n-architecture.md`)**:
+
+- **i18next 26.x + react-i18next 17.x** recommended (verify current pins via
+  `verify-current-docs`): one runtime (core JS, no Babel; runs in worker +
+  browser equally), strict TS keys via CustomTypeOptions, CSP-clean (plain
+  JSON catalogs), ~12–16KB gz combined for en-only (lingui ~3–5KB; react-intl
+  ~15–20KB). Record in `docs/dependency-versions.md` at adoption.
+
+**Record**: Every adopted dependency recorded in `docs/dependency-versions.md`
+with rationale per §Libraries rule. `pnpm build` + bundle-size measurement
+reported after each addition. Verify current docs before install (CSP, APIs,
+build mechanics).
 
 ## 6. Information architecture & user flows
 
@@ -599,9 +694,11 @@ bundle sizes), before starting the next milestone.
 
 Resolved by the owner (2026-08-17):
 
-- **D1 — Visual direction: RESOLVED — Direction D "Mac Modern"**,
-  benchmarked against the owner-supplied Tendify screenshot; mockup
-  updated accordingly.
+- **D1 — Visual direction: REOPENED (2026-08-17, later same day).** The
+  owner rejected all three round-1 mockups (A, B, D rev.1). Direction
+  selection now happens at the Stage 3 approval checkpoint between the
+  round-2 concepts E "Verdict" / F "Daylight" / G "Strata". The
+  macOS-inspired _character_ directive itself still stands.
 - **D-pricing — RESOLVED: no pricing changes.** Pricing page and all
   pricing copy stay exactly as they are; visual restyle only.
 - **Priority — RESOLVED: client onboarding first** (M1).
