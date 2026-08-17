@@ -102,12 +102,25 @@ verified (format/lint/typecheck, 649 unit, build) + onboarding e2e
 M0.1-era e2e flake (smooth-scroll + slow keyword-cap test → reducedMotion
 
 - test.slow; reproduced on main, not an M1 bug; only surfaced in nightly
-  e2e since PR CI has no e2e step). **NOW: M2 (feed / tender detail /
-  settings restyle in Strata)** — incl. the 402 subscription-required
-  state M1 left and Settings navigation. Known caveat for
-  implementation: mockup score-anatomy labels are illustrative — re-base
-  on the real engine components (docs/matching-engine.md) in M0. Phase
-  12's state record kept below:
+  e2e since PR CI has no e2e step). **M2 (feed / tender detail / settings
+  restyle in Strata) COMPLETE + MERGED (PR #40, 2026-08-17)** — incl. the
+  402 subscription-required state and Settings navigation; score UI re-based
+  on the REAL engine components (not the mockup's illustrative labels),
+  native `<progress>` bars (CSP intact), Feed stale-response race fixed.
+  **GTM + EUR pricing COMPLETE + MERGED (PR #41, 2026-08-17)**: marketing +
+  sales acquisition strategy (`docs/redesign/marketing-strategy.md`,
+  `sales-strategy.md` §8), canonical EUR pricing spec
+  (`docs/redesign/pricing.md`), and **founding cap DECIDED = 50** reconciled
+  across all copy/default/tests/docs.
+  **NOW: M3 (public marketing site → Strata) — slices 1–3 BUILT, qa-reviewer
+  verdict SHIP, merging to staging.** Marketing shell + ThemeToggle + all 8
+  marketing pages (Home, Pricing, HowItWorks, Methodology, Pilot, Contact,
+  Privacy, Terms) migrated to Strata in vanilla-CSS tokens (`.mkt-*`
+  namespace + upgraded shared `.site-header`/`.hero`/`.cta`); CSP intact,
+  0 axe violations both themes, guard e2e 26/26, prices frozen €29/€49,
+  cap 50, TED attribution + disclaimer preserved. DEFERRED to next slice:
+  sample-verdict demo + `/cybersecurity-tenders` `/cloud-tenders` category
+  pages. Phase 12's state record kept below:
 
 * **Stage A (E2E + accessibility) COMPLETE, 25/25 green** (`pnpm test:e2e`):
   critical-path journey (signup → mailbox-hook verification → login →

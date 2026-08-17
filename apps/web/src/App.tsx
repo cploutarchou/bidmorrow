@@ -43,7 +43,7 @@ export function App(): ReactElement {
           <Route
             path="/"
             element={
-              <MarketingLayout>
+              <MarketingLayout fullBleed>
                 <Home />
               </MarketingLayout>
             }
