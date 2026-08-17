@@ -410,6 +410,27 @@ header {
   text-decoration: none;
 }
 
+/* --- Brand mark (Logo.tsx) ---
+   `.wordmark` is the header's `<Link>` wrapping the mark + `.product-name`
+   text (MarketingLayout, AuthLayout keeps the plain `.product-name` link
+   alone — no mark there, only marketing/its footer show it). `.brand-mark`
+   sizes the inline SVG purely via CSS (never an inline `style`); its
+   `currentColor` bars inherit `.wordmark`'s `color`, so no separate color
+   rule is needed here. */
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-1);
+  text-decoration: none;
+}
+
+.brand-mark {
+  width: 26px;
+  height: 26px;
+  flex: none;
+}
+
 main {
   flex: 1;
   padding-block: 3rem 4rem;
@@ -540,6 +561,10 @@ footer p {
   gap: var(--s5);
   flex-wrap: wrap;
   min-height: 2.5rem;
+  /* Anchor for `.mkt-menu-panel`'s `position: absolute` below ~56rem
+     (MarketingLayout's nav only — AuthLayout's plain `.mkt-wrap` div never
+     has a panel child, so this is a no-op there). */
+  position: relative;
 }
 
 .nav-list {
@@ -1289,16 +1314,14 @@ td {
   }
 }
 
+/* Was previously `.site-header > .mkt-wrap { flex-direction: column }` +
+   `.nav-actions { margin-left: 0 }` — that let the header's nav-list and
+   nav-actions wrap into 3 stacked rows on mobile instead of collapsing.
+   Superseded by the hamburger menu below (MARKETING SITE section,
+   `@media (max-width: 56rem)`), which hides `.nav-list`/`.nav-actions`
+   entirely under 56rem (a superset of this 40rem query) and replaces them
+   with `.mkt-menu-toggle`/`.mkt-menu-panel`. */
 @media (max-width: 40rem) {
-  .site-header > .mkt-wrap {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .nav-actions {
-    margin-left: 0;
-  }
-
   .detail-facts {
     grid-template-columns: 1fr;
   }
@@ -1838,7 +1861,9 @@ td {
 }
 
 .mkt-footer__wordmark {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.1rem;
@@ -1885,6 +1910,147 @@ td {
   width: 15px;
   height: 15px;
   flex: none;
+}
+
+/* --- Mobile nav (hamburger + dropdown panel) ---
+   `.mkt-menu-toggle`/`.mkt-menu-panel` only ever render inside
+   MarketingLayout's header nav. Hidden by default (desktop: the inline
+   `.nav-list`/`.nav-actions` above do the job); the `@media (max-width:
+   56rem)` block below swaps that around — an intentional improvement on
+   the approved mockup, which only hides the links under its equivalent
+   breakpoint and puts nothing in their place (the reported "3 stacked
+   rows" bug). React only toggles the `is-open` class and the `inert`
+   attribute (MarketingLayout.tsx) — no inline `style` (CSP: style-src
+   'self'). `inert` (not just CSS) is what actually removes the closed
+   panel's links from the tab order and the accessibility tree; the
+   visibility/opacity/transform transition below is the visual layer on
+   top of that, and is fully neutralized by the reduced-motion kill-switch
+   near the top of this file (`*, *::before, *::after { transition: none
+   !important }`). */
+.mkt-menu-toggle {
+  display: none;
+}
+
+.mkt-menu-panel {
+  display: none;
+}
+
+@media (max-width: 56rem) {
+  .site-header .nav-list,
+  .site-header .nav-actions {
+    display: none;
+  }
+
+  .mkt-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* >= 44px touch target (WCAG 2.5.8). */
+    width: 44px;
+    height: 44px;
+    margin-left: auto;
+    border-radius: var(--r-m);
+    border: 1px solid var(--stroke);
+    background: var(--surface-1);
+    color: var(--text-1);
+    cursor: pointer;
+    transition: border-color 180ms var(--ease);
+  }
+
+  .mkt-menu-toggle:hover {
+    border-color: var(--stroke-strong);
+  }
+
+  .mkt-menu-toggle svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .mkt-menu-panel {
+    display: block;
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    margin-top: var(--s3);
+    padding: var(--s4) var(--s5) var(--s5);
+    border-radius: var(--r-m);
+    background: var(--glass-solid);
+    border: 1px solid var(--stroke-faint);
+    box-shadow: var(--shadow-m);
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition:
+      opacity 200ms var(--ease),
+      transform 200ms var(--ease),
+      visibility 0s linear 200ms;
+  }
+
+  .mkt-menu-panel.is-open {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+      opacity 200ms var(--ease),
+      transform 200ms var(--ease),
+      visibility 0s linear 0s;
+  }
+
+  .mkt-menu-panel__links {
+    list-style: none;
+    margin: 0 0 var(--s4);
+    padding: 0;
+    display: grid;
+    gap: var(--s1);
+  }
+
+  .mkt-menu-panel__links a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--r-s);
+    text-decoration: none;
+    color: var(--text-2);
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .mkt-menu-panel__links a:hover {
+    color: var(--text-1);
+    background: var(--surface-1);
+  }
+
+  .mkt-menu-panel__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+    padding-top: var(--s4);
+    border-top: 1px solid var(--stroke-faint);
+  }
+
+  .mkt-menu-panel__actions > a:not(.cta) {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    text-decoration: none;
+    color: var(--text-2);
+    font-weight: 600;
+  }
+
+  .mkt-menu-panel__actions > a:not(.cta):hover {
+    color: var(--text-1);
+  }
+
+  .mkt-menu-panel__actions .cta {
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .mkt-menu-panel__actions .mkt-theme-toggle {
+    align-self: flex-start;
+  }
 }
 
 @media (max-width: 64rem) {
