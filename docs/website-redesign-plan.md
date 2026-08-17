@@ -1,13 +1,14 @@
 # Website & Interface Overhaul — Implementation Plan
 
-Status: **AWAITING OWNER APPROVAL** (2026-08-17, rev. 5 — round-1
-directions REJECTED by owner and direction selection reopened; Stage-1
-research complete via the reusable `/website-redesign` multi-agent
-system: rendered-page competitor profiles, UX strategy, SEO/content
-strategy, i18n architecture, and dependency vetting all live under
-`docs/redesign/`; round-2 concepts E/F/G in exploration). No
-implementation begins until the owner approves a direction at the
-Stage 3 checkpoint. Produced by three research
+Status: **IN IMPLEMENTATION** (2026-08-17, rev. 6). Owner approved
+Direction **G "Strata"**; the competitive investigation is complete and
+verified and the owner locked product policy (see "Post-competitive
+positioning integration" below + `docs/product-scope.md` §Product policy
+lock). **M0.1 (Strata design-system foundation) is MERGED** to main
+(PR #38). Now in **M1 — onboarding overhaul** (owner's top priority).
+Stage-1 research (rendered-page competitor profiles, UX strategy,
+SEO/content strategy, i18n architecture, dependency vetting) is under
+`docs/redesign/`. Produced by three research
 workstreams (frontend inventory, competitor/UX research, product-truth
 guardrails) plus design/security/accessibility/QA synthesis. Competitor
 browsing: the sandbox egress proxy blocks competitor hosts, so rendered-
