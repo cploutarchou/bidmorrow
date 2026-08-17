@@ -209,6 +209,10 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
   });
 
   test('settings: keyword cap error path (51 keywords -> 422)', async () => {
+    // This step drives 55 sequential add-keyword UI round-trips before the
+    // cap fires; it legitimately runs long, especially on a loaded CI/sandbox
+    // box, so give it the tripled "slow" budget instead of the 30s default.
+    test.slow();
     await page.goto('/app/settings');
     await expect(page.getByRole('heading', { name: 'Company profile' })).toBeVisible();
 
