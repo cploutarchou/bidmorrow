@@ -39,7 +39,7 @@ for (const [label, w, h, scheme, rm] of variants) {
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto('file://' + file, { waitUntil: 'load' });
   await page.evaluate(async () => {
-    const { document, window } = globalThis;
+    const { document, window, setTimeout } = globalThis;
     document.documentElement.style.setProperty('scroll-behavior', 'auto', 'important');
     const total = document.documentElement.scrollHeight;
     for (let y = 0; y <= total; y += 500) {
