@@ -90,17 +90,26 @@ Decisions log): sample-verdict demo IN, programmatic per-tender SEO OUT,
 manually-authored category pages IN, pricing €29/€49 EUR retained, free
 tier OUT, no automated trial, deterministic explainable scoring REQUIRED
 (no LLM in scoring path). **GATE LIFTED** — positioning-sensitive work
-unblocked. M0.1 (Strata tokens/fonts/icons) COMPLETE with green gates
-(font payload 80.89KB ≤ 90KB; unit 638 passed; e2e 25/25 incl. 9 axe
-scans zero serious/critical; build + CSP byte-exact test pass) —
-finalizing under owner authorship. Repo commit author set to owner
-(Christos <cploutarchou@gmail.com>); Claude trailers dropped. Known
-caveat for
-implementation: mockup score-anatomy labels are illustrative — re-base
-on the real engine components (docs/matching-engine.md) in M0. Phase
-12's state record kept below:
+unblocked. M0.1 (Strata tokens/fonts/icons) COMPLETE + MERGED (PR #38).
+Repo commit author set to owner (Christos <cploutarchou@gmail.com>);
+Claude trailers dropped. **M1 (onboarding overhaul) COMPLETE + MERGED
+(PR #39, 2026-08-17 ~13:21 UTC)**: 4-phase Strata setup assistant on the
+unchanged onboarding API; fixed preset-prefill loss (Review
+reconciliation), CPV zero-overlap warning, post-login /onboarding
+routing; score copy uses real engine weights. Independently gate-
+verified (format/lint/typecheck, 649 unit, build) + onboarding e2e
+11/11 in clean runs; screenshots shared. Also fixed a pre-existing
+M0.1-era e2e flake (smooth-scroll + slow keyword-cap test → reducedMotion
 
-- **Stage A (E2E + accessibility) COMPLETE, 25/25 green** (`pnpm test:e2e`):
+- test.slow; reproduced on main, not an M1 bug; only surfaced in nightly
+  e2e since PR CI has no e2e step). **NOW: M2 (feed / tender detail /
+  settings restyle in Strata)** — incl. the 402 subscription-required
+  state M1 left and Settings navigation. Known caveat for
+  implementation: mockup score-anatomy labels are illustrative — re-base
+  on the real engine components (docs/matching-engine.md) in M0. Phase
+  12's state record kept below:
+
+* **Stage A (E2E + accessibility) COMPLETE, 25/25 green** (`pnpm test:e2e`):
   critical-path journey (signup → mailbox-hook verification → login →
   10-step onboarding → score-now hook → feed → detail → save/ignore/
   feedback → settings incl. real 422 keyword-cap → sole-owner-deletion 409
@@ -109,7 +118,7 @@ on the real engine components (docs/matching-engine.md) in M0. Phase
   Double-gated test hooks (`isE2ETestHooksEnabled`): mailbox capture +
   score-now, both with ungated-404 tests. docs/accessibility-review.md
   written with honest not-checked scope.
-- **The E2E suite caught and we fixed 3 REAL product bugs** (commit
+* **The E2E suite caught and we fixed 3 REAL product bugs** (commit
   8ff1ce9): (1) org list GETs returned raw DB rows → every Settings list
   save 400'd against `.strict()` schemas — responses now DTO-mapped (also
   response minimization); (2) logout was broken — Better Auth sign-out
@@ -121,7 +130,7 @@ on the real engine components (docs/matching-engine.md) in M0. Phase
   keys (empty string ≠ undefined flipped provider checks), digest
   schedule job clock now injectable (test failed for real 00:00–06:00
   UTC), keyboard spec drives focus via real Tab (`:focus-visible`).
-- **Stage B (analysis + fixes)**: docs/phase12-quality-findings.md
+* **Stage B (analysis + fixes)**: docs/phase12-quality-findings.md
   (query-plan pass, testing-gap sweep, E2E-in-CI decision). Applied:
   migration 0007 feed covering index (P-1, zero-drift proven); queue-
   dispatcher + rate-limit middleware tests (both HIGH gaps closed; 429
