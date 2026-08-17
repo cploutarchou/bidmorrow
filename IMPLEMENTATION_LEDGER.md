@@ -12,12 +12,19 @@ owner-side launch items CLOSED (HUMAN_DECISION_BLOCKERS snapshot: "owner
 checklist is now EMPTY"), fixture refresh from real TED notices DONE
 (PR #33), security sign-off RECORDED (see "Phase 13 sign-offs" below),
 production-reviewer reviewed with conditional findings — all doc/test
-fixes applied same night. Remaining before the phase tag: verify the
-first real staging ingestion (05:00 UTC cron on 2026-08-17; self
-check-in armed for 05:40 UTC) and the production-reviewer re-verify.
-Production ingestion stays PAUSED until the owner's explicit go-live
-(owner has a pre-go-live task pending). Phase 12's state record kept
-below:
+fixes applied same night.
+
+**PIPELINE ON HOLD (owner instruction, 2026-08-16 night)**: the
+remaining launch pipeline — first-ingestion verification →
+production-reviewer re-verify → `phase-13-complete` tag → Phase 14
+audit → go-live — is PAUSED until the owner's pre-go-live task is done.
+That task (requested same night): **website/UI overhaul** — plan-first
+(competitor/UX research, IA, design system, milestones), owner approval
+REQUIRED before any implementation. The 05:40 UTC self check-in remains
+armed but downgraded to a SILENT read-only health check of the first
+real staging ingestion (record results here; do NOT advance the phase
+pipeline). Production ingestion stays PAUSED until the owner's explicit
+go-live. Phase 12's state record kept below:
 
 - **Stage A (E2E + accessibility) COMPLETE, 25/25 green** (`pnpm test:e2e`):
   critical-path journey (signup → mailbox-hook verification → login →
