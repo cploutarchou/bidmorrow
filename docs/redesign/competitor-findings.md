@@ -322,7 +322,7 @@ on the homepage.
   specific crops of the score breakdown (one readable card, one readable verdict)
   where they show illegible thumbnails.
 - Honest founding-stage proof: they hide having no customers; BidMorrow can
-  convert the same weakness with the 'first 20' founding-cap honesty — scarcity
+  convert the same weakness with the 'first 50' founding-cap honesty — scarcity
   plus candor instead of silence.
 - Steal the activation promise mechanic, not its form: their 'first monitor on
   Day 1' microcopy works; BidMorrow's equivalent should be an original time-to-
@@ -626,7 +626,7 @@ EU-compliance signalling on the marketing pages is a visible gap.
   trackers, no cookie modal — the page that works instantly is itself a
   differentiator against their JS-heavy, consent-gated experience (and
   BidMorrow's CSP constraints force this anyway)
-- Honest scarcity instead of enterprise logo walls: the 'first 20 founding
+- Honest scarcity instead of enterprise logo walls: the 'first 50 founding
   customers' framing is truthful social proof BidMorrow can use while it has no
   logos — do not imitate a logo marquee with nothing to put in it
 - Keep mobile pricing stacked and comparable — their swipe-carousel plan cards
@@ -864,7 +864,7 @@ rather than product transparency.
   than a platform/category claim
 - Where Mercell signals trust via corporate mass, BidMorrow should signal it via
   transparency: honest CPV coverage statement, TED attribution, decision-support
-  disclaimer, and the truthful 'first 20' founding cap
+  disclaimer, and the truthful 'first 50' founding cap
 
 ### Design lessons (patterns described, never copied)
 
@@ -1874,7 +1874,7 @@ timestamps, issue IDs) itself functions as a credibility device.
   390px where Linear's heavy media fails
 - Their social proof is logos and quotes BidMorrow cannot truthfully use pre-
   launch; substitute verifiable mechanics (real scoring criteria, real TED notice
-  structure, founding-20 honesty) as the proof layer — specificity as the
+  structure, founding-50 honesty) as the proof layer — specificity as the
   credibility device
 
 ### Design lessons (patterns described, never copied)

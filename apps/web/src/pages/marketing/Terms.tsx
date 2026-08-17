@@ -37,7 +37,7 @@ export function Terms(): ReactElement {
       <h2>Billing</h2>
       <p>
         Monthly subscription via Stripe, cancel any time from account settings. Founding pricing is
-        limited to the first 20 customers and may not be available when you sign up. Once you're on
+        limited to the first 50 customers and may not be available when you sign up. Once you're on
         the founding price, it's retained for the life of your subscription — it never auto-migrates
         to the standard price.
       </p>

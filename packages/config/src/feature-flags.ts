@@ -6,8 +6,8 @@
 
 export const FLAG_FOUNDING_PLAN_OPEN = 'founding_plan_open';
 /**
- * Founding-plan seat cap (docs/product-scope.md pricing: "first 20
- * customers"). Value shape: a bare JSON integer, e.g. `"20"`. Absent = code
+ * Founding-plan seat cap (docs/product-scope.md pricing: "first 50
+ * customers"). Value shape: a bare JSON integer, e.g. `"50"`. Absent = code
  * default (packages/billing `DEFAULT_FOUNDING_CAP`).
  */
 export const FLAG_FOUNDING_CAP = 'founding_cap';

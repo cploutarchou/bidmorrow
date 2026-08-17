@@ -212,7 +212,7 @@ revisit post-launch (a Methodology-specific card is the first candidate).
 **`/pricing`** — canonical `https://bidmorrow.com/pricing`
 
 - Title (43): `Pricing — €29 or €49/Month Flat — BidMorrow`
-- Description (144): `Two monthly plans, prices on the page: €29 founding (first 20 customers) and €49 standard. No annual contracts, no usage fees, no demo gate.`
+- Description (144): `Two monthly plans, prices on the page: €29 founding (first 50 customers) and €49 standard. No annual contracts, no usage fees, no demo gate.`
 - Note: this is metadata, not page copy — it restates frozen pricing substance
   verbatim and changes no claims. **Owner/product sign-off required anyway**
   since it touches the pricing surface.
@@ -322,7 +322,7 @@ page copy; flag it for explicit owner sign-off.
   — flag to owner as a truth-rule tension: sole trader per docs. Recommended:
   neutral `direct line to the builder` if D8 stays NO).
 - Add one honest scarcity line, wired to reality, not a fake counter:
-  `The founding plan closes at 20 customers. We don't show a live countdown —
+  `The founding plan closes at 50 customers. We don't show a live countdown —
 when it's full, this page will say so.` (No fake urgency; complies with the
   no-unwired-counters guardrail; D6 live counter stays NO.)
 

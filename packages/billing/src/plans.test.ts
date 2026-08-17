@@ -54,7 +54,7 @@ describe('mapStripeSubscriptionStatus', () => {
 });
 
 describe('DEFAULT_FOUNDING_CAP', () => {
-  it('matches docs/product-scope.md ("first 20 customers")', () => {
-    expect(DEFAULT_FOUNDING_CAP).toBe(20);
+  it('matches docs/product-scope.md ("first 50 customers")', () => {
+    expect(DEFAULT_FOUNDING_CAP).toBe(50);
   });
 });

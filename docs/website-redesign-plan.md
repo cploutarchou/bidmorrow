@@ -124,7 +124,7 @@ cap); third-party fonts/CDNs/analytics/chat widgets; public tender SEO
 pages (explicitly OUT of V1); overstating team size (sole trader).
 
 MUST KEEP: TED attribution, decision-support disclaimer, plain EUR flat
-prices, founding-cap honesty ("first 20"), scoped-coverage statement
+prices, founding-cap honesty ("first 50"), scoped-coverage statement
 naming CPV 72*/48*/79417000, UNKNOWN-policy and hard-exclusion wording,
 "no LLM in the scoring path".
 

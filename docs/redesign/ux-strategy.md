@@ -505,7 +505,7 @@ hold at 390px (single column, CTA within first 1.5 viewports).
   /pilot and standard card's → /signup remain as-is.
 - **States**: none.
 - Note for later cycles (not this one): when founding fills, the founding
-  card's honesty depends on the flag — the "first 20" claim is governed by
+  card's honesty depends on the flag — the "first 50" claim is governed by
   `founding_plan_open`. No change now; recorded so nobody "improves" this
   page mid-implementation.
 

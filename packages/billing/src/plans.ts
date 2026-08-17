@@ -16,8 +16,8 @@ export interface PriceIds {
   readonly standard: string;
 }
 
-/** Founding-plan seat cap default (docs/product-scope.md: "first 20 customers"), overridable via `FLAG_FOUNDING_CAP`. */
-export const DEFAULT_FOUNDING_CAP = 20;
+/** Founding-plan seat cap default (docs/product-scope.md: "first 50 customers", owner decision 2026-08-17), overridable via `FLAG_FOUNDING_CAP`. */
+export const DEFAULT_FOUNDING_CAP = 50;
 
 /** `null` when `priceId` matches neither configured price — never fabricates a plan. */
 export function planFromPriceId(priceIds: PriceIds, priceId: string): SubscriptionPlan | null {

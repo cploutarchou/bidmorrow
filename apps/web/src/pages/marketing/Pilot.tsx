@@ -7,12 +7,12 @@ export function Pilot(): ReactElement {
       <title>Founding pilot — BidMorrow</title>
       <meta
         name="description"
-        content="Join BidMorrow's founding pilot: the first 20 customers get the founding price and a direct line to the team building it."
+        content="Join BidMorrow's founding pilot: the first 50 customers get the founding price and a direct line to the team building it."
       />
       <link rel="canonical" href="https://bidmorrow.com/pilot" />
       <h1>Founding pilot</h1>
       <p>
-        We're opening BidMorrow to a first cohort of up to 20 customers at the founding price of
+        We're opening BidMorrow to a first cohort of up to 50 customers at the founding price of
         €29/month. In exchange, we ask for your honest feedback — what's useful, what's noise, and
         what would make you actually rely on this every day.
       </p>

@@ -405,7 +405,7 @@ _(The viability objection the assessment under-weights — handle it head
 on.)_ The price is flat because the economics are structurally cheap, not
 because it's a fire-sale: the engine is deterministic and LLM-free, so
 there's no per-query model cost, and TED is a single official source. We're
-honest about being early — a solo builder, a "first 20" founding cap
+honest about being early — a solo builder, a "first 50" founding cap
 that's wired to the real number, price on the page, no lock-in, cancel
 anytime. We sell decision quality, not a discount, and we don't over-
 promise longevity — we remove the risk of committing to us (monthly, no
@@ -562,7 +562,7 @@ it. These are recorded as options, never as decisions.
      at least cost.
    - (iii) **A genuine free limited tier.** Maximum funnel response;
      permanent support cost, devaluation risk, and direct conflict with
-     founding-20 scarcity. If ever pursued, avoid recreating the metered
+     founding-50 scarcity. If ever pursued, avoid recreating the metered
      "5 checks then a wall" pattern GetTenderAI uses.
 
 2. **Any pricing/packaging response** (annual billing, a third tier,
@@ -612,7 +612,7 @@ snippet-grade items. Six specific challenges:
 
 2. **The viability/longevity objection is under-weighted.** A price ~8x
    below the nearest named tool _and_ below several free tiers, from a
-   sole trader with a "first 20" cap, predictably triggers "is this real /
+   sole trader with a "first 50" cap, predictably triggers "is this real /
    will it last?" The assessment flags the "toy" risk but not the
    longevity anxiety. Handled as objection §3.6 (structural-cost
    explanation + no lock-in + honest earliness). This should be a standard
@@ -653,3 +653,336 @@ sensitive Strata copy ships. Update the Tendly/Tenderium battlecards from
 PROVISIONAL to VERIFIED (or correct them) at that point. The durable
 positioning (§1) and the objection frames (§3) are built not to move
 regardless of the outcome.
+
+---
+
+# 8. ACQUISITION MOTION — landing the first founding cohort (added 2026-08-17)
+
+> **Scope of this section.** Everything above is positioning, battlecards,
+> objections, and website conversion levers. This section is the
+> **customer-acquisition lens the owner asked for**: the concrete motion a
+> solo founder runs to attract and land the **first founding cohort**
+> (cap: first **25–50**, owner to pick the single number before founding
+> copy ships — see policy lock). It is additive; it does not restate §1–§7.
+>
+> **Binding entry-path facts (product policy lock, 2026-08-17).** No free
+> tier. No automated trial. The entry path is a **no-credit-card, manually
+> onboarded 5-day validation pilot**. A **controlled public sample-verdict
+> demo** (no signup; 3–5 curated verdicts across Strong Match / Worth
+> Reviewing / Low Fit / Excluded, each fully explained with a source link;
+> CTA "Get verdicts matched to your company") is the top-of-funnel asset —
+> it must NOT drift into a free tier. Pricing €29 Founding / €49 Standard
+> is **FROZEN**; never discount below €29 to manufacture validation.
+
+## 8.1 The first-customer sales motion (founder-led, honest, repeatable)
+
+This is a **founder-led, high-touch, low-volume** motion, not a growth-
+marketing funnel. With a founding cap of 25–50, the goal is not scale — it
+is **25–50 well-qualified, well-onboarded, reference-able customers** who
+prove the verdict quality. A solo founder should optimize for
+conversation quality over lead volume.
+
+**The funnel, stage by stage (each stage has one job):**
+
+1. **Sample-verdict demo (attract → self-qualify).** The no-signup demo is
+   the single most important acquisition asset the policy lock allows,
+   because it does the differentiation work (§1) _before_ a human is
+   involved: a visitor sees a real decomposed verdict — including an
+   **Excluded** and a **Worth Reviewing** case — and either recognizes
+   their own tender stream or bounces. That bounce is a _feature_: it
+   qualifies out non-ICP and France-sub-threshold-dependent visitors (§3.5)
+   at zero founder cost. The demo's job is not to convert; it is to make
+   the right visitor think "I want _this_ run against _my_ profile."
+
+2. **Demo → pilot request (capture intent, not identity).** The demo CTA
+   ("Get verdicts matched to your company") leads to a short pilot-request
+   form: company, rough CPV/sector focus, EU country/countries they bid in,
+   how many tenders they look at per month, name + business email. This is
+   **not** a signup and **not** a profile — it is a request for a
+   founder-run pilot. Keep it to fields that let the founder qualify and
+   personalize. (Owner decision flagged in §8.6 on the exact form + any
+   consent copy.)
+
+3. **Pilot qualification call (15 min, human).** Before spending 5 days of
+   founder time, a short call confirms ICP fit and sets honest
+   expectations. Qualify **out** cleanly and early (§3.5): if their
+   pipeline is mostly national sub-threshold (esp. France/BOAMP-covered),
+   say so and part as a friendly non-fit — do not burn a pilot slot. This
+   protects the scarce resource (founder hours) and protects the honesty
+   posture that is itself a differentiator.
+
+4. **The 5-day validation pilot (the core mechanic).** Personally onboard:
+   build their real supplier profile with them, then let the deterministic
+   engine score the _live_ in-scope TED stream against it for 5 days. The
+   pilot proves the two things no competitor can (§1): **reproducible,
+   decomposed verdicts** and the **walk-away half** (exclusions/risk flags
+   with source evidence). The founder is present — not to sell, but to make
+   the first relevant verdict land fast (target: first relevant match < 1
+   day, per `product-scope.md` success signals) and to capture objections
+   live.
+
+5. **Pilot → paid founding customer (the ask).** At day 5, the ask is
+   specific and honest: "You've now seen N real verdicts and the reasons
+   behind each. Founding price is €29/month, locked for the life of your
+   subscription, no card until you say yes, cancel anytime. You'd be
+   founding customer #X of [25–50]." Sell **decision quality and time saved
+   on the no's** — never a win-rate. (Honest-selling rule, §0.)
+
+**Why this motion fits a solo founder.** It is deliberately
+capacity-bounded: the 5-day pilot is a fixed, short, founder-run unit of
+work, so a solo founder can run only a handful concurrently — which is
+correct at a 25–50 cap. It converts the _absence_ of a self-serve free
+tier from a disadvantage into an advantage: **every founding customer is
+personally onboarded, so every one can become a real reference and a
+source of product truth.** The scarcity is genuine, not manufactured.
+
+## 8.2 Targeted outbound plays to the ICP (GDPR/ePrivacy-compliant, truthful)
+
+The ICP is 5–50-person **EU IT / cyber / cloud / software consultancies
+without a dedicated bid team**. Outbound here is legitimate B2B, but it
+must respect GDPR (lawful basis + transparency + easy objection) and the
+ePrivacy Directive (electronic marketing rules, which vary by member
+state). The rules below are the compliant, truthful envelope; anything
+outside it is in the "do NOT" list.
+
+**Who to contact (role, not scraped personal data).** Managing
+partner / founder / director, or the person who owns "should we bid on
+this?" at a small consultancy — a **business/role context**, reached on a
+**professional channel**. Prefer LinkedIn (individual, relevant,
+non-automated messages) and role/business email addresses obtained
+legitimately, over scraped personal inboxes.
+
+**The trigger (relevance is the lawful-basis and the conversion story).**
+Reach out when there is a _genuine, specific reason this firm cares now_,
+e.g.:
+
+- The firm publicly positions in cybersecurity / cloud / software and
+  operates in an EU market with meaningful TED activity in `72*/48*/79417`.
+- Observable signals of public-sector interest (a case study mentioning a
+  public client, a framework/DPS listing, hiring for a bid/proposal role
+  they can't yet justify full-time — the classic "no dedicated bid team"
+  tell).
+- They have recently _lost time_ on the wrong tenders (rarely observable;
+  usually surfaced in conversation, not a trigger to assert).
+
+**The honest message angle (what to actually say).** Lead with the
+demo, not a pitch. One truthful, specific angle per message:
+
+- **"A verdict you can audit, not a rationale you have to trust."** The
+  spearhead (§1). "Here's a live sample: a real TED tender scored, every
+  point traced to a rule, including when to _walk away_. Same tender in,
+  same score out — no LLM guessing."
+- **"The explanation isn't metered or paywalled."** Truthful against the
+  observed category pattern (metered scores, paywalled explanations, credit
+  reveals) **without naming vendors** — the class-level line "no meters, no
+  reveal quotas, the reason is included on every verdict" is safe publicly;
+  naming GetTenderAI/Tendly/Tenderium is battlecard-internal only until
+  owner approval (§5, D11).
+- **"Built for a firm your size that bids a few times a year and has no bid
+  team."** ICP depth (§1.6) — the thing a generalist can't say.
+- **The offer:** a no-card 5-day pilot on their real profile, personally
+  set up. Not "sign up," not "free trial forever."
+
+**Compliance guardrails (make these standing rules of the play):**
+
+- **Lawful basis + transparency.** B2B outreach with a genuine,
+  documented relevance rationale (legitimate interest), sender clearly
+  identified, purpose stated, and a **frictionless opt-out honored
+  immediately and permanently** (suppression list). Keep a record of why
+  each contact was selected (the trigger) — that record _is_ the
+  legitimate-interest balancing evidence.
+- **ePrivacy varies by state.** Some member states treat unsolicited B2B
+  email strictly; when in doubt prefer LinkedIn/professional-network
+  contact or warm intros, and keep volume low and personalized (which this
+  motion wants anyway). Do not assume one EU-wide rule.
+- **Data minimization.** Store only what qualifies and personalizes;
+  no scraped personal-data dossiers; no enrichment that can't be justified.
+
+**What NOT to do (explicit landmines):**
+
+- **No bulk cold-email blasts / purchased lists / scraped personal
+  inboxes.** Illegal-risk _and_ off-strategy: this motion is low-volume,
+  high-relevance by design.
+- **No automation that impersonates 1:1 outreach at scale** (mass
+  LinkedIn automation, spun templates). It breaks platform terms and the
+  honesty posture.
+- **No fake proof in outbound** — no invented customer counts, no "trusted
+  by X firms," no fabricated urgency. Founding-cap scarcity is real; use it
+  truthfully ("first 25–50", the real remaining number only if wired to the
+  actual cap).
+- **No naming competitors** in public/outbound copy without owner approval.
+- **No outcome/win promises.** Sell the decision and the time saved.
+- **No "AI-powered" framing** — state the deterministic/LLM-free engine
+  truthfully; that is the advantage, not "AI".
+
+## 8.3 Pilot → paid conversion path, activation criteria, acquisition objections
+
+**Activation criteria — what "the pilot worked" means (define before
+selling, measure every pilot).** A pilot is _activated_ (i.e. earned the
+right to a paid ask) when, within the 5 days:
+
+1. **Time-to-first-relevant-verdict < 1 day** after onboarding (matches the
+   `product-scope.md` success signal). The engine must produce at least one
+   verdict the prospect agrees is genuinely relevant, fast.
+2. **They open a decomposed verdict and can explain it back** — they've
+   seen the arithmetic and the source-linked evidence, not just a number.
+   This is the "audit, not trust" moment landing.
+3. **At least one _walk-away_ verdict resonates** — an Excluded or
+   risk-flagged tender where they agree "yes, we'd have wasted time on
+   that." The walk-away half (§1.4) is what a capacity-constrained firm
+   actually pays for; if it never fires meaningfully in 5 days, that is
+   signal (either profile tuning or a genuine non-fit).
+4. **They articulate the time saved** — a qualitative "this would have
+   saved me an afternoon of reading" is the real conversion currency.
+
+If a pilot does NOT activate, do **not** discount to force a close (frozen
+pricing; "a €5 customer does not validate a €49 product"). Diagnose:
+profile mistuning, wrong CPV scope, or genuine non-fit → qualify out
+honestly. A clean non-fit is a better outcome than a coerced €29.
+
+**The conversion ask (day 5).** Recap the concrete verdicts they saw →
+restate founding terms (€29 locked for life of subscription, no card until
+yes, cancel anytime, founding #X of [cap]) → single clear ask → handle the
+objection that surfaces. No pressure sequence; a founder-led pilot that
+activated is already most of the way there.
+
+**Acquisition-specific objection handling** (complements §3; these are the
+ones that bite _at the acquisition moment_):
+
+- **"Why pay €29 when [competitor] has a free tier / a €9 scan?"** Answer
+  with shape, not price (§3.1–3.3): a free tier is a **metered taste that
+  hits a wall**, and a €9 one-off scan (Tenderium Quick Check — real, but
+  the site is **pre-transactional/invoice-only**, per the CI capture) is a
+  single AI risk-scan of _one tender you already chose_ — it does not
+  answer "which of everything published this week merits my time, and why."
+  €29 flat buys **continuous, unlimited, reproducible verdicts with the
+  walk-away half**, no credits, no reveal quota. You already saw it run on
+  your real stream for 5 days. (Do not quote a competitor price as fact in
+  writing; do not name them publicly.)
+- **"You're a solo founder — will BidMorrow still exist next year?"** (The
+  viability objection, §3.6 — sharpest at the acquisition moment for a
+  founding cohort.) Answer head-on and honestly: (a) **remove the risk of
+  committing** — monthly, no lock-in, no card until you decide, cancel
+  anytime, founding price grandfathered for the life of your subscription;
+  (b) **the economics are structurally cheap** (deterministic, LLM-free →
+  no per-query model cost; TED is one official source; infra < $100/mo), so
+  €29 is honest pricing, not a fire-sale runway-burn; (c) **you keep your
+  data / there's no lock-in** — you are not betting your pipeline on us.
+  Never over-promise longevity; sell the _reversibility_ of the decision.
+  **Owner-decision lever (§8.6):** a documented data-export commitment
+  would materially strengthen this answer.
+- **"Your coverage is narrower (TED-only, above threshold)."** Concede
+  first (§3.5); qualify out sub-threshold-dependent prospects cleanly. At
+  the acquisition moment this _builds_ trust: honesty stated before it's
+  discovered is the posture the free tiers can't cheaply copy.
+- **"Let me think about it / send me info."** For a founder-led pilot that
+  activated, the honest close is a light one: "The founding price is capped
+  at [25–50] and grandfathered for life — I'd rather you join because the
+  verdicts were useful, so tell me what's missing." Do not manufacture
+  urgency beyond the real cap.
+
+## 8.4 Referral / word-of-mouth engineering for this ICP
+
+Small EU IT/cyber/cloud consultancies cluster: they know each other through
+regional tech/cyber associations, ISACA/(ISC)² chapters, cloud-partner
+ecosystems (AWS/Azure/GCP partner networks), CCI/chamber groups, and
+founder communities. Word of mouth in a tight, reputation-sensitive niche
+is the highest-quality acquisition channel available to a solo founder —
+but it must be _engineered honestly_, not incentivized into spam.
+
+- **Make every founding customer reference-able by design.** Because each
+  is personally onboarded, ask at activation for (a) permission to name
+  them as a founding customer _only once they're real and consenting_
+  (testimonials/logos only for real customers — standing rule), and (b) one
+  honest intro to a peer firm who has the same "no bid team" problem. A
+  warm intro from a founding customer converts far better than any outbound.
+- **The demo is the shareable artifact.** The no-signup sample-verdict demo
+  is inherently forwardable ("look, it shows _why_ it says skip this one").
+  Engineer the demo to be worth forwarding — a specific, striking Excluded
+  case does more referral work than any incentive.
+- **Referral incentives touch frozen pricing — flag, don't enact (§8.6).**
+  A referral _reward_ (a free month, a credit, a discount, extending
+  founding pricing to a referred firm after the cap) is a
+  **pricing/packaging change = owner decision**, and "never discount below
+  €29" constrains the design. Within current rules, the honest,
+  no-pricing-change referral engine is: reference-ability + peer intros +
+  the shareable demo. Non-monetary recognition (e.g. a "founding customer"
+  acknowledgement) is within rules if real and consented.
+- **Founder credibility as a channel.** A solo founder writing honestly
+  about _deterministic vs generated-prose qualification_ (the §1 thesis) in
+  the niche's own communities is both marketing (owned by the
+  marketing-manager, §8.5) and a referral primer. Keep it truthful and
+  non-salesy; the credibility _is_ the funnel.
+
+## 8.5 Sales ↔ marketing handoff (interface with `marketing-strategy.md`)
+
+A `marketing-manager` is producing **`docs/redesign/marketing-strategy.md`
+in parallel** (not yet present at this writing — this section defines the
+interface, and I do not edit their document). Division of labor and the
+handoff contract:
+
+**Marketing owns (top-of-funnel: attract):** channel strategy and content
+(commercial category pages `/cybersecurity-tenders`, `/cloud-tenders`;
+niche-community presence; founder thought-leadership; SEO within the
+policy-locked scope — programmatic per-tender SEO is OUT), messaging
+_distribution_, and driving qualified visitors to the **sample-verdict
+demo**. Marketing must inherit, unchanged: the §1 positioning, the
+honest-selling rule (§0), coverage honesty, no fake proof, no "AI-powered",
+no unapproved competitor naming, frozen pricing presentation (§4 L6 "no
+meters, not cheap").
+
+**Sales (this doc) owns (mid/bottom-of-funnel: convert):** the
+demo→pilot-request handoff, pilot qualification, the 5-day pilot mechanic,
+activation criteria (§8.3), the paid ask, objection handling, and
+founding-cohort management.
+
+**The interface (the seam where a visitor becomes a lead):** the
+**sample-verdict demo CTA → pilot-request form** is the contract boundary.
+Marketing's job ends when a qualified visitor clicks
+"Get verdicts matched to your company"; sales' job begins at the
+pilot-request form. Shared definitions both docs must agree on: **who the
+ICP is** (5–50-person EU IT/cyber/cloud/software consultancy, no bid team,
+above-threshold TED-relevant), **what a qualified lead is** (ICP-fit + not
+sub-threshold-dependent), and **the single differentiation spearhead**
+("auditable arithmetic you can re-run, not generated prose"). If
+`marketing-strategy.md` diverges from these on arrival, reconcile at the
+interface — do not let messaging drift between attract and convert.
+
+**Feedback loop back to marketing:** sales returns, from pilots, the real
+language prospects use, the objections that actually fire, and which demo
+verdicts resonate — so marketing can sharpen attract-stage copy with
+_evidence_, not guesses. This loop is the main reason to run pilots
+founder-led early.
+
+## 8.6 Owner decisions flagged by this section (nothing enacted here)
+
+1. **Founding cap number.** Pick the single number in 25–50 before any
+   founding-cohort copy or the "#X of N" ask ships (updates `copy.ts`,
+   `founding_plan_open` cap, and `app.test.ts` together). Already on the
+   policy lock; repeated because §8.1/§8.3 depend on it.
+2. **Pilot-request form fields + consent copy.** Exact fields and the
+   GDPR/ePrivacy consent + privacy-notice wording on the demo→pilot form
+   are an owner/legal call (this is lead capture, adjacent to the frozen
+   "no signup" boundary — the form must stay a _pilot request_, not a
+   product signup or profile).
+3. **Referral reward mechanics.** Any monetary/packaging referral incentive
+   (free month, credit, discount, post-cap founding-price extension) is a
+   **pricing/packaging decision = owner-only** and constrained by "never
+   discount below €29." Recommendation to _consider_ (not a decision): keep
+   referral non-monetary at founding stage (reference-ability + intros +
+   shareable demo); revisit incentives only after the cohort proves value.
+4. **Data-export / continuity commitment.** A documented "your data is
+   exportable, no lock-in" commitment would materially strengthen the
+   solo-founder viability answer (§8.3). Owner call on whether/how to
+   commit publicly.
+5. **Outbound tooling + spend.** Any CRM / outreach / suppression-list
+   tooling is a cost and a data-processing decision (GDPR processor,
+   infra <$100/mo ceiling context). Owner-level; keep it minimal and
+   compliant.
+6. **Whether the demo CTA may capture email for a "pilot waitlist" if the
+   founding cap fills.** Owner call — keep it honest (real waitlist, real
+   cap), never fake scarcity.
+
+_(Standing constraints reaffirmed: pricing €29/€49 FROZEN; no free tier; no
+automated trial; sample-verdict demo must not become a free tier; no fake
+proof; no outcome promises; no public competitor naming without approval.)_
