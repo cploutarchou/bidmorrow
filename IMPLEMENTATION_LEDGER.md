@@ -26,6 +26,22 @@ real staging ingestion (record results here; do NOT advance the phase
 pipeline). Production ingestion stays PAUSED until the owner's explicit
 go-live.
 
+**First staging-ingestion health check (2026-08-17 05:40 UTC, silent,
+read-only — via Cloudflare D1 API)**: the 05:00 UTC staging cron ran and
+completed HEALTHY-EMPTY. `ingestion_runs`: one row, source `ted`, status
+`succeeded`, window 2026-08-16→2026-08-16, 5s duration
+(05:00:41–05:00:46), notices_seen/upserted/errors all 0.
+`ingestion_errors` 0, `source_snapshots` 0, `tender_notices/lots/matches`
+0 — internally consistent. Zero notices is EXPECTED: 2026-08-16 was a
+Sunday and TED publishes no OJ S edition on weekends; the search call
+itself succeeded (a header/identification failure would have surfaced as
+errors or a failed run). Checkpoint correctly advanced to 2026-08-16.
+The decisive NON-EMPTY end-to-end verification (real XML fetch with the
+new TedClient headers → parse → upsert → R2 snapshot) is the 2026-08-18
+05:00 UTC run covering Monday's notices — a follow-up silent check is
+armed for 2026-08-18 ~05:40 UTC. Phase pipeline NOT advanced, per the
+hold.
+
 **Website redesign RESTART (owner instruction, 2026-08-17)**: the owner
 REJECTED all three initial design directions (Ledger / Control Room /
 Mac Modern rev.1 — registry in
