@@ -160,6 +160,12 @@ lightly re-skin):
 - (**C — "Civic Modern"**, GOV.UK-influenced institutional clarity, was
   considered and not mocked up in round 1.)
 
+**DECISION (2026-08-17): the owner approved Direction G — "Strata" —
+for implementation.** Registry: requirements.md §Decisions log.
+Reference mockup source: `docs/redesign/mockups/direction-g-strata.html`
+(artifact d841bf21-aafa-4634-bbb8-0ca92f280ff5). E and F were not
+adopted (kept below for the record).
+
 **Round-2 concepts** (substantially different from each other and from
 every rejected direction; briefs in
 `docs/redesign/design-concepts-round2.md`). All three are built as

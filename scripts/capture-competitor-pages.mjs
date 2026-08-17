@@ -22,6 +22,16 @@ const TARGETS = [
   { name: 'tenderlake-home', url: 'https://www.tenderlake.com/' },
   { name: 'ted-home', url: 'https://ted.europa.eu/en/' },
   { name: 'linear-home', url: 'https://linear.app/' },
+  // Evidence-upgrade targets for the competitive risk assessment
+  // (docs/redesign/competitive-risk-assessment.md §9): confirm the
+  // snippet-grade Tendly €29 price-collision claim (R1) and the
+  // Tenderium/Stotles pricing scope. Public marketing pages only.
+  { name: 'tendly-home', url: 'https://tendly.eu/en' },
+  { name: 'tendly-pricing', url: 'https://tendly.eu/en/pricing' },
+  { name: 'tendly-compare-tendium', url: 'https://tendly.eu/en/compare/tendly-vs-tendium' },
+  { name: 'tenderium-home', url: 'https://tenderium.net/' },
+  { name: 'tenderium-pricing', url: 'https://tenderium.net/pricing' },
+  { name: 'gettenderai-pricing', url: 'https://gettenderai.com/pricing' },
 ];
 
 const VIEWPORTS = [
