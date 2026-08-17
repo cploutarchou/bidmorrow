@@ -7,7 +7,7 @@ export function Pricing(): ReactElement {
       <title>Pricing — BidMorrow</title>
       <meta
         name="description"
-        content="BidMorrow pricing: a founding plan for the first 20 customers, then a standard monthly plan. No annual contracts, no usage fees."
+        content="BidMorrow pricing: a founding plan for the first 50 customers, then a standard monthly plan. No annual contracts, no usage fees."
       />
       <link rel="canonical" href="https://bidmorrow.com/pricing" />
       <h1>Pricing</h1>
@@ -16,7 +16,7 @@ export function Pricing(): ReactElement {
         <section className="pricing-card" aria-labelledby="founding-plan-heading">
           <h2 id="founding-plan-heading">Founding plan</h2>
           <p className="price">€29 / month</p>
-          <p>Limited to our first 20 customers, while we run the founding pilot.</p>
+          <p>Limited to our first 50 customers, while we run the founding pilot.</p>
           <Link className="cta" to="/pilot">
             Join the founding pilot
           </Link>

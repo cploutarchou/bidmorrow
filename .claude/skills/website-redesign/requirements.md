@@ -159,7 +159,7 @@ skill — never from memory.
 - 2026-08-17 (~11:45 UTC): **Owner locked product policy** (full text:
   `docs/product-scope.md` §Product policy lock). Decisions: pricing NO
   CHANGE (€29/€49 EUR retained; "$" was shorthand); founding cap revised
-  to first 25–50 (pick a single number before that copy ships); no free
+  to first 25–50 (single number **50** selected 2026-08-17 — see below); no free
   tier; no automated trial (no-card manual 5-day pilot instead); **public
   sample-verdict demo IN** (controlled, not a free tier); manually
   authored commercial category pages IN; programmatic per-tender SEO OUT;
@@ -170,3 +170,23 @@ skill — never from memory.
   proceeds under these decisions. Author identity for repo commits set to
   the owner (Christos <cploutarchou@gmail.com>) per owner request; Claude
   co-author trailers dropped going forward.
+- 2026-08-17 (~17:00 UTC): **GTM investigation delivered.** Marketing
+  (`docs/redesign/marketing-strategy.md`) and sales acquisition motion
+  (`docs/redesign/sales-strategy.md` §8) produced by the marketing-manager
+  and sales-strategist agents. Top acquisition channels: founder-led
+  LinkedIn (free), the public sample-verdict demo as the conversion engine,
+  and community/consultant referral; single highest-leverage first move =
+  ship the demo + founder posting to it. GDPR/ePrivacy limits codified (no
+  scraped bulk cold email; LinkedIn 1:1 as compliant outbound). No paid
+  spend committed — all paid channels remain flagged owner decisions.
+- 2026-08-17 (~17:10 UTC): **Founding cap DECIDED = 50** (owner picked the
+  single number from the 25–50 range; billing agent's non-binding rec had
+  been 30). Canonical EUR pricing spec written
+  (`docs/redesign/pricing.md`): €29/€49 frozen, feature-identical plans,
+  Stripe Prices required in EUR (currency fixed at Price creation),
+  margin >99% at every modeled scale. Cap = 50 reconciled across every
+  surface in one change: `Pricing.tsx`/`Pilot.tsx`/`Terms.tsx` copy +
+  metas, `DEFAULT_FOUNDING_CAP = 50` (backs the `founding_cap` flag),
+  `plans.test.ts` numeric lock, doc comments, and `docs/product-scope.md`.
+  Correction: the prior note that cap copy lived in `copy.ts`/`app.test.ts`
+  was stale — neither references the cap.

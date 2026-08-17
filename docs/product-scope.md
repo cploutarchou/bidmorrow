@@ -44,7 +44,7 @@ generic tender search.
    automatic opaque score adjustment.
 7. **Daily digest email**: one per org per day, only when meaningful matches
    exist (unless the org opts into empty digests), DB-enforced dedupe.
-8. **Billing**: Stripe Checkout + Customer Portal. Founding €29/mo (first 20,
+8. **Billing**: Stripe Checkout + Customer Portal. Founding €29/mo (first 50,
    flag-controlled) and Standard €49/mo. Server-side entitlements.
 9. **Internal admin**: org/user/subscription search, ingestion & digest
    debugging, match trace, feature flags, ingestion scope config, pause
@@ -89,8 +89,8 @@ generic tender search.
 
 ## Pricing
 
-- Founding: €29/month, limited to first 20 customers (feature flag
-  `founding_plan_open`, configurable cap).
+- Founding: €29/month, limited to first 50 customers (feature flag
+  `founding_plan_open`, configurable cap; `DEFAULT_FOUNDING_CAP = 50`).
 - Standard: €49/month.
 - Currency is **EUR** — decided by the owner 2026-08-16 when creating the
   live-mode Stripe prices (natural fit for an EU procurement product);
@@ -125,12 +125,17 @@ each is an owner decision, not to be re-litigated by implementation work.
   preferably the first 3–5 payments. Never discount below €29 to
   manufacture validation ("a €5 customer does not validate a €49
   product").
-- **Founding cap: first 25–50 customers** (owner-revised from 20),
-  price grandfathered while continuously subscribed. ACTION REQUIRED
-  before founding-cap copy ships: pick a single number in this range —
-  `copy.ts` currently says "first 20" and is locked by `app.test.ts`, so
-  the change updates the copy constant, the `founding_plan_open` cap, and
-  the test together.
+- **Founding cap: first 50 customers** — owner-revised from 20 to a 25–50
+  range, then set to the single number **50** on 2026-08-17. Price
+  grandfathered while continuously subscribed. This is now applied
+  everywhere: the marketing copy (`Pricing.tsx`, `Pilot.tsx`, `Terms.tsx`),
+  the `DEFAULT_FOUNDING_CAP = 50` default backing the `founding_plan_open` /
+  `founding_cap` flag, and the numeric lock in
+  `packages/billing/src/plans.test.ts`. (The earlier note that the cap copy
+  lived in `copy.ts` and was locked by `app.test.ts` was inaccurate — the
+  cap text is inline in the marketing pages; neither `copy.ts` nor
+  `app.test.ts` references the cap.) Full rationale:
+  `docs/redesign/pricing.md` §2.
 - **No permanent free plan / free tier.** No self-serve free access.
 - **No automated 14/30-day SaaS trial at launch.** Pilots are personally
   onboarded; a **no-credit-card manual 5-day validation/pilot** is the

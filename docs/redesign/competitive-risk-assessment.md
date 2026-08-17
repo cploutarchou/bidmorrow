@@ -627,7 +627,7 @@ unfreeze it.
    positioning-sensitive work and needs an owner call on whether it
    counts as "free product"; (iii) a genuinely free limited tier —
    maximum funnel response, but permanent support cost, devaluation
-   risk, and direct conflict with the founding-20 scarcity framing.
+   risk, and direct conflict with the founding-50 scarcity framing.
    Recommendation to consider, not a decision: option (ii) captures
    most of the defensive value at least cost.
 2. **Trial mechanics** (length, card requirement, what a trial shows

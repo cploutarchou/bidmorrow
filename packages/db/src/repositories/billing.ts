@@ -189,7 +189,7 @@ export async function markBillingEventStatus(
 /**
  * Cross-tenant count of non-canceled subscriptions on a given plan — used
  * ONLY to enforce the founding-plan seat cap (docs/product-scope.md: "first
- * 20 customers") at checkout time. This is the billing equivalent of
+ * 50 customers") at checkout time. This is the billing equivalent of
  * `company.ts`'s `listOrgsEligibleForScoring`/`listOrgsWithDigestEnabled`
  * exemptions: a global count across every tenant, never reachable from a
  * per-tenant request path, and it returns a bare number — no tenant-owned
