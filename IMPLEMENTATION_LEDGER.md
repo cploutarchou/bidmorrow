@@ -38,13 +38,24 @@ ui-visual-designer, content-seo-strategist, frontend-engineer,
 backend-security-engineer, accessibility-performance-engineer,
 internationalization-engineer, qa-reviewer) + the `/website-redesign`
 skill (SKILL.md, requirements.md, templates, checklists,
-validate-config.mjs — all validated). Workflow stage: Stage 1 research
-re-running (competitor screenshots captured on scratch branch
-`competitor-shots`, 20 PNGs, 2026-08-17); next: Stage 2 fresh design
-directions → Stage 3 approval checkpoint (MANDATORY STOP). Earlier
+validate-config.mjs + review-mockup.mjs — all validated). Earlier
 in-flight SEO/dependency subagents were stopped by the owner mid-run;
-their scopes are re-covered by the new workflow. Phase 12's state
-record kept below:
+their scopes were re-covered by the new workflow.
+
+**Stages 1–2 COMPLETE, Stage 3 checkpoint PRESENTED (2026-08-17,
+~01:45 UTC)**: Stage-1 research done via an 11-agent workflow (7
+rendered-page competitor profiles from CI Playwright captures + UX/SEO/
+i18n/dependency strategies — all in `docs/redesign/`, merged via PR
+#36). Stage-2 round-2 directions built by three ui-visual-designer
+agents, harness-verified, published as artifacts: E "Verdict"
+(claude.ai/code/artifact/4b25b255-84ff-46ce-8495-35a599ec106d), F
+"Daylight" (…/cb5f516a-5edf-41cb-a82d-d510439b8dce), G "Strata"
+(…/d841bf21-aafa-4634-bbb8-0ca92f280ff5). 13-item approval package
+presented; NOW WAITING for the owner's direction selection (MANDATORY
+STOP — no production-code changes until then). Known caveat for
+implementation: mockup score-anatomy labels are illustrative — re-base
+on the real engine components (docs/matching-engine.md) in M0. Phase
+12's state record kept below:
 
 - **Stage A (E2E + accessibility) COMPLETE, 25/25 green** (`pnpm test:e2e`):
   critical-path journey (signup → mailbox-hook verification → login →

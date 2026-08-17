@@ -162,7 +162,16 @@ lightly re-skin):
 
 **Round-2 concepts** (substantially different from each other and from
 every rejected direction; briefs in
-`docs/redesign/design-concepts-round2.md`):
+`docs/redesign/design-concepts-round2.md`). All three are built as
+high-fidelity responsive single-file mockups (desktop + framed-mobile
+composition, both themes, reduced-motion static states), verified by the
+skill's review harness (zero horizontal overflow, zero console errors at
+1440/390px, all four variants) and published as artifacts for owner
+review. Caveat recorded by the designers: the 8-component score anatomy
+shown in all three mockups is a shared illustrative set for
+cross-direction comparability — the real engine's components in
+`docs/matching-engine.md` differ, so the approved direction re-bases its
+breakdown on a real `ScoreBreakdown` fixture before implementation.
 
 - **E — "Verdict".** The product demo IS the homepage: hero shows a working
   sample-data demo with real-shaped TED notice card, live score computation
