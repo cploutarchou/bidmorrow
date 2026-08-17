@@ -24,7 +24,27 @@ REQUIRED before any implementation. The 05:40 UTC self check-in remains
 armed but downgraded to a SILENT read-only health check of the first
 real staging ingestion (record results here; do NOT advance the phase
 pipeline). Production ingestion stays PAUSED until the owner's explicit
-go-live. Phase 12's state record kept below:
+go-live.
+
+**Website redesign RESTART (owner instruction, 2026-08-17)**: the owner
+REJECTED all three initial design directions (Ledger / Control Room /
+Mac Modern rev.1 — registry in
+`.claude/skills/website-redesign/requirements.md`) and expanded scope
+(content strategy, i18n readiness, imagery/motion workstream, full SEO,
+13-item approval package). A reusable multi-agent system was
+bootstrapped per owner instruction: 9 new specialist agents in
+`.claude/agents/` (competitor-researcher, ux-strategist,
+ui-visual-designer, content-seo-strategist, frontend-engineer,
+backend-security-engineer, accessibility-performance-engineer,
+internationalization-engineer, qa-reviewer) + the `/website-redesign`
+skill (SKILL.md, requirements.md, templates, checklists,
+validate-config.mjs — all validated). Workflow stage: Stage 1 research
+re-running (competitor screenshots captured on scratch branch
+`competitor-shots`, 20 PNGs, 2026-08-17); next: Stage 2 fresh design
+directions → Stage 3 approval checkpoint (MANDATORY STOP). Earlier
+in-flight SEO/dependency subagents were stopped by the owner mid-run;
+their scopes are re-covered by the new workflow. Phase 12's state
+record kept below:
 
 - **Stage A (E2E + accessibility) COMPLETE, 25/25 green** (`pnpm test:e2e`):
   critical-path journey (signup → mailbox-hook verification → login →
