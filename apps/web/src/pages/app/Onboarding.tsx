@@ -131,12 +131,13 @@ function describeSaveError(cause: unknown): string {
 }
 
 function pluralize(count: number, word: string): string {
-  return `${String(count)} ${word}${count === 1 ? '' : 's'}`;
+  if (count === 1) return `1 ${word}`;
+  const plural = word.endsWith('y') ? `${word.slice(0, -1)}ies` : `${word}s`;
+  return `${String(count)} ${plural}`;
 }
 
 export function Onboarding(): ReactElement {
   const navigate = useNavigate();
-  const { refresh } = useAuth();
   const headingRef = useRef<HTMLHeadingElement | null>(null);
 
   const [screenIndex, setScreenIndex] = useState(0);
@@ -592,7 +593,14 @@ export function Onboarding(): ReactElement {
         .get<BillingStatusLite>('/api/billing/status')
         .then((b) => setHasActiveSubscription(b.entitlement.active))
         .catch(() => setHasActiveSubscription(null));
-      await refresh();
+      // Deliberately no `refresh()` here: it flips `AuthContext.loading`,
+      // which unmounts `ProtectedRoute`'s children (this component,
+      // including its local `completed` state) and remounts them — the
+      // fresh mount's own resume effect would then see the now-complete
+      // profile and redirect to /app before the Done screen (§3.7's
+      // subscribe-seam messaging) ever renders. Nothing about the identity
+      // session itself changed by finishing onboarding, so there's nothing
+      // for auth-context to refresh.
       setCompleted(true);
     } catch {
       setError('Could not finish setup. Please review your company profile and try again.');

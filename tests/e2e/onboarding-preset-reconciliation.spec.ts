@@ -62,8 +62,17 @@ test('onboarding: preset selection survives skipping every downstream screen', a
 
   // Verify the preset's keywords/capabilities actually reached the server
   // — the whole point of the fix — via Settings, which reflects persisted
-  // state independent of onboarding's own local state.
+  // state independent of onboarding's own local state. Scoped per section
+  // since the preset's keyword "penetration testing" and capability
+  // "Penetration testing" differ only in case (Playwright's default text
+  // match is case-insensitive, so an unscoped query is ambiguous).
   await page.goto('/app/settings');
-  await expect(page.getByText('penetration testing')).toBeVisible();
-  await expect(page.getByText('Penetration testing')).toBeVisible();
+  const keywordsSection = page.locator('section', {
+    has: page.getByRole('heading', { name: 'Keywords' }),
+  });
+  await expect(keywordsSection.getByText('penetration testing')).toBeVisible();
+  const capabilitiesSection = page.locator('section', {
+    has: page.getByRole('heading', { name: 'Capabilities' }),
+  });
+  await expect(capabilitiesSection.getByText('Penetration testing')).toBeVisible();
 });

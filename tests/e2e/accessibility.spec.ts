@@ -85,10 +85,21 @@ test.describe('authenticated pages', () => {
   });
 });
 
-// A distinct helper (not `bootstrapOnboardedUserWithMatches` directly) so the
-// onboarding-step-1 axe scan runs BEFORE the wizard is filled in — the phase
-// instruction asks for "onboarding step 1" specifically, i.e. the freshly
-// created, still-empty company-basics step, not the completed wizard.
+/**
+ * Scans the CURRENT screen and asserts it's axe-clean, tagging any failure
+ * with which onboarding screen it came from.
+ */
+async function scanScreen(page: Page, label: string): Promise<void> {
+  const violations = await seriousOrCriticalViolations(page);
+  expectNoSeriousViolations(violations, `/onboarding — ${label}`);
+}
+
+// A distinct helper (not `bootstrapOnboardedUserWithMatches` directly) so
+// EVERY onboarding screen gets its own axe scan — the M1 accessibility gate
+// (docs/redesign/ux-strategy.md §3.8 "axe green on ALL screens", closing
+// the old wizard's "steps 2–10 unscanned" gap) — then finishes the wizard
+// so the later feed/detail/settings scans have real seeded matches to
+// render.
 async function bootstrapOnboardedUserWithMatchesForAxe(
   page: Page,
   emailHint: string,
@@ -107,28 +118,70 @@ async function bootstrapOnboardedUserWithMatchesForAxe(
   await page.goto(verification.url);
 
   await login(page, email, TEST_PASSWORD);
-  await page.goto('/onboarding');
+  // A brand-new user with no organization lands on /onboarding directly
+  // (R1) — no separate page.goto needed.
+  await expect(
+    page.getByRole('heading', { name: "Let's set up your scoring profile" }),
+  ).toBeVisible();
+  await scanScreen(page, 'welcome');
+  await page.getByRole('button', { name: 'Get started' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Name your workspace' })).toBeVisible();
+  await scanScreen(page, 'create workspace');
   await page.getByLabel('Organization name').fill(`Axe Org ${String(Date.now())}`);
-  await page.getByRole('button', { name: 'Create organization' }).click();
-  await expect(page.getByText('Step 2 of 10: Company basics')).toBeVisible();
+  await page.getByRole('button', { name: 'Create workspace' }).click();
 
-  // Scan onboarding step 1 (company basics) exactly as a real user first
-  // sees it — empty, no preset chosen yet.
-  const violations = await seriousOrCriticalViolations(page);
-  expect(violations, `onboarding step 1: ${JSON.stringify(violations, null, 2)}`).toEqual([]);
+  await expect(page.getByRole('heading', { name: 'Tell us about your company' })).toBeVisible();
+  await scanScreen(page, 'company basics');
+  await page.getByRole('button', { name: 'Skip' }).click();
 
-  // Then finish the wizard so the later feed/detail/settings scans have real
-  // seeded matches to render (same preset-CPV-save pattern as
-  // bootstrapOnboardedUserWithMatches — duplicated here rather than shared
-  // because that helper starts a NEW signup, and this one must reuse the
-  // already-created + already-scanned account).
+  await expect(page.getByRole('heading', { name: 'Start from a preset' })).toBeVisible();
+  await scanScreen(page, 'preset picker');
   await page.getByRole('radio', { name: /Cybersecurity consultancy/ }).check();
+  await page.getByRole('button', { name: 'Continue' }).click();
+
+  await expect(
+    page.getByRole('heading', { name: 'Which CPV codes describe your work?' }),
+  ).toBeVisible();
+  await scanScreen(page, 'CPV codes');
   await page.getByRole('button', { name: 'Save & continue' }).click();
-  await page.getByRole('button', { name: 'Save & continue' }).click();
-  for (let i = 0; i < 6; i += 1) {
-    await page.getByRole('button', { name: 'Skip' }).click();
-  }
-  await page.getByRole('button', { name: 'Finish onboarding' }).click();
+
+  await expect(
+    page.getByRole('heading', { name: "Which countries' opportunities do you want to see?" }),
+  ).toBeVisible();
+  await scanScreen(page, 'countries');
+  await page.getByRole('button', { name: 'Skip' }).click();
+
+  await expect(
+    page.getByRole('heading', { name: 'What contract value and timing work for you?' }),
+  ).toBeVisible();
+  await scanScreen(page, 'value & deadline');
+  await page.getByRole('button', { name: 'Skip' }).click();
+
+  await expect(
+    page.getByRole('heading', { name: 'What keywords describe the work you want?' }),
+  ).toBeVisible();
+  await scanScreen(page, 'keywords');
+  await page.getByRole('button', { name: 'Skip' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Capabilities & certifications' })).toBeVisible();
+  await scanScreen(page, 'capabilities & certifications');
+  await page.getByRole('button', { name: 'Skip' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Anything you want to exclude?' })).toBeVisible();
+  await scanScreen(page, 'exclusions');
+  await page.getByRole('button', { name: 'Skip' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Your daily digest' })).toBeVisible();
+  await scanScreen(page, 'digest');
+  await page.getByRole('button', { name: 'Skip' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Review your scoring profile' })).toBeVisible();
+  await scanScreen(page, 'review');
+  await page.getByRole('button', { name: 'Finish setup' }).click();
+
+  await expect(page.getByRole('heading', { name: "You're all set" })).toBeVisible();
+  await scanScreen(page, 'done');
   await page.getByRole('button', { name: 'Go to your feed' }).click();
   await page.request.post('/api/test/score-now');
 
