@@ -1,24 +1,356 @@
-/* Minimal readable defaults. No framework; prefers-color-scheme aware. */
+/* ============================================================
+   BidMorrow — "Strata" design-system foundation (M0.1)
+   ============================================================
+   Dark-first: bare :root carries the COMPLETE dark (ink-navy night)
+   palette. The daylight twin is a fully designed alternate palette
+   (never an inversion filter), defined in full in BOTH:
+     - @media (prefers-color-scheme: light) :root:not([data-theme="dark"])
+       (OS preference, no explicit user override)
+     - :root[data-theme="light"] (explicit user override, always wins)
+   Every color token is defined in full in all three blocks — never only
+   inside a media/[data-theme] block — per the approved Direction G
+   "Strata" mockup (docs/redesign/mockups/direction-g-strata.html).
 
-:root {
-  color-scheme: light dark;
-  --color-bg: #ffffff;
-  --color-text: #1c2333;
-  --color-muted: #4b5568;
-  --color-border: #d8dde8;
-  --color-accent: #1d4ed8;
-  --color-on-accent: #ffffff;
+   This file establishes tokens, fonts, and base primitives only. Page
+   layouts are NOT redesigned here (see M1–M3); every existing selector
+   below is unchanged in structure and now reads its colors from the new
+   token layer via the legacy `--color-*` aliases so current pages render
+   legibly, in both themes, with zero layout changes.
+   ============================================================ */
+
+/* ============================================================
+   FONTS — self-hosted OFL subsets, hand-written @font-face
+   (never Fontsource's wholesale per-weight CSS). Latin subset only
+   (English-only launch; re-add latin-ext/other scripts at i18n
+   activation). Weights trimmed to fit the ≤90KB budget — see
+   docs/dependency-versions.md for the measured payload math and which
+   CSS `font-weight` values intentionally share a single shipped face.
+   ============================================================ */
+@font-face {
+  font-family: 'Sora';
+  font-style: normal;
+  font-display: swap;
+  /* Single 700 face covers both the 600 (headings) and 700 (wordmark,
+     price amounts) weights used by the mockup — budget trim. */
+  font-weight: 600 700;
+  src: url('./assets/fonts/sora-latin-700.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('./assets/fonts/hanken-grotesk-latin-400.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-display: swap;
+  /* Single 700 face covers 500/600/700 (nav links, labels, buttons) —
+     budget trim; only 400 vs. bold is visually distinguished. */
+  font-weight: 500 700;
+  src: url('./assets/fonts/hanken-grotesk-latin-700.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-display: swap;
+  /* Variable axis — exact weights (400/500/700 all used by data/score
+     readouts) for less total weight than two static cuts. */
+  font-weight: 100 800;
+  src: url('./assets/fonts/jetbrains-mono-latin-wght.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #12161f;
-    --color-text: #e7ebf3;
-    --color-muted: #a3adc2;
-    --color-border: #303a4d;
-    --color-accent: #8ab0ff;
-    --color-on-accent: #101523;
+/* ============================================================
+   TOKENS — bare :root = DARK (ink-navy night). Dark-first.
+   ============================================================ */
+:root {
+  color-scheme: dark;
+
+  /* ground planes (deepest -> raised) */
+  --ground-deep: #070d20;
+  --ground: #0c142e;
+  --ground-high: #131d42;
+
+  /* surfaces + glass */
+  --surface-1: rgba(255, 255, 255, 0.045);
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --glass: rgba(19, 30, 66, 0.55);
+  --glass-strong: rgba(15, 24, 55, 0.78);
+  --glass-solid: #131d42; /* reduced-transparency / no-backdrop-filter fallback */
+  --pane-tint: rgba(146, 168, 232, 0.06);
+
+  /* strokes */
+  --stroke: rgba(168, 184, 230, 0.16);
+  --stroke-strong: rgba(168, 184, 230, 0.32);
+  --stroke-faint: rgba(168, 184, 230, 0.08);
+
+  /* text */
+  --text-1: #ecf0fb;
+  --text-2: #aab6da;
+  --text-3: #7e8bb6;
+
+  /* solar accent — warm apricot -> rose */
+  --sol-1: #ffb27a;
+  --sol-2: #ff8896;
+  --accent-text: #ffb27a; /* accent as TEXT directly on ground — AA-computed */
+  --accent-ink: #2a1530; /* text ON accent fills */
+  --accent-grad: linear-gradient(112deg, var(--sol-1), var(--sol-2));
+  --accent-soft: rgba(255, 178, 122, 0.13);
+  --accent-edge: rgba(255, 178, 122, 0.38);
+
+  /* functional */
+  --focus: #a9c0ff;
+  --shadow-l: 0 32px 70px -18px rgba(2, 6, 22, 0.75);
+  --shadow-m: 0 18px 44px -14px rgba(2, 6, 22, 0.6);
+  --shadow-s: 0 8px 22px -8px rgba(2, 6, 22, 0.55);
+  --edge-lit: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+  /* atmosphere washes */
+  --wash-hero:
+    radial-gradient(120% 85% at 50% -12%, rgba(255, 165, 120, 0.13), transparent 52%),
+    radial-gradient(90% 70% at 82% 8%, rgba(255, 136, 150, 0.08), transparent 55%);
+  --wash-deep: linear-gradient(var(--ground) 0%, var(--ground-deep) 100%);
+
+  /* status (5-tier score classification + form states) — computed-AA
+     against both --ground and --ground-high in this theme */
+  --status-strong-text: #7fe6a8;
+  --status-info-text: #8fc7ff;
+  --status-caution-text: #ffd479;
+  --status-caution-wash: rgba(255, 212, 121, 0.12);
+  --status-low-text: var(--text-3);
+  --status-danger-text: #ff9b9b;
+
+  /* legacy aliases — every selector below keeps its original custom
+     property name; only the value now comes from the Strata palette. */
+  --color-bg: var(--ground);
+  --color-text: var(--text-1);
+  --color-muted: var(--text-2);
+  --color-border: var(--stroke);
+  --color-accent: var(--sol-1); /* fill role (button backgrounds) */
+  --color-on-accent: var(--accent-ink); /* text ON an accent fill */
+  --color-link: var(--accent-text); /* text role (inline links) */
+  --color-focus: var(--focus);
+
+  /* type */
+  --font-display:
+    'Sora', 'Avenir Next', 'Segoe UI Variable Display', 'Segoe UI', 'Helvetica Neue', system-ui,
+    sans-serif;
+  --font-body: 'Hanken Grotesk', 'Segoe UI', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+  --font-mono:
+    'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+
+  /* scale */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2.25rem;
+  --s7: 3.5rem;
+  --s8: 5.5rem;
+  --s9: 8.5rem;
+  --r-s: 8px;
+  --r-m: 14px;
+  --r-l: 22px;
+  --r-xl: 30px;
+  --ease: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --dur: 480ms;
+}
+
+/* ============================================================
+   DAYLIGHT TWIN — designed, not inverted. "Morning altitude": cool
+   paper ground, ink-navy text, ember accent ink, lifted blue-gray
+   shadows, denser strokes, brighter glass. Defined in full twice: once
+   gated on the OS preference (no explicit override), once gated on the
+   explicit user override — kept byte-identical on purpose.
+   ============================================================ */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --ground-deep: #e7ebf7;
+    --ground: #f5f7fd;
+    --ground-high: #ffffff;
+    --surface-1: rgba(22, 32, 68, 0.035);
+    --surface-2: rgba(22, 32, 68, 0.07);
+    --glass: rgba(255, 255, 255, 0.6);
+    --glass-strong: rgba(255, 255, 255, 0.86);
+    --glass-solid: #ffffff;
+    --pane-tint: rgba(38, 58, 124, 0.045);
+    --stroke: rgba(28, 42, 92, 0.15);
+    --stroke-strong: rgba(28, 42, 92, 0.3);
+    --stroke-faint: rgba(28, 42, 92, 0.07);
+    --text-1: #161f42;
+    --text-2: #45527f;
+    --text-3: #59658d;
+    --sol-1: #ffad72;
+    --sol-2: #ff8390;
+    --accent-text: #a8430f; /* ember ink — AA on paper */
+    --accent-ink: #2a1530;
+    --accent-grad: linear-gradient(112deg, var(--sol-1), var(--sol-2));
+    --accent-soft: rgba(255, 149, 92, 0.14);
+    --accent-edge: rgba(200, 92, 40, 0.4);
+    --focus: #2e4fc4;
+    --shadow-l: 0 30px 64px -20px rgba(24, 34, 78, 0.22);
+    --shadow-m: 0 16px 40px -14px rgba(24, 34, 78, 0.17);
+    --shadow-s: 0 8px 20px -8px rgba(24, 34, 78, 0.14);
+    --edge-lit: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    --wash-hero:
+      radial-gradient(120% 85% at 50% -12%, rgba(255, 190, 140, 0.28), transparent 50%),
+      radial-gradient(90% 70% at 82% 8%, rgba(186, 205, 255, 0.35), transparent 55%);
+    --wash-deep: linear-gradient(var(--ground) 0%, var(--ground-deep) 100%);
+
+    --status-strong-text: #146c43;
+    --status-info-text: #2350b8;
+    --status-caution-text: #8a5a00;
+    --status-caution-wash: rgba(138, 90, 0, 0.1);
+    --status-low-text: var(--text-3);
+    --status-danger-text: #b3261e;
+
+    --color-bg: var(--ground);
+    --color-text: var(--text-1);
+    --color-muted: var(--text-2);
+    --color-border: var(--stroke);
+    --color-accent: var(--sol-1);
+    --color-on-accent: var(--accent-ink);
+    --color-link: var(--accent-text);
+    --color-focus: var(--focus);
   }
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+  --ground-deep: #e7ebf7;
+  --ground: #f5f7fd;
+  --ground-high: #ffffff;
+  --surface-1: rgba(22, 32, 68, 0.035);
+  --surface-2: rgba(22, 32, 68, 0.07);
+  --glass: rgba(255, 255, 255, 0.6);
+  --glass-strong: rgba(255, 255, 255, 0.86);
+  --glass-solid: #ffffff;
+  --pane-tint: rgba(38, 58, 124, 0.045);
+  --stroke: rgba(28, 42, 92, 0.15);
+  --stroke-strong: rgba(28, 42, 92, 0.3);
+  --stroke-faint: rgba(28, 42, 92, 0.07);
+  --text-1: #161f42;
+  --text-2: #45527f;
+  --text-3: #59658d;
+  --sol-1: #ffad72;
+  --sol-2: #ff8390;
+  --accent-text: #a8430f;
+  --accent-ink: #2a1530;
+  --accent-grad: linear-gradient(112deg, var(--sol-1), var(--sol-2));
+  --accent-soft: rgba(255, 149, 92, 0.14);
+  --accent-edge: rgba(200, 92, 40, 0.4);
+  --focus: #2e4fc4;
+  --shadow-l: 0 30px 64px -20px rgba(24, 34, 78, 0.22);
+  --shadow-m: 0 16px 40px -14px rgba(24, 34, 78, 0.17);
+  --shadow-s: 0 8px 20px -8px rgba(24, 34, 78, 0.14);
+  --edge-lit: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --wash-hero:
+    radial-gradient(120% 85% at 50% -12%, rgba(255, 190, 140, 0.28), transparent 50%),
+    radial-gradient(90% 70% at 82% 8%, rgba(186, 205, 255, 0.35), transparent 55%);
+  --wash-deep: linear-gradient(var(--ground) 0%, var(--ground-deep) 100%);
+
+  --status-strong-text: #146c43;
+  --status-info-text: #2350b8;
+  --status-caution-text: #8a5a00;
+  --status-caution-wash: rgba(138, 90, 0, 0.1);
+  --status-low-text: var(--text-3);
+  --status-danger-text: #b3261e;
+
+  --color-bg: var(--ground);
+  --color-text: var(--text-1);
+  --color-muted: var(--text-2);
+  --color-border: var(--stroke);
+  --color-accent: var(--sol-1);
+  --color-on-accent: var(--accent-ink);
+  --color-link: var(--accent-text);
+  --color-focus: var(--focus);
+}
+
+/* ============================================================
+   PREFERENCE GUARDS
+   ============================================================ */
+
+/* Reduced motion: global kill-switch. Nothing in this stylesheet uses
+   motion yet (M0.1 is tokens-only) — this establishes the contract for
+   M1+ so every future transition/animation is safe by construction. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Reduced transparency + no-backdrop-filter: opaque fallback for the
+   `.glass` utility (available now for M1+; not yet applied to any page). */
+.glass {
+  background: var(--glass-solid);
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow-m), var(--edge-lit);
+}
+@supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)) {
+  .glass {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+    backdrop-filter: blur(18px) saturate(1.25);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--glass-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Increased contrast: strengthen strokes and widen the focus ring.
+   Matched selectors (same specificity as the palette blocks above) so
+   this reliably wins the cascade in every theme combination. */
+@media (prefers-contrast: more) {
+  :root {
+    --stroke: var(--stroke-strong);
+    --stroke-faint: var(--stroke-strong);
+  }
+  :root[data-theme='light'] {
+    --stroke: var(--stroke-strong);
+    --stroke-faint: var(--stroke-strong);
+  }
+}
+@media (prefers-color-scheme: light) and (prefers-contrast: more) {
+  :root:not([data-theme='dark']) {
+    --stroke: var(--stroke-strong);
+    --stroke-faint: var(--stroke-strong);
+  }
+}
+@media (prefers-contrast: more) {
+  :focus-visible {
+    outline-width: 3px;
+  }
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+html {
+  scroll-behavior: smooth;
 }
 
 * {
@@ -29,15 +361,22 @@ body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-text);
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    sans-serif;
+  font-family: var(--font-body);
   line-height: 1.6;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+/* Tabular figures for score readouts and other data blocks. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 #root {
@@ -83,7 +422,7 @@ h1 {
 }
 
 a {
-  color: var(--color-accent);
+  color: var(--color-link);
 }
 
 .cta {
@@ -102,7 +441,7 @@ a {
 
 /* Keep keyboard focus clearly visible everywhere — never suppress outlines. */
 :focus-visible {
-  outline: 3px solid var(--color-accent);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -224,27 +563,27 @@ button.cta {
 }
 
 button.danger {
-  border-color: #b3261e;
-  color: #b3261e;
+  border-color: var(--status-danger-text);
+  color: var(--status-danger-text);
 }
 
 .link-button {
   background: none;
   border: none;
   padding: 0;
-  color: var(--color-accent);
+  color: var(--color-link);
   text-decoration: underline;
   cursor: pointer;
 }
 
 .form-error {
-  color: #b3261e;
+  color: var(--status-danger-text);
   font-weight: 600;
 }
 
 .form-warning {
-  border: 2px solid #b7791f;
-  background: rgba(183, 121, 31, 0.1);
+  border: 2px solid var(--status-caution-text);
+  background: var(--status-caution-wash);
   padding: 0.75rem 1rem;
   border-radius: 0.375rem;
   font-weight: 600;
@@ -376,23 +715,23 @@ button.danger {
 }
 
 .score-badge--strong {
-  color: #1a7f37;
+  color: var(--status-strong-text);
 }
 
 .score-badge--worth-reviewing {
-  color: #1d4ed8;
+  color: var(--status-info-text);
 }
 
 .score-badge--possible {
-  color: #6b5b00;
+  color: var(--status-caution-text);
 }
 
 .score-badge--low {
-  color: var(--color-muted);
+  color: var(--status-low-text);
 }
 
 .score-badge--excluded {
-  color: #b3261e;
+  color: var(--status-danger-text);
 }
 
 /* --- Detail page --- */
