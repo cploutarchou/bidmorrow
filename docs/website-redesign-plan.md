@@ -1,9 +1,12 @@
 # Website & Interface Overhaul — Implementation Plan
 
-Status: **AWAITING OWNER APPROVAL** (2026-08-17, rev. 2 after owner
-feedback: macOS-style direction with Tendify as visual benchmark,
-onboarding prioritized, pricing untouched). No implementation begins
-until the owner approves this plan. Produced by three research
+Status: **AWAITING OWNER APPROVAL** (2026-08-17, rev. 4 — final owner
+brief incorporated: macOS-style direction with Tendify as visual
+benchmark, onboarding prioritized, pricing untouched, premium-2026
+treatment, interactive elements, original/generated/licensed assets,
+Claude Design exploration + migration path, nine specialist workstreams
+with cross-review). No implementation begins until the owner approves
+this plan. Produced by three research
 workstreams (frontend inventory, competitor/UX research, product-truth
 guardrails) plus design/security/accessibility/QA synthesis. Competitor
 browsing: the sandbox egress proxy blocks competitor hosts, so rendered-
@@ -225,6 +228,42 @@ OUT this cycle, with reasons:
 - **OG/social image**: designed static asset, self-hosted.
 - Licensing rule: OFL/ISC/MIT assets only, licenses recorded in
   docs/dependency-versions.md; no unlicensed or "found" assets.
+- **Generated imagery** (allowed by the owner's final brief): permitted
+  for decorative/illustrative material only (abstract backgrounds,
+  diagram embellishment) — NEVER for anything that could read as
+  product evidence (fake screenshots, fake people, fake customer
+  logos, fake documents). Real UI is always photographed from the real
+  UI. A **screenshot gallery** of real product views (both themes) is
+  the "gallery" element from the brief.
+
+### 4d. Design exploration & migration path (Claude Design)
+
+Available in this session via the `DesignSync` tool + `/design-sync`
+skill (syncs a local component library into a claude.ai/design
+design-system project the owner reviews in the Design pane).
+
+- **Exploration (M0, before code lands in `apps/web`)**: build the Mac
+  Modern design system as a reviewable library — foundations (color
+  tokens both themes, type scale, spacing/grids, motion spec),
+  components with interaction states (buttons, segmented control, score
+  badge, score-breakdown card, preset card, stepper, FAQ, comparison
+  module), and high-fidelity responsive page mockups (Home,
+  onboarding phases, feed) — pushed to a Claude Design project so the
+  owner reviews and approves visual direction at high fidelity before
+  any production code. Quick single-page direction checks continue as
+  artifacts (the current mockup).
+- **Migration protocol (strict)**: the approved design migrates into
+  the EXISTING codebase — tokens become `styles.css` custom
+  properties, components become React components in
+  `apps/web/src/components/`, pages restyle in place. Same stack
+  (React 19 + Vite + vanilla CSS), same routes, same API calls, same
+  auth — **no disconnected prototype, no parallel app, no stack
+  rebuild**. Any place the production build must deviate from the
+  approved design (CSP, a11y, perf budget) is documented in the PR
+  description with the reason.
+- **Design-review loop**: each milestone's UI diffs are screenshotted
+  (Playwright, both themes) and compared against the approved design;
+  drift is either fixed or documented as an approved deviation.
 
 ## 5. UI design system (M0 deliverable)
 
@@ -451,8 +490,11 @@ milestone end. Production deploy of the redesigned site happens only via
 the owner-gated production workflow (bundled with go-live, or on owner
 request in between).
 
-**M0 — Design foundations & platform hygiene** (est. 1 session)
-Tokens (incl. motion tokens + full interaction-state matrix per §4a) +
+**M0 — Design foundations & platform hygiene** (est. 1–2 sessions)
+Opens with the §4d Claude Design exploration: the design system +
+high-fidelity page mockups pushed to a Claude Design project for owner
+review; production styling starts from the approved library. Then:
+tokens (incl. motion tokens + full interaction-state matrix per §4a) +
 type scale + fonts + layout-width fix + themed status colors + icon set
 (Lucide subset, inlined SVG) + wordmark/favicon/OG assets +
 robots/sitemap/meta/titles + `noindex` on app shells. All pages restyled
@@ -514,17 +556,44 @@ tag → Phase 14 audit → owner go-live).
 
 ## 12. Workstream/role mapping
 
-UX research (done — snippets + owner screenshot + CI rendered-page
-capture) · product/UI design (Direction D system + page specs — lead
-session with `product` copy sign-off) · **visual design** (icons,
-original SVG illustrations, gradient/texture system, OG image,
-screenshot pipeline — §4c) · frontend (`frontend` agent,
-implementation) · backend (`backend` agent, only if D6/D7 approved) ·
-security (`security` agent, read-only reviews M0/M1/M2) · accessibility/
-performance (dedicated pass in M4 + budgets in M0/M4) · QA (`qa` agent,
-spec extensions + visual baselines) · `production-reviewer` at every
-milestone end. All specialists operate as senior reviewers of their own
-lane; no fabricated credentials or employment claims anywhere.
+Nine lanes per the owner's final brief, each staffed by the matching
+specialist agent and treated as a senior reviewer of its own lane:
+
+1. **Competitor & market research** — done (snippets + owner screenshot
+   - CI rendered-page capture, §1/§1a); re-consulted when copy claims
+     reference the market.
+2. **UX strategy & information architecture** — §6/§6a; owns flows,
+   onboarding structure, IA decisions.
+3. **Product/UI design** — Direction D system + page specs; `product`
+   agent signs off all copy against truth rules.
+4. **Visual assets & motion design** — §4a/§4c: icons, original SVG
+   illustrations, gradient/texture system, OG image, screenshot
+   pipeline, motion spec.
+5. **Frontend engineering** — `frontend` agent, implementation in the
+   existing stack.
+6. **Backend & integration engineering** — `backend` agent; only the
+   Stripe success-URL config and any owner-approved D6/D7 endpoints.
+7. **Security & privacy** — `security` agent, read-only reviews at
+   M0/M1/M2 (CSP, escaping, no client-side authz, no trackers).
+8. **Accessibility, SEO & performance** — budgets set in M0, enforced
+   per milestone, dedicated manual pass in M4.
+9. **Testing & QA** — `qa` agent: spec extensions, mobile project,
+   visual-regression baselines.
+
+Coordination & cross-review protocol: this plan document is the shared
+plan; every lane documents findings in docs/ or the PR description;
+implementer lanes never self-certify — `security` and
+`production-reviewer` re-run checks themselves at each gate, `product`
+reviews copy, and design-vs-build drift is checked by the §4d review
+loop. Specialists are expected to challenge weak decisions in writing
+(their reports land in the PR/ledger, disagreements resolved in this
+doc, escalated to the owner when they change scope). No fabricated
+credentials or employment claims anywhere.
+
+**Milestone progress protocol (owner's brief)**: after each milestone —
+progress report to the owner with real screenshots (both themes,
+desktop + mobile) and verification results (test counts, axe status,
+bundle sizes), before starting the next milestone.
 
 ## 13. Decisions — resolved by owner feedback + remaining defaults
 
