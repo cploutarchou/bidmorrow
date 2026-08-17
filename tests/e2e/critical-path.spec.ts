@@ -78,7 +78,7 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     await page.getByRole('button', { name: 'Add', exact: true }).click();
     // Live scope-overlap indicator (fix for F15/§3.4) — non-blocking, shown
     // before the user commits, not only at the end of the wizard.
-    await expect(page.getByText(/inside BidMorrow's current ingestion scope/)).toBeVisible();
+    await expect(page.locator('.ob-scope-indicator--ok')).toHaveText(/5 of your 5 codes/);
     await page.getByRole('button', { name: 'Save & continue' }).click();
 
     // Countries (Coverage phase, screen 3 of 4) — skip.
@@ -118,7 +118,9 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     await page.getByRole('button', { name: 'Save & continue' }).click();
 
     // Exclusions (Signals phase, screen 3 of 3) — skip.
-    await expect(page.getByRole('heading', { name: 'Anything you want to exclude?' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Anything you want to exclude?' }),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Skip' }).click();
 
     // Digest (Review phase, screen 1 of 3) — skip.
