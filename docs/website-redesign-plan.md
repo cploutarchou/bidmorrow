@@ -742,3 +742,59 @@ accepts these as stated):
   service" column (every row sourced from the research). Naming
   competitors requires re-verified per-claim evidence; owner may opt in
   later.
+
+## Post-competitive positioning integration (2026-08-17)
+
+Locked after the verified competitive investigation
+(`docs/redesign/competitive-risk-assessment.md`) and sales strategy
+(`docs/redesign/sales-strategy.md`); governs all copy/messaging from M1
+on. Owner product-policy: `docs/product-scope.md` §Product policy lock.
+
+**Spearhead claim (escalated):** "explained score" is now table stakes
+(GetTenderAI/Tendly/Tenderium all claim it), so the differentiator is not
+that we explain but that our explanation is **auditable arithmetic you
+can re-run, not generated prose you have to trust** — deterministic,
+component-decomposable, reproducible (same inputs + engine version ⇒
+identical score), on official TED data, with hard-exclusion "reasons to
+walk away", and **unlimited, un-metered** (no credits, no per-scan fee,
+no paywalled explanations — a direct contrast to Tendly's credit meter
+and GetTenderAI's €319 explanation paywall).
+
+**Reduction copy must be distinct.** GetTenderAI owns "From thousands of
+notices to the few that matter." Our reduction message must not echo it —
+lead on the _decision_ ("should a company like mine pursue this?") and on
+_why_, not on search-narrowing. (Ref R9, treated as a hard copy
+constraint.)
+
+**Scope changes now in effect (per product-policy lock):**
+
+- **Sample-verdict demo — IN (controlled, D9 extended).** A public,
+  no-signup demo showing 3–5 curated verdicts across the real outcome
+  classes (Strong Match / Worth Reviewing / Possible / Excluded — matches
+  the feed tiers), each with a real-or-sanitized tender, a representative
+  supplier profile, the score, the component breakdown, risk flags, the
+  recommendation, and a TED source link. CTA "Get verdicts matched to
+  your company." Hard boundaries: anonymous visitors cannot submit
+  tenders, create profiles, get alerts, or reach the feed. It is a
+  demonstration of explainability, NOT a free tier.
+- **Manually-authored commercial category pages — IN (bounded).**
+  `/cybersecurity-tenders`, `/cloud-tenders`, later
+  `/software-development-tenders`: hand-written, methodology + sample
+  verdicts, NOT auto-generated directories.
+- **Programmatic per-tender SEO pages — OUT for V1.**
+- **Methodology page — first-class trust asset** (top conversion lever):
+  worked example, "same inputs + engine version ⇒ identical score", the
+  CPV pre-filter disclosure, exclusions, engine versioning. It is the
+  page no LLM rival can publish in substance.
+
+**Score UI must use the REAL engine components** (`docs/matching-engine.md`),
+NOT the mockups' illustrative labels. Real model (max 100): CPV fit 35 ·
+Capability/keyword fit 20 · Geography 15 · Contract value 10 ·
+Buyer/sector 5 · Procedure/contract nature 5 · Deadline runway 5 ·
+Eligibility/cert signals 5. UNKNOWN = 0.5×max, shown as "not published —
+neutral score applied". Any shipped sample verdict re-bases on these.
+
+**Pricing:** FROZEN — €29/€49 flat EUR (the "$" in owner directives is
+shorthand). Founding cap revised to first 25–50 (single number required
+before that copy ships — M3). No free tier; no automated trial; no-card
+manual 5-day pilot is the entry path.
