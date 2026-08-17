@@ -45,51 +45,62 @@ export function Methodology(): ReactElement {
         content="Exactly how BidMorrow scores tenders: score components, missing-data policy, exclusions, risk-flag confidence, and coverage scope."
       />
       <link rel="canonical" href="https://bidmorrow.com/methodology" />
-      <h1>Methodology</h1>
-      <p>{DECISION_SUPPORT_DISCLAIMER}</p>
+
+      <p className="mkt-eyebrow">Methodology</p>
+      <h1>Deterministic on purpose</h1>
+      <p className="subheadline">{DECISION_SUPPORT_DISCLAIMER}</p>
 
       <h2>Score components</h2>
       <p>
         Every match is scored 0–100 across eight components. The same inputs, at the same engine
         version, always produce the same score.
       </p>
-      <table>
-        <caption>Score components and their maximum points</caption>
-        <thead>
-          <tr>
-            <th scope="col">Component</th>
-            <th scope="col">Max points</th>
-            <th scope="col">If the data is missing</th>
-          </tr>
-        </thead>
-        <tbody>
-          {SCORE_COMPONENTS.map((row) => (
-            <tr key={row.component}>
-              <th scope="row">{row.component}</th>
-              <td>{row.max}</td>
-              <td>{row.unknownPolicy}</td>
+      <div className="mkt-table-card glass">
+        <table>
+          <caption>Score components and their maximum points</caption>
+          <thead>
+            <tr>
+              <th scope="col">Component</th>
+              <th scope="col">Max points</th>
+              <th scope="col">If the data is missing</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {SCORE_COMPONENTS.map((row) => (
+              <tr key={row.component}>
+                <th scope="row">{row.component}</th>
+                <td>{row.max}</td>
+                <td>{row.unknownPolicy}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      <h2>What "Unknown" means</h2>
-      <p>{UNKNOWN_POLICY_STATEMENT}</p>
+      <div className="mkt-truth-grid">
+        <article className="mkt-truth-card glass">
+          <h2>What "Unknown" means</h2>
+          <p>{UNKNOWN_POLICY_STATEMENT}</p>
+        </article>
+        <article className="mkt-truth-card glass">
+          <h2>Risk flags and confidence</h2>
+          <p>{RISK_FLAG_STATEMENT}</p>
+        </article>
+      </div>
 
-      <h2>Hard exclusions</h2>
-      <p>{HARD_EXCLUSIONS_STATEMENT}</p>
+      <div className="mkt-prose">
+        <h2>Hard exclusions</h2>
+        <p>{HARD_EXCLUSIONS_STATEMENT}</p>
 
-      <h2>Risk flags and confidence</h2>
-      <p>{RISK_FLAG_STATEMENT}</p>
+        <h2>The CPV pre-filter</h2>
+        <p>{CPV_PREFILTER_DISCLOSURE}</p>
 
-      <h2>The CPV pre-filter</h2>
-      <p>{CPV_PREFILTER_DISCLOSURE}</p>
+        <h2>Coverage scope</h2>
+        <p>{SCOPED_COVERAGE_STATEMENT}</p>
 
-      <h2>Coverage scope</h2>
-      <p>{SCOPED_COVERAGE_STATEMENT}</p>
-
-      <h2>Source</h2>
-      <p>{TED_ATTRIBUTION}</p>
+        <h2>Source</h2>
+        <p>{TED_ATTRIBUTION}</p>
+      </div>
     </>
   );
 }

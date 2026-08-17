@@ -10,9 +10,18 @@ export function HowItWorks(): ReactElement {
         content="How BidMorrow turns TED procurement notices into a daily shortlist of tenders worth investigating."
       />
       <link rel="canonical" href="https://bidmorrow.com/how-it-works" />
+
+      <p className="mkt-eyebrow">How it works</p>
       <h1>How it works</h1>
-      <ol className="steps-list">
-        <li>
+      <p className="subheadline">
+        Five steps from your company profile to a daily shortlist worth acting on.
+      </p>
+
+      <ol className="mkt-steps mkt-steps--flow">
+        <li className="mkt-step">
+          <span className="mkt-step__num" aria-hidden="true">
+            1
+          </span>
           <h2>Tell us what you do</h2>
           <p>
             Onboarding asks for your CPV codes, capabilities, keywords, geography, value range, and
@@ -20,7 +29,10 @@ export function HowItWorks(): ReactElement {
             afterwards.
           </p>
         </li>
-        <li>
+        <li className="mkt-step">
+          <span className="mkt-step__num" aria-hidden="true">
+            2
+          </span>
           <h2>We ingest TED daily</h2>
           <p>
             BidMorrow ingests competition notices from Tenders Electronic Daily (TED) within a
@@ -28,7 +40,10 @@ export function HowItWorks(): ReactElement {
             covered.
           </p>
         </li>
-        <li>
+        <li className="mkt-step">
+          <span className="mkt-step__num" aria-hidden="true">
+            3
+          </span>
           <h2>Every eligible tender gets scored</h2>
           <p>
             A deterministic, explainable engine scores each tender against your profile — 0 to 100,
@@ -36,7 +51,10 @@ export function HowItWorks(): ReactElement {
             LLM in the scoring path.
           </p>
         </li>
-        <li>
+        <li className="mkt-step">
+          <span className="mkt-step__num" aria-hidden="true">
+            4
+          </span>
           <h2>You see Strong Matches first</h2>
           <p>
             Your feed leads with Strong Matches, then Worth Reviewing, then Possible — no vanity
@@ -44,7 +62,10 @@ export function HowItWorks(): ReactElement {
             original TED notice for the source documents.
           </p>
         </li>
-        <li>
+        <li className="mkt-step">
+          <span className="mkt-step__num" aria-hidden="true">
+            5
+          </span>
           <h2>One daily digest</h2>
           <p>One email per day, only when there's something worth your attention.</p>
         </li>
