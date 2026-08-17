@@ -22,8 +22,13 @@ export function ScoreBadge({
 }): ReactElement {
   return (
     <span className={`score-badge ${CLASS_TO_CSS[classification]}`}>
-      {score !== null ? `${score} / 100 — ` : ''}
-      {classificationLabel(classification)}
+      {score !== null && (
+        <>
+          <span className="score-badge__num num">{score}/100</span>
+          {' — '}
+        </>
+      )}
+      <span className="score-badge__label">{classificationLabel(classification)}</span>
     </span>
   );
 }

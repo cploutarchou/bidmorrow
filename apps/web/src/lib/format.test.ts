@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   classificationLabel,
+  componentLabel,
+  componentMaxPoints,
   componentStatusLabel,
   formatIsoUtc,
   formatOriginalValue,
@@ -69,6 +71,46 @@ describe('componentStatusLabel', () => {
   });
   it('falls back to the raw string for unrecognized statuses', () => {
     expect(componentStatusLabel('SOMETHING_ELSE')).toBe('SOMETHING_ELSE');
+  });
+});
+
+describe('componentMaxPoints', () => {
+  it('matches the REAL 8-component weights in docs/matching-engine.md, never the mockup labels', () => {
+    expect(componentMaxPoints('cpv')).toBe(35);
+    expect(componentMaxPoints('capability')).toBe(20);
+    expect(componentMaxPoints('geography')).toBe(15);
+    expect(componentMaxPoints('value')).toBe(10);
+    expect(componentMaxPoints('buyer')).toBe(5);
+    expect(componentMaxPoints('procedure_nature')).toBe(5);
+    expect(componentMaxPoints('deadline')).toBe(5);
+    expect(componentMaxPoints('eligibility')).toBe(5);
+  });
+  it('sums to the 100-point score model', () => {
+    const keys = [
+      'cpv',
+      'capability',
+      'geography',
+      'value',
+      'buyer',
+      'procedure_nature',
+      'deadline',
+      'eligibility',
+    ];
+    const total = keys.reduce((sum, key) => sum + (componentMaxPoints(key) ?? 0), 0);
+    expect(total).toBe(100);
+  });
+  it('returns null (never a guessed max) for an unrecognized key', () => {
+    expect(componentMaxPoints('something_new')).toBeNull();
+  });
+});
+
+describe('componentLabel', () => {
+  it('gives every real component a human label, never a bare DB key', () => {
+    expect(componentLabel('cpv')).toBe('CPV fit');
+    expect(componentLabel('procedure_nature')).toBe('Procedure & contract nature');
+  });
+  it('falls back to the raw key for forward-compat', () => {
+    expect(componentLabel('something_new')).toBe('something_new');
   });
 });
 

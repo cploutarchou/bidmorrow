@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactElement } from 'react';
-import { useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { api } from '../../lib/api';
 import {
+  componentLabel,
   componentStatusLabel,
   formatOriginalValue,
   formatRelativeDeadline,
@@ -84,7 +85,12 @@ export function TenderDetail(): ReactElement {
   }
 
   if (detail === null) {
-    return <p>Loading…</p>;
+    return (
+      <div className="feed-skeleton-list" aria-hidden="true">
+        <div className="feed-skeleton-card" />
+        <div className="feed-skeleton-card" />
+      </div>
+    );
   }
 
   const now = Date.now();
@@ -92,13 +98,35 @@ export function TenderDetail(): ReactElement {
   return (
     <article className="tender-detail">
       <title>{`${detail.lot.title} — BidMorrow`}</title>
-      <ScoreBadge score={detail.match.score} classification={detail.match.classification} />
+      <Link className="tender-detail__breadcrumb" to="/app">
+        ← Feed
+      </Link>
+      <div className="tender-detail__header">
+        <ScoreBadge score={detail.match.score} classification={detail.match.classification} />
+      </div>
       <h1>{detail.lot.title}</h1>
       {detail.lot.lotNumber !== null && <p>Lot {detail.lot.lotNumber}</p>}
+
+      {/* SEC-P7-05: sourceUrl is untrusted TED-sourced data — only render an
+          actual clickable link when it is a genuine https:// URL, never a
+          javascript:/data: or other scheme, otherwise show it as plain text. */}
+      {detail.notice.sourceUrl.startsWith('https://') && (
+        <p>
+          <a
+            href={detail.notice.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-quiet btn-sm"
+          >
+            View source notice on TED ↗
+          </a>
+        </p>
+      )}
+
       <dl className="detail-facts">
         <div>
-          <dt>Buyer</dt>
-          <dd>{detail.buyerName ?? 'Not published'}</dd>
+          <dt>Deadline</dt>
+          <dd>{formatRelativeDeadline(detail.lot.deadlineAt, now)}</dd>
         </div>
         <div>
           <dt>Value</dt>
@@ -110,16 +138,8 @@ export function TenderDetail(): ReactElement {
           </dd>
         </div>
         <div>
-          <dt>Deadline</dt>
-          <dd>{formatRelativeDeadline(detail.lot.deadlineAt, now)}</dd>
-        </div>
-        <div>
-          <dt>Contract nature</dt>
-          <dd>{detail.lot.contractNature ?? 'Not published'}</dd>
-        </div>
-        <div>
-          <dt>Procedure</dt>
-          <dd>{detail.notice.procedureType ?? 'Not published'}</dd>
+          <dt>Buyer</dt>
+          <dd>{detail.buyerName ?? 'Not published'}</dd>
         </div>
         <div>
           <dt>Geography</dt>
@@ -130,6 +150,14 @@ export function TenderDetail(): ReactElement {
                   .join(', ')
               : 'Not published'}
           </dd>
+        </div>
+        <div>
+          <dt>Contract nature</dt>
+          <dd>{detail.lot.contractNature ?? 'Not published'}</dd>
+        </div>
+        <div>
+          <dt>Procedure</dt>
+          <dd>{detail.notice.procedureType ?? 'Not published'}</dd>
         </div>
         <div>
           <dt>CPV codes</dt>
@@ -154,8 +182,8 @@ export function TenderDetail(): ReactElement {
         </section>
       )}
 
-      <section>
-        <h2>Score breakdown</h2>
+      <section className="score-anatomy" aria-labelledby="score-breakdown-h">
+        <h2 id="score-breakdown-h">Score breakdown</h2>
         {detail.explanationNote !== null && <p>{detail.explanationNote}</p>}
         {detail.components.length > 0 && (
           <table>
@@ -171,8 +199,18 @@ export function TenderDetail(): ReactElement {
             <tbody>
               {detail.components.map((component) => (
                 <tr key={component.componentKey}>
-                  <th scope="row">{component.componentKey}</th>
-                  <td>
+                  <th scope="row">{componentLabel(component.componentKey)}</th>
+                  <td className="num">
+                    {/* Native <progress>, never an inline `style` width — CSP is
+                        `style-src 'self'` with no unsafe-inline; the fill is
+                        styled entirely via ::-webkit-progress-value/
+                        ::-moz-progress-bar in styles.css. */}
+                    <progress
+                      className="score-bar score-bar--inline"
+                      value={component.points}
+                      max={component.maxPoints > 0 ? component.maxPoints : 1}
+                      aria-hidden="true"
+                    />
                     {component.points} / {component.maxPoints}
                   </td>
                   <td>{componentStatusLabel(component.status)}</td>
@@ -187,14 +225,15 @@ export function TenderDetail(): ReactElement {
       {detail.riskFlags.length > 0 && (
         <section>
           <h2>Risk flags</h2>
-          <ul>
+          <ul className="risk-flags">
             {detail.riskFlags.map((flag, index) => (
-              <li key={`${flag.type}-${index}`}>
-                ⚠ {flag.explanation} — {riskConfidenceLabel(flag.confidence)}
-                <br />
-                <em>
+              <li key={`${flag.type}-${index}`} className="risk-flag">
+                <p className="risk-flag__headline">
+                  ⚠ {flag.explanation} — {riskConfidenceLabel(flag.confidence)}
+                </p>
+                <p className="risk-flag__evidence">
                   Evidence: "{flag.evidence}" ({flag.sourceField})
-                </em>
+                </p>
               </li>
             ))}
           </ul>
@@ -206,20 +245,26 @@ export function TenderDetail(): ReactElement {
       </p>
 
       <div className="tender-detail__actions">
-        <button type="button" aria-pressed={detail.savedByYou} onClick={() => void toggleSave()}>
+        <button
+          type="button"
+          className="btn-quiet"
+          aria-pressed={detail.savedByYou}
+          onClick={() => void toggleSave()}
+        >
           {detail.savedByYou ? 'Saved' : 'Save'}
         </button>
         <button
           type="button"
+          className="btn-quiet"
           aria-pressed={detail.ignoredByYou}
           onClick={() => void toggleIgnore()}
         >
           {detail.ignoredByYou ? 'Ignored' : 'Ignore'}
         </button>
-        <button type="button" onClick={() => void submitFeedback('useful')}>
+        <button type="button" className="btn-quiet" onClick={() => void submitFeedback('useful')}>
           Useful
         </button>
-        <button type="button" onClick={() => setShowNotUseful((v) => !v)}>
+        <button type="button" className="btn-quiet" onClick={() => setShowNotUseful((v) => !v)}>
           Not useful
         </button>
       </div>
@@ -267,9 +312,6 @@ export function TenderDetail(): ReactElement {
       )}
 
       <p>
-        {/* SEC-P7-05: sourceUrl is untrusted TED-sourced data — only render an
-            actual clickable link when it is a genuine https:// URL, never a
-            javascript:/data: or other scheme, otherwise show it as plain text. */}
         {detail.notice.sourceUrl.startsWith('https://') ? (
           <a
             href={detail.notice.sourceUrl}

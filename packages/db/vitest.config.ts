@@ -30,5 +30,12 @@ export default defineConfig({
   test: {
     include: ['src/**/*.d1.test.ts'],
     setupFiles: ['./src/test/apply-migrations.ts'],
+    // workerd startup + migration application is heavy and much slower on
+    // constrained CI runners than locally, so the default 5s per-test/hook
+    // timeout false-fails slow-but-correct D1 tests under load. A generous
+    // ceiling prevents that without masking real failures (a broken test
+    // still fails). The two 155-match scale tests keep their explicit 30s.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
   },
 });

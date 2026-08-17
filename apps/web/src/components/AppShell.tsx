@@ -1,12 +1,15 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { PRODUCT_NAME } from '../copy';
 import { useAuth } from '../lib/auth-context';
 
 export function AppShell({ children }: { children: ReactNode }): ReactElement {
   const navigate = useNavigate();
+  const location = useLocation();
   const { refresh } = useAuth();
   const [signOutError, setSignOutError] = useState<string | null>(null);
+  const isFeed = location.pathname === '/app' || location.pathname.startsWith('/app/tenders/');
+  const isSettings = location.pathname.startsWith('/app/settings');
 
   async function signOut(): Promise<void> {
     setSignOutError(null);
@@ -32,21 +35,25 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
-      <header className="site-header">
-        <nav aria-label="Main">
-          <Link className="product-name" to="/app">
+      <header className="app-header glass">
+        <nav className="app-header-inner" aria-label="Main">
+          <Link className="app-wordmark" to="/app">
             {PRODUCT_NAME}
           </Link>
-          <ul className="nav-list">
+          <ul className="app-nav-list">
             <li>
-              <Link to="/app">Feed</Link>
+              <Link to="/app" aria-current={isFeed ? 'page' : undefined}>
+                Feed
+              </Link>
             </li>
             <li>
-              <Link to="/app/settings">Settings</Link>
+              <Link to="/app/settings" aria-current={isSettings ? 'page' : undefined}>
+                Settings
+              </Link>
             </li>
           </ul>
-          <div className="nav-actions">
-            <button type="button" onClick={() => void signOut()}>
+          <div className="app-nav-actions">
+            <button className="btn-quiet btn-sm" type="button" onClick={() => void signOut()}>
               Log out
             </button>
           </div>
@@ -57,7 +64,9 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
           {signOutError}
         </p>
       )}
-      <main id="main-content">{children}</main>
+      <main id="main-content" className="app-main">
+        {children}
+      </main>
     </>
   );
 }

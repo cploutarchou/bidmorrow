@@ -67,12 +67,12 @@ test('onboarding: preset selection survives skipping every downstream screen', a
   // "Penetration testing" differ only in case (Playwright's default text
   // match is case-insensitive, so an unscoped query is ambiguous).
   await page.goto('/app/settings');
-  const keywordsSection = page.locator('section', {
-    has: page.getByRole('heading', { name: 'Keywords' }),
-  });
-  await expect(keywordsSection.getByText('penetration testing')).toBeVisible();
-  const capabilitiesSection = page.locator('section', {
-    has: page.getByRole('heading', { name: 'Capabilities' }),
-  });
-  await expect(capabilitiesSection.getByText('Penetration testing')).toBeVisible();
+  // The keyword "penetration testing" and the capability "Penetration
+  // testing" differ only in case. Playwright's string getByText is
+  // case-insensitive, and the M2 Settings restyle groups the matching-
+  // profile subsections under one <section>, so a section-scoped string
+  // query now matches both. Use case-sensitive regexes (capital vs
+  // lowercase P) to assert each persisted chip unambiguously.
+  await expect(page.getByText(/penetration testing/).first()).toBeVisible();
+  await expect(page.getByText(/Penetration testing/).first()).toBeVisible();
 });
