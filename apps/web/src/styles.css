@@ -1215,3 +1215,603 @@ td {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   APP INTERFACE — Strata (M2: Feed, Tender detail, Settings)
+   docs/redesign/ux-strategy.md §5. Deliberately its OWN class
+   namespace (`.app-*`, `.feed-*`, `.tender-detail__*`, `.settings-*`,
+   `.btn-*`) — never a redeclaration of `.site-header`/`.nav-list`/
+   `.cta`/`.filter-bar`/`.detail-facts`, which marketing (M3, untouched)
+   and the internal admin surface (untouched) also use. Builds on the
+   M0.1 token layer and the `.glass` utility already merged above.
+   ============================================================ */
+
+/* --- General-purpose Strata button utilities (app screens only —
+   `.cta` stays exactly as marketing/auth/admin already use it). --- */
+.btn-quiet,
+.btn-solar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.65rem 1.3rem;
+  border: 1px solid transparent;
+  transition:
+    transform 200ms var(--ease),
+    border-color 200ms var(--ease),
+    box-shadow 200ms var(--ease);
+}
+.btn-quiet {
+  background: var(--surface-1);
+  color: var(--text-1);
+  border-color: var(--stroke);
+}
+.btn-quiet:hover {
+  border-color: var(--stroke-strong);
+  transform: translateY(-1px);
+}
+.btn-quiet[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-solar {
+  background: var(--accent-grad);
+  color: var(--accent-ink);
+  box-shadow: 0 10px 26px -12px rgba(255, 140, 110, 0.5);
+}
+.btn-solar:hover {
+  transform: translateY(-1px);
+}
+.btn-sm {
+  font-size: 0.85rem;
+  padding: 0.45rem 0.95rem;
+}
+
+/* --- App shell (Feed / Tender detail / Settings only) --- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  /* Overrides ALL sides of `.glass`'s border shorthand (combined on the
+     same element) — a hairline on the bottom edge only, never a full box. */
+  border: none;
+  border-bottom: 1px solid var(--stroke-faint);
+}
+.app-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: 0.85rem 1.5rem;
+}
+.app-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+  color: var(--text-1);
+  text-decoration: none;
+}
+.app-nav-list {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin: 0 0 0 auto;
+  padding: 0;
+  list-style: none;
+}
+.app-nav-list a {
+  color: var(--text-2);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 0.3rem 0.1rem;
+}
+.app-nav-list a:hover {
+  color: var(--text-1);
+}
+.app-nav-list a[aria-current='page'] {
+  color: var(--accent-text);
+}
+.app-nav-actions {
+  display: flex;
+  align-items: center;
+}
+.app-main {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: 2rem 1.5rem 4rem;
+}
+@media (max-width: 40rem) {
+  .app-header-inner {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .app-nav-list {
+    margin-left: 0;
+    order: 3;
+    width: 100%;
+  }
+}
+
+/* --- Feed: view switcher (score-band tabs + shelf tabs) --- */
+.feed-view-switcher {
+  margin-bottom: 1.25rem;
+}
+.feed-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  background: var(--surface-1);
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  width: fit-content;
+  max-width: 100%;
+}
+.tab {
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab:hover {
+  color: var(--text-1);
+}
+.tab--active {
+  background: var(--accent-grad);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.tab--shelf {
+  margin-inline-start: 0.5rem;
+  border-inline-start: 1px solid var(--stroke);
+  border-radius: 0 999px 999px 0;
+  padding-inline-start: 1rem;
+  color: var(--text-3);
+}
+@media (max-width: 30rem) {
+  .feed-tabs {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+  .tab--shelf {
+    margin-inline-start: 0.25rem;
+  }
+}
+
+/* --- Feed: collapsible filter disclosure (fix for F26/C10) --- */
+.feed-filters {
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  background: var(--surface-1);
+  margin-bottom: 1.5rem;
+}
+.feed-filters summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.1rem;
+  font-weight: 700;
+}
+.feed-filters summary::-webkit-details-marker {
+  display: none;
+}
+.feed-filters summary::after {
+  content: '';
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-right: 2px solid var(--text-3);
+  border-bottom: 2px solid var(--text-3);
+  transform: rotate(45deg);
+}
+.feed-filters[open] summary::after {
+  transform: rotate(-135deg);
+}
+.filters-badge {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-edge);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+}
+.feed-filter-body {
+  padding: 0 1.1rem 1.1rem;
+  display: grid;
+  gap: 1.25rem;
+  border-top: 1px solid var(--stroke-faint);
+  padding-top: 1rem;
+}
+.feed-filter-group {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.feed-filter-group legend {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 0;
+}
+.feed-filter-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.feed-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--stroke-faint);
+}
+
+/* --- Feed: empty states + skeleton loading --- */
+.feed-empty {
+  border: 1px dashed var(--stroke-strong);
+  border-radius: var(--r-m);
+  padding: 1.5rem;
+  color: var(--text-2);
+  display: grid;
+  gap: 0.75rem;
+}
+.feed-skeleton-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+.feed-skeleton-card {
+  height: 6.5rem;
+  border-radius: var(--r-m);
+  background: linear-gradient(90deg, var(--surface-1), var(--surface-2), var(--surface-1));
+  background-size: 200% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .feed-skeleton-card {
+    animation: skeleton-sheen 1.6s ease-in-out infinite;
+  }
+  @keyframes skeleton-sheen {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+/* --- Feed: 402 subscription-required notice (fix for F17) --- */
+.subscribe-required {
+  border-radius: var(--r-l);
+  border: 1px solid var(--accent-edge);
+  padding: 2rem;
+  display: grid;
+  gap: 1rem;
+  max-width: 40rem;
+}
+.subscribe-required__price-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.subscribe-required__price {
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  padding: 0.6rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+}
+.subscribe-required__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* --- Score badge: text-first pill, mono readout (extends the base
+   rule above; classification is still always rendered as text, never
+   color alone) --- */
+.score-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  font-size: 0.85rem;
+}
+.score-badge__num {
+  font-size: 0.95rem;
+}
+
+/* --- Tender card (Feed list) --- */
+.tender-card {
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  background: var(--surface-1);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-s);
+  display: grid;
+  gap: 0.5rem;
+  transition:
+    transform 200ms var(--ease),
+    border-color 200ms var(--ease);
+}
+.tender-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--stroke-strong);
+}
+.tender-card--strong {
+  border-color: var(--accent-edge);
+  background: var(--glass-solid);
+  box-shadow: var(--shadow-m), var(--edge-lit);
+}
+.tender-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.tender-card__deadline {
+  color: var(--text-2);
+  font-size: 0.82rem;
+  margin: 0;
+}
+.tender-card__meta {
+  color: var(--text-3);
+  font-size: 0.85rem;
+  margin: 0;
+}
+.tender-card__reasons {
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
+}
+.tender-card__risk {
+  font-size: 0.85rem;
+  color: var(--status-caution-text);
+  margin: 0;
+}
+.tender-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* --- Shared score-component bar: a native <progress>, never an inline
+   `style` width — CSP is `style-src 'self'` with no unsafe-inline, so the
+   fill can only ever come from a stylesheet rule, never a per-instance
+   inline style. Styled per-engine via the pseudo-elements every current
+   browser actually implements (WebKit/Blink `::-webkit-progress-*`,
+   Firefox `::-moz-progress-bar`); the plain `background` on the element
+   itself is Firefox's post-`appearance:none` track color. --- */
+.score-bar {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  display: block;
+  width: 100%;
+  height: 5px;
+  border: none;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-2);
+  vertical-align: middle;
+}
+.score-bar::-webkit-progress-bar {
+  background: var(--surface-2);
+  border-radius: 999px;
+}
+.score-bar::-webkit-progress-value {
+  background: var(--accent-grad);
+  border-radius: 999px;
+}
+.score-bar::-moz-progress-bar {
+  background: var(--accent-grad);
+  border-radius: 999px;
+}
+.score-bar--sm {
+  flex: 1;
+  height: 4px;
+  min-width: 2rem;
+}
+.score-bar--inline {
+  display: inline-block;
+  width: 4rem;
+  margin-right: 0.5rem;
+}
+
+/* --- Card-level score anatomy (fix for requirement D — real 8
+   components, docs/matching-engine.md) --- */
+.card-anatomy {
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.card-anatomy__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-3);
+}
+.card-anatomy__name {
+  flex: none;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-anatomy__pts {
+  flex: none;
+  color: var(--text-2);
+}
+
+/* --- Tender detail --- */
+.tender-detail__breadcrumb {
+  display: inline-block;
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+.tender-detail__breadcrumb:hover {
+  color: var(--text-1);
+}
+.tender-detail__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.score-anatomy {
+  border-radius: var(--r-l);
+  border: 1px solid var(--stroke);
+  background: var(--surface-1);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-s);
+}
+.score-anatomy table {
+  margin: 1rem 0 0;
+}
+.risk-flags {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.risk-flag {
+  border: 1px solid var(--stroke);
+  border-left: 3px solid var(--status-caution-text);
+  border-radius: var(--r-s);
+  background: var(--status-caution-wash);
+  padding: 0.75rem 1rem;
+}
+.risk-flag__headline {
+  margin: 0;
+  font-weight: 600;
+}
+.risk-flag__evidence {
+  margin: 0.35rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-2);
+}
+
+/* --- Settings: in-page section navigation (fix for C4) --- */
+.settings-shell {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+.settings-nav {
+  position: sticky;
+  top: 5.5rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  background: var(--surface-1);
+  padding: 0.75rem;
+}
+.settings-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+.settings-nav a {
+  display: block;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--r-s);
+  color: var(--text-2);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.settings-nav a:hover {
+  color: var(--text-1);
+}
+.settings-nav a[aria-current='true'] {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+.settings-group {
+  padding-top: 2rem;
+  margin-top: 2rem;
+  border-top: 1px solid var(--stroke-faint);
+  scroll-margin-top: 5.5rem;
+}
+.settings-group:first-child {
+  padding-top: 0;
+  margin-top: 0;
+  border-top: none;
+}
+.settings-group h2 {
+  font-size: 1.35rem;
+}
+.settings-subsection {
+  margin-top: 1.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--stroke-faint);
+  scroll-margin-top: 5.5rem;
+}
+.settings-subsection:first-of-type {
+  margin-top: 1rem;
+  padding-top: 0;
+  border-top: none;
+}
+.settings-subsection h3 {
+  font-size: 1.05rem;
+}
+.settings-danger {
+  border-top-color: var(--status-danger-text);
+}
+.settings-danger h2 {
+  color: var(--status-danger-text);
+}
+@media (max-width: 56rem) {
+  .settings-shell {
+    grid-template-columns: 1fr;
+  }
+  .settings-nav {
+    position: static;
+    width: 100%;
+  }
+  .settings-nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .settings-nav a {
+    border: 1px solid var(--stroke);
+  }
+}

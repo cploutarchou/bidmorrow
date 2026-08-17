@@ -1,8 +1,22 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
-import { formatOriginalValue, formatRelativeDeadline, riskConfidenceLabel } from '../lib/format';
+import {
+  componentLabel,
+  componentMaxPoints,
+  formatOriginalValue,
+  formatRelativeDeadline,
+  riskConfidenceLabel,
+} from '../lib/format';
 import type { FeedRow } from '../lib/types';
 import { ScoreBadge } from './ScoreBadge';
+
+const CLASS_TO_CARD_MODIFIER: Record<FeedRow['classification'], string> = {
+  STRONG_MATCH: 'tender-card--strong',
+  WORTH_REVIEWING: 'tender-card--worth-reviewing',
+  POSSIBLE_MATCH: 'tender-card--possible',
+  LOW_FIT: '',
+  EXCLUDED: '',
+};
 
 export function TenderCard({
   item,
@@ -15,22 +29,46 @@ export function TenderCard({
   onSave: (matchId: string, nextSaved: boolean) => void;
   onIgnore: (matchId: string, nextIgnored: boolean) => void;
 }): ReactElement {
+  const modifier = CLASS_TO_CARD_MODIFIER[item.classification];
   return (
-    <article className="tender-card">
-      <ScoreBadge score={item.score} classification={item.classification} />
-      <h3>
+    <article className={modifier.length > 0 ? `tender-card ${modifier}` : 'tender-card'}>
+      <div className="tender-card__head">
+        <ScoreBadge score={item.score} classification={item.classification} />
+      </div>
+      <h3 className="tender-card__title">
         <Link to={`/app/tenders/${item.matchId}`}>{item.title}</Link>
       </h3>
+      <p className="tender-card__deadline num">{formatRelativeDeadline(item.deadlineAt, now)}</p>
       <p className="tender-card__meta">
         {item.buyerName ?? 'Buyer not published'} · {item.country ?? 'Country not published'} ·{' '}
         {formatOriginalValue(item.valueOriginalAmount, item.valueOriginalCurrency)}
       </p>
-      <p className="tender-card__deadline">{formatRelativeDeadline(item.deadlineAt, now)}</p>
       {item.topComponents.length > 0 && (
-        <ul className="tender-card__reasons">
-          {item.topComponents.map((component) => (
-            <li key={component.componentKey}>{component.explanation}</li>
-          ))}
+        <ul className="card-anatomy" aria-label="Top score components">
+          {item.topComponents.map((component) => {
+            const max = componentMaxPoints(component.componentKey);
+            return (
+              <li key={component.componentKey} className="card-anatomy__row">
+                <span className="card-anatomy__name">{componentLabel(component.componentKey)}</span>
+                {max !== null && (
+                  // Native <progress>, never an inline `style` width — CSP is
+                  // `style-src 'self'` with no unsafe-inline (.claude/agents/
+                  // frontend-engineer.md); the fill is styled entirely via
+                  // ::-webkit-progress-value/::-moz-progress-bar in styles.css.
+                  <progress
+                    className="score-bar score-bar--sm"
+                    value={component.points}
+                    max={max}
+                    aria-hidden="true"
+                  />
+                )}
+                <span className="card-anatomy__pts num">
+                  +{component.points}
+                  {max !== null ? `/${max}` : ''}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
       {item.topRiskFlag !== null && (
@@ -41,6 +79,7 @@ export function TenderCard({
       <div className="tender-card__actions">
         <button
           type="button"
+          className="btn-quiet btn-sm"
           aria-pressed={item.savedByYou}
           onClick={() => onSave(item.matchId, !item.savedByYou)}
         >
@@ -48,6 +87,7 @@ export function TenderCard({
         </button>
         <button
           type="button"
+          className="btn-quiet btn-sm"
           aria-pressed={item.ignoredByYou}
           onClick={() => onIgnore(item.matchId, !item.ignoredByYou)}
         >

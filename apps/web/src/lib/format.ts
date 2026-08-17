@@ -97,3 +97,47 @@ export function formatIsoUtc(epochMs: number | null): string {
   if (epochMs === null) return 'not recorded';
   return new Date(epochMs).toISOString();
 }
+
+/**
+ * Score component keys stored in `match_components.component_key`
+ * (packages/db/src/schema/matching.ts CHECK constraint) — the REAL 8
+ * engine components (docs/matching-engine.md), never the illustrative
+ * labels from the Strata mockup. Human labels + max points are derived
+ * directly from that spec; regression-tested in format.test.ts against the
+ * documented weights so this can never silently drift from the engine.
+ */
+const COMPONENT_LABEL: Record<string, string> = {
+  cpv: 'CPV fit',
+  capability: 'Capability & keyword fit',
+  geography: 'Geography',
+  value: 'Contract value',
+  buyer: 'Buyer & sector',
+  procedure_nature: 'Procedure & contract nature',
+  deadline: 'Deadline runway',
+  eligibility: 'Eligibility & certifications',
+};
+
+const COMPONENT_MAX_POINTS: Record<string, number> = {
+  cpv: 35,
+  capability: 20,
+  geography: 15,
+  value: 10,
+  buyer: 5,
+  procedure_nature: 5,
+  deadline: 5,
+  eligibility: 5,
+};
+
+/** Human label for a `component_key`; falls back to the raw key for forward-compat. */
+export function componentLabel(key: string): string {
+  return COMPONENT_LABEL[key] ?? key;
+}
+
+/**
+ * Max points for a `component_key` per docs/matching-engine.md. Returns
+ * `null` for an unrecognized key rather than guessing — callers must treat
+ * that as "no bar to render", never a silent 0/100.
+ */
+export function componentMaxPoints(key: string): number | null {
+  return COMPONENT_MAX_POINTS[key] ?? null;
+}
