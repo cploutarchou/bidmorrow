@@ -1948,7 +1948,10 @@ td {
     /* >= 44px touch target (WCAG 2.5.8). */
     width: 44px;
     height: 44px;
-    margin-left: auto;
+    /* Hamburger sits at the far LEFT of the header (owner preference), with
+       the wordmark following it — `order: -1` makes it the first flex item
+       instead of `margin-left: auto` pushing it to the right. */
+    order: -1;
     border-radius: var(--r-m);
     border: 1px solid var(--stroke);
     background: var(--surface-1);
