@@ -16,6 +16,16 @@ export default defineConfig({
   retries: 0,
   use: {
     baseURL: 'http://127.0.0.1:8787',
+    // Emulate reduced motion for deterministic runs. The app honors
+    // `prefers-reduced-motion` (styles.css) by switching `scroll-behavior`
+    // from smooth to auto; without this, Playwright's programmatic
+    // scroll-into-view races the smooth-scroll animation on long pages
+    // (e.g. the 51-keyword Settings form) and reports the target as
+    // "not stable"/"outside of the viewport" until it times out. Real
+    // users click what they see, so this is a harness-stability fix, not a
+    // change to shipped behavior — and it also exercises the reduced-motion
+    // code path.
+    reducedMotion: 'reduce',
   },
   projects: [
     {

@@ -32,45 +32,83 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
   test('signup, mailbox capture, verification link, login', async () => {
     await signUpAndVerify(page, { name: 'E2E Critical Path', email, password: TEST_PASSWORD });
     await login(page, email, TEST_PASSWORD);
-    // No org yet -> feed 403s with the onboarding prompt, not a crash.
-    await expect(page.getByText('Complete onboarding to see your feed.')).toBeVisible();
+    // Fix for F12/R1 (docs/redesign/ux-strategy.md §1.3): a new user with
+    // no organization yet is routed straight to /onboarding — never
+    // dumped on /app to hit the feed's 403 dead-end (the single worst
+    // moment in the product before this fix).
+    await expect(page).toHaveURL(/\/onboarding$/);
+    await expect(
+      page.getByRole('heading', { name: "Let's set up your scoring profile" }),
+    ).toBeVisible();
   });
 
-  test('onboarding: create org, apply preset, edit CPV + keywords, add capability + certification, complete', async () => {
+  test('onboarding: create workspace, apply preset, edit CPV + keywords, add capability + certification, complete', async () => {
     await page.goto('/onboarding');
 
-    // Step 0: organization
-    await page.getByLabel('Organization name').fill(orgName);
-    await page.getByRole('button', { name: 'Create organization' }).click();
-    await expect(page.getByText('Step 2 of 10: Company basics')).toBeVisible();
+    // Welcome (Company phase, screen 1 of 3) — no API call, no Back/Skip.
+    await expect(
+      page.getByRole('heading', { name: "Let's set up your scoring profile" }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Get started' }).click();
 
-    // Step 1: company basics — apply the cybersecurity consultancy preset.
-    await page.getByRole('radio', { name: /Cybersecurity consultancy/ }).check();
+    // Create workspace (Company phase, screen 2 of 3).
+    await expect(page.getByRole('heading', { name: 'Name your workspace' })).toBeVisible();
+    await page.getByLabel('Organization name').fill(orgName);
+    await page.getByRole('button', { name: 'Create workspace' }).click();
+
+    // Company basics (Company phase, screen 3 of 3).
+    await expect(page.getByRole('heading', { name: 'Tell us about your company' })).toBeVisible();
     await page.getByLabel('Company name').fill('E2E Critical Path Consulting');
     await page.getByRole('button', { name: 'Save & continue' }).click();
-    await expect(page.getByText('Step 3 of 10: CPV codes')).toBeVisible();
 
-    // Step 2: CPV codes — preset codes are pre-selected; edit by adding the
-    // exact CPV of demo lot 1 (72150000) so it's guaranteed to be scored.
-    await expect(page.getByRole('checkbox', { name: '79417000' })).toBeChecked();
+    // Start from a preset (Coverage phase, screen 1 of 4).
+    await expect(page.getByRole('heading', { name: 'Start from a preset' })).toBeVisible();
+    await page.getByRole('radio', { name: /Cybersecurity consultancy/ }).check();
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    // CPV codes (Coverage phase, screen 2 of 4 — NEVER skippable). Preset
+    // codes are pre-selected; edit by adding the exact CPV of demo lot 1
+    // (72150000) so it's guaranteed to be scored.
+    await expect(
+      page.getByRole('heading', { name: 'Which CPV codes describe your work?' }),
+    ).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: /79417000/ })).toBeChecked();
+    await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
     await page.getByLabel('Add another 8-digit CPV code').fill('72150000');
     await page.getByRole('button', { name: 'Add', exact: true }).click();
+    // Live scope-overlap indicator (fix for F15/§3.4) — non-blocking, shown
+    // before the user commits, not only at the end of the wizard.
+    await expect(page.locator('.ob-scope-indicator--ok')).toHaveText(/5 of your 5 codes/);
     await page.getByRole('button', { name: 'Save & continue' }).click();
-    await expect(page.getByText('Step 4 of 10: Geographies')).toBeVisible();
 
-    // Step 3: geographies — skip (not required for scoring to run).
+    // Countries (Coverage phase, screen 3 of 4) — skip.
+    await expect(
+      page.getByRole('heading', { name: "Which countries' opportunities do you want to see?" }),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Skip' }).click();
-    await expect(page.getByText('Step 5 of 10: Keywords')).toBeVisible();
 
-    // Step 4: keywords — preset keywords pre-filled; edit by adding one more.
+    // Value & deadline (Coverage phase, screen 4 of 4) — skip.
+    await expect(
+      page.getByRole('heading', { name: 'What contract value and timing work for you?' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Skip' }).click();
+
+    // Keywords (Signals phase, screen 1 of 3) — preset keywords pre-filled;
+    // edit by adding one more.
+    await expect(
+      page.getByRole('heading', { name: 'What keywords describe the work you want?' }),
+    ).toBeVisible();
     await expect(page.getByText('penetration testing')).toBeVisible();
     await page.getByLabel('Add a keyword').fill('cyber security services');
     await page.getByRole('button', { name: 'Add', exact: true }).click();
     await page.getByRole('button', { name: 'Save & continue' }).click();
-    await expect(page.getByText('Step 6 of 10: Capabilities & certifications')).toBeVisible();
 
-    // Step 5: capabilities + certifications (two "Add" buttons on this step
-    // — target each by proximity to its own input, not by role name alone).
+    // Capabilities & certifications (Signals phase, screen 2 of 3) — two
+    // "Add" buttons on this screen; target each by proximity to its own
+    // input, not by role name alone.
+    await expect(
+      page.getByRole('heading', { name: 'Capabilities & certifications' }),
+    ).toBeVisible();
     await page.locator('#capability-input').fill('Critical infrastructure audits');
     await page.locator('#capability-input').locator('xpath=following-sibling::button[1]').click();
     await expect(page.getByText('Critical infrastructure audits')).toBeVisible();
@@ -78,19 +116,27 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     await page.locator('#cert-code').locator('xpath=following-sibling::button[1]').click();
     await expect(page.getByText('ISO_27001', { exact: false }).first()).toBeVisible();
     await page.getByRole('button', { name: 'Save & continue' }).click();
-    await expect(page.getByText('Step 7 of 10: Exclusions')).toBeVisible();
 
-    // Steps 6-8: exclusions, value/deadline, digest — skip.
+    // Exclusions (Signals phase, screen 3 of 3) — skip.
+    await expect(
+      page.getByRole('heading', { name: 'Anything you want to exclude?' }),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Skip' }).click();
-    await expect(page.getByText('Step 8 of 10: Value & deadline')).toBeVisible();
-    await page.getByRole('button', { name: 'Skip' }).click();
-    await expect(page.getByText('Step 9 of 10: Digest')).toBeVisible();
-    await page.getByRole('button', { name: 'Skip' }).click();
-    await expect(page.getByText('Step 10 of 10: Review')).toBeVisible();
 
-    // Step 9: finish — the preset's CPV divisions (72/48/79) overlap the
-    // default ingestion scope, so the scope-overlap warning must be absent.
-    await page.getByRole('button', { name: 'Finish onboarding' }).click();
+    // Digest (Review phase, screen 1 of 3) — skip.
+    await expect(page.getByRole('heading', { name: 'Your daily digest' })).toBeVisible();
+    await page.getByRole('button', { name: 'Skip' }).click();
+
+    // Review (Review phase, screen 2 of 3) — the reconciliation screen: the
+    // preset-prefilled-but-never-explicitly-saved Company profile row must
+    // read as "will be saved when you finish", never as empty/lost (fix for
+    // F14 — the preset-skip data-loss defect).
+    await expect(page.getByRole('heading', { name: 'Review your scoring profile' })).toBeVisible();
+    await expect(page.getByText('10 keywords')).toBeVisible();
+
+    // Finish — the preset's CPV divisions (72/48/79) overlap the default
+    // ingestion scope, so the scope-overlap warning must be absent.
+    await page.getByRole('button', { name: 'Finish setup' }).click();
     await expect(page.getByRole('heading', { name: "You're all set" })).toBeVisible();
     await expect(page.locator('.scope-warning')).toHaveCount(0);
 
@@ -163,6 +209,10 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
   });
 
   test('settings: keyword cap error path (51 keywords -> 422)', async () => {
+    // This step drives 55 sequential add-keyword UI round-trips before the
+    // cap fires; it legitimately runs long, especially on a loaded CI/sandbox
+    // box, so give it the tripled "slow" budget instead of the 30s default.
+    test.slow();
     await page.goto('/app/settings');
     await expect(page.getByRole('heading', { name: 'Company profile' })).toBeVisible();
 

@@ -632,17 +632,329 @@ button.danger {
   margin-top: 1rem;
 }
 
-.preset-card {
-  display: block;
-  border: 1px solid var(--color-border);
-  border-radius: 0.375rem;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
+.scope-warning {
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================================
+   Onboarding setup assistant (M1 — Strata onboarding overhaul)
+   Own frame, no AppShell chrome (docs/redesign/ux-strategy.md §5.5): a
+   deliberate "you're setting up" mode. Layered surfaces, phase-pill
+   stepper, and glass panel reuse the M0.1 token layer; the reduced-
+   transparency/no-backdrop-filter fallback mirrors `.glass` above.
+   ============================================================ */
+.assistant-frame {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--wash-deep);
+}
+
+.assistant-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--stroke-faint);
+}
+
+.assistant-main {
+  flex: 1;
+  width: 100%;
+  max-width: 40rem;
+  margin-inline: auto;
+  padding: 2rem 1.5rem 4rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.assistant-phases {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-phase {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-3);
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+}
+
+.assistant-phase[data-state='done'] {
+  color: var(--text-2);
+  border-color: var(--stroke-strong);
+}
+
+.assistant-phase[aria-current='step'] {
+  color: var(--accent-text);
+  border-color: var(--accent-edge);
+  background: var(--accent-soft);
+}
+
+.assistant-progress {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-3);
+}
+
+.assistant-card {
+  border-radius: var(--r-l);
+  border: 1px solid var(--stroke);
+  background: var(--glass-solid);
+  box-shadow: var(--shadow-m), var(--edge-lit);
+  padding: 1.75rem;
+  display: grid;
+  gap: 1.15rem;
+}
+
+@supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)) {
+  .assistant-card {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    backdrop-filter: blur(18px) saturate(1.2);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .assistant-card {
+    background: var(--glass-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+.assistant-card h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.assistant-card h1:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 4px;
+  border-radius: 0.25rem;
+}
+
+.assistant-why {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-2);
+  background: var(--pane-tint);
+  border: 1px solid var(--stroke-faint);
+  border-radius: var(--r-m);
+  padding: 0.75rem 1rem;
+}
+
+/* --- Preset picker cards --- */
+.ob-preset-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ob-preset-card {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  background: var(--surface-1);
+  padding: 1rem;
+}
+
+.ob-preset-card > label {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ob-preset-card--selected {
+  border-color: var(--accent-edge);
+  background: var(--accent-soft);
+}
+
+.ob-preset-card__label {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.ob-preset-card__desc {
+  font-size: 0.9rem;
+  color: var(--text-2);
+}
+
+.ob-preset-card__stats {
+  font-size: 0.8rem;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+
+.ob-preset-card details {
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+
+.ob-preset-card summary {
+  cursor: pointer;
+  color: var(--color-link);
+  font-weight: 600;
+}
+
+/* --- CPV chip toggles + scope indicator --- */
+.ob-chip-toggle-list {
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0;
+}
+
+.ob-chip-toggle {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-s);
+  background: var(--surface-1);
+  padding: 0.55rem 0.8rem;
   cursor: pointer;
 }
 
-.scope-warning {
-  margin-bottom: 1.5rem;
+.ob-chip-toggle--on {
+  border-color: var(--accent-edge);
+  background: var(--accent-soft);
+}
+
+.ob-chip-toggle__code {
+  color: var(--text-3);
+  font-size: 0.78rem;
+  flex: none;
+}
+
+.ob-chip-toggle__label {
+  color: var(--text-1);
+}
+
+.ob-scope-indicator {
+  margin: 0;
+  font-size: 0.9rem;
+  border-radius: var(--r-m);
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--stroke);
+  background: var(--surface-1);
+  color: var(--text-2);
+}
+
+.ob-scope-indicator--ok {
+  border-color: var(--status-strong-text);
+  color: var(--status-strong-text);
+}
+
+.ob-scope-indicator--warn {
+  border-color: var(--status-caution-text);
+  background: var(--status-caution-wash);
+  color: var(--status-caution-text);
+}
+
+/* --- Region-grouped country picker --- */
+.ob-region-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.ob-advanced {
+  border: 1px solid var(--stroke-faint);
+  border-radius: var(--r-m);
+  padding: 0.5rem 0.9rem;
+}
+
+.ob-advanced summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* --- Review reconciliation table --- */
+.ob-review-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.ob-review-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  background: var(--surface-1);
+  padding: 0.85rem 1rem;
+}
+
+.ob-review-row__state {
+  flex: none;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.ob-review-row__state--saved {
+  color: var(--status-strong-text);
+}
+
+.ob-review-row__state--will-save {
+  color: var(--status-caution-text);
+}
+
+.ob-review-row__state--empty {
+  color: var(--text-3);
+}
+
+.ob-review-row__body {
+  flex: 1;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.ob-review-row__label {
+  font-weight: 600;
+}
+
+.ob-review-row__summary {
+  font-size: 0.9rem;
+  color: var(--text-2);
+  margin: 0;
+}
+
+/* --- Done screen checklist --- */
+.ob-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ob-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+}
+
+.ob-checklist__mark {
+  flex: none;
+  font-weight: 700;
 }
 
 /* --- Tabs & filters --- */
