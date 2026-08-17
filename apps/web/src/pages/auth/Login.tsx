@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '../../lib/auth-context';
+import { resolvePostAuthDestination } from '../../lib/post-auth-route';
 import { AuthLayout } from './AuthLayout';
 
 interface SignInErrorBody {
@@ -10,6 +11,7 @@ interface SignInErrorBody {
 
 export function Login(): ReactElement {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { refresh } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,7 +41,11 @@ export function Login(): ReactElement {
         return;
       }
       await refresh();
-      void navigate('/app');
+      // R1 (docs/redesign/ux-strategy.md §1.3): route by state, not a fixed
+      // URL — an explicit `returnTo` wins, else a new/incomplete profile
+      // lands on /onboarding instead of hitting the feed's 403 dead-end.
+      const destination = await resolvePostAuthDestination(searchParams.get('returnTo'));
+      void navigate(destination);
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -48,14 +54,16 @@ export function Login(): ReactElement {
   }
 
   async function resendVerification(): Promise<void> {
+    // Same callbackURL fix as Signup.tsx — see its comment (carries
+    // `?email=` through so VerifyEmail can show the resend affordance).
+    const verifyEmailPath = `/verify-email?email=${encodeURIComponent(email)}`;
     await fetch('/api/auth/send-verification-email', {
       method: 'POST',
       credentials: 'include',
       headers: { 'content-type': 'application/json' },
-      // Same callbackURL fix as Signup.tsx — see its comment.
-      body: JSON.stringify({ email, callbackURL: '/verify-email' }),
+      body: JSON.stringify({ email, callbackURL: verifyEmailPath }),
     });
-    void navigate('/verify-email');
+    void navigate(verifyEmailPath);
   }
 
   return (

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactElement } from 'react';
+import { useNavigate } from 'react-router';
 import { api, ApiError } from '../../lib/api';
 import { appendCursor, startCursor, type CursorState } from '../../lib/cursor';
 import type { FeedResponse, FeedRow } from '../../lib/types';
@@ -59,6 +60,7 @@ function buildQuery(tab: Tab, filters: Filters, cursor: string | undefined): str
 }
 
 export function Feed(): ReactElement {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('today');
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [state, setState] = useState<CursorState<FeedRow> | null>(null);
@@ -68,24 +70,44 @@ export function Feed(): ReactElement {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const now = Date.now();
 
-  const load = useCallback(async (nextTab: Tab, nextFilters: Filters) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await api.get<FeedResponse>(
-        `/api/org/feed?${buildQuery(nextTab, nextFilters, undefined)}`,
-      );
-      setState(startCursor(res));
-    } catch (cause) {
-      if (cause instanceof ApiError && cause.status === 403) {
-        setError('Complete onboarding to see your feed.');
-      } else {
-        setError('Could not load your feed. Please try again.');
+  const load = useCallback(
+    async (nextTab: Tab, nextFilters: Filters) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await api.get<FeedResponse>(
+          `/api/org/feed?${buildQuery(nextTab, nextFilters, undefined)}`,
+        );
+        setState(startCursor(res));
+      } catch (cause) {
+        if (cause instanceof ApiError && cause.status === 403) {
+          const body = cause.body as { error?: string } | null;
+          // R2 (docs/redesign/ux-strategy.md §1.3): a brand-new user who never
+          // created an organization is auto-routed to /onboarding instead of
+          // dead-ending on this page — the single worst moment in the product
+          // before this fix (F12). `organization_deleted`/`organization_
+          // suspended` are real, distinct problems and must NOT be routed the
+          // same way.
+          if (body?.error === 'no_organization') {
+            void navigate('/onboarding', { replace: true });
+            return;
+          }
+          if (body?.error === 'organization_deleted') {
+            setError('This organization has been deleted.');
+          } else if (body?.error === 'organization_suspended') {
+            setError('This organization is currently suspended — contact support for help.');
+          } else {
+            setError('Complete onboarding to see your feed.');
+          }
+        } else {
+          setError('Could not load your feed. Please try again.');
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     // Intentionally re-runs only when the tab changes — filters are applied

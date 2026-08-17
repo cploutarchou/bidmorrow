@@ -58,7 +58,7 @@ test.describe('authenticated pages', () => {
   test.describe.configure({ mode: 'serial' });
   let email = '';
 
-  test('onboarding step 1', async ({ page }) => {
+  test('onboarding — every screen (M1 §3.8 gate: axe green on ALL screens)', async ({ page }) => {
     email = `axe-onboarding-${String(Date.now())}@example.test`;
     const { email: createdEmail } = await bootstrapOnboardedUserWithMatchesForAxe(page, email);
     email = createdEmail;

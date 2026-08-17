@@ -65,13 +65,20 @@ export async function signUpAndVerify(
   await expect(page.getByRole('alert')).toHaveCount(0);
 }
 
-/** Logs in via the real UI form. */
+/**
+ * Logs in via the real UI form. Post-login routing (R1,
+ * docs/redesign/ux-strategy.md §1.3) lands on `/onboarding` for a new/
+ * incomplete profile or `/app` for a fully onboarded one — both are valid
+ * outcomes of a successful login, so this only asserts navigation actually
+ * left `/login`; callers that need a SPECIFIC destination assert it
+ * themselves afterward.
+ */
 export async function login(page: Page, email: string, password: string): Promise<void> {
   await page.goto('/login');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL(/\/app$/);
+  await expect(page).toHaveURL(/\/(app|onboarding)$/);
 }
 
 /** Triggers the real scoring engine synchronously against every seeded/ingested lot. */
@@ -83,12 +90,18 @@ export async function scoreNow(request: APIRequestContext): Promise<void> {
 /**
  * A signed-up, verified, logged-in, onboarded-with-matches account, for
  * specs (accessibility, keyboard traversal) that need real authenticated
- * pages but don't themselves exercise the onboarding wizard's UI in detail
- * (`critical-path.spec.ts` covers that). Applies the cybersecurity-
- * consultancy preset unedited (its CPV divisions overlap the default
- * ingestion scope and the seeded demo lots), skips every optional step, then
- * runs `scoreNow` so the feed/tender-detail pages have real content to
- * render for the accessibility scan.
+ * pages but don't themselves exercise the onboarding setup assistant's UI
+ * in detail (`critical-path.spec.ts` covers that). Applies the
+ * cybersecurity-consultancy preset unedited (its CPV divisions overlap the
+ * default ingestion scope and the seeded demo lots), skips every optional
+ * screen, then runs `scoreNow` so the feed/tender-detail pages have real
+ * content to render for the accessibility scan.
+ *
+ * Screen order (docs/redesign/ux-strategy.md §3.2, 4 phases — Company,
+ * Coverage, Signals, Review): Welcome -> Create workspace -> Company basics
+ * -> Start from a preset -> CPV codes (non-skippable) -> Countries -> Value
+ * & deadline -> Keywords -> Capabilities & certifications -> Exclusions ->
+ * Digest -> Review -> Done.
  */
 export async function bootstrapOnboardedUserWithMatches(
   page: Page,
@@ -99,24 +112,28 @@ export async function bootstrapOnboardedUserWithMatches(
   await login(page, email, TEST_PASSWORD);
 
   await page.goto('/onboarding');
+  await page.getByRole('button', { name: 'Get started' }).click();
   await page.getByLabel('Organization name').fill(`${orgNamePrefix} ${String(Date.now())}`);
-  await page.getByRole('button', { name: 'Create organization' }).click();
+  await page.getByRole('button', { name: 'Create workspace' }).click();
+  // Company basics — skip.
+  await page.getByRole('button', { name: 'Skip' }).click();
   await page.getByRole('radio', { name: /Cybersecurity consultancy/ }).check();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  // CPV codes screen MUST be explicitly saved — it has no Skip button at
+  // all (docs/redesign/ux-strategy.md §3.5), and without a persisted org
+  // CPV preference the division pre-filter (`scoreLotsForOrgs`) drops every
+  // pair with no match row at all, leaving the feed empty. The preset's
+  // codes are already pre-selected; saving them as-is is enough for the
+  // seeded demo lots to produce matches.
   await page.getByRole('button', { name: 'Save & continue' }).click();
-  // CPV codes step MUST be explicitly saved (not skipped) — "Skip" never
-  // calls saveCpv(), and without a persisted org CPV preference the
-  // division pre-filter (`scoreLotsForOrgs`) drops every pair with no match
-  // row at all, leaving the feed empty. The preset's codes are already
-  // pre-selected; saving them as-is is enough for the seeded demo lots to
-  // produce matches.
-  await page.getByRole('button', { name: 'Save & continue' }).click();
-  // Remaining optional steps (geographies, keywords, capabilities/certs,
-  // exclusions, value/deadline, digest) — skip.
+  // Remaining optional screens (countries, value/deadline, keywords,
+  // capabilities/certs, exclusions, digest) — skip.
   for (let i = 0; i < 6; i += 1) {
     await page.getByRole('button', { name: 'Skip' }).click();
   }
-  await expect(page.getByText('Step 10 of 10: Review')).toBeVisible();
-  await page.getByRole('button', { name: 'Finish onboarding' }).click();
+  await expect(page.getByRole('heading', { name: 'Review your scoring profile' })).toBeVisible();
+  await page.getByRole('button', { name: 'Finish setup' }).click();
+  await expect(page.getByRole('heading', { name: "You're all set" })).toBeVisible();
   await expect(page.locator('.scope-warning')).toHaveCount(0);
   await page.getByRole('button', { name: 'Go to your feed' }).click();
   await expect(page).toHaveURL(/\/app$/);

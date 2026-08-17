@@ -20,6 +20,11 @@ export function Signup(): ReactElement {
     setError(null);
     setSubmitting(true);
     try {
+      // callbackURL carries `?email=` through Better Auth's redirect after
+      // the emailed link is followed (fix for ux-strategy.md F10: the
+      // "check your inbox" page previously couldn't say which inbox — pure
+      // display text, never used for anything security-sensitive).
+      const verifyEmailPath = `/verify-email?email=${encodeURIComponent(email)}`;
       const response = await fetch('/api/auth/sign-up/email', {
         method: 'POST',
         credentials: 'include',
@@ -30,14 +35,14 @@ export function Signup(): ReactElement {
         // (reads `?error=` from ITS OWN route) would never be reachable.
         // Found via Phase 12 E2E: following a real captured verification
         // link and asserting it lands back on /verify-email.
-        body: JSON.stringify({ name, email, password, callbackURL: '/verify-email' }),
+        body: JSON.stringify({ name, email, password, callbackURL: verifyEmailPath }),
       });
       if (!response.ok) {
         const body = (await response.json().catch(() => ({}))) as SignUpErrorBody;
         setError(body.message ?? 'Sign up failed. Please check your details and try again.');
         return;
       }
-      void navigate('/verify-email');
+      void navigate(verifyEmailPath);
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
