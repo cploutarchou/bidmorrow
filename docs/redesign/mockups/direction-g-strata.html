@@ -1,0 +1,1818 @@
+<!doctype html>
+<!--
+  BidMorrow — Direction G "Strata"
+  ================================
+  CONCEPT: filtering depth made spatial. The page descends through three
+  translucent strata — Discover (all of TED) → Qualify (your profile
+  applied) → Decide (the shortlist). Depth of field is the metaphor for
+  signal extraction: the flood sits blurred in the distance; the one
+  tender worth your morning sits in crisp focus in the foreground.
+
+  TYPE (real faces — self-hosted OFL subsets in production, ≤90KB budget):
+    Display:  "Sora"            (approximated here: system geometric stack)
+    Body:     "Hanken Grotesk"  (approximated here: system humanist stack)
+    Data:     "JetBrains Mono"  (approximated here: ui-monospace stack)
+
+  THEME ARCHITECTURE — DARK-FIRST (roles swapped consistently):
+    bare :root            = the complete DARK (ink-navy night) palette
+    @media (prefers-color-scheme: light) :root:not([data-theme="dark"])
+      AND :root[data-theme="light"]      = the complete DAYLIGHT twin
+    The daylight twin is designed, not inverted: cool morning paper,
+    ember accent ink, lifted shadows, denser strokes.
+
+  HOW THIS DIFFERS FROM THE THREE REJECTED DIRECTIONS:
+    · "Ledger":       no paper ground, no ink-and-hairline audit-document
+                      grammar, no editorial rules — this is atmospheric
+                      night depth with layered translucent surfaces.
+    · "Control Room": ground is a rich ink-NAVY (#0C142E — a color, not
+                      near-black), the accent is WARM solar apricot→rose
+                      (no teal anywhere), there is no grid texture, no
+                      terminal styling, no glowing readouts — score bars
+                      are matte, shadows are soft and diffuse.
+    · "Mac Modern":   no macOS window chrome, no traffic-light dots, no
+                      #0071e3; translucency is limited to the nav and the
+                      strata panes, with explicit reduced-transparency
+                      and no-backdrop-filter opaque fallbacks.
+
+  CSP FIDELITY: zero external requests, zero inline style attributes
+  (all values live in this stylesheet as classes), one first-party
+  <script> block (equivalent to a self-hosted file under script-src
+  'self') used only for theme toggle + motion-gated reveals. Everything
+  renders complete and static without JS and under reduced motion.
+
+  Sample tender data is plausible and labeled as sample throughout.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BidMorrow — Strata</title>
+<style>
+/* ============================================================
+   TOKENS — bare :root = DARK (ink-navy night). Dark-first.
+   ============================================================ */
+:root {
+  color-scheme: dark;
+
+  /* ground planes (deepest → raised) */
+  --ground-deep: #070D20;
+  --ground:      #0C142E;
+  --ground-high: #131D42;
+
+  /* surfaces + glass */
+  --surface-1:    rgba(255, 255, 255, 0.045);
+  --surface-2:    rgba(255, 255, 255, 0.08);
+  --glass:        rgba(19, 30, 66, 0.55);
+  --glass-strong: rgba(15, 24, 55, 0.78);
+  --glass-solid:  #131D42;               /* reduced-transparency fallback */
+  --pane-tint:    rgba(146, 168, 232, 0.06);
+
+  /* strokes */
+  --stroke:        rgba(168, 184, 230, 0.16);
+  --stroke-strong: rgba(168, 184, 230, 0.32);
+  --stroke-faint:  rgba(168, 184, 230, 0.08);
+
+  /* text */
+  --text-1: #ECF0FB;
+  --text-2: #AAB6DA;
+  --text-3: #7E8BB6;
+
+  /* solar accent — warm inversion of the category's blue/violet */
+  --sol-1: #FFB27A;                       /* apricot */
+  --sol-2: #FF8896;                       /* rose */
+  --accent-text: #FFB27A;                 /* accent as TEXT on ground */
+  --accent-ink:  #2A1530;                 /* text ON accent fills */
+  --accent-grad: linear-gradient(112deg, var(--sol-1), var(--sol-2));
+  --accent-soft: rgba(255, 178, 122, 0.13);
+  --accent-edge: rgba(255, 178, 122, 0.38);
+
+  /* functional */
+  --focus: #A9C0FF;
+  --shadow-l: 0 32px 70px -18px rgba(2, 6, 22, 0.75);
+  --shadow-m: 0 18px 44px -14px rgba(2, 6, 22, 0.6);
+  --shadow-s: 0 8px 22px -8px rgba(2, 6, 22, 0.55);
+  --edge-lit: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+  /* atmosphere washes */
+  --wash-hero: radial-gradient(120% 85% at 50% -12%,
+                 rgba(255, 165, 120, 0.13), transparent 52%),
+               radial-gradient(90% 70% at 82% 8%,
+                 rgba(255, 136, 150, 0.08), transparent 55%);
+  --wash-deep: linear-gradient(var(--ground) 0%, var(--ground-deep) 100%);
+
+  /* type */
+  --font-display: "Sora", "Avenir Next", "Segoe UI Variable Display",
+                  "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+  --font-body: "Hanken Grotesk", "Segoe UI", "Helvetica Neue",
+               system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code",
+               Menlo, Consolas, monospace;
+
+  /* scale */
+  --s1: 0.25rem; --s2: 0.5rem; --s3: 0.75rem; --s4: 1rem;
+  --s5: 1.5rem; --s6: 2.25rem; --s7: 3.5rem; --s8: 5.5rem; --s9: 8.5rem;
+  --r-s: 8px; --r-m: 14px; --r-l: 22px; --r-xl: 30px;
+  --ease: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --dur: 480ms;
+}
+
+/* ============================================================
+   DAYLIGHT TWIN — designed, not inverted. "Morning altitude":
+   cool paper ground, ink-navy text, ember accent ink, lifted
+   blue-gray shadows, denser strokes, brighter glass.
+   ============================================================ */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --ground-deep: #E7EBF7;
+    --ground:      #F5F7FD;
+    --ground-high: #FFFFFF;
+    --surface-1:    rgba(22, 32, 68, 0.035);
+    --surface-2:    rgba(22, 32, 68, 0.07);
+    --glass:        rgba(255, 255, 255, 0.6);
+    --glass-strong: rgba(255, 255, 255, 0.86);
+    --glass-solid:  #FFFFFF;
+    --pane-tint:    rgba(38, 58, 124, 0.045);
+    --stroke:        rgba(28, 42, 92, 0.15);
+    --stroke-strong: rgba(28, 42, 92, 0.3);
+    --stroke-faint:  rgba(28, 42, 92, 0.07);
+    --text-1: #161F42;
+    --text-2: #45527F;
+    --text-3: #59658D;
+    --sol-1: #FFAD72;
+    --sol-2: #FF8390;
+    --accent-text: #A8430F;             /* ember ink — AA on paper */
+    --accent-ink:  #2A1530;
+    --accent-grad: linear-gradient(112deg, var(--sol-1), var(--sol-2));
+    --accent-soft: rgba(255, 149, 92, 0.14);
+    --accent-edge: rgba(200, 92, 40, 0.4);
+    --focus: #2E4FC4;
+    --shadow-l: 0 30px 64px -20px rgba(24, 34, 78, 0.22);
+    --shadow-m: 0 16px 40px -14px rgba(24, 34, 78, 0.17);
+    --shadow-s: 0 8px 20px -8px rgba(24, 34, 78, 0.14);
+    --edge-lit: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    --wash-hero: radial-gradient(120% 85% at 50% -12%,
+                   rgba(255, 190, 140, 0.28), transparent 50%),
+                 radial-gradient(90% 70% at 82% 8%,
+                   rgba(186, 205, 255, 0.35), transparent 55%);
+    --wash-deep: linear-gradient(var(--ground) 0%, var(--ground-deep) 100%);
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ground-deep: #E7EBF7;
+  --ground:      #F5F7FD;
+  --ground-high: #FFFFFF;
+  --surface-1:    rgba(22, 32, 68, 0.035);
+  --surface-2:    rgba(22, 32, 68, 0.07);
+  --glass:        rgba(255, 255, 255, 0.6);
+  --glass-strong: rgba(255, 255, 255, 0.86);
+  --glass-solid:  #FFFFFF;
+  --pane-tint:    rgba(38, 58, 124, 0.045);
+  --stroke:        rgba(28, 42, 92, 0.15);
+  --stroke-strong: rgba(28, 42, 92, 0.3);
+  --stroke-faint:  rgba(28, 42, 92, 0.07);
+  --text-1: #161F42;
+  --text-2: #45527F;
+  --text-3: #59658D;
+  --sol-1: #FFAD72;
+  --sol-2: #FF8390;
+  --accent-text: #A8430F;
+  --accent-ink:  #2A1530;
+  --accent-grad: linear-gradient(112deg, var(--sol-1), var(--sol-2));
+  --accent-soft: rgba(255, 149, 92, 0.14);
+  --accent-edge: rgba(200, 92, 40, 0.4);
+  --focus: #2E4FC4;
+  --shadow-l: 0 30px 64px -20px rgba(24, 34, 78, 0.22);
+  --shadow-m: 0 16px 40px -14px rgba(24, 34, 78, 0.17);
+  --shadow-s: 0 8px 20px -8px rgba(24, 34, 78, 0.14);
+  --edge-lit: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --wash-hero: radial-gradient(120% 85% at 50% -12%,
+                 rgba(255, 190, 140, 0.28), transparent 50%),
+               radial-gradient(90% 70% at 82% 8%,
+                 rgba(186, 205, 255, 0.35), transparent 55%);
+  --wash-deep: linear-gradient(var(--ground) 0%, var(--ground-deep) 100%);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text-1);
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.022em;
+  margin: 0 0 var(--s4);
+  text-wrap: balance;
+}
+p { margin: 0 0 var(--s4); max-width: 65ch; }
+a { color: inherit; }
+img, svg { display: block; }
+button { font: inherit; color: inherit; }
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+::selection { background: var(--accent-soft); color: var(--text-1); }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.skip-link {
+  position: absolute; left: var(--s4); top: -4rem; z-index: 100;
+  padding: var(--s2) var(--s4); border-radius: var(--r-s);
+  background: var(--ground-high); color: var(--text-1);
+  border: 1px solid var(--stroke-strong); text-decoration: none;
+  transition: top 160ms var(--ease);
+}
+.skip-link:focus-visible { top: var(--s4); }
+.wrap { width: min(1160px, 100% - 2 * var(--s5)); margin-inline: auto; }
+.visually-hidden-h {
+  position: absolute; width: 1px; height: 1px; margin: -1px;
+  padding: 0; overflow: hidden; clip-path: inset(50%);
+  white-space: nowrap; border: 0;
+}
+.accent { color: var(--accent-text); }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--text-3); margin-bottom: var(--s4);
+}
+.eyebrow::before {
+  content: ""; width: 22px; height: 1px;
+  background: var(--accent-edge);
+}
+
+/* ============================================================
+   GLASS — tasteful, with explicit fallbacks
+   ============================================================ */
+.glass {
+  background: var(--glass-solid);          /* fallback first */
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow-m), var(--edge-lit);
+}
+@supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)) {
+  .glass {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+    backdrop-filter: blur(18px) saturate(1.25);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--glass-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ============================================================
+   NAV
+   ============================================================ */
+.nav {
+  position: sticky; top: 0; z-index: 50;
+  border-bottom: 1px solid var(--stroke-faint);
+}
+.nav-inner {
+  display: flex; align-items: center; gap: var(--s5);
+  padding: var(--s3) 0; min-height: 64px;
+}
+.wordmark {
+  display: inline-flex; align-items: center; gap: 0.65rem;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 1.22rem; letter-spacing: -0.02em;
+  color: var(--text-1); text-decoration: none;
+}
+.wordmark .mark { flex: none; }
+.nav-links {
+  display: flex; align-items: center; gap: var(--s4);
+  margin-left: auto; list-style: none; padding: 0;
+}
+.nav-links a {
+  text-decoration: none; color: var(--text-2);
+  font-size: 0.95rem; font-weight: 500;
+  padding: var(--s2) var(--s2); border-radius: var(--r-s);
+  transition: color 180ms var(--ease);
+}
+.nav-links a:hover { color: var(--text-1); }
+.theme-toggle {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  background: var(--surface-1); border: 1px solid var(--stroke);
+  border-radius: 999px; padding: 0.4rem 0.85rem;
+  font-size: 0.85rem; font-weight: 600; color: var(--text-2);
+  cursor: pointer; transition: border-color 180ms var(--ease);
+}
+.theme-toggle:hover { border-color: var(--stroke-strong); color: var(--text-1); }
+.toggle-icon { width: 15px; height: 15px; }
+
+/* ============================================================
+   BUTTONS — one CTA verb, everywhere
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 0.55rem; text-decoration: none; cursor: pointer;
+  border-radius: 999px; font-weight: 700; font-size: 1rem;
+  padding: 0.8rem 1.6rem; border: 1px solid transparent;
+  transition: transform 200ms var(--ease), box-shadow 200ms var(--ease),
+              border-color 200ms var(--ease);
+}
+.btn-solar {
+  background: var(--accent-grad); color: var(--accent-ink);
+  box-shadow: 0 10px 30px -10px rgba(255, 140, 110, 0.45);
+}
+.btn-solar:hover { transform: translateY(-2px);
+  box-shadow: 0 16px 38px -10px rgba(255, 140, 110, 0.55); }
+.btn-solar:active { transform: translateY(0); }
+.btn-quiet {
+  background: var(--surface-1); color: var(--text-1);
+  border-color: var(--stroke);
+}
+.btn-quiet:hover { border-color: var(--stroke-strong); transform: translateY(-2px); }
+.btn-sm { font-size: 0.9rem; padding: 0.55rem 1.15rem; }
+
+/* ============================================================
+   HERO — the focal plane
+   ============================================================ */
+.hero {
+  position: relative;
+  background: var(--wash-hero);
+  padding: var(--s8) 0 var(--s9);
+  overflow: clip;
+}
+.hero-grid {
+  display: grid; grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  gap: var(--s7); align-items: center;
+}
+.hero h1 {
+  font-size: clamp(2.5rem, 5.4vw, 4.15rem);
+  font-weight: 700; margin-bottom: var(--s5);
+}
+.hero .sub { font-size: 1.16rem; color: var(--text-2); margin-bottom: var(--s5); }
+.cta-row { display: flex; flex-wrap: wrap; gap: var(--s3); margin-bottom: var(--s4); }
+.assurances {
+  display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4);
+  padding: 0; margin: 0; list-style: none;
+  font-size: 0.875rem; color: var(--text-3);
+}
+.assurances li { display: inline-flex; align-items: center; gap: 0.45rem; }
+.assurances svg { width: 13px; height: 13px; color: var(--accent-text); flex: none; }
+
+/* depth stack — the concept in one picture.
+   Far/mid panes are absolute; the focal card stays in flow so the
+   stack can never overflow into following content at any width. */
+.depth-stack {
+  position: relative; padding-top: 218px;
+  perspective: 1400px;
+}
+.pane {
+  position: absolute; inset-inline: 0;
+  border-radius: var(--r-l);
+  border: 1px solid var(--stroke);
+  background: var(--pane-tint);
+  padding: var(--s4);
+  overflow: clip;
+}
+.pane-caption {
+  font-family: var(--font-mono); font-size: 0.68rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-3); margin: 0 0 var(--s3);
+}
+.pane-far {
+  top: 0; height: 200px; z-index: 1;
+  transform: translateX(7%) scale(0.86);
+  opacity: 0.55; filter: blur(2.5px);
+}
+.pane-mid {
+  top: 108px; height: 210px; z-index: 2;
+  transform: translateX(3.5%) scale(0.93);
+  opacity: 0.85; filter: blur(0.75px);
+}
+.pane-near {
+  position: relative; z-index: 3;
+  padding: 0; border: 0; background: none; overflow: visible;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .pane-far, .pane-mid { filter: none; background: var(--surface-1); }
+}
+.ghost-rows { display: grid; gap: var(--s2); }
+.ghost-row {
+  display: grid; grid-template-columns: 1fr auto; gap: var(--s3);
+  align-items: center; padding: var(--s2) var(--s3);
+  border-radius: var(--r-s); background: var(--surface-1);
+  font-size: 0.78rem; color: var(--text-3); white-space: nowrap;
+  overflow: hidden;
+}
+.ghost-row span { overflow: hidden; text-overflow: ellipsis; }
+.chip {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  border-radius: 999px; border: 1px solid var(--stroke);
+  background: var(--surface-1); color: var(--text-2);
+  font-size: 0.8rem; font-weight: 600;
+  padding: 0.28rem 0.7rem; white-space: nowrap;
+}
+.chip-mono { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500; }
+.chip-solar {
+  background: var(--accent-soft); border-color: var(--accent-edge);
+  color: var(--accent-text);
+}
+.chip-row { display: flex; flex-wrap: wrap; gap: var(--s2); }
+
+/* ============================================================
+   FOCUS CARD — the sample tender that travels the page
+   ============================================================ */
+.notice-card {
+  border-radius: var(--r-l); padding: var(--s5);
+  display: grid; gap: var(--s3);
+  box-shadow: var(--shadow-l), var(--edge-lit);
+}
+.notice-head { display: flex; align-items: flex-start; gap: var(--s3); }
+.notice-title {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 1.08rem; line-height: 1.32; letter-spacing: -0.012em;
+  margin: 0; text-wrap: balance;
+}
+.notice-meta {
+  display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4);
+  font-size: 0.84rem; color: var(--text-2); margin: 0;
+}
+.notice-meta .num { color: var(--text-2); }
+.score-lockup {
+  margin-left: auto; text-align: right; flex: none;
+}
+.score-big {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 1.9rem; font-weight: 700; line-height: 1;
+  background: var(--accent-grad);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+}
+.score-max { font-size: 0.72rem; color: var(--text-3); font-family: var(--font-mono); }
+.sample-tag {
+  font-family: var(--font-mono); font-size: 0.66rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-3); border: 1px dashed var(--stroke-strong);
+  border-radius: 999px; padding: 0.2rem 0.6rem; width: max-content;
+}
+
+/* ============================================================
+   DEPTH RAIL — Discover / Qualify / Decide wayfinding
+   ============================================================ */
+.depth-rail {
+  position: fixed; right: 1.4rem; top: 50%; z-index: 40;
+  transform: translateY(-50%);
+  display: none;
+}
+@media (min-width: 1240px) { .depth-rail { display: block; } }
+.depth-rail ol {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: var(--s4); justify-items: end;
+}
+.depth-rail a {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  text-decoration: none; font-family: var(--font-mono);
+  font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-3); transition: color 200ms var(--ease);
+}
+.depth-rail a::after {
+  content: ""; width: 9px; height: 9px; border-radius: 50%;
+  border: 1.5px solid var(--stroke-strong);
+  transition: background 200ms var(--ease), border-color 200ms var(--ease);
+}
+.depth-rail a:hover { color: var(--text-1); }
+.depth-rail li.is-active a { color: var(--accent-text); }
+.depth-rail li.is-active a::after {
+  background: var(--accent-grad); border-color: transparent;
+}
+
+/* ============================================================
+   STRATA SECTIONS — the descent
+   ============================================================ */
+.stratum { position: relative; padding: var(--s8) 0; }
+.stratum + .stratum { border-top: 1px solid var(--stroke-faint); }
+.stratum-head {
+  display: flex; align-items: baseline; gap: var(--s4);
+  margin-bottom: var(--s6);
+}
+.stratum-ordinal {
+  font-family: var(--font-mono); font-size: 0.78rem;
+  letter-spacing: 0.14em; color: var(--accent-text);
+  border: 1px solid var(--accent-edge); border-radius: 999px;
+  padding: 0.3rem 0.8rem; white-space: nowrap; flex: none;
+}
+.stratum h2 { font-size: clamp(1.75rem, 3.2vw, 2.5rem); margin: 0; }
+.stratum-lede { color: var(--text-2); font-size: 1.08rem; }
+.depth-2 { background: var(--wash-deep); }
+.depth-3 { background: var(--ground-deep); }
+
+/* Stratum I — the unfocused field */
+.field {
+  display: flex; flex-wrap: wrap; gap: var(--s2);
+  margin-top: var(--s5); max-width: 62rem;
+}
+.field .chip { font-weight: 500; font-size: 0.78rem; }
+.f-blur2 { filter: blur(2.2px); opacity: 0.5; }
+.f-blur1 { filter: blur(1.1px); opacity: 0.7; }
+.f-dim   { opacity: 0.85; }
+.f-focus { border-color: var(--accent-edge); color: var(--text-1); }
+@media (prefers-reduced-transparency: reduce) {
+  .f-blur2, .f-blur1 { filter: none; }
+}
+.scope-note {
+  margin-top: var(--s5); display: flex; flex-wrap: wrap;
+  align-items: center; gap: var(--s3);
+}
+
+/* Stratum II — qualify: the score anatomy */
+.qualify-grid {
+  display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: var(--s6); align-items: start;
+}
+.anatomy {
+  border-radius: var(--r-l); padding: var(--s5);
+  box-shadow: var(--shadow-l), var(--edge-lit);
+}
+.anatomy h3 {
+  font-size: 0.95rem; letter-spacing: 0.02em; margin-bottom: var(--s4);
+  display: flex; align-items: baseline; gap: var(--s3);
+}
+.anatomy h3 .sample-tag { margin-left: auto; }
+.brk { display: grid; gap: 0.7rem; margin: 0; padding: 0; list-style: none; }
+.brk li { display: grid; gap: 0.3rem; }
+.brk-line {
+  display: flex; align-items: baseline; gap: var(--s3);
+  font-size: 0.88rem;
+}
+.brk-name { font-weight: 600; color: var(--text-1); }
+.brk-why { color: var(--text-3); font-size: 0.78rem; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; min-width: 0; }
+.brk-pts {
+  margin-left: auto; font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums; font-size: 0.82rem;
+  color: var(--text-2); flex: none;
+}
+.bar {
+  height: 5px; border-radius: 999px; background: var(--surface-2);
+  overflow: hidden;
+}
+.bar i {
+  display: block; height: 100%; border-radius: inherit;
+  background: var(--accent-grad); width: var(--w, 100%);
+}
+.motion-ok .anatomy:not(.in-view) .bar i { width: 0; }
+.in-view .bar i { transition: width 900ms var(--ease); }
+.b-cpv { --w: 87.1%; } .b-geo { --w: 85%; }  .b-val { --w: 100%; }
+.b-ddl { --w: 80%; }   .b-lng { --w: 80%; }  .b-aut { --w: 100%; }
+.b-cmp { --w: 60%; }   .b-rec { --w: 40%; }
+.brk-total {
+  display: flex; align-items: center; gap: var(--s3);
+  border-top: 1px solid var(--stroke); margin-top: var(--s4);
+  padding-top: var(--s4);
+}
+.verdict-chip {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  background: var(--accent-soft); border: 1px solid var(--accent-edge);
+  color: var(--accent-text); border-radius: 999px;
+  font-weight: 700; font-size: 0.85rem; padding: 0.35rem 0.85rem;
+}
+.verdict-chip svg { width: 13px; height: 13px; }
+.total-num {
+  margin-left: auto; font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums; font-weight: 700; font-size: 1.3rem;
+}
+.total-num small { font-size: 0.72rem; color: var(--text-3); font-weight: 500; }
+.determinism-note {
+  margin-top: var(--s4); font-size: 0.84rem; color: var(--text-3);
+  border-left: 2px solid var(--accent-edge); padding-left: var(--s3);
+}
+
+/* Stratum III — decide: the shortlist */
+.shortlist { display: grid; gap: var(--s4); margin-top: var(--s5); }
+.short-card {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: var(--s4); align-items: center;
+  border-radius: var(--r-m); padding: var(--s4) var(--s5);
+  background: var(--surface-1); border: 1px solid var(--stroke);
+  box-shadow: var(--shadow-s);
+  transition: transform 220ms var(--ease), border-color 220ms var(--ease);
+}
+.short-card:hover { transform: translateY(-3px); border-color: var(--stroke-strong); }
+.short-card.is-lead {
+  background: var(--glass-solid); border-color: var(--accent-edge);
+  box-shadow: var(--shadow-m), var(--edge-lit);
+}
+.short-score {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-weight: 700; font-size: 1.15rem; min-width: 3.2ch; text-align: right;
+}
+.is-lead .short-score {
+  background: var(--accent-grad);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.short-title { font-weight: 600; font-size: 0.95rem; margin: 0; }
+.short-meta { color: var(--text-3); font-size: 0.8rem; margin: 0; }
+.tier { font-size: 0.78rem; font-weight: 700; white-space: nowrap; }
+.tier-strong { color: var(--accent-text); }
+.tier-review, .tier-possible { color: var(--text-2); }
+.ddl-chip {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 0.74rem; color: var(--text-2);
+  border: 1px solid var(--stroke); border-radius: 999px;
+  padding: 0.24rem 0.65rem; white-space: nowrap;
+}
+.digest-line {
+  margin-top: var(--s5); display: flex; align-items: center; gap: var(--s3);
+  color: var(--text-2); font-size: 0.95rem;
+}
+.digest-line svg { width: 18px; height: 18px; color: var(--accent-text); flex: none; }
+
+/* ============================================================
+   HOW IT WORKS + DETERMINISM
+   ============================================================ */
+.section { padding: var(--s8) 0; }
+.section-head { max-width: 46rem; margin-bottom: var(--s6); }
+.section h2 { font-size: clamp(1.75rem, 3.2vw, 2.5rem); }
+.section .lede { color: var(--text-2); font-size: 1.08rem; }
+.steps {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s4); counter-reset: step; padding: 0; margin: 0; list-style: none;
+}
+.step {
+  counter-increment: step;
+  border-radius: var(--r-m); padding: var(--s5);
+  background: var(--surface-1); border: 1px solid var(--stroke);
+  display: grid; gap: var(--s3); align-content: start;
+}
+.step-glyph {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: grid; place-items: center;
+  background: var(--accent-soft); border: 1px solid var(--accent-edge);
+  color: var(--accent-text);
+}
+.step-glyph svg { width: 20px; height: 20px; }
+.step h3 { font-size: 1.02rem; margin: 0; display: flex; gap: 0.55rem; }
+.step h3::before {
+  content: counter(step); font-family: var(--font-mono);
+  font-size: 0.78rem; color: var(--text-3); align-self: baseline;
+}
+.step p { font-size: 0.9rem; color: var(--text-2); margin: 0; }
+.truth-cards {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s4); margin-top: var(--s6);
+}
+.truth-card {
+  border-radius: var(--r-m); padding: var(--s5);
+  background: var(--pane-tint); border: 1px solid var(--stroke);
+}
+.truth-card h3 { font-size: 1.05rem; }
+.truth-card p { font-size: 0.92rem; color: var(--text-2); margin: 0; }
+.quote-mono {
+  font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-2);
+  background: var(--surface-1); border: 1px solid var(--stroke);
+  border-radius: var(--r-s); padding: var(--s3); display: block;
+  margin-top: var(--s3);
+}
+
+/* ============================================================
+   ONBOARDING ASSISTANT PREVIEW
+   ============================================================ */
+.onboard-grid {
+  display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: var(--s6); align-items: center;
+}
+.onboard-panel {
+  border-radius: var(--r-l); overflow: clip;
+  box-shadow: var(--shadow-l), var(--edge-lit);
+}
+.onboard-top {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s4) var(--s5); border-bottom: 1px solid var(--stroke);
+}
+.onboard-top strong { font-family: var(--font-display); font-size: 0.95rem; }
+.phases {
+  display: flex; gap: var(--s2); margin-left: auto;
+  padding: 0; list-style: none; flex-wrap: wrap;
+}
+.phase {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.74rem; font-weight: 600; color: var(--text-3);
+  border: 1px solid var(--stroke); border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+}
+.phase svg { width: 11px; height: 11px; }
+.phase-done { color: var(--text-2); border-color: var(--stroke-strong); }
+.phase-live {
+  color: var(--accent-text); border-color: var(--accent-edge);
+  background: var(--accent-soft);
+}
+.onboard-body { padding: var(--s5); display: grid; gap: var(--s5); }
+.ob-group { display: grid; gap: var(--s2); }
+.ob-label {
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-3);
+}
+.ob-help { font-size: 0.8rem; color: var(--text-3); margin: 0; }
+.range-line {
+  display: flex; align-items: center; gap: var(--s3);
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 0.85rem; color: var(--text-2);
+}
+.range-track {
+  flex: 1; height: 5px; border-radius: 999px; background: var(--surface-2);
+  position: relative;
+}
+.range-fill {
+  position: absolute; left: 12%; right: 22%; top: 0; bottom: 0;
+  border-radius: inherit; background: var(--accent-grad);
+}
+.range-fill::before, .range-fill::after {
+  content: ""; position: absolute; top: 50%; width: 15px; height: 15px;
+  border-radius: 50%; transform: translateY(-50%);
+  background: var(--ground-high); border: 2px solid var(--sol-1);
+  box-shadow: var(--shadow-s);
+}
+.range-fill::before { left: -7px; } .range-fill::after { right: -7px; }
+.onboard-foot {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s4) var(--s5); border-top: 1px solid var(--stroke);
+}
+.onboard-foot .btn { margin-left: auto; }
+
+/* ============================================================
+   TRUST STRIP
+   ============================================================ */
+.trust { background: var(--wash-deep); }
+.trust-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s4);
+}
+.trust-card {
+  border-radius: var(--r-m); padding: var(--s5);
+  border: 1px solid var(--stroke); background: var(--surface-1);
+  display: grid; gap: var(--s3); align-content: start;
+}
+.trust-card h3 {
+  font-size: 0.92rem; margin: 0; display: flex; align-items: center;
+  gap: var(--s2);
+}
+.trust-card h3 svg { width: 16px; height: 16px; color: var(--accent-text); flex: none; }
+.trust-card p { font-size: 0.84rem; color: var(--text-2); margin: 0; }
+
+/* ============================================================
+   PRICING — FROZEN SUBSTANCE, restyled
+   ============================================================ */
+.plans {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s5); align-items: stretch; max-width: 56rem;
+}
+.plan {
+  border-radius: var(--r-l); padding: var(--s6);
+  display: grid; gap: var(--s4); align-content: start;
+  background: var(--surface-1); border: 1px solid var(--stroke);
+}
+.plan-founding {
+  background: var(--glass-solid);
+  border-color: var(--accent-edge);
+  box-shadow: var(--shadow-l), var(--edge-lit);
+}
+.plan h3 { font-size: 1.2rem; margin: 0; }
+.plan-cap {
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--accent-text);
+}
+.plan-price { display: flex; align-items: baseline; gap: 0.5rem; }
+.plan-price .amount {
+  font-family: var(--font-display); font-weight: 700; font-size: 2.6rem;
+  letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+}
+.plan-price .per { color: var(--text-3); font-size: 0.9rem; }
+.plan p { font-size: 0.92rem; color: var(--text-2); margin: 0; }
+.plan ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--s2); }
+.plan li {
+  display: flex; gap: 0.55rem; font-size: 0.9rem; color: var(--text-2);
+  align-items: baseline;
+}
+.plan li svg { width: 13px; height: 13px; color: var(--accent-text);
+  flex: none; transform: translateY(1px); }
+.plans-foot { margin-top: var(--s5); color: var(--text-3); font-size: 0.9rem; }
+
+/* ============================================================
+   FAQ
+   ============================================================ */
+.faq-list { max-width: 46rem; display: grid; gap: var(--s3); }
+.faq-item {
+  border: 1px solid var(--stroke); border-radius: var(--r-m);
+  background: var(--surface-1);
+}
+.faq-item[open] { border-color: var(--stroke-strong); background: var(--pane-tint); }
+.faq-item summary {
+  cursor: pointer; list-style: none;
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s4) var(--s5);
+  font-family: var(--font-display); font-weight: 600; font-size: 1rem;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: ""; margin-left: auto; width: 9px; height: 9px; flex: none;
+  border-right: 2px solid var(--text-3); border-bottom: 2px solid var(--text-3);
+  transform: rotate(45deg); transition: transform 200ms var(--ease);
+}
+.faq-item[open] summary::after { transform: rotate(-135deg); }
+.faq-item .faq-body { padding: 0 var(--s5) var(--s5); }
+.faq-item .faq-body p { font-size: 0.94rem; color: var(--text-2); }
+
+/* ============================================================
+   MOBILE COMPOSITION — phone frames
+   ============================================================ */
+.phones {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s5); align-items: start; justify-items: center;
+}
+.phone {
+  width: min(300px, 100%); border-radius: 38px; padding: 10px;
+  background: var(--ground-high); border: 1px solid var(--stroke-strong);
+  box-shadow: var(--shadow-l);
+}
+.phone-screen {
+  border-radius: 30px; overflow: clip; background: var(--ground);
+  border: 1px solid var(--stroke-faint); min-height: 460px;
+  display: grid; align-content: start;
+}
+.phone-status {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.55rem 1.1rem; font-family: var(--font-mono);
+  font-size: 0.62rem; color: var(--text-3);
+}
+.phone-notch {
+  width: 74px; height: 17px; border-radius: 999px;
+  background: var(--ground-deep); border: 1px solid var(--stroke-faint);
+}
+.phone-body { padding: var(--s4); display: grid; gap: var(--s3); }
+.phone-label {
+  margin-top: var(--s3); text-align: center; font-size: 0.82rem;
+  color: var(--text-3);
+}
+.m-h1 {
+  font-family: var(--font-display); font-weight: 700; font-size: 1.32rem;
+  line-height: 1.16; letter-spacing: -0.02em; margin: 0; text-wrap: balance;
+}
+.m-sub { font-size: 0.76rem; color: var(--text-2); margin: 0; }
+.m-card {
+  border-radius: var(--r-m); padding: var(--s4);
+  background: var(--surface-1); border: 1px solid var(--stroke);
+  display: grid; gap: var(--s2);
+}
+.m-card .brk-line { font-size: 0.76rem; }
+.m-card .brk-pts { font-size: 0.72rem; }
+.m-title { font-weight: 600; font-size: 0.84rem; margin: 0; line-height: 1.35; }
+.m-meta { font-size: 0.68rem; color: var(--text-3); margin: 0;
+  display: flex; flex-wrap: wrap; gap: 0.3rem 0.7rem; }
+.m-score-row { display: flex; align-items: center; gap: var(--s2); }
+.m-score {
+  font-family: var(--font-mono); font-weight: 700; font-size: 1.35rem;
+  background: var(--accent-grad);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-variant-numeric: tabular-nums;
+}
+.m-chip-row { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.m-chip-row .chip { font-size: 0.62rem; padding: 0.18rem 0.5rem; }
+.m-btn {
+  display: inline-flex; justify-content: center; border-radius: 999px;
+  background: var(--accent-grad); color: var(--accent-ink);
+  font-weight: 700; font-size: 0.78rem; padding: 0.55rem 1rem;
+  text-decoration: none;
+}
+.m-phase-row { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.m-phase-row .phase { font-size: 0.6rem; padding: 0.16rem 0.5rem; }
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer {
+  background: var(--ground-deep);
+  border-top: 1px solid var(--stroke-faint);
+  padding: var(--s7) 0 var(--s6);
+  font-size: 0.86rem; color: var(--text-3);
+}
+.footer-grid {
+  display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: var(--s6); margin-bottom: var(--s6);
+}
+@media (max-width: 640px) {
+  .footer-grid { grid-template-columns: 1fr; }
+}
+.footer-links a { overflow-wrap: anywhere; }
+.footer h4 { font-size: 0.85rem; color: var(--text-2); margin-bottom: var(--s3); }
+.footer p { font-size: 0.82rem; max-width: 58ch; }
+.footer-links { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4);
+  list-style: none; padding: 0; margin: 0 0 var(--s4); }
+.footer-links a { color: var(--text-2); text-decoration: none; }
+.footer-links a:hover { color: var(--text-1); text-decoration: underline; }
+.footer-base {
+  border-top: 1px solid var(--stroke-faint); padding-top: var(--s4);
+  display: flex; flex-wrap: wrap; gap: var(--s3); justify-content: space-between;
+}
+
+/* ============================================================
+   MOTION — reveal choreography, fully guarded
+   ============================================================ */
+.motion-ok .reveal {
+  opacity: 0; transform: translateY(22px);
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.motion-ok .reveal.in-view { opacity: 1; transform: none; }
+.motion-ok .reveal-d1 { transition-delay: 90ms; }
+.motion-ok .reveal-d2 { transition-delay: 180ms; }
+.motion-ok .reveal-d3 { transition-delay: 270ms; }
+@media (prefers-reduced-motion: no-preference) {
+  .pane-far, .pane-mid { animation: drift 14s ease-in-out infinite alternate; }
+  .pane-mid { animation-duration: 18s; }
+  @keyframes drift { from { translate: 0 0; } to { translate: 0 -8px; } }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .motion-ok .reveal { opacity: 1; transform: none; }
+  .motion-ok .anatomy:not(.in-view) .bar i { width: var(--w, 100%); }
+}
+
+/* ============================================================
+   RESPONSIVE — 390 → 1440+, no horizontal page scroll
+   ============================================================ */
+@media (max-width: 1080px) {
+  .hero-grid { grid-template-columns: 1fr; gap: var(--s6); }
+  .depth-stack { max-width: 560px; }
+  .qualify-grid, .onboard-grid { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .phones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .trust-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 1023px) {
+  .nav-links { display: none; }
+  .nav-cta-mobile { margin-left: auto; }
+}
+@media (max-width: 760px) {
+  body { font-size: 1rem; }
+  .hero { padding: var(--s6) 0 var(--s7); }
+  .stratum, .section { padding: var(--s7) 0; }
+  .steps, .truth-cards, .plans, .phones { grid-template-columns: 1fr; }
+  .short-card { grid-template-columns: auto minmax(0, 1fr); row-gap: var(--s2); }
+  .short-card .tier, .short-card .ddl-chip { grid-column: 2; justify-self: start; }
+  .stratum-head { flex-direction: column; gap: var(--s3); align-items: flex-start; }
+  .score-lockup { text-align: left; }
+  .phases { display: none; }
+  .brk-why { white-space: normal; }
+  .phone { width: min(340px, 100%); }
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<nav class="depth-rail" aria-label="Page depth">
+  <ol>
+    <li id="rail-discover" class="is-active"><a href="#discover">Discover</a></li>
+    <li id="rail-qualify"><a href="#qualify">Qualify</a></li>
+    <li id="rail-decide"><a href="#decide">Decide</a></li>
+  </ol>
+</nav>
+
+<header class="nav glass">
+  <div class="wrap nav-inner">
+    <a class="wordmark" href="#" aria-label="BidMorrow home">
+      <svg class="mark" width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+        <rect x="6.5" y="2.5" width="13" height="6" rx="3" fill="currentColor" opacity="0.28"/>
+        <rect x="4" y="9.5" width="18" height="6" rx="3" fill="currentColor" opacity="0.55"/>
+        <rect x="1.5" y="16.5" width="23" height="7" rx="3.5" fill="url(#solgrad)"/>
+        <defs>
+          <linearGradient id="solgrad" x1="1.5" y1="16.5" x2="24.5" y2="23.5">
+            <stop offset="0" stop-color="#FFB27A"/><stop offset="1" stop-color="#FF8896"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      BidMorrow
+    </a>
+    <ul class="nav-links">
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#methodology">Methodology</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#">Sign in</a></li>
+      <li><a class="btn btn-solar btn-sm" href="#pricing">Join the founding pilot</a></li>
+    </ul>
+    <button class="theme-toggle nav-cta-mobile" id="theme-toggle" type="button"
+            aria-pressed="false" aria-label="Switch between dark and light theme">
+      <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4.2"/>
+        <path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/>
+      </svg>
+      <span id="theme-label">Theme</span>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ============ HERO — the focal plane ============ -->
+<section class="hero" aria-labelledby="hero-h">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Bid/no-bid qualification · EU public procurement · TED</p>
+      <h1 id="hero-h">Find the tenders worth pursuing. <span class="accent">Skip the rest.</span></h1>
+      <p class="sub">BidMorrow is bid/no-bid qualification intelligence for EU public
+        procurement. It answers one question: &ldquo;Should a company like mine spend
+        time investigating this tender?&rdquo;</p>
+      <div class="cta-row">
+        <a class="btn btn-solar" href="#pricing">Join the founding pilot</a>
+        <a class="btn btn-quiet" href="#qualify">See a score explained</a>
+      </div>
+      <ul class="assurances">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+             <path d="m4.5 12.5 5 5 10-11"/></svg>
+          €29/month founding price — first 20 customers</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+             <path d="m4.5 12.5 5 5 10-11"/></svg>
+          Cancel any time from account settings</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+             <path d="m4.5 12.5 5 5 10-11"/></svg>
+          No annual contract, no usage-based fees</li>
+      </ul>
+    </div>
+
+    <div class="depth-stack">
+      <div class="pane pane-far" aria-hidden="true">
+        <p class="pane-caption">Stratum I · Every in-scope TED notice</p>
+        <div class="ghost-rows">
+          <div class="ghost-row"><span>Framework for cloud hosting services — Vantaa</span><span class="num">FI</span></div>
+          <div class="ghost-row"><span>Hospital information system renewal — Graz</span><span class="num">AT</span></div>
+          <div class="ghost-row"><span>Network infrastructure upgrade — Porto</span><span class="num">PT</span></div>
+          <div class="ghost-row"><span>GIS platform licences — Woj. Mazowieckie</span><span class="num">PL</span></div>
+        </div>
+      </div>
+      <div class="pane pane-mid" aria-hidden="true">
+        <p class="pane-caption">Stratum II · Your profile applied</p>
+        <div class="chip-row">
+          <span class="chip chip-mono">CPV 72*</span>
+          <span class="chip chip-mono">CPV 48*</span>
+          <span class="chip">NL · DE · BE · DK</span>
+          <span class="chip num">€100k–€2M</span>
+          <span class="chip">SOC · MDR · incident response</span>
+          <span class="chip">excl. hardware supply</span>
+        </div>
+      </div>
+      <div class="pane pane-near">
+        <article class="notice-card glass" aria-label="Sample scored tender">
+          <p class="sample-tag">Sample notice — illustrative data</p>
+          <div class="notice-head">
+            <h3 class="notice-title">Managed detection &amp; response services for
+              municipal IT infrastructure</h3>
+            <div class="score-lockup">
+              <div class="score-big num">84.5</div>
+              <div class="score-max">/ 100 · Strong match</div>
+            </div>
+          </div>
+          <p class="notice-meta">
+            <span>Gemeente Utrecht — Netherlands</span>
+            <span class="num">CPV 72250000-2</span>
+            <span class="num">€680,000</span>
+          </p>
+          <div class="chip-row">
+            <span class="verdict-chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m4.5 12.5 5 5 10-11"/></svg>
+              Pursue</span>
+            <span class="ddl-chip">25d left · 11 Sep 2026</span>
+            <span class="chip chip-mono">2026/S 158-512044</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STRATUM I — DISCOVER ============ -->
+<section class="stratum" id="discover" aria-labelledby="discover-h">
+  <div class="wrap">
+    <div class="stratum-head reveal">
+      <span class="stratum-ordinal">Stratum I</span>
+      <h2 id="discover-h">Discover — all of TED, within an honest scope</h2>
+    </div>
+    <p class="stratum-lede reveal">Every day, BidMorrow ingests competition notices
+      from Tenders Electronic Daily — the official journal of EU public
+      procurement — within a documented CPV scope. The flood is real. Most of it
+      was never meant for you.</p>
+    <div class="field reveal reveal-d1" aria-label="A field of sample tender notices at varying focus, illustrating volume">
+      <span class="chip f-blur2">Data centre colocation — Lyon · FR</span>
+      <span class="chip f-blur1">ERP licences and support — Sevilla · ES</span>
+      <span class="chip f-dim">Cyber-resilience audit — Hovedstaden · DK</span>
+      <span class="chip f-blur2">Telephony platform — Kraków · PL</span>
+      <span class="chip f-focus">Managed detection &amp; response — Utrecht · NL</span>
+      <span class="chip f-blur1">Document management system — Tallinn · EE</span>
+      <span class="chip f-blur2">Fibre network maintenance — Limerick · IE</span>
+      <span class="chip f-dim">IT service desk outsourcing — Antwerpen · BE</span>
+      <span class="chip f-blur1">HR software package — Ljubljana · SI</span>
+      <span class="chip f-blur2">Smart-city sensor platform — Milano · IT</span>
+      <span class="chip f-dim">Identity &amp; access management — Bremen · DE</span>
+      <span class="chip f-blur1">e-Invoicing system — Vilnius · LT</span>
+      <span class="chip f-blur2">Hospital PACS renewal — Uppsala · SE</span>
+      <span class="chip f-dim">Penetration testing framework — Wien · AT</span>
+      <span class="chip f-blur1">School device rollout — Rotterdam · NL</span>
+      <span class="chip f-blur2">Geoportal development — Bratislava · SK</span>
+      <span class="chip f-dim">SIEM implementation — Helsinki · FI</span>
+      <span class="chip f-blur1">Case management software — Aarhus · DK</span>
+    </div>
+    <p class="sample-tag reveal reveal-d2">Sample titles — illustrative data</p>
+    <div class="scope-note reveal reveal-d2">
+      <span class="chip chip-solar chip-mono">CPV 72* — IT services</span>
+      <span class="chip chip-solar chip-mono">CPV 48* — software &amp; systems</span>
+      <span class="chip chip-solar chip-mono">CPV 79417000 — safety consultancy</span>
+    </div>
+    <p class="reveal reveal-d3">This is scoped coverage, not exhaustive
+      EU coverage: a notice outside this documented scope is never ingested or
+      scored, regardless of how well it might otherwise fit your profile.</p>
+  </div>
+</section>
+
+<!-- ============ STRATUM II — QUALIFY ============ -->
+<section class="stratum depth-2" id="qualify" aria-labelledby="qualify-h">
+  <div class="wrap">
+    <div class="stratum-head reveal">
+      <span class="stratum-ordinal">Stratum II</span>
+      <h2 id="qualify-h">Qualify — your profile brings one notice into focus</h2>
+    </div>
+    <div class="qualify-grid">
+      <div>
+        <p class="stratum-lede reveal">Each eligible notice is scored 0–100 against
+          your company profile by a deterministic engine. No black box, no
+          &ldquo;AI magic&rdquo; — the same notice, the same profile, and the same
+          engine version always produce the same score.</p>
+        <p class="reveal reveal-d1">Every component is inspectable. When a data point
+          is missing from the published notice, BidMorrow never guesses and never
+          scores it as zero — it applies a documented neutral score, half of that
+          component&rsquo;s maximum, and marks the component
+          <strong>Unknown</strong> with an explanation of what was missing.</p>
+        <p class="determinism-note reveal reveal-d2">Risk flags quote the exact
+          source text they were detected from and are labelled either
+          &ldquo;Confirmed pattern&rdquo; or &ldquo;Possible requirement detected —
+          verify in source documents.&rdquo; BidMorrow never asserts a requirement
+          exists without quoting the evidence it found.</p>
+      </div>
+      <article class="anatomy glass reveal reveal-d1" aria-label="Sample score breakdown">
+        <h3>Score anatomy — Gemeente Utrecht, MDR services
+          <span class="sample-tag">Sample</span></h3>
+        <ul class="brk">
+          <li><div class="brk-line"><span class="brk-name">CPV relevance</span>
+              <span class="brk-why">division 72 match; 72250000 in your preferences</span>
+              <span class="brk-pts num">30.5 / 35</span></div>
+            <div class="bar"><i class="b-cpv"></i></div></li>
+          <li><div class="brk-line"><span class="brk-name">Geography</span>
+              <span class="brk-why">NL lot — inside your declared coverage</span>
+              <span class="brk-pts num">17.0 / 20</span></div>
+            <div class="bar"><i class="b-geo"></i></div></li>
+          <li><div class="brk-line"><span class="brk-name">Value fit</span>
+              <span class="brk-why">€680,000 sits inside your €100k–€2M band</span>
+              <span class="brk-pts num">15.0 / 15</span></div>
+            <div class="bar"><i class="b-val"></i></div></li>
+          <li><div class="brk-line"><span class="brk-name">Deadline runway</span>
+              <span class="brk-why">25 days — above your 14-day minimum</span>
+              <span class="brk-pts num">8.0 / 10</span></div>
+            <div class="bar"><i class="b-ddl"></i></div></li>
+          <li><div class="brk-line"><span class="brk-name">Language</span>
+              <span class="brk-why">Dutch, English summary — both accepted</span>
+              <span class="brk-pts num">4.0 / 5</span></div>
+            <div class="bar"><i class="b-lng"></i></div></li>
+          <li><div class="brk-line"><span class="brk-name">Authority type</span>
+              <span class="brk-why">municipal authority — preferred buyer type</span>
+              <span class="brk-pts num">5.0 / 5</span></div>
+            <div class="bar"><i class="b-aut"></i></div></li>
+          <li><div class="brk-line"><span class="brk-name">Competition signal</span>
+              <span class="brk-why">open procedure — broad field expected</span>
+              <span class="brk-pts num">3.0 / 5</span></div>
+            <div class="bar"><i class="b-cmp"></i></div></li>
+          <li><div class="brk-line"><span class="brk-name">Recency</span>
+              <span class="brk-why">first published 41 days ago; deadline extended</span>
+              <span class="brk-pts num">2.0 / 5</span></div>
+            <div class="bar"><i class="b-rec"></i></div></li>
+        </ul>
+        <div class="brk-total">
+          <span class="verdict-chip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m4.5 12.5 5 5 10-11"/></svg>
+            Strong match — Pursue</span>
+          <span class="total-num num">84.5 <small>/ 100</small></span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STRATUM III — DECIDE ============ -->
+<section class="stratum depth-3" id="decide" aria-labelledby="decide-h">
+  <div class="wrap">
+    <div class="stratum-head reveal">
+      <span class="stratum-ordinal">Stratum III</span>
+      <h2 id="decide-h">Decide — a shortlist, not a dashboard</h2>
+    </div>
+    <p class="stratum-lede reveal">Your feed leads with Strong Matches, then Worth
+      Reviewing, then Possible — no vanity charts, just the tenders worth your
+      time. Save or ignore with one click; open the original TED notice for the
+      source documents.</p>
+    <div class="shortlist" aria-label="Sample shortlist">
+      <article class="short-card is-lead reveal reveal-d1">
+        <span class="short-score num">84.5</span>
+        <div>
+          <h3 class="short-title">Managed detection &amp; response services for
+            municipal IT infrastructure</h3>
+          <p class="short-meta">Gemeente Utrecht · NL · <span class="num">CPV 72250000-2</span> · <span class="num">€680,000</span></p>
+        </div>
+        <span class="tier tier-strong">Strong match</span>
+        <span class="ddl-chip">25d left</span>
+      </article>
+      <article class="short-card reveal reveal-d2">
+        <span class="short-score num">71.0</span>
+        <div>
+          <h3 class="short-title">Security operations centre services for regional
+            healthcare IT</h3>
+          <p class="short-meta">Region Hovedstaden · DK · <span class="num">CPV 72220000-3</span> · <span class="num">€1,240,000</span></p>
+        </div>
+        <span class="tier tier-review">Worth reviewing</span>
+        <span class="ddl-chip">18d left</span>
+      </article>
+      <article class="short-card reveal reveal-d3">
+        <span class="short-score num">58.5</span>
+        <div>
+          <h3 class="short-title">ERP application maintenance and second-level
+            support</h3>
+          <p class="short-meta">Comune di Bologna · IT · <span class="num">CPV 72267100-0</span> · value not published — scored neutral</p>
+        </div>
+        <span class="tier tier-possible">Possible</span>
+        <span class="ddl-chip">32d left</span>
+      </article>
+    </div>
+    <p class="sample-tag reveal reveal-d3">Sample shortlist — illustrative data</p>
+    <div class="digest-line reveal reveal-d3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="5.5" width="18" height="13" rx="2.5"/>
+        <path d="m3.8 7 8.2 6 8.2-6"/></svg>
+      <span>One daily digest email — only when there&rsquo;s something worth your
+        attention.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="section" id="how" aria-labelledby="how-h">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">How it works</p>
+      <h2 id="how-h">From official journal to <span class="accent">defensible decision</span></h2>
+      <p class="lede">Four steps, no black box. The order matters: the source is
+        official, the profile is yours, the scoring is deterministic, and the
+        verdict is explained.</p>
+    </div>
+    <ol class="steps">
+      <li class="step reveal">
+        <span class="step-glyph">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <ellipse cx="12" cy="6" rx="7.5" ry="3"/>
+            <path d="M4.5 6v12c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3V6"/>
+            <path d="M4.5 12c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3"/></svg>
+        </span>
+        <h3>TED, ingested daily</h3>
+        <p>Competition notices from Tenders Electronic Daily — the Publications
+          Office of the European Union — within a documented CPV scope.</p>
+      </li>
+      <li class="step reveal reveal-d1">
+        <span class="step-glyph">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="3.6"/>
+            <path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6"/></svg>
+        </span>
+        <h3>Your company profile</h3>
+        <p>CPV codes, capabilities, keywords, geography, value range, exclusions —
+          set once in onboarding, editable forever after.</p>
+      </li>
+      <li class="step reveal reveal-d2">
+        <span class="step-glyph">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5.5 9.5h13M5.5 14.5h13"/>
+            <path d="M12 3.5v2.6M12 17.9v2.6"/></svg>
+        </span>
+        <h3>Deterministic scoring</h3>
+        <p>Same input, same engine version, same score — every time. Eight
+          inspectable components, 0–100. No LLM anywhere in the scoring path.</p>
+      </li>
+      <li class="step reveal reveal-d3">
+        <span class="step-glyph">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 21V4"/>
+            <path d="M6 4h11.5l-2.6 4 2.6 4H6"/></svg>
+        </span>
+        <h3>Verdict + explanation</h3>
+        <p>Strong match, worth reviewing, or possible — with the reasoning for
+          every point, and a link to the original notice on TED.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ METHODOLOGY / WHY NOT AI ============ -->
+<section class="section trust" id="methodology" aria-labelledby="method-h">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Methodology</p>
+      <h2 id="method-h">Deterministic <span class="accent">on purpose</span></h2>
+      <p class="lede">The category sells &ldquo;AI-powered&rdquo; magic. A bid/no-bid
+        call you might defend to a managing partner deserves better: a scoring
+        engine you can audit, rerun, and disagree with — point by point.</p>
+    </div>
+    <div class="truth-cards">
+      <article class="truth-card reveal">
+        <h3>Unknowns are never guessed</h3>
+        <p>When a notice omits a value or a deadline, the affected component gets a
+          documented neutral score — half its maximum — and is marked
+          <strong>Unknown</strong> in the breakdown, with an explanation of what
+          was missing. Never zero, never a silent perfect match.</p>
+        <span class="quote-mono">Contract value · not published → 5.0 / 10 ·
+          marked &ldquo;Unknown&rdquo;</span>
+      </article>
+      <article class="truth-card reveal reveal-d1">
+        <h3>Risk flags quote their evidence</h3>
+        <p>Certifications, clearances, turnover thresholds, framework membership —
+          detected by deterministic pattern matches over the notice text, never an
+          LLM guess. Each flag quotes the exact source text it was found in.</p>
+        <span class="quote-mono">&ldquo;…certificering conform ISO/IEC 27001 is
+          vereist…&rdquo; → Confirmed pattern · ISO 27001 (sample)</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ONBOARDING ASSISTANT PREVIEW ============ -->
+<section class="section" id="onboarding" aria-labelledby="onboard-h">
+  <div class="wrap onboard-grid">
+    <div class="reveal">
+      <p class="eyebrow">Onboarding</p>
+      <h2 id="onboard-h">Your profile is the lens. <span class="accent">Grinding it takes minutes.</span></h2>
+      <p class="lede">Everything above depends on one thing: a profile that
+        actually describes your firm. The onboarding assistant walks four short
+        phases — Company, Coverage, Signals, Review — with four editable presets
+        to start from. Every field stays editable afterwards.</p>
+      <p>Widen or narrow the lens whenever you like: a quiet feed usually means a
+        narrow CPV list, and the methodology page tells you exactly why.</p>
+    </div>
+    <article class="onboard-panel glass reveal reveal-d1" aria-label="Onboarding assistant preview, phase 2 of 4">
+      <div class="onboard-top">
+        <strong>Set up your profile</strong>
+        <ol class="phases" aria-label="Setup phases">
+          <li class="phase phase-done">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m4.5 12.5 5 5 10-11"/></svg>
+            Company</li>
+          <li class="phase phase-live" aria-current="step">Coverage</li>
+          <li class="phase">Signals</li>
+          <li class="phase">Review</li>
+        </ol>
+      </div>
+      <div class="onboard-body">
+        <div class="ob-group">
+          <span class="ob-label">CPV families</span>
+          <div class="chip-row">
+            <span class="chip chip-solar chip-mono">72* IT services</span>
+            <span class="chip chip-solar chip-mono">48* software &amp; systems</span>
+            <span class="chip chip-mono">79417000 safety consultancy</span>
+            <span class="chip">+ add CPV</span>
+          </div>
+          <p class="ob-help">A narrow list keeps the feed quiet — you can widen it
+            any time.</p>
+        </div>
+        <div class="ob-group">
+          <span class="ob-label">Geographies</span>
+          <div class="chip-row">
+            <span class="chip">Netherlands</span>
+            <span class="chip">Germany</span>
+            <span class="chip">Belgium</span>
+            <span class="chip">Denmark</span>
+            <span class="chip">+ add country</span>
+          </div>
+        </div>
+        <div class="ob-group">
+          <span class="ob-label">Contract value band</span>
+          <div class="range-line">
+            <span>€100k</span>
+            <div class="range-track"><div class="range-fill"></div></div>
+            <span>€2M</span>
+          </div>
+        </div>
+      </div>
+      <div class="onboard-foot">
+        <span class="ob-help">Phase 2 of 4 · Coverage</span>
+        <span class="btn btn-solar btn-sm">Continue</span>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ============ TRUST STRIP ============ -->
+<section class="section trust" aria-labelledby="trust-h">
+  <div class="wrap">
+    <h2 id="trust-h" class="visually-hidden-h">Source, scope and limits</h2>
+    <div class="trust-grid">
+      <article class="trust-card reveal">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+             <circle cx="12" cy="12" r="8.5"/>
+             <path d="M12 3.5v17M3.5 12h17M6 6.5c3.6 2.4 8.4 2.4 12 0M6 17.5c3.6-2.4 8.4-2.4 12 0"/></svg>
+          Official source</h3>
+        <p>Source of procurement notices: Tenders Electronic Daily (TED),
+          Publications Office of the European Union. Reuse of TED data per
+          Commission Decision 2011/833/EU.</p>
+      </article>
+      <article class="trust-card reveal reveal-d1">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+             <circle cx="11" cy="11" r="6.5"/>
+             <path d="m15.8 15.8 4.2 4.2"/></svg>
+          Honest coverage</h3>
+        <p>Scoped, documented coverage — currently IT services (CPV 72*), software
+          packages and information systems (CPV 48*), and a small reviewed extras
+          list (safety consultancy, CPV 79417000). Not exhaustive EU coverage, and
+          we say so.</p>
+      </article>
+      <article class="trust-card reveal reveal-d2">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+             <path d="M12 3 4.5 6v5.5c0 4.6 3.1 7.9 7.5 9.5 4.4-1.6 7.5-4.9 7.5-9.5V6Z"/></svg>
+          Decision support, not promises</h3>
+        <p>BidMorrow is decision support — it does not guarantee eligibility,
+          compliance, award, or the completeness or accuracy of source notices.
+          Always verify requirements in the original procurement documents.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRICING (FROZEN SUBSTANCE) ============ -->
+<section class="section" id="pricing" aria-labelledby="pricing-h">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Pricing</p>
+      <h2 id="pricing-h">Two monthly plans. <span class="accent">Nothing hidden.</span></h2>
+      <p class="lede">Flat EUR pricing. No annual contract, no usage-based fees,
+        no hidden tiers.</p>
+    </div>
+    <div class="plans">
+      <article class="plan plan-founding reveal" aria-labelledby="plan-founding-h">
+        <span class="plan-cap">Founding — first 20 customers</span>
+        <h3 id="plan-founding-h">Founding plan</h3>
+        <div class="plan-price"><span class="amount num">€29</span>
+          <span class="per">/ month</span></div>
+        <p>Limited to our first 20 customers, while we run the founding pilot. The
+          founding price is retained for the life of your subscription — it never
+          auto-migrates to the standard price.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+               <path d="m4.5 12.5 5 5 10-11"/></svg>
+            The same product every customer gets — no separate pilot feature set</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+               <path d="m4.5 12.5 5 5 10-11"/></svg>
+            Direct access to the team building BidMorrow</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+               <path d="m4.5 12.5 5 5 10-11"/></svg>
+            Cancel any time from account settings</li>
+        </ul>
+        <a class="btn btn-solar" href="#">Join the founding pilot</a>
+      </article>
+      <article class="plan reveal reveal-d1" aria-labelledby="plan-standard-h">
+        <span class="plan-cap" aria-hidden="true">&nbsp;</span>
+        <h3 id="plan-standard-h">Standard plan</h3>
+        <div class="plan-price"><span class="amount num">€49</span>
+          <span class="per">/ month</span></div>
+        <p>Full access once the founding plan is full, or any time after.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+               <path d="m4.5 12.5 5 5 10-11"/></svg>
+            Same feed, matching engine, daily digest, and support</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+               <path d="m4.5 12.5 5 5 10-11"/></svg>
+            Monthly subscription via Stripe</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+               <path d="m4.5 12.5 5 5 10-11"/></svg>
+            Cancel any time from account settings</li>
+        </ul>
+        <a class="btn btn-quiet" href="#">Sign up</a>
+      </article>
+    </div>
+    <p class="plans-foot reveal reveal-d2">Both plans include the same feed,
+      matching engine, daily digest, and support.</p>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section depth-2" id="faq" aria-labelledby="faq-h">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">FAQ</p>
+      <h2 id="faq-h">Fair questions, straight answers</h2>
+    </div>
+    <div class="faq-list">
+      <details class="faq-item reveal">
+        <summary>Where does the data come from, and how fresh is it?</summary>
+        <div class="faq-body">
+          <p>Every notice comes from Tenders Electronic Daily (TED), the official
+            journal of EU public procurement, published by the Publications Office
+            of the European Union. BidMorrow ingests competition notices daily
+            within its documented CPV scope, and every match links back to the
+            original notice on TED so you can read the source documents.</p>
+        </div>
+      </details>
+      <details class="faq-item reveal reveal-d1">
+        <summary>Is BidMorrow AI-powered?</summary>
+        <div class="faq-body">
+          <p>No — deliberately. Scoring is deterministic and LLM-free: the same
+            notice, the same profile, and the same engine version always produce
+            the same score, and every component of every score is inspectable.
+            When data is missing from a notice, we apply a documented neutral
+            score and label the component &ldquo;Unknown&rdquo; — we never guess.</p>
+        </div>
+      </details>
+      <details class="faq-item reveal reveal-d2">
+        <summary>What does &ldquo;scoped coverage&rdquo; actually mean?</summary>
+        <div class="faq-body">
+          <p>BidMorrow ingests TED competition notices within a documented CPV
+            scope — currently IT services (CPV 72*), software packages and
+            information systems (CPV 48*), and a small reviewed extras list
+            (safety consultancy, CPV 79417000). A notice outside this scope is
+            never ingested or scored, regardless of how well it might otherwise
+            fit your profile. Before scoring, a CPV pre-filter also requires a
+            shared CPV division with your preferences — so keep your CPV list
+            honest and revisit it if your feed seems too quiet.</p>
+        </div>
+      </details>
+      <details class="faq-item reveal reveal-d3">
+        <summary>What are the billing terms?</summary>
+        <div class="faq-body">
+          <p>Monthly subscription via Stripe — cancel any time from account
+            settings. No annual contract, no usage-based fees, no hidden tiers.
+            Founding pricing (€29/month) is limited to the first 20 customers and
+            may not be available when you sign up; once you&rsquo;re on the
+            founding price, it&rsquo;s retained for the life of your
+            subscription.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MOBILE COMPOSITION ============ -->
+<section class="section" aria-labelledby="mobile-h">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Mobile</p>
+      <h2 id="mobile-h">The same descent, at 390 pixels</h2>
+      <p class="lede">The strata collapse gracefully: focal card first, breakdown
+        one tap away, onboarding thumb-reachable.</p>
+    </div>
+    <div class="phones">
+      <figure class="phone reveal">
+        <div class="phone-screen">
+          <div class="phone-status"><span class="num">09:41</span>
+            <span class="phone-notch" aria-hidden="true"></span>
+            <span class="num">5G</span></div>
+          <div class="phone-body">
+            <p class="eyebrow">EU procurement · TED</p>
+            <h3 class="m-h1">Find the tenders worth pursuing.
+              <span class="accent">Skip the rest.</span></h3>
+            <p class="m-sub">Bid/no-bid qualification intelligence for EU public
+              procurement — should a company like yours spend time on this
+              tender?</p>
+            <span class="m-btn">Join the founding pilot</span>
+            <p class="m-meta"><span>€29/mo founding — first 20</span>
+              <span>Cancel any time</span></p>
+          </div>
+        </div>
+        <figcaption class="phone-label">Hero — the promise in one screen</figcaption>
+      </figure>
+      <figure class="phone reveal reveal-d1">
+        <div class="phone-screen">
+          <div class="phone-status"><span class="num">09:41</span>
+            <span class="phone-notch" aria-hidden="true"></span>
+            <span class="num">5G</span></div>
+          <div class="phone-body">
+            <div class="m-card">
+              <p class="sample-tag">Sample</p>
+              <p class="m-title">Managed detection &amp; response services for
+                municipal IT infrastructure</p>
+              <p class="m-meta"><span>Gemeente Utrecht · NL</span>
+                <span class="num">€680,000</span><span class="num">25d left</span></p>
+              <div class="m-score-row">
+                <span class="m-score num">84.5</span>
+                <span class="verdict-chip">Pursue</span>
+              </div>
+            </div>
+            <div class="m-card">
+              <div class="brk-line"><span class="brk-name">CPV relevance</span>
+                <span class="brk-pts num">30.5/35</span></div>
+              <div class="bar"><i class="b-cpv"></i></div>
+              <div class="brk-line"><span class="brk-name">Geography</span>
+                <span class="brk-pts num">17.0/20</span></div>
+              <div class="bar"><i class="b-geo"></i></div>
+              <div class="brk-line"><span class="brk-name">Value fit</span>
+                <span class="brk-pts num">15.0/15</span></div>
+              <div class="bar"><i class="b-val"></i></div>
+              <div class="brk-line"><span class="brk-name">Deadline runway</span>
+                <span class="brk-pts num">8.0/10</span></div>
+              <div class="bar"><i class="b-ddl"></i></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="phone-label">Score card — verdict, then evidence</figcaption>
+      </figure>
+      <figure class="phone reveal reveal-d2">
+        <div class="phone-screen">
+          <div class="phone-status"><span class="num">09:41</span>
+            <span class="phone-notch" aria-hidden="true"></span>
+            <span class="num">5G</span></div>
+          <div class="phone-body">
+            <div class="m-phase-row">
+              <span class="phase phase-done">Company</span>
+              <span class="phase phase-live">Coverage</span>
+              <span class="phase">Signals</span>
+              <span class="phase">Review</span>
+            </div>
+            <div class="m-card">
+              <span class="ob-label">CPV families</span>
+              <div class="m-chip-row">
+                <span class="chip chip-solar chip-mono">72*</span>
+                <span class="chip chip-solar chip-mono">48*</span>
+                <span class="chip chip-mono">79417000</span>
+              </div>
+            </div>
+            <div class="m-card">
+              <span class="ob-label">Geographies</span>
+              <div class="m-chip-row">
+                <span class="chip">NL</span><span class="chip">DE</span>
+                <span class="chip">BE</span><span class="chip">DK</span>
+              </div>
+            </div>
+            <div class="m-card">
+              <span class="ob-label">Value band</span>
+              <div class="range-line"><span>€100k</span>
+                <div class="range-track"><div class="range-fill"></div></div>
+                <span>€2M</span></div>
+            </div>
+            <span class="m-btn">Continue</span>
+          </div>
+        </div>
+        <figcaption class="phone-label">Onboarding — four phases, thumb-first</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="wordmark" href="#" aria-label="BidMorrow home">
+          <svg class="mark" width="22" height="22" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+            <rect x="6.5" y="2.5" width="13" height="6" rx="3" fill="currentColor" opacity="0.28"/>
+            <rect x="4" y="9.5" width="18" height="6" rx="3" fill="currentColor" opacity="0.55"/>
+            <rect x="1.5" y="16.5" width="23" height="7" rx="3.5" fill="url(#solgrad-f)"/>
+            <defs>
+              <linearGradient id="solgrad-f" x1="1.5" y1="16.5" x2="24.5" y2="23.5">
+                <stop offset="0" stop-color="#FFB27A"/><stop offset="1" stop-color="#FF8896"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          BidMorrow
+        </a>
+        <p>Source of procurement notices: Tenders Electronic Daily (TED),
+          Publications Office of the European Union.</p>
+        <p>BidMorrow is decision support — it does not guarantee eligibility,
+          compliance, award, or the completeness or accuracy of source notices;
+          always verify requirements in the original procurement documents.</p>
+      </div>
+      <div>
+        <h4>BidMorrow</h4>
+        <ul class="footer-links">
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#methodology">Methodology</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="#">Sign in</a></li>
+        </ul>
+        <h4>Legal</h4>
+        <ul class="footer-links">
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="mailto:support@bidmorrow.com">support@bidmorrow.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-base">
+      <span>© 2026 BidMorrow</span>
+      <span>All tender data on this page is sample data, labeled as such.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* In production this block ships as a self-hosted file under
+   script-src 'self'. It only handles the theme toggle, motion-gated
+   reveals, and depth-rail wayfinding — the page is complete without it. */
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  var label = document.getElementById('theme-label');
+  var mqLight = window.matchMedia('(prefers-color-scheme: light)');
+
+  function applied() {
+    return root.getAttribute('data-theme') || (mqLight.matches ? 'light' : 'dark');
+  }
+  function sync() {
+    var mode = applied();
+    if (label) label.textContent = mode === 'dark' ? 'Dark' : 'Light';
+    if (btn) btn.setAttribute('aria-pressed', String(mode === 'light'));
+  }
+  if (btn) {
+    btn.addEventListener('click', function () {
+      root.setAttribute('data-theme', applied() === 'dark' ? 'light' : 'dark');
+      sync();
+    });
+    mqLight.addEventListener('change', sync);
+    sync();
+  }
+
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (!reduce.matches && 'IntersectionObserver' in window) {
+    root.classList.add('motion-ok');
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+  }
+
+  /* Depth-rail wayfinding — state change only, safe under reduced motion */
+  if ('IntersectionObserver' in window) {
+    var railMap = {
+      discover: document.getElementById('rail-discover'),
+      qualify: document.getElementById('rail-qualify'),
+      decide: document.getElementById('rail-decide')
+    };
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting && railMap[entry.target.id]) {
+          Object.keys(railMap).forEach(function (key) {
+            railMap[key].classList.toggle('is-active', key === entry.target.id);
+          });
+        }
+      });
+    }, { rootMargin: '-40% 0px -40% 0px' });
+    ['discover', 'qualify', 'decide'].forEach(function (id) {
+      var section = document.getElementById(id);
+      if (section) railIo.observe(section);
+    });
+  }
+})();
+</script>
+</body>
+</html>

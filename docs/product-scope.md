@@ -54,19 +54,21 @@ generic tender search.
 
 ## V1 scope — OUT (deliberate exclusions)
 
-| Excluded                                           | Why                                                                                                                                             |
-| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Non-TED sources (national portals, paid datasets)  | TED-only V1; `ProcurementSource` interface keeps the door open                                                                                  |
-| Contract **award** notices in matching             | Competition notices are the bid/no-bid input; awards deferred to future buyer-history enrichment                                                |
-| Exhaustive all-of-TED ingestion                    | D1 size limits + cost; scoped ingestion is the product promise (relevance, not completeness)                                                    |
-| LLM scoring / summaries                            | Cost, determinism, explainability; V1 must be auditable                                                                                         |
-| Machine translation                                | Cost; language-independent fields (CPV/NUTS/values/deadlines) dominate scoring; capability match marked UNKNOWN when no matchable-language text |
-| ML-driven score learning from feedback             | Opaque; V1 stores feedback and may later _suggest_ deterministic preference edits                                                               |
-| Multi-seat collaboration UX                        | Memberships modeled; UI deferred                                                                                                                |
-| Complex pricing tiers, annual plans, usage billing | Two monthly prices; schema supports future plans                                                                                                |
-| Mobile apps                                        | Responsive web only                                                                                                                             |
-| Session replay / third-party analytics             | Minimal first-party events only                                                                                                                 |
-| Public tender SEO pages                            | Risk of thin content + leaking customer relevance signals                                                                                       |
+| Excluded                                                | Why                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Non-TED sources (national portals, paid datasets)       | TED-only V1; `ProcurementSource` interface keeps the door open                                                                                                                                                                                                                                                                                                                                                |
+| Contract **award** notices in matching                  | Competition notices are the bid/no-bid input; awards deferred to future buyer-history enrichment                                                                                                                                                                                                                                                                                                              |
+| Exhaustive all-of-TED ingestion                         | D1 size limits + cost; scoped ingestion is the product promise (relevance, not completeness)                                                                                                                                                                                                                                                                                                                  |
+| LLM scoring / summaries                                 | Cost, determinism, explainability; V1 must be auditable                                                                                                                                                                                                                                                                                                                                                       |
+| Machine translation                                     | Cost; language-independent fields (CPV/NUTS/values/deadlines) dominate scoring; capability match marked UNKNOWN when no matchable-language text                                                                                                                                                                                                                                                               |
+| ML-driven score learning from feedback                  | Opaque; V1 stores feedback and may later _suggest_ deterministic preference edits                                                                                                                                                                                                                                                                                                                             |
+| Multi-seat collaboration UX                             | Memberships modeled; UI deferred                                                                                                                                                                                                                                                                                                                                                                              |
+| Complex pricing tiers, annual plans, usage billing      | Two monthly prices; schema supports future plans                                                                                                                                                                                                                                                                                                                                                              |
+| Mobile apps                                             | Responsive web only                                                                                                                                                                                                                                                                                                                                                                                           |
+| Session replay / third-party analytics                  | Minimal first-party events only                                                                                                                                                                                                                                                                                                                                                                               |
+| Programmatic/auto-generated public per-tender SEO pages | Thin content + leaks customer relevance signals; a tender has no universal fit score (the verdict depends on the supplier), and it creates ingestion/canonicalization/stale-notice/duplicate-content problems and the wrong acquisition loop before match quality is proven (owner decision 2026-08-17). A SMALL number of manually authored commercial category pages IS allowed — see "Product policy lock" |
+| Permanent free plan / self-serve free tier              | Would create abuse/cost exposure and undercut paid positioning; the controlled public sample-verdict demo replaces it (owner decision 2026-08-17)                                                                                                                                                                                                                                                             |
+| Automated 14/30-day SaaS free trial (at launch)         | Founding pilots are personally onboarded; a no-card manual 5-day validation is used instead (owner decision 2026-08-17)                                                                                                                                                                                                                                                                                       |
 
 ## Product-truth rules
 
@@ -107,3 +109,55 @@ generic tender search.
   (PROD-P7-01, Phase 7 review). Any future price change to an existing
   subscriber would require its own explicit, disclosed decision; none is
   planned for V1.
+
+## Product policy lock — owner decision 2026-08-17
+
+Settled in response to the competitive investigation
+(`docs/redesign/competitive-risk-assessment.md`). These are firm for V1;
+each is an owner decision, not to be re-litigated by implementation work.
+
+- **Pricing: NO CHANGE.** €29 Founding / €49 Standard, flat **EUR**,
+  retained. (The owner wrote the amounts with "$" in the directive; this
+  is shorthand for the existing euro pricing — currency was deliberately
+  set to EUR in live-mode Stripe on 2026-08-16, and a currency switch
+  would itself be a pricing change, which the directive forbids.) No
+  pricing experiments until at least ~10 serious sales conversations and
+  preferably the first 3–5 payments. Never discount below €29 to
+  manufacture validation ("a €5 customer does not validate a €49
+  product").
+- **Founding cap: first 25–50 customers** (owner-revised from 20),
+  price grandfathered while continuously subscribed. ACTION REQUIRED
+  before founding-cap copy ships: pick a single number in this range —
+  `copy.ts` currently says "first 20" and is locked by `app.test.ts`, so
+  the change updates the copy constant, the `founding_plan_open` cap, and
+  the test together.
+- **No permanent free plan / free tier.** No self-serve free access.
+- **No automated 14/30-day SaaS trial at launch.** Pilots are personally
+  onboarded; a **no-credit-card manual 5-day validation/pilot** is the
+  entry path.
+- **Public sample-verdict demo: IN (controlled).** A public,
+  no-signup demonstration — NOT a free version of the product. It shows a
+  small curated set (target 3–5) of sample verdicts spanning the real
+  outcome classes (Strong Match, Worth Reviewing, Low Fit, Excluded),
+  each with a real-or-sanitized tender, a representative supplier
+  profile, the score, the component breakdown, detected risk flags, the
+  recommendation, and the source link — then a single CTA of the form
+  "Get verdicts matched to your company." Hard boundaries (to prevent it
+  becoming a free tier or an abuse/cost vector): anonymous visitors may
+  NOT submit arbitrary tenders, create company profiles, receive alerts,
+  or reach the full feed. The acquisition advantage demonstrated is
+  **explainability** (why the decision was made), not "AI".
+- **Manually authored commercial category pages: IN (bounded).** A small
+  number — `/cybersecurity-tenders`, `/cloud-tenders`, later perhaps
+  `/software-development-tenders` — each a hand-written page explaining
+  the qualification methodology and showing sample verdicts. These are
+  NOT auto-generated tender directories.
+- **Programmatic public per-tender SEO pages: OUT for V1** (see the
+  exclusions table).
+- **Deterministic, explainable scoring: REQUIRED; no LLM in the core
+  scoring path in V1.** Source-backed risk flags, decomposable score,
+  engine versioning. An LLM may LATER summarize source documents or
+  extract candidate requirements, but must never silently manufacture the
+  verdict. This is the positioning spearhead against generic "AI tender
+  matching": we show exactly why a tender fits and what could disqualify
+  the supplier.

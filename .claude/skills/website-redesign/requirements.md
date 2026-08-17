@@ -23,6 +23,25 @@ model, storytelling device, personality) — not a re-skin of the above.
 
 - **Pricing frozen**: €29/€49 flat EUR, plan structure and substance
   unchanged. Presentation may be restyled; content/claims may not change.
+  Reaffirmed 2026-08-17 under competitive pressure (do NOT switch to USD;
+  "$" in owner directives is shorthand for the existing EUR pricing). No
+  pricing experiments until ~10 sales conversations + 3–5 payments; never
+  discount below €29.
+- **No free tier / no automated trial**; entry path is a no-card manual
+  5-day validation pilot, personally onboarded (owner 2026-08-17).
+- **Public sample-verdict demo is IN** (controlled, no-signup, 3–5
+  curated verdicts across Strong Match / Worth Reviewing / Low Fit /
+  Excluded, each fully explained with source link; CTA "Get verdicts
+  matched to your company"). It must NOT become a free tier: no anonymous
+  tender submission, profile creation, alerts, or full-feed access.
+- **Deterministic explainable scoring is REQUIRED**; no LLM in the core
+  scoring path in V1 (LLM later only for doc summarization/requirement
+  extraction, never manufacturing the verdict). Explainability — not
+  "AI" — is the acquisition advantage.
+- **Programmatic per-tender SEO pages OUT**; a small number of
+  manually-authored commercial category pages (`/cybersecurity-tenders`,
+  `/cloud-tenders`, later `/software-development-tenders`) is IN.
+  Full policy: `docs/product-scope.md` §Product policy lock (2026-08-17).
 - **Onboarding is the top UX priority** for the interface work.
 - **Visual character: macOS-INSPIRED** — refined typography, generous
   spacing, layered surfaces, elegant depth, tasteful translucency, soft
@@ -96,3 +115,58 @@ skill — never from memory.
 
 - 2026-08-17: Initial three directions rejected (see above); workflow
   restarted at research/creative exploration with this reusable system.
+- 2026-08-17 (~06:05 UTC): **Owner APPROVED Direction G — "Strata"**
+  ("i like strata"). ADOPTED for implementation. Reference mockup:
+  claude.ai/code/artifact/d841bf21-aafa-4634-bbb8-0ca92f280ff5 (source
+  committed at `docs/redesign/mockups/direction-g-strata.html`).
+  Character: dark-first ink-navy (#0C142E family) with warm solar
+  apricot→rose accent, fully designed daylight twin, tasteful glass with
+  reduced-transparency/no-backdrop-filter fallbacks, Sora display +
+  Hanken Grotesk body + JetBrains Mono data (self-hosted OFL, ≤90KB
+  total — measure at install; trim weights/axes to fit). The mockup's
+  in-page theme toggle is part of the approved design (supersedes the
+  earlier D5 "auto-only" default). Round-2 E "Verdict" and F "Daylight"
+  were NOT adopted (kept for the record; their research-backed devices —
+  e.g. the funnel-reduction narrative, live-demo honesty — may inform
+  Strata-styled sections only if they fit the Strata concept).
+  Implementation caveat (recorded at checkpoint): mockup score-anatomy
+  labels are illustrative — re-base all shipped score UI/demos on the
+  real engine components in `docs/matching-engine.md`.
+- 2026-08-17 (later): **Owner supplied new competitive intelligence and
+  gated further Strata implementation on a competitive-risk + sales
+  investigation.** Owner-reported (TO BE VERIFIED, not yet fact):
+  GetTenderAI — unlimited match scores from €235/month; Tenderium —
+  €9 pay-as-you-go tender risk scans + €99/month workspace; Stotles —
+  limited free bid/no-bid reporting. Owner's own read: the wedge is
+  being validated AND compressed (their internal score 91→90). Two
+  permanent agents created: `competitive-intelligence` and
+  `sales-strategist`. GATE: M0.1 technical foundations (tokens/fonts/
+  icons — positioning-neutral, already in flight) may land; M0.2 onward
+  and ALL positioning-sensitive work (copy, metadata, messaging,
+  pricing presentation) wait until the investigation is integrated into
+  the plan. Pricing substance remains FROZEN — competitive pressure does
+  not unfreeze it; any pricing/packaging response is an owner decision.
+- 2026-08-17 (~11:20 UTC): **Competitive investigation COMPLETE and
+  verified.** CI Playwright capture (branch `competitor-shots`) confirmed
+  the load-bearing snippet claims: Tendly (tendly.eu) is a real, distinct
+  competitor at €29/mo (credit-metered, LLM matching) — R1 High stands;
+  Tenderium's €9 PAYG scan is real but the site is pre-transactional
+  (invoice-only, "coming soon") — threat lowered. Full register:
+  `docs/redesign/competitive-risk-assessment.md`; positioning response:
+  `docs/redesign/sales-strategy.md`. Net: the deterministic/auditable moat
+  is intact; "explained score" is now table stakes so the claim escalates
+  to "auditable arithmetic you can re-run, not generated prose."
+- 2026-08-17 (~11:45 UTC): **Owner locked product policy** (full text:
+  `docs/product-scope.md` §Product policy lock). Decisions: pricing NO
+  CHANGE (€29/€49 EUR retained; "$" was shorthand); founding cap revised
+  to first 25–50 (pick a single number before that copy ships); no free
+  tier; no automated trial (no-card manual 5-day pilot instead); **public
+  sample-verdict demo IN** (controlled, not a free tier); manually
+  authored commercial category pages IN; programmatic per-tender SEO OUT;
+  **deterministic explainable scoring REQUIRED, no LLM in the core scoring
+  path in V1**. **GATE LIFTED**: with the investigation integrated and
+  policy locked, positioning-sensitive redesign work (messaging, the
+  sample-verdict demo, methodology/category pages, M0.2+) is UNBLOCKED and
+  proceeds under these decisions. Author identity for repo commits set to
+  the owner (Christos <cploutarchou@gmail.com>) per owner request; Claude
+  co-author trailers dropped going forward.

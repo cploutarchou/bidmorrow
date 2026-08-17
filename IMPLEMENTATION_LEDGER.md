@@ -67,8 +67,35 @@ agents, harness-verified, published as artifacts: E "Verdict"
 (claude.ai/code/artifact/4b25b255-84ff-46ce-8495-35a599ec106d), F
 "Daylight" (…/cb5f516a-5edf-41cb-a82d-d510439b8dce), G "Strata"
 (…/d841bf21-aafa-4634-bbb8-0ca92f280ff5). 13-item approval package
-presented; NOW WAITING for the owner's direction selection (MANDATORY
-STOP — no production-code changes until then). Known caveat for
+presented. **RESOLVED 2026-08-17 ~06:05 UTC: owner APPROVED Direction G
+"Strata"** — recorded in requirements.md §Decisions log. **Stage 4
+implementation STARTED**: M0 foundations running as sequential chunks
+(M0.1 Strata tokens + self-hosted fonts + icons + favicon; M0.2
+SEO artifacts + prerendering; M0.3 packages/i18n + copy.ts facade), each
+chunk gated → PR → merge on green, qa-reviewer verification per
+milestone. Pause conditions per requirements.md apply. **2026-08-17
+(~11:00 UTC) NEW GATE (owner)**: owner-supplied competitive intel
+(GetTenderAI €235/mo unlimited scores; Tenderium €9 PAYG scans +
+€99/mo; Stotles free limited bid/no-bid reporting — ALL to be verified)
+triggered a competitive-risk + sales-strategy investigation via two new
+permanent agents (`competitive-intelligence`, `sales-strategist`).
+M0.1 (positioning-neutral foundations, in flight) may land; M0.2+ and
+all positioning-sensitive work GATED until the investigation is
+integrated. Outputs: docs/redesign/competitive-risk-assessment.md +
+docs/redesign/sales-strategy.md. **RESOLVED 2026-08-17 ~11:45 UTC**:
+investigation complete + verified (Tendly €29 real via CI capture; R1
+High stands; Tenderium pre-transactional, lowered); owner locked product
+policy (docs/product-scope.md §Product policy lock + requirements.md
+Decisions log): sample-verdict demo IN, programmatic per-tender SEO OUT,
+manually-authored category pages IN, pricing €29/€49 EUR retained, free
+tier OUT, no automated trial, deterministic explainable scoring REQUIRED
+(no LLM in scoring path). **GATE LIFTED** — positioning-sensitive work
+unblocked. M0.1 (Strata tokens/fonts/icons) COMPLETE with green gates
+(font payload 80.89KB ≤ 90KB; unit 638 passed; e2e 25/25 incl. 9 axe
+scans zero serious/critical; build + CSP byte-exact test pass) —
+finalizing under owner authorship. Repo commit author set to owner
+(Christos <cploutarchou@gmail.com>); Claude trailers dropped. Known
+caveat for
 implementation: mockup score-anatomy labels are illustrative — re-base
 on the real engine components (docs/matching-engine.md) in M0. Phase
 12's state record kept below:

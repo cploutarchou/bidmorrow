@@ -81,6 +81,101 @@ See docs/ted-data-source.md (research recorded separately).
 Drizzle 1.0 (rc.4) · Better Auth 1.7 (rc.6) · Vitest 5 (rc.1) · TS 7 native.
 None adopted pre-stable; revisit at Phase 12.
 
+## Website redesign — M0.1 Strata design-system foundation (2026-08-17)
+
+Verified via the npm registry (`npm view <pkg> version`, per the
+verify-current-docs skill's approved source list) plus direct inspection of
+the installed package contents (README, shipped CSS, `dist/` source) —
+`fontsource.org`/`lucide.dev` doc pages were not reachable from this
+environment (no outbound web-fetch tool available to this session), so API
+syntax was confirmed empirically against the actual published package
+output rather than the docs site. Record superseded if a future session can
+cross-check against the live docs.
+
+| Package                               | Version | Role                                                                                                  | License |
+| ------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------- | ------- |
+| `lucide-react`                        | 1.31.0  | dependency — runtime UI icon components (not yet used in any component this chunk; available for M1+) | ISC     |
+| `@fontsource/sora`                    | 5.3.0   | devDependency — source of the vendored display-face woff2 (static 700 cut)                            | OFL-1.1 |
+| `@fontsource/hanken-grotesk`          | 5.3.0   | devDependency — source of the vendored body-face woff2s (static 400 + 700 cuts)                       | OFL-1.1 |
+| `@fontsource-variable/jetbrains-mono` | 5.3.0   | devDependency — source of the vendored mono-face woff2 (variable wght axis)                           | OFL-1.1 |
+
+Rationale: `lucide-react` — tree-shakable per-icon ESM, verified empirically
+(grepped the published dist) to contain zero runtime `<style>`-element
+injection, so it is clean under `style-src 'self'`; ISC license; React 19
+peer range confirmed in its `package.json`
+(`"react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0"`); named-export
+pattern confirmed by reading `dist/esm/lucide-react.mjs` directly
+(`import { IconName } from 'lucide-react'`). No icon is wired into a
+component yet — M0.1 only installs and records it per
+`docs/redesign/dependency-evaluation.md` item 1.
+
+Fonts — the three `@fontsource*` packages are **devDependencies only**:
+none of their JS/CSS is imported at runtime (their wholesale per-weight CSS
+is explicitly not used, per `docs/redesign/dependency-evaluation.md` item
+2). Instead, the specific woff2 files needed are copied once into
+`apps/web/src/assets/fonts/` (vendored, committed) and referenced by
+hand-written `@font-face` rules in `apps/web/src/styles.css`, imported via
+ordinary Vite-relative `url()` paths (processed by Vite's CSS asset
+pipeline — hashed in `pnpm build` output). The npm packages remain
+installed so the exact source version + OFL-1.1 license text
+(`apps/web/src/assets/fonts/LICENSE-*.txt`, copied from each package) stay
+traceable to a real, auditable upstream release rather than a hand-typed
+copy.
+
+**Font payload — measured (2026-08-17), not estimated:**
+
+| File shipped                                                                              | Face / weights covered                                                                                                                                     | Bytes                   |
+| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `sora-latin-700.woff2` (from `@fontsource/sora` `700.css`)                                | Sora, static 700 cut, declared `font-weight: 600 700` (covers h1–h4 @600 and the wordmark/price-amount @700 with one file)                                 | 15,128                  |
+| `hanken-grotesk-latin-400.woff2` (from `@fontsource/hanken-grotesk` `400.css`)            | Hanken Grotesk, static 400 cut, declared `font-weight: 400` (body copy)                                                                                    | 13,460                  |
+| `hanken-grotesk-latin-700.woff2` (from `@fontsource/hanken-grotesk` `700.css`)            | Hanken Grotesk, static 700 cut, declared `font-weight: 500 700` (covers nav-link @500, label/heading @600, and button @700 with one file)                  | 13,844                  |
+| `jetbrains-mono-latin-wght.woff2` (from `@fontsource-variable/jetbrains-mono` `wght.css`) | JetBrains Mono, variable wght axis, declared `font-weight: 100 800` (exact 400/500/700 — chip labels, score readouts, deadlines all need distinct weights) | 40,404                  |
+| **Total**                                                                                 |                                                                                                                                                            | **82,836 B ≈ 80.89 KB** |
+
+Budget: ≤90KB (requirements.md §Decisions log, 2026-08-17 Strata approval).
+**80.89 KB ships, 9.11 KB (≈10%) under budget.**
+
+Trimming decisions (why these specific files, not the alternatives also
+measured):
+
+- Display (Sora) and body (Hanken Grotesk) each ship **static single-weight
+  cuts with a `font-weight` range descriptor** rather than a full variable
+  file: a static cut is smaller per-weight, and declaring e.g.
+  `font-weight: 500 700` on the 700 cut makes the browser use that face for
+  any of 500/600/700 without triggering synthetic (fake) bold — the
+  trade-off is that those three weights render visually identical (all at
+  the 700 cut's boldness) instead of three distinct weights. Measured:
+  two static cuts (400 + range 500-700) = 27,304 B vs. the full variable
+  file = 34,704 B — static duo is 7,400 B cheaper. Applied the same
+  reasoning to Sora (single 700 cut covering 600 + 700) since Sora is only
+  ever used at those two weights.
+- Mono (JetBrains Mono) ships the **variable axis file instead of static
+  cuts**: measured the opposite way around — two static cuts (400 + range
+  500-700, 43,076 B) cost _more_ than the single variable file (40,404 B)
+  **and** the variable file gives exact 400/500/700 weights with no
+  collapsing. Since the mono face carries the score numerals (the
+  product's single most important on-page number) and chip labels where a
+  visible 500-vs-700 distinction matters most, exact weights were
+  prioritized here — and it was free to do so.
+- `latin-ext` subset files, italics, and weights 100–300/800–900 are not
+  shipped (not used by the approved mockup; English-only launch — re-add
+  `latin-ext` at i18n activation per
+  `docs/redesign/dependency-evaluation.md` item 2).
+- Full measured alternative-combination comparison performed before
+  settling on the above (all combinations use woff2 only, no woff
+  fallback — no supported target browser needs it):
+  - All-static (Sora 700 + Hanken 400+700 + Mono 400+700range): 85,508 B ≈
+    83.50 KB — fits, but loses mono weight fidelity for no size benefit
+    over the variable-mono option. Rejected in favor of the shipped combo.
+  - All-variable (Sora Variable + Hanken Grotesk Variable + JetBrains Mono
+    Variable): 33,652 + 34,704 + 40,404 = 108,760 B ≈ 106.21 KB — **over
+    budget**, rejected outright.
+  - Hanken variable instead of static duo (full body-weight fidelity) +
+    Sora static 700 + Mono variable: 34,704 + 15,128 + 40,404 = 90,236 B ≈
+    88.12 KB — fits with only 1.88 KB headroom; rejected as too fragile
+    (near-zero margin for the copy/spacing work still to come in M1–M3) in
+    favor of the shipped 80.89 KB combination.
+
 ## Unverified / to re-check when network allows
 
 - Resend pricing tiers (free 3k/mo, $20/50k figures from secondary sources).
