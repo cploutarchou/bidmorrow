@@ -1,0 +1,110 @@
+# Phase 13 ops drills on STAGING (docs/deployment.md "Rollback strategy"):
+# dispatchable rollback + D1 Time Travel operations, run from CI because the
+# session sandbox has no Cloudflare data-plane access. Same guard-rail shape
+# as staging-flag.yml: fixed choice inputs, re-validated in-job, values only
+# ever passed through quoted environment variables.
+#
+# Wrangler syntax verified against the pinned 4.123.0 CLI itself:
+#   wrangler rollback [version-id] -m <msg> -y   (-y = accept defaults, i.e.
+#     the previous version, non-interactively)
+#   wrangler d1 time-travel info <db> --json
+#   wrangler d1 time-travel restore <db> --timestamp <RFC3339|unix> --json
+name: Staging ops
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Operation'
+        required: true
+        type: choice
+        options:
+          - deployments-list
+          - rollback-previous
+          - d1-time-travel-info
+          - d1-time-travel-restore
+      timestamp:
+        description: 'RFC3339 UTC restore point (d1-time-travel-restore only), e.g. 2026-08-16T13:00:00Z'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-ops
+  cancel-in-progress: false
+
+jobs:
+  ops:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      OPERATION: ${{ inputs.operation }}
+      RESTORE_TIMESTAMP: ${{ inputs.timestamp }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate inputs (defense in depth)
+        run: |
+          case "$OPERATION" in
+            deployments-list|rollback-previous|d1-time-travel-info|d1-time-travel-restore) ;;
+            *) echo "bad operation"; exit 1;;
+          esac
+          if [ "$OPERATION" = "d1-time-travel-restore" ]; then
+            echo "$RESTORE_TIMESTAMP" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$' \
+              || { echo "d1-time-travel-restore requires an RFC3339 UTC timestamp input"; exit 1; }
+          fi
+
+      - name: Run operation
+        working-directory: apps/worker
+        run: |
+          case "$OPERATION" in
+            deployments-list)
+              pnpm exec wrangler deployments list --env staging
+              ;;
+            rollback-previous)
+              pnpm exec wrangler rollback --env staging --message "staging rollback drill (staging-ops workflow)" -y
+              echo "--- deployments after rollback ---"
+              pnpm exec wrangler deployments list --env staging
+              ;;
+            d1-time-travel-info)
+              pnpm exec wrangler d1 time-travel info bidmorrow-staging --env staging --json
+              ;;
+            d1-time-travel-restore)
+              echo "restoring bidmorrow-staging to $RESTORE_TIMESTAMP"
+              # `echo y |` guards against a confirmation prompt; wrangler is
+              # non-interactive in CI but the guard costs nothing.
+              echo y | pnpm exec wrangler d1 time-travel restore bidmorrow-staging --env staging --timestamp "$RESTORE_TIMESTAMP" --json
+              echo "--- bookmark after restore ---"
+              pnpm exec wrangler d1 time-travel info bidmorrow-staging --env staging --json
+              echo "--- ingestion_paused after restore (drill marker) ---"
+              pnpm exec wrangler d1 execute bidmorrow-staging --env staging --remote --command "SELECT key, value_json, updated_at FROM feature_flags WHERE key = 'ingestion_paused'"
+              ;;
+          esac
+
+      - name: Health check after rollback
+        if: ${{ inputs.operation == 'rollback-previous' }}
+        run: |
+          base="https://staging.bidmorrow.com"
+          echo "health check: $base"
+          curl -sf "$base/api/health/live" | grep -q '"ok"'
+          curl -sf "$base/api/health/ready" | grep -q '"ok"'
+          echo "staging healthy on rolled-back version — roll forward by dispatching the Deploy staging workflow"

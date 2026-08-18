@@ -1,0 +1,11 @@
+-- 0001_init — Phase 2 bootstrap migration (intentionally near-empty).
+--
+-- Purpose: make `wrangler d1 migrations apply bidmorrow --local` and the
+-- vitest-pool-workers migration path (readD1Migrations/applyD1Migrations)
+-- succeed against a completely empty database before the real schema exists.
+--
+-- Phase 3 replaces this bootstrap: the real application schema arrives as
+-- new numbered migrations (0002+). Per migration-safety rules, this file
+-- must never be edited or deleted once applied anywhere — Phase 3 may drop
+-- the _bootstrap table in a follow-up migration instead.
+CREATE TABLE IF NOT EXISTS _bootstrap (id INTEGER PRIMARY KEY CHECK (id = 1));

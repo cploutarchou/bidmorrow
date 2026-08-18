@@ -1,0 +1,21 @@
+// Test-only Wrangler config for @bidmorrow/db integration tests.
+//
+// The repository tests run inside workerd via @cloudflare/vitest-pool-workers
+// and only need the D1 binding — no entrypoint, assets, or routes. A minimal
+// local config is used instead of reusing apps/worker/wrangler.jsonc so the
+// db package's tests carry no dependency on the worker's assets directory or
+// entry module (see packages/db/vitest.config.ts).
+{
+  "$schema": "../../apps/worker/node_modules/wrangler/config-schema.json",
+  "name": "bidmorrow-db-tests",
+  "compatibility_date": "2026-08-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bidmorrow-db-tests",
+      // Tests always run against isolated local storage; never a remote DB.
+      "database_id": "local-test-placeholder",
+      "migrations_dir": "../../migrations",
+    },
+  ],
+}

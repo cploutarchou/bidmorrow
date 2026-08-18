@@ -1,0 +1,257 @@
+// BidMorrow Worker configuration.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bidmorrow",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-01",
+  // nodejs_compat is required by Better Auth (AsyncLocalStorage) — ADR-0002.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "../web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bidmorrow",
+      // Local development and tests never talk to a remote database; wrangler
+      // uses local storage in dev, so this ID is a placeholder until deploy.
+      "database_id": "local-placeholder",
+      "migrations_dir": "../../migrations",
+    },
+  ],
+  // Native Workers rate-limit binding (docs/security.md C7) for `/api/org/*`
+  // — in addition to Better Auth's own database-storage limiter on
+  // `/api/auth/*`. Staging/production use 100 requests / 60s per client IP
+  // (see the env blocks below); middleware tolerates a missing binding
+  // (see src/middleware/rate-limit.ts) — validate this limit against real
+  // staging traffic before tightening it.
+  //
+  // This top-level block only ever applies to LOCAL `wrangler dev` (deploys
+  // always use --env staging/--env production), where every request shares
+  // one key ('unknown' — no cf-connecting-ip without Cloudflare's edge) and
+  // the Playwright E2E journey alone exceeds 100 requests/min; a deliberately
+  // high local limit keeps the middleware exercised end-to-end without
+  // false-limiting the test run.
+  "ratelimits": [
+    {
+      "name": "API_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 5000, "period": 60 },
+    },
+  ],
+  // Raw eForms XML snapshots (ADR-0005) — private, per-environment bucket.
+  // `bidmorrow-snapshots*` buckets are created via the Cloudflare MCP
+  // connector at first deploy of each environment (HUMAN_DECISION_BLOCKERS
+  // item 1); local/test dev use miniflare's local R2 simulator, no real
+  // bucket needed.
+  "r2_buckets": [
+    {
+      "binding": "SNAPSHOTS",
+      "bucket_name": "bidmorrow-snapshots-local",
+    },
+  ],
+  // Ingestion run queue (ADR-0006): the daily cron enqueues one `ingest`
+  // message; `queue()` in src/index.ts processes it. Bounded batch + bounded
+  // retries + DLQ so a poison message can never wedge the queue.
+  // MATCH_QUEUE (Phase 6): the ingest queue consumer enqueues `score`/
+  // `recompute` messages after a successful/partial ingestion window; its
+  // own consumer runs the matching engine. Same bounded-batch/DLQ shape.
+  // DIGEST_QUEUE (Phase 8): the hourly digest cron enqueues one
+  // `{kind:'digest', organizationId, localDate}` message per org due for a
+  // digest; its own consumer runs `@bidmorrow/notifications` generateDigest.
+  // Same bounded-batch/DLQ shape.
+  "queues": {
+    "producers": [
+      { "queue": "bidmorrow-ingest-local", "binding": "INGEST_QUEUE" },
+      { "queue": "bidmorrow-match-local", "binding": "MATCH_QUEUE" },
+      { "queue": "bidmorrow-digest-local", "binding": "DIGEST_QUEUE" },
+    ],
+    "consumers": [
+      {
+        "queue": "bidmorrow-ingest-local",
+        "max_batch_size": 10,
+        "max_retries": 3,
+        "dead_letter_queue": "bidmorrow-ingest-dlq-local",
+      },
+      {
+        "queue": "bidmorrow-match-local",
+        "max_batch_size": 10,
+        "max_retries": 3,
+        "dead_letter_queue": "bidmorrow-match-dlq-local",
+      },
+      {
+        "queue": "bidmorrow-digest-local",
+        "max_batch_size": 10,
+        "max_retries": 3,
+        "dead_letter_queue": "bidmorrow-digest-dlq-local",
+      },
+    ],
+  },
+  // Cron triggers (UTC): daily ingestion catch-up, daily retention purge, a
+  // stale-ingestion watchdog, and an hourly digest scheduling pass
+  // (docs/architecture.md background paths; the digest cron runs hourly,
+  // not daily, because org-local send times roll over at different UTC
+  // hours — see src/index.ts's CRON_DIGEST_SCHEDULE comment).
+  "triggers": {
+    "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *"],
+  },
+  // Non-secret config vars. Secrets (BETTER_AUTH_SECRET, RESEND_API_KEY) are
+  // NEVER put here: local dev reads them from `.dev.vars` (git-ignored —
+  // see .dev.vars.example), staging/production from `wrangler secret put
+  // <NAME> --env <env>` (HUMAN_DECISION_BLOCKERS.md item 5).
+  "vars": {
+    "APP_ENV": "local",
+    "APP_BASE_URL": "http://localhost:8787",
+    "BETTER_AUTH_URL": "http://localhost:8787",
+  },
+  "env": {
+    "staging": {
+      // staging.bidmorrow.com attaches as a Workers custom domain
+      // automatically at deploy (wrangler creates the zone's DNS record +
+      // certificate itself — same mechanism as production's apex; error
+      // 100117 means a pre-existing `staging` DNS record must be deleted
+      // first). workers_dev off: one canonical origin per environment
+      // (auth cookies, Stripe webhook URL stability).
+      "workers_dev": false,
+      "routes": [{ "pattern": "staging.bidmorrow.com", "custom_domain": true }],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "bidmorrow-staging",
+          // Real staging DB, created 2026-08-16 via the Cloudflare MCP
+          // connector (WEUR primary). Never share databases across envs.
+          "database_id": "cd51fe7b-6b12-48b4-ae94-84205c3de99a",
+          "migrations_dir": "../../migrations",
+        },
+      ],
+      // SEC-P4-01: wrangler named environments do NOT inherit bindings from
+      // the top level — this must be redeclared identically here and kept
+      // in sync with the top-level `ratelimits` block above.
+      "ratelimits": [
+        {
+          "name": "API_RATE_LIMITER",
+          "namespace_id": "1001",
+          "simple": { "limit": 100, "period": 60 },
+        },
+      ],
+      // Distinct bucket/queue names per environment — never shared across envs.
+      "r2_buckets": [
+        {
+          "binding": "SNAPSHOTS",
+          "bucket_name": "bidmorrow-snapshots-staging",
+        },
+      ],
+      "queues": {
+        "producers": [
+          { "queue": "bidmorrow-ingest-staging", "binding": "INGEST_QUEUE" },
+          { "queue": "bidmorrow-match-staging", "binding": "MATCH_QUEUE" },
+          { "queue": "bidmorrow-digest-staging", "binding": "DIGEST_QUEUE" },
+        ],
+        "consumers": [
+          {
+            "queue": "bidmorrow-ingest-staging",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "bidmorrow-ingest-dlq-staging",
+          },
+          {
+            "queue": "bidmorrow-match-staging",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "bidmorrow-match-dlq-staging",
+          },
+          {
+            "queue": "bidmorrow-digest-staging",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "bidmorrow-digest-dlq-staging",
+          },
+        ],
+      },
+      "triggers": {
+        "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *"],
+      },
+      "vars": {
+        "APP_ENV": "staging",
+        "APP_BASE_URL": "https://staging.bidmorrow.com",
+        "BETTER_AUTH_URL": "https://staging.bidmorrow.com",
+      },
+    },
+    "production": {
+      // bidmorrow.com attaches as a Workers custom domain automatically at
+      // the FIRST production deploy — wrangler creates the zone's DNS record
+      // and certificate itself (docs/deployment.md "Custom domain & DNS").
+      // Until that deploy, the zone Overview showing "No Workers connected"
+      // is expected, not an error. Never connect the staging worker to the
+      // zone. workers_dev off: production is reachable only on the canonical
+      // origin (auth cookies, CSP, no duplicate workers.dev origin).
+      "workers_dev": false,
+      "routes": [{ "pattern": "bidmorrow.com", "custom_domain": true }],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "bidmorrow-production",
+          // Real production DB, created by deploy-production run #1
+          // (2026-08-16, WEUR primary; id from the run's PRODUCTION_D1_ID
+          // log line). Never share databases across envs.
+          "database_id": "cd5f6ceb-3262-4ba9-a5f4-4c1ed43e27bb",
+          "migrations_dir": "../../migrations",
+        },
+      ],
+      // SEC-P4-01: wrangler named environments do NOT inherit bindings from
+      // the top level — this must be redeclared identically here and kept
+      // in sync with the top-level `ratelimits` block above.
+      "ratelimits": [
+        {
+          "name": "API_RATE_LIMITER",
+          "namespace_id": "1001",
+          "simple": { "limit": 100, "period": 60 },
+        },
+      ],
+      "r2_buckets": [
+        {
+          "binding": "SNAPSHOTS",
+          "bucket_name": "bidmorrow-snapshots-production",
+        },
+      ],
+      "queues": {
+        "producers": [
+          { "queue": "bidmorrow-ingest-production", "binding": "INGEST_QUEUE" },
+          { "queue": "bidmorrow-match-production", "binding": "MATCH_QUEUE" },
+          { "queue": "bidmorrow-digest-production", "binding": "DIGEST_QUEUE" },
+        ],
+        "consumers": [
+          {
+            "queue": "bidmorrow-ingest-production",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "bidmorrow-ingest-dlq-production",
+          },
+          {
+            "queue": "bidmorrow-match-production",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "bidmorrow-match-dlq-production",
+          },
+          {
+            "queue": "bidmorrow-digest-production",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "bidmorrow-digest-dlq-production",
+          },
+        ],
+      },
+      "triggers": {
+        "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *"],
+      },
+      "vars": {
+        "APP_ENV": "production",
+        "APP_BASE_URL": "https://bidmorrow.com",
+        "BETTER_AUTH_URL": "https://bidmorrow.com",
+      },
+    },
+  },
+}

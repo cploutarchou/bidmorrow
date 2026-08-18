@@ -1,0 +1,118 @@
+import { useState, type FormEvent, type ReactElement } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router';
+import { useAuth } from '../../lib/auth-context';
+import { resolvePostAuthDestination } from '../../lib/post-auth-route';
+import { AuthLayout } from './AuthLayout';
+
+interface SignInErrorBody {
+  code?: string;
+  message?: string;
+}
+
+export function Login(): ReactElement {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { refresh } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    setError(null);
+    setNeedsVerification(false);
+    setSubmitting(true);
+    try {
+      const response = await fetch('/api/auth/sign-in/email', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as SignInErrorBody;
+        if (response.status === 403 && body.code === 'EMAIL_NOT_VERIFIED') {
+          setNeedsVerification(true);
+        } else {
+          setError(body.message ?? 'Could not sign in — check your email and password.');
+        }
+        return;
+      }
+      await refresh();
+      // R1 (docs/redesign/ux-strategy.md §1.3): route by state, not a fixed
+      // URL — an explicit `returnTo` wins, else a new/incomplete profile
+      // lands on /onboarding instead of hitting the feed's 403 dead-end.
+      const destination = await resolvePostAuthDestination(searchParams.get('returnTo'));
+      void navigate(destination);
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function resendVerification(): Promise<void> {
+    // Same callbackURL fix as Signup.tsx — see its comment (carries
+    // `?email=` through so VerifyEmail can show the resend affordance).
+    const verifyEmailPath = `/verify-email?email=${encodeURIComponent(email)}`;
+    await fetch('/api/auth/send-verification-email', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, callbackURL: verifyEmailPath }),
+    });
+    void navigate(verifyEmailPath);
+  }
+
+  return (
+    <AuthLayout title="Log in">
+      <form onSubmit={(event) => void onSubmit(event)} noValidate>
+        {error !== null && (
+          <p role="alert" className="form-error">
+            {error}
+          </p>
+        )}
+        {needsVerification && (
+          <p role="alert" className="form-warning">
+            Please verify your email before logging in.{' '}
+            <button type="button" className="link-button" onClick={() => void resendVerification()}>
+              Resend verification email
+            </button>
+          </p>
+        )}
+        <div className="form-field">
+          <label htmlFor="login-email">Email</label>
+          <input
+            id="login-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </div>
+        <div className="form-field">
+          <label htmlFor="login-password">Password</label>
+          <input
+            id="login-password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </div>
+        <button className="cta" type="submit" disabled={submitting}>
+          {submitting ? 'Logging in…' : 'Log in'}
+        </button>
+      </form>
+      <p>
+        <Link to="/forgot-password">Forgot your password?</Link>
+      </p>
+    </AuthLayout>
+  );
+}

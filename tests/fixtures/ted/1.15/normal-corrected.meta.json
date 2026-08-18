@@ -1,0 +1,11 @@
+{
+  "source": "derived from normal.xml (see 1.15/normal.meta.json for the original SDK-example provenance)",
+  "sourceNoticeId": null,
+  "publicationDate": null,
+  "retrievalDate": "2026-08-14",
+  "sdkVersion": "1.15",
+  "sdkGitTag": "1.15.1",
+  "case": "Phase 5 stage B integration fixture: a correction/new-version of normal.xml for the same notice-id (c4c415ee-ac08-4465-8fa6-57568cf69462). Used by apps/worker/src/ingestion.d1.test.ts to prove a re-ingested notice with changed content creates tender_notice_versions row #2 while version #1 remains immutable.",
+  "origin": "Derived fixture, not an independent OP-TED example.",
+  "sanitization": "Identical to normal.xml except: cbc:VersionID bumped 01 -> 02, and both cbc:Name (procedure-level and lot-level) elements have \" (Corrected)\" appended. No other bytes changed."
+}

@@ -1,0 +1,6 @@
+# gitleaks false-positive allowlist.
+#
+# One fingerprint per line, as printed by gitleaks in its findings output
+# (format: <commit>:<file>:<rule-id>:<line>). Only add entries for confirmed
+# false positives, with a brief justification comment above each. Never
+# allowlist a real secret — rotate it instead.

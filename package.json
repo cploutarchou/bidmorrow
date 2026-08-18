@@ -1,0 +1,39 @@
+{
+  "name": "bidmorrow",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Bid/no-bid qualification intelligence for EU public procurement",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r --no-bail run typecheck",
+    "test": "vitest run && pnpm --filter @bidmorrow/worker test && pnpm --filter @bidmorrow/db test",
+    "test:watch": "vitest",
+    "build": "pnpm --filter @bidmorrow/web build && pnpm --filter @bidmorrow/worker build",
+    "dev": "pnpm --filter @bidmorrow/worker dev",
+    "db:migrate:local": "pnpm --filter @bidmorrow/worker db:migrate:local",
+    "test:e2e": "playwright test"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ]
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "^9.34.0",
+    "@playwright/test": "^1.62.0",
+    "eslint": "^9.34.0",
+    "eslint-config-prettier": "^10.1.0",
+    "prettier": "^3.6.0",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.40.0",
+    "vitest": "^4.1.0"
+  }
+}

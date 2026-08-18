@@ -1,0 +1,66 @@
+# Phase 13 ops helper: flip a boolean feature flag on the STAGING D1 from
+# CI (the sandbox's Cloudflare MCP connector cannot run data-plane queries,
+# and admin-UI login on staging needs Resend for email verification).
+# Guard rails: key is a fixed choice list, value must be true/false — both
+# are interpolated only after validation, and only repo admins can dispatch.
+name: Staging flag
+
+on:
+  workflow_dispatch:
+    inputs:
+      key:
+        description: 'Feature flag key'
+        required: true
+        type: choice
+        options:
+          - ingestion_paused
+          - digest_paused
+          - stripe_tax_enabled
+      value:
+        description: 'Boolean value'
+        required: true
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: read
+
+jobs:
+  set-flag:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      FLAG_KEY: ${{ inputs.key }}
+      FLAG_VALUE: ${{ inputs.value }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate inputs (defense in depth)
+        run: |
+          case "$FLAG_KEY" in ingestion_paused|digest_paused|stripe_tax_enabled) ;; *) echo "bad key"; exit 1;; esac
+          case "$FLAG_VALUE" in true|false) ;; *) echo "bad value"; exit 1;; esac
+
+      - name: Set flag
+        working-directory: apps/worker
+        run: |
+          pnpm exec wrangler d1 execute bidmorrow-staging --env staging --remote --command "INSERT INTO feature_flags (id, key, value_json, description, created_at, updated_at) SELECT lower(hex(randomblob(13))), '$FLAG_KEY', '$FLAG_VALUE', 'Set via staging-flag workflow', CAST(strftime('%s','now') AS INTEGER)*1000, CAST(strftime('%s','now') AS INTEGER)*1000 WHERE NOT EXISTS (SELECT 1 FROM feature_flags WHERE key = '$FLAG_KEY')"
+          pnpm exec wrangler d1 execute bidmorrow-staging --env staging --remote --command "UPDATE feature_flags SET value_json = '$FLAG_VALUE', updated_at = CAST(strftime('%s','now') AS INTEGER)*1000 WHERE key = '$FLAG_KEY'"
+          pnpm exec wrangler d1 execute bidmorrow-staging --env staging --remote --command "SELECT key, value_json, updated_at FROM feature_flags WHERE key = '$FLAG_KEY'"
