@@ -456,6 +456,17 @@ footer p {
   padding: 1.5rem;
 }
 
+/* A flow-level CTA rendered directly in the shared marketing text column
+   (Pilot's "Start the founding pilot") needs its own breathing room:
+   `.cta` itself is deliberately margin-free because it also serves auth
+   submit rows, plan-card grids, and app toolbars where the CONTAINER owns
+   spacing — but as a direct flow child nothing else separates it from the
+   content above, so it renders flush against the preceding card/list
+   (owner-reported, responsive-qa 2026-08-18). */
+#main-content > .cta {
+  margin-block-start: var(--s6);
+}
+
 /* --- Forms --- */
 .form-field {
   display: flex;
