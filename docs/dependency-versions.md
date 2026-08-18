@@ -56,6 +56,18 @@ skill before relying on any entry older than ~1 month.
   `invoice.paid`, `invoice.payment_failed`.
 - Ordering NOT guaranteed; at-least-once delivery → dedupe on event ID +
   re-fetch object state from the API instead of trusting payload order.
+- Client billing surface (2026-08-18, verified against the installed
+  `stripe@22.5.0` SDK types — inline citations in
+  `packages/billing/src/{stripe-types,invoices}.ts`):
+  `invoices.list({customer, limit})` (`InvoiceListParams` extends
+  `PaginationParams`, limit 1–100); `Invoice.period_start`/`period_end`/
+  `hosted_invoice_url`/`invoice_pdf`/`amount_due`/`amount_paid`/`number`/
+  `status`/`currency`/`created` are top-level fields;
+  `SubscriptionUpdateParams.cancel_at_period_end?: boolean` serves both
+  user cancel (true) and reactivate (false). Invoice list ordering
+  (reverse-chronological default) was cross-checked via WebSearch only —
+  docs.stripe.com is egress-blocked from this sandbox; the UI re-sorts
+  nothing and displays what the API returns.
 
 ## Better Auth facts
 

@@ -59,6 +59,16 @@ export interface ListInvoicesResult {
   readonly hasBillingCustomer: boolean;
 }
 
+/**
+ * Defense-in-depth (SEC BILL-R1-03): invoice URLs come from Stripe via our
+ * server (never tenant-controlled), but they end up in client hrefs — pass
+ * through only https URLs so a provider-side anomaly can never yield a
+ * javascript:/data: link by construction.
+ */
+function httpsUrlOrNull(value: string | null | undefined): string | null {
+  return typeof value === 'string' && value.startsWith('https://') ? value : null;
+}
+
 function toSummary(invoice: Stripe.Invoice): InvoiceSummary {
   return {
     id: invoice.id ?? '',
@@ -70,8 +80,8 @@ function toSummary(invoice: Stripe.Invoice): InvoiceSummary {
     createdAt: invoice.created * 1000,
     periodStartAt: invoice.period_start * 1000,
     periodEndAt: invoice.period_end * 1000,
-    hostedInvoiceUrl: invoice.hosted_invoice_url ?? null,
-    invoicePdf: invoice.invoice_pdf ?? null,
+    hostedInvoiceUrl: httpsUrlOrNull(invoice.hosted_invoice_url),
+    invoicePdf: httpsUrlOrNull(invoice.invoice_pdf),
   };
 }
 
