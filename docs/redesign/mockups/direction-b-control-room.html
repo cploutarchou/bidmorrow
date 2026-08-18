@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BidMorrow Control Room</title>
+<style>
+  /* Direction B commits to a single dark world — every color painted explicitly. */
+  :root {
+    --ground: #0b0d11;
+    --panel: #12151b;
+    --panel-raised: #161a22;
+    --ink: #e8edf4;
+    --muted: #8b94a7;
+    --hairline: #1f242e;
+    --rule: #2a303d;
+    --accent: #35d3c0;
+    --on-accent: #062723;
+    --strong: #4ade80;
+    --risk: #f87171;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--sans); font-size: 1rem; line-height: 1.55;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(139, 148, 167, 0.045) 0 1px, transparent 1px 64px),
+      repeating-linear-gradient(90deg, rgba(139, 148, 167, 0.045) 0 1px, transparent 1px 64px);
+  }
+  .wrap { max-width: 70rem; margin-inline: auto; padding-inline: 1.5rem; }
+  a { color: var(--accent); }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .mock-note {
+    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); border-bottom: 1px solid var(--hairline); padding-block: 0.5rem;
+    background: var(--ground);
+  }
+  .mock-note .wrap { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+
+  header.site { border-bottom: 1px solid var(--hairline); background: rgba(11, 13, 17, 0.85); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 10; }
+  header.site .wrap { display: flex; align-items: center; gap: 1.75rem; flex-wrap: wrap; padding-block: 0.9rem; }
+  .wordmark { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em; color: var(--ink); text-decoration: none; }
+  .wordmark::after { content: "_"; color: var(--accent); }
+  nav.main { display: flex; gap: 1.4rem; flex-wrap: wrap; margin-right: auto; }
+  nav.main a { color: var(--muted); text-decoration: none; font-size: 0.92rem; }
+  nav.main a:hover { color: var(--ink); }
+  .nav-cta { display: flex; gap: 1rem; align-items: center; }
+  .nav-cta .login { color: var(--ink); font-size: 0.92rem; text-decoration: none; }
+  .btn {
+    display: inline-block; text-decoration: none; font-weight: 600; font-size: 0.95rem;
+    padding: 0.55rem 1.2rem; border-radius: 8px; border: 1px solid var(--accent);
+  }
+  .btn-primary { background: var(--accent); color: var(--on-accent); }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-quiet { color: var(--accent); background: transparent; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 1rem;
+  }
+
+  .hero { position: relative; overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(60rem 30rem at 75% 10%, rgba(53, 211, 192, 0.1), transparent 60%);
+  }
+  .hero .wrap {
+    position: relative; display: grid; gap: 3rem; padding-block: 4.5rem;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); align-items: center;
+  }
+  @media (max-width: 56rem) { .hero .wrap { grid-template-columns: 1fr; padding-block: 3rem; } }
+  .hero h1 {
+    font-size: clamp(2.4rem, 5.2vw, 3.5rem); line-height: 1.06; letter-spacing: -0.025em;
+    font-weight: 700; margin: 0 0 1.25rem; text-wrap: balance;
+  }
+  .hero .sub { font-size: 1.12rem; color: var(--muted); max-width: 32rem; margin: 0 0 2rem; }
+  .hero .sub strong { color: var(--ink); font-weight: 600; }
+  .cta-row { display: flex; gap: 1.1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.1rem; }
+  .trust-line { font-family: var(--mono); font-size: 0.76rem; color: var(--muted); letter-spacing: 0.02em; }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 10px;
+    box-shadow: 0 0 0 1px rgba(53, 211, 192, 0.06), 0 24px 60px rgba(0, 0, 0, 0.5);
+  }
+  .panel__head {
+    display: flex; justify-content: space-between; gap: 1rem; align-items: baseline;
+    padding: 0.65rem 1.1rem; border-bottom: 1px solid var(--hairline);
+    font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  }
+  .panel__head .live { color: var(--accent); }
+  .score-card__title { padding: 1rem 1.1rem 0.25rem; font-weight: 600; line-height: 1.35; }
+  .score-card__meta { padding: 0 1.1rem 0.8rem; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+  .score-total { display: flex; align-items: baseline; gap: 0.7rem; padding: 0 1.1rem 0.9rem; }
+  .score-total .figure {
+    font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 3.4rem; line-height: 1;
+    font-weight: 700; color: var(--accent); letter-spacing: -0.03em;
+    text-shadow: 0 0 24px rgba(53, 211, 192, 0.35);
+  }
+  .score-total .of { font-family: var(--mono); color: var(--muted); }
+  .score-total .class {
+    font-family: var(--mono); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--strong); border: 1px solid currentColor; border-radius: 6px; padding: 0.25rem 0.6rem; align-self: center;
+  }
+  table.breakdown { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  table.breakdown td { padding: 0.4rem 1.1rem; border-top: 1px solid var(--hairline); }
+  td.pts { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+  td.pts .max { color: var(--muted); }
+  .bar { height: 3px; background: var(--hairline); border-radius: 2px; margin-top: 0.25rem; overflow: hidden; }
+  .bar > span { display: block; height: 100%; background: var(--accent); }
+  .risk-line { padding: 0.7rem 1.1rem; border-top: 1px solid var(--hairline); font-size: 0.84rem; color: var(--risk); }
+  .risk-line .conf { color: var(--muted); font-family: var(--mono); font-size: 0.74rem; }
+  .panel__foot {
+    padding: 0.6rem 1.1rem; border-top: 1px solid var(--hairline);
+    font-family: var(--mono); font-size: 0.7rem; color: var(--muted); letter-spacing: 0.04em;
+  }
+
+  section.band .wrap { padding-block: 3.75rem; }
+  h2 { font-size: clamp(1.55rem, 3vw, 2rem); letter-spacing: -0.02em; margin: 0 0 1rem; text-wrap: balance; }
+  .lede { color: var(--muted); max-width: 40rem; margin: 0 0 2.25rem; }
+  .lede strong { color: var(--ink); }
+
+  .assistant { max-width: 46rem; }
+  .assistant__body { padding: 1.75rem 2rem 2rem; }
+  .phases { display: flex; gap: 0.35rem; align-items: center; margin-bottom: 1.6rem; flex-wrap: wrap; font-family: var(--mono); }
+  .phase { display: flex; align-items: center; gap: 0.45rem; font-size: 0.74rem; color: var(--muted); letter-spacing: 0.04em; }
+  .phase .dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--hairline); }
+  .phase.done .dot, .phase.now .dot { background: var(--accent); box-shadow: 0 0 8px rgba(53, 211, 192, 0.5); }
+  .phase.now { color: var(--ink); font-weight: 700; }
+  .phase + .phase::before { content: ""; width: 1.4rem; height: 1px; background: var(--hairline); margin-right: 0.4rem; }
+  .assistant h3 { font-size: 1.35rem; letter-spacing: -0.015em; margin: 0 0 0.4rem; }
+  .assistant .why { color: var(--muted); font-size: 0.93rem; margin: 0 0 1.5rem; }
+  .assistant .why .mono { color: var(--accent); }
+  .presets { display: grid; gap: 0.7rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); margin-bottom: 1.6rem; }
+  .preset {
+    text-align: left; border: 1px solid var(--rule); border-radius: 8px;
+    background: var(--panel-raised); padding: 0.9rem 1rem; cursor: pointer; font: inherit; color: inherit;
+  }
+  .preset[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 20px rgba(53, 211, 192, 0.15); }
+  .preset h4 { margin: 0 0 0.25rem; font-size: 0.96rem; }
+  .preset p { margin: 0; color: var(--muted); font-size: 0.76rem; font-family: var(--mono); }
+  .assistant__actions { display: flex; justify-content: space-between; align-items: center; }
+  .btn-ghost { background: none; border: none; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; padding: 0.5rem 0.25rem; }
+
+  .cards3 { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 1.4rem; }
+  .card .n { font-family: var(--mono); color: var(--accent); font-size: 0.74rem; letter-spacing: 0.12em; }
+  .card h3 { margin: 0.45rem 0 0.4rem; font-size: 1.05rem; }
+  .card p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+  .card .num { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 2rem; font-weight: 700; color: var(--ink); }
+  .card .src { font-family: var(--mono); font-size: 0.64rem; color: var(--muted); margin-top: 0.5rem; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  ul.plain-deal { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem 2.5rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); max-width: 46rem; }
+  ul.plain-deal li { padding-left: 1.5rem; position: relative; font-size: 0.95rem; }
+  ul.plain-deal li::before { content: ">"; position: absolute; left: 0; color: var(--accent); font-family: var(--mono); font-weight: 700; }
+
+  .pricing { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); max-width: 44rem; }
+  .price-card h3 { margin: 0 0 0.3rem; font-size: 1rem; }
+  .price-card .price { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 2rem; font-weight: 700; color: var(--ink); }
+  .price-card .per { color: var(--muted); font-size: 0.9rem; font-family: var(--mono); }
+  .price-card p { color: var(--muted); font-size: 0.9rem; }
+  .price-card { padding: 1.5rem; }
+
+  footer.site { border-top: 1px solid var(--hairline); background: var(--ground); }
+  footer.site .wrap { padding-block: 2.5rem 3rem; display: grid; gap: 1.25rem; }
+  footer.site nav { display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; }
+  footer.site p { margin: 0; color: var(--muted); font-size: 0.8rem; max-width: 56rem; }
+</style>
+</head>
+<body>
+
+<div class="mock-note" role="note">
+  <div class="wrap">
+    <span>Direction B — “Control Room” · dark technical authority (single-theme by design)</span>
+    <span>Copy illustrative · pricing copy unchanged by directive</span>
+  </div>
+</div>
+
+<header class="site">
+  <div class="wrap">
+    <a class="wordmark" href="#">BidMorrow</a>
+    <nav class="main" aria-label="Main">
+      <a href="#">Pricing</a>
+      <a href="#">How it works</a>
+      <a href="#">Methodology</a>
+      <a href="#">Founding pilot</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="login" href="#">Log in</a>
+      <a class="btn btn-primary" href="#">Sign up</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">EU public procurement · TED</p>
+        <h1>Find the tenders worth pursuing. Skip the rest.</h1>
+        <p class="sub">
+          Deterministic relevance scoring on every TED competition notice,
+          matched to your company profile. Built for
+          <strong>5–50-person IT, cyber and software consultancies</strong>
+          without a bid team.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#">Join the founding pilot</a>
+          <a class="btn btn-quiet" href="#">See how scoring works</a>
+        </div>
+        <p class="trust-line">€29/mo founding · monthly billing · cancel anytime · no demo calls</p>
+      </div>
+
+      <article class="panel" aria-label="Example tender match">
+        <div class="panel__head">
+          <span>Tender match</span>
+          <span class="live">Engine v1 · deterministic</span>
+        </div>
+        <p class="score-card__title">Managed security operations centre for a regional health authority</p>
+        <p class="score-card__meta">DE · CPV 72220000 · €480,000 · deadline in 24 days</p>
+        <div class="score-total">
+          <span class="figure">84.5</span>
+          <span class="of">/ 100</span>
+          <span class="class">Strong match</span>
+        </div>
+        <table class="breakdown">
+          <tbody>
+            <tr><td>CPV fit<div class="bar"><span style="width:87%"></span></div></td><td class="pts">30.5 <span class="max">/ 35</span></td></tr>
+            <tr><td>Capability match<div class="bar"><span style="width:85%"></span></div></td><td class="pts">17.0 <span class="max">/ 20</span></td></tr>
+            <tr><td>Geography<div class="bar"><span style="width:100%"></span></div></td><td class="pts">15.0 <span class="max">/ 15</span></td></tr>
+            <tr><td>Contract value<div class="bar"><span style="width:80%"></span></div></td><td class="pts">8.0 <span class="max">/ 10</span></td></tr>
+            <tr><td>Deadline runway<div class="bar"><span style="width:60%"></span></div></td><td class="pts">3.0 <span class="max">/ 5</span></td></tr>
+          </tbody>
+        </table>
+        <p class="risk-line">⚠ Possible on-site presence requirement — verify in source documents. <span class="conf">medium confidence</span></p>
+        <p class="panel__foot">Same inputs + same engine version = the same score. Always.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <p class="eyebrow">Client onboarding</p>
+      <h2>From signup to a scoring-ready profile in minutes.</h2>
+      <p class="lede">One focused question per screen, presets that defeat the blank form, and a plain statement of <strong>why each answer changes your score</strong>.</p>
+      <div class="panel assistant" aria-label="Onboarding preview">
+        <div class="panel__head">
+          <span>Set up your company profile</span>
+          <span class="live">Phase 2 / 4</span>
+        </div>
+        <div class="assistant__body">
+          <div class="phases" aria-label="Progress: phase 2 of 4">
+            <span class="phase done"><span class="dot"></span>COMPANY</span>
+            <span class="phase now"><span class="dot"></span>WHAT YOU DO</span>
+            <span class="phase"><span class="dot"></span>WHERE &amp; SIZE</span>
+            <span class="phase"><span class="dot"></span>DIGEST</span>
+          </div>
+          <h3>What kind of work do you do?</h3>
+          <p class="why">CPV codes drive <span class="mono">35 / 100</span> points of every score — start from a preset and adjust anything later.</p>
+          <div class="presets">
+            <button class="preset" aria-pressed="true" type="button">
+              <h4>Cybersecurity consultancy</h4>
+              <p>CPV 72246000 +6 · SOC, pentest, NIS2</p>
+            </button>
+            <button class="preset" aria-pressed="false" type="button">
+              <h4>Cloud / DevOps consultancy</h4>
+              <p>CPV 72514300 +5 · migration, IaC</p>
+            </button>
+            <button class="preset" aria-pressed="false" type="button">
+              <h4>Software development house</h4>
+              <p>CPV 72212000 +7 · bespoke software</p>
+            </button>
+            <button class="preset" aria-pressed="false" type="button">
+              <h4>IT services generalist</h4>
+              <p>CPV 72000000 +9 · broad scope</p>
+            </button>
+          </div>
+          <div class="assistant__actions">
+            <button class="btn-ghost" type="button">Back</button>
+            <a class="btn btn-primary" href="#">Save &amp; continue</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <p class="eyebrow">The problem</p>
+      <h2>Most tender alerts maximise volume. Your job is saying no fast.</h2>
+      <div class="cards3">
+        <div class="card">
+          <p class="num">3,000+</p>
+          <p>notices published on TED every working day</p>
+          <p class="src">Source: TED, Publications Office of the EU</p>
+        </div>
+        <div class="card">
+          <p class="num">0–100</p>
+          <p>explainable score on every eligible tender</p>
+          <p class="src">Deterministic · engine-versioned</p>
+        </div>
+        <div class="card">
+          <p class="num">1</p>
+          <p>daily digest — only when something deserves your attention</p>
+          <p class="src">No empty emails</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <p class="eyebrow">The plain deal</p>
+      <h2>No fine print worth hiding.</h2>
+      <ul class="plain-deal">
+        <li>Monthly billing — cancel anytime</li>
+        <li>Price on the page, not behind a demo call</li>
+        <li>No annual upfront payment</li>
+        <li>No third-party trackers or session replay</li>
+        <li>Same product on every plan</li>
+        <li>Founding price locked for the life of your subscription</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <p class="eyebrow">Pricing — unchanged by directive</p>
+      <h2>Two monthly plans. No annual contract, no usage-based fees, no hidden tiers.</h2>
+      <div class="pricing">
+        <div class="panel price-card">
+          <h3>Founding plan</h3>
+          <p><span class="price">€29</span> <span class="per">/ month</span></p>
+          <p>Limited to our first 20 customers, while we run the founding pilot.</p>
+          <a class="btn btn-primary" href="#">Join the founding pilot</a>
+        </div>
+        <div class="panel price-card">
+          <h3>Standard plan</h3>
+          <p><span class="price">€49</span> <span class="per">/ month</span></p>
+          <p>Full access once the founding plan is full, or any time after.</p>
+          <a class="btn btn-quiet" href="#">Sign up</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <nav aria-label="Footer">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Contact</a>
+      <a href="#">Methodology</a>
+    </nav>
+    <p>Source of procurement notices: Tenders Electronic Daily (TED), Publications Office of the European Union.</p>
+    <p>BidMorrow is decision support — it does not guarantee eligibility, compliance, award, or the completeness or accuracy of source notices; always verify requirements in the original procurement documents.</p>
+  </div>
+</footer>
+
+</body>
+</html>
