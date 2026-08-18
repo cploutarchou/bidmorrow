@@ -93,6 +93,15 @@ export function Feed(): ReactElement {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const now = Date.now();
 
+  // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) —
+  // purely visual; the accessible `role="status"` live region below reads
+  // `statusMessage` independently and is unaffected by this timeout.
+  useEffect(() => {
+    if (statusMessage === null) return;
+    const timeout = window.setTimeout(() => setStatusMessage(null), 2500);
+    return () => window.clearTimeout(timeout);
+  }, [statusMessage]);
+
   // Best-effort: populates the country filter's known-value select from the
   // org's own saved opportunity/served countries (fix for C8 — a bare
   // free-text field invites typos that silently return zero results). Never
@@ -280,13 +289,7 @@ export function Feed(): ReactElement {
                   role="tab"
                   aria-selected={tab === t.id}
                   data-group={t.group}
-                  className={
-                    tab === t.id
-                      ? 'tab tab--active'
-                      : t.group === 'shelf'
-                        ? 'tab tab--shelf'
-                        : 'tab'
-                  }
+                  className={tab === t.id ? 'tab tab--active' : 'tab'}
                   onClick={() => setTab(t.id)}
                 >
                   {t.label}
@@ -466,6 +469,11 @@ export function Feed(): ReactElement {
           <p role="status" aria-live="polite" className="visually-hidden-status">
             {statusMessage}
           </p>
+          {statusMessage !== null && (
+            <div className="app-toast" aria-hidden="true">
+              {statusMessage}
+            </div>
+          )}
 
           {loading && (
             <ul className="feed-skeleton-list" aria-hidden="true">
@@ -481,25 +489,34 @@ export function Feed(): ReactElement {
           )}
           {!loading && error === null && state !== null && state.items.length === 0 && (
             <div className="feed-empty">
+              <span className="feed-empty__glyph" aria-hidden="true" />
               {isShelfTab ? (
-                <p>
+                <p className="feed-empty__title">
                   {tab === 'saved'
                     ? 'Nothing saved yet — use Save on a tender you want to come back to.'
                     : 'Nothing ignored yet — use Ignore to keep a tender out of your review queue.'}
                 </p>
               ) : activeFilterCount > 0 ? (
                 <>
-                  <p>No matches with these filters.</p>
-                  <button type="button" className="btn-quiet btn-sm" onClick={clearFilters}>
-                    Clear filters
-                  </button>
+                  <p className="feed-empty__title">No matches with these filters.</p>
+                  <div className="feed-empty__actions">
+                    <button type="button" className="btn-quiet" onClick={clearFilters}>
+                      Clear filters
+                    </button>
+                  </div>
                 </>
               ) : (
-                <p>
-                  No matches yet — ingestion and matching run daily. Your next chance: tomorrow.
-                  Widen CPV preferences in <a href="/app/settings#matching-profile">Settings</a> if
-                  this persists.
-                </p>
+                <>
+                  <p className="feed-empty__title">
+                    No matches yet — ingestion and matching run daily.
+                  </p>
+                  <p className="feed-empty__body">Your next chance: tomorrow.</p>
+                  <div className="feed-empty__actions">
+                    <a className="btn-quiet" href="/app/settings#matching-profile">
+                      Widen CPV preferences in Settings
+                    </a>
+                  </div>
+                </>
               )}
             </div>
           )}

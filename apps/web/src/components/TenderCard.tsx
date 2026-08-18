@@ -34,11 +34,11 @@ export function TenderCard({
     <article className={modifier.length > 0 ? `tender-card ${modifier}` : 'tender-card'}>
       <div className="tender-card__head">
         <ScoreBadge score={item.score} classification={item.classification} />
+        <p className="tender-card__deadline num">{formatRelativeDeadline(item.deadlineAt, now)}</p>
       </div>
       <h3 className="tender-card__title">
         <Link to={`/app/tenders/${item.matchId}`}>{item.title}</Link>
       </h3>
-      <p className="tender-card__deadline num">{formatRelativeDeadline(item.deadlineAt, now)}</p>
       <p className="tender-card__meta">
         {item.buyerName ?? 'Buyer not published'} · {item.country ?? 'Country not published'} ·{' '}
         {formatOriginalValue(item.valueOriginalAmount, item.valueOriginalCurrency)}

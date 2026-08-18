@@ -74,16 +74,12 @@ const REQUEST = {
   limit: 250,
 } as const;
 
-function makeClient(
-  fetchImpl: TedFetch,
-  overrides?: { maxRequestsPerRun?: number; apiKey?: string },
-) {
+function makeClient(fetchImpl: TedFetch, overrides?: { maxRequestsPerRun?: number }) {
   return new TedClient({
     fetch: fetchImpl,
     budget: { maxRequestsPerRun: overrides?.maxRequestsPerRun ?? 10 },
     logger: createLogger({ test: 'ted-client' }),
     random: () => 0, // deterministic jitter for timing assertions
-    ...(overrides?.apiKey === undefined ? {} : { apiKey: overrides.apiKey }),
   });
 }
 
@@ -324,19 +320,13 @@ describe('TedClient.fetchNoticeXml', () => {
     ).rejects.toMatchObject({ name: 'TedRenderPendingError', status: 202 });
   });
 
-  it('uses the authenticated API route with Authorization when apiKey + publicationNumber are provided', async () => {
-    const { fetchImpl, calls } = makeFakeFetch([{ status: 200, body: '<xml/>' }]);
-    const client = makeClient(fetchImpl, { apiKey: 'test-key-123' });
-    const xml = await client.fetchNoticeXml('https://ted.europa.eu/en/notice/1-2026/xml', '1-2026');
-    expect(xml).toBe('<xml/>');
-    expect(calls[0]?.url).toBe('https://api.ted.europa.eu/v3/notices/1-2026/xml');
-    expect(calls[0]?.headers['Authorization']).toBe('Bearer test-key-123');
-  });
-
-  it('stays on the anonymous front-end URL (no Authorization) when no apiKey is configured', async () => {
+  it('fetches the front-end URL as given and never sends an Authorization header', async () => {
+    // The v3 API offers no published-notice content endpoint (probe runs
+    // 32152093521/32155040026) — the search row's front-end URL is THE route.
     const { fetchImpl, calls } = makeFakeFetch([{ status: 200, body: '<xml/>' }]);
     const client = makeClient(fetchImpl);
-    await client.fetchNoticeXml('https://ted.europa.eu/en/notice/1-2026/xml', '1-2026');
+    const xml = await client.fetchNoticeXml('https://ted.europa.eu/en/notice/1-2026/xml');
+    expect(xml).toBe('<xml/>');
     expect(calls[0]?.url).toBe('https://ted.europa.eu/en/notice/1-2026/xml');
     expect(calls[0]?.headers['Authorization']).toBeUndefined();
   });

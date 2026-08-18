@@ -46,16 +46,6 @@ export interface TedClientOptions {
   readonly logger: Logger;
   /** Injected randomness for backoff jitter (test seam). */
   readonly random?: () => number;
-  /**
-   * TED developer-portal API key (HUMAN_DECISION_BLOCKERS item 9). When set,
-   * `fetchNoticeXml` uses the authenticated
-   * `{baseUrl}/v3/notices/{publication-number}/xml` endpoint instead of the
-   * anonymous website front-end (which renders XML asynchronously — 202
-   * first, cached document later). Header shape `Authorization: Bearer` is
-   * pending live verification via the ted-key-verify workflow before the
-   * key is ever configured (docs/dependency-versions.md).
-   */
-  readonly apiKey?: string;
 }
 
 const MAX_RETRIES = 4;
@@ -109,7 +99,6 @@ export class TedClient {
   private readonly minRequestSpacingMs: number;
   private readonly logger: Logger;
   private readonly random: () => number;
-  private readonly apiKey: string | undefined;
 
   private requestsUsed = 0;
   private lastRequestStartedAt: number | null = null;
@@ -123,8 +112,6 @@ export class TedClient {
     this.minRequestSpacingMs = options.minRequestSpacingMs ?? DEFAULT_SPACING_MS;
     this.logger = options.logger;
     this.random = options.random ?? Math.random;
-    this.apiKey =
-      options.apiKey !== undefined && options.apiKey.length > 0 ? options.apiKey : undefined;
   }
 
   /** HTTP requests spent so far this run (each retry attempt counts). */
@@ -171,51 +158,41 @@ export class TedClient {
   }
 
   /**
-   * Fetch a notice's source XML. Two routes:
-   *
-   * - **Authenticated API route** (preferred, used when `apiKey` is
-   *   configured AND the caller passes the notice's `publicationNumber`):
-   *   `GET {baseUrl}/v3/notices/{publication-number}/xml` with an
-   *   `Authorization` header. The URL is built from trusted config, not
-   *   from response data.
-   * - **Anonymous front-end route** (fallback): the `links.xml.MUL` URL
-   *   from a search row. Only https URLs on ted.europa.eu hosts are
-   *   accepted — links are data from an external API and must not turn the
-   *   worker into an open proxy. Since ~2026-08-17 this front-end renders
-   *   XML asynchronously: HTTP 202 (or an empty 2xx body) means "render
-   *   queued, come back later" and surfaces as `TedRenderPendingError` so
-   *   the caller can requeue the notice instead of failing the window.
+   * Fetch a notice's source XML from the `links.xml.MUL` URL of a search
+   * row — the website front-end route, which is the ONLY route: probing the
+   * live v3 OpenAPI spec (2026-08-18, ted-api-probe runs 32152093521 /
+   * 32155040026) proved the API host offers no endpoint that returns an
+   * arbitrary published notice's content — its surface is eSender
+   * submission plus search. Only https URLs on ted.europa.eu hosts are
+   * accepted — links are data from an external API and must not turn the
+   * worker into an open proxy. Since ~2026-08-17 the front-end renders XML
+   * asynchronously: HTTP 202 (or an empty 2xx body) means "render queued,
+   * come back later" and surfaces as `TedRenderPendingError` so the caller
+   * can requeue the notice instead of failing the window.
    */
-  async fetchNoticeXml(url: string, publicationNumber?: string): Promise<string> {
-    let requestUrl = url;
-    if (this.apiKey !== undefined && publicationNumber !== undefined) {
-      requestUrl = `${this.baseUrl}/v3/notices/${encodeURIComponent(publicationNumber)}/xml`;
-    } else {
-      let parsed: URL;
-      try {
-        parsed = new URL(url);
-      } catch {
-        throw new TedRequestError(`invalid notice XML URL`, { status: null, attempts: 0, url });
-      }
-      if (
-        parsed.protocol !== 'https:' ||
-        (parsed.hostname !== ALLOWED_XML_HOST && !parsed.hostname.endsWith(ALLOWED_XML_HOST_SUFFIX))
-      ) {
-        throw new TedRequestError('notice XML URL must be https on a ted.europa.eu host', {
-          status: null,
-          attempts: 0,
-          url,
-        });
-      }
+  async fetchNoticeXml(url: string): Promise<string> {
+    const requestUrl = url;
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      throw new TedRequestError(`invalid notice XML URL`, { status: null, attempts: 0, url });
+    }
+    if (
+      parsed.protocol !== 'https:' ||
+      (parsed.hostname !== ALLOWED_XML_HOST && !parsed.hostname.endsWith(ALLOWED_XML_HOST_SUFFIX))
+    ) {
+      throw new TedRequestError('notice XML URL must be https on a ted.europa.eu host', {
+        status: null,
+        attempts: 0,
+        url,
+      });
     }
     const response = await this.requestWithRetry(requestUrl, {
       method: 'GET',
       headers: {
         Accept: XML_ACCEPT,
         'User-Agent': TED_USER_AGENT,
-        ...(this.apiKey !== undefined && publicationNumber !== undefined
-          ? { Authorization: `Bearer ${this.apiKey}` }
-          : {}),
       },
     });
     if (response.status === 202) {

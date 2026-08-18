@@ -43,15 +43,23 @@ could not be fully verified.
   exhausted notice stays window-fatal (checkpoint held — the next daily
   retry collects the by-then-cached renders). This broke the first
   non-empty staging window (2026-08-17, 156 in-scope notices).
-- **Authenticated notice-XML API endpoint** (preferred once available):
-  `GET api.ted.europa.eu/v3/notices/{publication-number}/xml` exists and
-  answers `400 Missing Authorization header` without a key. With a
-  developer-portal API key (developer.ted.europa.eu — owner action,
-  HUMAN_DECISION_BLOCKERS item 9) configured as `TED_API_KEY`, `TedClient`
-  fetches notice XML there instead of the anonymous front-end. The
-  `Authorization` header shape ships as `Bearer <key>` but MUST be verified
-  live via the `ted-key-verify` workflow before the key is enabled
-  (docs/dependency-versions.md).
+- **There is NO authenticated notice-XML download endpoint** (verified
+  live 2026-08-18 against the owner's real key AND the API's own OpenAPI
+  spec, ted-api-probe runs 32152093521/32155040026 — supersedes the
+  same-day "authenticated endpoint exists" inference). The complete
+  `api.ted.europa.eu` v3 path list is eSender submission
+  (`/v3/notices/submit|validate|render|render-async|convert`,
+  `/v3/notices/{businessId}/…`, `/v3/notices` = "search YOUR submitted
+  notices", `/v3/api-keys/{token}/renew`, `/v3/config/sdk-versions`) plus
+  the anonymous `/v3/notices/search`. `GET /v3/notices/{id}/xml` answers
+  `404 No static resource` with valid credentials — the earlier
+  `400 Missing Authorization header` (and pre-pairing
+  `403 No eNotices2 account found`) came from a gateway auth filter that
+  answers BEFORE routing, which made the endpoint look real. A developer
+  API key therefore buys nothing for ingestion; `TedClient` takes no
+  apiKey and the front-end route with render-cycling above is THE
+  supported path. The dispatchable `ted-api-probe` workflow remains for
+  re-checking if TED ever adds a content endpoint.
 - The search API (api.ted.europa.eu `/v3/notices/search`) remains anonymous
   and unaffected; `TedClient` still sends `Accept` + `TED_USER_AGENT` on
   every request (transparency toward the data provider).

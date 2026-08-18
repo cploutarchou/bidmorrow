@@ -205,6 +205,29 @@ for a future hardening decision: a revoked/expired key silently converts
 ingestion to 100% window failure — candidate ADR-0008-adjacent follow-up
 (auth-error fallback to anonymous cycling, loudly logged).
 
+**TED API-route REMOVED — no such endpoint exists (2026-08-18 ~15:40 UTC).**
+After the owner's eNotices2 pairing made the key authenticate, the
+authenticated route answered `404 No static resource` for a notice the
+anonymous search confirms exists; fetching the API's own OpenAPI spec
+(`api.ted.europa.eu/api-v3.yaml`, ted-api-probe runs 32152093521/
+32155040026, workflow merged in PRs #53/#54) shows the COMPLETE v3
+surface: eSender submit/validate/render(-async)/convert,
+`/v3/notices/{businessId}/…`, "search your submitted notices", key renewal,
+sdk-versions, and anonymous `/v3/notices/search` — **no published-notice
+content endpoint**. The `400 Missing Authorization header` that spawned
+the whole key hypothesis was a gateway auth filter answering before
+routing. Fix: `TedClient` apiKey option + API-route branch deleted
+(`fetchNoticeXml(url)` — front-end URL + render-cycling is THE path);
+`TED_API_KEY` removed from worker env, both TedClient constructions, and
+both deploy workflows' secret push; `ted-key-verify` workflow deleted
+(premise dead), `ted-api-probe` kept as the re-check diagnostic. Blockers
+item 9 CLOSED (key not needed; stored secrets harmless, owner may delete).
+This also un-breaks staging: with the key deployed, every notice fetch was
+404ing via the dead route — after this deploy the keyless cycling path is
+active and the owner's admin backfill (2026-08-17..08-18, 156-notice
+backlog) can land data. The eNotices2 pairing note stays archived in
+dependency-versions.md; residual-risk note above is MOOT (no key in play).
+
 **DESIGN DIRECTION SWITCHED (owner, 2026-08-18 ~09:55 UTC): Control Room
 (Direction B) replaces Strata — FULL re-skin, single-theme dark only.**
 Owner saw the round-2 "BidMorrow Control Room" mockup artifact and prefers

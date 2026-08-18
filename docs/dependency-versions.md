@@ -209,23 +209,26 @@ Control Room design ships zero custom fonts.
   32131832286, 32132169652). `docs/ted-data-source.md` carries the full
   behavior record; `TedClient`/`runIngestionWindow` implement 202-aware
   requeue cycling.
-- `GET api.ted.europa.eu/v3/notices/{publication-number}/xml` is the
-  authenticated alternative (`400 Missing Authorization header` without a
-  key — verified in the same runs). The client ships `Authorization:
-Bearer <TED_API_KEY>`.
-- **Header shape VERIFIED 2026-08-18** (`ted-key-verify` run 32135295775,
-  owner's real key): `Bearer` is the shape the API parses — it reached the
-  account-authorization stage (`403 No eNotices2 account found.`), while the
-  raw-key shape was not recognized as credentials at all (`401 API key can
-not be null or empty`). No client change needed.
-- **Key ACTIVATION pending** (same run): the `403 No eNotices2 account
-found.` means the API key's EU Login account has never been provisioned in
-  eNotices2 — per the TED docs, a key holder must log in to the eNotices2 UI
-  (production: enotices2.ted.europa.eu) at least once with the same EU Login
-  account to pair the key, and keys are only valid in the environment
-  (production vs preview) whose developer portal issued them. Until the
-  owner completes that pairing (HUMAN_DECISION_BLOCKERS item 9), every
-  authenticated notice fetch 403s — and because a configured `TED_API_KEY`
-  switches the client to the authenticated route, staging ingestion FAILS
-  (NOTICE_FETCH_HTTP_403) rather than falling back to anonymous cycling.
-  Re-dispatch `ted-key-verify` after pairing; 200 + XML bytes = live.
+- **FINAL (2026-08-18, supersedes the two struck records below): the v3
+  API has NO published-notice content endpoint at all.** After the owner's
+  key authenticated (eNotices2 pairing done), `GET
+/v3/notices/{id}/xml` answers `404 No static resource` for a notice the
+  anonymous search confirms exists, and the API's own OpenAPI spec
+  (`api.ted.europa.eu/api-v3.yaml`, fetched in `ted-api-probe` run 32155040026) lists only eSender submission/validation/rendering-of-
+  request-bodies, "search your submitted notices", key renewal, SDK
+  config, and the anonymous `/v3/notices/search`. The earlier
+  `400`/`403` responses were a gateway auth filter answering BEFORE
+  routing — the endpoint never existed. `TedClient` dropped the apiKey
+  option; the anonymous front-end route + render-cycling is the supported
+  path; `TED_API_KEY` removed from worker env and deploy workflows (the
+  GitHub environment secret and the already-pushed worker secret are
+  unused and harmless; the owner may delete them).
+- ~~Header shape VERIFIED~~ (2026-08-18, `ted-key-verify` run 32135295775):
+  `Bearer` was the parsed shape (`403 No eNotices2 account found.` before
+  pairing; raw shape rejected as `401 API key can not be null or empty`).
+  Struck: moot — there is no endpoint behind it. The `ted-key-verify`
+  workflow is deleted; `ted-api-probe` remains the diagnostic if TED ever
+  adds a content endpoint.
+- ~~Key ACTIVATION pending~~ — the eNotices2 pairing (one UI login with the
+  key's EU Login account) did resolve the 403-to-404 transition and is
+  recorded for the archive, but it has no effect on ingestion.

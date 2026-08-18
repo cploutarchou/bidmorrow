@@ -18,7 +18,10 @@ export function Pricing(): ReactElement {
       </p>
 
       <div className="mkt-plans">
-        <article className="mkt-plan mkt-plan--founding" aria-labelledby="founding-plan-heading">
+        <article
+          className="mkt-plan mkt-plan--founding mkt-reveal"
+          aria-labelledby="founding-plan-heading"
+        >
           <p className="mkt-plan__cap">Founding — first 50 customers</p>
           <h2 id="founding-plan-heading">Founding plan</h2>
           <p className="mkt-plan__price">€29 / month</p>
@@ -36,7 +39,10 @@ export function Pricing(): ReactElement {
             Join the founding pilot
           </Link>
         </article>
-        <article className="mkt-plan" aria-labelledby="standard-plan-heading">
+        <article
+          className="mkt-plan mkt-reveal mkt-reveal--d1"
+          aria-labelledby="standard-plan-heading"
+        >
           <p className="mkt-plan__cap" aria-hidden="true">
             &nbsp;
           </p>

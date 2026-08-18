@@ -18,7 +18,7 @@ export function HowItWorks(): ReactElement {
       </p>
 
       <ol className="mkt-steps mkt-steps--flow">
-        <li className="mkt-step">
+        <li className="mkt-step mkt-reveal">
           <span className="mkt-step__num" aria-hidden="true">
             1
           </span>
@@ -29,7 +29,7 @@ export function HowItWorks(): ReactElement {
             afterwards.
           </p>
         </li>
-        <li className="mkt-step">
+        <li className="mkt-step mkt-reveal mkt-reveal--d1">
           <span className="mkt-step__num" aria-hidden="true">
             2
           </span>
@@ -40,7 +40,7 @@ export function HowItWorks(): ReactElement {
             covered.
           </p>
         </li>
-        <li className="mkt-step">
+        <li className="mkt-step mkt-reveal mkt-reveal--d2">
           <span className="mkt-step__num" aria-hidden="true">
             3
           </span>
@@ -51,7 +51,7 @@ export function HowItWorks(): ReactElement {
             LLM in the scoring path.
           </p>
         </li>
-        <li className="mkt-step">
+        <li className="mkt-step mkt-reveal mkt-reveal--d3">
           <span className="mkt-step__num" aria-hidden="true">
             4
           </span>
@@ -62,7 +62,7 @@ export function HowItWorks(): ReactElement {
             original TED notice for the source documents.
           </p>
         </li>
-        <li className="mkt-step">
+        <li className="mkt-step mkt-reveal">
           <span className="mkt-step__num" aria-hidden="true">
             5
           </span>
