@@ -71,23 +71,22 @@ jobs:
             sleep 1
           done
 
-      - name: 3 — OpenAPI spec discovery (which paths serve XML?)
+      - name: 3 — OpenAPI spec (run 32152093521 located it at /api-v3.yaml)
         run: |
-          for spec in "v3/api-docs" "api-docs" "v3/api-docs/swagger-config" "swagger-ui/index.html"; do
-            out=$(curl -s -o /tmp/body.out -w '%{http_code}' --max-time 30 \
-              -H 'Accept: application/json, */*;q=0.5' \
-              -H 'User-Agent: BidMorrow/1.0 (+https://bidmorrow.com; support@bidmorrow.com)' \
-              "https://api.ted.europa.eu/${spec}" || echo 'curl-error')
-            bytes=$(wc -c < /tmp/body.out | tr -d ' ')
-            echo "GET /${spec}: status=${out} bytes=${bytes}"
-            if [ "$out" = "200" ] && [ "$bytes" -gt 100 ]; then
-              echo "--- paths mentioning notices/xml (bounded) ---"
-              grep -o '"/[^"]*"' /tmp/body.out | sort -u | head -40 || true
-              echo "--- endpoint summaries mentioning xml (bounded) ---"
-              grep -io '"[^"]*xml[^"]*"' /tmp/body.out | sort -u | head -20 || true
-              rm -f /tmp/body.out
-              break
-            fi
-            rm -f /tmp/body.out
-            sleep 1
-          done
+          out=$(curl -s -o /tmp/spec.yaml -w '%{http_code}' --max-time 30 \
+            -H 'Accept: application/yaml, text/yaml, */*;q=0.5' \
+            -H 'User-Agent: BidMorrow/1.0 (+https://bidmorrow.com; support@bidmorrow.com)' \
+            "https://api.ted.europa.eu/api-v3.yaml" || echo 'curl-error')
+          bytes=$(wc -c < /tmp/spec.yaml | tr -d ' ')
+          echo "GET /api-v3.yaml: status=${out} bytes=${bytes}"
+          if [ "$out" = "200" ]; then
+            echo "--- all path keys ---"
+            grep -E '^  /' /tmp/spec.yaml | head -60 || true
+            echo "--- operation summaries/ids (bounded) ---"
+            grep -E '^\s+(summary|operationId):' /tmp/spec.yaml | head -60 || true
+            echo "--- lines mentioning xml (bounded) ---"
+            grep -in 'xml' /tmp/spec.yaml | head -40 || true
+            echo "--- lines mentioning download or content (bounded) ---"
+            grep -inE 'download|content-type|fntc' /tmp/spec.yaml | head -30 || true
+          fi
+          rm -f /tmp/spec.yaml
