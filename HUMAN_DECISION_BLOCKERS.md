@@ -269,17 +269,26 @@ API host (`api.ted.europa.eu/v3/notices/<publication-number>/xml` answers
 `400 Missing Authorization header`), which is the robust, officially
 supported route.
 
-Owner action: register at https://developer.ted.europa.eu/home, create an
+~~Owner action: register at https://developer.ted.europa.eu/home, create an
 API key, and add it as secret **`TED_API_KEY`** in BOTH the `staging` and
-`production` GitHub environments (repo → Settings → Environments). The
-deploy workflows will push it to the Worker as a runtime secret once wired
-(implementation follows this item). Do NOT paste the key in chat/issues —
+`production` GitHub environments (repo → Settings → Environments).~~
+**DONE 2026-08-18** (owner confirmed; deploy-staging run 32135278377 pushed
+the key to the staging Worker). Do NOT paste the key in chat/issues —
 GitHub environment secrets only.
 
-Until provided: ingestion falls back to the anonymous front-end route with
-202-aware retry cycling (self-healing across daily runs — renders are
-triggered on first pass and served from cache on the next), so real data
-still lands; the API key removes the extra latency/uncertainty.
+**Remaining owner action (2026-08-18, from `ted-key-verify` run 32135295775)**: the key authenticates (`Bearer` shape confirmed) but the
+API answers `403 No eNotices2 account found.` — per the TED docs the key's
+EU Login account must be **paired** by logging in to the eNotices2 UI at
+least once: open https://enotices2.ted.europa.eu/ and sign in with the SAME
+EU Login account that created the key on developer.ted.europa.eu (keys are
+also environment-specific — a production key needs the production portal).
+One login, no notice authoring needed. Then tell Claude (or re-dispatch the
+`ted-key-verify` workflow yourself) to confirm 200 + XML.
+
+⚠️ Until pairing is done, staging ingestion 403s on every notice (a
+configured `TED_API_KEY` switches the client to the authenticated route —
+there is no automatic anonymous fallback), so the daily 05:00 UTC run and
+any admin backfill will fail with a `NOTICE_FETCH_HTTP_403` diagnostic.
 
 ---
 
