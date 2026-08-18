@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Link } from 'react-router';
 import { PRODUCT_NAME } from '../../copy';
+import { Logo } from '../../components/Logo';
 
 export function AuthLayout({
   title,
@@ -20,8 +21,9 @@ export function AuthLayout({
       </a>
       <header className="site-header glass">
         <div className="mkt-wrap">
-          <Link className="product-name" to="/">
-            {PRODUCT_NAME}
+          <Link className="wordmark" to="/">
+            <Logo className="brand-mark" />
+            <span className="product-name">{PRODUCT_NAME}</span>
           </Link>
         </div>
       </header>

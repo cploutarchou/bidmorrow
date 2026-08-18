@@ -160,7 +160,7 @@ describe('GET /api/billing/status', () => {
     });
   });
 
-  it('reflects a seeded active subscription', async () => {
+  it('reflects a seeded active subscription, including price + paymentState', async () => {
     const { cookie, orgId } = await setUpOrg('StatusActive');
     const db = createDb(env.DB);
     await seedSubscription(db, orgId, { status: 'active', plan: 'founding' });
@@ -170,7 +170,30 @@ describe('GET /api/billing/status', () => {
     const body = await response.json();
     expect(body).toMatchObject({
       entitlement: { active: true, plan: 'founding', status: 'active', reason: 'active' },
-      subscription: { plan: 'founding', status: 'active', cancelAtPeriodEnd: false },
+      subscription: {
+        plan: 'founding',
+        status: 'active',
+        cancelAtPeriodEnd: false,
+        paymentState: 'active',
+        price: { amountMinorUnits: 2900, currency: 'eur', interval: 'month' },
+      },
+    });
+  });
+
+  it('reflects the standard plan price and a past_due paymentState', async () => {
+    const { cookie, orgId } = await setUpOrg('StatusStandardPastDue');
+    const db = createDb(env.DB);
+    await seedSubscription(db, orgId, { status: 'past_due', plan: 'standard' });
+
+    const response = await fetchApi('/api/billing/status', { headers: { cookie } });
+    const body = await response.json();
+    expect(body).toMatchObject({
+      subscription: {
+        plan: 'standard',
+        status: 'past_due',
+        paymentState: 'past_due',
+        price: { amountMinorUnits: 4900, currency: 'eur', interval: 'month' },
+      },
     });
   });
 
@@ -320,6 +343,223 @@ describe('POST /api/billing/portal', () => {
     });
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ error: 'no_billing_customer' });
+  });
+});
+
+async function auditEventCount(organizationId: string, action: string): Promise<number> {
+  const row = await env.DB.prepare(
+    'SELECT COUNT(*) as n FROM audit_events WHERE organization_id = ? AND action = ?',
+  )
+    .bind(organizationId, action)
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
+describe('GET /api/billing/invoices', () => {
+  it('401s when unauthenticated', async () => {
+    const response = await fetchApi('/api/billing/invoices');
+    expect(response.status).toBe(401);
+  });
+
+  it('403s for a MEMBER (non-owner)', async () => {
+    const owner = await setUpOrg('InvoicesMember');
+    const memberCookie = await addMember(owner.orgId, uniqueEmail('invoices-member'));
+    const response = await fetchApi('/api/billing/invoices', { headers: { cookie: memberCookie } });
+    expect(response.status).toBe(403);
+  });
+
+  it('200s with an empty list + hasBillingCustomer:false before any Stripe call when the org has never checked out, and audit-logs the access', async () => {
+    const { cookie, orgId } = await setUpOrg('InvoicesNoCustomer');
+    const response = await fetchApi('/api/billing/invoices', { headers: { cookie } });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ invoices: [], hasBillingCustomer: false });
+    expect(await auditEventCount(orgId, 'billing.invoices_viewed')).toBe(1);
+  });
+
+  it("never leaks another organization's billing-customer state (cross-org isolation)", async () => {
+    const orgA = await setUpOrg('InvoicesIsoA');
+    const orgB = await setUpOrg('InvoicesIsoB');
+    const db = createDb(env.DB);
+    await seedSubscription(db, orgA.orgId, { status: 'active' });
+
+    const responseB = await fetchApi('/api/billing/invoices', { headers: { cookie: orgB.cookie } });
+    expect(await responseB.json()).toEqual({ invoices: [], hasBillingCustomer: false });
+  });
+});
+
+describe('POST /api/billing/cancel', () => {
+  it('401s when unauthenticated', async () => {
+    const response = await fetchApi('/api/billing/cancel', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...STATE_CHANGING_HEADERS },
+      body: JSON.stringify({ confirm: 'CANCEL_SUBSCRIPTION' }),
+    });
+    expect(response.status).toBe(401);
+  });
+
+  it('403s for a MEMBER (non-owner)', async () => {
+    const owner = await setUpOrg('CancelMember');
+    const memberCookie = await addMember(owner.orgId, uniqueEmail('cancel-member'));
+    const response = await fetchApi('/api/billing/cancel', {
+      method: 'POST',
+      headers: jsonHeaders(memberCookie),
+      body: JSON.stringify({ confirm: 'CANCEL_SUBSCRIPTION' }),
+    });
+    expect(response.status).toBe(403);
+  });
+
+  it('400s on a missing/incorrect confirm literal (zod)', async () => {
+    const { cookie } = await setUpOrg('CancelBadBody');
+    const wrongLiteral = await fetchApi('/api/billing/cancel', {
+      method: 'POST',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({ confirm: 'yes' }),
+    });
+    expect(wrongLiteral.status).toBe(400);
+
+    const missing = await fetchApi('/api/billing/cancel', {
+      method: 'POST',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({}),
+    });
+    expect(missing.status).toBe(400);
+  });
+
+  it('409s no_subscription when the org has never checked out', async () => {
+    const { cookie, orgId } = await setUpOrg('CancelNoSub');
+    const response = await fetchApi('/api/billing/cancel', {
+      method: 'POST',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({ confirm: 'CANCEL_SUBSCRIPTION' }),
+    });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'no_subscription' });
+    expect(await auditEventCount(orgId, 'billing.subscription_cancel_scheduled')).toBe(0);
+  });
+
+  it('409s already_canceled when the subscription is fully canceled', async () => {
+    const { cookie, orgId } = await setUpOrg('CancelAlreadyCanceled');
+    const db = createDb(env.DB);
+    await seedSubscription(db, orgId, { status: 'canceled' });
+
+    const response = await fetchApi('/api/billing/cancel', {
+      method: 'POST',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({ confirm: 'CANCEL_SUBSCRIPTION' }),
+    });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'already_canceled' });
+  });
+
+  it('200s idempotently (no Stripe call, no new audit row) when already scheduled to cancel', async () => {
+    const { cookie, orgId } = await setUpOrg('CancelAlreadyScheduled');
+    const db = createDb(env.DB);
+    const seeded = await seedSubscription(db, orgId, {
+      status: 'active',
+      currentPeriodEndAt: 1_800_000_000_000,
+    });
+    // Mark it already scheduled to cancel directly via the repository — the
+    // exact state this outcome branch checks for, without any Stripe call.
+    await upsertSubscriptionByStripeCustomerId(db, toOrganizationId(orgId), {
+      stripeCustomerId: seeded.stripeCustomerId,
+      stripeSubscriptionId: seeded.stripeSubscriptionId,
+      status: 'active',
+      plan: 'standard',
+      currentPeriodEndAt: 1_800_000_000_000,
+      cancelAtPeriodEnd: true,
+    });
+
+    const response = await fetchApi('/api/billing/cancel', {
+      method: 'POST',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({ confirm: 'CANCEL_SUBSCRIPTION' }),
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      cancelAtPeriodEnd: true,
+      currentPeriodEndAt: 1_800_000_000_000,
+      effective: 'period_end',
+    });
+    // Idempotent no-op: no new audit row for a request that changed nothing.
+    expect(await auditEventCount(orgId, 'billing.subscription_cancel_scheduled')).toBe(0);
+  });
+});
+
+describe('POST /api/billing/reactivate', () => {
+  it('401s when unauthenticated', async () => {
+    const response = await fetchApi('/api/billing/reactivate', {
+      method: 'POST',
+      headers: STATE_CHANGING_HEADERS,
+    });
+    expect(response.status).toBe(401);
+  });
+
+  it('403s for a MEMBER (non-owner)', async () => {
+    const owner = await setUpOrg('ReactivateMember');
+    const memberCookie = await addMember(owner.orgId, uniqueEmail('reactivate-member'));
+    const response = await fetchApi('/api/billing/reactivate', {
+      method: 'POST',
+      headers: jsonHeaders(memberCookie),
+    });
+    expect(response.status).toBe(403);
+  });
+
+  it('409s no_subscription (requiresCheckout: true) when the org has never checked out', async () => {
+    const { cookie } = await setUpOrg('ReactivateNoSub');
+    const response = await fetchApi('/api/billing/reactivate', {
+      method: 'POST',
+      headers: jsonHeaders(cookie),
+    });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'no_subscription', requiresCheckout: true });
+  });
+
+  it('409s already_canceled (requiresCheckout: true) when fully canceled', async () => {
+    const { cookie, orgId } = await setUpOrg('ReactivateAlreadyCanceled');
+    const db = createDb(env.DB);
+    await seedSubscription(db, orgId, { status: 'canceled' });
+
+    const response = await fetchApi('/api/billing/reactivate', {
+      method: 'POST',
+      headers: jsonHeaders(cookie),
+    });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'already_canceled', requiresCheckout: true });
+  });
+
+  it('409s not_scheduled when the subscription is active but not scheduled to cancel', async () => {
+    const { cookie, orgId } = await setUpOrg('ReactivateNotScheduled');
+    const db = createDb(env.DB);
+    await seedSubscription(db, orgId, { status: 'active' });
+
+    const response = await fetchApi('/api/billing/reactivate', {
+      method: 'POST',
+      headers: jsonHeaders(cookie),
+    });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'not_scheduled' });
+    expect(await auditEventCount(orgId, 'billing.subscription_reactivated')).toBe(0);
+  });
+
+  it('409s not_scheduled for a past_due subscription even if cancelAtPeriodEnd is set', async () => {
+    const { cookie, orgId } = await setUpOrg('ReactivatePastDue');
+    const db = createDb(env.DB);
+    const seeded = await seedSubscription(db, orgId, { status: 'past_due' });
+    await upsertSubscriptionByStripeCustomerId(db, toOrganizationId(orgId), {
+      stripeCustomerId: seeded.stripeCustomerId,
+      stripeSubscriptionId: seeded.stripeSubscriptionId,
+      status: 'past_due',
+      plan: 'standard',
+      currentPeriodEndAt: seeded.currentPeriodEndAt,
+      cancelAtPeriodEnd: true,
+    });
+
+    const response = await fetchApi('/api/billing/reactivate', {
+      method: 'POST',
+      headers: jsonHeaders(cookie),
+    });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'not_scheduled' });
   });
 });
 

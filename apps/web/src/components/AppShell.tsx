@@ -2,6 +2,7 @@ import { useState, type ReactElement, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { PRODUCT_NAME } from '../copy';
 import { useAuth } from '../lib/auth-context';
+import { Logo } from './Logo';
 
 export function AppShell({ children }: { children: ReactNode }): ReactElement {
   const navigate = useNavigate();
@@ -38,6 +39,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
       <header className="app-header glass">
         <nav className="app-header-inner" aria-label="Main">
           <Link className="app-wordmark" to="/app">
+            <Logo className="brand-mark" />
             {PRODUCT_NAME}
           </Link>
           <ul className="app-nav-list">

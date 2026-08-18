@@ -19,6 +19,34 @@ export interface PriceIds {
 /** Founding-plan seat cap default (docs/product-scope.md: "first 50 customers", owner decision 2026-08-17), overridable via `FLAG_FOUNDING_CAP`. */
 export const DEFAULT_FOUNDING_CAP = 50;
 
+/**
+ * Flat display price per plan (docs/product-scope.md: "Founding: €29/month
+ * ... Standard: €49/month", "Currency is EUR", "Prices are flat (€29/€49, no
+ * tax line, no VAT ID field...)"; HUMAN_DECISION_BLOCKERS.md item 4:
+ * `BIDMORROW_FOUNDING_MONTHLY` €29/mo, `BIDMORROW_STANDARD_MONTHLY` €49/mo).
+ * Hardcoded rather than fetched from the live Stripe `Price` object on every
+ * `GET /api/billing/status` call: these are fixed, owner-decided flat prices
+ * (docs/product-scope.md: "Pricing: NO CHANGE... never discount below €29"),
+ * not values Stripe is the source of truth for at read time — avoids an
+ * extra Stripe API round trip on a status-polling endpoint. `amountMinorUnits`
+ * matches Stripe's own minor-unit convention (cents) for straightforward
+ * frontend formatting.
+ */
+export interface PlanPrice {
+  readonly amountMinorUnits: number;
+  readonly currency: 'eur';
+  readonly interval: 'month';
+}
+
+export const PLAN_PRICES: Record<SubscriptionPlan, PlanPrice> = {
+  founding: { amountMinorUnits: 2900, currency: 'eur', interval: 'month' },
+  standard: { amountMinorUnits: 4900, currency: 'eur', interval: 'month' },
+};
+
+export function planPrice(plan: SubscriptionPlan): PlanPrice {
+  return PLAN_PRICES[plan];
+}
+
 /** `null` when `priceId` matches neither configured price — never fabricates a plan. */
 export function planFromPriceId(priceIds: PriceIds, priceId: string): SubscriptionPlan | null {
   if (priceId === priceIds.founding) return 'founding';
@@ -66,4 +94,20 @@ export function mapStripeSubscriptionStatus(status: string): SubscriptionStatus 
       // (non-entitled) mapping rather than guess.
       return 'canceled';
   }
+}
+
+/**
+ * The UI-facing payment-state enum for `GET /api/billing/status`
+ * (`active | trialing | past_due | unpaid | canceled`). Currently an
+ * identity mapping over `SubscriptionStatus` — kept as a distinctly named
+ * type/function (rather than exposing `SubscriptionStatus` directly to the
+ * route's JSON contract) so the API's payment-state vocabulary can diverge
+ * from the DB's storage vocabulary later (e.g. splitting `past_due` into a
+ * grace/expired distinction for the UI, mirroring `entitlement.ts`'s
+ * `EntitlementReason`) without a breaking rename at every call site.
+ */
+export type PaymentState = SubscriptionStatus;
+
+export function paymentStateFromStatus(status: SubscriptionStatus): PaymentState {
+  return status;
 }
