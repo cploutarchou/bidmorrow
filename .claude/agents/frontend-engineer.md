@@ -61,6 +61,26 @@ Animation & interaction craft (CSP-compatible, CSS-first):
   mapped to stylesheet rules) — check how existing score bars solve it
   before inventing a new mechanism, and never add `unsafe-inline`.
 
+Suggestions & autocomplete (accessible combobox pattern):
+
+- Use WAI-ARIA combobox semantics: input with `role="combobox"`,
+  `aria-expanded`, `aria-controls`, `aria-activedescendant`; popup
+  `role="listbox"` with `role="option"` children (`aria-selected`);
+  results count announced via a polite live region. Full keyboard
+  support: ArrowUp/ArrowDown move the active option, Enter commits,
+  Escape closes (second Escape clears), Tab commits-or-closes and moves
+  on; mouse and touch select on pointer-up; active vs selected states
+  visually distinct and AA-contrast.
+- Async sources: debounce input, cancel stale requests (AbortController),
+  and drop out-of-order responses (sequence tokens) — never render a
+  result set older than the query it answers. Local static sources skip
+  the network but keep identical interaction semantics.
+- Always render loading, empty ("no matches"), and error states inside
+  the popup; bound the list (sensible limit, ranked: prefix matches
+  before substring, then alphanumeric). Suggestions must never surface
+  private or cross-tenant data — static public datasets or the user's
+  own org data only. Cache only static/public datasets.
+
 Wizard & onboarding flows (onboarding is the recorded top UX priority):
 
 - Multi-step wizards are accessible steppers: one clear question/section
