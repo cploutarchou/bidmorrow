@@ -163,6 +163,23 @@ mockup source committed at
 re-skin) starting next; the pending final slice (sample-verdict demo +
 category pages) will be built Control-Room-styled after the re-skin lands.
 
+**M4 Control Room re-skin IMPLEMENTED (2026-08-18, frontend-engineer +
+qa-reviewer).** Token-value swap on the existing custom-property system
+(names kept, values repointed — 100+ call sites untouched): single dark
+palette, grid texture, teal accent, terminal wordmark, restyled buttons;
+theme toggle + light theme deleted (`ThemeToggle.tsx`, `lib/theme.ts`(+test),
+all `prefers-color-scheme`/`[data-theme]` CSS); @fontsource packages removed
+(~81KB fonts → 0, system stacks); Logo/favicon re-colored teal, PNGs
+regenerated. Deliberate deviations recorded by the implementer: `--accent-grad`
+kept as flat alias; risk-flag amber kept for medium-confidence flags.
+Independent qa-reviewer: initial verdict FIX with one blocking finding
+F1 (`--text-3` #6b7280 failed AA at 4.14:1/3.78:1 on footer + /month chips)
+— fixed to #7d8799 (≥5.05:1 everywhere), axe re-run 0 serious/critical on
+/, /pricing, /how-it-works, /contact; F2 stale favicon sizes attr fixed;
+F3 (pre-existing CSS/JS budget overage, improved not worsened: CSS
+36.69→31.89kB) and F4 (env-only 502) informational. Gates green (444
+tests). Shipped as commit 70e1c69 → PR/merge per flow below.
+
 **Website redesign RESTART (owner instruction, 2026-08-17)**: the owner
 REJECTED all three initial design directions (Ledger / Control Room /
 Mac Modern rev.1 — registry in
