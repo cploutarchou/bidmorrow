@@ -190,3 +190,29 @@ skill — never from memory.
   `plans.test.ts` numeric lock, doc comments, and `docs/product-scope.md`.
   Correction: the prior note that cap copy lived in `copy.ts`/`app.test.ts`
   was stale — neither references the cap.
+- 2026-08-18 (~09:55 UTC): **Owner SWITCHED the approved design direction to
+  Direction B — "Control Room"** ("i just notice about new mockup control
+  room and to be honest i like more"; confirmed via structured question).
+  Decisions: **FULL SWITCH** — the public marketing site AND the app
+  interface are re-skinned in Control Room; **SINGLE-THEME DARK ONLY, as
+  designed** — the theme toggle is removed and the Strata daylight twin is
+  retired. Structure, copy, IA, pricing presentation, and page set are
+  UNCHANGED — this is a visual re-skin, not a content or scope change.
+  Reference mockup: claude.ai/code/artifact/701f686f-c51b-470a-9d0d-ab5a5995549d
+  (source committed at `docs/redesign/mockups/direction-b-control-room.html`).
+  Character: near-black `#0b0d11` ground, panel `#12151b`/`#161a22`, ink
+  `#e8edf4`, teal accent `#35d3c0` (on-accent `#062723`), strong `#4ade80`,
+  risk `#f87171`, faint 64px grid-line texture, glowing tabular-mono score
+  readouts, terminal wordmark (`BidMorrow` + teal `_` cursor), system sans
+  (`-apple-system` stack) + `ui-monospace` stacks — NO webfonts (the
+  @fontsource Sora/Hanken/JetBrains packages become removable). This entry
+  SUPERSEDES the 2026-08-17 Strata adoption above (kept for the record);
+  the round-1 "Control Room" rejection stands — Direction B is the distinct
+  second-round concept, not a revival of the rejected one. Carried-over
+  implementation caveats: mockup copy is illustrative where it conflicts
+  with shipped copy (e.g. its "first 20 customers" line is stale — cap is
+  50; shipped copy is authoritative); score-anatomy labels re-base on
+  `docs/matching-engine.md`; brand mark + favicon are kept but re-colored
+  from the solar gradient to the teal accent; CSP constraints unchanged
+  (no inline styles — the mockup's inline `style="width:…"` bars must be
+  implemented CSP-safe); WCAG 2.2 AA contrast verified on the dark ground.

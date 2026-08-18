@@ -133,6 +133,36 @@ whole day) — the latter is ADR-level and noted as a separate follow-up. Root
 cause of the fetch failure remains OPEN pending the next run's captured
 diagnostic or the Worker log. Phase pipeline still on hold.
 
+**Poison-pill resilience SPEC written (owner instruction "spec the
+poison-pill fix as a follow-up", 2026-08-18): ADR-0008
+(`docs/architecture-decisions/0008-poison-pill-notice-fetch-resilience.md`),
+status Proposed — spec only, implementation NOT scheduled.** Key decisions
+specced: per-notice `TedRequestError` from `fetchNoticeXml` becomes
+record-and-continue (window `partial`), guarded by a systemic-failure
+threshold (fail the window when fetch failures ≥5 absolute AND >20% of
+notices seen, code `FETCH_FAILURE_THRESHOLD_EXCEEDED`); skipped notices get
+a bounded re-attempt via a new `ingestion_fetch_retries` table (≤25/day
+drained inside the daily run, 5 attempts, then `NOTICE_FETCH_ABANDONED`);
+search fetches and `REQUEST_BUDGET_EXCEEDED` stay window-fatal; checkpoint
+rules, idempotency, TED politeness, and the PR #46 diagnostics unchanged.
+Notable nuance found while speccing: the admin backfill CANNOT re-run
+windows at-or-behind the checkpoint (advance-only guard throws), so
+"manual backfill as the retry path" was not merely weak but unavailable —
+this drove the retry-table choice.
+
+**DESIGN DIRECTION SWITCHED (owner, 2026-08-18 ~09:55 UTC): Control Room
+(Direction B) replaces Strata — FULL re-skin, single-theme dark only.**
+Owner saw the round-2 "BidMorrow Control Room" mockup artifact and prefers
+it; confirmed via structured question: full switch (public site AND app
+interface), dark-only as designed (theme toggle removed, daylight twin
+retired). Visual re-skin ONLY — structure/copy/IA/pricing unchanged. Full
+decision record + token palette + carried-over caveats:
+`.claude/skills/website-redesign/requirements.md` Decisions log 2026-08-18;
+mockup source committed at
+`docs/redesign/mockups/direction-b-control-room.html`. Implementation (M4
+re-skin) starting next; the pending final slice (sample-verdict demo +
+category pages) will be built Control-Room-styled after the re-skin lands.
+
 **Website redesign RESTART (owner instruction, 2026-08-17)**: the owner
 REJECTED all three initial design directions (Ledger / Control Room /
 Mac Modern rev.1 — registry in
