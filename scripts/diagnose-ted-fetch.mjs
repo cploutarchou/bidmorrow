@@ -115,3 +115,84 @@ for (const notice of notices.slice(0, 5)) {
   }
 }
 console.log('\ndiagnostic complete');
+
+// ---------------------------------------------------------------------------
+// v2 probes (2026-08-18): the /en/notice/<id>/xml front-end now answers HTTP
+// 202 + empty body to EVERY client (see run 32131289081) — find the working
+// download route.
+// ---------------------------------------------------------------------------
+
+const first = notices[0];
+if (first !== undefined) {
+  console.log('\n=== v2: full links object of first row ===');
+  console.log(JSON.stringify(first.links ?? null, null, 2));
+
+  const num = String(first['publication-number']);
+  const xmlUrl = first.links?.xml?.MUL;
+
+  // Probe A: 202-as-async — re-GET the same URL with growing delays.
+  if (typeof xmlUrl === 'string') {
+    console.log('\n=== v2 probe A: retry-after-delay on the 202 URL ===');
+    for (const delayMs of [0, 5_000, 20_000]) {
+      if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs));
+      const res = await fetch(xmlUrl, {
+        headers: { Accept: XML_ACCEPT, 'User-Agent': PROD_UA },
+        signal: AbortSignal.timeout(30_000),
+      });
+      const body = await res.text();
+      console.log(
+        `after +${String(delayMs)}ms: status=${String(res.status)} bytes=${String(body.length)} ` +
+          `head=${body.trimStart().slice(0, 80).replaceAll('\n', ' ')}`,
+      );
+      if (body.length > 0) break;
+    }
+  }
+
+  // Probe B: candidate API-host endpoints for the notice document.
+  console.log('\n=== v2 probe B: candidate api.ted.europa.eu endpoints ===');
+  const candidates = [
+    `https://api.ted.europa.eu/v3/notices/${num}/xml`,
+    `https://api.ted.europa.eu/v3/notices/${num}`,
+    `https://ted.europa.eu/en/notice/${num}/xml?download=true`,
+  ];
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, {
+        headers: { Accept: XML_ACCEPT, 'User-Agent': PROD_UA },
+        signal: AbortSignal.timeout(30_000),
+      });
+      const body = await res.text();
+      console.log(
+        `${url} -> status=${String(res.status)} ct=${String(res.headers.get('content-type'))} ` +
+          `bytes=${String(body.length)} head=${body.trimStart().slice(0, 100).replaceAll('\n', ' ')}`,
+      );
+    } catch (cause) {
+      console.log(`${url} -> ERROR ${cause instanceof Error ? cause.message : String(cause)}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 700));
+  }
+
+  // Probe C: current API docs text — what do they say about notice XML now?
+  console.log('\n=== v2 probe C: docs.ted.europa.eu grep ===');
+  for (const docUrl of [
+    'https://docs.ted.europa.eu/api/latest/index.html',
+    'https://ted.europa.eu/en/simap/developers-corner',
+  ]) {
+    try {
+      const res = await fetch(docUrl, {
+        headers: { 'User-Agent': PROD_UA },
+        signal: AbortSignal.timeout(30_000),
+      });
+      const text = await res.text();
+      console.log(`\n--- ${docUrl} (HTTP ${String(res.status)}, ${String(text.length)} bytes) ---`);
+      const lines = text
+        .split('\n')
+        .filter((line) => /xml|download|202|package/i.test(line))
+        .slice(0, 40);
+      for (const line of lines) console.log(line.trim().slice(0, 200));
+    } catch (cause) {
+      console.log(`${docUrl} -> ERROR ${cause instanceof Error ? cause.message : String(cause)}`);
+    }
+  }
+}
+console.log('\nv2 probes complete');
