@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../lib/auth-context';
-import { resolvePostAuthDestination } from '../../lib/post-auth-route';
+import { useRedirectIfAuthenticated } from '../../lib/use-redirect-if-authenticated';
 import { AuthLayout } from './AuthLayout';
 
 interface SignInErrorBody {
@@ -11,8 +11,16 @@ interface SignInErrorBody {
 
 export function Login(): ReactElement {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { refresh } = useAuth();
+  // Already-authenticated visitor landing on /login must not see the form
+  // (auth/session-flow-polish R1) — this must run for every render, so it's
+  // declared before the early loading-state return below. Also owns
+  // post-login navigation: once `refresh()` below resolves to a session,
+  // `user` flips non-null and this hook's own effect resolves the
+  // destination and navigates — a single code path instead of duplicating
+  // `resolvePostAuthDestination` here too (which raced it and could
+  // double-fetch `/api/org/profile` / navigate twice).
+  const { ready } = useRedirectIfAuthenticated();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -40,12 +48,13 @@ export function Login(): ReactElement {
         }
         return;
       }
-      await refresh();
       // R1 (docs/redesign/ux-strategy.md §1.3): route by state, not a fixed
-      // URL — an explicit `returnTo` wins, else a new/incomplete profile
-      // lands on /onboarding instead of hitting the feed's 403 dead-end.
-      const destination = await resolvePostAuthDestination(searchParams.get('returnTo'));
-      void navigate(destination);
+      // URL. `refresh()` flips `user` from null to the signed-in account;
+      // `useRedirectIfAuthenticated` above reacts to that and does the
+      // `resolvePostAuthDestination` + navigate — an explicit `returnTo`
+      // wins, else a new/incomplete profile lands on /onboarding instead of
+      // hitting the feed's 403 dead-end.
+      await refresh();
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -64,6 +73,14 @@ export function Login(): ReactElement {
       body: JSON.stringify({ email, callbackURL: verifyEmailPath }),
     });
     void navigate(verifyEmailPath);
+  }
+
+  if (!ready) {
+    return (
+      <main id="main-content">
+        <p>Loading…</p>
+      </main>
+    );
   }
 
   return (
