@@ -391,6 +391,82 @@ describe('runIngestionWindow', () => {
     expect(result.status).toBe('failed');
     const after = await getCheckpoint(db, { source: 'ted' });
     expect(after?.lastPublicationDate).toBe(before?.lastPublicationDate);
+
+    // Durable diagnostic: a window-level failure must NOT be silent — it
+    // records exactly one ingestion_errors row (stage fetch, budget code,
+    // naming the notice/URL it died on) and bumps errors_count to match, so
+    // the failure is diagnosable from D1 alone without live worker logs.
+    expect(result.run.errorsCount).toBe(1);
+    const diag = await env.DB.prepare(
+      'SELECT stage, source_notice_id, error_code, message, detail_json FROM ingestion_errors WHERE ingestion_run_id = ?',
+    )
+      .bind(result.run.id)
+      .all();
+    expect(diag.results.length).toBe(1);
+    const row = diag.results[0] as {
+      stage: string;
+      source_notice_id: string | null;
+      error_code: string;
+      message: string;
+      detail_json: string | null;
+    };
+    expect(row.stage).toBe('fetch');
+    expect(row.error_code).toBe('REQUEST_BUDGET_EXCEEDED');
+    expect(row.source_notice_id).toBe('budget-1');
+    const detail = JSON.parse(row.detail_json ?? '{}') as Record<string, unknown>;
+    expect(detail['noticeXmlUrl']).toBe('https://ted.europa.eu/notice/budget-1.xml');
+    expect(detail['windowFrom']).toBe('2026-08-12');
+  });
+
+  it('a window-level HTTP failure (notice XML fetch) records a durable NOTICE_FETCH_HTTP diagnostic and fails the run', async () => {
+    const db = createDb(env.DB);
+    const before = await getCheckpoint(db, { source: 'ted' });
+    // The notice appears in search, but its XML URL is absent from the fake
+    // backend → GET returns a non-retryable 404 → TedRequestError propagates
+    // as a window-level failure (this is the shape of the 2026-08-17 staging
+    // incident: search OK, notice-XML fetch fails before any persistence).
+    const rows = [searchRow('http-1', '2026-08-30', 'https://ted.europa.eu/notice/http-1.xml')];
+    const client = makeClient(makeFakeFetch([{ notices: rows }], {}));
+
+    const result = await runIngestionWindow(
+      {
+        db,
+        client,
+        snapshots: env.SNAPSHOTS,
+        logger: createLogger({ test: true }),
+        scope: DEFAULT_INGESTION_SCOPE,
+        now: () => T0,
+      },
+      { windowFrom: '2026-08-30', windowTo: '2026-08-30' },
+    );
+
+    expect(result.status).toBe('failed');
+    // Nothing persisted: the abort is at fetch, before snapshot/upsert.
+    expect(result.run.noticesSeen).toBe(1);
+    expect(result.run.noticesUpserted).toBe(0);
+    expect(result.run.errorsCount).toBe(1);
+    // Checkpoint held — the window did not fully succeed.
+    const after = await getCheckpoint(db, { source: 'ted' });
+    expect(after?.lastPublicationDate).toBe(before?.lastPublicationDate);
+
+    const diag = await env.DB.prepare(
+      'SELECT stage, source_notice_id, error_code, detail_json FROM ingestion_errors WHERE ingestion_run_id = ?',
+    )
+      .bind(result.run.id)
+      .all();
+    expect(diag.results.length).toBe(1);
+    const row = diag.results[0] as {
+      stage: string;
+      source_notice_id: string | null;
+      error_code: string;
+      detail_json: string | null;
+    };
+    expect(row.stage).toBe('fetch');
+    expect(row.error_code).toBe('NOTICE_FETCH_HTTP_404');
+    expect(row.source_notice_id).toBe('http-1');
+    const detail = JSON.parse(row.detail_json ?? '{}') as Record<string, unknown>;
+    expect(detail['status']).toBe(404);
+    expect(detail['noticeXmlUrl']).toBe('https://ted.europa.eu/notice/http-1.xml');
   });
 
   it('a correction (same notice, new XML) creates version 2; version 1 stays immutable', async () => {

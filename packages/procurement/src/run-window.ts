@@ -3,7 +3,13 @@
  * `@bidmorrow/db` (checkpointed, idempotent persistence) into one bounded
  * publication-date-window run (ted-ingestion-audit checklist items 1–7).
  */
-import { TED_SOURCE_ID, TedParseError, TedXmlTooLargeError } from '@bidmorrow/ted';
+import {
+  TED_SOURCE_ID,
+  TedBudgetExceededError,
+  TedParseError,
+  TedRequestError,
+  TedXmlTooLargeError,
+} from '@bidmorrow/ted';
 import type { ParseIssue, TedClient } from '@bidmorrow/ted';
 import type { Logger } from '@bidmorrow/observability';
 import type { Db, IngestionRun, IngestionRunTerminalStatus } from '@bidmorrow/db';
@@ -87,7 +93,10 @@ interface MutableCounts {
  * `partial`); DOES throw-and-fail-the-run on window-level failures (request
  * budget exhausted, an HTTP failure surviving the client's own retries, or
  * any unexpected persistence error) — the checkpoint is only advanced when
- * the window finishes non-`failed`.
+ * the window finishes non-`failed`. A window-level failure ALSO writes one
+ * durable `ingestion_errors` row (stage + machine code + message + the
+ * notice/URL it died on) so the failure is fully diagnosable from D1 without
+ * live worker logs.
  */
 export async function runIngestionWindow(
   deps: RunWindowDeps,
@@ -111,6 +120,12 @@ export async function runIngestionWindow(
     errorsCount: 0,
   };
   const newLotIds: string[] = [];
+  // The notice currently mid-processing, so a window-level failure can name
+  // the notice/URL it died on in the durable diagnostic below. Non-null ONLY
+  // while a specific notice is in flight (cleared before search-row extraction
+  // and after each notice completes), so a failure fetching the NEXT search
+  // page is never mis-attributed to the last good notice.
+  let currentNotice: { sourceNoticeId: string; xmlUrl: string } | null = null;
 
   try {
     const query = buildScopeQuery(deps.scope, window);
@@ -121,6 +136,7 @@ export async function runIngestionWindow(
     })) {
       for (const row of page.notices) {
         counts.noticesSeen += 1;
+        currentNotice = null;
         const extracted = extractSearchRow(row);
         if (extracted === null) {
           counts.errorsCount += 1;
@@ -134,7 +150,9 @@ export async function runIngestionWindow(
           });
           continue;
         }
+        currentNotice = { sourceNoticeId: extracted.sourceNoticeId, xmlUrl: extracted.xmlUrl };
         await processOneNotice(deps, run.id, extracted, counts, newLotIds);
+        currentNotice = null;
       }
     }
   } catch (cause) {
@@ -142,8 +160,17 @@ export async function runIngestionWindow(
       source: TED_SOURCE_ID,
       window_from: window.windowFrom,
       window_to: window.windowTo,
+      source_notice_id: currentNotice?.sourceNoticeId ?? null,
       error: cause instanceof Error ? cause.message : String(cause),
     });
+    // Persist a DURABLE diagnostic. A window-level failure previously left
+    // NOTHING in `ingestion_errors` (only this ephemeral worker log), so an
+    // operator seeing `status=failed, errors_count=0` had no way to tell WHAT
+    // failed without live logs — exactly the gap the 2026-08-17 staging
+    // incident hit. Recording one row makes every window failure diagnosable
+    // from D1 alone ("surface, don't swallow"). Guarded: a failure to write
+    // the diagnostic must never mask or replace the original error.
+    await recordWindowFailure(deps, run.id, currentNotice, window, cause, counts);
     const finished = await finishRun(deps.db, {
       runId: run.id,
       status: 'failed',
@@ -349,6 +376,117 @@ async function processOneNotice(
   }
   await insertCpvCodes(deps.db, { entries: dedupeCpv(cpvEntries) });
   await insertGeographies(deps.db, { entries: dedupeGeo(geoEntries) });
+}
+
+/**
+ * Cap on any single free-text or URL value stored in a window-failure
+ * diagnostic. `recordError` serializes `detail` to `detail_json`, and D1 caps
+ * a single statement (bound values included) at ~100KB — a pathological TED
+ * URL or error message must never push the insert over that cap, because the
+ * write is guarded and would then be SILENTLY LOST, regressing to the exact
+ * "no durable record" bug this diagnostic exists to fix. Mirrors the intent of
+ * `boundIssuesForErrorDetail` for the per-notice parse path. A few short,
+ * capped fields keep the whole insert comfortably within budget.
+ */
+export const MAX_DIAGNOSTIC_VALUE_CHARS = 2_000;
+
+/** Truncates a diagnostic string to the cap, appending a marker when it bites. */
+export function truncateForDiagnostic(value: string): string {
+  return value.length <= MAX_DIAGNOSTIC_VALUE_CHARS
+    ? value
+    : `${value.slice(0, MAX_DIAGNOSTIC_VALUE_CHARS)}…truncated`;
+}
+
+/**
+ * Maps a window-fatal error to a stable, machine-readable diagnostic. Only
+ * the errors that legitimately reach the window-level catch are classified:
+ * request-budget exhaustion and HTTP failures (both `fetch` stage), with
+ * anything else treated as an unexpected persistence/normalization failure
+ * (parse and too-large errors are handled per-notice and never arrive here).
+ */
+function describeWindowFailure(
+  cause: unknown,
+  noticeInFlight: boolean,
+): {
+  readonly stage: 'fetch' | 'persist';
+  readonly errorCode: string;
+  readonly message: string;
+  readonly detail: Record<string, unknown>;
+} {
+  if (cause instanceof TedBudgetExceededError) {
+    return {
+      stage: 'fetch',
+      errorCode: 'REQUEST_BUDGET_EXCEEDED',
+      message: cause.message,
+      detail: { requestsUsed: cause.requestsUsed, maxRequestsPerRun: cause.maxRequestsPerRun },
+    };
+  }
+  if (cause instanceof TedRequestError) {
+    // A stable code per failure shape so alerting can group them: which
+    // request died (a notice-XML fetch vs the search endpoint — the latter
+    // is the only TedRequestError source when no notice is in flight), then
+    // network-level (no status) vs a specific HTTP status.
+    const prefix = noticeInFlight ? 'NOTICE_FETCH' : 'SEARCH_FETCH';
+    return {
+      stage: 'fetch',
+      errorCode:
+        cause.status === null ? `${prefix}_NETWORK_ERROR` : `${prefix}_HTTP_${cause.status}`,
+      message: truncateForDiagnostic(cause.message),
+      detail: {
+        url: truncateForDiagnostic(cause.url),
+        status: cause.status,
+        attempts: cause.attempts,
+      },
+    };
+  }
+  return {
+    stage: 'persist',
+    errorCode: 'UNEXPECTED_WINDOW_ERROR',
+    message: truncateForDiagnostic(cause instanceof Error ? cause.message : String(cause)),
+    detail: cause instanceof Error ? { errorName: cause.name } : {},
+  };
+}
+
+/**
+ * Writes the durable `ingestion_errors` diagnostic for a window-level failure
+ * and bumps `errorsCount` so the run's counter matches the persisted row.
+ * Fully guarded: if the diagnostic write itself fails (e.g. the failure that
+ * killed the window was D1 being unavailable), it is logged and swallowed —
+ * the ORIGINAL error still propagates to `finishRun('failed')`, never masked.
+ */
+async function recordWindowFailure(
+  deps: RunWindowDeps,
+  ingestionRunId: string,
+  currentNotice: { sourceNoticeId: string; xmlUrl: string } | null,
+  window: PublicationWindow,
+  cause: unknown,
+  counts: MutableCounts,
+): Promise<void> {
+  const diag = describeWindowFailure(cause, currentNotice !== null);
+  try {
+    await recordError(deps.db, {
+      ingestionRunId,
+      source: TED_SOURCE_ID,
+      sourceNoticeId: currentNotice?.sourceNoticeId ?? null,
+      stage: diag.stage,
+      errorCode: diag.errorCode,
+      message: diag.message,
+      detail: {
+        ...diag.detail,
+        ...(currentNotice === null
+          ? {}
+          : { noticeXmlUrl: truncateForDiagnostic(currentNotice.xmlUrl) }),
+        windowFrom: window.windowFrom,
+        windowTo: window.windowTo,
+      },
+    });
+    counts.errorsCount += 1;
+  } catch (recordCause) {
+    deps.logger.error('ingestion.window.failed.diagnostic_write_failed', {
+      source: TED_SOURCE_ID,
+      error: recordCause instanceof Error ? recordCause.message : String(recordCause),
+    });
+  }
 }
 
 /**
