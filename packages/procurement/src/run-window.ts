@@ -379,13 +379,35 @@ async function processOneNotice(
 }
 
 /**
+ * Cap on any single free-text or URL value stored in a window-failure
+ * diagnostic. `recordError` serializes `detail` to `detail_json`, and D1 caps
+ * a single statement (bound values included) at ~100KB — a pathological TED
+ * URL or error message must never push the insert over that cap, because the
+ * write is guarded and would then be SILENTLY LOST, regressing to the exact
+ * "no durable record" bug this diagnostic exists to fix. Mirrors the intent of
+ * `boundIssuesForErrorDetail` for the per-notice parse path. A few short,
+ * capped fields keep the whole insert comfortably within budget.
+ */
+export const MAX_DIAGNOSTIC_VALUE_CHARS = 2_000;
+
+/** Truncates a diagnostic string to the cap, appending a marker when it bites. */
+export function truncateForDiagnostic(value: string): string {
+  return value.length <= MAX_DIAGNOSTIC_VALUE_CHARS
+    ? value
+    : `${value.slice(0, MAX_DIAGNOSTIC_VALUE_CHARS)}…truncated`;
+}
+
+/**
  * Maps a window-fatal error to a stable, machine-readable diagnostic. Only
  * the errors that legitimately reach the window-level catch are classified:
  * request-budget exhaustion and HTTP failures (both `fetch` stage), with
  * anything else treated as an unexpected persistence/normalization failure
  * (parse and too-large errors are handled per-notice and never arrive here).
  */
-function describeWindowFailure(cause: unknown): {
+function describeWindowFailure(
+  cause: unknown,
+  noticeInFlight: boolean,
+): {
   readonly stage: 'fetch' | 'persist';
   readonly errorCode: string;
   readonly message: string;
@@ -400,20 +422,27 @@ function describeWindowFailure(cause: unknown): {
     };
   }
   if (cause instanceof TedRequestError) {
+    // A stable code per failure shape so alerting can group them: which
+    // request died (a notice-XML fetch vs the search endpoint — the latter
+    // is the only TedRequestError source when no notice is in flight), then
+    // network-level (no status) vs a specific HTTP status.
+    const prefix = noticeInFlight ? 'NOTICE_FETCH' : 'SEARCH_FETCH';
     return {
       stage: 'fetch',
-      // A stable code per failure shape so alerting can group them:
-      // network-level (no status) vs a specific HTTP status.
       errorCode:
-        cause.status === null ? 'NOTICE_FETCH_NETWORK_ERROR' : `NOTICE_FETCH_HTTP_${cause.status}`,
-      message: cause.message,
-      detail: { url: cause.url, status: cause.status, attempts: cause.attempts },
+        cause.status === null ? `${prefix}_NETWORK_ERROR` : `${prefix}_HTTP_${cause.status}`,
+      message: truncateForDiagnostic(cause.message),
+      detail: {
+        url: truncateForDiagnostic(cause.url),
+        status: cause.status,
+        attempts: cause.attempts,
+      },
     };
   }
   return {
     stage: 'persist',
     errorCode: 'UNEXPECTED_WINDOW_ERROR',
-    message: cause instanceof Error ? cause.message : String(cause),
+    message: truncateForDiagnostic(cause instanceof Error ? cause.message : String(cause)),
     detail: cause instanceof Error ? { errorName: cause.name } : {},
   };
 }
@@ -433,7 +462,7 @@ async function recordWindowFailure(
   cause: unknown,
   counts: MutableCounts,
 ): Promise<void> {
-  const diag = describeWindowFailure(cause);
+  const diag = describeWindowFailure(cause, currentNotice !== null);
   try {
     await recordError(deps.db, {
       ingestionRunId,
@@ -444,7 +473,9 @@ async function recordWindowFailure(
       message: diag.message,
       detail: {
         ...diag.detail,
-        ...(currentNotice === null ? {} : { noticeXmlUrl: currentNotice.xmlUrl }),
+        ...(currentNotice === null
+          ? {}
+          : { noticeXmlUrl: truncateForDiagnostic(currentNotice.xmlUrl) }),
         windowFrom: window.windowFrom,
         windowTo: window.windowTo,
       },

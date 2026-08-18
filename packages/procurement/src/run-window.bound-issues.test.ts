@@ -6,7 +6,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ParseIssue } from '@bidmorrow/ted';
 
-import { boundIssuesForErrorDetail, MAX_ISSUES_DETAIL_JSON_CHARS } from './run-window';
+import {
+  boundIssuesForErrorDetail,
+  MAX_DIAGNOSTIC_VALUE_CHARS,
+  MAX_ISSUES_DETAIL_JSON_CHARS,
+  truncateForDiagnostic,
+} from './run-window';
 
 function makeIssue(index: number, messageLength = 20): ParseIssue {
   return {
@@ -60,5 +65,27 @@ describe('boundIssuesForErrorDetail', () => {
     const bounded = boundIssuesForErrorDetail([hugeIssue]);
     expect(JSON.stringify(bounded).length).toBeLessThanOrEqual(MAX_ISSUES_DETAIL_JSON_CHARS);
     expect(bounded).toEqual(['...truncated']);
+  });
+});
+
+describe('truncateForDiagnostic', () => {
+  it('returns short values unchanged', () => {
+    expect(truncateForDiagnostic('https://ted.europa.eu/notice/1.xml')).toBe(
+      'https://ted.europa.eu/notice/1.xml',
+    );
+    expect(truncateForDiagnostic('')).toBe('');
+  });
+
+  it('returns a value exactly at the cap unchanged', () => {
+    const exact = 'x'.repeat(MAX_DIAGNOSTIC_VALUE_CHARS);
+    expect(truncateForDiagnostic(exact)).toBe(exact);
+  });
+
+  it('truncates a pathological value to the cap plus a marker (D1 statement-size guard)', () => {
+    const huge = 'x'.repeat(MAX_DIAGNOSTIC_VALUE_CHARS * 100);
+    const truncated = truncateForDiagnostic(huge);
+    expect(truncated.length).toBe(MAX_DIAGNOSTIC_VALUE_CHARS + '…truncated'.length);
+    expect(truncated.endsWith('…truncated')).toBe(true);
+    expect(truncated.startsWith('x'.repeat(MAX_DIAGNOSTIC_VALUE_CHARS))).toBe(true);
   });
 });
