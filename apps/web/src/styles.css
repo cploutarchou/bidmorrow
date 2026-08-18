@@ -290,12 +290,15 @@ header {
 }
 
 /* --- Brand mark (Logo.tsx) ---
-   `.wordmark` is the header's `<Link>` wrapping the mark + `.product-name`
-   text (MarketingLayout, AuthLayout keeps the plain `.product-name` link
-   alone — no mark there, only marketing/its footer show it). `.brand-mark`
-   sizes the inline SVG purely via CSS (never an inline `style`); its
-   `currentColor` bars inherit `.wordmark`'s `color`, so no separate color
-   rule is needed here. */
+   `.wordmark` wraps the mark + `.product-name` text: MarketingLayout's
+   header/footer `<Link>`s and AuthLayout's header `<Link>` all use it.
+   `.app-wordmark` (Feed/Settings header, below) and the onboarding
+   assistant header render the same mark inline instead, sized by the same
+   `.brand-mark` class, so the mark appears everywhere the wordmark does —
+   not just marketing (2026-08-18 fix: it had been marketing-only).
+   `.brand-mark` sizes the inline SVG purely via CSS (never an inline
+   `style`); its `currentColor` bars inherit the surrounding text color, so
+   no separate color rule is needed per call site. */
 .wordmark {
   display: inline-flex;
   align-items: center;
@@ -2353,6 +2356,7 @@ td {
 .app-wordmark {
   display: inline-flex;
   align-items: center;
+  gap: 0.5rem;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.1rem;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { COMPANY_PRESETS, CONTRACT_NATURES, type ContractNature } from '@bidmorrow/domain';
+import { Logo } from '../../components/Logo';
 import { PRODUCT_NAME } from '../../copy';
 import { api, ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
@@ -1814,7 +1815,10 @@ function OnboardingHeader(): ReactElement {
 
   return (
     <header className="assistant-header">
-      <span className="product-name">{PRODUCT_NAME}</span>
+      <span className="wordmark">
+        <Logo className="brand-mark" />
+        <span className="product-name">{PRODUCT_NAME}</span>
+      </span>
       <button type="button" onClick={() => void signOut()}>
         Log out
       </button>
