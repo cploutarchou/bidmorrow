@@ -192,7 +192,13 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     const ignoreButtons = page.getByRole('button', { name: 'Ignore', exact: true });
     await expect(ignoreButtons.first()).toBeVisible();
     await ignoreButtons.first().click();
-    await expect(page.getByText('Ignored.')).toBeVisible();
+    // Two nodes now render this text by design (docs/redesign/
+    // app-interface-spec.md §8.2): the accessible `role="status"` live
+    // region (visually hidden, the source of truth for AT) and its
+    // `aria-hidden` visual toast twin. Target the live region — it's the
+    // one guaranteed to be unique and is the semantically correct assertion
+    // for a status message.
+    await expect(page.getByRole('status')).toHaveText('Ignored.');
 
     await page.getByRole('tab', { name: 'Ignored' }).click();
     await expect(page.locator('article.tender-card')).toHaveCount(1);
@@ -205,7 +211,8 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     await page.getByRole('checkbox', { name: 'Wrong CPV / category' }).check();
     await page.getByLabel('Additional comment (optional, max 500 characters)').fill('E2E feedback');
     await page.getByRole('button', { name: 'Submit feedback' }).click();
-    await expect(page.getByText('Thanks — feedback recorded.')).toBeVisible();
+    // See the toast-selector note above — target the accessible live region.
+    await expect(page.getByRole('status')).toHaveText('Thanks — feedback recorded.');
   });
 
   test('settings: keyword cap error path (51 keywords -> 422)', async () => {

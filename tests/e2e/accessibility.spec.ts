@@ -16,7 +16,30 @@ interface SeriousViolation {
   readonly nodes: number;
 }
 
+/**
+ * QA fix (2026-08-18): WCAG 1.4.3 contrast applies to the settled, static
+ * rendering of text — not to a transient mid-transition animation frame —
+ * but axe-core has no concept of "wait for animations to finish". The
+ * suite-level `reducedMotion: 'reduce'` context option (playwright.config.ts)
+ * is meant to keep every animation/transition dead everywhere (the app's own
+ * `prefers-reduced-motion: reduce` kill-switch, styles.css), but wasn't
+ * reliably re-applied across every client-side SPA navigation in this
+ * sandboxed/software-rendered browser — producing an intermittent
+ * false-positive `color-contrast` finding on `.cta` buttons caught mid-way
+ * through the onboarding `.assistant-screen` `rise-in` mount animation
+ * (opacity ramping 0→1: a real but non-representative paint frame, not the
+ * shipped, settled UI a user actually reads). Re-asserting the emulation
+ * before every scan (a native browser feature, never a stylesheet — the
+ * simpler `page.addStyleTag` alternative is itself refused by the app's own
+ * CSP, `style-src 'self'`, which is correct and must stay that way) makes
+ * every scan deterministically evaluate the true end state.
+ */
+async function reassertReducedMotion(page: Page): Promise<void> {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+}
+
 async function seriousOrCriticalViolations(page: Page): Promise<SeriousViolation[]> {
+  await reassertReducedMotion(page);
   const results = await new AxeBuilder({ page }).analyze();
   return results.violations
     .filter((v) => v.impact === 'serious' || v.impact === 'critical')
