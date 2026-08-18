@@ -1,0 +1,22 @@
+{
+  "name": "@bidmorrow/ted",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bidmorrow/domain": "workspace:*",
+    "@bidmorrow/observability": "workspace:*",
+    "fast-xml-parser": "^5.10.1"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2",
+    "vitest": "^4.1.0"
+  }
+}

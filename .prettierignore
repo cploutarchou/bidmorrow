@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.wrangler/
+coverage/
+playwright-report/
+test-results/
+pnpm-lock.yaml
+migrations/
+tests/fixtures/
+docs/redesign/mockups/

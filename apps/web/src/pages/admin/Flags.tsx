@@ -1,0 +1,146 @@
+import { useCallback, useEffect, useState, type ReactElement } from 'react';
+import { adminApi } from '../../lib/admin-api';
+import { formatIsoUtc } from '../../lib/format';
+import { ConfirmAction } from '../../components/admin/ConfirmAction';
+import type { AdminFlag } from '../../lib/admin-types';
+
+export function Flags(): ReactElement {
+  const [flags, setFlags] = useState<AdminFlag[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await adminApi.listFlags();
+      setFlags(result.items);
+    } catch {
+      setError('Could not load feature flags.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  function startEdit(flag: AdminFlag): void {
+    setEditingKey(flag.key);
+    setEditValue(flag.value ?? '');
+    setEditDescription(flag.description ?? '');
+  }
+
+  async function saveEdit(): Promise<void> {
+    if (editingKey === null) return;
+    let parsedValue: unknown;
+    try {
+      parsedValue = JSON.parse(editValue);
+    } catch {
+      setStatusMessage('Value must be valid JSON (e.g. "true", "42", or a quoted string).');
+      return;
+    }
+    setBusy(true);
+    setStatusMessage(null);
+    try {
+      await adminApi.updateFlag(editingKey, {
+        value: parsedValue,
+        ...(editDescription.trim().length > 0 ? { description: editDescription.trim() } : {}),
+      });
+      setStatusMessage(`Flag ${editingKey} updated.`);
+      setEditingKey(null);
+      await load();
+    } catch {
+      setStatusMessage('Could not update flag.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <title>Feature flags — Admin</title>
+      <h1>Feature flags</h1>
+      <p role="status" aria-live="polite" className="visually-hidden-status">
+        {statusMessage}
+      </p>
+      {loading && <p>Loading…</p>}
+      {error !== null && (
+        <p role="alert" className="form-error">
+          {error}
+        </p>
+      )}
+      {!loading && flags.length > 0 && (
+        <div className="admin-table-scroll">
+          <table>
+            <caption className="visually-hidden-status">Feature flags</caption>
+            <thead>
+              <tr>
+                <th scope="col">Key</th>
+                <th scope="col">Value</th>
+                <th scope="col">Description</th>
+                <th scope="col">Updated</th>
+                <th scope="col">Edit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {flags.map((flag) => (
+                <tr key={flag.key}>
+                  <td>{flag.key}</td>
+                  <td>{flag.value ?? '(unset)'}</td>
+                  <td>{flag.description ?? '—'}</td>
+                  <td>{formatIsoUtc(flag.updatedAt)}</td>
+                  <td>
+                    <button type="button" onClick={() => startEdit(flag)}>
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {editingKey !== null && (
+        <section>
+          <h2>Editing {editingKey}</h2>
+          <div className="form-field">
+            <label htmlFor="flag-value">Value (JSON)</label>
+            <input
+              id="flag-value"
+              value={editValue}
+              onChange={(event) => setEditValue(event.target.value)}
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor="flag-description">Description</label>
+            <input
+              id="flag-description"
+              value={editDescription}
+              onChange={(event) => setEditDescription(event.target.value)}
+            />
+          </div>
+          <div className="button-row">
+            <ConfirmAction
+              label="Update flag"
+              confirmText="UPDATE_FLAG"
+              busy={busy}
+              variant="danger"
+              onConfirm={() => void saveEdit()}
+            />
+            <button type="button" onClick={() => setEditingKey(null)}>
+              Cancel
+            </button>
+          </div>
+        </section>
+      )}
+    </>
+  );
+}

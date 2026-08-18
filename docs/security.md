@@ -1,0 +1,52 @@
+# Security Baseline
+
+Threat model: docs/threat-model.md (maintained by the security agent; must be
+revisited per its review-triggers section). This document is the control
+baseline every phase is reviewed against. Tenant-isolation failures are
+CRITICAL by definition.
+
+## Mandatory controls
+
+| #   | Control                   | Implementation                                                                                                                                                                                             |
+| --- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C1  | Strict input validation   | zod schemas via @hono/zod-validator on every route (body, params, query); size limits via hono/body-limit; unknown fields rejected on mutating endpoints                                                   |
+| C2  | Safe output encoding      | React default escaping only; `dangerouslySetInnerHTML` banned for any source-derived data (lint rule); digest emails render text through an escaping template — no raw source HTML anywhere                |
+| C3  | CSP                       | strict CSP on app + marketing responses (default-src 'self'; no unsafe-inline scripts; frame-ancestors 'none'), via hono/secure-headers                                                                    |
+| C4  | Security headers          | HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy via hono/secure-headers                                                                                                                  |
+| C5  | Secure cookies            | Better Auth defaults: HttpOnly, Secure, SameSite; origin-validation CSRF (`trustedOrigins`) never disabled                                                                                                 |
+| C6  | Server-side authorization | org context derived from session membership only; repository layer requires organizationId (grep-auditable); roles checked server-side; INTERNAL_ADMIN via `ADMIN_EMAILS` allowlist + separate route group |
+| C7  | Rate/abuse protection     | Workers native rate-limit binding on auth + expensive endpoints; Better Auth built-in limiter (database storage) on auth routes; per-org caps (keywords 50, CPV prefs 30)                                  |
+| C8  | Audit logs                | audit_events row for every admin action, auth-sensitive event, and destructive customer action; append-only                                                                                                |
+| C9  | Webhook integrity         | Stripe `constructEventAsync` signature verification; unique stripe_event_id (DB-enforced idempotency); state re-fetched from Stripe rather than trusting event order                                       |
+| C10 | Secret isolation          | wrangler secrets per environment; `.dev.vars`/`.env*` git-ignored and deny-listed in the session settings; gitleaks in CI; no secrets in logs (redaction in observability package)                        |
+| C11 | Least privilege           | scoped Cloudflare API token (never Global Key); read-only reviewer agents; admin surface separated and audited; queues/R2 reachable only via bindings                                                      |
+
+## Source-data safety
+
+All procurement content is untrusted external input:
+
+- never executed, never rendered as HTML, always escaped;
+- risk-flag/keyword patterns are linear-time (no catastrophic-backtracking
+  regex; patterns reviewed against ReDoS), applied with input length caps;
+- adversarial strings in notices (script tags, SQL fragments, huge tokens)
+  are part of the standard contract/security test fixtures.
+
+## Auth policy
+
+Email/password with mandatory email verification before digest sending;
+password reset with anti-enumeration (uniform responses); session expiry
+7 days / refresh 1 day (Better Auth defaults); account deletion supported.
+Authentication throttling via C7. No OAuth providers in V1 (scope).
+
+## Forbidden patterns (enforced in review)
+
+Raw SQL string interpolation (Drizzle parameterized only) · client-supplied
+organization/role identifiers used for access decisions · error suppression /
+silent catch · secrets or tokens in logs · unsanitized source HTML ·
+disabling CSRF/signature verification "temporarily".
+
+## Review cadence
+
+Security agent reviews every phase touching auth, tenancy, ingestion input
+handling, billing, or admin; production-reviewer independently re-runs
+security tests. 0 CRITICAL and 0 HIGH findings required for phase sign-off.

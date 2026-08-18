@@ -1,0 +1,92 @@
+# One-off diagnostic (2026-08-18): after eNotices2 pairing, the authenticated
+# GET /v3/notices/{publication-number}/xml stopped 403ing but answers 404 for
+# a real published notice — hypothesis: that endpoint serves only the CALLER'S
+# OWN submitted notices (eSender surface), not arbitrary published ones.
+# This dispatchable workflow settles it against the live API (verify-current-
+# docs discipline: probe, don't guess): (1) confirm the test notice exists via
+# the anonymous Search API, (2) try authenticated URL variants, (3) fetch the
+# API's own OpenAPI spec and grep for xml-serving paths. Prints statuses,
+# byte counts and sanitized heads ONLY; the key is never echoed.
+name: TED API probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      publication_number:
+        description: 'Publication number to probe (e.g. 566510-2026)'
+        required: false
+        type: string
+        default: '566510-2026'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ted-api-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 5
+    env:
+      TED_API_KEY: ${{ secrets.TED_API_KEY }}
+      PUB_NUM: ${{ inputs.publication_number }}
+    steps:
+      - name: Validate inputs (defense in depth)
+        run: |
+          [[ "$PUB_NUM" =~ ^[0-9]{1,8}-[0-9]{4}$ ]] || { echo "bad publication_number"; exit 1; }
+          [ -n "$TED_API_KEY" ] || { echo "TED_API_KEY is not set in the staging environment"; exit 1; }
+
+      - name: 1 — Does the notice exist (anonymous Search API)
+        run: |
+          out=$(curl -s -o /tmp/body.out -w '%{http_code}' --max-time 30 \
+            -X POST 'https://api.ted.europa.eu/v3/notices/search' \
+            -H 'Content-Type: application/json' \
+            -H 'User-Agent: BidMorrow/1.0 (+https://bidmorrow.com; support@bidmorrow.com)' \
+            -d "{\"query\": \"publication-number=${PUB_NUM}\", \"fields\": [\"publication-number\", \"publication-date\"], \"limit\": 1}" \
+            || echo 'curl-error')
+          bytes=$(wc -c < /tmp/body.out | tr -d ' ')
+          head=$(head -c 300 /tmp/body.out | tr -d '\n' | tr -c 'a-zA-Z0-9{}[]<>?/=",. :-' '_')
+          echo "search: status=${out} bytes=${bytes} head=${head}"
+          rm -f /tmp/body.out
+
+      - name: 2 — Authenticated URL variants
+        run: |
+          for path in \
+            "v3/notices/${PUB_NUM}/xml" \
+            "v3/notices/${PUB_NUM}" \
+            "v3/notices/xml/${PUB_NUM}" \
+            "v3/notices/${PUB_NUM}/download" ; do
+            out=$(curl -s -o /tmp/body.out -w '%{http_code}' --max-time 30 \
+              -H "Authorization: Bearer ${TED_API_KEY}" \
+              -H 'Accept: application/xml, application/json;q=0.8, */*;q=0.5' \
+              -H 'User-Agent: BidMorrow/1.0 (+https://bidmorrow.com; support@bidmorrow.com)' \
+              "https://api.ted.europa.eu/${path}" || echo 'curl-error')
+            bytes=$(wc -c < /tmp/body.out | tr -d ' ')
+            head=$(head -c 120 /tmp/body.out | tr -d '\n' | tr -c 'a-zA-Z0-9{}[]<>?/=",. :-' '_')
+            echo "GET /${path}: status=${out} bytes=${bytes} head=${head}"
+            rm -f /tmp/body.out
+            sleep 1
+          done
+
+      - name: 3 — OpenAPI spec (run 32152093521 located it at /api-v3.yaml)
+        run: |
+          out=$(curl -s -o /tmp/spec.yaml -w '%{http_code}' --max-time 30 \
+            -H 'Accept: application/yaml, text/yaml, */*;q=0.5' \
+            -H 'User-Agent: BidMorrow/1.0 (+https://bidmorrow.com; support@bidmorrow.com)' \
+            "https://api.ted.europa.eu/api-v3.yaml" || echo 'curl-error')
+          bytes=$(wc -c < /tmp/spec.yaml | tr -d ' ')
+          echo "GET /api-v3.yaml: status=${out} bytes=${bytes}"
+          if [ "$out" = "200" ]; then
+            echo "--- all path keys ---"
+            grep -E '^  /' /tmp/spec.yaml | head -60 || true
+            echo "--- operation summaries/ids (bounded) ---"
+            grep -E '^\s+(summary|operationId):' /tmp/spec.yaml | head -60 || true
+            echo "--- lines mentioning xml (bounded) ---"
+            grep -in 'xml' /tmp/spec.yaml | head -40 || true
+            echo "--- lines mentioning download or content (bounded) ---"
+            grep -inE 'download|content-type|fntc' /tmp/spec.yaml | head -30 || true
+          fi
+          rm -f /tmp/spec.yaml

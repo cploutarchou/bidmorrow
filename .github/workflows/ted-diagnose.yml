@@ -1,0 +1,41 @@
+# TED notice-XML fetch diagnostic (2026-08-18 staging ingest incident):
+# dispatchable reproduction of the production ingestion's search + notice-XML
+# fetch for one publication-date window, with several header variants and
+# full response diagnostics printed to the run log. Run from CI because the
+# session sandbox cannot reach ted.europa.eu. Read-only against TED
+# (anonymous public API + public notice documents); no repository writes,
+# no secrets.
+name: TED fetch diagnostic
+
+on:
+  workflow_dispatch:
+    inputs:
+      window_date:
+        description: 'Publication date to diagnose (YYYY-MM-DD)'
+        required: false
+        type: string
+        default: '2026-08-17'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ted-diagnose
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      WINDOW_DATE: ${{ inputs.window_date }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Validate inputs (defense in depth)
+        run: |
+          echo "$WINDOW_DATE" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' || { echo "bad window_date"; exit 1; }
+
+      - name: Run diagnostic
+        run: node scripts/diagnose-ted-fetch.mjs

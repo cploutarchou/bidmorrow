@@ -1,0 +1,26 @@
+{
+  "name": "@bidmorrow/db",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@bidmorrow/config": "workspace:*",
+    "@bidmorrow/domain": "workspace:*",
+    "drizzle-orm": "~0.45.2"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.21.3",
+    "@cloudflare/workers-types": "^5.20260814.1",
+    "drizzle-kit": "~0.31.0",
+    "typescript": "~5.9.2",
+    "vitest": "^4.1.0"
+  }
+}

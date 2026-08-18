@@ -1,0 +1,948 @@
+import { useEffect, useState, type ReactElement } from 'react';
+import { useNavigate } from 'react-router';
+import { CONTRACT_NATURES, type ContractNature } from '@bidmorrow/domain';
+import { api, ApiError } from '../../lib/api';
+import { useAuth } from '../../lib/auth-context';
+import {
+  CERTIFICATION_CODES,
+  type CertificationCode,
+  type CertificationDto,
+  type DigestPreferencesDto,
+  type ExclusionDto,
+  type GeographyDto,
+  type KeywordDto,
+  type MatchingPreferencesDto,
+  type OrgProfileResponse,
+} from '../../lib/onboarding-types';
+
+/** Mirrors the worker's own 422 `cap_exceeded` shape (packages/db repos). */
+function describeSaveError(cause: unknown): string {
+  if (cause instanceof ApiError && cause.status === 422) {
+    const body = cause.body as { error?: string; cap?: number } | null;
+    if (body?.error === 'cap_exceeded') {
+      return body.cap !== undefined
+        ? `You've reached the limit of ${String(body.cap)} items for this list — remove one before adding another.`
+        : "You've reached the limit for this list — remove an item before adding another.";
+    }
+  }
+  return 'Could not save — please try again.';
+}
+
+interface BillingStatus {
+  entitlement: {
+    active: boolean;
+    plan: 'founding' | 'standard' | null;
+    status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | null;
+    reason: string;
+  };
+  subscription: {
+    plan: 'founding' | 'standard';
+    status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid';
+    cancelAtPeriodEnd: boolean;
+    currentPeriodEndAt: number | null;
+  } | null;
+  foundingAvailable: boolean;
+}
+
+/** Mirrors the worker's `/api/billing/*` error shapes (apps/worker/src/routes/billing.ts). */
+function describeBillingError(cause: unknown): string {
+  if (cause instanceof ApiError) {
+    if (cause.status === 403) return 'Only the organization owner can manage billing.';
+    if (cause.status === 409) {
+      const body = cause.body as { error?: string; reason?: string } | null;
+      if (body?.error === 'subscription_exists') {
+        return 'This organization already has a subscription — use Manage billing to change it.';
+      }
+      if (body?.error === 'founding_unavailable') {
+        return body.reason === 'cap_reached'
+          ? 'The founding plan is full — please choose the standard plan.'
+          : 'The founding plan is not open right now — please choose the standard plan.';
+      }
+    }
+    if (cause.status === 404) return 'No billing account on file yet — subscribe first.';
+    if (cause.status === 503)
+      return 'Billing is not available right now — please try again shortly.';
+  }
+  return 'Could not open billing — please try again.';
+}
+
+/**
+ * Fix for C4 (docs/redesign/ux-strategy.md §5.3): the 11-section wall
+ * collapses into 5 navigable groups mirroring the onboarding phase model
+ * (Company / Coverage+Signals -> "Matching profile" / Review+Digest). Every
+ * existing `<section>`/heading/id/save-button below is preserved verbatim —
+ * this is grouping and navigation only, never a form refactor. IDs double as
+ * the URL hash the 402 notice links to (`/app/settings#billing`).
+ */
+const SETTINGS_GROUPS: { id: string; label: string }[] = [
+  { id: 'billing', label: 'Billing' },
+  { id: 'company', label: 'Company' },
+  { id: 'matching-profile', label: 'Matching profile' },
+  { id: 'digest', label: 'Digest' },
+  { id: 'danger-zone', label: 'Danger zone' },
+];
+
+export function Settings(): ReactElement {
+  const navigate = useNavigate();
+  const { refresh } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const [displayName, setDisplayName] = useState('');
+  const [description, setDescription] = useState('');
+  const [website, setWebsite] = useState('');
+  const [employeeBand, setEmployeeBand] = useState('');
+
+  const [cpvCodes, setCpvCodes] = useState<string[]>([]);
+  const [newCpv, setNewCpv] = useState('');
+
+  const [keywords, setKeywords] = useState<KeywordDto[]>([]);
+  const [newKeyword, setNewKeyword] = useState('');
+
+  const [geographies, setGeographies] = useState<GeographyDto[]>([]);
+  const [newGeography, setNewGeography] = useState('');
+
+  const [exclusions, setExclusions] = useState<ExclusionDto[]>([]);
+  const [newExclusion, setNewExclusion] = useState('');
+
+  const [capabilities, setCapabilities] = useState<string[]>([]);
+  const [newCapability, setNewCapability] = useState('');
+  const [certifications, setCertifications] = useState<CertificationDto[]>([]);
+  const [newCertCode, setNewCertCode] = useState<CertificationCode>('ISO_27001');
+  const [newCertLabel, setNewCertLabel] = useState('');
+
+  const [matching, setMatching] = useState<MatchingPreferencesDto | null>(null);
+  const [digest, setDigest] = useState<DigestPreferencesDto | null>(null);
+  const [supportedNatures, setSupportedNatures] = useState<ContractNature[]>([...CONTRACT_NATURES]);
+
+  const [billing, setBilling] = useState<BillingStatus | null>(null);
+  const [billingBusy, setBillingBusy] = useState(false);
+  const [billingError, setBillingError] = useState<string | null>(null);
+
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const [activeGroup, setActiveGroup] = useState<string>('billing');
+
+  // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) —
+  // purely visual; the accessible `role="status"` live region below reads
+  // `statusMessage` independently and is unaffected by this timeout.
+  useEffect(() => {
+    if (statusMessage === null) return;
+    const timeout = window.setTimeout(() => setStatusMessage(null), 2500);
+    return () => window.clearTimeout(timeout);
+  }, [statusMessage]);
+
+  useEffect(() => {
+    async function load(): Promise<void> {
+      try {
+        const [profileRes, cpvRes, kwRes, geoRes, exRes, capRes, certRes, billingRes] =
+          await Promise.all([
+            api.get<OrgProfileResponse>('/api/org/profile'),
+            api.get<{ cpvPreferences: { cpvCode: string }[] }>('/api/org/cpv-preferences'),
+            api.get<{ keywords: KeywordDto[] }>('/api/org/keywords'),
+            api.get<{ geographies: GeographyDto[] }>('/api/org/geographies'),
+            api.get<{ exclusions: ExclusionDto[] }>('/api/org/exclusions'),
+            api.get<{ capabilities: { label: string }[] }>('/api/org/capabilities'),
+            api.get<{ certifications: CertificationDto[] }>('/api/org/certifications'),
+            api.get<BillingStatus>('/api/billing/status'),
+          ]);
+        setBilling(billingRes);
+        if (profileRes.profile !== null) {
+          setDisplayName(profileRes.profile.displayName ?? '');
+          setDescription(profileRes.profile.description ?? '');
+          setWebsite(profileRes.profile.website ?? '');
+          setEmployeeBand(profileRes.profile.employeeBand ?? '');
+        }
+        setMatching(profileRes.matching);
+        setDigest(profileRes.digest);
+        if (profileRes.matching !== null) {
+          setSupportedNatures(
+            JSON.parse(profileRes.matching.supportedContractNaturesJson) as ContractNature[],
+          );
+        }
+        setCpvCodes(cpvRes.cpvPreferences.map((c) => c.cpvCode));
+        setKeywords(kwRes.keywords);
+        setGeographies(geoRes.geographies);
+        setExclusions(exRes.exclusions);
+        setCapabilities(capRes.capabilities.map((c) => c.label));
+        setCertifications(certRes.certifications);
+      } catch {
+        setSaveError('Could not load your settings. Please refresh the page and try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    void load();
+  }, []);
+
+  // Fix for requirement C ("current-section indication"): scrollspy over the
+  // 5 group anchors. Best-effort — degrades to a static (non-highlighting)
+  // nav in environments without IntersectionObserver; never blocks render.
+  useEffect(() => {
+    if (loading) return;
+    if (typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        const top = visible[0];
+        if (top !== undefined) setActiveGroup(top.target.id);
+      },
+      { rootMargin: '-15% 0px -70% 0px', threshold: [0, 0.25, 0.5, 1] },
+    );
+    for (const group of SETTINGS_GROUPS) {
+      const el = document.getElementById(group.id);
+      if (el !== null) observer.observe(el);
+    }
+    return () => observer.disconnect();
+  }, [loading]);
+
+  async function saveProfile(): Promise<void> {
+    setSaveError(null);
+    try {
+      await api.put('/api/org/profile', {
+        displayName: displayName.length > 0 ? displayName : null,
+        description: description.length > 0 ? description : null,
+        website: website.length > 0 ? website : null,
+        employeeBand: employeeBand.length > 0 ? employeeBand : null,
+        presetKey: null,
+        onboardingCompletedAt: Date.now(),
+      });
+      setStatusMessage('Company profile saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
+  }
+
+  async function saveCpv(): Promise<void> {
+    setSaveError(null);
+    try {
+      await api.put('/api/org/cpv-preferences', { cpvCodes });
+      setStatusMessage('CPV preferences saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
+  }
+
+  async function saveKeywords(): Promise<void> {
+    setSaveError(null);
+    try {
+      await api.put('/api/org/keywords', { keywords });
+      setStatusMessage('Keywords saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
+  }
+
+  async function saveGeographies(): Promise<void> {
+    setSaveError(null);
+    try {
+      await api.put('/api/org/geographies', { geographies });
+      setStatusMessage('Geographies saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
+  }
+
+  async function saveExclusions(): Promise<void> {
+    setSaveError(null);
+    try {
+      await api.put('/api/org/exclusions', { exclusions });
+      setStatusMessage('Exclusions saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
+  }
+
+  async function saveCapabilities(): Promise<void> {
+    setSaveError(null);
+    try {
+      await api.put('/api/org/capabilities', { labels: capabilities });
+      setStatusMessage('Capabilities saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
+  }
+
+  async function saveCertifications(): Promise<void> {
+    setSaveError(null);
+    try {
+      await api.put('/api/org/certifications', { certifications });
+      setStatusMessage('Certifications saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
+  }
+
+  async function saveMatching(): Promise<void> {
+    if (matching === null) return;
+    setSaveError(null);
+    try {
+      await api.put('/api/org/matching-preferences', {
+        minValueEur: matching.minValueEur,
+        maxValueEur: matching.maxValueEur,
+        supportedContractNatures: supportedNatures,
+        minimumDaysRemaining: matching.minimumDaysRemaining,
+      });
+      setStatusMessage('Matching preferences saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
+  }
+
+  async function saveDigest(): Promise<void> {
+    if (digest === null) return;
+    setSaveError(null);
+    try {
+      await api.put('/api/org/digest-preferences', {
+        enabled: digest.enabled === 1,
+        sendEmpty: digest.sendEmpty === 1,
+        minClassification: digest.minClassification,
+        timezone: digest.timezone,
+      });
+      setStatusMessage('Digest preferences saved.');
+    } catch (cause) {
+      setSaveError(describeSaveError(cause));
+    }
+  }
+
+  async function startCheckout(plan: 'founding' | 'standard'): Promise<void> {
+    setBillingError(null);
+    setBillingBusy(true);
+    try {
+      const { url } = await api.post<{ url: string }>('/api/billing/checkout', { plan });
+      window.location.href = url;
+    } catch (cause) {
+      setBillingError(describeBillingError(cause));
+      setBillingBusy(false);
+    }
+  }
+
+  async function openPortal(): Promise<void> {
+    setBillingError(null);
+    setBillingBusy(true);
+    try {
+      const { url } = await api.post<{ url: string }>('/api/billing/portal');
+      window.location.href = url;
+    } catch (cause) {
+      setBillingError(describeBillingError(cause));
+      setBillingBusy(false);
+    }
+  }
+
+  async function deleteAccount(): Promise<void> {
+    setDeleteError(null);
+    try {
+      await api.delete('/api/account');
+      await refresh();
+      void navigate('/');
+    } catch (cause) {
+      if (cause instanceof ApiError && cause.status === 409) {
+        setDeleteError(
+          'You are the sole owner of an organization. Transfer or delete the organization before deleting your account.',
+        );
+      } else {
+        setDeleteError('Could not delete your account. Please try again or contact support.');
+      }
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="feed-skeleton-list" aria-hidden="true">
+        <div className="feed-skeleton-card" />
+        <div className="feed-skeleton-card" />
+        <div className="feed-skeleton-card" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <title>Settings — BidMorrow</title>
+      <h1>Settings</h1>
+      <p role="status" aria-live="polite" className="visually-hidden-status">
+        {statusMessage}
+      </p>
+      {statusMessage !== null && (
+        <div className="app-toast" aria-hidden="true">
+          {statusMessage}
+        </div>
+      )}
+      {saveError !== null && (
+        <p role="alert" className="form-error">
+          {saveError}
+        </p>
+      )}
+
+      <div className="settings-shell">
+        <nav className="settings-nav" aria-label="Settings sections">
+          <ul>
+            {SETTINGS_GROUPS.map((group) => (
+              <li key={group.id}>
+                <a
+                  href={`#${group.id}`}
+                  aria-current={activeGroup === group.id ? 'true' : undefined}
+                >
+                  {group.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="settings-content">
+          <section id="billing" className="settings-group">
+            <h2>Billing</h2>
+            {billingError !== null && (
+              <p role="alert" className="form-error">
+                {billingError}
+              </p>
+            )}
+            {billing !== null && (
+              <>
+                {billing.subscription === null ? (
+                  <>
+                    <p>No active subscription.</p>
+                    <p className="hint">
+                      Founding price is locked in for the life of your subscription — it never
+                      migrates to the standard price later.
+                    </p>
+                    <div className="button-row">
+                      {billing.foundingAvailable && (
+                        <button
+                          className="cta"
+                          type="button"
+                          disabled={billingBusy}
+                          onClick={() => void startCheckout('founding')}
+                        >
+                          Subscribe — Founding (€29/mo, limited spots)
+                        </button>
+                      )}
+                      <button
+                        className="cta"
+                        type="button"
+                        disabled={billingBusy}
+                        onClick={() => void startCheckout('standard')}
+                      >
+                        Subscribe — Standard (€49/mo)
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      Plan: <strong>{billing.subscription.plan}</strong> · Status:{' '}
+                      <strong>{billing.subscription.status}</strong>
+                      {billing.subscription.cancelAtPeriodEnd ? ' (cancels at period end)' : ''}
+                      {!billing.entitlement.active
+                        ? ` — ${billing.entitlement.reason.replace(/_/g, ' ')}`
+                        : ''}
+                    </p>
+                    <button
+                      className="cta"
+                      type="button"
+                      disabled={billingBusy}
+                      onClick={() => void openPortal()}
+                    >
+                      Manage billing
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+          </section>
+
+          <section id="company" className="settings-group">
+            <h2>Company profile</h2>
+            <div className="form-field">
+              <label htmlFor="settings-name">Company name</label>
+              <input
+                id="settings-name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+              />
+            </div>
+            <div className="form-field">
+              <label htmlFor="settings-description">Description</label>
+              <textarea
+                id="settings-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+            <div className="form-field">
+              <label htmlFor="settings-website">Website</label>
+              <input
+                id="settings-website"
+                type="url"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+              />
+            </div>
+            <div className="form-field">
+              <label htmlFor="settings-employees">Company size</label>
+              <input
+                id="settings-employees"
+                value={employeeBand}
+                onChange={(e) => setEmployeeBand(e.target.value)}
+              />
+            </div>
+            <div className="form-actions">
+              <button className="cta" type="button" onClick={() => void saveProfile()}>
+                Save profile
+              </button>
+            </div>
+          </section>
+
+          <section id="matching-profile" className="settings-group">
+            <h2>Matching profile</h2>
+            <p className="hint">
+              Everything below is what the scoring engine matches against — CPV codes, keywords,
+              geographies, capabilities, certifications, exclusions, and your value/deadline range.
+            </p>
+
+            <section className="settings-subsection">
+              <h3>CPV codes</h3>
+              <ul className="chip-list">
+                {cpvCodes.map((code) => (
+                  <li key={code}>
+                    {code}
+                    <button
+                      type="button"
+                      aria-label={`Remove CPV ${code}`}
+                      onClick={() => setCpvCodes((cs) => cs.filter((c) => c !== code))}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="form-field inline">
+                <label htmlFor="new-cpv">Add CPV code</label>
+                <input id="new-cpv" value={newCpv} onChange={(e) => setNewCpv(e.target.value)} />
+                <button
+                  type="button"
+                  className="btn-add"
+                  onClick={() => {
+                    if (newCpv.trim().length > 0 && cpvCodes.length < 30) {
+                      setCpvCodes((cs) => [...cs, newCpv.trim()]);
+                      setNewCpv('');
+                    }
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveCpv()}>
+                  Save CPV codes
+                </button>
+              </div>
+            </section>
+
+            <section className="settings-subsection">
+              <h3>Keywords</h3>
+              <ul className="chip-list">
+                {keywords.map((keyword, index) => (
+                  <li key={`${keyword.term}-${index}`}>
+                    {keyword.term}
+                    <button
+                      type="button"
+                      aria-label={`Remove keyword ${keyword.term}`}
+                      onClick={() => setKeywords((ks) => ks.filter((_, i) => i !== index))}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="form-field inline">
+                <label htmlFor="new-keyword">Add keyword</label>
+                <input
+                  id="new-keyword"
+                  value={newKeyword}
+                  onChange={(e) => setNewKeyword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn-add"
+                  onClick={() => {
+                    if (newKeyword.trim().length > 0) {
+                      setKeywords((ks) => [
+                        ...ks,
+                        {
+                          kind: 'positive',
+                          term: newKeyword.trim(),
+                          synonymGroup: null,
+                          language: null,
+                        },
+                      ]);
+                      setNewKeyword('');
+                    }
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveKeywords()}>
+                  Save keywords
+                </button>
+              </div>
+            </section>
+
+            <section className="settings-subsection">
+              <h3>Geographies</h3>
+              <ul className="chip-list">
+                {geographies.map((geo, index) => (
+                  <li key={`${geo.kind}-${geo.code}-${index}`}>
+                    {geo.kind}: {geo.code}
+                    <button
+                      type="button"
+                      aria-label={`Remove geography ${geo.code}`}
+                      onClick={() => setGeographies((gs) => gs.filter((_, i) => i !== index))}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="form-field inline">
+                <label htmlFor="new-geo">Add country code (opportunity country)</label>
+                <input
+                  id="new-geo"
+                  maxLength={2}
+                  value={newGeography}
+                  onChange={(e) => setNewGeography(e.target.value.toUpperCase())}
+                />
+                <button
+                  type="button"
+                  className="btn-add"
+                  onClick={() => {
+                    if (newGeography.trim().length > 0) {
+                      setGeographies((gs) => [
+                        ...gs,
+                        { kind: 'opportunity_country', code: newGeography.trim() },
+                      ]);
+                      setNewGeography('');
+                    }
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveGeographies()}>
+                  Save geographies
+                </button>
+              </div>
+            </section>
+
+            <section className="settings-subsection">
+              <h3>Exclusions</h3>
+              <ul className="chip-list">
+                {exclusions.map((exclusion, index) => (
+                  <li key={`${exclusion.kind}-${exclusion.value}-${index}`}>
+                    {exclusion.kind}: {exclusion.value}
+                    <button
+                      type="button"
+                      aria-label={`Remove exclusion ${exclusion.value}`}
+                      onClick={() => setExclusions((ex) => ex.filter((_, i) => i !== index))}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="form-field inline">
+                <label htmlFor="new-exclusion">Add excluded phrase</label>
+                <input
+                  id="new-exclusion"
+                  value={newExclusion}
+                  onChange={(e) => setNewExclusion(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn-add"
+                  onClick={() => {
+                    if (newExclusion.trim().length > 0) {
+                      setExclusions((ex) => [
+                        ...ex,
+                        { kind: 'phrase', value: newExclusion.trim() },
+                      ]);
+                      setNewExclusion('');
+                    }
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveExclusions()}>
+                  Save exclusions
+                </button>
+              </div>
+            </section>
+
+            <section className="settings-subsection">
+              <h3>Capabilities</h3>
+              <ul className="chip-list">
+                {capabilities.map((label, index) => (
+                  <li key={`${label}-${index}`}>
+                    {label}
+                    <button
+                      type="button"
+                      aria-label={`Remove capability ${label}`}
+                      onClick={() => setCapabilities((cs) => cs.filter((_, i) => i !== index))}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="form-field inline">
+                <label htmlFor="new-capability">Add capability</label>
+                <input
+                  id="new-capability"
+                  value={newCapability}
+                  onChange={(e) => setNewCapability(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn-add"
+                  onClick={() => {
+                    if (newCapability.trim().length > 0) {
+                      setCapabilities((cs) => [...cs, newCapability.trim()]);
+                      setNewCapability('');
+                    }
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveCapabilities()}>
+                  Save capabilities
+                </button>
+              </div>
+            </section>
+
+            <section className="settings-subsection">
+              <h3>Certifications</h3>
+              <ul className="chip-list">
+                {certifications.map((cert, index) => (
+                  <li key={`${cert.certificationCode}-${index}`}>
+                    {cert.certificationCode}
+                    {cert.label !== null ? `: ${cert.label}` : ''}
+                    <button
+                      type="button"
+                      aria-label={`Remove certification ${cert.certificationCode}`}
+                      onClick={() => setCertifications((cs) => cs.filter((_, i) => i !== index))}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="form-field inline">
+                <label htmlFor="settings-cert-code">Certification</label>
+                <select
+                  id="settings-cert-code"
+                  value={newCertCode}
+                  onChange={(e) => setNewCertCode(e.target.value as CertificationCode)}
+                >
+                  {CERTIFICATION_CODES.map((code) => (
+                    <option key={code} value={code}>
+                      {code}
+                    </option>
+                  ))}
+                </select>
+                {newCertCode === 'OTHER' && (
+                  <>
+                    <label htmlFor="settings-cert-label">Certification name</label>
+                    <input
+                      id="settings-cert-label"
+                      value={newCertLabel}
+                      onChange={(e) => setNewCertLabel(e.target.value)}
+                    />
+                  </>
+                )}
+                <button
+                  type="button"
+                  className="btn-add"
+                  onClick={() => {
+                    if (newCertCode === 'OTHER' && newCertLabel.trim().length === 0) return;
+                    setCertifications((cs) => [
+                      ...cs,
+                      {
+                        certificationCode: newCertCode,
+                        label: newCertCode === 'OTHER' ? newCertLabel.trim() : null,
+                      },
+                    ]);
+                    setNewCertLabel('');
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveCertifications()}>
+                  Save certifications
+                </button>
+              </div>
+            </section>
+
+            {matching !== null && (
+              <section className="settings-subsection">
+                <h3>Value range & deadline threshold</h3>
+                <div className="form-field">
+                  <label htmlFor="settings-min-value">Minimum contract value (EUR)</label>
+                  <input
+                    id="settings-min-value"
+                    type="number"
+                    min={0}
+                    value={matching.minValueEur ?? ''}
+                    onChange={(e) =>
+                      setMatching({
+                        ...matching,
+                        minValueEur: e.target.value.length > 0 ? Number(e.target.value) : null,
+                      })
+                    }
+                  />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="settings-max-value">Maximum contract value (EUR)</label>
+                  <input
+                    id="settings-max-value"
+                    type="number"
+                    min={0}
+                    value={matching.maxValueEur ?? ''}
+                    onChange={(e) =>
+                      setMatching({
+                        ...matching,
+                        maxValueEur: e.target.value.length > 0 ? Number(e.target.value) : null,
+                      })
+                    }
+                  />
+                </div>
+                <fieldset className="field-group">
+                  <legend>Contract types you support</legend>
+                  {CONTRACT_NATURES.map((nature) => (
+                    <label key={nature} className="checkbox-row">
+                      <input
+                        type="checkbox"
+                        checked={supportedNatures.includes(nature)}
+                        onChange={() =>
+                          setSupportedNatures((ns) =>
+                            ns.includes(nature) ? ns.filter((n) => n !== nature) : [...ns, nature],
+                          )
+                        }
+                      />
+                      {nature}
+                    </label>
+                  ))}
+                </fieldset>
+                <div className="form-field">
+                  <label htmlFor="settings-min-days">
+                    Minimum days remaining you're willing to bid
+                  </label>
+                  <input
+                    id="settings-min-days"
+                    type="number"
+                    min={0}
+                    value={matching.minimumDaysRemaining ?? ''}
+                    onChange={(e) =>
+                      setMatching({
+                        ...matching,
+                        minimumDaysRemaining:
+                          e.target.value.length > 0 ? Number(e.target.value) : null,
+                      })
+                    }
+                  />
+                </div>
+                <div className="form-actions">
+                  <button className="cta" type="button" onClick={() => void saveMatching()}>
+                    Save matching preferences
+                  </button>
+                </div>
+              </section>
+            )}
+          </section>
+
+          {digest !== null && (
+            <section id="digest" className="settings-group">
+              <h2>Digest preferences</h2>
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={digest.enabled === 1}
+                  onChange={(e) => setDigest({ ...digest, enabled: e.target.checked ? 1 : 0 })}
+                />
+                Send me a daily digest email
+              </label>
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={digest.sendEmpty === 1}
+                  onChange={(e) => setDigest({ ...digest, sendEmpty: e.target.checked ? 1 : 0 })}
+                />
+                Send the digest even on days with no matches
+              </label>
+              <div className="form-field">
+                <label htmlFor="settings-digest-min">Minimum classification to include</label>
+                <select
+                  id="settings-digest-min"
+                  value={digest.minClassification}
+                  onChange={(e) => setDigest({ ...digest, minClassification: e.target.value })}
+                >
+                  <option value="STRONG_MATCH">Strong match only</option>
+                  <option value="WORTH_REVIEWING">Worth reviewing or better</option>
+                  <option value="POSSIBLE_MATCH">Possible match or better</option>
+                  <option value="LOW_FIT">Everything</option>
+                </select>
+              </div>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveDigest()}>
+                  Save digest preferences
+                </button>
+              </div>
+            </section>
+          )}
+
+          <section id="danger-zone" className="settings-group settings-danger">
+            <h2>Delete account</h2>
+            <p>
+              This permanently deletes your account. If you're the sole owner of an organization,
+              you must transfer or delete it first.
+            </p>
+            {deleteError !== null && (
+              <p role="alert" className="form-error">
+                {deleteError}
+              </p>
+            )}
+            <div className="form-field">
+              <label htmlFor="delete-confirm">Type DELETE to confirm</label>
+              <input
+                id="delete-confirm"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              className="danger"
+              disabled={deleteConfirmText !== 'DELETE'}
+              onClick={() => void deleteAccount()}
+            >
+              Permanently delete my account
+            </button>
+          </section>
+        </div>
+      </div>
+    </>
+  );
+}
