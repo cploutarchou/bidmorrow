@@ -20,5 +20,7 @@ export * from './plans';
 export * from './checkout';
 export * from './portal';
 export * from './cancellation';
+export * from './reactivation';
+export * from './invoices';
 export * from './webhook';
 export * from './entitlement';
