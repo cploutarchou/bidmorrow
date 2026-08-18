@@ -172,6 +172,7 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           STRIPE_PRICE_FOUNDING_MONTHLY: ${{ secrets.STRIPE_PRICE_FOUNDING_MONTHLY }}
           STRIPE_PRICE_STANDARD_MONTHLY: ${{ secrets.STRIPE_PRICE_STANDARD_MONTHLY }}
+          TED_API_KEY: ${{ secrets.TED_API_KEY }}
           ADMIN_EMAILS: ${{ vars.ADMIN_EMAILS }}
           EMAIL_FROM: ${{ vars.EMAIL_FROM }}
         run: |
@@ -180,7 +181,7 @@ jobs:
           # Production MUST use live-mode Stripe keys — never staging's test
           # keys (docs/deployment.md environment rules).
           node -e '
-            const keys = ["BETTER_AUTH_SECRET","RESEND_API_KEY","STRIPE_SECRET_KEY","STRIPE_WEBHOOK_SECRET","STRIPE_PRICE_FOUNDING_MONTHLY","STRIPE_PRICE_STANDARD_MONTHLY","ADMIN_EMAILS","EMAIL_FROM"];
+            const keys = ["BETTER_AUTH_SECRET","RESEND_API_KEY","STRIPE_SECRET_KEY","STRIPE_WEBHOOK_SECRET","STRIPE_PRICE_FOUNDING_MONTHLY","STRIPE_PRICE_STANDARD_MONTHLY","TED_API_KEY","ADMIN_EMAILS","EMAIL_FROM"];
             const out = {};
             for (const k of keys) { const v = process.env[k]; if (v !== undefined && v !== "") out[k] = v; }
             if (out.BETTER_AUTH_SECRET === undefined) { console.error("BETTER_AUTH_SECRET missing in the production environment secrets"); process.exit(1); }

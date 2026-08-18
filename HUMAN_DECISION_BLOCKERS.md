@@ -258,10 +258,35 @@ the registration threshold is their/their accountant's responsibility.
    principal can technically dispatch a production deploy — recorded in
    docs/threat-model.md §5.
 
+## 9. TED developer API key — OPEN (2026-08-18)
+
+TED changed the anonymous notice-XML front-end (`ted.europa.eu/<lang>/notice/<id>/xml`)
+to asynchronous rendering: HTTP 202 + empty body on first request for every
+client, 200 + XML only once the render is cached (diagnosed live, CI runs
+32131289081 / 32131832286 — this broke the first non-empty staging ingest,
+2026-08-18 05:00 UTC). An **authenticated** notice-XML endpoint exists on the
+API host (`api.ted.europa.eu/v3/notices/<publication-number>/xml` answers
+`400 Missing Authorization header`), which is the robust, officially
+supported route.
+
+Owner action: register at https://developer.ted.europa.eu/home, create an
+API key, and add it as secret **`TED_API_KEY`** in BOTH the `staging` and
+`production` GitHub environments (repo → Settings → Environments). The
+deploy workflows will push it to the Worker as a runtime secret once wired
+(implementation follows this item). Do NOT paste the key in chat/issues —
+GitHub environment secrets only.
+
+Until provided: ingestion falls back to the anonymous front-end route with
+202-aware retry cycling (self-healing across daily runs — renders are
+triggered on first pass and served from cache on the next), so real data
+still lands; the API key removes the extra latency/uncertainty.
+
 ---
 
 ## Not blockers (deliberately)
 
-- TED API: public, no credential required (verified in docs/ted-data-source.md).
+- ~~TED API: public, no credential required (verified in docs/ted-data-source.md).~~
+  SUPERSEDED 2026-08-18 by item 9: search remains anonymous, but the robust
+  notice-XML route needs a (free) developer API key.
 - LLM keys: no production LLM usage in V1 by design.
 - Analytics/monitoring SaaS: none used in V1.

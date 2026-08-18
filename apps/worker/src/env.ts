@@ -24,6 +24,14 @@ export interface Env {
   /** TED Search API origin (docs/dependency-versions.md); optional — TedClient defaults to TED_API_BASE. */
   TED_API_BASE_URL?: string;
   /**
+   * TED developer-portal API key (HUMAN_DECISION_BLOCKERS item 9); secret,
+   * pushed by the deploy workflows when set in the GitHub environment.
+   * Optional: absent/empty means the client uses the anonymous notice-XML
+   * front-end (async render, 202-aware requeue). When set, notice XML is
+   * fetched from the authenticated `/v3/notices/{id}/xml` API endpoint.
+   */
+  TED_API_KEY?: string;
+  /**
    * Comma-separated allowlist of INTERNAL_ADMIN emails (docs/security.md
    * C6). Never a wrangler.jsonc `vars` entry (those are committed,
    * non-secret config) — always `wrangler secret put` / `.dev.vars`.

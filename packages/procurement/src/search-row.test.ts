@@ -61,3 +61,21 @@ describe('extractSearchRow: publication-number validation (SEC-P5-02)', () => {
     expect(extractSearchRow(row('abc/def'))).toBeNull();
   });
 });
+
+describe('extractSearchRow: xml URL length cap (BM-51-1)', () => {
+  const rowWithUrl = (xmlUrl: string) => ({
+    'publication-number': '123-2026',
+    'publication-date': '2026-08-10',
+    links: { xml: { MUL: xmlUrl } },
+  });
+
+  it('accepts a realistic-length URL', () => {
+    const url = `https://ted.europa.eu/en/notice/123-2026/xml`;
+    expect(extractSearchRow(rowWithUrl(url))?.xmlUrl).toBe(url);
+  });
+
+  it('rejects an oversized URL as a malformed row — window rows are buffered in memory', () => {
+    const url = `https://ted.europa.eu/${'a'.repeat(2_100)}`;
+    expect(extractSearchRow(rowWithUrl(url))).toBeNull();
+  });
+});

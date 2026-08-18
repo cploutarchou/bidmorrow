@@ -74,12 +74,16 @@ const REQUEST = {
   limit: 250,
 } as const;
 
-function makeClient(fetchImpl: TedFetch, overrides?: { maxRequestsPerRun?: number }) {
+function makeClient(
+  fetchImpl: TedFetch,
+  overrides?: { maxRequestsPerRun?: number; apiKey?: string },
+) {
   return new TedClient({
     fetch: fetchImpl,
     budget: { maxRequestsPerRun: overrides?.maxRequestsPerRun ?? 10 },
     logger: createLogger({ test: 'ted-client' }),
     random: () => 0, // deterministic jitter for timing assertions
+    ...(overrides?.apiKey === undefined ? {} : { apiKey: overrides.apiKey }),
   });
 }
 
@@ -298,16 +302,43 @@ describe('TedClient.fetchNoticeXml', () => {
     expect(TED_USER_AGENT).toContain('BidMorrow');
   });
 
-  it('rejects an HTTP 200 response with an empty body as a failed fetch, not valid XML', async () => {
+  it('surfaces an HTTP 200 response with an empty body as render-pending, not valid XML', async () => {
     // Fresh client per case — a second request on one client would park on
-    // the 500 ms spacing sleep under fake timers.
+    // the 500 ms spacing sleep under fake timers. Empty 2xx = the async
+    // front-end's "not rendered yet" signal (docs/ted-data-source.md,
+    // 2026-08-18) — the caller requeues the notice.
     for (const emptyBody of ['', '  \n\t ']) {
       const { fetchImpl } = makeFakeFetch([{ status: 200, body: emptyBody }]);
       const client = makeClient(fetchImpl);
       await expect(
         client.fetchNoticeXml('https://ted.europa.eu/en/notice/1-2026/xml'),
-      ).rejects.toMatchObject({ name: 'TedRequestError', status: 200 });
+      ).rejects.toMatchObject({ name: 'TedRenderPendingError', status: 200 });
     }
+  });
+
+  it('surfaces HTTP 202 as render-pending without reading the body', async () => {
+    const { fetchImpl } = makeFakeFetch([{ status: 202, body: '' }]);
+    const client = makeClient(fetchImpl);
+    await expect(
+      client.fetchNoticeXml('https://ted.europa.eu/en/notice/1-2026/xml'),
+    ).rejects.toMatchObject({ name: 'TedRenderPendingError', status: 202 });
+  });
+
+  it('uses the authenticated API route with Authorization when apiKey + publicationNumber are provided', async () => {
+    const { fetchImpl, calls } = makeFakeFetch([{ status: 200, body: '<xml/>' }]);
+    const client = makeClient(fetchImpl, { apiKey: 'test-key-123' });
+    const xml = await client.fetchNoticeXml('https://ted.europa.eu/en/notice/1-2026/xml', '1-2026');
+    expect(xml).toBe('<xml/>');
+    expect(calls[0]?.url).toBe('https://api.ted.europa.eu/v3/notices/1-2026/xml');
+    expect(calls[0]?.headers['Authorization']).toBe('Bearer test-key-123');
+  });
+
+  it('stays on the anonymous front-end URL (no Authorization) when no apiKey is configured', async () => {
+    const { fetchImpl, calls } = makeFakeFetch([{ status: 200, body: '<xml/>' }]);
+    const client = makeClient(fetchImpl);
+    await client.fetchNoticeXml('https://ted.europa.eu/en/notice/1-2026/xml', '1-2026');
+    expect(calls[0]?.url).toBe('https://ted.europa.eu/en/notice/1-2026/xml');
+    expect(calls[0]?.headers['Authorization']).toBeUndefined();
   });
 
   it('refuses non-TED hosts and non-https URLs without spending budget', async () => {

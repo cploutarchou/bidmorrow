@@ -200,3 +200,20 @@ Control Room design ships zero custom fonts.
 
 - Resend pricing tiers (free 3k/mo, $20/50k figures from secondary sources).
 - Stripe webhook-set page wording (verified via snippets + stripe-node source).
+
+## TED notice-XML download route (2026-08-18)
+
+- The anonymous `ted.europa.eu/<lang>/notice/<id>/xml` front-end switched to
+  asynchronous rendering (HTTP 202 + empty body first, cached XML later) —
+  verified live via the `ted-diagnose` workflow (runs 32131289081,
+  32131832286, 32132169652). `docs/ted-data-source.md` carries the full
+  behavior record; `TedClient`/`runIngestionWindow` implement 202-aware
+  requeue cycling.
+- `GET api.ted.europa.eu/v3/notices/{publication-number}/xml` is the
+  authenticated alternative (`400 Missing Authorization header` without a
+  key — verified in the same runs). The client ships `Authorization:
+Bearer <TED_API_KEY>`; **UNVERIFIED against the live API** until the owner
+  stores `TED_API_KEY` (HUMAN_DECISION_BLOCKERS item 9) and the
+  `ted-key-verify` workflow is dispatched — do not enable the key in any
+  environment before that run confirms the header shape (update
+  `packages/ted/src/client.ts` first if only the raw-key shape works).

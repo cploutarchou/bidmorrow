@@ -46,6 +46,15 @@ function isValidSourceNoticeId(value: string): boolean {
 }
 
 /**
+ * Cap on an accepted `links.xml.MUL` URL. Real TED notice-XML URLs are
+ * ~50 chars; the window work queue now buffers every accepted row in memory
+ * (run-window.ts phase 1), so a hostile/compromised search response must
+ * not be able to inflate per-row size unboundedly (BM-51-1, security review
+ * PR #51). Longer URLs are treated as a malformed row.
+ */
+const MAX_XML_URL_CHARS = 2_048;
+
+/**
  * Pulls `publication-number`, `publication-date`, and `links.xml.MUL` out of
  * a search row. Returns null (never throws, never fabricates) when any
  * required field is missing or malformed — the caller records an
@@ -67,6 +76,7 @@ export function extractSearchRow(row: Readonly<Record<string, unknown>>): Search
     sourceNoticeId === null ||
     publicationDate === null ||
     xmlUrl === null ||
+    xmlUrl.length > MAX_XML_URL_CHARS ||
     !isValidSourceNoticeId(sourceNoticeId)
   ) {
     return null;
