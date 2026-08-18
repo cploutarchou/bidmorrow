@@ -3,7 +3,6 @@ import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode }
 import { Link } from 'react-router';
 import { DECISION_SUPPORT_DISCLAIMER, PRODUCT_NAME, TED_ATTRIBUTION } from '../copy';
 import { Logo } from './Logo';
-import { ThemeToggle } from './ThemeToggle';
 
 const NAV_LINKS: { to: string; label: string }[] = [
   { to: '/pricing', label: 'Pricing' },
@@ -13,23 +12,25 @@ const NAV_LINKS: { to: string; label: string }[] = [
 ];
 
 /**
- * Shared shell for every marketing page (Direction G "Strata" mockup,
- * docs/redesign/mockups/direction-g-strata.html `.nav`/`.footer`). `.cta`
- * and `.site-header` are also rendered by the auth pages
- * (`pages/auth/AuthLayout.tsx`) and, for `.cta`, by the already-Strata app
- * screens — their styling lives in styles.css as a shared upgrade, not a
+ * Shared shell for every marketing page (Direction B "Control Room" mockup,
+ * docs/redesign/mockups/direction-b-control-room.html `header.site`/
+ * `footer.site`). `.cta` and `.site-header` are also rendered by the auth
+ * pages (`pages/auth/AuthLayout.tsx`) and, for `.cta`, by the app screens —
+ * their styling lives in styles.css as a shared upgrade, not a
  * `.mkt-*`-namespaced one, so it stays visually coherent everywhere it's
  * used. `fullBleed` opts a page's `<main>` out of the shared centered
- * text-column container so it can run its own full-width Strata sections
- * (Home only, today) without affecting any other marketing page.
+ * text-column container so it can run its own full-width sections (Home
+ * only, today) without affecting any other marketing page.
  *
  * Below ~56rem (900px, styles.css `MARKETING SITE` section) the inline
  * `.nav-list`/`.nav-actions` are hidden and replaced with a hamburger
  * toggle that opens `.mkt-menu-panel` — a dropdown holding the same links
- * plus Log in / Sign up / theme toggle. The mockup only hides the nav
- * links under its equivalent breakpoint and leaves nothing in their place;
- * that's the "3 stacked rows" bug this component fixes, so this menu is a
- * deliberate improvement on the mockup rather than a literal port of it.
+ * plus Log in / Sign up. The mockup only hides the nav links under its
+ * equivalent breakpoint and leaves nothing in their place; that's the
+ * "3 stacked rows" bug this component fixes, so this menu is a deliberate
+ * improvement on the mockup rather than a literal port of it. Single-theme
+ * dark only (2026-08-18 decision log) — there is no theme toggle anywhere
+ * in this shell.
  */
 export function MarketingLayout({
   children,
@@ -105,7 +106,6 @@ export function MarketingLayout({
             <Link className="cta cta-small" to="/signup">
               Sign up
             </Link>
-            <ThemeToggle />
           </div>
 
           <button
@@ -142,7 +142,6 @@ export function MarketingLayout({
               <Link className="cta" to="/signup" onClick={closeMenu}>
                 Sign up
               </Link>
-              <ThemeToggle />
             </div>
           </div>
         </nav>
@@ -155,7 +154,7 @@ export function MarketingLayout({
           <div className="mkt-footer__brand">
             <Link className="mkt-footer__wordmark" to="/" aria-label="BidMorrow home">
               <Logo className="brand-mark" />
-              <span>{PRODUCT_NAME}</span>
+              <span className="product-name">{PRODUCT_NAME}</span>
             </Link>
             <p>{TED_ATTRIBUTION}</p>
             <p>{DECISION_SUPPORT_DISCLAIMER}</p>

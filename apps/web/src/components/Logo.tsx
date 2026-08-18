@@ -1,15 +1,15 @@
 import { useId, type ReactElement } from 'react';
 
 /**
- * BidMorrow brand mark — three stacked rounded bars (approved reference:
- * docs/redesign/mockups/direction-g-strata.html ~L995-1010; the same shape
- * as `apps/web/public/favicon.svg`). The top two bars are filled with
- * `currentColor` at partial opacity so they inherit whatever text color
- * surrounds them in either theme; the bottom bar is filled with the fixed
- * "solar" gradient shared with `.cta`/`.btn-solar` — an intentional brand
- * color, not a theme token (matches favicon.svg's `#solgrad` stops
- * exactly). Sized purely via the `className` prop (CSS, never an inline
- * `style` — CSP `style-src 'self'`).
+ * BidMorrow brand mark — three stacked rounded bars (shape unchanged by
+ * the Control Room re-skin; same shape as `apps/web/public/favicon.svg`).
+ * The top two bars are filled with `currentColor` at partial opacity so
+ * they inherit whatever text color surrounds them; the bottom bar is
+ * filled with a fixed teal gradient (`#35d3c0` -> `#1fa899`) shared with
+ * favicon.svg's `#solgrad` stops — an intentional brand color, not a theme
+ * token (this file has only one theme now: 2026-08-18 decision log).
+ * Sized purely via the `className` prop (CSS, never an inline `style` —
+ * CSP `style-src 'self'`).
  *
  * `useId()` gives the `<linearGradient>` a unique id per render so two
  * copies of this mark on the same page (header + footer, on every
@@ -39,8 +39,8 @@ export function Logo({ className }: { className?: string }): ReactElement {
           y2="23.5"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0" stopColor="#FFB27A" />
-          <stop offset="1" stopColor="#FF8896" />
+          <stop offset="0" stopColor="#35D3C0" />
+          <stop offset="1" stopColor="#1FA899" />
         </linearGradient>
       </defs>
     </svg>
