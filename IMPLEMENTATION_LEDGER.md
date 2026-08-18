@@ -241,6 +241,43 @@ mockup source committed at
 re-skin) starting next; the pending final slice (sample-verdict demo +
 category pages) will be built Control-Room-styled after the re-skin lands.
 
+**M5 App-interface + interaction milestone SHIPPED (2026-08-18 ~17:30 UTC,
+owner instruction "UI still needs work / more interactive / modern
+responsive / wizard").** Full chain: ui-visual-designer spec
+(`docs/redesign/app-interface-spec.md`, ~1700 lines, 13 sections — root
+causes: bare `header` element rule made the app bar a floating island;
+`.tab--shelf` class-drop broke dividers; marketing `h1` leaked into the
+app; unclassed fieldset) → frontend-engineer implementation (all 12
+checklist items: full-bleed app bar + two-row ≤40rem mobile bar, 3 new
+tokens `--field-bg`/`--app-header-h`/`--danger-edge`, recessed form
+system + `.btn-add`/`.field-group`/`.form-actions`/chip animations,
+58rem feed column + designed radar empty state + `data-group` tabs,
+panelized Settings, onboarding stepper rail + native `<progress>` meter +
+CPV search + `btn-quiet` + `aria-invalid` wiring, TenderDetail facts
+panel, interaction layer: press/hover vocabulary, rise-in/chip-in/toast +
+auto-clear, cursor blink, readout glow-in, scan sweep — all
+reduced-motion-dead; marketing polish + IntersectionObserver scroll
+reveals) → qa-reviewer FULL verification (32 screenshots, FAIL:
+3 BLOCKING — toast dual-node broke E2E strict selectors; `--text-3` on
+raised surfaces 4.34:1; `#main-content` ID rule caused measured 64px
+header/content misalignment + 1024px onboarding column — plus 2 MINOR)
+→ fixes (PR #56: selectors → `getByRole('status')`;
+`--status-low-text`/chip codes → `--text-2` = 5.17:1/4.80:1;
+`#main-content.app-main|assistant-main|auth-main` specificity escapes =
+flush 144px/144px, 72rem/40rem/30rem columns; `align-content:start`
+stepper; a11y-spec reducedMotion re-assert for mid-animation axe flakes;
+console-403 noise investigated = dev-only StrictMode double-mount,
+deliberately not "fixed") → qa-reviewer targeted RE-VERIFICATION PASS
+(E2E 28/28 twice, axe 0 serious/critical everywhere, alignment measured
+flush, `final-*` screenshots). Merged: PRs #55 (carried the
+implementation WIP) + #56 (QA fixes) → staging. New agents this window
+(owner request): `visual-asset-designer` created;
+`frontend-engineer` extended with animation + wizard craft. Owner sent 8
+final screenshots. Non-blocking residue: dev-console 403 noise (by
+design). NOTE: `AppShell.tsx` untouched per spec (CSS-only); marketing
+copy untouched (copy locks intact, 448-test root suite green
+throughout).**
+
 **M4 Control Room re-skin IMPLEMENTED (2026-08-18, frontend-engineer +
 qa-reviewer).** Token-value swap on the existing custom-property system
 (names kept, values repointed — 100+ call sites untouched): single dark
