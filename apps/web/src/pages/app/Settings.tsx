@@ -1,8 +1,20 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { useNavigate } from 'react-router';
 import { CONTRACT_NATURES, type ContractNature } from '@bidmorrow/domain';
+import { Combobox } from '../../components/Combobox';
+import { ConfirmAction } from '../../components/ConfirmAction';
+import { CPV_SUGGESTIONS } from '../../data/cpv-suggestions';
 import { api, ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
+import { localComboboxSource, type ComboboxOption } from '../../lib/combobox-filter';
+import {
+  formatCalendarDate,
+  formatMinorUnitsAsCurrency,
+  invoiceStatusLabel,
+  paymentStateLabel,
+  paymentStateTone,
+} from '../../lib/format';
+import { COUNTRY_REGIONS, KEYWORD_SUGGESTIONS } from '../../lib/onboarding-reference-data';
 import {
   CERTIFICATION_CODES,
   type CertificationCode,
@@ -14,6 +26,32 @@ import {
   type MatchingPreferencesDto,
   type OrgProfileResponse,
 } from '../../lib/onboarding-types';
+
+/** Module-level (not per-render) Combobox option lists + sources — stable
+ * references so `Combobox`'s `useEffect([..., source])` never re-fires on
+ * every Settings render. All three datasets are static/public
+ * (docs/redesign requirements: "no private data in suggestions"). */
+const CPV_COMBOBOX_OPTIONS: readonly ComboboxOption[] = CPV_SUGGESTIONS.map((suggestion) => ({
+  value: suggestion.code,
+  label: suggestion.label,
+  sublabel: suggestion.code,
+}));
+const cpvComboboxSource = localComboboxSource(CPV_COMBOBOX_OPTIONS);
+
+const COUNTRY_COMBOBOX_OPTIONS: readonly ComboboxOption[] = COUNTRY_REGIONS.flatMap((region) =>
+  region.countries.map((country) => ({
+    value: country.code,
+    label: country.name,
+    sublabel: country.code,
+  })),
+);
+const countryComboboxSource = localComboboxSource(COUNTRY_COMBOBOX_OPTIONS);
+
+const KEYWORD_COMBOBOX_OPTIONS: readonly ComboboxOption[] = KEYWORD_SUGGESTIONS.map((term) => ({
+  value: term,
+  label: term,
+}));
+const keywordComboboxSource = localComboboxSource(KEYWORD_COMBOBOX_OPTIONS);
 
 /** Mirrors the worker's own 422 `cap_exceeded` shape (packages/db repos). */
 function describeSaveError(cause: unknown): string {
@@ -28,28 +66,61 @@ function describeSaveError(cause: unknown): string {
   return 'Could not save — please try again.';
 }
 
+/** `packages/billing/src/plans.ts` `SubscriptionPlan`/`SubscriptionStatus`/`PaymentState` — kept as string literals here rather than importing `@bidmorrow/billing` into the web bundle for a handful of enum values. */
+type SubscriptionPlan = 'founding' | 'standard';
+type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid';
+
 interface BillingStatus {
   entitlement: {
     active: boolean;
-    plan: 'founding' | 'standard' | null;
-    status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | null;
+    plan: SubscriptionPlan | null;
+    status: SubscriptionStatus | null;
     reason: string;
   };
   subscription: {
-    plan: 'founding' | 'standard';
-    status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid';
+    plan: SubscriptionPlan;
+    status: SubscriptionStatus;
     cancelAtPeriodEnd: boolean;
     currentPeriodEndAt: number | null;
+    price: { amountMinorUnits: number; currency: string; interval: string };
+    paymentState: SubscriptionStatus;
   } | null;
   foundingAvailable: boolean;
 }
+
+/** `GET /api/billing/invoices`'s `InvoiceSummary` (`packages/billing/src/invoices.ts`). */
+interface Invoice {
+  readonly id: string;
+  readonly number: string | null;
+  readonly status: string | null;
+  readonly currency: string;
+  readonly amountDue: number;
+  readonly amountPaid: number;
+  readonly createdAt: number;
+  readonly periodStartAt: number;
+  readonly periodEndAt: number;
+  readonly hostedInvoiceUrl: string | null;
+  readonly invoicePdf: string | null;
+}
+
+type InvoicesState =
+  | { kind: 'loading' }
+  | { kind: 'forbidden' }
+  | { kind: 'not_configured' }
+  | { kind: 'provider_error' }
+  | { kind: 'error' }
+  | { kind: 'ready'; invoices: readonly Invoice[]; hasBillingCustomer: boolean };
 
 /** Mirrors the worker's `/api/billing/*` error shapes (apps/worker/src/routes/billing.ts). */
 function describeBillingError(cause: unknown): string {
   if (cause instanceof ApiError) {
     if (cause.status === 403) return 'Only the organization owner can manage billing.';
     if (cause.status === 409) {
-      const body = cause.body as { error?: string; reason?: string } | null;
+      const body = cause.body as {
+        error?: string;
+        reason?: string;
+        requiresCheckout?: boolean;
+      } | null;
       if (body?.error === 'subscription_exists') {
         return 'This organization already has a subscription — use Manage billing to change it.';
       }
@@ -58,12 +129,36 @@ function describeBillingError(cause: unknown): string {
           ? 'The founding plan is full — please choose the standard plan.'
           : 'The founding plan is not open right now — please choose the standard plan.';
       }
+      if (body?.error === 'no_subscription') {
+        return body.requiresCheckout === true
+          ? 'There is no subscription to reactivate — start a new one below.'
+          : 'There is no subscription to cancel.';
+      }
+      if (body?.error === 'already_canceled') {
+        return body.requiresCheckout === true
+          ? 'Your subscription has already ended — start a new one below.'
+          : 'This subscription is already canceled.';
+      }
+      if (body?.error === 'not_scheduled') {
+        return 'This subscription is not scheduled to cancel — there is nothing to reactivate.';
+      }
     }
     if (cause.status === 404) return 'No billing account on file yet — subscribe first.';
     if (cause.status === 503)
       return 'Billing is not available right now — please try again shortly.';
+    if (cause.status === 502)
+      return 'Could not reach the billing provider — please try again shortly.';
   }
   return 'Could not open billing — please try again.';
+}
+
+/** `true` when a 409 response's body carries `requiresCheckout: true` (`POST /api/billing/reactivate`'s "the subscription is truly gone, start over" outcome). */
+function reactivateRequiresCheckout(cause: unknown): boolean {
+  if (cause instanceof ApiError && cause.status === 409) {
+    const body = cause.body as { requiresCheckout?: boolean } | null;
+    return body?.requiresCheckout === true;
+  }
+  return false;
 }
 
 /**
@@ -119,6 +214,13 @@ export function Settings(): ReactElement {
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [billingBusy, setBillingBusy] = useState(false);
   const [billingError, setBillingError] = useState<string | null>(null);
+
+  const [invoicesState, setInvoicesState] = useState<InvoicesState>({ kind: 'loading' });
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [reactivateBusy, setReactivateBusy] = useState(false);
+  const [reactivateError, setReactivateError] = useState<string | null>(null);
+  const [reactivateNeedsCheckout, setReactivateNeedsCheckout] = useState(false);
 
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -176,6 +278,66 @@ export function Settings(): ReactElement {
     }
     void load();
   }, []);
+
+  // Invoices are fetched independently of the main Promise.all above:
+  // `GET /api/billing/invoices` is OWNER-only (403 for a member), while
+  // every other endpoint in that batch is member-visible — a 403 here must
+  // never fail the rest of Settings' load (Promise.all is fail-fast). A
+  // 403 also doubles as this component's only client-side signal of "the
+  // current user is not the organization owner" (the app has no other
+  // client-side role state — see the mutation-gating comments below).
+  useEffect(() => {
+    let cancelled = false;
+    async function loadInvoices(): Promise<void> {
+      try {
+        const res = await api.get<{ invoices: Invoice[]; hasBillingCustomer: boolean }>(
+          '/api/billing/invoices',
+        );
+        if (cancelled) return;
+        setInvoicesState({
+          kind: 'ready',
+          invoices: res.invoices,
+          hasBillingCustomer: res.hasBillingCustomer,
+        });
+      } catch (cause) {
+        if (cancelled) return;
+        if (cause instanceof ApiError) {
+          if (cause.status === 403) {
+            setInvoicesState({ kind: 'forbidden' });
+            return;
+          }
+          if (cause.status === 503) {
+            setInvoicesState({ kind: 'not_configured' });
+            return;
+          }
+          if (cause.status === 502) {
+            setInvoicesState({ kind: 'provider_error' });
+            return;
+          }
+        }
+        setInvoicesState({ kind: 'error' });
+      }
+    }
+    void loadInvoices();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /** Only known non-owner signal available client-side (see the invoices-effect comment above) — used to hide/disable owner-only mutation controls as a UX nicety, never as the security boundary (the server independently 403s every mutation for a non-owner regardless of what this renders). */
+  const knownNonOwner = invoicesState.kind === 'forbidden';
+
+  async function refreshBillingStatus(): Promise<void> {
+    try {
+      const res = await api.get<BillingStatus>('/api/billing/status');
+      setBilling(res);
+    } catch {
+      // Best-effort refresh after cancel/reactivate — the mutation itself
+      // already succeeded (or the caller wouldn't have reached this point);
+      // a failed re-fetch just means the plan card shows slightly stale
+      // data until the next load, never a lost mutation.
+    }
+  }
 
   // Fix for requirement C ("current-section indication"): scrollspy over the
   // 5 group anchors. Best-effort — degrades to a static (non-highlighting)
@@ -333,6 +495,44 @@ export function Settings(): ReactElement {
     }
   }
 
+  /** Cancellation always takes effect at the CURRENT period end, never
+   * immediately (`POST /api/billing/cancel`'s `effective: 'period_end'`) —
+   * the confirm UI states this explicitly before the request ever fires. */
+  async function handleCancel(): Promise<void> {
+    setCancelError(null);
+    setCancelBusy(true);
+    try {
+      await api.post<{ cancelAtPeriodEnd: true; currentPeriodEndAt: number | null }>(
+        '/api/billing/cancel',
+        { confirm: 'CANCEL_SUBSCRIPTION' },
+      );
+      setStatusMessage(
+        'Cancellation scheduled — access continues until the end of your billing period.',
+      );
+      await refreshBillingStatus();
+    } catch (cause) {
+      setCancelError(describeBillingError(cause));
+    } finally {
+      setCancelBusy(false);
+    }
+  }
+
+  async function handleReactivate(): Promise<void> {
+    setReactivateError(null);
+    setReactivateNeedsCheckout(false);
+    setReactivateBusy(true);
+    try {
+      await api.post('/api/billing/reactivate');
+      setStatusMessage('Subscription reactivated.');
+      await refreshBillingStatus();
+    } catch (cause) {
+      setReactivateError(describeBillingError(cause));
+      setReactivateNeedsCheckout(reactivateRequiresCheckout(cause));
+    } finally {
+      setReactivateBusy(false);
+    }
+  }
+
   async function deleteAccount(): Promise<void> {
     setDeleteError(null);
     try {
@@ -402,58 +602,64 @@ export function Settings(): ReactElement {
                 {billingError}
               </p>
             )}
-            {billing !== null && (
-              <>
-                {billing.subscription === null ? (
-                  <>
-                    <p>No active subscription.</p>
-                    <p className="hint">
-                      Founding price is locked in for the life of your subscription — it never
-                      migrates to the standard price later.
-                    </p>
-                    <div className="button-row">
-                      {billing.foundingAvailable && (
-                        <button
-                          className="cta"
-                          type="button"
-                          disabled={billingBusy}
-                          onClick={() => void startCheckout('founding')}
-                        >
-                          Subscribe — Founding (€29/mo, limited spots)
-                        </button>
-                      )}
+            <div id="billing-print-area">
+              {billing === null ? (
+                <p className="hint">Could not load billing status. Please refresh the page.</p>
+              ) : billing.subscription === null ? (
+                <>
+                  <p>No active subscription.</p>
+                  <p className="hint">
+                    Founding price is locked in for the life of your subscription — it never
+                    migrates to the standard price later.
+                  </p>
+                  <div className="button-row">
+                    {billing.foundingAvailable && (
                       <button
                         className="cta"
                         type="button"
                         disabled={billingBusy}
-                        onClick={() => void startCheckout('standard')}
+                        onClick={() => void startCheckout('founding')}
                       >
-                        Subscribe — Standard (€49/mo)
+                        Subscribe — Founding (€29/mo, limited spots)
                       </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p>
-                      Plan: <strong>{billing.subscription.plan}</strong> · Status:{' '}
-                      <strong>{billing.subscription.status}</strong>
-                      {billing.subscription.cancelAtPeriodEnd ? ' (cancels at period end)' : ''}
-                      {!billing.entitlement.active
-                        ? ` — ${billing.entitlement.reason.replace(/_/g, ' ')}`
-                        : ''}
-                    </p>
+                    )}
                     <button
                       className="cta"
                       type="button"
                       disabled={billingBusy}
-                      onClick={() => void openPortal()}
+                      onClick={() => void startCheckout('standard')}
                     >
-                      Manage billing
+                      Subscribe — Standard (€49/mo)
                     </button>
-                  </>
-                )}
-              </>
-            )}
+                  </div>
+                  <BillingInvoiceHistory state={invoicesState} />
+                </>
+              ) : (
+                (() => {
+                  const subscription = billing.subscription;
+                  if (subscription === null) return null;
+                  return (
+                    <BillingActiveSubscription
+                      subscription={subscription}
+                      entitlementActive={billing.entitlement.active}
+                      entitlementReason={billing.entitlement.reason}
+                      billingBusy={billingBusy}
+                      cancelBusy={cancelBusy}
+                      cancelError={cancelError}
+                      reactivateBusy={reactivateBusy}
+                      reactivateError={reactivateError}
+                      reactivateNeedsCheckout={reactivateNeedsCheckout}
+                      knownNonOwner={knownNonOwner}
+                      invoicesState={invoicesState}
+                      onManagePayment={() => void openPortal()}
+                      onCancel={() => void handleCancel()}
+                      onReactivate={() => void handleReactivate()}
+                      onStartCheckout={() => void startCheckout(subscription.plan)}
+                    />
+                  );
+                })()
+              )}
+            </div>
           </section>
 
           <section id="company" className="settings-group">
@@ -521,9 +727,23 @@ export function Settings(): ReactElement {
                   </li>
                 ))}
               </ul>
-              <div className="form-field inline">
-                <label htmlFor="new-cpv">Add CPV code</label>
-                <input id="new-cpv" value={newCpv} onChange={(e) => setNewCpv(e.target.value)} />
+              <div className="combobox-add-row">
+                <Combobox
+                  id="new-cpv"
+                  label="Add CPV code"
+                  value={newCpv}
+                  onValueChange={setNewCpv}
+                  source={cpvComboboxSource}
+                  placeholder="e.g. 72220000 or software"
+                  hint="A curated shortlist, not exhaustive — any 8-digit CPV code is still accepted below."
+                  isChosen={(option) => cpvCodes.includes(option.value)}
+                  onCommit={(option) => {
+                    if (!cpvCodes.includes(option.value) && cpvCodes.length < 30) {
+                      setCpvCodes((cs) => [...cs, option.value]);
+                    }
+                    setNewCpv('');
+                  }}
+                />
                 <button
                   type="button"
                   className="btn-add"
@@ -560,12 +780,30 @@ export function Settings(): ReactElement {
                   </li>
                 ))}
               </ul>
-              <div className="form-field inline">
-                <label htmlFor="new-keyword">Add keyword</label>
-                <input
+              <div className="combobox-add-row">
+                <Combobox
                   id="new-keyword"
+                  label="Add keyword"
                   value={newKeyword}
-                  onChange={(e) => setNewKeyword(e.target.value)}
+                  onValueChange={setNewKeyword}
+                  source={keywordComboboxSource}
+                  placeholder="e.g. penetration testing"
+                  hint="Suggestions from BidMorrow's bundled presets — any term is still accepted below."
+                  isChosen={(option) => keywords.some((k) => k.term === option.value)}
+                  onCommit={(option) => {
+                    if (!keywords.some((k) => k.term === option.value)) {
+                      setKeywords((ks) => [
+                        ...ks,
+                        {
+                          kind: 'positive',
+                          term: option.value,
+                          synonymGroup: null,
+                          language: null,
+                        },
+                      ]);
+                    }
+                    setNewKeyword('');
+                  }}
                 />
                 <button
                   type="button"
@@ -611,13 +849,33 @@ export function Settings(): ReactElement {
                   </li>
                 ))}
               </ul>
-              <div className="form-field inline">
-                <label htmlFor="new-geo">Add country code (opportunity country)</label>
-                <input
+              <div className="combobox-add-row">
+                <Combobox
                   id="new-geo"
-                  maxLength={2}
+                  label="Add country code (opportunity country)"
                   value={newGeography}
-                  onChange={(e) => setNewGeography(e.target.value.toUpperCase())}
+                  onValueChange={(v) => setNewGeography(v.toUpperCase())}
+                  source={countryComboboxSource}
+                  placeholder="e.g. Germany or DE"
+                  hint="EU/EEA countries shown here — any 2-letter country code is still accepted below."
+                  isChosen={(option) =>
+                    geographies.some(
+                      (g) => g.kind === 'opportunity_country' && g.code === option.value,
+                    )
+                  }
+                  onCommit={(option) => {
+                    if (
+                      !geographies.some(
+                        (g) => g.kind === 'opportunity_country' && g.code === option.value,
+                      )
+                    ) {
+                      setGeographies((gs) => [
+                        ...gs,
+                        { kind: 'opportunity_country', code: option.value },
+                      ]);
+                    }
+                    setNewGeography('');
+                  }}
                 />
                 <button
                   type="button"
@@ -944,5 +1202,276 @@ export function Settings(): ReactElement {
         </div>
       </div>
     </>
+  );
+}
+
+/** Non-null `BillingStatus['subscription']` — extracted so the plan
+ * card/cancel-reactivate panel/invoice history below share one type instead
+ * of each re-narrowing the parent's nullable field. */
+type ActiveSubscription = NonNullable<BillingStatus['subscription']>;
+
+/**
+ * Plan card + cancel/reactivate controls + payment/print actions + invoice
+ * history for an organization WITH a subscription (`billing.subscription !==
+ * null`). Split out of `Settings` purely to keep that component's JSX
+ * readable — same "local helper component in the page file" idiom already
+ * used by `Onboarding.tsx` (`PhaseStepper`/`OnboardingHeader`/`StepActions`).
+ */
+function BillingActiveSubscription({
+  subscription,
+  entitlementActive,
+  entitlementReason,
+  billingBusy,
+  cancelBusy,
+  cancelError,
+  reactivateBusy,
+  reactivateError,
+  reactivateNeedsCheckout,
+  knownNonOwner,
+  invoicesState,
+  onManagePayment,
+  onCancel,
+  onReactivate,
+  onStartCheckout,
+}: {
+  subscription: ActiveSubscription;
+  entitlementActive: boolean;
+  entitlementReason: string;
+  billingBusy: boolean;
+  cancelBusy: boolean;
+  cancelError: string | null;
+  reactivateBusy: boolean;
+  reactivateError: string | null;
+  reactivateNeedsCheckout: boolean;
+  knownNonOwner: boolean;
+  invoicesState: InvoicesState;
+  onManagePayment: () => void;
+  onCancel: () => void;
+  onReactivate: () => void;
+  onStartCheckout: () => void;
+}): ReactElement {
+  const overdue =
+    subscription.paymentState === 'past_due' || subscription.paymentState === 'unpaid';
+  const planLabel = subscription.plan === 'founding' ? 'Founding' : 'Standard';
+  const tone = paymentStateTone(subscription.paymentState);
+
+  return (
+    <>
+      <div className="billing-plan-card">
+        <div className="billing-plan-card__row">
+          <span className="billing-plan-card__plan">{planLabel} plan</span>
+          <span>
+            {formatMinorUnitsAsCurrency(
+              subscription.price.amountMinorUnits,
+              subscription.price.currency,
+            )}{' '}
+            / {subscription.price.interval}
+          </span>
+          <span className={`billing-status-badge billing-status-badge--${tone}`}>
+            {paymentStateLabel(subscription.paymentState)}
+          </span>
+        </div>
+        <p>
+          {subscription.cancelAtPeriodEnd
+            ? `Cancels on ${formatCalendarDate(subscription.currentPeriodEndAt)} — access continues until then.`
+            : `Renews on ${formatCalendarDate(subscription.currentPeriodEndAt)}.`}
+        </p>
+        {!entitlementActive && (
+          <p className="hint">
+            Feed and digest are currently paused: {entitlementReason.replace(/_/g, ' ')}.
+          </p>
+        )}
+        {overdue && (
+          <div className="billing-overdue-notice" role="alert">
+            <p>
+              We couldn't process your last payment
+              {subscription.paymentState === 'past_due'
+                ? ' — your subscription is past due.'
+                : '.'}{' '}
+              Update your payment details to keep your feed and digest active.
+            </p>
+            {!knownNonOwner && (
+              <button
+                className="cta no-print"
+                type="button"
+                disabled={billingBusy}
+                onClick={onManagePayment}
+              >
+                Fix payment details
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {!subscription.cancelAtPeriodEnd ? (
+        <div className="billing-cancel-panel">
+          <h3>Cancel subscription</h3>
+          <p className="hint">
+            Canceling takes effect at the end of your current billing period (
+            {formatCalendarDate(subscription.currentPeriodEndAt)}) — you keep full access until
+            then, and nothing is charged again after that date.
+          </p>
+          {cancelError !== null && (
+            <p role="alert" className="form-error">
+              {cancelError}
+            </p>
+          )}
+          {knownNonOwner ? (
+            <p className="hint">Only the organization owner can cancel billing.</p>
+          ) : (
+            <ConfirmAction
+              label="Cancel subscription"
+              confirmText="CANCEL_SUBSCRIPTION"
+              variant="danger"
+              busy={cancelBusy}
+              onConfirm={onCancel}
+            />
+          )}
+        </div>
+      ) : (
+        <div className="billing-cancel-panel">
+          <h3>Subscription ending</h3>
+          <p>
+            Cancels on <strong>{formatCalendarDate(subscription.currentPeriodEndAt)}</strong> —
+            access continues until then.
+          </p>
+          {reactivateError !== null && (
+            <p role="alert" className="form-error">
+              {reactivateError}
+            </p>
+          )}
+          {knownNonOwner ? (
+            <p className="hint">Only the organization owner can reactivate billing.</p>
+          ) : reactivateNeedsCheckout ? (
+            <div className="button-row">
+              <p className="hint">This subscription has already ended.</p>
+              <button
+                className="cta"
+                type="button"
+                disabled={billingBusy}
+                onClick={onStartCheckout}
+              >
+                Start a new subscription
+              </button>
+            </div>
+          ) : (
+            <button className="cta" type="button" disabled={reactivateBusy} onClick={onReactivate}>
+              {reactivateBusy ? 'Working…' : 'Keep my subscription'}
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="button-row">
+        {!knownNonOwner && (
+          <button
+            className="btn-quiet"
+            type="button"
+            disabled={billingBusy}
+            onClick={onManagePayment}
+          >
+            Manage payment details
+          </button>
+        )}
+        <button className="btn-quiet no-print" type="button" onClick={() => window.print()}>
+          Print
+        </button>
+      </div>
+
+      <BillingInvoiceHistory state={invoicesState} />
+    </>
+  );
+}
+
+/**
+ * Invoice history table (Task 1 §2): loading/empty/error/forbidden states,
+ * per-invoice "View" (hosted Stripe invoice page) and "PDF" (Stripe-hosted
+ * download — never a client-fabricated PDF) links. `hasBillingCustomer:
+ * false` with zero invoices is a normal "never checked out" state, not an
+ * error (mirrors `packages/billing/src/invoices.ts`'s own framing).
+ */
+function BillingInvoiceHistory({ state }: { state: InvoicesState }): ReactElement {
+  return (
+    <section className="settings-subsection" aria-labelledby="billing-invoices-heading">
+      <h3 id="billing-invoices-heading">Invoice history</h3>
+      {state.kind === 'loading' && <p className="hint">Loading invoices…</p>}
+      {state.kind === 'forbidden' && (
+        <p className="hint">Only the organization owner can view billing invoices.</p>
+      )}
+      {state.kind === 'not_configured' && (
+        <p className="hint">Billing is not available right now — please try again shortly.</p>
+      )}
+      {state.kind === 'provider_error' && (
+        <p role="alert" className="form-error">
+          Could not reach the billing provider — please try again shortly.
+        </p>
+      )}
+      {state.kind === 'error' && (
+        <p role="alert" className="form-error">
+          Could not load invoices — please try again.
+        </p>
+      )}
+      {state.kind === 'ready' && state.invoices.length === 0 && (
+        <p className="hint">No invoices yet.</p>
+      )}
+      {state.kind === 'ready' && state.invoices.length > 0 && (
+        <div className="admin-table-scroll">
+          <table>
+            <caption className="visually-hidden-status">Invoice history</caption>
+            <thead>
+              <tr>
+                <th scope="col">Number</th>
+                <th scope="col">Date</th>
+                <th scope="col">Period</th>
+                <th scope="col">Amount</th>
+                <th scope="col">Status</th>
+                <th scope="col" className="no-print">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {state.invoices.map((invoice) => (
+                <tr key={invoice.id}>
+                  <td>{invoice.number ?? invoice.id}</td>
+                  <td>{formatCalendarDate(invoice.createdAt)}</td>
+                  <td>
+                    {formatCalendarDate(invoice.periodStartAt)} –{' '}
+                    {formatCalendarDate(invoice.periodEndAt)}
+                  </td>
+                  <td>{formatMinorUnitsAsCurrency(invoice.amountPaid, invoice.currency)}</td>
+                  <td>{invoiceStatusLabel(invoice.status)}</td>
+                  <td className="no-print">
+                    <span className="billing-invoice-actions">
+                      {invoice.hostedInvoiceUrl !== null && (
+                        <a
+                          href={invoice.hostedInvoiceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-quiet btn-sm"
+                        >
+                          View
+                        </a>
+                      )}
+                      {invoice.invoicePdf !== null && (
+                        <a
+                          href={invoice.invoicePdf}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-quiet btn-sm"
+                        >
+                          PDF
+                        </a>
+                      )}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   );
 }

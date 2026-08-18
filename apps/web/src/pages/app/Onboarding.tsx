@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { COMPANY_PRESETS, CONTRACT_NATURES, type ContractNature } from '@bidmorrow/domain';
+import { Combobox } from '../../components/Combobox';
 import { Logo } from '../../components/Logo';
 import { PRODUCT_NAME } from '../../copy';
+import { CPV_SUGGESTIONS } from '../../data/cpv-suggestions';
 import { api, ApiError } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
+import { localComboboxSource, type ComboboxOption } from '../../lib/combobox-filter';
 import {
   CPV_SHORTHAND_LABELS,
   COUNTRY_REGIONS,
@@ -113,6 +116,18 @@ const SCREEN_RESOURCE: Partial<Record<ScreenId, ResourceKey>> = {
 };
 
 const EMPLOYEE_BAND_OPTIONS = ['1-10', '11-25', '26-50', '51-100', '101-250', '250+'];
+
+/** Module-level (not per-render) Combobox options/source for the CPV
+ * screen's "add another code" field — the FULL curated CPV suggestion set
+ * (`data/cpv-suggestions.ts`, 141 entries), distinct from the smaller
+ * `PRESET_CPV_CODES` checkbox list above (codes that appear in a bundled
+ * preset) since this field is specifically for codes beyond the presets. */
+const CPV_COMBOBOX_OPTIONS: readonly ComboboxOption[] = CPV_SUGGESTIONS.map((suggestion) => ({
+  value: suggestion.code,
+  label: suggestion.label,
+  sublabel: suggestion.code,
+}));
+const cpvComboboxSource = localComboboxSource(CPV_COMBOBOX_OPTIONS);
 
 interface BillingStatusLite {
   entitlement: { active: boolean };
@@ -668,6 +683,19 @@ export function Onboarding(): ReactElement {
     toggleCpv(trimmed);
     setManualCpv('');
   }
+  /** Combobox suggestion commit — an ADD only (never a toggle-off): a
+   * suggestion is a known-good 8-digit code by dataset construction, so no
+   * regex re-check is needed, but re-selecting an already-chosen one must
+   * stay a no-op rather than silently removing it (unlike `toggleCpv`,
+   * which the preset checkbox list intentionally treats as toggle-on/off). */
+  function commitCpvSuggestion(option: ComboboxOption): void {
+    if (!cpvCodes.includes(option.value) && cpvCodes.length < 30) {
+      setCpvCodes((codes) => [...codes, option.value]);
+      markDirty('cpv');
+    }
+    setManualCpv('');
+    setManualCpvError(null);
+  }
 
   function toggleCountry(code: string): void {
     setCountries((cs) => (cs.includes(code) ? cs.filter((c) => c !== code) : [...cs, code]));
@@ -1091,17 +1119,21 @@ export function Onboarding(): ReactElement {
                     </ul>
                   </fieldset>
                 )}
-                <div className="form-field inline">
-                  <label htmlFor="manual-cpv">Add another 8-digit CPV code</label>
-                  <input
+                <div className="combobox-add-row">
+                  <Combobox
                     id="manual-cpv"
+                    label="Add another 8-digit CPV code"
                     value={manualCpv}
-                    aria-invalid={manualCpvError !== null}
-                    aria-describedby={manualCpvError !== null ? 'manual-cpv-error' : undefined}
-                    onChange={(event) => {
-                      setManualCpv(event.target.value);
+                    onValueChange={(value) => {
+                      setManualCpv(value);
                       setManualCpvError(null);
                     }}
+                    source={cpvComboboxSource}
+                    placeholder="e.g. 72220000 or software"
+                    hint="A curated shortlist beyond the presets above — any 8-digit CPV code is still accepted."
+                    isChosen={(option) => cpvCodes.includes(option.value)}
+                    onCommit={commitCpvSuggestion}
+                    describedBy={manualCpvError !== null ? 'manual-cpv-error' : undefined}
                   />
                   <button type="button" className="btn-add" onClick={addManualCpv}>
                     Add
