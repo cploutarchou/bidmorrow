@@ -78,11 +78,11 @@ export function Methodology(): ReactElement {
       </div>
 
       <div className="mkt-truth-grid">
-        <article className="mkt-truth-card glass">
+        <article className="mkt-truth-card glass mkt-reveal">
           <h2>What "Unknown" means</h2>
           <p>{UNKNOWN_POLICY_STATEMENT}</p>
         </article>
-        <article className="mkt-truth-card glass">
+        <article className="mkt-truth-card glass mkt-reveal mkt-reveal--d1">
           <h2>Risk flags and confidence</h2>
           <p>{RISK_FLAG_STATEMENT}</p>
         </article>

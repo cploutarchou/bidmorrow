@@ -24,6 +24,15 @@ export function TenderDetail(): ReactElement {
   const [reasons, setReasons] = useState<FeedbackReason[]>([]);
   const [comment, setComment] = useState('');
 
+  // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) —
+  // purely visual; the accessible `role="status"` live region below reads
+  // `statusMessage` independently and is unaffected by this timeout.
+  useEffect(() => {
+    if (statusMessage === null) return;
+    const timeout = window.setTimeout(() => setStatusMessage(null), 2500);
+    return () => window.clearTimeout(timeout);
+  }, [statusMessage]);
+
   useEffect(() => {
     if (matchId === undefined) return;
     api
@@ -243,6 +252,11 @@ export function TenderDetail(): ReactElement {
       <p role="status" aria-live="polite" className="visually-hidden-status">
         {statusMessage}
       </p>
+      {statusMessage !== null && (
+        <div className="app-toast" aria-hidden="true">
+          {statusMessage}
+        </div>
+      )}
 
       <div className="tender-detail__actions">
         <button
@@ -277,7 +291,7 @@ export function TenderDetail(): ReactElement {
             void submitFeedback('not_useful');
           }}
         >
-          <fieldset>
+          <fieldset className="field-group">
             <legend>Why isn't this useful?</legend>
             {(Object.keys(FEEDBACK_REASON_LABELS) as FeedbackReason[]).map((reason) => (
               <label key={reason} className="checkbox-row">

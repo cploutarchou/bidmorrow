@@ -56,20 +56,22 @@ export function Home(): ReactElement {
 
       <section className="mkt-section" aria-labelledby="value-h">
         <div className="mkt-wrap">
-          <div className="mkt-section-head">
+          <div className="mkt-section-head mkt-reveal">
             <p className="mkt-eyebrow">What you get</p>
             <h2 id="value-h">What BidMorrow does</h2>
           </div>
           <ul className="feature-list">
-            <li>Ingests EU procurement notices from TED within a documented CPV scope.</li>
-            <li>
+            <li className="mkt-reveal">
+              Ingests EU procurement notices from TED within a documented CPV scope.
+            </li>
+            <li className="mkt-reveal mkt-reveal--d1">
               Scores every eligible tender against your company profile — deterministically, with an
               explanation for every point.
             </li>
-            <li>
+            <li className="mkt-reveal mkt-reveal--d2">
               Surfaces Strong Matches first, then Worth Reviewing, then Possible — no vanity graphs.
             </li>
-            <li>
+            <li className="mkt-reveal mkt-reveal--d3">
               Sends one daily digest email, only when there is something worth your attention.
             </li>
           </ul>
@@ -78,7 +80,7 @@ export function Home(): ReactElement {
 
       <section className="mkt-section mkt-section--deep" aria-labelledby="how-h">
         <div className="mkt-wrap">
-          <div className="mkt-section-head">
+          <div className="mkt-section-head mkt-reveal">
             <p className="mkt-eyebrow">How it works</p>
             <h2 id="how-h">From official journal to defensible decision</h2>
             <p className="mkt-section-lede">
@@ -87,7 +89,7 @@ export function Home(): ReactElement {
             </p>
           </div>
           <ol className="mkt-steps">
-            <li className="mkt-step">
+            <li className="mkt-step mkt-reveal">
               <span className="mkt-step__num" aria-hidden="true">
                 1
               </span>
@@ -97,7 +99,7 @@ export function Home(): ReactElement {
                 European Union — within a documented CPV scope.
               </p>
             </li>
-            <li className="mkt-step">
+            <li className="mkt-step mkt-reveal mkt-reveal--d1">
               <span className="mkt-step__num" aria-hidden="true">
                 2
               </span>
@@ -107,7 +109,7 @@ export function Home(): ReactElement {
                 in onboarding, editable forever after.
               </p>
             </li>
-            <li className="mkt-step">
+            <li className="mkt-step mkt-reveal mkt-reveal--d2">
               <span className="mkt-step__num" aria-hidden="true">
                 3
               </span>
@@ -117,7 +119,7 @@ export function Home(): ReactElement {
                 scoring path.
               </p>
             </li>
-            <li className="mkt-step">
+            <li className="mkt-step mkt-reveal mkt-reveal--d3">
               <span className="mkt-step__num" aria-hidden="true">
                 4
               </span>
@@ -136,7 +138,7 @@ export function Home(): ReactElement {
 
       <section className="mkt-section" aria-labelledby="method-h">
         <div className="mkt-wrap">
-          <div className="mkt-section-head">
+          <div className="mkt-section-head mkt-reveal">
             <p className="mkt-eyebrow">Methodology</p>
             <h2 id="method-h">Deterministic on purpose</h2>
             <p className="mkt-section-lede">
@@ -145,11 +147,11 @@ export function Home(): ReactElement {
             </p>
           </div>
           <div className="mkt-truth-grid">
-            <article className="mkt-truth-card glass">
+            <article className="mkt-truth-card glass mkt-reveal">
               <h3>Unknowns are never guessed</h3>
               <p>{UNKNOWN_POLICY_STATEMENT}</p>
             </article>
-            <article className="mkt-truth-card glass">
+            <article className="mkt-truth-card glass mkt-reveal mkt-reveal--d1">
               <h3>Risk flags quote their evidence</h3>
               <p>{RISK_FLAG_STATEMENT}</p>
             </article>
@@ -162,7 +164,7 @@ export function Home(): ReactElement {
 
       <section className="mkt-section mkt-section--deep" aria-labelledby="pricing-h">
         <div className="mkt-wrap">
-          <div className="mkt-section-head">
+          <div className="mkt-section-head mkt-reveal">
             <p className="mkt-eyebrow">Pricing</p>
             <h2 id="pricing-h">Two monthly plans. Nothing hidden.</h2>
             <p className="mkt-section-lede">
@@ -170,13 +172,13 @@ export function Home(): ReactElement {
             </p>
           </div>
           <div className="mkt-plan-row">
-            <div className="mkt-plan-chip mkt-plan-chip--founding">
+            <div className="mkt-plan-chip mkt-plan-chip--founding mkt-reveal">
               <span className="mkt-plan-chip__label">Founding — first 50 customers</span>
               <span className="mkt-plan-chip__price">
                 €29<span className="mkt-plan-chip__per">/month</span>
               </span>
             </div>
-            <div className="mkt-plan-chip">
+            <div className="mkt-plan-chip mkt-reveal mkt-reveal--d1">
               <span className="mkt-plan-chip__label">Standard</span>
               <span className="mkt-plan-chip__price">
                 €49<span className="mkt-plan-chip__per">/month</span>

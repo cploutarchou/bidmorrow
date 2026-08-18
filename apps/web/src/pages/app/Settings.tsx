@@ -125,6 +125,15 @@ export function Settings(): ReactElement {
 
   const [activeGroup, setActiveGroup] = useState<string>('billing');
 
+  // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) —
+  // purely visual; the accessible `role="status"` live region below reads
+  // `statusMessage` independently and is unaffected by this timeout.
+  useEffect(() => {
+    if (statusMessage === null) return;
+    const timeout = window.setTimeout(() => setStatusMessage(null), 2500);
+    return () => window.clearTimeout(timeout);
+  }, [statusMessage]);
+
   useEffect(() => {
     async function load(): Promise<void> {
       try {
@@ -358,6 +367,11 @@ export function Settings(): ReactElement {
       <p role="status" aria-live="polite" className="visually-hidden-status">
         {statusMessage}
       </p>
+      {statusMessage !== null && (
+        <div className="app-toast" aria-hidden="true">
+          {statusMessage}
+        </div>
+      )}
       {saveError !== null && (
         <p role="alert" className="form-error">
           {saveError}
@@ -477,9 +491,11 @@ export function Settings(): ReactElement {
                 onChange={(e) => setEmployeeBand(e.target.value)}
               />
             </div>
-            <button className="cta" type="button" onClick={() => void saveProfile()}>
-              Save profile
-            </button>
+            <div className="form-actions">
+              <button className="cta" type="button" onClick={() => void saveProfile()}>
+                Save profile
+              </button>
+            </div>
           </section>
 
           <section id="matching-profile" className="settings-group">
@@ -510,6 +526,7 @@ export function Settings(): ReactElement {
                 <input id="new-cpv" value={newCpv} onChange={(e) => setNewCpv(e.target.value)} />
                 <button
                   type="button"
+                  className="btn-add"
                   onClick={() => {
                     if (newCpv.trim().length > 0 && cpvCodes.length < 30) {
                       setCpvCodes((cs) => [...cs, newCpv.trim()]);
@@ -520,9 +537,11 @@ export function Settings(): ReactElement {
                   Add
                 </button>
               </div>
-              <button className="cta" type="button" onClick={() => void saveCpv()}>
-                Save CPV codes
-              </button>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveCpv()}>
+                  Save CPV codes
+                </button>
+              </div>
             </section>
 
             <section className="settings-subsection">
@@ -550,6 +569,7 @@ export function Settings(): ReactElement {
                 />
                 <button
                   type="button"
+                  className="btn-add"
                   onClick={() => {
                     if (newKeyword.trim().length > 0) {
                       setKeywords((ks) => [
@@ -568,9 +588,11 @@ export function Settings(): ReactElement {
                   Add
                 </button>
               </div>
-              <button className="cta" type="button" onClick={() => void saveKeywords()}>
-                Save keywords
-              </button>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveKeywords()}>
+                  Save keywords
+                </button>
+              </div>
             </section>
 
             <section className="settings-subsection">
@@ -599,6 +621,7 @@ export function Settings(): ReactElement {
                 />
                 <button
                   type="button"
+                  className="btn-add"
                   onClick={() => {
                     if (newGeography.trim().length > 0) {
                       setGeographies((gs) => [
@@ -612,9 +635,11 @@ export function Settings(): ReactElement {
                   Add
                 </button>
               </div>
-              <button className="cta" type="button" onClick={() => void saveGeographies()}>
-                Save geographies
-              </button>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveGeographies()}>
+                  Save geographies
+                </button>
+              </div>
             </section>
 
             <section className="settings-subsection">
@@ -642,6 +667,7 @@ export function Settings(): ReactElement {
                 />
                 <button
                   type="button"
+                  className="btn-add"
                   onClick={() => {
                     if (newExclusion.trim().length > 0) {
                       setExclusions((ex) => [
@@ -655,9 +681,11 @@ export function Settings(): ReactElement {
                   Add
                 </button>
               </div>
-              <button className="cta" type="button" onClick={() => void saveExclusions()}>
-                Save exclusions
-              </button>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveExclusions()}>
+                  Save exclusions
+                </button>
+              </div>
             </section>
 
             <section className="settings-subsection">
@@ -685,6 +713,7 @@ export function Settings(): ReactElement {
                 />
                 <button
                   type="button"
+                  className="btn-add"
                   onClick={() => {
                     if (newCapability.trim().length > 0) {
                       setCapabilities((cs) => [...cs, newCapability.trim()]);
@@ -695,9 +724,11 @@ export function Settings(): ReactElement {
                   Add
                 </button>
               </div>
-              <button className="cta" type="button" onClick={() => void saveCapabilities()}>
-                Save capabilities
-              </button>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveCapabilities()}>
+                  Save capabilities
+                </button>
+              </div>
             </section>
 
             <section className="settings-subsection">
@@ -742,6 +773,7 @@ export function Settings(): ReactElement {
                 )}
                 <button
                   type="button"
+                  className="btn-add"
                   onClick={() => {
                     if (newCertCode === 'OTHER' && newCertLabel.trim().length === 0) return;
                     setCertifications((cs) => [
@@ -757,9 +789,11 @@ export function Settings(): ReactElement {
                   Add
                 </button>
               </div>
-              <button className="cta" type="button" onClick={() => void saveCertifications()}>
-                Save certifications
-              </button>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveCertifications()}>
+                  Save certifications
+                </button>
+              </div>
             </section>
 
             {matching !== null && (
@@ -795,7 +829,7 @@ export function Settings(): ReactElement {
                     }
                   />
                 </div>
-                <fieldset>
+                <fieldset className="field-group">
                   <legend>Contract types you support</legend>
                   {CONTRACT_NATURES.map((nature) => (
                     <label key={nature} className="checkbox-row">
@@ -830,9 +864,11 @@ export function Settings(): ReactElement {
                     }
                   />
                 </div>
-                <button className="cta" type="button" onClick={() => void saveMatching()}>
-                  Save matching preferences
-                </button>
+                <div className="form-actions">
+                  <button className="cta" type="button" onClick={() => void saveMatching()}>
+                    Save matching preferences
+                  </button>
+                </div>
               </section>
             )}
           </section>
@@ -869,9 +905,11 @@ export function Settings(): ReactElement {
                   <option value="LOW_FIT">Everything</option>
                 </select>
               </div>
-              <button className="cta" type="button" onClick={() => void saveDigest()}>
-                Save digest preferences
-              </button>
+              <div className="form-actions">
+                <button className="cta" type="button" onClick={() => void saveDigest()}>
+                  Save digest preferences
+                </button>
+              </div>
             </section>
           )}
 

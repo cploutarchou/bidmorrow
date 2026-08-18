@@ -1,6 +1,6 @@
 import { Menu, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { DECISION_SUPPORT_DISCLAIMER, PRODUCT_NAME, TED_ATTRIBUTION } from '../copy';
 import { Logo } from './Logo';
 
@@ -43,6 +43,34 @@ export function MarketingLayout({
   const panelId = useId();
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+
+  // Scroll-triggered reveals (docs/redesign/app-interface-spec.md §8.4) —
+  // progressive enhancement: `.mkt-reveal` is only ever hidden under the
+  // `js-reveal` root class this effect adds, so content is fully visible if
+  // JS never runs. Re-observes on every route change (marketing pages are
+  // client-side navigated, so a fresh mount effect alone wouldn't re-run
+  // per page).
+  useEffect(() => {
+    document.documentElement.classList.add('js-reveal');
+    const targets = document.querySelectorAll<HTMLElement>('.mkt-reveal:not(.is-in)');
+    if (typeof IntersectionObserver === 'undefined') {
+      for (const el of targets) el.classList.add('is-in');
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries, obs) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add('is-in');
+          obs.unobserve(entry.target);
+        }
+      },
+      { rootMargin: '0px 0px -10%', threshold: 0.15 },
+    );
+    for (const el of targets) observer.observe(el);
+    return () => observer.disconnect();
+  }, [location.pathname]);
 
   function closeMenu(): void {
     setMenuOpen(false);
