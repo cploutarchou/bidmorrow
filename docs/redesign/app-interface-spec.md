@@ -1521,59 +1521,6 @@ Existing `.detail-facts { grid-template-columns: 1fr }` block kept.
 
 ---
 
-## 13. Marketing front pages polish (secondary — after the app area)
-
-Audit of `apps/web/src/pages/marketing/*` + `MarketingLayout.tsx` against
-the Control Room mockup. Copy is LOCKED (`copy.ts` + `app.test.ts`);
-structure/IA unchanged — classNames and CSS only.
-
-### 13.1 Gap audit (shipped vs mockup character)
-
-| Surface                                                                                   | Shipped                                          | Mockup character                                                           | Verdict                                                                                                                                                                                                                                                                                                                                                                                                      |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Hero right panel (Home)                                                                   | Static chip rows + tier list (`.mkt-hero-panel`) | Glowing 84.5/100 score-readout panel with breakdown bars + mono panel head | **Flagged, out of this pass**: a live score panel means new illustrative content (numbers/labels), which is a content addition, not a re-skin — and it's exactly the planned public sample-verdict demo's job. Do not fake it here. This pass: scan sweep (§8.3), chip hover states, and a proper mono panel-head treatment on the existing captions.                                                        |
-| Cards (`.mkt-step`, `.mkt-truth-card`, `.feature-list li`, `.mkt-plan`, `.mkt-plan-chip`) | Fully static — no hover, no transition           | Panels feel instrumented/alive                                             | Hover lift + border sharpen (§8.1) + scroll reveals (§8.4).                                                                                                                                                                                                                                                                                                                                                  |
-| Section links ("… →")                                                                     | Plain teal link, underline on hover              | —                                                                          | Arrow nudge: `.mkt-section-link a { display: inline-block; transition: transform 200ms var(--ease); } .mkt-section-link a:hover { transform: translateX(3px); }` (whole-link transform; the "→" is locked copy — never wrap it).                                                                                                                                                                             |
-| Methodology score-components table                                                        | Plain bordered table in a glass card             | Mockup's breakdown table: tabular-mono points, hairline row rules only     | Scope inside `.mkt-table-card`: `td, th { border-inline: none; border-top: 1px solid var(--stroke-faint); }`, `thead th { border-top: none; }`, points column gets `.num`-equivalent via `.mkt-table-card td:nth-child(2) { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }`. (Adding `<progress>` bars is a tasteful OPTION but a structure change — leave out unless the owner asks.) |
-| Wordmark                                                                                  | Static `_`                                       | Terminal cursor                                                            | Blink ×3 on load (§8.3).                                                                                                                                                                                                                                                                                                                                                                                     |
-| Buttons                                                                                   | Hover only                                       | —                                                                          | Press feedback (§8.1).                                                                                                                                                                                                                                                                                                                                                                                       |
-| Panel heads                                                                               | `.mkt-hero-panel__caption` mono caption exists   | Mockup `.panel__head` has a hairline underline strip                       | `.mkt-hero-panel__caption { padding-bottom: 0.4rem; border-bottom: 1px solid var(--stroke-faint); }`                                                                                                                                                                                                                                                                                                         |
-
-### 13.2 Responsive tightening (marketing)
-
-```css
-@media (max-width: 30rem) {
-  .mkt-cta-row .cta,
-  .mkt-cta-row .mkt-btn-quiet {
-    flex: 1 1 100%;
-    justify-content: center;
-  }
-  .mkt-plan-row {
-    flex-direction: column;
-  }
-  .mkt-hero-panel {
-    padding: 1.25rem;
-  }
-}
-```
-
-Everything else (hero grid collapse at 64rem, steps 2-col/1-col, plans
-1-col at 48rem, hamburger ≤56rem) is already handled — verified in
-`styles.css`; no further marketing layout changes.
-
-### 13.3 Marketing markup deltas (complete list)
-
-- `Home.tsx`: `mkt-reveal` (+ delay modifiers) classNames per §8.4.
-- `Pricing.tsx` / `HowItWorks.tsx` / `Methodology.tsx` / `Pilot.tsx`:
-  `mkt-reveal` on section heads / `.mkt-plan` / `.mkt-step` /
-  `.mkt-truth-card` only.
-- `MarketingLayout.tsx`: `js-reveal` root class + IntersectionObserver
-  effect (§8.4).
-- `Contact.tsx`, `Privacy.tsx`, `Terms.tsx`: **no changes** (legal/prose
-  pages get no reveals).
-
----
-
 ## 10. Implementation checklist (ordered for frontend-engineer)
 
 App area first (owner screenshots), onboarding immediately after
@@ -1630,20 +1577,31 @@ motion` sweep (every §8 animation absent, all end-states intact) and
 
 ## 11. What does NOT change
 
-- Copy: `copy.ts` untouched; all Settings/Detail/Onboarding strings
-  verbatim; the one Feed empty-state restructure is meaning-preserving
-  and has a specified verbatim fallback (§5.4).
+- Copy: `copy.ts` untouched; all Settings/Detail strings verbatim; the
+  Feed empty-state restructure (§5.4) is meaning-preserving with a
+  specified verbatim fallback; the only new UI strings are the two
+  onboarding CPV-search strings (§7.2d) and both are flagged for the
+  copy-lock grep. Marketing copy: byte-identical.
 - Behavior: per-section saves, scrollspy, tab semantics
   (`role="tab"`/`data-group`), optimistic save/ignore, 402 flow, filter
-  apply-on-submit, IntersectionObserver logic — all as-is.
-- Routes, IA, section ids/anchors (`#billing`, `#matching-profile`, …).
+  apply-on-submit, onboarding screen order / payloads / endpoints /
+  resume + dirty-tracking contract — all as-is. (New behavior is limited
+  to presentation: toast auto-clear timeout, reveal observer, CPV
+  client-side filter.)
+- Routes, IA, section ids/anchors (`#billing`, `#matching-profile`, …),
+  page set.
 - Tokens: no existing value changes; single dark theme; grid texture;
   system font stacks (no webfonts); terminal wordmark.
-- CSP posture: zero inline styles introduced; score bars stay native
-  `<progress>`.
-- Marketing site, admin shell, `.cta` treatment, `.glass` fallbacks,
-  reduced-motion kill-switch.
-- Dependencies: none added.
+- CSP posture: zero inline styles introduced; score bars and the new
+  onboarding progress meter stay native `<progress>`; all JS motion
+  hooks are classList-only.
+- Accessibility contracts: skip links, live regions (toast is an
+  `aria-hidden` twin of the existing hidden status), heading focus
+  management in onboarding, `:focus-visible` outline.
+- Admin shell, `.cta` treatment, `.glass` fallbacks, reduced-motion
+  kill-switch, hamburger pattern on marketing.
+- Dependencies: none added (motion layer is CSS + IntersectionObserver,
+  both already in use).
 
 ## 12. Rejected while designing (taste record)
 
@@ -1659,3 +1617,71 @@ motion` sweep (every §8 animation absent, all end-states intact) and
   on-direction, weighs 0 bytes, and can't drift from the token palette.
 - **Filled red delete button** — an outline danger button keeps the
   page's single-accent discipline; the confirm-input is the real guard.
+- **Numeric count-up on score readouts** — needs per-frame JS or
+  pseudo-element counters that corrupt screen-reader output; the glow-in
+  conveys "computed" without lying to AT.
+- **Persistent wordmark cursor blink** — a cursor that never stops
+  blinking is an attention leak; 3 blinks then solid.
+- **Cross-route page transitions** — fights the SPA router and adds
+  perceived latency; per-view rise-in is the ceiling.
+- **Animating the body grid texture** — full-page repaint, not
+  60fps-safe; the texture's job is stillness under moving panels.
+- **Direction-aware step slide in onboarding** — requires direction
+  state purely for decoration; a single rise-in reads equally well.
+- **Faking a score-readout hero panel on Home** — invented numbers on
+  the marketing page violate the content-truth rules; that device
+  belongs to the planned sample-verdict demo, which uses real curated
+  verdicts (§13.1, flagged).
+
+---
+
+## 13. Marketing front pages polish (secondary — after the app area)
+
+Audit of `apps/web/src/pages/marketing/*` + `MarketingLayout.tsx` against
+the Control Room mockup. Copy is LOCKED (`copy.ts` + `app.test.ts`);
+structure/IA unchanged — classNames and CSS only.
+
+### 13.1 Gap audit (shipped vs mockup character)
+
+| Surface                                                                                   | Shipped                                          | Mockup character                                                           | Verdict                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Hero right panel (Home)                                                                   | Static chip rows + tier list (`.mkt-hero-panel`) | Glowing 84.5/100 score-readout panel with breakdown bars + mono panel head | **Flagged, out of this pass**: a live score panel means new illustrative content (numbers/labels), which is a content addition, not a re-skin — and it's exactly the planned public sample-verdict demo's job. Do not fake it here. This pass: scan sweep (§8.3), chip hover states, and a proper mono panel-head treatment on the existing captions.                                                        |
+| Cards (`.mkt-step`, `.mkt-truth-card`, `.feature-list li`, `.mkt-plan`, `.mkt-plan-chip`) | Fully static — no hover, no transition           | Panels feel instrumented/alive                                             | Hover lift + border sharpen (§8.1) + scroll reveals (§8.4).                                                                                                                                                                                                                                                                                                                                                  |
+| Section links ("… →")                                                                     | Plain teal link, underline on hover              | —                                                                          | Arrow nudge: `.mkt-section-link a { display: inline-block; transition: transform 200ms var(--ease); } .mkt-section-link a:hover { transform: translateX(3px); }` (whole-link transform; the "→" is locked copy — never wrap it).                                                                                                                                                                             |
+| Methodology score-components table                                                        | Plain bordered table in a glass card             | Mockup's breakdown table: tabular-mono points, hairline row rules only     | Scope inside `.mkt-table-card`: `td, th { border-inline: none; border-top: 1px solid var(--stroke-faint); }`, `thead th { border-top: none; }`, points column gets `.num`-equivalent via `.mkt-table-card td:nth-child(2) { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }`. (Adding `<progress>` bars is a tasteful OPTION but a structure change — leave out unless the owner asks.) |
+| Wordmark                                                                                  | Static `_`                                       | Terminal cursor                                                            | Blink ×3 on load (§8.3).                                                                                                                                                                                                                                                                                                                                                                                     |
+| Buttons                                                                                   | Hover only                                       | —                                                                          | Press feedback (§8.1).                                                                                                                                                                                                                                                                                                                                                                                       |
+| Panel heads                                                                               | `.mkt-hero-panel__caption` mono caption exists   | Mockup `.panel__head` has a hairline underline strip                       | `.mkt-hero-panel__caption { padding-bottom: 0.4rem; border-bottom: 1px solid var(--stroke-faint); }`                                                                                                                                                                                                                                                                                                         |
+
+### 13.2 Responsive tightening (marketing)
+
+```css
+@media (max-width: 30rem) {
+  .mkt-cta-row .cta,
+  .mkt-cta-row .mkt-btn-quiet {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  .mkt-plan-row {
+    flex-direction: column;
+  }
+  .mkt-hero-panel {
+    padding: 1.25rem;
+  }
+}
+```
+
+Everything else (hero grid collapse at 64rem, steps 2-col/1-col, plans
+1-col at 48rem, hamburger ≤56rem) is already handled — verified in
+`styles.css`; no further marketing layout changes.
+
+### 13.3 Marketing markup deltas (complete list)
+
+- `Home.tsx`: `mkt-reveal` (+ delay modifiers) classNames per §8.4.
+- `Pricing.tsx` / `HowItWorks.tsx` / `Methodology.tsx` / `Pilot.tsx`:
+  `mkt-reveal` on section heads / `.mkt-plan` / `.mkt-step` /
+  `.mkt-truth-card` only.
+- `MarketingLayout.tsx`: `js-reveal` root class + IntersectionObserver
+  effect (§8.4).
+- `Contact.tsx`, `Privacy.tsx`, `Terms.tsx`: **no changes** (legal/prose
+  pages get no reveals).
