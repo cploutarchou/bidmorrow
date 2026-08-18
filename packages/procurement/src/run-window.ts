@@ -281,7 +281,7 @@ async function processOneNotice(
 
   let rawXml: string;
   try {
-    rawXml = await deps.client.fetchNoticeXml(row.xmlUrl, row.sourceNoticeId);
+    rawXml = await deps.client.fetchNoticeXml(row.xmlUrl);
   } catch (cause) {
     if (!(cause instanceof TedXmlTooLargeError)) {
       throw cause;

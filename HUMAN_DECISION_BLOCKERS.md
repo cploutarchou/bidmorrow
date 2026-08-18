@@ -258,16 +258,32 @@ the registration threshold is their/their accountant's responsibility.
    principal can technically dispatch a production deploy — recorded in
    docs/threat-model.md §5.
 
-## 9. TED developer API key — OPEN (2026-08-18)
+## 9. TED developer API key — CLOSED 2026-08-18 (key NOT needed)
+
+**Resolution: no owner action remains.** Probing the live v3 API with the
+owner's (paired, working) key and reading the API's own OpenAPI spec
+(`ted-api-probe` runs 32152093521 / 32155040026) proved
+`api.ted.europa.eu` offers **no endpoint that returns a published
+notice's XML** — its surface is eSender submission plus search. The
+"authenticated download route" this item was opened for never existed
+(`400 Missing Authorization header` came from a gateway filter answering
+before routing). Ingestion's supported path is the anonymous front-end
+URL with 202-aware render-cycling (shipped in PR #51), which needs no
+credentials. The client/env/deploy wiring for `TED_API_KEY` has been
+removed; the GitHub environment secrets and the already-pushed staging
+worker secret are unused and harmless — the owner MAY delete them at
+leisure (repo → Settings → Environments; `wrangler secret delete
+TED_API_KEY` for the worker copy) but nothing depends on it.
+
+Archive of the original analysis (for the record):
 
 TED changed the anonymous notice-XML front-end (`ted.europa.eu/<lang>/notice/<id>/xml`)
 to asynchronous rendering: HTTP 202 + empty body on first request for every
 client, 200 + XML only once the render is cached (diagnosed live, CI runs
 32131289081 / 32131832286 — this broke the first non-empty staging ingest,
-2026-08-18 05:00 UTC). An **authenticated** notice-XML endpoint exists on the
-API host (`api.ted.europa.eu/v3/notices/<publication-number>/xml` answers
-`400 Missing Authorization header`), which is the robust, officially
-supported route.
+2026-08-18 05:00 UTC). ~~An **authenticated** notice-XML endpoint exists on
+the API host, which is the robust, officially supported route.~~ (Disproved
+— see resolution above.)
 
 ~~Owner action: register at https://developer.ted.europa.eu/home, create an
 API key, and add it as secret **`TED_API_KEY`** in BOTH the `staging` and
@@ -276,26 +292,17 @@ API key, and add it as secret **`TED_API_KEY`** in BOTH the `staging` and
 the key to the staging Worker). Do NOT paste the key in chat/issues —
 GitHub environment secrets only.
 
-**Remaining owner action (2026-08-18, from `ted-key-verify` run 32135295775)**: the key authenticates (`Bearer` shape confirmed) but the
-API answers `403 No eNotices2 account found.` — per the TED docs the key's
-EU Login account must be **paired** by logging in to the eNotices2 UI at
-least once: open https://enotices2.ted.europa.eu/ and sign in with the SAME
-EU Login account that created the key on developer.ted.europa.eu (keys are
-also environment-specific — a production key needs the production portal).
-One login, no notice authoring needed. Then tell Claude (or re-dispatch the
-`ted-key-verify` workflow yourself) to confirm 200 + XML.
-
-⚠️ Until pairing is done, staging ingestion 403s on every notice (a
-configured `TED_API_KEY` switches the client to the authenticated route —
-there is no automatic anonymous fallback), so the daily 05:00 UTC run and
-any admin backfill will fail with a `NOTICE_FETCH_HTTP_403` diagnostic.
+~~Remaining owner action: eNotices2 pairing login.~~ **DONE 2026-08-18**
+(owner logged in; the key then authenticated — which is exactly what let
+the probe prove the endpoint doesn't exist; see resolution above).
 
 ---
 
 ## Not blockers (deliberately)
 
-- ~~TED API: public, no credential required (verified in docs/ted-data-source.md).~~
-  SUPERSEDED 2026-08-18 by item 9: search remains anonymous, but the robust
-  notice-XML route needs a (free) developer API key.
+- **TED API: public, no credential required** — reinstated 2026-08-18
+  after item 9's investigation closed full-circle: search is anonymous and
+  the notice-XML front-end (with render-cycling) is the only content
+  route; no key exists that helps.
 - LLM keys: no production LLM usage in V1 by design.
 - Analytics/monitoring SaaS: none used in V1.
