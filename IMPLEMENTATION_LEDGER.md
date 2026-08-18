@@ -42,6 +42,70 @@ new TedClient headers → parse → upsert → R2 snapshot) is the 2026-08-18
 armed for 2026-08-18 ~05:40 UTC. Phase pipeline NOT advanced, per the
 hold.
 
+**Second staging-ingestion health check (2026-08-18 ~05:43 UTC, silent,
+read-only — via Cloudflare D1 API): FAILED — real finding, launch-blocking
+ingestion bug.** The 2026-08-18 05:00 UTC cron (window 2026-08-17→2026-08-17,
+started 05:00:47Z) is the first NON-EMPTY end-to-end run. `ingestion_runs`
+latest row: status **`failed`**, notices_seen **1**, notices_upserted 0,
+versions_created 0, lots_created 0, errors_count **0**, duration ~2.4s.
+`ingestion_errors` **0 rows**; `tender_notices/versions/lots/matches`,
+`buyers`, `source_snapshots`, `tender_cpv_codes/geographies` all **0**.
+Checkpoint correctly held at **2026-08-16** (NOT advanced past a failed
+window — checkpoint safety worked; the next daily cron re-attempts the same
+window).
+
+Diagnosis (from run row + tables + code, since worker logs / `wrangler tail`
+are not available in-session):
+
+- `notices_seen=1` ⟹ the TED **search** succeeded (endpoint, expert-query
+  syntax, and scope all work against live TED; returned exactly 1 notice for
+  the 72*/48*/79417000 competition scope on Monday).
+- `source_snapshots=0` AND `buyers=0` are decisive: in
+  `packages/procurement/src/run-window.ts`, both the snapshot insert
+  (`insertSnapshotIfNewHash`, L218) and buyer upsert (L264) run only AFTER
+  `client.fetchNoticeXml` (L193). Empty snapshot + buyer tables with 1 notice
+  seen ⟹ the run aborted **inside `fetchNoticeXml`**, before any persistence.
+- `errors_count=0` / no `ingestion_errors` row ⟹ it did NOT hit a per-notice
+  recorded path (MALFORMED_SEARCH_ROW / XML_TOO_LARGE / TedParseError). In
+  `fetchNoticeXml`, every failure except `TedXmlTooLargeError` re-throws and
+  bubbles to the window-level catch → `status=failed` (run-window.ts
+  L195–197, L140–155).
+- ~2.4s duration is too short for the client's 4-retry backoff cycle
+  (~1+2+4+8=15s), so the notice-XML GET **fail-fast on a non-retryable
+  error** — most consistent with an **HTTP 200 empty body** (the documented
+  `ted.europa.eu` response to a client it won't serve — see client.ts
+  L51–60, L192–201) or a non-retryable 4xx on the `ted.europa.eu` notice-XML
+  origin.
+- **Why now:** every earlier staging window saw 0 notices, so the
+  notice-XML download path (host `ted.europa.eu`, distinct from the working
+  search host `api.ted.europa.eu`) had NEVER run from the deployed Worker
+  before today — only in the fixture-fetch CI job. Likely **deterministic**
+  → recurs daily and will not self-heal, though the held checkpoint means
+  each day re-attempts the identical window.
+
+Could NOT live-reproduce from the sandbox: the session network policy denies
+`api.ted.europa.eu` (403 CONNECT, `connect_rejected` in agent-proxy status) —
+an org policy denial, reported not worked around; the deployed Worker's
+egress is the relevant path and it reached the search host fine.
+
+Secondary (defensibility) finding: a window-level failure persists **no
+durable diagnostic** — `errors_count=0`, no `ingestion_errors` row; the only
+forensic trace is the `ingestion.window.failed` worker log (not retained /
+not accessible here). Recommend the window-level catch in `runIngestionWindow`
+ALSO write an `ingestion_errors` row (stage `fetch`, error code + message +
+failing notice id/URL) so the next occurrence self-documents without live
+logs — aligns with the "surface, don't swallow malformed records" hard rule.
+
+Owner next steps (reported to owner as a real finding; NOT auto-fixed —
+pipeline is on hold): (a) read the 05:00 run's Worker logs (Cloudflare
+dashboard → Workers → the ingest worker → Logs; filter `ingestion.window.failed`
+and `ted.request` / `ted.notice_xml.ok`) — that line carries the exact error
+message and confirms empty-body vs HTTP status; (b) confirm the DEPLOYED bundle
+sends `User-Agent`+`Accept` on the notice-XML GET (present in source — rule out
+a stale deploy) and that the Worker egress isn't served the blocked-client
+empty body; (c) greenlight the durable-diagnostic `ingestion_errors`-on-failure
+change (offered). Phase pipeline NOT advanced, per the hold.
+
 **Website redesign RESTART (owner instruction, 2026-08-17)**: the owner
 REJECTED all three initial design directions (Ledger / Control Room /
 Mac Modern rev.1 — registry in
