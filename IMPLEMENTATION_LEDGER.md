@@ -106,6 +106,33 @@ a stale deploy) and that the Worker egress isn't served the blocked-client
 empty body; (c) greenlight the durable-diagnostic `ingestion_errors`-on-failure
 change (offered). Phase pipeline NOT advanced, per the hold.
 
+**Ingestion durable-diagnostic fix (owner instruction "fix the ingestion bug",
+2026-08-18): SHIPPED (PR #46).** Addresses the secondary/defensibility finding
+above. `runIngestionWindow` (`packages/procurement/src/run-window.ts`) now tracks
+the notice in flight and, on a window-level failure, writes exactly one durable
+`ingestion_errors` row (stage + stable machine code + message + failing notice
+id/URL + HTTP status/attempts) and bumps `errors_count` to match — guarded so a
+diagnostic-write failure can never mask the original error; checkpoint-hold-on-
+failure unchanged. Machine codes: `REQUEST_BUDGET_EXCEEDED`,
+`NOTICE_FETCH_HTTP_<status>`, `NOTICE_FETCH_NETWORK_ERROR`,
+`UNEXPECTED_WINDOW_ERROR`. Tests extended in `apps/worker/src/ingestion.d1.test.ts`
+(budget case now asserts the diagnostic row; new HTTP-404 notice-fetch-failure
+test mirrors the 2026-08-17 incident shape). Gates green (format/lint/typecheck/
+build; root vitest 445 pass/3 skip, worker 158, db 52). Independent
+production-reviewer + security review run before merge.
+
+What this fix does and does NOT do: it makes the failure **self-documenting in
+D1**, so the NEXT staging ingest run (daily 05:00 UTC, or an admin backfill)
+captures the EXACT notice-XML fetch cause (empty-body vs a specific HTTP status)
+in `ingestion_errors` — turning the targeted fetch fix from a guess into a
+certainty. It does NOT by itself unblock the Monday window (1 notice, 100% fetch
+failure → still correctly window-fatal, checkpoint held). Deliberately NOT
+changed: the fail-the-window-on-fetch-error semantics (documented design) and
+the "poison-pill" resilience question (one bad notice among many blocking a
+whole day) — the latter is ADR-level and noted as a separate follow-up. Root
+cause of the fetch failure remains OPEN pending the next run's captured
+diagnostic or the Worker log. Phase pipeline still on hold.
+
 **Website redesign RESTART (owner instruction, 2026-08-17)**: the owner
 REJECTED all three initial design directions (Ledger / Control Room /
 Mac Modern rev.1 — registry in
