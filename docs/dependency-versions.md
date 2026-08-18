@@ -176,6 +176,26 @@ measured):
     (near-zero margin for the copy/spacing work still to come in M1–M3) in
     favor of the shipped 80.89 KB combination.
 
+## Website redesign — Control Room re-skin (2026-08-18): fonts removed
+
+Superseding the M0.1 Strata font section above: the owner switched the
+approved design direction to Direction B "Control Room" (2026-08-18
+decision log, `.claude/skills/website-redesign/requirements.md`), which
+specifies system font stacks only (`-apple-system` sans, `ui-monospace`
+mono) — **no webfonts**. Removed in this change:
+
+- devDependencies `@fontsource/sora`, `@fontsource/hanken-grotesk`,
+  `@fontsource-variable/jetbrains-mono` (`apps/web/package.json`; lockfile
+  updated via `pnpm install`).
+- The vendored `apps/web/src/assets/fonts/` directory (four `.woff2` files
+  - three `LICENSE-*.txt` files, ~80.89 KB) and the hand-written
+    `@font-face` rules that referenced them in `apps/web/src/styles.css`.
+
+Font payload after removal: **0 B** (system stacks ship nothing over the
+wire). The 80.89 KB budget analysis above is retained for the historical
+record but no longer applies — there is no font budget to track while the
+Control Room design ships zero custom fonts.
+
 ## Unverified / to re-check when network allows
 
 - Resend pricing tiers (free 3k/mo, $20/50k figures from secondary sources).
