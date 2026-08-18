@@ -196,3 +196,42 @@ if (first !== undefined) {
   }
 }
 console.log('\nv2 probes complete');
+
+// ---------------------------------------------------------------------------
+// v3 probe (2026-08-18): the /xml endpoint renders ASYNC (202 first, 200 +
+// XML once cached — proven by probe A across runs). Decisive question: does
+// `?download=true` bypass the async render on a COLD notice? Tested on rows
+// 10..12, untouched by earlier runs; row 13 without the param is the cold
+// control (expected 202).
+// ---------------------------------------------------------------------------
+
+console.log('\n=== v3 probe: ?download=true on COLD notices ===');
+for (const [offset, withParam] of [
+  [10, true],
+  [11, true],
+  [12, true],
+  [13, false],
+]) {
+  const row = notices[offset];
+  const base = row?.links?.xml?.MUL;
+  if (typeof base !== 'string') continue;
+  const url = withParam ? `${base}?download=true` : base;
+  try {
+    const res = await fetch(url, {
+      headers: { Accept: XML_ACCEPT, 'User-Agent': PROD_UA },
+      signal: AbortSignal.timeout(30_000),
+    });
+    const body = await res.text();
+    console.log(
+      `[row ${String(offset)}${withParam ? ' +download=true' : ' (cold control)'}] ${url}` +
+        ` -> status=${String(res.status)} ct=${String(res.headers.get('content-type'))}` +
+        ` bytes=${String(body.length)} head=${body.trimStart().slice(0, 80).replaceAll('\n', ' ')}`,
+    );
+  } catch (cause) {
+    console.log(
+      `[row ${String(offset)}] ERROR ${cause instanceof Error ? cause.message : String(cause)}`,
+    );
+  }
+  await new Promise((resolve) => setTimeout(resolve, 700));
+}
+console.log('v3 probe complete');
