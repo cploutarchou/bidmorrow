@@ -32,7 +32,7 @@ section breaks, native fieldsets, 44rem-boxed headers. This spec extends
 the mockup's **panel language** into the app: everything that groups
 content becomes an opaque panel (`--glass-solid` + `--stroke` + radius
 10–12px); everything that labels a panel becomes a mono uppercase head;
-every input becomes a *recessed* field (darker than its panel — depth
+every input becomes a _recessed_ field (darker than its panel — depth
 logic: ground < field < panel < raised); every score number keeps its
 glow. Page titles step down to workspace scale (1.5rem) because the app is
 an instrument, not a landing page. One root-cause bug fix (the bare
@@ -44,7 +44,7 @@ an instrument, not a landing page. One root-cause bug fix (the bare
 
 1. **Header island (Feed/Settings/Detail + Onboarding).** `styles.css`
    L210–221: `header, main, footer { max-width: 44rem; margin-inline:
-   auto; padding-inline: 1.5rem; }` + `header { padding-block: 1.25rem }`.
+auto; padding-inline: 1.5rem; }` + `header { padding-block: 1.25rem }`.
    `.site-header` escapes this (`max-width: none; margin-inline: 0; …`);
    `.app-header` and `.assistant-header` do **not** — so both render as a
    44rem centered box while their content runs 72rem/40rem. Fix by
@@ -87,19 +87,19 @@ empty-state glyph is pure CSS (§5.3).
 
 New/newly-relied-on text pairings (all ≥ 4.5:1 — pass):
 
-| Foreground | Background | Ratio |
-|---|---|---|
-| `--text-1` #e8edf4 | panel `--glass-solid` #12151b | 15.5:1 |
-| `--text-2` #8b94a7 | panel #12151b | 5.9:1 |
-| `--text-3` #7d8799 | panel #12151b | 5.05:1 |
-| `--text-1` #e8edf4 | `--field-bg` #0e1116 | 16.1:1 |
-| `--text-3` #7d8799 (hints/placeholder) | `--field-bg` #0e1116 | 5.2:1 |
-| `--accent-text` #35d3c0 | panel #12151b | 9.8:1 |
-| `--accent-ink` #062723 | accent fill #35d3c0 | 8.5:1 |
-| `--status-danger-text` #f87171 | panel #12151b | 6.6:1 |
-| `--status-strong-text` #4ade80 | panel #12151b | 10.5:1 |
-| `--status-caution-text` #fbbf24 | panel #12151b | 10.8:1 |
-| `--status-info-text` #7dd3fc | panel #12151b | 11.0:1 |
+| Foreground                             | Background                    | Ratio  |
+| -------------------------------------- | ----------------------------- | ------ |
+| `--text-1` #e8edf4                     | panel `--glass-solid` #12151b | 15.5:1 |
+| `--text-2` #8b94a7                     | panel #12151b                 | 5.9:1  |
+| `--text-3` #7d8799                     | panel #12151b                 | 5.05:1 |
+| `--text-1` #e8edf4                     | `--field-bg` #0e1116          | 16.1:1 |
+| `--text-3` #7d8799 (hints/placeholder) | `--field-bg` #0e1116          | 5.2:1  |
+| `--accent-text` #35d3c0                | panel #12151b                 | 9.8:1  |
+| `--accent-ink` #062723                 | accent fill #35d3c0           | 8.5:1  |
+| `--status-danger-text` #f87171         | panel #12151b                 | 6.6:1  |
+| `--status-strong-text` #4ade80         | panel #12151b                 | 10.5:1 |
+| `--status-caution-text` #fbbf24        | panel #12151b                 | 10.8:1 |
+| `--status-info-text` #7dd3fc           | panel #12151b                 | 11.0:1 |
 
 `--danger-edge` blended over panel is ~1.8:1 — acceptable because it is
 strictly decorative (the danger section is identified by its red heading
@@ -143,7 +143,7 @@ Nav links get a real selected indicator (currently color-only — an AA
 
 ```css
 .app-nav-list a {
-  padding: 0.55rem 0.15rem;   /* was 0.3rem 0.1rem */
+  padding: 0.55rem 0.15rem; /* was 0.3rem 0.1rem */
 }
 .app-nav-list a[aria-current='page'] {
   color: var(--accent-text);
@@ -166,15 +166,23 @@ with:
 
 ```css
 @media (max-width: 40rem) {
-  :root { --app-header-h: 6.25rem; }
+  :root {
+    --app-header-h: 6.25rem;
+  }
   .app-header-inner {
     flex-wrap: wrap;
     gap: 0 1rem;
     min-height: 0;
     padding-block: 0.5rem 0;
   }
-  .app-wordmark { display: inline-flex; align-items: center; min-height: 2.75rem; }
-  .app-nav-actions { margin-left: auto; }
+  .app-wordmark {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+  .app-nav-actions {
+    margin-left: auto;
+  }
   .app-nav-list {
     order: 3;
     width: 100%;
@@ -182,12 +190,14 @@ with:
     gap: 0;
     border-top: 1px solid var(--stroke-faint);
   }
-  .app-nav-list li { flex: 1; }
+  .app-nav-list li {
+    flex: 1;
+  }
   .app-nav-list a {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 2.75rem;   /* 44px */
+    min-height: 2.75rem; /* 44px */
     padding: 0;
   }
 }
@@ -236,8 +246,15 @@ styling). CSS deltas — **delete** the whole `.tab--shelf` rule and the
 `@media (max-width: 30rem)` feed-tabs block, replace with:
 
 ```css
-.tab { min-height: 2.25rem; transition: background-color 180ms var(--ease), color 180ms var(--ease); }
-.feed-tabs [data-group='shelf']:not(.tab--active) { color: var(--text-3); }
+.tab {
+  min-height: 2.25rem;
+  transition:
+    background-color 180ms var(--ease),
+    color 180ms var(--ease);
+}
+.feed-tabs [data-group='shelf']:not(.tab--active) {
+  color: var(--text-3);
+}
 /* exactly ONE divider: between the last score tab and the first shelf tab */
 .feed-tabs [data-group='score'] + [data-group='shelf'] {
   position: relative;
@@ -259,7 +276,9 @@ styling). CSS deltas — **delete** the whole `.tab--shelf` rule and the
     overflow-x: auto;
     scrollbar-width: thin;
   }
-  .tab { min-height: 2.75rem; }
+  .tab {
+    min-height: 2.75rem;
+  }
 }
 ```
 
@@ -270,7 +289,12 @@ becomes a proper Control Room panel. No markup change. Replace the
 `.feed-filters` / `.feed-filter-body` rules:
 
 ```css
-.feed-filters { border: none; background: none; border-radius: 0; margin-bottom: 1.5rem; }
+.feed-filters {
+  border: none;
+  background: none;
+  border-radius: 0;
+  margin-bottom: 1.5rem;
+}
 .feed-filters summary {
   display: inline-flex;
   width: fit-content;
@@ -284,16 +308,27 @@ becomes a proper Control Room panel. No markup change. Replace the
   color: var(--text-2);
   font-weight: 600;
   font-size: 0.9rem;
-  transition: border-color 180ms var(--ease), color 180ms var(--ease);
+  transition:
+    border-color 180ms var(--ease),
+    color 180ms var(--ease);
 }
-.feed-filters summary:hover { color: var(--text-1); border-color: var(--stroke-strong); }
-.feed-filters[open] summary { color: var(--text-1); border-color: var(--accent-edge); }
-.feed-filters summary::after { /* keep chevron; add: */ transition: transform 200ms var(--ease); }
+.feed-filters summary:hover {
+  color: var(--text-1);
+  border-color: var(--stroke-strong);
+}
+.feed-filters[open] summary {
+  color: var(--text-1);
+  border-color: var(--accent-edge);
+}
+.feed-filters summary::after {
+  /* keep chevron; add: */
+  transition: transform 200ms var(--ease);
+}
 .feed-filter-body {
   margin-top: 0.75rem;
   padding: 1.25rem;
   border: 1px solid var(--stroke);
-  border-top: 1px solid var(--stroke);   /* replaces old border-top hairline */
+  border-top: 1px solid var(--stroke); /* replaces old border-top hairline */
   border-radius: var(--r-m);
   background: var(--glass-solid);
   box-shadow: var(--shadow-s);
@@ -327,7 +362,8 @@ defect via generous min-height:
   text-align: center;
   color: var(--text-2);
 }
-.feed-empty__glyph {          /* pure-CSS radar motif — no asset */
+.feed-empty__glyph {
+  /* pure-CSS radar motif — no asset */
   width: 72px;
   height: 72px;
   margin-bottom: 0.75rem;
@@ -356,15 +392,37 @@ defect via generous min-height:
   box-shadow: 0 0 12px rgba(53, 211, 192, 0.6);
 }
 @media (prefers-reduced-motion: no-preference) {
-  .feed-empty__glyph::after { animation: empty-ping 3s ease-in-out infinite; }
+  .feed-empty__glyph::after {
+    animation: empty-ping 3s ease-in-out infinite;
+  }
   @keyframes empty-ping {
-    0%, 100% { box-shadow: 0 0 8px rgba(53, 211, 192, 0.4); }
-    50%      { box-shadow: 0 0 16px rgba(53, 211, 192, 0.75); }
+    0%,
+    100% {
+      box-shadow: 0 0 8px rgba(53, 211, 192, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 16px rgba(53, 211, 192, 0.75);
+    }
   }
 }
-.feed-empty__title { margin: 0; font-weight: 600; font-size: 1.05rem; color: var(--text-1); }
-.feed-empty__body  { margin: 0; font-size: 0.95rem; max-width: 34ch; }
-.feed-empty__actions { margin-top: 0.75rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; }
+.feed-empty__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--text-1);
+}
+.feed-empty__body {
+  margin: 0;
+  font-size: 0.95rem;
+  max-width: 34ch;
+}
+.feed-empty__actions {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
 ```
 
 `Feed.tsx` markup delta (the empty-state block only; glyph in every
@@ -373,7 +431,7 @@ variant):
 - **Shelf tabs**: glyph + the existing sentence verbatim as
   `<p className="feed-empty__title">`.
 - **Filtered**: glyph + `<p className="feed-empty__title">No matches with
-  these filters.</p>` + existing Clear-filters button (promote to
+these filters.</p>` + existing Clear-filters button (promote to
   `className="btn-quiet"`, drop `btn-sm`) inside
   `<div className="feed-empty__actions">`.
 - **Default (no filters)**:
@@ -396,20 +454,29 @@ lets the grid texture bleed through — off-language). CSS deltas:
 
 ```css
 .tender-card {
-  background: var(--glass-solid);      /* was var(--surface-1) */
+  background: var(--glass-solid); /* was var(--surface-1) */
   padding: 1.25rem 1.4rem;
   gap: 0.55rem;
 }
-.tender-card__head {                    /* class exists in markup, currently unstyled */
+.tender-card__head {
+  /* class exists in markup, currently unstyled */
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem 1rem;
 }
-.tender-card__title { line-height: 1.35; }
-.tender-card__title a { color: var(--text-1); text-decoration: none; }
-.tender-card__title a:hover { color: var(--accent-text); text-decoration: underline; }
+.tender-card__title {
+  line-height: 1.35;
+}
+.tender-card__title a {
+  color: var(--text-1);
+  text-decoration: none;
+}
+.tender-card__title a:hover {
+  color: var(--accent-text);
+  text-decoration: underline;
+}
 .tender-card__meta {
   font-family: var(--font-mono);
   font-size: 0.78rem;
@@ -423,7 +490,9 @@ lets the grid texture bleed through — off-language). CSS deltas:
 }
 /* visible pressed state for Save/Ignore toggles (not color-only: label
    text already flips Saved/Ignored) */
-.btn-quiet[aria-pressed='true'] { background: var(--accent-soft); }
+.btn-quiet[aria-pressed='true'] {
+  background: var(--accent-soft);
+}
 ```
 
 `TenderCard.tsx` markup delta: move the deadline `<p className=
@@ -439,8 +508,8 @@ deltas on the app-section `.score-badge` rules:
 
 ```css
 .score-badge {
-  border-radius: var(--r-s);   /* was 999px */
-  border-width: 1px;           /* was 1.5px */
+  border-radius: var(--r-s); /* was 999px */
+  border-width: 1px; /* was 1.5px */
   padding: 0.3rem 0.65rem;
   font-size: 0.8rem;
 }
@@ -453,7 +522,7 @@ deltas on the app-section `.score-badge` rules:
 }
 .score-badge__num {
   font-size: 0.95rem;
-  text-shadow: 0 0 16px currentColor;  /* was fixed teal — wrong hue on
+  text-shadow: 0 0 16px currentColor; /* was fixed teal — wrong hue on
                                           caution/risk/info badges */
 }
 ```
@@ -476,8 +545,11 @@ needed beyond §9. No markup change.
 ### 6.1 Layout
 
 ```css
-.settings-shell { grid-template-columns: 15rem minmax(0, 1fr); }  /* was 14rem */
-.settings-content {                 /* class exists, currently unstyled */
+.settings-shell {
+  grid-template-columns: 15rem minmax(0, 1fr);
+} /* was 14rem */
+.settings-content {
+  /* class exists, currently unstyled */
   display: grid;
   gap: 1.25rem;
   min-width: 0;
@@ -505,7 +577,8 @@ styling:
   scroll-margin-top: calc(var(--app-header-h) + 1rem);
 }
 /* delete the old .settings-group:first-child reset (no longer needed) */
-.settings-group > h2 {              /* Control Room panel-head */
+.settings-group > h2 {
+  /* Control Room panel-head */
   margin: 0 0 1.25rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--stroke-faint);
@@ -522,15 +595,18 @@ styling:
   border-top: 1px solid var(--stroke-faint);
   scroll-margin-top: calc(var(--app-header-h) + 1rem);
 }
-.settings-subsection h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+.settings-subsection h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
 ```
 
 ### 6.3 Sidebar nav (defect #2 type size)
 
 ```css
 .settings-nav {
-  top: calc(var(--app-header-h) + 1.25rem);   /* was hardcoded 5.5rem */
-  background: var(--glass-solid);              /* was surface-1 */
+  top: calc(var(--app-header-h) + 1.25rem); /* was hardcoded 5.5rem */
+  background: var(--glass-solid); /* was surface-1 */
   padding: 0.6rem;
 }
 .settings-nav a {
@@ -538,12 +614,12 @@ styling:
   align-items: center;
   min-height: 2.5rem;
   padding: 0.45rem 0.75rem;
-  font-size: 0.95rem;    /* was 0.9rem */
+  font-size: 0.95rem; /* was 0.9rem */
 }
 .settings-nav a[aria-current='true'] {
   color: var(--accent-text);
   background: var(--accent-soft);
-  box-shadow: inset 2px 0 0 var(--accent-text);   /* not color-only */
+  box-shadow: inset 2px 0 0 var(--accent-text); /* not color-only */
 }
 ```
 
@@ -553,19 +629,26 @@ styling:
 rule in place (safe for admin too):
 
 ```css
-input, textarea, select {
-  padding: 0.5rem 0.75rem;            /* was 0.5rem */
-  border: 1px solid var(--stroke);    /* was --color-border (same value) */
-  border-radius: var(--r-s);          /* was 0.25rem */
-  background: var(--field-bg);        /* was --color-bg — recessed field */
+input,
+textarea,
+select {
+  padding: 0.5rem 0.75rem; /* was 0.5rem */
+  border: 1px solid var(--stroke); /* was --color-border (same value) */
+  border-radius: var(--r-s); /* was 0.25rem */
+  background: var(--field-bg); /* was --color-bg — recessed field */
   color: var(--text-1);
   font: inherit;
   min-height: 2.5rem;
 }
-input:focus-visible, textarea:focus-visible, select:focus-visible {
-  border-color: var(--accent-edge);   /* + the global outline, kept */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  border-color: var(--accent-edge); /* + the global outline, kept */
 }
-textarea { min-height: 6rem; resize: vertical; }
+textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
 input[type='checkbox'] {
   min-height: 0;
   width: 1.05rem;
@@ -574,7 +657,9 @@ input[type='checkbox'] {
   flex: none;
   accent-color: var(--sol-1);
 }
-.form-field input, .form-field select, .form-field textarea {
+.form-field input,
+.form-field select,
+.form-field textarea {
   width: 100%;
   min-width: 0;
 }
@@ -586,12 +671,15 @@ input[type='checkbox'] {
 .form-field.inline {
   flex-direction: row;
   flex-wrap: wrap;
-  align-items: center;      /* was flex-end */
+  align-items: center; /* was flex-end */
   gap: 0.5rem;
-  max-width: 32rem;         /* was none */
+  max-width: 32rem; /* was none */
 }
-.form-field.inline label { flex: 1 0 100%; }   /* label on its own line */
-.form-field.inline input, .form-field.inline select {
+.form-field.inline label {
+  flex: 1 0 100%;
+} /* label on its own line */
+.form-field.inline input,
+.form-field.inline select {
   flex: 1 1 10rem;
   width: auto;
   min-width: 0;
@@ -608,7 +696,9 @@ input[type='checkbox'] {
   cursor: pointer;
   transition: border-color 180ms var(--ease);
 }
-.btn-add:hover { border-color: var(--stroke-strong); }
+.btn-add:hover {
+  border-color: var(--stroke-strong);
+}
 ```
 
 `Settings.tsx` markup delta: add `className="btn-add"` to the six "Add"
@@ -617,7 +707,9 @@ buttons (CPV, keyword, geography, exclusion, capability, certification).
 **Chip groups** (defect #4 tightness):
 
 ```css
-.chip-list { gap: 0.5rem; }
+.chip-list {
+  gap: 0.5rem;
+}
 .chip-list li {
   gap: 0.45rem;
   border: 1px solid var(--stroke);
@@ -629,7 +721,7 @@ buttons (CPV, keyword, geography, exclusion, capability, certification).
   overflow-wrap: anywhere;
 }
 .chip-list li button {
-  width: 1.5rem;                 /* 24px — WCAG 2.5.8 minimum met */
+  width: 1.5rem; /* 24px — WCAG 2.5.8 minimum met */
   height: 1.5rem;
   min-height: 0;
   padding: 0;
@@ -653,9 +745,23 @@ buttons (CPV, keyword, geography, exclusion, capability, certification).
 **Fieldsets** (defect #5 — native chrome):
 
 ```css
-.field-group { border: none; margin: 0 0 1rem; padding: 0; display: grid; gap: 0.35rem; }
-.field-group legend { padding: 0; margin-bottom: 0.35rem; font-weight: 600; font-size: 0.9rem; }
-.checkbox-row { min-height: 2rem; gap: 0.6rem; }
+.field-group {
+  border: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.field-group legend {
+  padding: 0;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.checkbox-row {
+  min-height: 2rem;
+  gap: 0.6rem;
+}
 ```
 
 Markup deltas: `className="field-group"` on the Settings contract-natures
@@ -685,8 +791,13 @@ width still fits content (correct for text buttons).
 ### 6.5 Danger zone (defect #8)
 
 ```css
-.settings-danger { border-color: var(--danger-edge); }
-.settings-danger h2 { color: var(--status-danger-text); border-bottom-color: var(--danger-edge); }
+.settings-danger {
+  border-color: var(--danger-edge);
+}
+.settings-danger h2 {
+  color: var(--status-danger-text);
+  border-bottom-color: var(--danger-edge);
+}
 button.danger {
   border: 1px solid var(--status-danger-text);
   color: var(--status-danger-text);
@@ -696,9 +807,16 @@ button.danger {
   padding: 0.6rem 1.2rem;
   min-height: 2.5rem;
 }
-button.danger:hover:not([disabled]) { background: rgba(248, 113, 113, 0.1); }
-button.danger[disabled] { opacity: 0.5; cursor: not-allowed; }
-#delete-confirm { max-width: 16rem; }
+button.danger:hover:not([disabled]) {
+  background: rgba(248, 113, 113, 0.1);
+}
+button.danger[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+#delete-confirm {
+  max-width: 16rem;
+}
 ```
 
 (`.settings-danger`'s old `border-top-color` override is superseded by
@@ -706,7 +824,7 @@ the panel border.) No markup change.
 
 ---
 
-## 7. Secondary pages — consistency pass (only what changes)
+## 7. Remaining pages (note: §7.2 Onboarding is PRIMARY scope by owner addendum; §7.1 TenderDetail and §7.3 auth are the lighter consistency pass)
 
 ### 7.1 TenderDetail
 
@@ -730,13 +848,17 @@ the panel border.) No markup change.
     color: var(--text-3);
     margin-bottom: 0.15rem;
   }
-  .detail-facts dd { margin: 0; overflow-wrap: anywhere; }
+  .detail-facts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
   ```
 - Score-anatomy panel: `background: var(--glass-solid)` (was surface-1),
   `overflow-x: auto`, and de-spreadsheet the table (scoped — the global
   bordered `th, td` rule stays for admin):
   ```css
-  .score-anatomy th, .score-anatomy td {
+  .score-anatomy th,
+  .score-anatomy td {
     border: none;
     border-top: 1px solid var(--stroke-faint);
     padding: 0.5rem 0.75rem;
@@ -759,7 +881,9 @@ the panel border.) No markup change.
     color: var(--text-3);
     margin-bottom: 0.5rem;
   }
-  .score-anatomy table { min-width: 34rem; }  /* scrolls inside panel on mobile */
+  .score-anatomy table {
+    min-width: 34rem;
+  } /* scrolls inside panel on mobile */
   ```
 - Currently-unstyled classes:
   ```css
@@ -782,23 +906,226 @@ the panel border.) No markup change.
   ```
 - Markup delta: `className="field-group"` on the feedback fieldset (§6.4).
 
-### 7.2 Onboarding
+### 7.2 Onboarding wizard — PRIMARY scope (owner addendum 2026-08-18; requirements.md: "Onboarding is the top UX priority")
 
-- **Header island fix** (same root cause as the app header):
-  ```css
-  .assistant-header { max-width: none; margin-inline: 0; padding: 1rem 1.5rem; }
-  ```
-- Everything else (assistant card, presets, chip toggles) inherits the
-  global input upgrade (§6.4) automatically and already matches the
-  panel language. No markup changes.
+Audit first: the shipped M1 wizard (`Onboarding.tsx`) already implements
+most of the required pattern correctly — accessible phase stepper
+(`aria-current="step"` on `.assistant-phase`, `aria-live` "Phase · step x
+of y" in `.assistant-progress`), one focused section per screen (12
+screens / 4 phases), presets-first fast path with Skip on deferrable
+screens, per-resource saves with dirty-tracking + resume (state preserved
+on back/forward), inline validation on manual CPV + value range, a
+region-grouped country picker **with search**, a review reconciliation
+screen, and an honest completion checklist (✓ saved / ○ what happens
+next). **Do not restructure the steps or the data flow — no API change is
+needed for anything below, and none is permitted.** This pass elevates
+its presentation to the Control Room system and closes six concrete gaps.
+
+**(a) Header island fix** (same root cause as the app header, §2.1):
+
+```css
+.assistant-header {
+  max-width: none;
+  margin-inline: 0;
+  padding: 1rem 1.5rem;
+  display: flex; /* keep existing alignment rules */
+}
+```
+
+**(b) Stepper → connected progress rail + determinate progress fill.**
+Keep the `<ol>` DOM and ARIA exactly as-is; restyle to the mockup's
+`.phases` language (connector hairlines, glow dot on the current phase)
+and add an overall progress meter:
+
+```css
+.assistant-phase {
+  position: relative;
+}
+.assistant-phase + .assistant-phase::before {
+  content: '';
+  width: 1.25rem;
+  height: 1px;
+  background: var(--stroke);
+  position: absolute;
+  left: -1.375rem; /* bridges the 0.5rem flex gap + overlap */
+  top: 50%;
+}
+.assistant-phase[data-state='done'] {
+  color: var(--accent-text);
+  border-color: var(--accent-edge);
+}
+.assistant-phase[aria-current='step'] {
+  box-shadow: 0 0 12px rgba(53, 211, 192, 0.25);
+}
+/* determinate fill under the stepper — reuses the CSP-safe native
+   <progress> pattern (.score-bar), never an inline width */
+.assistant-meter {
+  height: 3px;
+}
+.assistant-progress {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+@media (max-width: 30rem) {
+  .assistant-phase + .assistant-phase::before {
+    content: none;
+  }
+}
+```
+
+Markup delta (`Onboarding.tsx`): directly under `<PhaseStepper …/>`
+render
+`<progress className="score-bar assistant-meter" value={screenIndex} max={REVIEW_SCREEN_INDEX} aria-hidden="true" />`
+— decorative (the `aria-live` progress text is the accessible source of
+truth), fills as the user advances, animates via the browser's own value
+rendering (no keyframes needed).
+
+**(c) Step transitions.** The card persists across screens, so CSS mount
+animations never re-trigger. Wrap each screen's conditional content in
+one keyed element: `<div className="assistant-screen"
+key={currentScreen.id}>…</div>` (a single wrapper inside
+`.assistant-card`, around the whole `{currentScreen.id === '…' && …}`
+chain — one div, not twelve). CSS:
+
+```css
+.assistant-screen {
+  display: grid;
+  gap: 1.15rem;
+} /* takes over the card's inner gap */
+@media (prefers-reduced-motion: no-preference) {
+  .assistant-screen {
+    animation: rise-in 240ms var(--ease);
+  }
+}
+```
+
+Same `rise-in` keyframes as §8.2; direction-aware slide was rejected (it
+needs direction state for pure decoration). Focus management (heading
+`ref` + `tabIndex={-1}`) already exists and is unchanged.
+
+**(d) Search affordance for the CPV list** (long-option-list
+requirement). The country screen already has search; mirror it on the
+CPV screen — client-side filter only, no API change:
+
+- Markup delta: above the preset-CPV fieldset, a `.form-field` with
+  `<label htmlFor="cpv-search">Search CPV codes</label>` +
+  `<input id="cpv-search" type="search" …/>`; new local state
+  `cpvSearch`; filter `PRESET_CPV_CODES` by code substring OR
+  `CPV_SHORTHAND_LABELS` label substring (case-insensitive). Selected
+  codes filtered out of view stay selected (state is the source of
+  truth — same behavior as the country search). When the filter empties
+  the list, show the fieldset with a `.hint` "No codes match your
+  search." (new UI string — not in `copy.ts`, flag to QA like §5.4).
+- Keywords/capabilities/exclusions screens are free-text add-rows, not
+  long option lists — no search needed there; do not add one.
+
+**(e) Inline validation styling** (logic already exists — style + wiring
+only):
+
+```css
+input[aria-invalid='true'],
+textarea[aria-invalid='true'] {
+  border-color: var(--status-danger-text);
+}
+.form-error {
+  font-size: 0.9rem;
+}
+```
+
+Markup deltas: `aria-invalid={manualCpvError !== null}` +
+`aria-describedby="manual-cpv-error"` on the manual-CPV input (give the
+error `<p>` that id); same pattern on the min/max value inputs with the
+existing min>max error. Error paragraphs already render directly under
+their fields (`role="alert"`) — keep adjacency.
+
+**(f) Form system + 44px targets.** The wizard inherits §6.4
+automatically (recessed fields, add-rows, `.btn-add` on its Add buttons
+— add that className to the manual-CPV / NUTS / keyword / capability /
+certification / exclusion Add buttons). Additional wizard-specific
+rules:
+
+```css
+.ob-chip-toggle {
+  min-height: 2.75rem;
+  align-items: center;
+} /* 44px, all widths */
+.ob-preset-grid {
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+.ob-preset-card {
+  cursor: pointer;
+  transition:
+    border-color 200ms var(--ease),
+    box-shadow 200ms var(--ease);
+}
+.ob-preset-card--selected {
+  box-shadow:
+    0 0 0 1px var(--sol-1),
+    0 0 20px rgba(53, 211, 192, 0.15); /* mockup .preset[aria-pressed] */
+}
+.step-actions {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--stroke-faint);
+  align-items: center;
+}
+.step-actions .cta {
+  margin-left: auto;
+} /* Back/Skip left, primary right */
+@media (max-width: 30rem) {
+  .step-actions {
+    flex-wrap: wrap;
+  }
+  .step-actions .cta {
+    flex: 1 1 100%;
+    margin-left: 0;
+    order: -1;
+  } /* primary first, full width */
+}
+```
+
+Markup delta (`StepActions` + the welcome/workspace/done screens): Back,
+Skip, and the completion screen's non-primary "Go to your feed" get
+`className="btn-quiet"` (currently bare unstyled `<button>`s). Labels
+and handlers unchanged. Mobile stacking puts the primary action first
+(thumb-reachable), Back/Skip beneath — 44px each via the §9 ≤48rem rule.
+
+**(g) Completion state polish** (content already honest — "what happens
+next" checklist ships today; styling only):
+
+```css
+.ob-checklist__mark {
+  width: 1.25rem;
+  text-align: center;
+  color: var(--text-3);
+}
+.ob-checklist__mark--done {
+  color: var(--status-strong-text);
+}
+```
+
+Markup: add the `--done` modifier to the "✓" spans only (pending "○"
+marks keep the default). Never color-only — the ✓/○ glyphs already
+differ.
+
+**Flagged (needs no decision to ship this spec, listed for honesty):**
+the CPV-search label and empty-search hint are new UI strings outside
+`copy.ts` (grep tests before landing, per §5.4 protocol). Nothing in
+this section changes payloads, endpoints, screen order, or the resume
+contract.
 
 ### 7.3 Auth pages
 
 - Inherit the input/field upgrade automatically. Add (after the shared
   `#main-content` rule):
   ```css
-  .auth-main { max-width: 30rem; }
-  .auth-main h1 { font-size: 1.6rem; }
+  .auth-main {
+    max-width: 30rem;
+  }
+  .auth-main h1 {
+    font-size: 1.6rem;
+  }
   ```
 - No markup changes; `.site-header glass` already correct.
 
@@ -825,8 +1152,13 @@ surfaces:
 
 ```css
 /* press feedback — every button-like element */
-.cta:active, .btn-quiet:active, .btn-solar:active, .btn-add:active,
-.tab:active, button.danger:active, .mkt-btn-quiet:active,
+.cta:active,
+.btn-quiet:active,
+.btn-solar:active,
+.btn-add:active,
+.tab:active,
+button.danger:active,
+.mkt-btn-quiet:active,
 .mkt-menu-toggle:active {
   transform: translateY(1px);
 }
@@ -834,28 +1166,38 @@ surfaces:
 @media (hover: hover) {
   /* interactive cards/panels: lift + edge sharpen (app cards already
      have this; extend to marketing cards, §13) */
-  .tender-card:hover, .mkt-step:hover, .mkt-truth-card:hover,
-  .feature-list li:hover, .mkt-plan:hover, .mkt-plan-chip:hover {
+  .tender-card:hover,
+  .mkt-step:hover,
+  .mkt-truth-card:hover,
+  .feature-list li:hover,
+  .mkt-plan:hover,
+  .mkt-plan-chip:hover {
     transform: translateY(-2px);
     border-color: var(--stroke-strong);
     box-shadow: var(--shadow-m);
   }
 }
-.mkt-step, .mkt-truth-card, .feature-list li, .mkt-plan, .mkt-plan-chip {
-  transition: transform 200ms var(--ease), border-color 200ms var(--ease),
+.mkt-step,
+.mkt-truth-card,
+.feature-list li,
+.mkt-plan,
+.mkt-plan-chip {
+  transition:
+    transform 200ms var(--ease),
+    border-color 200ms var(--ease),
     box-shadow 200ms var(--ease);
 }
 ```
 
 - Buttons keep their existing hover semantics (solid → `brightness(1.1)`;
   quiet → `--accent-soft` wash; add `transition: … transform 120ms
-  var(--ease)` to each existing button transition list).
+var(--ease)` to each existing button transition list).
 - Tabs: 180ms color/background (§5.2); chips (`.mkt-chip`, `.chip-list
-  li`): border-color 180ms; remove buttons per §6.4.
+li`): border-color 180ms; remove buttons per §6.4.
 - Focus: the existing global `:focus-visible { outline: 3px solid
-  var(--focus) }` (teal, ≥3:1 against every surface) is the single focus
+var(--focus) }` (teal, ≥3:1 against every surface) is the single focus
   treatment — never suppressed, never replaced by glow. `prefers-contrast:
-  more` already widens it.
+more` already widens it.
 
 ### 8.2 Transitions (in-page state changes)
 
@@ -863,8 +1205,15 @@ surfaces:
   body rises in:
   ```css
   @media (prefers-reduced-motion: no-preference) {
-    .feed-filters[open] .feed-filter-body { animation: rise-in 200ms var(--ease); }
-    @keyframes rise-in { from { opacity: 0; transform: translateY(-6px); } }
+    .feed-filters[open] .feed-filter-body {
+      animation: rise-in 200ms var(--ease);
+    }
+    @keyframes rise-in {
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+    }
   }
   ```
 - **Tab switches / feed loads**: the list and empty state are unmounted
@@ -872,14 +1221,17 @@ surfaces:
   every tab change with zero JS:
   ```css
   @media (prefers-reduced-motion: no-preference) {
-    .tender-list, .feed-empty { animation: rise-in 240ms var(--ease); }
+    .tender-list,
+    .feed-empty {
+      animation: rise-in 240ms var(--ease);
+    }
   }
   ```
   Skeleton sheen stays as shipped (already reduced-motion-gated).
 - **Chip add**: `@media (prefers-reduced-motion: no-preference)
-  { .chip-list li { animation: chip-in 160ms var(--ease); } @keyframes
-  chip-in { from { opacity: 0; transform: scale(0.92); } } }`. Chip
-  *removal* animates nothing — exit animations would require
+{ .chip-list li { animation: chip-in 160ms var(--ease); } @keyframes
+chip-in { from { opacity: 0; transform: scale(0.92); } } }`. Chip
+  _removal_ animates nothing — exit animations would require
   unmount-delay state machinery for pure decoration; rejected.
 - **Save success feedback (app)**: make the existing `statusMessage`
   visible as a transient toast — the accessible live region stays exactly
@@ -907,8 +1259,15 @@ surfaces:
       box-shadow: var(--shadow-m);
     }
     @media (prefers-reduced-motion: no-preference) {
-      .app-toast { animation: toast-in 200ms var(--ease); }
-      @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+      .app-toast {
+        animation: toast-in 200ms var(--ease);
+      }
+      @keyframes toast-in {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+      }
     }
     ```
     (With motion off the toast simply appears/disappears — fine.)
@@ -925,10 +1284,15 @@ decoration overload (see §12).
    on load, then holds solid (persistent blink = distraction):
    ```css
    @media (prefers-reduced-motion: no-preference) {
-     .product-name::after, .app-wordmark::after {
+     .product-name::after,
+     .app-wordmark::after {
        animation: cursor-blink 1.1s steps(2, jump-none) 3;
      }
-     @keyframes cursor-blink { 50% { opacity: 0; } }
+     @keyframes cursor-blink {
+       50% {
+         opacity: 0;
+       }
+     }
    }
    ```
 2. **Score readout glow-in** — every score figure "powers on" at first
@@ -936,8 +1300,15 @@ decoration overload (see §12).
    text throughout; AT unaffected:
    ```css
    @media (prefers-reduced-motion: no-preference) {
-     .score-badge__num { animation: readout-in 500ms var(--ease); }
-     @keyframes readout-in { from { opacity: 0.2; text-shadow: none; } }
+     .score-badge__num {
+       animation: readout-in 500ms var(--ease);
+     }
+     @keyframes readout-in {
+       from {
+         opacity: 0.2;
+         text-shadow: none;
+       }
+     }
    }
    ```
    (A numeric count-up was rejected: it needs per-frame JS or
@@ -947,18 +1318,31 @@ decoration overload (see §12).
    static:
    ```css
    @media (prefers-reduced-motion: no-preference) {
-     .mkt-hero-panel, .feed-empty { position: relative; overflow: hidden; }
-     .mkt-hero-panel::after, .feed-empty::after {
+     .mkt-hero-panel,
+     .feed-empty {
+       position: relative;
+       overflow: hidden;
+     }
+     .mkt-hero-panel::after,
+     .feed-empty::after {
        content: '';
        position: absolute;
        inset: 0;
        transform: translateX(-110%);
-       background: linear-gradient(105deg, transparent 40%,
-         rgba(53, 211, 192, 0.08) 50%, transparent 60%);
+       background: linear-gradient(
+         105deg,
+         transparent 40%,
+         rgba(53, 211, 192, 0.08) 50%,
+         transparent 60%
+       );
        animation: panel-scan 1.4s var(--ease) 400ms 1 forwards;
        pointer-events: none;
      }
-     @keyframes panel-scan { to { transform: translateX(110%); } }
+     @keyframes panel-scan {
+       to {
+         transform: translateX(110%);
+       }
+     }
    }
    ```
    Explicitly rejected: animating the body grid texture
@@ -985,12 +1369,23 @@ exists under a JS-added root class):
     .js-reveal .mkt-reveal {
       opacity: 0;
       transform: translateY(16px);
-      transition: opacity 480ms var(--ease), transform 480ms var(--ease);
+      transition:
+        opacity 480ms var(--ease),
+        transform 480ms var(--ease);
     }
-    .js-reveal .mkt-reveal.is-in { opacity: 1; transform: none; }
-    .mkt-reveal--d1 { transition-delay: 60ms; }
-    .mkt-reveal--d2 { transition-delay: 120ms; }
-    .mkt-reveal--d3 { transition-delay: 180ms; }
+    .js-reveal .mkt-reveal.is-in {
+      opacity: 1;
+      transform: none;
+    }
+    .mkt-reveal--d1 {
+      transition-delay: 60ms;
+    }
+    .mkt-reveal--d2 {
+      transition-delay: 120ms;
+    }
+    .mkt-reveal--d3 {
+      transition-delay: 180ms;
+    }
   }
   ```
   (Under reduced motion the hidden state never applies at all — no
@@ -1025,6 +1420,7 @@ becomes fluid naturally). Verify feed filter fields wrap 3→2 per row
 (they do via `flex: 1 1 11rem`).
 
 **≤ 56rem (896 — covers 768):**
+
 - Feed tabs: single-row horizontal scroll, no wrap, thin scrollbar,
   44px-tall tabs (§5.2).
 - Settings: `.settings-shell { display: block; }` (replaces the current
@@ -1032,7 +1428,9 @@ becomes fluid naturally). Verify feed filter fields wrap 3→2 per row
   horizontal chip row** under the app bar:
   ```css
   @media (max-width: 56rem) {
-    .settings-shell { display: block; }
+    .settings-shell {
+      display: block;
+    }
     .settings-nav {
       position: sticky;
       top: var(--app-header-h);
@@ -1040,16 +1438,25 @@ becomes fluid naturally). Verify feed filter fields wrap 3→2 per row
       margin-bottom: 1.25rem;
       padding: 0.5rem;
     }
-    .settings-nav ul { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 0.35rem; }
+    .settings-nav ul {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 0.35rem;
+    }
     .settings-nav a {
       white-space: nowrap;
-      min-height: 2.75rem;         /* 44px */
+      min-height: 2.75rem; /* 44px */
       border: 1px solid var(--stroke);
       border-radius: 999px;
       padding: 0.4rem 1rem;
     }
-    .settings-nav a[aria-current='true'] { box-shadow: none; border-color: var(--accent-edge); }
-    .settings-group, .settings-subsection {
+    .settings-nav a[aria-current='true'] {
+      box-shadow: none;
+      border-color: var(--accent-edge);
+    }
+    .settings-group,
+    .settings-subsection {
       scroll-margin-top: calc(var(--app-header-h) + 4.5rem);
     }
   }
@@ -1057,10 +1464,19 @@ becomes fluid naturally). Verify feed filter fields wrap 3→2 per row
   (Scrollspy + anchors already exist; this is restyle only.)
 
 **≤ 48rem (768):** all interactive controls reach 44px:
+
 ```css
 @media (max-width: 48rem) {
-  .cta, .btn-quiet, .btn-solar, .btn-add, button.danger { min-height: 2.75rem; }
-  .checkbox-row { min-height: 2.75rem; }
+  .cta,
+  .btn-quiet,
+  .btn-solar,
+  .btn-add,
+  button.danger {
+    min-height: 2.75rem;
+  }
+  .checkbox-row {
+    min-height: 2.75rem;
+  }
 }
 ```
 
@@ -1068,17 +1484,38 @@ becomes fluid naturally). Verify feed filter fields wrap 3→2 per row
 Existing `.detail-facts { grid-template-columns: 1fr }` block kept.
 
 **≤ 30rem (480 — covers 320–480):**
+
 ```css
 @media (max-width: 30rem) {
-  .app-main { padding-inline: 1rem; }
-  .settings-group { padding: 1.25rem 1rem 1.5rem; }
-  .form-actions .cta { width: 100%; }
-  .form-field.inline .btn-add { flex: 1 1 auto; }
-  .feed-empty { padding: 3rem 1.25rem; }
-  .feed-filter-fields .form-field { max-width: none; flex-basis: 100%; }
-  .subscribe-required { padding: 1.5rem 1.25rem; }
-  .subscribe-required__actions { flex-direction: column; align-items: stretch; }
-  .tender-card__actions { flex-wrap: wrap; }
+  .app-main {
+    padding-inline: 1rem;
+  }
+  .settings-group {
+    padding: 1.25rem 1rem 1.5rem;
+  }
+  .form-actions .cta {
+    width: 100%;
+  }
+  .form-field.inline .btn-add {
+    flex: 1 1 auto;
+  }
+  .feed-empty {
+    padding: 3rem 1.25rem;
+  }
+  .feed-filter-fields .form-field {
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .subscribe-required {
+    padding: 1.5rem 1.25rem;
+  }
+  .subscribe-required__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tender-card__actions {
+    flex-wrap: wrap;
+  }
 }
 ```
 
@@ -1092,26 +1529,31 @@ structure/IA unchanged — classNames and CSS only.
 
 ### 13.1 Gap audit (shipped vs mockup character)
 
-| Surface | Shipped | Mockup character | Verdict |
-|---|---|---|---|
-| Hero right panel (Home) | Static chip rows + tier list (`.mkt-hero-panel`) | Glowing 84.5/100 score-readout panel with breakdown bars + mono panel head | **Flagged, out of this pass**: a live score panel means new illustrative content (numbers/labels), which is a content addition, not a re-skin — and it's exactly the planned public sample-verdict demo's job. Do not fake it here. This pass: scan sweep (§8.3), chip hover states, and a proper mono panel-head treatment on the existing captions. |
-| Cards (`.mkt-step`, `.mkt-truth-card`, `.feature-list li`, `.mkt-plan`, `.mkt-plan-chip`) | Fully static — no hover, no transition | Panels feel instrumented/alive | Hover lift + border sharpen (§8.1) + scroll reveals (§8.4). |
-| Section links ("… →") | Plain teal link, underline on hover | — | Arrow nudge: `.mkt-section-link a { display: inline-block; transition: transform 200ms var(--ease); } .mkt-section-link a:hover { transform: translateX(3px); }` (whole-link transform; the "→" is locked copy — never wrap it). |
-| Methodology score-components table | Plain bordered table in a glass card | Mockup's breakdown table: tabular-mono points, hairline row rules only | Scope inside `.mkt-table-card`: `td, th { border-inline: none; border-top: 1px solid var(--stroke-faint); }`, `thead th { border-top: none; }`, points column gets `.num`-equivalent via `.mkt-table-card td:nth-child(2) { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }`. (Adding `<progress>` bars is a tasteful OPTION but a structure change — leave out unless the owner asks.) |
-| Wordmark | Static `_` | Terminal cursor | Blink ×3 on load (§8.3). |
-| Buttons | Hover only | — | Press feedback (§8.1). |
-| Panel heads | `.mkt-hero-panel__caption` mono caption exists | Mockup `.panel__head` has a hairline underline strip | `.mkt-hero-panel__caption { padding-bottom: 0.4rem; border-bottom: 1px solid var(--stroke-faint); }` |
+| Surface                                                                                   | Shipped                                          | Mockup character                                                           | Verdict                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Hero right panel (Home)                                                                   | Static chip rows + tier list (`.mkt-hero-panel`) | Glowing 84.5/100 score-readout panel with breakdown bars + mono panel head | **Flagged, out of this pass**: a live score panel means new illustrative content (numbers/labels), which is a content addition, not a re-skin — and it's exactly the planned public sample-verdict demo's job. Do not fake it here. This pass: scan sweep (§8.3), chip hover states, and a proper mono panel-head treatment on the existing captions.                                                        |
+| Cards (`.mkt-step`, `.mkt-truth-card`, `.feature-list li`, `.mkt-plan`, `.mkt-plan-chip`) | Fully static — no hover, no transition           | Panels feel instrumented/alive                                             | Hover lift + border sharpen (§8.1) + scroll reveals (§8.4).                                                                                                                                                                                                                                                                                                                                                  |
+| Section links ("… →")                                                                     | Plain teal link, underline on hover              | —                                                                          | Arrow nudge: `.mkt-section-link a { display: inline-block; transition: transform 200ms var(--ease); } .mkt-section-link a:hover { transform: translateX(3px); }` (whole-link transform; the "→" is locked copy — never wrap it).                                                                                                                                                                             |
+| Methodology score-components table                                                        | Plain bordered table in a glass card             | Mockup's breakdown table: tabular-mono points, hairline row rules only     | Scope inside `.mkt-table-card`: `td, th { border-inline: none; border-top: 1px solid var(--stroke-faint); }`, `thead th { border-top: none; }`, points column gets `.num`-equivalent via `.mkt-table-card td:nth-child(2) { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }`. (Adding `<progress>` bars is a tasteful OPTION but a structure change — leave out unless the owner asks.) |
+| Wordmark                                                                                  | Static `_`                                       | Terminal cursor                                                            | Blink ×3 on load (§8.3).                                                                                                                                                                                                                                                                                                                                                                                     |
+| Buttons                                                                                   | Hover only                                       | —                                                                          | Press feedback (§8.1).                                                                                                                                                                                                                                                                                                                                                                                       |
+| Panel heads                                                                               | `.mkt-hero-panel__caption` mono caption exists   | Mockup `.panel__head` has a hairline underline strip                       | `.mkt-hero-panel__caption { padding-bottom: 0.4rem; border-bottom: 1px solid var(--stroke-faint); }`                                                                                                                                                                                                                                                                                                         |
 
 ### 13.2 Responsive tightening (marketing)
 
 ```css
 @media (max-width: 30rem) {
-  .mkt-cta-row .cta, .mkt-cta-row .mkt-btn-quiet {
+  .mkt-cta-row .cta,
+  .mkt-cta-row .mkt-btn-quiet {
     flex: 1 1 100%;
     justify-content: center;
   }
-  .mkt-plan-row { flex-direction: column; }
-  .mkt-hero-panel { padding: 1.25rem; }
+  .mkt-plan-row {
+    flex-direction: column;
+  }
+  .mkt-hero-panel {
+    padding: 1.25rem;
+  }
 }
 ```
 
@@ -1134,36 +1576,55 @@ Everything else (hero grid collapse at 64rem, steps 2-col/1-col, plans
 
 ## 10. Implementation checklist (ordered for frontend-engineer)
 
+App area first (owner screenshots), onboarding immediately after
+Feed/Settings, interaction layer and marketing last.
+
 1. **Tokens**: add `--field-bg`, `--app-header-h`, `--danger-edge` to
    `:root` (§3).
 2. **App bar**: `.app-header` full-bleed escape + inner min-height +
    active-nav underline; replace the ≤40rem header block (§4). Also the
-   one-line `.assistant-header` fix (§7.2).
+   one-line `.assistant-header` fix (§7.2a).
 3. **Global form primitives**: input/select/textarea/checkbox upgrade,
    `.form-field` width, `.form-field.inline` add-row, `.btn-add`,
-   `.field-group`, `.form-actions`, chip-list, `button.danger` (§6.4–6.5).
-   These are app-wide — verify auth, onboarding, admin, feed filters
-   render sanely after this step alone.
+   `.field-group`, `.form-actions`, chip-list, `button.danger`,
+   `aria-invalid` border (§6.4–6.5, §7.2e). These are app-wide — verify
+   auth, onboarding, admin, feed filters render sanely after this step
+   alone.
 4. **Feed**: `.app-main h1` scale; column caps; tab divider fix (CSS +
    `Feed.tsx` className simplification); filters restyle; empty-state CSS
-   + `Feed.tsx` empty-block markup (§5.1–5.4). Run the copy-lock grep
-   noted in §5.4 first.
+   - `Feed.tsx` empty-block markup (§5.1–5.4). Run the copy-lock grep
+     noted in §5.4 first.
 5. **Card + badge**: `.tender-card` deltas + `TenderCard.tsx` deadline
    move into `__head`; ScoreBadge chip restyle (§5.5–5.6).
 6. **Settings**: shell columns, `.settings-content`, panelized groups,
    panel-head h2, sidebar restyle, danger zone; markup deltas =
    `btn-add` ×6, `field-group` ×1, `form-actions` ×9 (§6).
-7. **TenderDetail**: facts panel, table de-border, feedback-form,
+7. **Onboarding wizard (primary)**: stepper rail + `<progress>` meter,
+   keyed `.assistant-screen` wrapper + transition, CPV search, validation
+   wiring, `btn-quiet` on Back/Skip/secondary actions, `btn-add` on its
+   Add buttons, preset/completion polish (§7.2 b–g). Copy-lock grep for
+   the two new CPV-search strings first.
+8. **TenderDetail**: facts panel, table de-border, feedback-form,
    ted-attribution, `field-group` ×1 (§7.1).
-8. **Auth**: `.auth-main` cap (§7.3).
-9. **Responsive blocks**: apply §9 top-down; delete the superseded
-   `@media (max-width: 30rem)` feed-tabs block and the old ≤56rem
-   settings block contents it replaces.
-10. **QA pass**: 320 / 390 / 480 / 768 / 1024 / 1440 / 2000px — no
+9. **Auth**: `.auth-main` cap (§7.3).
+10. **Responsive blocks (app)**: apply §9 top-down; delete the superseded
+    `@media (max-width: 30rem)` feed-tabs block and the old ≤56rem
+    settings block contents it replaces.
+11. **Interaction layer — app**: press states, hover vocabulary,
+    rise-in/chip-in/toast (incl. the small `statusMessage` auto-clear
+    effect), cursor blink, readout glow-in, empty-state scan (§8.1–8.3).
+12. **Marketing polish + interaction**: card hovers, section-link nudge,
+    Methodology table restyle, panel-head hairlines, responsive
+    tightening (§13.1–13.2); then scroll reveals (`MarketingLayout`
+    observer + `mkt-reveal` classNames, §8.4, §13.3).
+13. **QA pass**: 320 / 390 / 480 / 768 / 1024 / 1440 / 2000px — no
     horizontal overflow anywhere; keyboard focus visible on every new
     control; axe/contrast spot-check of §3 pairings; `prefers-reduced-
-    motion` and `prefers-reduced-transparency` sweeps; existing E2E tab
-    selectors (`getByRole('tab', …)`) still pass (className change only).
+motion` sweep (every §8 animation absent, all end-states intact) and
+    `prefers-reduced-transparency` sweep; onboarding keyboard-only
+    run-through (focus lands on each screen's h1, stepper announces);
+    existing E2E tab selectors (`getByRole('tab', …)`) still pass
+    (className change only).
 
 ---
 
