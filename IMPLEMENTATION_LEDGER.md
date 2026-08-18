@@ -183,6 +183,28 @@ Expected behavior on staging after deploy: next daily 05:00 UTC run cycles
 the 156-notice backlog — renders triggered pass 1, collected within the
 run or (worst case) by the following day's retry from TED's cache.
 
+**PR #51 MERGED + TED key verified (2026-08-18 ~12:10 UTC).** Squash-merged
+as `1bf26af` after production-reviewer PASS + security SIGN-OFF (both LOW
+follow-ups BM-51-1/BM-51-2 fixed pre-merge); deploy-staging run 32135278377
+green (migrations, worker deploy, secret push incl. the owner-set
+`TED_API_KEY`, smoke tests). `ted-key-verify` run 32135295775 against the
+owner's real key: **`Bearer` header shape CONFIRMED** (it reached account
+authorization; the raw shape isn't parsed as credentials at all — no client
+change needed), but the API answers **`403 No eNotices2 account found.`** —
+the key's EU Login account was never paired with eNotices2. Owner must log
+in ONCE at enotices2.ted.europa.eu with the same EU Login account (TED docs:
+key pairing requirement; keys are also environment-specific). ⚠️ Until
+then, staging ingestion 403s on every notice (configured key ⇒
+authenticated route, no anonymous fallback) — daily cron AND admin backfill
+will fail with `NOTICE_FETCH_HTTP_403`. Blockers item 9 updated with the
+pairing step; dependency-versions.md verification ledger updated
+(Bearer = VERIFIED shape, activation pending). Admin-UI access explained to
+owner (allowlist login, no separate creds; /admin/ingestion backfill
+2026-08-17..2026-08-18 once the key answers 200). Known residual risk noted
+for a future hardening decision: a revoked/expired key silently converts
+ingestion to 100% window failure — candidate ADR-0008-adjacent follow-up
+(auth-error fallback to anonymous cycling, loudly logged).
+
 **DESIGN DIRECTION SWITCHED (owner, 2026-08-18 ~09:55 UTC): Control Room
 (Direction B) replaces Strata — FULL re-skin, single-theme dark only.**
 Owner saw the round-2 "BidMorrow Control Room" mockup artifact and prefers

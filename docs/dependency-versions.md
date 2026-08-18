@@ -212,8 +212,20 @@ Control Room design ships zero custom fonts.
 - `GET api.ted.europa.eu/v3/notices/{publication-number}/xml` is the
   authenticated alternative (`400 Missing Authorization header` without a
   key — verified in the same runs). The client ships `Authorization:
-Bearer <TED_API_KEY>`; **UNVERIFIED against the live API** until the owner
-  stores `TED_API_KEY` (HUMAN_DECISION_BLOCKERS item 9) and the
-  `ted-key-verify` workflow is dispatched — do not enable the key in any
-  environment before that run confirms the header shape (update
-  `packages/ted/src/client.ts` first if only the raw-key shape works).
+Bearer <TED_API_KEY>`.
+- **Header shape VERIFIED 2026-08-18** (`ted-key-verify` run 32135295775,
+  owner's real key): `Bearer` is the shape the API parses — it reached the
+  account-authorization stage (`403 No eNotices2 account found.`), while the
+  raw-key shape was not recognized as credentials at all (`401 API key can
+not be null or empty`). No client change needed.
+- **Key ACTIVATION pending** (same run): the `403 No eNotices2 account
+found.` means the API key's EU Login account has never been provisioned in
+  eNotices2 — per the TED docs, a key holder must log in to the eNotices2 UI
+  (production: enotices2.ted.europa.eu) at least once with the same EU Login
+  account to pair the key, and keys are only valid in the environment
+  (production vs preview) whose developer portal issued them. Until the
+  owner completes that pairing (HUMAN_DECISION_BLOCKERS item 9), every
+  authenticated notice fetch 403s — and because a configured `TED_API_KEY`
+  switches the client to the authenticated route, staging ingestion FAILS
+  (NOTICE_FETCH_HTTP_403) rather than falling back to anonymous cycling.
+  Re-dispatch `ted-key-verify` after pairing; 200 + XML bytes = live.
