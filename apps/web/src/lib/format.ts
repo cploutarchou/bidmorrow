@@ -134,6 +134,90 @@ export function componentLabel(key: string): string {
 }
 
 /**
+ * Locale-aware calendar date for billing UI ("Renews on 15 Sept 2026" /
+ * "Cancels on ..."), following the same no-hardcoded-locale idiom as
+ * `formatOriginalValue` above (`Intl` with `undefined` locale = the
+ * browser's own). Distinct from `formatIsoUtc` (fixed ISO-UTC, admin-only
+ * tooling) — this is a customer-facing date, so it renders in the visitor's
+ * own locale/calendar, not a fixed machine format.
+ */
+export function formatCalendarDate(epochMs: number | null): string {
+  if (epochMs === null) return 'unknown date';
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(epochMs));
+}
+
+/**
+ * Formats a Stripe-style minor-units amount (e.g. cents) as a currency
+ * string, same `Intl.NumberFormat` idiom as `formatOriginalValue`. Unlike
+ * `formatOriginalValue`, `amountMinorUnits`/`currency` here are never
+ * user/notice-supplied — they come from `packages/billing`'s own
+ * `planPrice()`/Stripe invoice fields, so there is no "value not published"
+ * case to report.
+ */
+export function formatMinorUnitsAsCurrency(amountMinorUnits: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+    }).format(amountMinorUnits / 100);
+  } catch {
+    return `${(amountMinorUnits / 100).toFixed(2)} ${currency.toUpperCase()}`;
+  }
+}
+
+/**
+ * `GET /api/billing/status` `subscription.status`/`paymentState` and
+ * `POST /api/billing/reactivate`'s returned `status` (`packages/billing/src/
+ * plans.ts` `SubscriptionStatus`/`PaymentState` — identical vocabularies).
+ * Kept as a plain `string` param (not the DB/billing package's own type) so
+ * `apps/web` never depends on `@bidmorrow/billing` for a five-value enum.
+ */
+const PAYMENT_STATE_LABEL: Record<string, string> = {
+  trialing: 'Trialing',
+  active: 'Active',
+  past_due: 'Past due',
+  canceled: 'Canceled',
+  unpaid: 'Unpaid',
+};
+
+export function paymentStateLabel(state: string): string {
+  return PAYMENT_STATE_LABEL[state] ?? state;
+}
+
+export type PaymentStateTone = 'ok' | 'info' | 'warn' | 'danger' | 'muted';
+
+const PAYMENT_STATE_TONE: Record<string, PaymentStateTone> = {
+  trialing: 'info',
+  active: 'ok',
+  past_due: 'danger',
+  unpaid: 'danger',
+  canceled: 'muted',
+};
+
+/** Visual tone bucket for the payment-state badge — text label is always
+ * rendered alongside it (WCAG: status is never color-only). */
+export function paymentStateTone(state: string): PaymentStateTone {
+  return PAYMENT_STATE_TONE[state] ?? 'muted';
+}
+
+/** Stripe `Invoice.status` (`draft | open | paid | uncollectible | void`,
+ * or `null` for a not-yet-finalized invoice — verified from the installed
+ * SDK, same source as `packages/billing/src/invoices.ts`). */
+const INVOICE_STATUS_LABEL: Record<string, string> = {
+  draft: 'Draft',
+  open: 'Open',
+  paid: 'Paid',
+  uncollectible: 'Uncollectible',
+  void: 'Void',
+};
+
+export function invoiceStatusLabel(status: string | null): string {
+  if (status === null) return 'Unknown';
+  return INVOICE_STATUS_LABEL[status] ?? status;
+}
+
+/**
  * Max points for a `component_key` per docs/matching-engine.md. Returns
  * `null` for an unrecognized key rather than guessing — callers must treat
  * that as "no bar to render", never a silent 0/100.

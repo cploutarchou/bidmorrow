@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { useNavigate } from 'react-router';
+import { useRedirectIfAuthenticated } from '../../lib/use-redirect-if-authenticated';
 import { AuthLayout } from './AuthLayout';
 
 interface SignUpErrorBody {
@@ -9,6 +10,10 @@ interface SignUpErrorBody {
 
 export function Signup(): ReactElement {
   const navigate = useNavigate();
+  // Already-authenticated visitor landing on /signup must not see the form
+  // (auth/session-flow-polish R1) — this must run for every render, so it's
+  // declared before the early loading-state return below.
+  const { ready } = useRedirectIfAuthenticated();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,6 +53,14 @@ export function Signup(): ReactElement {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (!ready) {
+    return (
+      <main id="main-content">
+        <p>Loading…</p>
+      </main>
+    );
   }
 
   return (

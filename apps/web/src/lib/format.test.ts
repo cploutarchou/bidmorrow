@@ -4,10 +4,15 @@ import {
   componentLabel,
   componentMaxPoints,
   componentStatusLabel,
+  formatCalendarDate,
   formatIsoUtc,
+  formatMinorUnitsAsCurrency,
   formatOriginalValue,
   formatRelativeDeadline,
   formatScoreLine,
+  invoiceStatusLabel,
+  paymentStateLabel,
+  paymentStateTone,
   riskConfidenceLabel,
 } from './format';
 
@@ -120,5 +125,64 @@ describe('formatIsoUtc', () => {
   });
   it('reports a missing timestamp honestly, never as blank', () => {
     expect(formatIsoUtc(null)).toBe('not recorded');
+  });
+});
+
+describe('formatCalendarDate', () => {
+  it('formats a known epoch as a locale calendar date', () => {
+    expect(formatCalendarDate(Date.parse('2026-09-15T00:00:00Z'))).toContain('2026');
+  });
+  it('reports a missing date honestly, never as blank', () => {
+    expect(formatCalendarDate(null)).toBe('unknown date');
+  });
+});
+
+describe('formatMinorUnitsAsCurrency', () => {
+  it('formats the founding-plan price (2900 minor units, EUR)', () => {
+    const result = formatMinorUnitsAsCurrency(2900, 'eur');
+    expect(result).toContain('29');
+  });
+  it('formats the standard-plan price (4900 minor units, EUR)', () => {
+    const result = formatMinorUnitsAsCurrency(4900, 'eur');
+    expect(result).toContain('49');
+  });
+  it('falls back gracefully for an unrecognized currency code', () => {
+    expect(formatMinorUnitsAsCurrency(100, 'not-a-currency')).toContain('1.00');
+  });
+});
+
+describe('paymentStateLabel', () => {
+  it('gives every known payment state a human label, never a bare enum value', () => {
+    expect(paymentStateLabel('trialing')).toBe('Trialing');
+    expect(paymentStateLabel('active')).toBe('Active');
+    expect(paymentStateLabel('past_due')).toBe('Past due');
+    expect(paymentStateLabel('canceled')).toBe('Canceled');
+    expect(paymentStateLabel('unpaid')).toBe('Unpaid');
+  });
+  it('falls back to the raw value for forward-compat', () => {
+    expect(paymentStateLabel('something_new')).toBe('something_new');
+  });
+});
+
+describe('paymentStateTone', () => {
+  it('maps failed-payment states to the danger tone', () => {
+    expect(paymentStateTone('past_due')).toBe('danger');
+    expect(paymentStateTone('unpaid')).toBe('danger');
+  });
+  it('maps a healthy subscription to the ok tone', () => {
+    expect(paymentStateTone('active')).toBe('ok');
+  });
+  it('falls back to muted for an unrecognized state, never danger by default', () => {
+    expect(paymentStateTone('something_new')).toBe('muted');
+  });
+});
+
+describe('invoiceStatusLabel', () => {
+  it('labels every known Stripe invoice status', () => {
+    expect(invoiceStatusLabel('paid')).toBe('Paid');
+    expect(invoiceStatusLabel('open')).toBe('Open');
+  });
+  it('reports a null status honestly, never as blank', () => {
+    expect(invoiceStatusLabel(null)).toBe('Unknown');
   });
 });

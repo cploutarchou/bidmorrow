@@ -21,6 +21,22 @@ export class ApiError extends Error {
   }
 }
 
+let onUnauthorized: (() => void) | null = null;
+
+/**
+ * Single shared point where an app API 401 (session expired/revoked
+ * mid-use) is surfaced — registered by `AuthProvider`
+ * (lib/auth-context.tsx) so every `pages/app/*` fetch that goes through
+ * `api.*` re-syncs auth state the same way, instead of each page
+ * reimplementing "session might have expired". `GET /api/auth/get-session`
+ * itself is fetched directly (not through this module) in
+ * lib/auth-context.tsx, so its own 401s can never loop back into this
+ * handler. Not a security boundary — see the file header.
+ */
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  onUnauthorized = handler;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -35,6 +51,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const body: unknown = text.length > 0 ? JSON.parse(text) : null;
 
   if (!response.ok) {
+    if (response.status === 401) onUnauthorized?.();
     throw new ApiError(response.status, body);
   }
   return body as T;
