@@ -47,7 +47,7 @@ Rules:
   do not exist. Product-UI illustrations must depict the real product
   honestly (or be clearly stylized abstractions).
 - OG/social images: 1200x630 baseline, legible at thumbnail size, wordmark
-  - one message, file size kept lean; record dimensions and target pages.
+  plus one message, file size kept lean; record dimensions and target pages.
 - Respect performance budgets: report per-asset byte sizes; prefer a small
   set of reusable assets over page-unique art; never ship multi-hundred-KB
   decoration.
