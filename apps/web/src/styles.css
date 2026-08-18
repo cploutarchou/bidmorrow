@@ -108,6 +108,16 @@
   --r-xl: 16px;
   --ease: cubic-bezier(0.22, 0.8, 0.24, 1);
   --dur: 480ms;
+
+  /* Control Room polish pass (docs/redesign/app-interface-spec.md §3) */
+  /* recessed input surface — darker than panel, lighter than ground-deep */
+  --field-bg: #0e1116;
+  /* app-shell layout metric: header height, drives sticky offsets and
+     scroll-margins. Overridden to 6.25rem inside the ≤40rem media query. */
+  --app-header-h: 3.5rem;
+  /* decorative danger border (panel edge + danger h2 underline only —
+     never a text color and never the sole signifier) */
+  --danger-edge: rgba(248, 113, 113, 0.35);
 }
 
 /* ============================================================
@@ -159,6 +169,21 @@
   }
   :focus-visible {
     outline-width: 3px;
+  }
+}
+
+/* ============================================================
+   MOTION PRIMITIVES — shared keyframes (docs/redesign/app-interface-spec.md
+   §8). Defining a `@keyframes` rule is inert on its own; every actual USE
+   of it below is an `animation` declaration nested inside its own
+   `@media (prefers-reduced-motion: no-preference)` block, so the global
+   `prefers-reduced-motion: reduce` kill-switch above always wins. Shared
+   across both surfaces (app rise-in for filters/tab loads/onboarding
+   screens; marketing scroll reveals use their own transition, not this). */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
   }
 }
 
@@ -478,24 +503,61 @@ footer p {
 
 .form-field.inline {
   flex-direction: row;
-  align-items: flex-end;
+  flex-wrap: wrap;
+  align-items: center; /* was flex-end */
   gap: 0.5rem;
-  max-width: none;
+  max-width: 32rem; /* was none */
+}
+.form-field.inline label {
+  flex: 1 0 100%;
+} /* label on its own line */
+.form-field.inline input,
+.form-field.inline select {
+  flex: 1 1 10rem;
+  width: auto;
+  min-width: 0;
 }
 
 .form-field label {
   font-weight: 600;
 }
 
+/* Recessed input surface (Control Room depth logic: ground < field < panel
+   < raised — docs/redesign/app-interface-spec.md §6.4). Bare-element rule,
+   upgraded in place: safe for admin/marketing/auth too. */
 input,
 textarea,
 select {
-  padding: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.25rem;
-  background: var(--color-bg);
+  padding: 0.5rem 0.75rem; /* was 0.5rem */
+  border: 1px solid var(--color-border); /* --color-border === --stroke */
+  border-radius: var(--r-s); /* was 0.25rem */
+  background: var(--field-bg); /* was --color-bg — recessed field */
   color: var(--color-text);
   font: inherit;
+  min-height: 2.5rem;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  border-color: var(--accent-edge); /* the global :focus-visible outline below still applies */
+}
+textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+input[type='checkbox'] {
+  min-height: 0;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  flex: none;
+  accent-color: var(--sol-1);
+}
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  min-width: 0;
 }
 
 button {
@@ -513,9 +575,25 @@ button {
    for both `<a class="cta">` and `<button class="cta">` — an extra
    `button.cta` rule would only re-specialize and diverge from it. */
 
+/* Outline danger button — keeps the page's single-accent discipline (the
+   confirm-input, not a filled red button, is the real guard). Shared by
+   Settings' delete-account action and any future destructive control. */
 button.danger {
+  border: 1px solid var(--status-danger-text);
   border-color: var(--status-danger-text);
   color: var(--status-danger-text);
+  background: transparent;
+  border-radius: var(--r-s);
+  font-weight: 600;
+  padding: 0.6rem 1.2rem;
+  min-height: 2.5rem;
+}
+button.danger:hover:not([disabled]) {
+  background: rgba(248, 113, 113, 0.1);
+}
+button.danger[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .link-button {
@@ -530,6 +608,59 @@ button.danger {
 .form-error {
   color: var(--status-danger-text);
   font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Visible border on an invalid field — never the only signal (the adjacent
+   `role="alert"` `.form-error` paragraph is the primary one). */
+input[aria-invalid='true'],
+textarea[aria-invalid='true'] {
+  border-color: var(--status-danger-text);
+}
+
+/* Add-row button (Settings/Onboarding "Add CPV code" etc.) — the button
+   half of a `.form-field.inline` row. */
+.btn-add {
+  flex: none;
+  min-height: 2.5rem;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-s);
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 180ms var(--ease);
+}
+.btn-add:hover {
+  border-color: var(--stroke-strong);
+}
+
+/* Save-button row (per-section Settings/TenderDetail feedback saves —
+   behavior stays per-section, only the anchored placement is shared). */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--stroke-faint);
+}
+
+/* Unclassed native `<fieldset>` chrome removal (Settings contract-natures,
+   TenderDetail feedback). */
+.field-group {
+  border: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.field-group legend {
+  padding: 0;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .form-warning {
@@ -543,7 +674,8 @@ button.danger {
 .checkbox-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
+  min-height: 2rem;
   font-weight: 400;
   margin-bottom: 0.25rem;
 }
@@ -571,16 +703,67 @@ button.danger {
 .chip-list li {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  border: 1px solid var(--color-border);
+  gap: 0.45rem;
+  border: 1px solid var(--stroke);
+  background: var(--surface-2);
   border-radius: 999px;
-  padding: 0.25rem 0.6rem;
+  padding: 0.3rem 0.35rem 0.3rem 0.8rem;
+  font-size: 0.88rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.chip-list li button {
+  width: 1.5rem; /* 24px — WCAG 2.5.8 minimum met */
+  height: 1.5rem;
+  min-height: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 1rem;
+  line-height: 1;
+  flex: none;
+}
+.chip-list li button:hover {
+  color: var(--status-danger-text);
+  background: rgba(139, 148, 167, 0.15);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .chip-list li {
+    animation: chip-in 160ms var(--ease);
+  }
+  @keyframes chip-in {
+    from {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+  }
 }
 
 .step-actions {
   display: flex;
   gap: 1rem;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--stroke-faint);
+  align-items: center;
+}
+.step-actions .cta {
+  margin-left: auto;
+} /* Back/Skip left, primary right */
+@media (max-width: 30rem) {
+  .step-actions {
+    flex-wrap: wrap;
+  }
+  .step-actions .cta {
+    flex: 1 1 100%;
+    margin-left: 0;
+    order: -1;
+  } /* primary first, full width */
 }
 
 .scope-warning {
@@ -602,11 +785,15 @@ button.danger {
 }
 
 .assistant-header {
+  /* escape the bare `header` element box — same root cause as .app-header
+     (docs/redesign/app-interface-spec.md §2.1/§7.2a) */
+  max-width: none;
+  margin-inline: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.25rem 1.5rem;
+  padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--stroke-faint);
 }
 
@@ -630,6 +817,7 @@ button.danger {
 }
 
 .assistant-phase {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -640,22 +828,49 @@ button.danger {
   border-radius: 999px;
   padding: 0.3rem 0.8rem;
 }
+/* Connector hairline bridging the stepper's flex gap — mockup's `.phases`
+   connected-rail language. */
+.assistant-phase + .assistant-phase::before {
+  content: '';
+  width: 1.25rem;
+  height: 1px;
+  background: var(--stroke);
+  position: absolute;
+  left: -1.375rem;
+  top: 50%;
+}
+@media (max-width: 30rem) {
+  .assistant-phase + .assistant-phase::before {
+    content: none;
+  }
+}
 
 .assistant-phase[data-state='done'] {
-  color: var(--text-2);
-  border-color: var(--stroke-strong);
+  color: var(--accent-text);
+  border-color: var(--accent-edge);
 }
 
 .assistant-phase[aria-current='step'] {
   color: var(--accent-text);
   border-color: var(--accent-edge);
   background: var(--accent-soft);
+  box-shadow: 0 0 12px rgba(53, 211, 192, 0.25);
 }
 
 .assistant-progress {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
   color: var(--text-3);
+}
+
+/* Decorative determinate progress fill under the stepper — reuses the
+   CSP-safe native <progress> pattern (.score-bar), never an inline width;
+   the aria-live .assistant-progress text above is the accessible source of
+   truth. */
+.assistant-meter {
+  height: 3px;
 }
 
 .assistant-card {
@@ -705,9 +920,24 @@ button.danger {
   padding: 0.75rem 1rem;
 }
 
+/* One wrapper per screen (Onboarding.tsx keys it on currentScreen.id) so a
+   mount animation fires on every screen change — the card itself persists
+   across screens, so CSS mount animations on the card would never
+   re-trigger without this. */
+.assistant-screen {
+  display: grid;
+  gap: 1.15rem;
+} /* takes over the card's inner gap */
+@media (prefers-reduced-motion: no-preference) {
+  .assistant-screen {
+    animation: rise-in 240ms var(--ease);
+  }
+}
+
 /* --- Preset picker cards --- */
 .ob-preset-grid {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
   gap: 0.75rem;
 }
 
@@ -718,6 +948,10 @@ button.danger {
   border-radius: var(--r-m);
   background: var(--surface-1);
   padding: 1rem;
+  cursor: pointer;
+  transition:
+    border-color 200ms var(--ease),
+    box-shadow 200ms var(--ease);
 }
 
 .ob-preset-card > label {
@@ -728,6 +962,9 @@ button.danger {
 .ob-preset-card--selected {
   border-color: var(--accent-edge);
   background: var(--accent-soft);
+  box-shadow:
+    0 0 0 1px var(--sol-1),
+    0 0 20px rgba(53, 211, 192, 0.15);
 }
 
 .ob-preset-card__label {
