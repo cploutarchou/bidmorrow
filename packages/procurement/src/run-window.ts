@@ -7,6 +7,7 @@ import {
   TED_SOURCE_ID,
   TedBudgetExceededError,
   TedParseError,
+  TedRenderPendingError,
   TedRequestError,
   TedXmlTooLargeError,
 } from '@bidmorrow/ted';
@@ -52,7 +53,27 @@ export interface RunWindowDeps {
   readonly scope: IngestionScope;
   /** Injected clock (test seam); defaults to `Date.now`. */
   readonly now?: () => number;
+  /**
+   * Minimum ms before REVISITING a notice whose XML render is still pending
+   * (TED's async front-end — see `TedRenderPendingError`). Default
+   * `RENDER_RETRY_DELAY_MS`; tests inject 0. Only bites when the work queue
+   * is so short that cycling alone doesn't provide the delay.
+   */
+  readonly renderRetryDelayMs?: number;
 }
+
+/** Default minimum delay before revisiting a render-pending notice. */
+export const RENDER_RETRY_DELAY_MS = 20_000;
+
+/**
+ * Maximum visits per notice for the render-pending cycle (first visit
+ * triggers the render; later visits collect the cached document). Every
+ * queued notice is visited once before any notice is visited twice, so even
+ * when a notice exhausts its visits and fails the window, ALL renders were
+ * already triggered — the next daily retry of the held window collects them
+ * from TED's cache.
+ */
+export const MAX_RENDER_VISITS = 4;
 
 export interface RunWindowResult {
   readonly run: IngestionRun;
@@ -128,7 +149,10 @@ export async function runIngestionWindow(
   let currentNotice: { sourceNoticeId: string; xmlUrl: string } | null = null;
 
   try {
+    // Phase 1 — collect every in-scope search row (cheap; pages are just
+    // metadata). Malformed rows are recorded here and dropped.
     const query = buildScopeQuery(deps.scope, window);
+    const workQueue: { row: SearchRowFields; visits: number; notBefore: number }[] = [];
     for await (const page of deps.client.iterateSearch({
       query,
       fields: SEARCH_FIELDS,
@@ -136,7 +160,6 @@ export async function runIngestionWindow(
     })) {
       for (const row of page.notices) {
         counts.noticesSeen += 1;
-        currentNotice = null;
         const extracted = extractSearchRow(row);
         if (extracted === null) {
           counts.errorsCount += 1;
@@ -150,10 +173,51 @@ export async function runIngestionWindow(
           });
           continue;
         }
-        currentNotice = { sourceNoticeId: extracted.sourceNoticeId, xmlUrl: extracted.xmlUrl };
-        await processOneNotice(deps, run.id, extracted, counts, newLotIds);
-        currentNotice = null;
+        workQueue.push({ row: extracted, visits: 0, notBefore: 0 });
       }
+    }
+
+    // Phase 2 — process the queue. A notice whose XML render is still
+    // pending (TED's async front-end answers 202 / empty body until the
+    // render it just queued completes) is requeued to the TAIL, so every
+    // notice is visited once (triggering all renders) before any is visited
+    // twice (collecting them). `renderRetryDelayMs` guards the short-queue
+    // case where cycling alone would revisit too quickly.
+    const renderRetryDelayMs = deps.renderRetryDelayMs ?? RENDER_RETRY_DELAY_MS;
+    while (workQueue.length > 0) {
+      const entry = workQueue.shift();
+      if (entry === undefined) break;
+      const waitMs = entry.notBefore - now();
+      if (waitMs > 0) {
+        await new Promise((resolve) => {
+          setTimeout(resolve, waitMs);
+        });
+      }
+      currentNotice = { sourceNoticeId: entry.row.sourceNoticeId, xmlUrl: entry.row.xmlUrl };
+      try {
+        await processOneNotice(deps, run.id, entry.row, counts, newLotIds);
+      } catch (cause) {
+        if (!(cause instanceof TedRenderPendingError)) {
+          throw cause;
+        }
+        entry.visits += 1;
+        if (entry.visits >= MAX_RENDER_VISITS) {
+          // Exhausted: window-fatal (checkpoint held, durable diagnostic) —
+          // NEVER skip-and-advance, that would silently drop the notice
+          // (ADR-0008 owns any future record-and-continue semantics). All
+          // renders were triggered above, so the next daily retry collects
+          // them from TED's cache.
+          throw cause;
+        }
+        entry.notBefore = now() + renderRetryDelayMs;
+        workQueue.push(entry);
+        deps.logger.info('ingestion.notice_render.pending', {
+          source_notice_id: entry.row.sourceNoticeId,
+          visits: entry.visits,
+          queue_length: workQueue.length,
+        });
+      }
+      currentNotice = null;
     }
   } catch (cause) {
     deps.logger.error('ingestion.window.failed', {
@@ -217,7 +281,7 @@ async function processOneNotice(
 
   let rawXml: string;
   try {
-    rawXml = await deps.client.fetchNoticeXml(row.xmlUrl);
+    rawXml = await deps.client.fetchNoticeXml(row.xmlUrl, row.sourceNoticeId);
   } catch (cause) {
     if (!(cause instanceof TedXmlTooLargeError)) {
       throw cause;
@@ -419,6 +483,14 @@ function describeWindowFailure(
       errorCode: 'REQUEST_BUDGET_EXCEEDED',
       message: cause.message,
       detail: { requestsUsed: cause.requestsUsed, maxRequestsPerRun: cause.maxRequestsPerRun },
+    };
+  }
+  if (cause instanceof TedRenderPendingError) {
+    return {
+      stage: 'fetch',
+      errorCode: 'NOTICE_RENDER_PENDING',
+      message: truncateForDiagnostic(cause.message),
+      detail: { url: truncateForDiagnostic(cause.url), status: cause.status },
     };
   }
   if (cause instanceof TedRequestError) {

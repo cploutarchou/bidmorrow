@@ -543,6 +543,122 @@ describe('runIngestionWindow', () => {
       .first<{ title: string }>();
     expect(currentTitle?.title).toContain('(Corrected)');
   });
+  it('render-pending notices (HTTP 202) are requeued and collected on a later visit; the window succeeds', async () => {
+    const db = createDb(env.DB);
+    // TED's async front-end (docs/ted-data-source.md, 2026-08-18): the first
+    // GET queues the render and answers 202/empty; a later GET is served the
+    // cached XML. Fake: 202 on each URL's first visit, real XML on the second.
+    const rows = [
+      searchRow('rp-1', '2026-08-15', 'https://ted.europa.eu/notice/rp-1.xml'),
+      searchRow('rp-2', '2026-08-15', 'https://ted.europa.eu/notice/rp-2.xml'),
+    ];
+    const xmlByUrl: Record<string, string> = {
+      'https://ted.europa.eu/notice/rp-1.xml': normalXml,
+      'https://ted.europa.eu/notice/rp-2.xml': multiLotXml,
+    };
+    const xmlHits = new Map<string, number>();
+    const baseFetch = makeFakeFetch([{ notices: rows }], xmlByUrl);
+    const fetchImpl: TedFetch = (url, init) => {
+      if (url.endsWith('/v3/notices/search') || xmlByUrl[url] === undefined) {
+        return baseFetch(url, init);
+      }
+      const hits = (xmlHits.get(url) ?? 0) + 1;
+      xmlHits.set(url, hits);
+      if (hits === 1) {
+        return Promise.resolve({
+          ok: true,
+          status: 202,
+          headers: { get: () => null },
+          json: () => Promise.reject(new Error('not json')),
+          text: () => Promise.resolve(''),
+        });
+      }
+      return baseFetch(url, init);
+    };
+
+    const result = await runIngestionWindow(
+      {
+        db,
+        client: makeClient(fetchImpl),
+        snapshots: env.SNAPSHOTS,
+        logger: createLogger({ test: true }),
+        scope: DEFAULT_INGESTION_SCOPE,
+        now: () => T0,
+        renderRetryDelayMs: 0,
+      },
+      { windowFrom: '2026-08-15', windowTo: '2026-08-15' },
+    );
+
+    expect(result.status).toBe('succeeded');
+    expect(result.run.noticesSeen).toBe(2);
+    expect(result.run.noticesUpserted).toBe(2);
+    expect(result.run.errorsCount).toBe(0);
+    // Each notice's XML URL was hit exactly twice: trigger, then collect.
+    expect(xmlHits.get('https://ted.europa.eu/notice/rp-1.xml')).toBe(2);
+    expect(xmlHits.get('https://ted.europa.eu/notice/rp-2.xml')).toBe(2);
+    const checkpoint = await getCheckpoint(db, { source: 'ted' });
+    expect(checkpoint?.lastPublicationDate).toBe('2026-08-15');
+  });
+
+  it('a notice whose render never completes exhausts its visits: window fails with a NOTICE_RENDER_PENDING diagnostic, checkpoint held', async () => {
+    const db = createDb(env.DB);
+    const before = await getCheckpoint(db, { source: 'ted' });
+    const rows = [searchRow('ap-1', '2026-08-16', 'https://ted.europa.eu/notice/ap-1.xml')];
+    let xmlHits = 0;
+    const baseFetch = makeFakeFetch([{ notices: rows }], {});
+    const fetchImpl: TedFetch = (url, init) => {
+      if (url.endsWith('/v3/notices/search')) {
+        return baseFetch(url, init);
+      }
+      xmlHits += 1;
+      return Promise.resolve({
+        ok: true,
+        status: 202,
+        headers: { get: () => null },
+        json: () => Promise.reject(new Error('not json')),
+        text: () => Promise.resolve(''),
+      });
+    };
+
+    const result = await runIngestionWindow(
+      {
+        db,
+        client: makeClient(fetchImpl),
+        snapshots: env.SNAPSHOTS,
+        logger: createLogger({ test: true }),
+        scope: DEFAULT_INGESTION_SCOPE,
+        now: () => T0,
+        renderRetryDelayMs: 0,
+      },
+      { windowFrom: '2026-08-16', windowTo: '2026-08-16' },
+    );
+
+    expect(result.status).toBe('failed');
+    // MAX_RENDER_VISITS (4) trigger/collect attempts, then window-fatal —
+    // never skip-and-advance (that would silently drop the notice).
+    expect(xmlHits).toBe(4);
+    expect(result.run.errorsCount).toBe(1);
+    const after = await getCheckpoint(db, { source: 'ted' });
+    expect(after?.lastPublicationDate).toBe(before?.lastPublicationDate);
+
+    const diag = await env.DB.prepare(
+      'SELECT stage, source_notice_id, error_code, detail_json FROM ingestion_errors WHERE ingestion_run_id = ?',
+    )
+      .bind(result.run.id)
+      .all();
+    expect(diag.results.length).toBe(1);
+    const row = diag.results[0] as {
+      stage: string;
+      source_notice_id: string | null;
+      error_code: string;
+      detail_json: string | null;
+    };
+    expect(row.stage).toBe('fetch');
+    expect(row.error_code).toBe('NOTICE_RENDER_PENDING');
+    expect(row.source_notice_id).toBe('ap-1');
+    const detail = JSON.parse(row.detail_json ?? '{}') as Record<string, unknown>;
+    expect(detail['status']).toBe(202);
+  });
 });
 
 describe('runIngestionCatchUp', () => {

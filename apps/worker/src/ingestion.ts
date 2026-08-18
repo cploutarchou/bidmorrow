@@ -70,6 +70,7 @@ export async function runIngestCatchUpJob(env: Env, logger: Logger): Promise<Run
   const client = new TedClient({
     fetch: globalThis.fetch.bind(globalThis),
     ...(env.TED_API_BASE_URL === undefined ? {} : { baseUrl: env.TED_API_BASE_URL }),
+    ...(env.TED_API_KEY === undefined || env.TED_API_KEY === '' ? {} : { apiKey: env.TED_API_KEY }),
     budget: { maxRequestsPerRun: MAX_REQUESTS_PER_RUN },
     logger,
   });
@@ -130,6 +131,7 @@ export async function runBackfillWindowJob(
   const client = new TedClient({
     fetch: globalThis.fetch.bind(globalThis),
     ...(env.TED_API_BASE_URL === undefined ? {} : { baseUrl: env.TED_API_BASE_URL }),
+    ...(env.TED_API_KEY === undefined || env.TED_API_KEY === '' ? {} : { apiKey: env.TED_API_KEY }),
     budget: { maxRequestsPerRun: MAX_REQUESTS_PER_RUN },
     logger,
   });

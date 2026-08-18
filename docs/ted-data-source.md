@@ -26,15 +26,35 @@ could not be fully verified.
   Multilingual fields are objects keyed by ISO 639-2 codes (`eng`, `deu`…).
   `links.xml.MUL` is the authoritative multilingual source XML per notice —
   ingestion fetches this for parsing + R2 snapshot.
-- **XML downloads require an identifying client** (empirical, 2026-08-16,
-  fixture-fetch CI runs 31976779119 vs 31977377822): a bare GET of a
-  `links.xml.MUL` URL (`ted.europa.eu/<lang>/notice/<id>/xml`) returns
-  **HTTP 200 with an empty body**; with `Accept: application/xml, …` and a
-  `User-Agent` identifying the client it returns the real XML. The search
-  API (api.ted.europa.eu) never showed this. `TedClient` therefore sends
-  both headers on every request (`TED_USER_AGENT` in
-  `packages/ted/src/client.ts`) and treats an empty 200 body as a failed
-  fetch, never as valid XML.
+- **The anonymous XML front-end renders ASYNCHRONOUSLY** (empirical,
+  2026-08-18, ted-diagnose CI runs 32131289081/32131832286/32132169652 —
+  supersedes the 2026-08-16 "identifying client" note): a GET of a
+  `links.xml.MUL` URL (`ted.europa.eu/<lang>/notice/<id>/xml`) now returns
+  **HTTP 202 with an empty body for EVERY client** (identified, bare, and
+  browser-like alike; `?download=true` changes nothing); the request queues
+  a server-side render, and a LATER request may be served the cached XML
+  (observed ~200 + full XML minutes after the trigger; the cache is
+  short-lived/unstable — the same URL reverted to 202 within ~4 minutes).
+  `TedClient` surfaces 202/empty-2xx as `TedRenderPendingError`; the
+  orchestrator (`runIngestionWindow`) requeues the notice to the tail of
+  the window's work queue (max `MAX_RENDER_VISITS` visits, min
+  `RENDER_RETRY_DELAY_MS` between visits to the same notice) so every
+  render is triggered on the first pass and collected on later passes; an
+  exhausted notice stays window-fatal (checkpoint held — the next daily
+  retry collects the by-then-cached renders). This broke the first
+  non-empty staging window (2026-08-17, 156 in-scope notices).
+- **Authenticated notice-XML API endpoint** (preferred once available):
+  `GET api.ted.europa.eu/v3/notices/{publication-number}/xml` exists and
+  answers `400 Missing Authorization header` without a key. With a
+  developer-portal API key (developer.ted.europa.eu — owner action,
+  HUMAN_DECISION_BLOCKERS item 9) configured as `TED_API_KEY`, `TedClient`
+  fetches notice XML there instead of the anonymous front-end. The
+  `Authorization` header shape ships as `Bearer <key>` but MUST be verified
+  live via the `ted-key-verify` workflow before the key is enabled
+  (docs/dependency-versions.md).
+- The search API (api.ted.europa.eu `/v3/notices/search`) remains anonymous
+  and unaffected; `TedClient` still sends `Accept` + `TED_USER_AGENT` on
+  every request (transparency toward the data provider).
 - No documented req/s or daily quota exists in the official spec. We do NOT
   assume unlimited: polite throttling, exponential backoff on 429/5xx, and
   an admin-configurable request budget per run are mandatory.

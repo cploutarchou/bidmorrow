@@ -150,6 +150,39 @@ windows at-or-behind the checkpoint (advance-only guard throws), so
 "manual backfill as the retry path" was not merely weak but unavailable —
 this drove the retry-table choice.
 
+**INGESTION FETCH ROOT CAUSE FOUND + FIXED (2026-08-18 ~11:00–12:00 UTC,
+owner instruction "finalize the caveats").** Live CI diagnosis (new
+dispatchable `ted-diagnose` workflow, runs 32131289081/32131832286/
+32132169652 — the sandbox cannot reach TED, CI can): TED **changed the
+anonymous notice-XML front-end to ASYNCHRONOUS rendering** around
+2026-08-17 — `ted.europa.eu/<lang>/notice/<id>/xml` answers HTTP 202 +
+empty body to EVERY client (identified/bare/browser-like; `?download=true`
+changes nothing); the request queues a render and a later request may get
+the cached XML (observed 200 + 12,953-byte ContractNotice minutes after
+trigger; cache short-lived — same URL back to 202 within ~4 min). NOT a
+worker/header bug. The failed 2026-08-17 window actually holds **156
+in-scope notices** (staging died on #1). Fix shipped: (1)
+`TedRenderPendingError` — client surfaces 202/empty-2xx as render-pending;
+(2) `runIngestionWindow` requeue-cycling — collect all rows first, requeue
+pending notices to the tail (MAX_RENDER_VISITS=4, ≥RENDER_RETRY_DELAY_MS=20s
+between visits to the same notice), so pass 1 triggers every render and
+later passes collect; exhaustion stays WINDOW-FATAL (checkpoint held, code
+`NOTICE_RENDER_PENDING` — never skip-and-advance; ADR-0008 owns any future
+record-and-continue); (3) **authenticated API route**: `TedClient.apiKey` →
+`GET {base}/v3/notices/{id}/xml` with `Authorization: Bearer` (endpoint
+verified to exist: 400 Missing Authorization header without a key; header
+SHAPE unverified until the `ted-key-verify` workflow runs against the
+owner's key — HUMAN_DECISION_BLOCKERS item 9, owner registering at
+developer.ted.europa.eu); `TED_API_KEY` wired through env + both deploy
+workflows' secret push. Docs updated (ted-data-source.md supersedes the
+2026-08-16 empty-body note; dependency-versions.md verification ledger).
+Tests: client 46 (202→pending, empty-2xx→pending, API route URL+auth,
+anonymous fallback), ingestion.d1 160 (cycling success = exactly 2 hits/
+notice; exhaustion = 4 hits, failed, durable diagnostic, checkpoint held).
+Expected behavior on staging after deploy: next daily 05:00 UTC run cycles
+the 156-notice backlog — renders triggered pass 1, collected within the
+run or (worst case) by the following day's retry from TED's cache.
+
 **DESIGN DIRECTION SWITCHED (owner, 2026-08-18 ~09:55 UTC): Control Room
 (Direction B) replaces Strata — FULL re-skin, single-theme dark only.**
 Owner saw the round-2 "BidMorrow Control Room" mockup artifact and prefers

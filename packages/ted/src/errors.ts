@@ -59,6 +59,29 @@ export class TedRequestError extends Error {
 }
 
 /**
+ * Thrown when the notice-XML endpoint signals "document not rendered yet":
+ * HTTP 202, or a 2xx with an empty body. Since ~2026-08-17 the anonymous
+ * `ted.europa.eu/<lang>/notice/<id>/xml` front-end renders XML
+ * ASYNCHRONOUSLY — the first request queues the render and answers
+ * `202 Accepted` with an empty body; a later request is served the cached
+ * document (diagnosed live: ted-diagnose CI runs 32131289081/32131832286/
+ * 32132169652, 2026-08-18). The caller (procurement's run-window) requeues
+ * the notice and retries after a delay instead of failing the window
+ * outright — the render was already triggered by this very request.
+ */
+export class TedRenderPendingError extends Error {
+  readonly url: string;
+  readonly status: number;
+
+  constructor(url: string, status: number) {
+    super(`TED notice XML not rendered yet (HTTP ${String(status)}, empty body): ${url}`);
+    this.name = 'TedRenderPendingError';
+    this.url = url;
+    this.status = status;
+  }
+}
+
+/**
  * Thrown when a notice XML fetch exceeds `MAX_XML_BYTES` (client.ts) —
  * either the `Content-Length` header declared an oversized body, or the
  * actual decoded body did (headers can lie or be absent, so both are
