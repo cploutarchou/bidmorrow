@@ -285,7 +285,15 @@ frontend-engineer gained combobox + (earlier) animation/wizard craft;
 visual-asset-designer agent (earlier this window).
 REVIEWS: security SIGN-OFF (all billing-audit points re-verified; LOW
 BILL-R1-01 docs + INFO BILL-R1-03 https-guard fixed in 518b80f; INFO
--02/-04 accepted); production-reviewer final pass ran at phase close.
+-02/-04 accepted); **production-reviewer PASS (2026-08-18, post-eb1d87c):
+0 Critical/High, gates re-measured independently — root 509/3 skip
+(billing 75, combobox 13, cpv 6, format 32), worker 181, db 52, new E2E
+17 pass/3 skip in 59s, build green; critical-path flake reproduced once
+with the documented baseline signature (PR-M6-04, known). LOW PR-M6-01
+(invoice Amount cell showed amountPaid for unpaid invoices — fixed:
+non-paid statuses render amountDue) and LOW PR-M6-02 (this record) fixed
+in the phase-close commit; INFO PR-M6-03 (reactivate returns pre-call row
+fields — correct today, noted against blind copying) accepted.**
 TESTS: root vitest 509 pass/3 skip (billing 75, combobox-filter 13, cpv
 6); worker d1 181; db 52; E2E grew 28→48 (auth-session 5, billing 5 —
 3 documented skips for states unreachable without live Stripe, nothing

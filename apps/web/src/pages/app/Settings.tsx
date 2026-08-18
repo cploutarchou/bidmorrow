@@ -1440,7 +1440,15 @@ function BillingInvoiceHistory({ state }: { state: InvoicesState }): ReactElemen
                     {formatCalendarDate(invoice.periodStartAt)} –{' '}
                     {formatCalendarDate(invoice.periodEndAt)}
                   </td>
-                  <td>{formatMinorUnitsAsCurrency(invoice.amountPaid, invoice.currency)}</td>
+                  <td>
+                    {/* Paid invoices show what was paid; open/past-due show
+                        what is owed (PR-M6-01 — a €0.00 "amount" on an unpaid
+                        invoice reads as ambiguous next to its status). */}
+                    {formatMinorUnitsAsCurrency(
+                      invoice.status === 'paid' ? invoice.amountPaid : invoice.amountDue,
+                      invoice.currency,
+                    )}
+                  </td>
                   <td>{invoiceStatusLabel(invoice.status)}</td>
                   <td className="no-print">
                     <span className="billing-invoice-actions">
