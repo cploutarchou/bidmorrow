@@ -112,3 +112,17 @@ export const COUNTRY_REGIONS: readonly CountryRegion[] = [
 export const COUNTRY_NAME_BY_CODE: Readonly<Record<string, string>> = Object.fromEntries(
   COUNTRY_REGIONS.flatMap((region) => region.countries.map((c) => [c.code, c.name])),
 );
+
+/**
+ * Union of every keyword term across the bundled onboarding presets
+ * (`packages/domain`'s `COMPANY_PRESETS`), de-duplicated case-insensitively
+ * and sorted — a public, static suggestion source for Settings' "Add
+ * keyword" combobox. Same non-exhaustive posture as `CPV_SUGGESTIONS`
+ * (`data/cpv-suggestions.ts`): a suggestion list only, any free-typed
+ * keyword is still accepted.
+ */
+export const KEYWORD_SUGGESTIONS: readonly string[] = [
+  ...new Map(
+    COMPANY_PRESETS.flatMap((preset) => preset.keywords).map((k) => [k.term.toLowerCase(), k.term]),
+  ).values(),
+].sort((a, b) => a.localeCompare(b));

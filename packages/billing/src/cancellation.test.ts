@@ -27,7 +27,8 @@ vi.mock('@bidmorrow/db', () => ({
     upsertSubscriptionByStripeCustomerId(...args),
 }));
 
-const { cancelSubscriptionForOrgDeletion } = await import('./cancellation');
+const { cancelSubscriptionForOrgDeletion, cancelSubscriptionAtPeriodEnd } =
+  await import('./cancellation');
 
 const ORG_ID = 'org_test_01J0CANCEL' as OrganizationId;
 const FAKE_DB = {} as never;
@@ -137,6 +138,107 @@ describe('cancelSubscriptionForOrgDeletion', () => {
     // The failed attempt is never mirrored into the local row — only a
     // successful Stripe response is trusted as "live state" (cancellation.ts
     // doc comment).
+    expect(upsertSubscriptionByStripeCustomerId).not.toHaveBeenCalled();
+  });
+});
+
+describe('cancelSubscriptionAtPeriodEnd (user-initiated, POST /api/billing/cancel)', () => {
+  beforeEach(() => {
+    getSubscription.mockReset();
+    upsertSubscriptionByStripeCustomerId.mockReset();
+  });
+
+  it('returns no_subscription when the org has no subscription row', async () => {
+    getSubscription.mockResolvedValue(null);
+    const stripe = { subscriptions: { update: vi.fn() } };
+
+    const outcome = await cancelSubscriptionAtPeriodEnd(
+      { db: FAKE_DB, stripe },
+      { organizationId: ORG_ID },
+    );
+
+    expect(outcome).toEqual({ kind: 'no_subscription' });
+    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
+  });
+
+  it('returns no_subscription when the row has no stripeSubscriptionId yet', async () => {
+    getSubscription.mockResolvedValue(activeSubscription({ stripeSubscriptionId: null }));
+    const stripe = { subscriptions: { update: vi.fn() } };
+
+    const outcome = await cancelSubscriptionAtPeriodEnd(
+      { db: FAKE_DB, stripe },
+      { organizationId: ORG_ID },
+    );
+
+    expect(outcome).toEqual({ kind: 'no_subscription' });
+    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
+  });
+
+  it('returns already_canceled without calling Stripe', async () => {
+    getSubscription.mockResolvedValue(activeSubscription({ status: 'canceled' }));
+    const stripe = { subscriptions: { update: vi.fn() } };
+
+    const outcome = await cancelSubscriptionAtPeriodEnd(
+      { db: FAKE_DB, stripe },
+      { organizationId: ORG_ID },
+    );
+
+    expect(outcome).toEqual({ kind: 'already_canceled' });
+    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
+    expect(upsertSubscriptionByStripeCustomerId).not.toHaveBeenCalled();
+  });
+
+  it('returns already_scheduled (idempotent) without calling Stripe when cancelAtPeriodEnd is already set', async () => {
+    getSubscription.mockResolvedValue(
+      activeSubscription({ cancelAtPeriodEnd: 1, currentPeriodEndAt: 1_700_000_000_000 }),
+    );
+    const stripe = { subscriptions: { update: vi.fn() } };
+
+    const outcome = await cancelSubscriptionAtPeriodEnd(
+      { db: FAKE_DB, stripe },
+      { organizationId: ORG_ID },
+    );
+
+    expect(outcome).toEqual({ kind: 'already_scheduled', currentPeriodEndAt: 1_700_000_000_000 });
+    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
+    expect(upsertSubscriptionByStripeCustomerId).not.toHaveBeenCalled();
+  });
+
+  it('schedules cancel_at_period_end and mirrors the result into the local row', async () => {
+    const row = activeSubscription({ currentPeriodEndAt: 1_700_000_000_000 });
+    getSubscription.mockResolvedValue(row);
+    upsertSubscriptionByStripeCustomerId.mockResolvedValue(row);
+    const stripe = {
+      subscriptions: {
+        update: vi.fn().mockResolvedValue({ id: 'sub_test', cancel_at_period_end: true }),
+      },
+    };
+
+    const outcome = await cancelSubscriptionAtPeriodEnd(
+      { db: FAKE_DB, stripe },
+      { organizationId: ORG_ID },
+    );
+
+    expect(outcome).toEqual({
+      kind: 'canceled_at_period_end',
+      stripeSubscriptionId: 'sub_test',
+      currentPeriodEndAt: 1_700_000_000_000,
+    });
+    expect(stripe.subscriptions.update).toHaveBeenCalledWith('sub_test', {
+      cancel_at_period_end: true,
+    });
+    expect(upsertSubscriptionByStripeCustomerId).toHaveBeenCalledTimes(1);
+  });
+
+  it('propagates a Stripe API error to the caller rather than swallowing it', async () => {
+    getSubscription.mockResolvedValue(activeSubscription());
+    const stripeError = new Error('stripe: rate limited');
+    const stripe = { subscriptions: { update: vi.fn().mockRejectedValue(stripeError) } };
+
+    await expect(
+      cancelSubscriptionAtPeriodEnd({ db: FAKE_DB, stripe }, { organizationId: ORG_ID }),
+    ).rejects.toThrow('stripe: rate limited');
+
     expect(upsertSubscriptionByStripeCustomerId).not.toHaveBeenCalled();
   });
 });

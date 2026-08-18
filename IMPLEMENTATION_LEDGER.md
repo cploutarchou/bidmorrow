@@ -241,6 +241,69 @@ mockup source committed at
 re-skin) starting next; the pending final slice (sample-verdict demo +
 category pages) will be built Control-Room-styled after the re-skin lands.
 
+**M6 Client-area follow-up SHIPPED (2026-08-18 evening, owner directive:
+auth/session polish, client billing + subscriptions, autocomplete, client
+logo, skills/agents).** Four workstreams, coordinated per the new
+single-writer partition rules:
+(1) AUTH: `use-redirect-if-authenticated` (authenticated visitors never
+see /login|/signup — invariant verified in Better Auth source: with
+requireEmailVerification no session exists pre-verification, so
+/verify-email is unaffected); api.ts 401s → single coalesced
+auth-context refresh (in-flight guard, no loops, get-session never
+routes through api.ts); Login's duplicate resolve+navigate race removed;
+returnTo open-redirect guard confirmed (`isSafeReturnTo`).
+(2) BILLING: server — GET /api/billing/invoices (server-stored
+stripeCustomerId only, https-only URL passthrough), POST /cancel
+(typed-confirm body, cancel_at_period_end, idempotent), POST /reactivate
+(409 requiresCheckout when fully canceled), enriched /status
+(price/paymentState; currentPeriodStartAt correctly omitted — no column,
+no migration); all owner-gated with tested denial paths; webhook stays
+authoritative (syncSubscriptionState re-fetch converges optimistic rows);
+SDK semantics cited from installed stripe@22.5.0 types, recorded in
+dependency-versions.md §Stripe. Client — Settings billing panel: plan
+card (price/status/renewal vs "Cancels on … — access continues"),
+overdue notice → portal, ConfirmAction-gated cancel, reactivate,
+invoice history (Stripe-hosted View/PDF; loading/empty/forbidden/
+not-configured/provider-error states; invoices fetch isolated so the
+owner-only 403 doubles as the non-owner UI signal without breaking
+Settings), @media print layout + Print button. NOT live-verified against
+real Stripe (unit/fake-client + d1 tests only — honest boundary; staging
+test-mode exercise pending owner use).
+(3) AUTOCOMPLETE: reusable ARIA combobox (activedescendant, full
+keyboard matrix, pointer/touch, live-region counts, sequence-guard) over
+pure ranked filtering (13 tests); applied to Settings CPV/keyword/country
+and onboarding CPV add; free-typed valid codes still accepted; datasets
+static/public — CPV_SUGGESTIONS (141 entries, every label extracted from
+the official CPV 2008 genericode file — zero recalled), presets-derived
+keywords, existing country list.
+(4) LOGO: root cause — Logo.tsx was rendered only by MarketingLayout;
+mark added to AppShell/AuthLayout/onboarding header (decorative inline
+SVG, CSS-sized), screenshot-verified in the built app 1440/390.
+SKILLS/AGENTS: new `billing-audit` skill (8-point checklist);
+coordination rules codified in website-redesign §Standing rules;
+frontend-engineer gained combobox + (earlier) animation/wizard craft;
+visual-asset-designer agent (earlier this window).
+REVIEWS: security SIGN-OFF (all billing-audit points re-verified; LOW
+BILL-R1-01 docs + INFO BILL-R1-03 https-guard fixed in 518b80f; INFO
+-02/-04 accepted); **production-reviewer PASS (2026-08-18, post-eb1d87c):
+0 Critical/High, gates re-measured independently — root 509/3 skip
+(billing 75, combobox 13, cpv 6, format 32), worker 181, db 52, new E2E
+17 pass/3 skip in 59s, build green; critical-path flake reproduced once
+with the documented baseline signature (PR-M6-04, known). LOW PR-M6-01
+(invoice Amount cell showed amountPaid for unpaid invoices — fixed:
+non-paid statuses render amountDue) and LOW PR-M6-02 (this record) fixed
+in the phase-close commit; INFO PR-M6-03 (reactivate returns pre-call row
+fields — correct today, noted against blind copying) accepted.**
+TESTS: root vitest 509 pass/3 skip (billing 75, combobox-filter 13, cpv
+6); worker d1 181; db 52; E2E grew 28→48 (auth-session 5, billing 5 —
+3 documented skips for states unreachable without live Stripe, nothing
+faked; combobox 10); all 20 new pass 3× runs. KNOWN: pre-existing E2E
+flake critical-path.spec.ts:218 (51-keyword loop, browser-process death
+in this sandbox) reproduced identically at baseline — not a regression,
+left intact. Also pre-existing: SPA ships as one JS chunk (no route
+code-splitting anywhere yet) — flagged against docs/project-guide.md guidance as
+follow-up, not introduced here.**
+
 **M5 App-interface + interaction milestone SHIPPED (2026-08-18 ~17:30 UTC,
 owner instruction "UI still needs work / more interactive / modern
 responsive / wizard").** Full chain: ui-visual-designer spec
