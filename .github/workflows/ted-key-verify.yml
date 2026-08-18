@@ -34,7 +34,9 @@ jobs:
     steps:
       - name: Validate inputs (defense in depth)
         run: |
-          echo "$PUB_NUM" | grep -Eq '^[0-9]{1,8}-[0-9]{4}$' || { echo "bad publication_number"; exit 1; }
+          # [[ =~ ]] validates the WHOLE value — a multi-line input cannot
+          # sneak a matching line past a per-line grep (BM-51-2).
+          [[ "$PUB_NUM" =~ ^[0-9]{1,8}-[0-9]{4}$ ]] || { echo "bad publication_number"; exit 1; }
           [ -n "$TED_API_KEY" ] || { echo "TED_API_KEY is not set in the staging environment — add it first (HUMAN_DECISION_BLOCKERS item 9)"; exit 1; }
 
       - name: Probe Authorization header shapes
