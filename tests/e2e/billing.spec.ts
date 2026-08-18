@@ -56,7 +56,7 @@ test.describe('billing: Settings', () => {
     test.skip(true, 'no invite/add-member seam exists anywhere in the app to create this state');
   });
 
-  test('cancel-subscription confirmation gate: SKIPPED — the Cancel panel never renders without Stripe, and the handoff\'s assumed 409 is pre-empted by 503 locally', () => {
+  test("cancel-subscription confirmation gate: SKIPPED — the Cancel panel never renders without Stripe, and the handoff's assumed 409 is pre-empted by 503 locally", () => {
     // Two independent reasons this scenario is unreachable here, both
     // verified by reading the code (not assumed):
     // 1. Settings.tsx only renders the `BillingActiveSubscription`
@@ -127,6 +127,9 @@ test.describe('billing: Settings', () => {
     //   — the exact `POST /api/billing/reactivate` response shapes
     //   Settings.tsx's `describeBillingError`/`reactivateRequiresCheckout`
     //   branch on)
-    test.skip(true, 'unreachable without a Stripe-backed subscription; see packages/billing unit tests');
+    test.skip(
+      true,
+      'unreachable without a Stripe-backed subscription; see packages/billing unit tests',
+    );
   });
 });

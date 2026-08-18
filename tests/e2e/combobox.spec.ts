@@ -23,7 +23,13 @@
  * a guess.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { bootstrapOnboardedUserWithMatches, TEST_PASSWORD, uniqueEmail, signUpAndVerify, login } from './helpers';
+import {
+  bootstrapOnboardedUserWithMatches,
+  TEST_PASSWORD,
+  uniqueEmail,
+  signUpAndVerify,
+  login,
+} from './helpers';
 
 /** Resolves a `Combobox` instance's tightly-coupled ARIA/DOM siblings from
  * its accessible label — the input itself stays label-first (`getByLabel`,
@@ -34,7 +40,12 @@ async function comboboxParts(
   page: Page,
   labelText: string | RegExp,
 ): Promise<{ input: Locator; listbox: Locator; announcement: Locator; addButton: Locator }> {
-  const input = page.getByLabel(labelText);
+  // `getByRole('combobox', ...)`, not `getByLabel` — Combobox.tsx's popup
+  // `<ul role="listbox" aria-label={label}>` carries the SAME accessible
+  // name as the `<input>` it belongs to, so a plain `getByLabel` matches
+  // both and throws a strict-mode violation. `role="combobox"` is unique to
+  // the input.
+  const input = page.getByRole('combobox', { name: labelText });
   const id = await input.getAttribute('id');
   if (id === null) throw new Error(`combobox input for label "${String(labelText)}" has no id`);
   const wrapper = page.locator('.combobox').filter({ has: input });
@@ -111,27 +122,30 @@ test.describe.serial('combobox: Settings CPV + country fields', () => {
   });
 
   test('Enter commits the active option and clears the field', async () => {
-    // "de" -> Denmark is the only PREFIX match (Sweden matches only as a
-    // substring, "swe[de]n") so it's guaranteed to be the active (index 0)
-    // option without any arrow presses.
+    // "fr" -> France is the ONLY match (prefix on both its code "FR" and
+    // its label) — no competing substring match, so it's unambiguously the
+    // active (index 0) option without any arrow presses.
     const parts = await comboboxParts(page, 'Add country code (opportunity country)');
-    await parts.input.fill('de');
-    await expect(parts.listbox.getByRole('option').first()).toBeVisible();
+    await parts.input.fill('fr');
+    await expect(parts.listbox.getByRole('option')).toHaveCount(1);
     await parts.input.press('Enter');
 
     await expect(parts.input).toHaveValue('');
     await expect(parts.listbox).toHaveCount(0);
-    await expect(geographyChips(page).filter({ hasText: 'DK' })).toHaveCount(1);
+    await expect(geographyChips(page).filter({ hasText: 'FR' })).toHaveCount(1);
   });
 
   test('Escape closes the popup, and a second Escape clears the field', async () => {
     const parts = await comboboxParts(page, 'Add country code (opportunity country)');
     await parts.input.fill('ir'); // Ireland
+    // Settings.tsx uppercases this field's `onValueChange` — the rendered
+    // value is "IR", not the literal keystrokes typed.
+    await expect(parts.input).toHaveValue('IR');
     await expect(parts.listbox.getByRole('option')).not.toHaveCount(0);
 
     await parts.input.press('Escape');
     await expect(parts.listbox).toHaveCount(0);
-    await expect(parts.input).toHaveValue('ir'); // first Escape only closes
+    await expect(parts.input).toHaveValue('IR'); // first Escape only closes
 
     await parts.input.press('Escape');
     await expect(parts.input).toHaveValue(''); // second Escape clears
@@ -216,9 +230,7 @@ test('combobox: onboarding CPV screen commits a suggestion via keyboard, updates
 
   await page.goto('/onboarding');
   await page.getByRole('button', { name: 'Get started' }).click();
-  await page
-    .getByLabel('Organization name')
-    .fill(`Combobox Onboarding Org ${String(Date.now())}`);
+  await page.getByLabel('Organization name').fill(`Combobox Onboarding Org ${String(Date.now())}`);
   await page.getByRole('button', { name: 'Create workspace' }).click();
   await page.getByRole('button', { name: 'Skip' }).click(); // company basics
 
@@ -236,7 +248,9 @@ test('combobox: onboarding CPV screen commits a suggestion via keyboard, updates
   // "72130" -> uniquely 72130000 (verified by grep against the real
   // suggestion dataset), a code not in ANY bundled preset, so this is a
   // genuine free selection, not a preset carry-over.
-  const manualCpv = page.getByLabel('Add another 8-digit CPV code');
+  // `getByRole('combobox', ...)`, not `getByLabel` — see `comboboxParts`'s
+  // comment above for why a plain label lookup is ambiguous here.
+  const manualCpv = page.getByRole('combobox', { name: 'Add another 8-digit CPV code' });
   await manualCpv.fill('72130');
   const listbox = page.locator('#manual-cpv-listbox');
   await expect(listbox.getByRole('option')).toHaveCount(1);

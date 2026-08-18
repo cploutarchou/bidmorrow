@@ -48,29 +48,39 @@ test.describe.serial('auth: redirects, session expiry, verify-email', () => {
     await expect(page).toHaveURL(/\/app$/);
   });
 
-  test('/verify-email renders normally for a brand-new signup — no redirect away (no session pre-verification)', async () => {
+  test('/verify-email renders normally for a brand-new signup — no redirect away (no session pre-verification)', async ({
+    page: freshPage,
+  }) => {
+    // Deliberately uses the FIXTURE-provided `page` (a fresh, unauthenticated
+    // browser context Playwright creates per test regardless of `serial`
+    // mode) rather than this file's shared `page` closure variable — by this
+    // point in the file the shared page/context is already authenticated as
+    // the step-1 account, and `useRedirectIfAuthenticated` would correctly
+    // bounce an authenticated visit to /signup straight to /onboarding,
+    // which is real app behavior but not what THIS scenario (a genuinely
+    // new, logged-out signup) needs to exercise.
     const freshEmail = uniqueEmail('auth-session-verify');
-    await page.goto('/signup');
-    await page.getByLabel('Full name').fill('Verify Flow User');
-    await page.getByLabel('Work email').fill(freshEmail);
-    await page.getByLabel('Password').fill(TEST_PASSWORD);
-    await page.getByRole('button', { name: 'Create account' }).click();
+    await freshPage.goto('/signup');
+    await freshPage.getByLabel('Full name').fill('Verify Flow User');
+    await freshPage.getByLabel('Work email').fill(freshEmail);
+    await freshPage.getByLabel('Password').fill(TEST_PASSWORD);
+    await freshPage.getByRole('button', { name: 'Create account' }).click();
     // Signing up with `requireEmailVerification: true` never creates a
     // session (auth-context.tsx docblock) — the verify-email screen itself
     // must render its real content, not bounce anywhere.
-    await expect(page).toHaveURL(/\/verify-email/);
-    await expect(page.getByRole('alert')).toHaveCount(0);
-    await expect(page.getByText(freshEmail)).toBeVisible();
+    await expect(freshPage).toHaveURL(/\/verify-email/);
+    await expect(freshPage.getByRole('alert')).toHaveCount(0);
+    await expect(freshPage.getByText(freshEmail)).toBeVisible();
   });
 
   test('an authenticated visitor cannot see the /login or /signup forms — no flash', async () => {
-    // From here on this test needs the account from step 1 to have an
-    // org/onboarding state so resolvePostAuthDestination has somewhere
-    // deterministic to land; complete onboarding via the shared helper's
-    // exact sequence isn't necessary — any authenticated landing away from
-    // the auth form is the assertion, and `login`'s own postcondition
-    // already accepts /app or /onboarding.
-    await login(page, email, TEST_PASSWORD);
+    // The shared `page`'s session is ALREADY authenticated from step 1 —
+    // calling the `login` helper again here would itself hit the exact bug
+    // under test (a `/login` visit while authenticated never renders the
+    // form `login()` waits on, so it would hang). Just confirm the session
+    // is still live.
+    await page.goto('/app');
+    await expect(page).toHaveURL(/\/(app|onboarding)$/);
 
     // Navigating to /login while authenticated must never render the
     // sign-in form at any point — assert the heading/inputs never appear,
@@ -82,9 +92,10 @@ test.describe.serial('auth: redirects, session expiry, verify-email', () => {
       .then(() => true)
       .catch(() => false);
     await page.goto('/login');
-    expect(await loginFormAppeared, 'the /login form must never render for an authenticated visitor').toBe(
-      false,
-    );
+    expect(
+      await loginFormAppeared,
+      'the /login form must never render for an authenticated visitor',
+    ).toBe(false);
     await expect(page).not.toHaveURL(/\/login$/);
 
     const signupFormAppeared = page
@@ -124,7 +135,18 @@ test.describe.serial('auth: redirects, session expiry, verify-email', () => {
     // docblock), so onboarding is driven inline exactly once, only if not
     // already complete.
     await page.goto('/app');
-    if (/\/onboarding$/.test(page.url())) {
+    // The account has no organization yet at this point (test 1 only
+    // signed up + logged in, never onboarded) — Feed.tsx's own 403
+    // `no_organization` handling client-navigates to /onboarding
+    // ASYNCHRONOUSLY, after its feed API call resolves, so `page.url()`
+    // read synchronously right after `goto()` is a race: it can still read
+    // `/app` for a moment before that navigate fires. Actively WAIT for the
+    // redirect (or its absence) instead of sampling the URL once.
+    const wentToOnboarding = await page
+      .waitForURL(/\/onboarding$/, { timeout: 5000 })
+      .then(() => true)
+      .catch(() => false);
+    if (wentToOnboarding) {
       await page.getByRole('button', { name: 'Get started' }).click();
       await page.getByLabel('Organization name').fill(orgName);
       await page.getByRole('button', { name: 'Create workspace' }).click();
@@ -154,7 +176,15 @@ test.describe.serial('auth: redirects, session expiry, verify-email', () => {
     // propagates to `page` itself; the in-memory React `user` state does
     // NOT know yet, matching a real "session expired while a tab sat open"
     // scenario.
-    const signOutResponse = await page.request.post('/api/auth/sign-out');
+    // `page.request` is a raw HTTP client sharing the context's cookie
+    // jar — unlike a real in-page `fetch`, it does not automatically send
+    // an `Origin` header, which Better Auth requires on state-changing
+    // requests (apps/worker/src/auth.test.ts `STATE_CHANGING_HEADERS`
+    // documents the same requirement for its own raw-fetch sign-out call).
+    const signOutResponse = await page.request.post('/api/auth/sign-out', {
+      headers: { origin: 'http://127.0.0.1:8787' },
+      data: {},
+    });
     expect(signOutResponse.ok()).toBe(true);
 
     // Trigger a real app API call from the still-mounted page (not a
