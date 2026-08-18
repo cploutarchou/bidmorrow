@@ -72,7 +72,13 @@
   --status-info-text: #7dd3fc;
   --status-caution-text: #fbbf24;
   --status-caution-wash: rgba(251, 191, 36, 0.12);
-  --status-low-text: var(--text-3);
+  /* QA fix (2026-08-18): was `var(--text-3)` (#7d8799) — passes AA on the
+     panel (5.05:1) but fails 4.5:1 on raised surfaces the LOW_FIT badge
+     also renders against (e.g. ~#1f232b, 4.34:1 measured). `--text-2`
+     (#8b94a7) clears every raised surface tested (≥4.8:1) while --text-3
+     itself is untouched — every other --text-3 usage (body/footer/
+     captions on ground/panel) still passes and is unaffected. */
+  --status-low-text: var(--text-2);
   --status-danger-text: #f87171; /* "risk" */
 
   /* legacy aliases — every selector below keeps its original custom
@@ -498,7 +504,30 @@ footer p {
   padding: 1.5rem;
 }
 
+/* QA fix (2026-08-18): every shell's `<main>` also carries `id="main-
+   content"` (the skip-link target) — AppShell's `.app-main`, Onboarding's
+   `.assistant-main`, and AuthLayout's own `.auth-main` (immediately below)
+   all previously lost their max-width/padding to the `#main-content` ID
+   rule above (ID specificity 1-0-0 always beats a class's 0-1-0,
+   regardless of source order), so the app content column rendered at
+   64rem/1.5rem instead of the intended 72rem/2rem 1.5rem 4rem, the
+   onboarding column at 64rem instead of 40rem, and this auth override
+   below never actually took effect. Same specificity-escape already used
+   for `#main-content.mkt-main--full` further down this file — an ID+class
+   compound selector (1-1-0) outranks the bare ID rule above it. */
+#main-content.app-main {
+  max-width: 72rem;
+  padding: 2rem 1.5rem 4rem;
+}
+#main-content.assistant-main {
+  max-width: 40rem;
+  padding: 2rem 1.5rem 4rem;
+}
+
 .auth-main {
+  max-width: 30rem;
+}
+#main-content.auth-main {
   max-width: 30rem;
 }
 .auth-main h1 {
@@ -834,6 +863,12 @@ textarea[aria-invalid='true'] {
   padding: 2rem 1.5rem 4rem;
   display: grid;
   gap: 1.25rem;
+  /* QA fix (2026-08-18): default grid align-content:stretch was stretching
+     the stepper pills into tall ovals on short viewports whenever this
+     grid has extra vertical space (e.g. welcome/completion screens on a
+     1440x900 display) — grid items should size to content, not fill the
+     row track. */
+  align-content: start;
 }
 
 .assistant-phases {
@@ -1050,7 +1085,11 @@ textarea[aria-invalid='true'] {
 }
 
 .ob-chip-toggle__code {
-  color: var(--text-3);
+  /* QA fix (2026-08-18): was `var(--text-3)` — the chip surface is raised
+     (surface-1 unselected / accent-soft when `--on`), and against the
+     teal accent-soft surface --text-3 measures ~4.04:1 (fail); --text-2
+     clears both the unselected (~5.65:1) and selected (~4.80:1) surfaces. */
+  color: var(--text-2);
   font-size: 0.78rem;
   flex: none;
 }

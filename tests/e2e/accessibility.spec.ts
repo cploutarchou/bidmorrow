@@ -16,7 +16,32 @@ interface SeriousViolation {
   readonly nodes: number;
 }
 
+/**
+ * Freezes every CSS animation/transition to its end state before scanning.
+ * WCAG 1.4.3 contrast applies to the settled, static rendering of text —
+ * not to a transient mid-transition frame — but axe-core has no concept of
+ * "wait for animations to finish" and Playwright's `reducedMotion: 'reduce'`
+ * context option (see playwright.config.ts) isn't guaranteed to be honored
+ * for CSS `prefers-reduced-motion` media-query timing on every navigation
+ * in a sandboxed/software-rendered browser, which was producing
+ * intermittent false-positive `color-contrast` findings on `.cta` buttons
+ * caught mid-way through the onboarding `.assistant-screen` `rise-in`
+ * mount animation (opacity ramping 0→1) — a real but non-representative
+ * paint frame, not the shipped, settled UI. `animation-duration: 0s
+ * !important` (rather than `animation: none`) jumps every animation
+ * straight to its final keyframe instead of removing it, so this reflects
+ * the actual end-state design, not a different one.
+ */
+async function freezeAnimations(page: Page): Promise<void> {
+  // `page.addStyleTag` inserts an inline <style> element, which the app's
+  // own CSP (`style-src 'self'`, no unsafe-inline) correctly refuses to
+  // apply — re-assert the context-level reducedMotion emulation instead
+  // (native browser feature emulation, not a stylesheet).
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+}
+
 async function seriousOrCriticalViolations(page: Page): Promise<SeriousViolation[]> {
+  await freezeAnimations(page);
   const results = await new AxeBuilder({ page }).analyze();
   return results.violations
     .filter((v) => v.impact === 'serious' || v.impact === 'critical')
