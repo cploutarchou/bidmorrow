@@ -1,6 +1,9 @@
 # ADR-0008: Poison-pill notice resilience (record-and-continue for per-notice fetch failures)
 
-Status: Proposed (2026-08-18) — spec only; implementation not yet scheduled.
+Status: Accepted (2026-08-19) — implementation authorized by owner. Amended
+2026-08-19 (render-pending exhaustion joins record-and-continue — see the
+dated Amendment section at the end). Originally Proposed 2026-08-18 as spec
+only.
 
 ## Context
 
@@ -62,6 +65,10 @@ must keep propagating to the window-level handler (§4). Search-page fetch
 failures (`SEARCH_FETCH_*`, thrown while no notice is in flight) remain
 window-fatal: they are positional — a page we cannot enumerate cannot be
 "skipped per notice".
+
+_Amended 2026-08-19: render-pending exhaustion (`TedRenderPendingError`
+after `MAX_RENDER_VISITS`) joins this record-and-continue path — see
+Amendment §A1._
 
 ### 2. Systemic-failure threshold — record-and-continue is bounded
 
@@ -142,7 +149,15 @@ status ('pending'|'recovered'|'abandoned'), created_at, updated_at}`.
 - cost-audit note: no new platform service or dependency; deltas are within
   existing line items. docs/cost-model.md gets the 0.33 MB/12-month and
   ≤25 req/day figures at implementation time (this ADR is spec-only and
-  edits no other file).
+  edits no other file). _Amended 2026-08-19: a drain attempt is now a full
+  render-visit cycle, so the request delta rises to ≤150 req/day worst case
+  (25 rows × 6 visits) — see Amendment §A2; docs/cost-model.md updated with
+  both figures as part of the amendment._
+
+_Amended 2026-08-19: drain attempts get in-run render-visit cycling
+(trigger + collect, same `MAX_RENDER_VISITS` budget) instead of a single
+fetch — see Amendment §A2. Table shape, backoff, give-up, and abandonment
+semantics are unchanged._
 
 ### 4. Budget exhaustion stays window-fatal
 
@@ -234,3 +249,184 @@ Negative:
 - **Threshold in `feature_flags`**: runtime tunability we do not need, plus
   a validation path and admin surface; `ingestion_paused` already covers the
   emergency case. Rejected for now (promotable later by superseding ADR).
+
+---
+
+## Amendment (2026-08-19): render-pending exhaustion joins record-and-continue
+
+This amendment **extends §1** (a second trigger class for record-and-
+continue) and **§3** (the shape of a drain attempt, and its request delta),
+and re-checks §2's arithmetic under the extension. It contradicts no
+recorded decision: §4's window-fatal set, §2's constants, and §3's table
+shape, backoff, give-up, and abandonment semantics are unchanged.
+
+### New evidence (post-dating the original spec)
+
+- TED's anonymous notice-XML front-end renders **asynchronously**
+  (docs/ted-data-source.md, verified 2026-08-18): a GET answers HTTP 202 +
+  empty body while queueing a server-side render; render latency can exceed
+  several minutes; the resulting cache is short-lived (~4 min observed).
+  PR #51 added `TedRenderPendingError` + requeue-cycling
+  (`MAX_RENDER_VISITS = 4`, `RENDER_RETRY_DELAY_MS = 20s`) and explicitly
+  reserved exhaustion semantics for this ADR ("never skip-and-advance;
+  ADR-0008 owns any future record-and-continue").
+- **2026-08-19 05:00 UTC staging run** (`ingestion_runs.started_at`
+  1787115645955, window 2026-08-17): 156 notices seen, all renders
+  triggered on pass 1, requeue cycling ran ~4 minutes. With a full queue
+  and no render yet complete, every pass stays full-length (~80–120 s at
+  156 notices × ≥500 ms spacing), so the first-queued notice
+  (**566510-2026**) reached its 4th visit ≈ 4 minutes after its trigger —
+  below TED's observed render latency — threw `TedRenderPendingError`
+  exhaustion, and the window went fatal: **0 of 156 notices landed**,
+  checkpoint held. This is the poison pill of the Context section
+  generalized, with render-pending rather than `TedRequestError` as the
+  trigger. One slow render must not cost the other 155 notices their day.
+
+### A1. Render-pending exhaustion is a §1 fetch failure
+
+A notice that exhausts `MAX_RENDER_VISITS` is skipped exactly like a §1
+fetch failure. Handling lives at the Phase-2 requeue site in
+`runIngestionWindow` (the catch site differs from §1's
+`processOneNotice` catch, but the handling is identical):
+
+- one `ingestion_errors` row via `recordError` — stage `fetch`, the
+  **existing** stable code `NOTICE_RENDER_PENDING` (introduced by PR #51
+  for the window-fatal diagnostic; reused unchanged), `sourceNoticeId` set,
+  `detail: {url, status, visits}` (values via `truncateForDiagnostic`);
+- `counts.errorsCount` and §1's `noticesFetchFailed` increment — so
+  exhaustions count toward the §2 systemic threshold and the §5
+  `notices_fetch_failed` run column;
+- one idempotent `ingestion_fetch_retries` row with
+  `last_error_code = 'NOTICE_RENDER_PENDING'` — **no schema change**; §3's
+  table shape already fits (the column is an opaque code string);
+- the notice is dropped from the work queue; the window continues and
+  finishes `partial`.
+
+Pre-exhaustion cycling is unchanged, and `describeWindowFailure`'s
+`NOTICE_RENDER_PENDING` branch stays as defense-in-depth for any
+`TedRenderPendingError` that escapes outside the cycling loop. Rationale:
+render-pending exhaustion is notice-specific **by construction** — the
+other 155 notices on the same origin and day differ only in render state,
+so §1's asymmetry argument applies verbatim. A day where renders are
+broadly slow is the systemic case and threshold-fails instead (A4); both
+outcomes strictly dominate today's first-exhaustion-kills-all behavior.
+
+### A2. Drain attempts are full render-visit cycles, not single fetches
+
+A §3 drain attempt is a fresh GET against an async front-end with a ~4-min
+cache and multi-minute render latency — a **single** attempt is therefore
+deterministically a trigger-only 202: five single-fetch drains would burn
+all `FETCH_RETRY_MAX_ATTEMPTS` and convert every render-pending skip into
+a guaranteed `NOTICE_FETCH_ABANDONED`. Decision: drain rows get the same
+in-run revisit budget as window notices.
+
+- The drain's ≤ `FETCH_RETRY_MAX_PER_RUN = 25` due rows form their own
+  requeue-cycling mini-queue: same `TedClient` instance (shared budget,
+  spacing, backoff — §3 unchanged), same `MAX_RENDER_VISITS` per row, same
+  `RENDER_RETRY_DELAY_MS` floor, identical `processOneNotice` path.
+- One §3 `attempts` increment per **cycle**, not per visit: success →
+  `recovered`; exhaustion within the cycle → `attempts += 1` and the
+  existing linear daily backoff. No `ingestion_errors` row until
+  `NOTICE_FETCH_ABANDONED` (§3 unchanged). Drain outcomes never feed the
+  §2 threshold — that threshold is defined over a window's `noticesSeen`,
+  and drain rows are windowless by design.
+- **Ordering/skip rules**: the drain runs after the catch-up loop in the
+  same invocation, and is skipped when the catch-up ended `failed` or
+  ingestion is paused — an origin that just failed a window systemically
+  should not be hammered further (budget + politeness).
+  `TedBudgetExceededError` during the drain terminates the drain only
+  (logged; rows remain due tomorrow) — no window is in flight, so nothing
+  is window-fatal.
+- **Cost**: worst case 25 × 6 = **150 requests/run** (7.5% of
+  `MAX_REQUESTS_PER_RUN = 2000`) and ≈ 2–3 min wall clock (25-row passes
+  ≈ 12.5 s, so the 20 s delay floor dominates: ~5 delay-bound passes).
+  Even a 3-window ceiling catch-up plus a full drain fits the budget
+  (see A3). Supersedes the original §3 "≤25 extra requests/day" figure,
+  which assumed one request per attempt.
+- **Honest limit**: cycling at the 20 s floor collects renders completing
+  within ~100 s of the drain's trigger. A notice whose render reliably
+  exceeds that exhausts each drain day and is abandoned after 5 days with
+  the §3 alert — the correct, loud outcome for a notice TED's front-end
+  effectively will not serve.
+
+### A3. Patience bump: `MAX_RENDER_VISITS` 4 → 6
+
+With a full queue, a notice's visits are spaced by whole passes, so its
+trigger-to-last-visit horizon ≈ (visits − 1) × pass length. The 2026-08-19
+run proves 4 visits ≈ 4 min is insufficient for at least one real notice;
+6 visits extends the full-queue horizon to **~8–10 min at current volume
+(156/day)** — above every render latency observed so far — and gives the
+short-queue tail (20 s floor) two extra collection chances.
+
+Budget math — worst case is the all-202 systemic day, where notices march
+through visits in lockstep, exhaustions first land in pass `V`, and the A4
+threshold aborts at the 32nd:
+
+- **156 notices (current measured)**: 156 × 5 + 32 ≈ **812 fetches**
+  (+ ~2 search pages) — 41% of the 2,000 budget; wall clock ≈ 5 full
+  passes + 32 fetches ≈ **7.5–10.5 min**, inside the 15-min cron/queue
+  invocation ceiling (docs/dependency-versions.md, verified 2026-08-14)
+  with margin.
+- **300/day planning ceiling**: 300 × 5 + 61 ≈ 1,561 fetches < 2,000;
+  wall clock 12.5–20 min — the 15-min ceiling can kill the invocation
+  before the threshold diagnostic writes. The checkpoint is **held either
+  way** (an unfinished run never advances it) and the ADR-0006 watchdog's
+  stale-run detection covers the observability gap.
+- **Happy path unchanged** at 2 visits/notice: ~314 requests at 156,
+  ~604 at ceiling; a 3-window ceiling catch-up + full drain ≈
+  3 × 604 + 150 + search ≈ 1,962 < 2,000.
+- **Why not higher**: `MAX_RENDER_VISITS = 8` pushes the current-volume
+  systemic abort to ~1,124 requests and ~12–14 min — no wall-clock margin
+  at today's measured volume — to buy ~3 min of extra same-day horizon
+  that the A2 drain's cross-day re-attempts already provide more cheaply.
+  Patience competes with the whole window for wall clock; bounded patience
+  - skip + drain is the design, not unbounded patience.
+
+Remains a code constant; §2's location rationale applies unchanged.
+
+**Verification resolved (2026-08-19, coordinator, via the official
+Cloudflare docs MCP)**: the recalled 1,000-subrequest cap is STALE — since
+2026-02-11 Workers Paid defaults to **10,000 subrequests per invocation**
+(configurable up to 10M via `limits.subrequests`), and subrequests to
+internal services (D1/R2/KV) now match the configured limit as well
+(changelog 2026-02-11; workers/platform/limits). V = 6's numbers therefore
+clear the platform bound with an order of magnitude of headroom, and the
+binding constraints are exactly the ones A3 designed against: the 15-min
+invocation wall clock and our own `MAX_REQUESTS_PER_RUN` politeness
+budget. The same fact defuses the latent D1-calls concern noted at
+amendment time (a fully successful 156-notice window's ~1,000–1,250 D1
+calls sits far below 10,000). Recorded in docs/dependency-versions.md.
+
+### A4. §2 threshold arithmetic re-checked with render-pending counting
+
+At 156 notices, `FETCH_FAILURE_FAIL_MIN = 5` and
+`FETCH_FAILURE_FAIL_RATIO = 0.2` trip at the **32nd** fetch failure
+(32 ≥ 5, 32/156 ≈ 20.5% > 20%). An all-notices-202 day (a TED render
+outage) reaches 32 exhaustions early in pass 6 →
+`FETCH_FAILURE_THRESHOLD_EXCEEDED`, run `failed`, **checkpoint held** —
+exactly the systemic protection §2 exists for, at ~812 requests (vs ~469
+for today's first-exhaustion fatality; the extra ~340 requests are the
+price of distinguishing one slow render from an outage). Small windows:
+5–24 notices all-202 trip both floor and ratio at the 5th exhaustion →
+`failed`; ≤4 notices can never threshold-fail (the floor) → at most 4 rows
+into the drain, a bounded loss — §2's floor rationale, unchanged. Mixed
+days (render exhaustions + `TedRequestError`s) share the one
+`noticesFetchFailed` counter, so combined systemic signal is seen.
+**Confirmed: no constant changes needed.**
+
+### Doc touchpoints and transferred duties
+
+- **docs/cost-model.md updated with this amendment** (the §3 deferral is
+  now due, implementation being authorized): drain request delta ≤150/day
+  worst case at V = 6; `ingestion_fetch_retries` 0.33 MB/year worst case
+  unchanged — measured render-pending incidence on 2026-08-19 was
+  1/156 ≈ 0.6%, inside §3's pessimistic 1% assumption; $0 marginal, no new
+  platform component.
+- The **coverage-methodology disclosure duty** (§Consequences: late
+  arrival + abandonment wording in the ADR-0003 disclosure) **transfers to
+  the documentation agent at phase close** — recorded here so the phase
+  checklist, not this ADR, owns its execution.
+- §Consequences' test list extends to: exhaustion-skip (`partial`, other
+  notices land), threshold breach via pure exhaustions, drain-cycling
+  recovery, drain exhaustion `attempts` accounting, and drain-skip after a
+  failed catch-up.
