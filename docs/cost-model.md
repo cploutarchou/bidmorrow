@@ -43,8 +43,13 @@ binding (GA) at no documented extra cost.
 
 Assumptions behind the request math:
 
-- Ingestion: 1 daily cron, ~150–300 scoped notices/day, ≤ a few hundred TED
-  API calls/day, queue-batched normalization → well under 100k Worker
+- Ingestion: 1 daily cron, ~150–300 scoped notices/day. TED's async
+  notice-XML rendering (docs/ted-data-source.md, 2026-08-18) makes the
+  happy path ≥2 fetches/notice, and the ADR-0008 fetch-retry drain (amended
+  2026-08-19) adds ≤150 requests/day worst case (25 rows × 6 render
+  visits) → ~350–800 outbound TED calls/day, inside the self-imposed
+  2,000/run budget; these are outbound subrequests, not billed Worker
+  requests. Queue-batched normalization → well under 100k Worker
   requests/mo and ~1M D1 row writes/mo including match recomputation.
   Matching writes ≈ orgs × new lots × ~10 component rows/day: at 100 orgs ×
   200 lots × 12 rows ≈ 240k writes/day ≈ 7.2M/mo — inside the 50M allowance.
@@ -86,6 +91,12 @@ with margin; no scope tightening needed (ADR-0003 trigger is >600/day).
   state. Component rows are the biggest table → store component details as
   one compact JSON column per match if row growth outpaces projection
   (decision recorded in data-model doc; revisit at 50 orgs).
+- `ingestion_fetch_retries` (ADR-0008, amended 2026-08-19): rows exist only
+  for per-notice fetch/render failures — pessimistic 1%/day at the 300/day
+  ceiling ≈ **0.33 MB/year** worst case before the 90-day terminal-row
+  purge (steady state a few KB). Measured render-pending incidence
+  2026-08-19: 1/156 ≈ 0.6%, inside the 1% assumption. Negligible vs the
+  10 GB cap; no headroom impact.
 - **Steady state projection ≤ ~3–5 GB total at 100 customers** vs 10 GB
   limit → ≥50% headroom. Retention/archival (normalized rows pruned after
   deadline+90d; snapshots retained in R2) is what keeps this bounded and is
@@ -106,7 +117,10 @@ Bounded backfills (admin-only, windowed) · per-run TED request budget ·
 queue batch caps · max retries with DLQ · max keywords (50) / CPV
 preferences (30) per org · bounded recompute windows · digest batching ·
 emergency pause flags (ingestion_paused, digest_paused) · CPV/country
-ingestion scope config · retention purge job · DB-size alert at 60%.
+ingestion scope config · retention purge job · DB-size alert at 60% ·
+fetch-retry drain caps (≤25 rows × ≤6 render visits/run, 5 attempts, then
+alerting abandonment — ADR-0008) · systemic fetch-failure threshold
+(ADR-0008 §2).
 
 ## Deliberately avoided
 

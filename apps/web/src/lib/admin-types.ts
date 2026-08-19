@@ -99,6 +99,12 @@ export interface AdminIngestionRun {
   lotsCreated: number;
   matchesScored: number;
   errorsCount: number;
+  /**
+   * Per-notice XML fetch failures recorded as record-and-continue skips
+   * (ADR-0008 §1/§5) — a subset of `errorsCount`, surfaced separately so the
+   * runs table distinguishes "healthy partial" from "systemically degraded".
+   */
+  noticesFetchFailed: number;
   startedAt: number;
   finishedAt: number | null;
 }
@@ -113,6 +119,29 @@ export interface AdminIngestionError {
   message: string;
   detailJson: string | null;
   createdAt: number;
+}
+
+/** `ingestion_fetch_retries` row (ADR-0008 §3 bounded per-notice XML fetch retry queue). */
+export interface AdminIngestionFetchRetry {
+  id: string;
+  source: string;
+  sourceNoticeId: string;
+  xmlUrl: string;
+  /** `YYYY-MM-DD` notice publication date. */
+  publicationDate: string;
+  attempts: number;
+  nextAttemptAt: number;
+  lastErrorCode: string;
+  status: 'pending' | 'recovered' | 'abandoned';
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** `GET /api/admin/ingestion/fetch-retries` response (ADR-0008 §5 admin surface). */
+export interface AdminFetchRetriesPage {
+  counts: { pending: number; recovered: number; abandoned: number };
+  items: readonly AdminIngestionFetchRetry[];
+  nextCursor: string | null;
 }
 
 export interface AdminNoticeDebugBundle {

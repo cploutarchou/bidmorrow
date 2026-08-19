@@ -16,7 +16,7 @@
  * testable without a database; this module only fetches the raw rows it
  * needs and performs the FK-safe cascade delete.
  */
-import { and, eq, inArray, isNull, lte } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lte, or } from 'drizzle-orm';
 
 import type { Db } from '../client';
 import {
@@ -26,6 +26,7 @@ import {
   emailDeliveries,
   savedTenders,
 } from '../schema/engagement';
+import { ingestionFetchRetries } from '../schema/ingestion';
 import { matchComponents, matchRiskFlags, tenderMatches } from '../schema/matching';
 import { auditEvents, productEvents } from '../schema/ops';
 import {
@@ -320,6 +321,42 @@ export async function purgeOldProductEvents(
   const ids = rows.map((r) => r.id);
   for (const idsChunk of chunk(ids, ID_CHUNK_SIZE)) {
     await db.delete(productEvents).where(inArray(productEvents.id, idsChunk));
+  }
+  return ids.length;
+}
+
+/**
+ * Deletes `ingestion_fetch_retries` rows older than `cutoffMs` (ADR-0008 §3:
+ * 90-day retention, measured off `updated_at` — the terminal transition
+ * time, not `created_at`), bounded by `limit`. TERMINAL ROWS ONLY
+ * (`status IN ('recovered', 'abandoned')`) — a `pending` row must never be
+ * purged regardless of age; it is still an open retry the drain (or a
+ * future manual re-skip) may still act on, and deleting it would silently
+ * drop the notice from the retry mechanism (exactly what ADR-0008 exists to
+ * prevent). No FK safety needed: nothing references
+ * `ingestion_fetch_retries.id`.
+ */
+export async function purgeOldFetchRetries(
+  db: Db,
+  args: { cutoffMs: number; limit: number },
+): Promise<number> {
+  const rows = await db
+    .select({ id: ingestionFetchRetries.id })
+    .from(ingestionFetchRetries)
+    .where(
+      and(
+        or(
+          eq(ingestionFetchRetries.status, 'recovered'),
+          eq(ingestionFetchRetries.status, 'abandoned'),
+        ),
+        lte(ingestionFetchRetries.updatedAt, args.cutoffMs),
+      ),
+    )
+    .limit(args.limit);
+  if (rows.length === 0) return 0;
+  const ids = rows.map((r) => r.id);
+  for (const idsChunk of chunk(ids, ID_CHUNK_SIZE)) {
+    await db.delete(ingestionFetchRetries).where(inArray(ingestionFetchRetries.id, idsChunk));
   }
   return ids.length;
 }

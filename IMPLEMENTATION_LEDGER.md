@@ -841,6 +841,88 @@ per env), Stripe test keys + prices, Resend API key, ADMIN_EMAILS — all in
 GitHub `staging`/`production` environment secrets. Staging deploy is fully
 unblocked; STRIPE_WEBHOOK_SECRET waits for the staging URL by design.
 
+**ADR-0008 IMPLEMENTED — poison-pill notice-fetch resilience, consumer
+side (2026-08-19).** Schema (migration 0008, `ingestion_fetch_retries` +
+`ingestion_runs.notices_fetch_failed`) had already landed; this closes the
+consumer side per the ADR + its dated Amendment. `run-window.ts`: a
+per-notice `TedRequestError` from `fetchNoticeXml` is now record-and-
+continue (durable `ingestion_errors` row reusing the PR #46
+`NOTICE_FETCH_*` codes, `noticesFetchFailed`++, idempotent
+`upsertFetchRetry`, window finishes `partial`); `TedBudgetExceededError`
+still propagates unchanged (§4). Render-pending exhaustion at the phase-2
+requeue site gets the identical record-and-continue treatment
+(`NOTICE_RENDER_PENDING`, Amendment §A1) — this SUPERSEDES the 2026-08-18
+fix's "exhaustion stays window-fatal" behavior; two pre-existing tests
+that asserted the old window-fatal shape were rewritten to assert
+`partial` + retry-row-created instead. Systemic threshold
+(`FETCH_FAILURE_FAIL_MIN=5`, `FETCH_FAILURE_FAIL_RATIO=0.2`, internal
+`FetchFailureThresholdError` → durable `FETCH_FAILURE_THRESHOLD_EXCEEDED`)
+implemented as an exported pure function (`isFetchFailureThresholdExceeded`)
+for unit testing without D1. `MAX_RENDER_VISITS` bumped 4→6 (§A3). New
+`packages/procurement/src/fetch-retry-drain.ts` (`drainFetchRetries`):
+reuses `processOneNotice` (now exported, with a `swallowFetchErrors` flag
+so the drain's own attempts/abandon bookkeeping — not §1's window
+skip-and-upsert — decides drain-cycle outcomes) as a shared requeue-
+cycling mini-queue over due retry rows, one `attempts+=1` per CYCLE not
+per visit (§A2); wired into `runIngestionCatchUp` to run after catch-up,
+skipped when catch-up ended `failed` or ingestion is paused. Watchdog
+(`checkFetchResilienceAlerts`, wired into the existing `CRON_WATCHDOG`
+handler) adds the three §5 alert conditions. Admin: `GET
+/api/admin/ingestion/runs` already surfaces `notices_fetch_failed` (whole
+row returned); new `GET /api/admin/ingestion/fetch-retries` (status
+counts + bounded paginated list). Retention: `purgeOldFetchRetries`
+(terminal rows only, 90 days off `updated_at`, pending rows never purged)
+wired into `runLedgerPurge` alongside the existing three ledger purges.
+Tests: new pure-function suite
+`packages/procurement/src/run-window.threshold.test.ts` (7 tests); 9 new
+D1 integration tests in `apps/worker/src/ingestion.d1.test.ts` (record-
+and-continue partial, budget passthrough still fails the window,
+render-pending record-and-continue, threshold breach via
+`TedRequestError`s, threshold breach via pure exhaustions (§A4),
+idempotent re-run of a partial day, drain recovery end-to-end, drain
+backoff+abandonment at 5, drain skipped after a failed catch-up); 1 new
+retention-purge D1 test in `org-lifecycle.d1.test.ts`. Gates green:
+format/lint/typecheck (all 14 workspace packages) clean, root vitest 516
+pass/3 skip, worker 191, db 61, build clean (web + worker dry-run
+deploy). Deviation from the ADR's literal §3 "identical processOneNotice
+path" wording, recorded honestly: since §1 changed `processOneNotice` to
+SWALLOW `TedRequestError` internally, a literal drain-reuse would never
+let a drain-cycle failure propagate for the attempts/abandon bookkeeping
+§3 requires — resolved via the `swallowFetchErrors:false` flag so the
+drain gets the same fetch/snapshot/parse/persist code path with failure
+semantics the drain's own contract needs. A permanently-malformed notice
+recovered via the drain (fetches fine, then fails to PARSE) is marked
+`recovered` in the retry table (the retry table's job is fetch failures
+specifically; the parse failure is independently tracked in its own
+`ingestion_errors` row) — an interpretation call, not explicit in the
+ADR, flagged for review. Not independently re-verified by
+production-reviewer/security in this session (implementer-only pass);
+recommend running both before the next phase-close tag.
+
+**ADR-0008 REVIEW FINDINGS CLOSED (2026-08-19, same session, security
+SIGN-OFF + production-reviewer PASS with findings-before-merge).** F-1
+(MEDIUM, the real bug): `checkFetchResilienceAlerts` condition (iii)'s
+newest-first streak scan (`packages/procurement/src/health.ts`) broke on
+every drain run interleaved between partial windows — the drain writes
+its own `ingestion_runs` row (needed as the FK anchor for its own
+diagnostics) that always finishes `notices_seen = 0`/`notices_fetch_failed
+= 0`, which read as "not fetch-failed" and reset the streak on exactly the
+degraded days the condition targets. Fixed by excluding `notices_seen ===
+0` rows from the scan (no migration; a cheap existing-shape discriminator,
+documented in-code) — this also correctly no-ops on a genuinely empty
+window (e.g. a TED-quiet weekend), which carries no fetch-health signal
+either way. F-2/F-3/F-4/BM-ADR8-1 (LOW) closed with new tests: pure-drain
+render-cycling (`attempts` incremented ONCE per cycle, not per 202 visit —
+both the recovers-after-N-202s and exhausts-all-6-visits shapes), the
+drain-recovers/parse-fails-independently interpretation call (F-4, now
+pinned by a test), watchdog conditions (i)/(ii) direct coverage, and the
+new admin endpoint's 404-cloak/200-shape/limit-cap. 15 new D1 tests total
+(9 in `ingestion.d1.test.ts`'s new `checkFetchResilienceAlerts` describe
+block + 3 in its `ADR-0008 fetch resilience` block + 3 in
+`admin.d1.test.ts`). Gates re-run clean: format/lint/typecheck (all 14
+packages), root vitest 516 pass/3 skip, worker 200 (was 191), db 61,
+build clean (web + worker dry-run deploy).
+
 ## Completed
 
 ### Phase 11 stage A — Privacy implementation (2026-08-15)
