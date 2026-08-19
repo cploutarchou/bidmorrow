@@ -568,7 +568,10 @@ export async function listDueFetchRetries(
     .select()
     .from(ingestionFetchRetries)
     .where(
-      and(eq(ingestionFetchRetries.status, 'pending'), lte(ingestionFetchRetries.nextAttemptAt, now)),
+      and(
+        eq(ingestionFetchRetries.status, 'pending'),
+        lte(ingestionFetchRetries.nextAttemptAt, now),
+      ),
     )
     .orderBy(asc(ingestionFetchRetries.nextAttemptAt), asc(ingestionFetchRetries.id))
     .limit(args.limit);
