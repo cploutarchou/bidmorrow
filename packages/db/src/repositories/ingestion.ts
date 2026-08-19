@@ -18,7 +18,7 @@
  *   `recovered`/`abandoned` are one-way transitions out of `pending`, never
  *   reversed.
  */
-import { and, asc, desc, eq, isNull, lt, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, sql } from 'drizzle-orm';
 
 import type { Db } from '../client';
 import { newId } from '../id';
@@ -195,6 +195,39 @@ export async function listErrorsForRun(
     .orderBy(desc(ingestionErrors.id))
     .limit(limit + 1);
   return toPage(rows, limit, (row) => row.id);
+}
+
+/**
+ * Count of `ingestion_errors` rows matching any of `errorCodes` recorded at
+ * or after `sinceMs` (ADR-0008 §5 watchdog condition (i):
+ * `FETCH_FAILURE_THRESHOLD_EXCEEDED` / `NOTICE_FETCH_ABANDONED` in the last
+ * 24h). `source` scopes to one ingestion source, matching every other
+ * function in this module.
+ */
+export async function countRecentErrorsByCode(
+  db: Db,
+  args: {
+    readonly source: string;
+    readonly errorCodes: readonly string[];
+    readonly sinceMs: number;
+  },
+): Promise<number> {
+  if (args.errorCodes.length === 0) {
+    return 0;
+  }
+  const row = (
+    await db
+      .select({ n: sql<number>`count(*)` })
+      .from(ingestionErrors)
+      .where(
+        and(
+          eq(ingestionErrors.source, args.source),
+          inArray(ingestionErrors.errorCode, [...args.errorCodes]),
+          gte(ingestionErrors.createdAt, args.sinceMs),
+        ),
+      )
+  )[0];
+  return row?.n ?? 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -635,6 +668,72 @@ export async function markFetchRetryAbandoned(
     );
   }
   return row;
+}
+
+/**
+ * Total `pending` retry-row backlog (ADR-0008 §5 watchdog condition (ii):
+ * pending retry backlog > 50 rows), regardless of whether each row is
+ * currently due — the alert is about accumulating unrecovered notices, not
+ * just today's drain queue. Served by the same partial pending index as
+ * `listDueFetchRetries` (leading column differs but the partial predicate
+ * matches, so this is still an index-only count, not a table scan).
+ */
+export async function countPendingFetchRetries(db: Db): Promise<number> {
+  const row = (
+    await db
+      .select({ n: sql<number>`count(*)` })
+      .from(ingestionFetchRetries)
+      .where(eq(ingestionFetchRetries.status, 'pending'))
+  )[0];
+  return row?.n ?? 0;
+}
+
+export interface ListFetchRetriesArgs extends Pagination {
+  /** Optional filter to one lifecycle state; omitted returns every status. */
+  readonly status?: IngestionFetchRetryStatus;
+}
+
+/**
+ * Admin read-only listing of `ingestion_fetch_retries` rows, newest first
+ * (ADR-0008 §5 admin surface). `id` is a time-sortable ULID (`newId(now)`
+ * used by `upsertFetchRetry`), so PK order is a stable single-column cursor.
+ */
+export async function listFetchRetries(
+  db: Db,
+  args: ListFetchRetriesArgs = {},
+): Promise<Page<IngestionFetchRetry>> {
+  const limit = normalizeLimit(args.limit);
+  const rows = await db
+    .select()
+    .from(ingestionFetchRetries)
+    .where(
+      and(
+        args.status === undefined ? undefined : eq(ingestionFetchRetries.status, args.status),
+        args.cursor === undefined ? undefined : lt(ingestionFetchRetries.id, args.cursor),
+      ),
+    )
+    .orderBy(desc(ingestionFetchRetries.id))
+    .limit(limit + 1);
+  return toPage(rows, limit, (row) => row.id);
+}
+
+/** Row counts per lifecycle state (ADR-0008 §5 admin surface — one indexed `GROUP BY`, not three separate counts). */
+export async function countFetchRetriesByStatus(
+  db: Db,
+): Promise<Record<IngestionFetchRetryStatus, number>> {
+  const rows = await db
+    .select({ status: ingestionFetchRetries.status, n: sql<number>`count(*)` })
+    .from(ingestionFetchRetries)
+    .groupBy(ingestionFetchRetries.status);
+  const counts: Record<IngestionFetchRetryStatus, number> = {
+    pending: 0,
+    recovered: 0,
+    abandoned: 0,
+  };
+  for (const row of rows) {
+    counts[row.status as IngestionFetchRetryStatus] = row.n;
+  }
+  return counts;
 }
 
 export interface RecordFetchRetryFailureArgs {

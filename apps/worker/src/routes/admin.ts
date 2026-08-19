@@ -36,6 +36,7 @@ import {
 } from '@bidmorrow/config';
 import type { FeatureFlagKey } from '@bidmorrow/config';
 import {
+  countFetchRetriesByStatus,
   createDb,
   getFeatureFlag,
   getNoticeDebugBundle,
@@ -50,6 +51,7 @@ import {
   listDigestRunsAdmin,
   listEmailFailuresAdmin,
   listErrorsForRun,
+  listFetchRetries,
   listRecentRuns,
   listSubscriptionsAdmin,
   listSupportNotes,
@@ -276,6 +278,35 @@ adminRoutes.get('/ingestion/errors', zValidator('query', ingestionErrorsQuerySch
   });
   return c.json({ items: page.items, nextCursor: page.nextCursor });
 });
+
+const fetchRetriesQuerySchema = paginationQuerySchema.extend({
+  status: z.enum(['pending', 'recovered', 'abandoned']).optional(),
+});
+
+/**
+ * ADR-0008 §5 admin surface: read-only view of the fetch-retry queue —
+ * status counts (pending backlog / recovered / abandoned totals) plus a
+ * bounded, optionally status-filtered, newest-first list of individual
+ * rows. Same pagination contract (`limit`<=50, `cursor`) as every other
+ * admin list route.
+ */
+adminRoutes.get(
+  '/ingestion/fetch-retries',
+  zValidator('query', fetchRetriesQuerySchema),
+  async (c) => {
+    const db = createDb(c.env.DB);
+    const q = c.req.valid('query');
+    const [counts, page] = await Promise.all([
+      countFetchRetriesByStatus(db),
+      listFetchRetries(db, {
+        ...(q.status !== undefined ? { status: q.status } : {}),
+        limit: q.limit ?? 25,
+        ...(q.cursor !== undefined ? { cursor: q.cursor } : {}),
+      }),
+    ]);
+    return c.json({ counts, items: page.items, nextCursor: page.nextCursor });
+  },
+);
 
 const noticeParamSchema = z.object({ sourceNoticeId: z.string().trim().min(1).max(120) }).strict();
 

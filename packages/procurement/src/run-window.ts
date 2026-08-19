@@ -26,6 +26,7 @@ import {
   insertSnapshotIfNewHash,
   recordError,
   upsertBuyer,
+  upsertFetchRetry,
   upsertNoticeWithVersion,
 } from '@bidmorrow/db';
 import { parseEformsNotice } from '@bidmorrow/ted';
@@ -69,11 +70,66 @@ export const RENDER_RETRY_DELAY_MS = 20_000;
  * Maximum visits per notice for the render-pending cycle (first visit
  * triggers the render; later visits collect the cached document). Every
  * queued notice is visited once before any notice is visited twice, so even
- * when a notice exhausts its visits and fails the window, ALL renders were
- * already triggered — the next daily retry of the held window collects them
- * from TED's cache.
+ * when a notice exhausts its visits, ALL renders were already triggered. A
+ * notice that still exhausts is skipped (record-and-continue, ADR-0008
+ * Amendment §A1) rather than failing the window — the next daily drain
+ * (§A2) re-attempts it from TED's cache with a fresh visit budget.
+ * Bumped 4 -> 6 (ADR-0008 Amendment §A3): the 2026-08-19 staging incident
+ * showed 4 visits (~4 min full-queue horizon) insufficient for at least one
+ * real render; 6 visits extends the horizon to ~8-10 min at current volume.
  */
-export const MAX_RENDER_VISITS = 4;
+export const MAX_RENDER_VISITS = 6;
+
+/**
+ * Systemic-fetch-failure threshold (ADR-0008 §2): record-and-continue for
+ * per-notice fetch failures is bounded so a genuinely systemic problem (TED
+ * blocking/outage) still fails the window and holds the checkpoint, rather
+ * than silently degrading into "skip everything". Code constants, not a
+ * `feature_flags` entry (§2's location rationale — a correctness parameter,
+ * not an operator-tunable lever; `ingestion_paused` already covers the
+ * runtime emergency case).
+ */
+export const FETCH_FAILURE_FAIL_MIN = 5;
+export const FETCH_FAILURE_FAIL_RATIO = 0.2;
+
+/**
+ * Pure threshold check (ADR-0008 §2), evaluated after each record-and-
+ * continue skip: `noticesFetchFailed >= FETCH_FAILURE_FAIL_MIN` AND
+ * `noticesFetchFailed / noticesSeen > FETCH_FAILURE_FAIL_RATIO`. Exported
+ * for direct unit testing without a database.
+ */
+export function isFetchFailureThresholdExceeded(
+  noticesFetchFailed: number,
+  noticesSeen: number,
+): boolean {
+  return (
+    noticesFetchFailed >= FETCH_FAILURE_FAIL_MIN &&
+    noticesSeen > 0 &&
+    noticesFetchFailed / noticesSeen > FETCH_FAILURE_FAIL_RATIO
+  );
+}
+
+/**
+ * Internal signal thrown when `isFetchFailureThresholdExceeded` trips
+ * (ADR-0008 §2). Caught by `runIngestionWindow`'s existing window-level
+ * handler and mapped to the durable `FETCH_FAILURE_THRESHOLD_EXCEEDED`
+ * diagnostic by `describeWindowFailure` — never thrown across a package
+ * boundary, so it is not exported.
+ */
+class FetchFailureThresholdError extends Error {
+  readonly noticesFetchFailed: number;
+  readonly noticesSeen: number;
+
+  constructor(noticesFetchFailed: number, noticesSeen: number) {
+    super(
+      `fetch failure threshold exceeded: ${String(noticesFetchFailed)}/${String(noticesSeen)} ` +
+        'notices failed to fetch this window',
+    );
+    this.name = 'FetchFailureThresholdError';
+    this.noticesFetchFailed = noticesFetchFailed;
+    this.noticesSeen = noticesSeen;
+  }
+}
 
 export interface RunWindowResult {
   readonly run: IngestionRun;
@@ -88,7 +144,8 @@ export interface RunWindowResult {
   readonly newLotIds: readonly string[];
 }
 
-interface MutableCounts {
+/** Exported so the ADR-0008 §3/A2 drain (fetch-retry-drain.ts) can build its own counts object for `processOneNotice`. */
+export interface MutableCounts {
   noticesSeen: number;
   noticesUpserted: number;
   versionsCreated: number;
@@ -106,6 +163,13 @@ interface MutableCounts {
    */
   matchesScored: number;
   errorsCount: number;
+  /**
+   * Per-notice XML fetch failures recorded as record-and-continue skips
+   * (ADR-0008 §1/A1) — a subset of `errorsCount`. Drives the §2 systemic
+   * threshold and is passed through to `finishRun` (§5) so watchdog/admin can
+   * distinguish "healthy partial" from "systemically degraded".
+   */
+  noticesFetchFailed: number;
 }
 
 /**
@@ -139,6 +203,7 @@ export async function runIngestionWindow(
     lotsCreated: 0,
     matchesScored: 0,
     errorsCount: 0,
+    noticesFetchFailed: 0,
   };
   const newLotIds: string[] = [];
   // The notice currently mid-processing, so a window-level failure can name
@@ -195,27 +260,37 @@ export async function runIngestionWindow(
       }
       currentNotice = { sourceNoticeId: entry.row.sourceNoticeId, xmlUrl: entry.row.xmlUrl };
       try {
-        await processOneNotice(deps, run.id, entry.row, counts, newLotIds);
+        await processOneNotice(deps, run.id, entry.row, counts, newLotIds, now);
       } catch (cause) {
         if (!(cause instanceof TedRenderPendingError)) {
           throw cause;
         }
         entry.visits += 1;
         if (entry.visits >= MAX_RENDER_VISITS) {
-          // Exhausted: window-fatal (checkpoint held, durable diagnostic) —
-          // NEVER skip-and-advance, that would silently drop the notice
-          // (ADR-0008 owns any future record-and-continue semantics). All
-          // renders were triggered above, so the next daily retry collects
-          // them from TED's cache.
-          throw cause;
+          // Exhausted: record-and-continue (ADR-0008 Amendment §A1) — the
+          // notice is skipped exactly like a §1 fetch failure (durable
+          // diagnostic, noticesFetchFailed++, retry row). May itself throw
+          // FetchFailureThresholdError (§2), which propagates unchanged to
+          // the window-level catch below.
+          await recordFetchSkip(
+            deps,
+            run.id,
+            entry.row,
+            counts,
+            'NOTICE_RENDER_PENDING',
+            cause.message,
+            { url: truncateForDiagnostic(cause.url), status: cause.status, visits: entry.visits },
+            now,
+          );
+        } else {
+          entry.notBefore = now() + renderRetryDelayMs;
+          workQueue.push(entry);
+          deps.logger.info('ingestion.notice_render.pending', {
+            source_notice_id: entry.row.sourceNoticeId,
+            visits: entry.visits,
+            queue_length: workQueue.length,
+          });
         }
-        entry.notBefore = now() + renderRetryDelayMs;
-        workQueue.push(entry);
-        deps.logger.info('ingestion.notice_render.pending', {
-          source_notice_id: entry.row.sourceNoticeId,
-          visits: entry.visits,
-          queue_length: workQueue.length,
-        });
       }
       currentNotice = null;
     }
@@ -227,6 +302,17 @@ export async function runIngestionWindow(
       source_notice_id: currentNotice?.sourceNoticeId ?? null,
       error: cause instanceof Error ? cause.message : String(cause),
     });
+    if (cause instanceof FetchFailureThresholdError) {
+      // ADR-0008 §5: distinct alertable log line so watchdog/on-call can
+      // group threshold breaches without parsing the generic failure line.
+      deps.logger.error('ingestion.window.fetch_failure_threshold', {
+        source: TED_SOURCE_ID,
+        window_from: window.windowFrom,
+        window_to: window.windowTo,
+        notices_fetch_failed: cause.noticesFetchFailed,
+        notices_seen: cause.noticesSeen,
+      });
+    }
     // Persist a DURABLE diagnostic. A window-level failure previously left
     // NOTHING in `ingestion_errors` (only this ephemeral worker log), so an
     // operator seeing `status=failed, errors_count=0` had no way to tell WHAT
@@ -261,17 +347,34 @@ export async function runIngestionWindow(
 
 /**
  * Fetches, snapshots, parses, and persists ONE notice. Parse failures
- * (`TedParseError`) are caught here and routed to `ingestion_errors` —
- * they never abort the window. Everything else (fetch/persistence errors)
- * propagates to `runIngestionWindow`'s window-level failure handling.
+ * (`TedParseError`) and XML fetch failures (`TedXmlTooLargeError`,
+ * `TedRequestError` — ADR-0008 §1) are caught here and routed to
+ * `ingestion_errors` — they never abort the window. `TedBudgetExceededError`
+ * is NOT a `TedRequestError` and always propagates (ADR-0008 §4), as does
+ * anything else (persistence errors, `FetchFailureThresholdError` from a
+ * §2 threshold breach), to `runIngestionWindow`'s window-level failure
+ * handling. Exported so the ADR-0008 §3/A2 drain reuses the IDENTICAL
+ * fetch/snapshot/parse/persist path for retried notices.
+ *
+ * `opts.swallowFetchErrors` (default `true`, the window's §1 behavior):
+ * when `false` — used ONLY by the drain — a `TedRequestError` is NOT
+ * absorbed into a record-and-continue skip; it propagates instead, so the
+ * drain's own per-cycle bookkeeping (`recordFetchRetryFailure` /
+ * `markFetchRetryAbandoned`, ADR-0008 §3's "Failure -> attempts += 1")
+ * decides the outcome instead of §1's window-level skip+upsert+threshold
+ * machinery, which does not apply to windowless drain rows (Amendment §A2:
+ * "Drain outcomes never feed the §2 threshold").
  */
-async function processOneNotice(
+export async function processOneNotice(
   deps: RunWindowDeps,
   ingestionRunId: string,
   row: SearchRowFields,
   counts: MutableCounts,
   newLotIds: string[],
+  now: () => number,
+  opts: { readonly swallowFetchErrors?: boolean } = {},
 ): Promise<void> {
+  const swallowFetchErrors = opts.swallowFetchErrors ?? true;
   const existingNotice = await getNoticeByPublicationNumber(deps.db, {
     source: TED_SOURCE_ID,
     publicationNumber: row.sourceNoticeId,
@@ -283,20 +386,41 @@ async function processOneNotice(
   try {
     rawXml = await deps.client.fetchNoticeXml(row.xmlUrl);
   } catch (cause) {
-    if (!(cause instanceof TedXmlTooLargeError)) {
-      throw cause;
+    if (cause instanceof TedXmlTooLargeError) {
+      counts.errorsCount += 1;
+      await recordError(deps.db, {
+        ingestionRunId,
+        source: TED_SOURCE_ID,
+        sourceNoticeId: row.sourceNoticeId,
+        stage: 'fetch',
+        errorCode: 'XML_TOO_LARGE',
+        message: cause.message,
+        detail: { bytes: cause.bytes, maxBytes: cause.maxBytes },
+      });
+      return;
     }
-    counts.errorsCount += 1;
-    await recordError(deps.db, {
-      ingestionRunId,
-      source: TED_SOURCE_ID,
-      sourceNoticeId: row.sourceNoticeId,
-      stage: 'fetch',
-      errorCode: 'XML_TOO_LARGE',
-      message: cause.message,
-      detail: { bytes: cause.bytes, maxBytes: cause.maxBytes },
-    });
-    return;
+    if (cause instanceof TedRequestError && swallowFetchErrors) {
+      // ADR-0008 §1: record-and-continue. `TedBudgetExceededError` is a
+      // sibling type, NOT a TedRequestError, so it falls through to the
+      // `throw cause` below and stays window-fatal (§4).
+      const prefix = 'NOTICE_FETCH';
+      const errorCode =
+        cause.status === null
+          ? `${prefix}_NETWORK_ERROR`
+          : `${prefix}_HTTP_${String(cause.status)}`;
+      await recordFetchSkip(
+        deps,
+        ingestionRunId,
+        row,
+        counts,
+        errorCode,
+        cause.message,
+        { url: truncateForDiagnostic(cause.url), status: cause.status, attempts: cause.attempts },
+        now,
+      );
+      return;
+    }
+    throw cause;
   }
   const contentHash = await sha256Hex(rawXml);
   const r2Key = buildSnapshotR2Key(
@@ -443,6 +567,55 @@ async function processOneNotice(
 }
 
 /**
+ * Records one ADR-0008 record-and-continue skip: a durable `ingestion_errors`
+ * row, `errorsCount`/`noticesFetchFailed` increments, an idempotent
+ * `ingestion_fetch_retries` upsert (due immediately — `next_attempt_at =
+ * now()` — so the SAME run's drain, if any, can pick it up per Amendment
+ * §A2), a structured warn log, and finally the §2 threshold check. Throws
+ * `FetchFailureThresholdError` when the threshold trips; callers let that
+ * propagate unchanged to `runIngestionWindow`'s window-level catch.
+ */
+async function recordFetchSkip(
+  deps: RunWindowDeps,
+  ingestionRunId: string,
+  row: { sourceNoticeId: string; xmlUrl: string; publicationDate: string },
+  counts: MutableCounts,
+  errorCode: string,
+  message: string,
+  detail: Readonly<Record<string, unknown>>,
+  now: () => number,
+): Promise<void> {
+  counts.errorsCount += 1;
+  counts.noticesFetchFailed += 1;
+  await recordError(deps.db, {
+    ingestionRunId,
+    source: TED_SOURCE_ID,
+    sourceNoticeId: row.sourceNoticeId,
+    stage: 'fetch',
+    errorCode,
+    message: truncateForDiagnostic(message),
+    detail,
+  });
+  await upsertFetchRetry(deps.db, {
+    source: TED_SOURCE_ID,
+    sourceNoticeId: row.sourceNoticeId,
+    xmlUrl: row.xmlUrl,
+    publicationDate: row.publicationDate,
+    errorCode,
+    nextAttemptAt: now(),
+    now: now(),
+  });
+  deps.logger.warn('ingestion.notice_fetch.skipped', {
+    source_notice_id: row.sourceNoticeId,
+    error_code: errorCode,
+    attempts: detail['attempts'] ?? null,
+  });
+  if (isFetchFailureThresholdExceeded(counts.noticesFetchFailed, counts.noticesSeen)) {
+    throw new FetchFailureThresholdError(counts.noticesFetchFailed, counts.noticesSeen);
+  }
+}
+
+/**
  * Cap on any single free-text or URL value stored in a window-failure
  * diagnostic. `recordError` serializes `detail` to `detail_json`, and D1 caps
  * a single statement (bound values included) at ~100KB — a pathological TED
@@ -483,6 +656,23 @@ function describeWindowFailure(
       errorCode: 'REQUEST_BUDGET_EXCEEDED',
       message: cause.message,
       detail: { requestsUsed: cause.requestsUsed, maxRequestsPerRun: cause.maxRequestsPerRun },
+    };
+  }
+  if (cause instanceof FetchFailureThresholdError) {
+    // ADR-0008 §2: record-and-continue is bounded — this many failures looks
+    // systemic rather than notice-specific, so the window aborts.
+    const ratio = cause.noticesSeen > 0 ? cause.noticesFetchFailed / cause.noticesSeen : 0;
+    return {
+      stage: 'fetch',
+      errorCode: 'FETCH_FAILURE_THRESHOLD_EXCEEDED',
+      message: cause.message,
+      detail: {
+        noticesFetchFailed: cause.noticesFetchFailed,
+        noticesSeen: cause.noticesSeen,
+        ratio,
+        min: FETCH_FAILURE_FAIL_MIN,
+        maxRatio: FETCH_FAILURE_FAIL_RATIO,
+      },
     };
   }
   if (cause instanceof TedRenderPendingError) {
