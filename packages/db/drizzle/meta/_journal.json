@@ -36,6 +36,13 @@
       "when": 1786835609805,
       "tag": "0004_tender_matches_score_index",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1787137778120,
+      "tag": "0005_ingestion_fetch_retries",
+      "breakpoints": true
     }
   ]
 }

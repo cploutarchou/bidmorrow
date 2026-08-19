@@ -34,7 +34,13 @@ export {
   tenderGeographies,
   exchangeRates,
 } from './tender';
-export { ingestionRuns, ingestionCheckpoints, ingestionErrors, sourceSnapshots } from './ingestion';
+export {
+  ingestionRuns,
+  ingestionCheckpoints,
+  ingestionErrors,
+  ingestionFetchRetries,
+  sourceSnapshots,
+} from './ingestion';
 export { tenderMatches, matchComponents, matchRiskFlags } from './matching';
 export {
   savedTenders,
