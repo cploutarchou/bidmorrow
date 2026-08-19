@@ -899,6 +899,30 @@ ADR, flagged for review. Not independently re-verified by
 production-reviewer/security in this session (implementer-only pass);
 recommend running both before the next phase-close tag.
 
+**ADR-0008 REVIEW FINDINGS CLOSED (2026-08-19, same session, security
+SIGN-OFF + production-reviewer PASS with findings-before-merge).** F-1
+(MEDIUM, the real bug): `checkFetchResilienceAlerts` condition (iii)'s
+newest-first streak scan (`packages/procurement/src/health.ts`) broke on
+every drain run interleaved between partial windows — the drain writes
+its own `ingestion_runs` row (needed as the FK anchor for its own
+diagnostics) that always finishes `notices_seen = 0`/`notices_fetch_failed
+= 0`, which read as "not fetch-failed" and reset the streak on exactly the
+degraded days the condition targets. Fixed by excluding `notices_seen ===
+0` rows from the scan (no migration; a cheap existing-shape discriminator,
+documented in-code) — this also correctly no-ops on a genuinely empty
+window (e.g. a TED-quiet weekend), which carries no fetch-health signal
+either way. F-2/F-3/F-4/BM-ADR8-1 (LOW) closed with new tests: pure-drain
+render-cycling (`attempts` incremented ONCE per cycle, not per 202 visit —
+both the recovers-after-N-202s and exhausts-all-6-visits shapes), the
+drain-recovers/parse-fails-independently interpretation call (F-4, now
+pinned by a test), watchdog conditions (i)/(ii) direct coverage, and the
+new admin endpoint's 404-cloak/200-shape/limit-cap. 15 new D1 tests total
+(9 in `ingestion.d1.test.ts`'s new `checkFetchResilienceAlerts` describe
+block + 3 in its `ADR-0008 fetch resilience` block + 3 in
+`admin.d1.test.ts`). Gates re-run clean: format/lint/typecheck (all 14
+packages), root vitest 516 pass/3 skip, worker 200 (was 191), db 61,
+build clean (web + worker dry-run deploy).
+
 ## Completed
 
 ### Phase 11 stage A — Privacy implementation (2026-08-15)

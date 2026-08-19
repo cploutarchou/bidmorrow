@@ -12,9 +12,12 @@ import type { TedFetch } from '@bidmorrow/ted';
 import {
   DEFAULT_INGESTION_SCOPE,
   FETCH_RETRY_MAX_ATTEMPTS,
+  PENDING_RETRY_BACKLOG_ALERT_THRESHOLD,
+  checkFetchResilienceAlerts,
   computeCatchUpWindows,
   drainFetchRetries,
   gzipText,
+  nextIsoDate,
   runIngestionCatchUp,
   runIngestionWindow,
   runPurge,
@@ -23,11 +26,13 @@ import {
   advanceCheckpoint,
   createDb,
   createOrganization,
+  createRun,
   getCheckpoint,
   getNoticeByPublicationNumber,
   insertLots,
   insertSnapshotIfNewHash,
   newId,
+  recordError,
   setFeatureFlag,
   upsertBuyer,
   upsertFetchRetry,
@@ -1254,6 +1259,303 @@ describe('ADR-0008 fetch resilience', () => {
       .first<{ attempts: number; status: string }>();
     expect(retryRow?.attempts).toBe(0);
     expect(retryRow?.status).toBe('pending');
+  });
+
+  it('Amendment §A2 F-3a: a drain row that cycles through render-pending responses then succeeds is recovered WITHOUT incrementing attempts (a whole successful cycle is not a "failure")', async () => {
+    const db = createDb(env.DB);
+    const sourceNoticeId = 'drain-cycle-recover-1';
+    const xmlUrl = 'https://ted.europa.eu/notice/drain-cycle-recover-1.xml';
+    const seeded = await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId,
+      xmlUrl,
+      publicationDate: '2026-08-10',
+      errorCode: 'NOTICE_FETCH_HTTP_404',
+      nextAttemptAt: T0,
+      now: T0,
+    });
+    expect(seeded.attempts).toBe(0);
+
+    // First 3 visits answer 202 (render-pending); the 4th (well within
+    // MAX_RENDER_VISITS=6) serves the real XML.
+    let hits = 0;
+    const fetchImpl: TedFetch = (url) => {
+      if (url !== xmlUrl) {
+        return Promise.resolve({
+          ok: false,
+          status: 404,
+          headers: { get: () => null },
+          json: () => Promise.reject(new Error('not found')),
+          text: () => Promise.resolve(''),
+        });
+      }
+      hits += 1;
+      if (hits <= 3) {
+        return Promise.resolve({
+          ok: true,
+          status: 202,
+          headers: { get: () => null },
+          json: () => Promise.reject(new Error('not json')),
+          text: () => Promise.resolve(''),
+        });
+      }
+      return Promise.resolve(textResponse(normalXml));
+    };
+
+    const result = await drainFetchRetries({
+      db,
+      client: makeClient(fetchImpl),
+      snapshots: env.SNAPSHOTS,
+      logger: createLogger({ test: true }),
+      now: () => T0 + 1000,
+      renderRetryDelayMs: 0,
+    });
+    expect(result.recovered).toBeGreaterThanOrEqual(1);
+    expect(hits).toBe(4); // 3 trigger/collect-empty visits + the one that lands the XML.
+
+    const retryRow = await env.DB.prepare(
+      'SELECT status, attempts FROM ingestion_fetch_retries WHERE source = ? AND source_notice_id = ?',
+    )
+      .bind('ted', sourceNoticeId)
+      .first<{ status: string; attempts: number }>();
+    expect(retryRow?.status).toBe('recovered');
+    // The whole cycle succeeded — a success is never a "failed re-attempt",
+    // so `attempts` (a count of FAILED cycles, ADR-0008 §3) is untouched.
+    expect(retryRow?.attempts).toBe(0);
+  });
+
+  it('Amendment §A2 F-3b: a drain row that exhausts all MAX_RENDER_VISITS as render-pending increments attempts ONCE per cycle (not once per visit), stays pending with backoff below FETCH_RETRY_MAX_ATTEMPTS', async () => {
+    const db = createDb(env.DB);
+    const sourceNoticeId = 'drain-cycle-exhaust-1';
+    const xmlUrl = 'https://ted.europa.eu/notice/drain-cycle-exhaust-1.xml';
+    await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId,
+      xmlUrl,
+      publicationDate: '2026-08-10',
+      errorCode: 'NOTICE_FETCH_HTTP_404',
+      nextAttemptAt: T0,
+      now: T0,
+    });
+
+    let hits = 0;
+    const fetchImpl: TedFetch = (url) => {
+      if (url !== xmlUrl) {
+        return Promise.resolve({
+          ok: false,
+          status: 404,
+          headers: { get: () => null },
+          json: () => Promise.reject(new Error('not found')),
+          text: () => Promise.resolve(''),
+        });
+      }
+      hits += 1;
+      return Promise.resolve({
+        ok: true,
+        status: 202,
+        headers: { get: () => null },
+        json: () => Promise.reject(new Error('not json')),
+        text: () => Promise.resolve(''),
+      });
+    };
+
+    const result = await drainFetchRetries({
+      db,
+      client: makeClient(fetchImpl),
+      snapshots: env.SNAPSHOTS,
+      logger: createLogger({ test: true }),
+      now: () => T0 + 1000,
+      renderRetryDelayMs: 0,
+    });
+    expect(result.stillPending).toBeGreaterThanOrEqual(1);
+    expect(result.abandoned).toBe(0); // 1st failed cycle: attempts -> 1, well below FETCH_RETRY_MAX_ATTEMPTS (5).
+    expect(hits).toBe(6); // exactly MAX_RENDER_VISITS visits for this one row's single cycle.
+
+    const retryRow = await env.DB.prepare(
+      'SELECT status, attempts, next_attempt_at FROM ingestion_fetch_retries WHERE source = ? AND source_notice_id = ?',
+    )
+      .bind('ted', sourceNoticeId)
+      .first<{ status: string; attempts: number; next_attempt_at: number }>();
+    expect(retryRow?.status).toBe('pending');
+    // ONE cycle (6 visits, all render-pending) -> ONE `attempts` increment,
+    // not 6 — the drain's attempts accounting is per-cycle (Amendment §A2).
+    expect(retryRow?.attempts).toBe(1);
+    // Linear daily backoff computed from the INCREMENTED value (repo doc):
+    // next_attempt_at = (T0 + 1000) + 1 * 86_400_000.
+    expect(retryRow?.next_attempt_at).toBe(T0 + 1000 + 86_400_000);
+  });
+
+  it('F-4: a drain row that fetches successfully but fails to PARSE is marked recovered (fetch problem solved); the parse failure lands in ingestion_errors under the drain run, and the drain run finishes partial', async () => {
+    const db = createDb(env.DB);
+    const sourceNoticeId = 'drain-parse-fail-1';
+    const xmlUrl = 'https://ted.europa.eu/notice/drain-parse-fail-1.xml';
+    await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId,
+      xmlUrl,
+      publicationDate: '2026-08-10',
+      errorCode: 'NOTICE_FETCH_HTTP_404',
+      nextAttemptAt: T0,
+      now: T0,
+    });
+
+    const client = makeClient(makeFakeFetch([], { [xmlUrl]: malformedTruncatedXml }));
+    const result = await drainFetchRetries({
+      db,
+      client,
+      snapshots: env.SNAPSHOTS,
+      logger: createLogger({ test: true }),
+      now: () => T0 + 1000,
+    });
+    expect(result.runId).not.toBeNull();
+    expect(result.recovered).toBeGreaterThanOrEqual(1);
+
+    const retryRow = await env.DB.prepare(
+      'SELECT status FROM ingestion_fetch_retries WHERE source = ? AND source_notice_id = ?',
+    )
+      .bind('ted', sourceNoticeId)
+      .first<{ status: string }>();
+    // The retry table's job is fetch failures specifically — the notice WAS
+    // fetched successfully; the parse failure is independently diagnosable
+    // from its own ingestion_errors row below, so it does not keep
+    // occupying a retry slot.
+    expect(retryRow?.status).toBe('recovered');
+
+    const errorRow = await env.DB.prepare(
+      "SELECT ingestion_run_id, stage, error_code, detail_json FROM ingestion_errors WHERE source_notice_id = ? AND stage = 'parse'",
+    )
+      .bind(sourceNoticeId)
+      .first<{
+        ingestion_run_id: string;
+        stage: string;
+        error_code: string;
+        detail_json: string | null;
+      }>();
+    expect(errorRow?.ingestion_run_id).toBe(result.runId);
+    expect(errorRow?.stage).toBe('parse');
+    expect(errorRow?.detail_json).toContain('snapshotR2Key');
+
+    const runRow = await env.DB.prepare('SELECT status FROM ingestion_runs WHERE id = ?')
+      .bind(result.runId)
+      .first<{ status: string }>();
+    expect(runRow?.status).toBe('partial');
+  });
+});
+
+describe('ADR-0008 §5: checkFetchResilienceAlerts (watchdog conditions i-iii)', () => {
+  it('F-2(i): a recent FETCH_FAILURE_THRESHOLD_EXCEEDED/NOTICE_FETCH_ABANDONED error trips condition (i)', async () => {
+    const db = createDb(env.DB);
+    const run = await createRun(db, {
+      source: 'ted',
+      windowFrom: '2026-08-01',
+      windowTo: '2026-08-01',
+      startedAt: T0,
+    });
+    const nowMs = T0 + 5000;
+    await recordError(db, {
+      ingestionRunId: run.id,
+      source: 'ted',
+      stage: 'fetch',
+      errorCode: 'NOTICE_FETCH_ABANDONED',
+      message: 'test: abandoned notice',
+    });
+
+    const alerts = await checkFetchResilienceAlerts(db, nowMs);
+    expect(alerts.thresholdOrAbandonment).toBe(true);
+    expect(alerts.degraded).toBe(true);
+  });
+
+  it('F-2(ii): a pending retry backlog over the threshold trips condition (ii)', async () => {
+    const db = createDb(env.DB);
+    // Insert enough FRESH pending rows to push the total backlog over
+    // PENDING_RETRY_BACKLOG_ALERT_THRESHOLD regardless of whatever this
+    // shared-D1 file's earlier tests already left pending.
+    const marker = `backlog-${String(T0)}`;
+    for (let i = 0; i < PENDING_RETRY_BACKLOG_ALERT_THRESHOLD + 5; i += 1) {
+      await upsertFetchRetry(db, {
+        source: 'ted',
+        sourceNoticeId: `${marker}-${String(i)}`,
+        xmlUrl: `https://ted.europa.eu/notice/${marker}-${String(i)}.xml`,
+        publicationDate: '2026-08-01',
+        errorCode: 'NOTICE_FETCH_HTTP_404',
+        // Due far in the future — condition (ii) counts the WHOLE pending
+        // backlog regardless of due-ness (health.ts doc comment), so these
+        // must NOT get swept/recovered by an earlier or later drain call in
+        // this same test file.
+        nextAttemptAt: T0 + 365 * 86_400_000,
+        now: T0,
+      });
+    }
+
+    const alerts = await checkFetchResilienceAlerts(db, T0 + 5000);
+    expect(alerts.pendingRetryBacklog).toBe(true);
+    expect(alerts.degraded).toBe(true);
+  });
+
+  it('the drain-run masking fix (F-1): condition (iii) is not broken by interleaved drain runs (noticesSeen=0) between partial windows', async () => {
+    const db = createDb(env.DB);
+    const before = await getCheckpoint(db, { source: 'ted' });
+    let windowFrom = before?.lastPublicationDate ?? '2026-08-23';
+
+    async function partialWindowWithFetchFailure(label: string): Promise<void> {
+      windowFrom = nextIsoDate(windowFrom, 1);
+      const url = `https://ted.europa.eu/notice/${label}.xml`;
+      const rows = [searchRow(label, windowFrom, url)];
+      const client = makeClient(
+        makeFakeFetch([{ notices: rows }], {}), // absent from the map -> 404, non-retryable
+      );
+      const result = await runIngestionWindow(
+        {
+          db,
+          client,
+          snapshots: env.SNAPSHOTS,
+          logger: createLogger({ test: true }),
+          scope: DEFAULT_INGESTION_SCOPE,
+          now: () => T0,
+        },
+        { windowFrom, windowTo: windowFrom },
+      );
+      expect(result.status).toBe('partial');
+      expect(result.run.noticesFetchFailed).toBeGreaterThan(0);
+    }
+
+    async function drainRunGuaranteed(label: string): Promise<void> {
+      // Guarantee a due row regardless of what other tests left pending, so
+      // this test is self-contained rather than relying on shared-D1 state.
+      await upsertFetchRetry(db, {
+        source: 'ted',
+        sourceNoticeId: `iii-fixture-${label}`,
+        xmlUrl: `https://ted.europa.eu/notice/iii-fixture-${label}.xml`,
+        publicationDate: '2026-08-01',
+        errorCode: 'NOTICE_FETCH_HTTP_404',
+        nextAttemptAt: T0,
+        now: T0,
+      });
+      const drainResult = await drainFetchRetries({
+        db,
+        client: makeClient(makeFakeFetch([], {})),
+        snapshots: env.SNAPSHOTS,
+        logger: createLogger({ test: true }),
+        now: () => T0 + 1000,
+      });
+      expect(drainResult.runId).not.toBeNull();
+      const runRow = await env.DB.prepare('SELECT notices_seen FROM ingestion_runs WHERE id = ?')
+        .bind(drainResult.runId)
+        .first<{ notices_seen: number }>();
+      expect(runRow?.notices_seen).toBe(0);
+    }
+
+    // partial (failed>0) -> drain (0) -> partial -> drain -> partial -> drain.
+    await partialWindowWithFetchFailure('iii-w1');
+    await drainRunGuaranteed('a');
+    await partialWindowWithFetchFailure('iii-w2');
+    await drainRunGuaranteed('b');
+    await partialWindowWithFetchFailure('iii-w3');
+    await drainRunGuaranteed('c');
+
+    const alerts = await checkFetchResilienceAlerts(db, T0 + 100_000);
+    expect(alerts.consecutiveFetchFailedRuns).toBe(true);
+    expect(alerts.degraded).toBe(true);
   });
 });
 

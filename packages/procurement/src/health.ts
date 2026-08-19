@@ -62,7 +62,13 @@ export interface FetchResilienceAlerts {
   readonly thresholdOrAbandonment: boolean;
   /** (ii): pending retry backlog > `PENDING_RETRY_BACKLOG_ALERT_THRESHOLD`. */
   readonly pendingRetryBacklog: boolean;
-  /** (iii): `CONSECUTIVE_FETCH_FAILED_RUNS_ALERT_THRESHOLD`+ most-recent FINISHED runs all have `notices_fetch_failed > 0`. */
+  /**
+   * (iii): `CONSECUTIVE_FETCH_FAILED_RUNS_ALERT_THRESHOLD`+ most-recent
+   * FINISHED, non-empty (`notices_seen > 0`) runs all have
+   * `notices_fetch_failed > 0`. Non-empty excludes both drain runs (always
+   * `notices_seen = 0`, see the loop below) and genuinely empty windows —
+   * neither carries a fetch-health signal for this streak.
+   */
   readonly consecutiveFetchFailedRuns: boolean;
   /** True when ANY of (i)-(iii) is set — "degraded" per §5. */
   readonly degraded: boolean;
@@ -90,6 +96,26 @@ export async function checkFetchResilienceAlerts(
   for (const run of recentRuns.items) {
     if (run.status === 'running') {
       // Not yet finished — skip without breaking the streak.
+      continue;
+    }
+    // The ADR-0008 §3/A2 drain writes its OWN `ingestion_runs` row (so its
+    // durable diagnostics/abandonments have a valid FK), interleaved
+    // newest-first with the window runs this condition is actually about.
+    // A drain run always has `noticesSeen = 0` (it processes retry-table
+    // rows, not a search-derived window) and would otherwise ALWAYS read as
+    // "not fetch-failed" (its own `noticesFetchFailed` reflects only its
+    // own within-drain outcomes, decoupled from window health by design —
+    // §A2 "drain outcomes never feed the §2 threshold") and break the
+    // streak, masking exactly the degraded run of windows this alert
+    // exists to catch. No schema discriminator exists for "this run came
+    // from the drain, not a window" without a migration, so we use the
+    // cheap proxy already true of every drain run: `noticesSeen === 0`.
+    // An empty WINDOW (a real search day with 0 in-scope notices, e.g. a
+    // TED-quiet weekend) also has `noticesSeen === 0` and is likewise
+    // skipped here — deliberately: a day with nothing to fetch carries no
+    // fetch-health signal either way, so treating it as "skip, don't break"
+    // is correct for both cases, not just a drain-detection side effect.
+    if (run.noticesSeen === 0) {
       continue;
     }
     if (run.noticesFetchFailed > 0) {

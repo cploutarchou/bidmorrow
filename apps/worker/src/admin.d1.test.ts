@@ -18,6 +18,9 @@ import {
   insertSnapshotIfNewHash,
   insertTenderMatches,
   listOrgsWithDigestEnabled,
+  markFetchRetryAbandoned,
+  markFetchRetryRecovered,
+  upsertFetchRetry,
   upsertNoticeWithVersion,
   type Db,
   type TenderMatchInput,
@@ -426,6 +429,95 @@ describe('ingestion backfill bounds', () => {
     expect(response.status).toBe(200);
     const body = (await response.json()) as { enqueuedWindows: number };
     expect(body.enqueuedWindows).toBe(3);
+  });
+});
+
+describe('GET /api/admin/ingestion/fetch-retries — BM-ADR8-1', () => {
+  it('404s for a non-admin, 200s for admin with the {counts, items, nextCursor} shape', async () => {
+    const db = createDb(env.DB);
+    const marker = `fr-shape-${String(Date.now())}`;
+    const pending = await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId: `${marker}-pending`,
+      xmlUrl: 'https://ted.europa.eu/notice/fr-shape-pending.xml',
+      publicationDate: '2026-08-01',
+      errorCode: 'NOTICE_FETCH_HTTP_404',
+      nextAttemptAt: Date.now(),
+    });
+    const recovered = await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId: `${marker}-recovered`,
+      xmlUrl: 'https://ted.europa.eu/notice/fr-shape-recovered.xml',
+      publicationDate: '2026-08-01',
+      errorCode: 'NOTICE_FETCH_HTTP_404',
+      nextAttemptAt: Date.now(),
+    });
+    await markFetchRetryRecovered(db, { id: recovered.id });
+    const abandoned = await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId: `${marker}-abandoned`,
+      xmlUrl: 'https://ted.europa.eu/notice/fr-shape-abandoned.xml',
+      publicationDate: '2026-08-01',
+      errorCode: 'NOTICE_FETCH_HTTP_404',
+      nextAttemptAt: Date.now(),
+    });
+    await markFetchRetryAbandoned(db, { id: abandoned.id });
+
+    const nonAdmin = await createVerifiedUser(uniqueEmail('non-admin-fetch-retries'));
+    const denied = await fetchApi('/api/admin/ingestion/fetch-retries', {
+      headers: { cookie: nonAdmin },
+    });
+    expect(denied.status).toBe(404);
+
+    const cookie = await adminCookie();
+    const response = await fetchApi('/api/admin/ingestion/fetch-retries', { headers: { cookie } });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      counts: { pending: number; recovered: number; abandoned: number };
+      items: { id: string; sourceNoticeId: string; status: string }[];
+      nextCursor: string | null;
+    };
+    expect(typeof body.counts.pending).toBe('number');
+    expect(typeof body.counts.recovered).toBe('number');
+    expect(typeof body.counts.abandoned).toBe('number');
+    expect(body.counts.pending).toBeGreaterThanOrEqual(1);
+    expect(body.counts.recovered).toBeGreaterThanOrEqual(1);
+    expect(body.counts.abandoned).toBeGreaterThanOrEqual(1);
+    expect(Array.isArray(body.items)).toBe(true);
+    const ids = body.items.map((i) => i.id);
+    // Newest-first, unfiltered listing includes all three freshly-seeded rows.
+    expect(ids).toEqual(expect.arrayContaining([pending.id, recovered.id, abandoned.id]));
+  });
+
+  it('filters by status', async () => {
+    const db = createDb(env.DB);
+    const marker = `fr-filter-${String(Date.now())}`;
+    const recovered = await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId: `${marker}-recovered`,
+      xmlUrl: 'https://ted.europa.eu/notice/fr-filter-recovered.xml',
+      publicationDate: '2026-08-01',
+      errorCode: 'NOTICE_FETCH_HTTP_404',
+      nextAttemptAt: Date.now(),
+    });
+    await markFetchRetryRecovered(db, { id: recovered.id });
+
+    const cookie = await adminCookie();
+    const response = await fetchApi('/api/admin/ingestion/fetch-retries?status=recovered', {
+      headers: { cookie },
+    });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { items: { status: string }[] };
+    expect(body.items.length).toBeGreaterThanOrEqual(1);
+    expect(body.items.every((i) => i.status === 'recovered')).toBe(true);
+  });
+
+  it('the requested-limit cap (limit=999) is rejected with 400, same as every other admin list route', async () => {
+    const cookie = await adminCookie();
+    const response = await fetchApi('/api/admin/ingestion/fetch-retries?limit=999', {
+      headers: { cookie },
+    });
+    expect(response.status).toBe(400);
   });
 });
 
