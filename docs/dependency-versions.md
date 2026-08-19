@@ -28,7 +28,15 @@ skill before relying on any entry older than ~1 month.
 
 - Workers Paid $5/mo: 10M req + 30M CPU-ms/mo; static asset requests free/unlimited.
 - **D1**: max **10 GB/database (paid)**; $5 plan includes 25B row reads, 50M row
-  writes, 5 GB storage/mo; 1,000 queries per invocation; 100 KB max statement.
+  writes, 5 GB storage/mo; 100 KB max statement. ~~1,000 queries per
+  invocation~~ SUPERSEDED 2026-02-11 (verified 2026-08-19 via the official
+  Cloudflare docs MCP): internal-service subrequests (D1/R2/KV) now match
+  the Worker's configured subrequest limit — default **10,000 per
+  invocation on paid**, configurable up to 10M via `limits.subrequests`.
+- **Workers subrequests** (verified 2026-08-19, same source): paid default
+  **10,000 outbound subrequests per invocation** (was 1,000 before
+  2026-02-11), configurable to 10M; free stays 50 external / 1,000
+  internal.
 - **D1 Time Travel**: 30-day retention (paid), free, always-on.
   Bookmark: `wrangler d1 time-travel info <DB>`; restore:
   `wrangler d1 time-travel restore <DB> --bookmark=<B>`.

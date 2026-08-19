@@ -13,8 +13,19 @@
  * 24 months as deliberate security-forensics retention" a bounded claim
  * rather than an unbounded one — the ledger is append-only by design, but
  * not retained forever.
+ *
+ * ADR-0008 §3 closes the matching gap for the fetch-retry table: terminal
+ * (`recovered`/`abandoned`) `ingestion_fetch_retries` rows purge on the same
+ * 90-day window as the tender-corpus retention job (docs/ted-ingestion-scope.md
+ * `RETENTION_DAYS`) — `pending` rows are NEVER purged by age (see
+ * `purgeOldFetchRetries`'s own doc comment).
  */
-import { purgeOldAuditEvents, purgeOldEmailDeliveries, purgeOldProductEvents } from '@bidmorrow/db';
+import {
+  purgeOldAuditEvents,
+  purgeOldEmailDeliveries,
+  purgeOldFetchRetries,
+  purgeOldProductEvents,
+} from '@bidmorrow/db';
 import type { Db } from '@bidmorrow/db';
 import type { Logger } from '@bidmorrow/observability';
 
@@ -24,6 +35,8 @@ const MS_PER_DAY = 86_400_000;
 export const AUDIT_EVENTS_RETENTION_DAYS = 24 * 30;
 /** docs/privacy.md data inventory: `email_deliveries` / `product_events` retention window. */
 export const ENGAGEMENT_LEDGER_RETENTION_DAYS = 365;
+/** ADR-0008 §3: terminal `ingestion_fetch_retries` row retention window (matches docs/ted-ingestion-scope.md `RETENTION_DAYS`). */
+export const FETCH_RETRIES_RETENTION_DAYS = 90;
 
 /** Default per-run bound on rows purged, per table (config). */
 export const DEFAULT_LEDGER_PURGE_BATCH_LIMIT = 1000;
@@ -39,14 +52,15 @@ export interface RunLedgerPurgeResult {
   readonly auditEventsDeleted: number;
   readonly emailDeliveriesDeleted: number;
   readonly productEventsDeleted: number;
+  readonly fetchRetriesDeleted: number;
 }
 
 /**
  * Purges rows older than each table's fixed retention window, bounded to
  * `limit` rows PER TABLE per run (not a shared budget — a burst in one
- * table's backlog must never starve the other two). A repeated cron run
- * makes steady progress on any backlog rather than needing to finish one
- * table before starting another.
+ * table's backlog must never starve the others). A repeated cron run makes
+ * steady progress on any backlog rather than needing to finish one table
+ * before starting another.
  */
 export async function runLedgerPurge(args: RunLedgerPurgeArgs): Promise<RunLedgerPurgeResult> {
   const now = args.now ?? Date.now;
@@ -65,11 +79,16 @@ export async function runLedgerPurge(args: RunLedgerPurgeArgs): Promise<RunLedge
     cutoffMs: nowMs - ENGAGEMENT_LEDGER_RETENTION_DAYS * MS_PER_DAY,
     limit,
   });
+  const fetchRetriesDeleted = await purgeOldFetchRetries(args.db, {
+    cutoffMs: nowMs - FETCH_RETRIES_RETENTION_DAYS * MS_PER_DAY,
+    limit,
+  });
 
   const result: RunLedgerPurgeResult = {
     auditEventsDeleted,
     emailDeliveriesDeleted,
     productEventsDeleted,
+    fetchRetriesDeleted,
   };
   args.logger.info('ledger_purge.completed', { limit, ...result });
   return result;

@@ -11,6 +11,7 @@ import type {
   AdminDigestPreview,
   AdminDigestRun,
   AdminEmailFailure,
+  AdminFetchRetriesPage,
   AdminFlag,
   AdminHealthDetails,
   AdminIngestionError,
@@ -61,6 +62,8 @@ export const adminApi = {
     runId: string;
     cursor?: string;
   }): Promise<AdminPage<AdminIngestionError>> => api.get(`/api/admin/ingestion/errors${qs(args)}`),
+  listFetchRetries: (args: { status?: string; cursor?: string }): Promise<AdminFetchRetriesPage> =>
+    api.get(`/api/admin/ingestion/fetch-retries${qs(args)}`),
   noticeDebugBundle: (sourceNoticeId: string): Promise<AdminNoticeDebugBundle> =>
     api.get(`/api/admin/notices/${encodeURIComponent(sourceNoticeId)}`),
   pauseIngestion: (): Promise<{ paused: true }> =>

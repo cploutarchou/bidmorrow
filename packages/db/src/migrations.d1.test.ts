@@ -33,6 +33,7 @@ const EXPECTED_TABLES = [
   'ignored_tenders',
   'ingestion_checkpoints',
   'ingestion_errors',
+  'ingestion_fetch_retries',
   'ingestion_runs',
   'match_components',
   'match_risk_flags',
@@ -76,7 +77,7 @@ describe('migrations apply from an empty database', () => {
     expect(tables.has('_bootstrap')).toBe(false);
   });
 
-  it('records all seven migrations in d1_migrations', async () => {
+  it('records all eight migrations in d1_migrations', async () => {
     const result = await env.DB.prepare('SELECT name FROM d1_migrations ORDER BY name').all<{
       name: string;
     }>();
@@ -88,6 +89,7 @@ describe('migrations apply from an empty database', () => {
       '0005_nullable_authorship.sql',
       '0006_org_created_by_nullable.sql',
       '0007_tender_matches_score_index.sql',
+      '0008_ingestion_fetch_retries.sql',
     ]);
   });
 
@@ -130,5 +132,42 @@ describe('migrations apply from an empty database', () => {
     expect(result.results.map((row) => row.name)).toContain(
       'idx_tender_matches__org_engine_score_id',
     );
+  });
+
+  it('0008 creates ingestion_fetch_retries with its unique + partial drain indexes (ADR-0008 §3)', async () => {
+    // `sqlite_autoindex_ingestion_fetch_retries_1` is SQLite's implicit
+    // index backing the non-INTEGER TEXT PRIMARY KEY (every table in this
+    // schema has one) — present but irrelevant here, so this asserts the
+    // two migration-authored indexes exist rather than the full set.
+    const indexes = await env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'ingestion_fetch_retries' ORDER BY name",
+    ).all<{ name: string }>();
+    expect(indexes.results.map((row) => row.name)).toEqual(
+      expect.arrayContaining([
+        'idx_ingestion_fetch_retries__pending_next_attempt_at',
+        'uq_ingestion_fetch_retries__source_source_notice_id',
+      ]),
+    );
+
+    const columns = await env.DB.prepare('PRAGMA table_info(ingestion_fetch_retries)').all<{
+      name: string;
+      notnull: number;
+      dflt_value: string | null;
+    }>();
+    const byName = new Map(columns.results.map((c) => [c.name, c]));
+    expect(byName.get('status')?.dflt_value).toBe("'pending'");
+    expect(byName.get('attempts')?.dflt_value).toBe('0');
+    expect(byName.get('last_error_code')?.notnull).toBe(1);
+  });
+
+  it('0008 adds ingestion_runs.notices_fetch_failed defaulted to 0 (ADR-0008 §5)', async () => {
+    const columns = await env.DB.prepare('PRAGMA table_info(ingestion_runs)').all<{
+      name: string;
+      notnull: number;
+      dflt_value: string | null;
+    }>();
+    const info = columns.results.find((c) => c.name === 'notices_fetch_failed');
+    expect(info?.notnull).toBe(1);
+    expect(info?.dflt_value).toBe('0');
   });
 });
