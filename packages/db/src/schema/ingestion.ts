@@ -36,6 +36,14 @@ export const ingestionRuns = sqliteTable(
     /** Scoring runs inside the ingestion pipeline. */
     matchesScored: integer('matches_scored').notNull().default(0),
     errorsCount: integer('errors_count').notNull().default(0),
+    /**
+     * Per-notice XML fetch failures recorded as record-and-continue skips
+     * (ADR-0008 §1/§5) — distinct from `errorsCount`, which also counts
+     * parse/map/persist failures. Lets watchdog/admin distinguish "healthy
+     * partial" from "systemically degraded" with one indexed read instead of
+     * grouping `ingestion_errors` by code prefix on every check.
+     */
+    noticesFetchFailed: integer('notices_fetch_failed').notNull().default(0),
     startedAt: integer('started_at').notNull(),
     /** Null while the run is still executing. */
     finishedAt: integer('finished_at'),
@@ -100,6 +108,64 @@ export const ingestionErrors = sqliteTable(
     check(
       'ck_ingestion_errors__stage',
       sql`${t.stage} IN ('fetch', 'parse', 'map', 'persist', 'score')`,
+    ),
+  ],
+);
+
+/**
+ * Bounded per-notice retry queue for XML fetch failures that would
+ * otherwise be lost past the checkpoint (ADR-0008 §3 "poison pill" fix). A
+ * row is inserted, idempotently on `(source, source_notice_id)`, when
+ * `processOneNotice` skips a notice after `TedRequestError`; the daily
+ * ingestion cron drains due rows through the identical fetch/parse/persist
+ * path. Mutable: `attempts`/`next_attempt_at`/`last_error_code`/`status`
+ * move as the row is retried, recovered, or abandoned.
+ */
+export const ingestionFetchRetries = sqliteTable(
+  'ingestion_fetch_retries',
+  {
+    id: text('id').primaryKey(),
+    source: text('source').notNull(),
+    sourceNoticeId: text('source_notice_id').notNull(),
+    /** Notice XML URL to re-fetch, as returned by the last search page. */
+    xmlUrl: text('xml_url').notNull(),
+    /** `YYYY-MM-DD` notice publication date. */
+    publicationDate: text('publication_date').notNull(),
+    /** Failed re-attempts so far (0 = never yet retried since insert). */
+    attempts: integer('attempts').notNull().default(0),
+    /** Epoch-millis the row becomes due for the next drain pass. */
+    nextAttemptAt: integer('next_attempt_at').notNull(),
+    /** Stable machine code from the most recent failure (PR #46 codes). */
+    lastErrorCode: text('last_error_code').notNull(),
+    /** Lifecycle state; terminal once `recovered` or `abandoned`. */
+    status: text('status').notNull().default('pending'),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+  },
+  (t) => [
+    // Idempotency key: re-skipping the same notice on a later day must
+    // refresh the existing row (repositories/ingestion.ts
+    // `upsertFetchRetry`), never duplicate it.
+    uniqueIndex('uq_ingestion_fetch_retries__source_source_notice_id').on(
+      t.source,
+      t.sourceNoticeId,
+    ),
+    // Serves the drain query exactly (ADR-0008 §3): `WHERE status =
+    // 'pending' AND next_attempt_at <= ? ORDER BY next_attempt_at ASC, id
+    // ASC LIMIT FETCH_RETRY_MAX_PER_RUN`. Partial (`WHERE status =
+    // 'pending'`) so the index never carries `recovered`/`abandoned` rows —
+    // those are never queried by this path and would only bloat the index
+    // as terminal rows accumulate before retention purges them. Leading
+    // column `next_attempt_at` matches the ORDER BY directly (no in-memory
+    // sort); trailing `id` breaks ties deterministically in creation order
+    // (ULIDs are time-sortable) without needing a second `created_at`
+    // column in the index.
+    index('idx_ingestion_fetch_retries__pending_next_attempt_at')
+      .on(t.nextAttemptAt, t.id)
+      .where(sql`${t.status} = 'pending'`),
+    check(
+      'ck_ingestion_fetch_retries__status',
+      sql`${t.status} IN ('pending', 'recovered', 'abandoned')`,
     ),
   ],
 );

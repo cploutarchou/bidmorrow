@@ -9,6 +9,7 @@ import { ConfirmAction } from '../../components/admin/ConfirmAction';
 import { Pager } from '../../components/admin/Pager';
 import type {
   AdminIngestionError,
+  AdminIngestionFetchRetry,
   AdminIngestionRun,
   AdminNoticeDebugBundle,
 } from '../../lib/admin-types';
@@ -20,6 +21,17 @@ export function Ingestion(): ReactElement {
   const [runs, setRuns] = useState<CursorState<AdminIngestionRun> | null>(null);
   const [runsLoading, setRunsLoading] = useState(true);
   const [runsError, setRunsError] = useState<string | null>(null);
+
+  const [fetchRetries, setFetchRetries] = useState<CursorState<AdminIngestionFetchRetry> | null>(
+    null,
+  );
+  const [fetchRetriesCounts, setFetchRetriesCounts] = useState<{
+    pending: number;
+    recovered: number;
+    abandoned: number;
+  } | null>(null);
+  const [fetchRetriesLoading, setFetchRetriesLoading] = useState(true);
+  const [fetchRetriesError, setFetchRetriesError] = useState<string | null>(null);
 
   const [errorsRunId, setErrorsRunId] = useState('');
   const [errors, setErrors] = useState<CursorState<AdminIngestionError> | null>(null);
@@ -65,6 +77,35 @@ export function Ingestion(): ReactElement {
       setRuns((prev) => (prev === null ? startCursor(page) : appendCursor(prev, page)));
     } catch {
       setRunsError('Could not load more runs.');
+    }
+  }
+
+  const loadFetchRetries = useCallback(async () => {
+    setFetchRetriesLoading(true);
+    setFetchRetriesError(null);
+    try {
+      const page = await adminApi.listFetchRetries({});
+      setFetchRetriesCounts(page.counts);
+      setFetchRetries(startCursor(page));
+    } catch {
+      setFetchRetriesError('Could not load fetch retries.');
+    } finally {
+      setFetchRetriesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadFetchRetries();
+  }, [loadFetchRetries]);
+
+  async function loadMoreFetchRetries(): Promise<void> {
+    if (fetchRetries === null || fetchRetries.nextCursor === null) return;
+    try {
+      const page = await adminApi.listFetchRetries({ cursor: fetchRetries.nextCursor });
+      setFetchRetriesCounts(page.counts);
+      setFetchRetries((prev) => (prev === null ? startCursor(page) : appendCursor(prev, page)));
+    } catch {
+      setFetchRetriesError('Could not load more fetch retries.');
     }
   }
 
@@ -214,6 +255,7 @@ export function Ingestion(): ReactElement {
                     <th scope="col">Window</th>
                     <th scope="col">Notices seen/upserted</th>
                     <th scope="col">Errors</th>
+                    <th scope="col">Fetch failures</th>
                     <th scope="col">Started</th>
                     <th scope="col">Finished</th>
                   </tr>
@@ -230,6 +272,7 @@ export function Ingestion(): ReactElement {
                         {run.noticesSeen} / {run.noticesUpserted}
                       </td>
                       <td>{run.errorsCount}</td>
+                      <td>{run.noticesFetchFailed}</td>
                       <td>{formatIsoUtc(run.startedAt)}</td>
                       <td>{formatIsoUtc(run.finishedAt)}</td>
                     </tr>
@@ -241,6 +284,73 @@ export function Ingestion(): ReactElement {
               nextCursor={runs.nextCursor}
               loading={false}
               onLoadMore={() => void loadMoreRuns()}
+            />
+          </>
+        )}
+      </section>
+
+      <section>
+        <h2>Fetch retries</h2>
+        {fetchRetriesCounts !== null && (
+          <dl className="detail-facts">
+            <div>
+              <dt>Pending</dt>
+              <dd>{fetchRetriesCounts.pending}</dd>
+            </div>
+            <div>
+              <dt>Recovered</dt>
+              <dd>{fetchRetriesCounts.recovered}</dd>
+            </div>
+            <div>
+              <dt>Abandoned</dt>
+              <dd>{fetchRetriesCounts.abandoned}</dd>
+            </div>
+          </dl>
+        )}
+        {fetchRetriesLoading && <p>Loading…</p>}
+        {fetchRetriesError !== null && (
+          <p role="alert" className="form-error">
+            {fetchRetriesError}
+          </p>
+        )}
+        {!fetchRetriesLoading && fetchRetries !== null && fetchRetries.items.length === 0 && (
+          <p>No fetch retries recorded.</p>
+        )}
+        {!fetchRetriesLoading && fetchRetries !== null && fetchRetries.items.length > 0 && (
+          <>
+            <div className="admin-table-scroll">
+              <table>
+                <caption className="visually-hidden-status">Ingestion fetch retries</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Source notice</th>
+                    <th scope="col">Publication date</th>
+                    <th scope="col">Attempts</th>
+                    <th scope="col">Next attempt</th>
+                    <th scope="col">Last error code</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Updated</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fetchRetries.items.map((retry) => (
+                    <tr key={retry.id}>
+                      <td>{retry.sourceNoticeId}</td>
+                      <td>{retry.publicationDate}</td>
+                      <td>{retry.attempts}</td>
+                      <td>{formatIsoUtc(retry.nextAttemptAt)}</td>
+                      <td>{retry.lastErrorCode}</td>
+                      <td>{retry.status}</td>
+                      <td>{formatIsoUtc(retry.updatedAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pager
+              nextCursor={fetchRetries.nextCursor}
+              loading={false}
+              onLoadMore={() => void loadMoreFetchRetries()}
             />
           </>
         )}

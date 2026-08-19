@@ -10,15 +10,22 @@
  * - run status transitions `running -> succeeded | partial | failed` ONLY;
  * - checkpoints ADVANCE only, never backwards (equal date allowed so the
  *   sequence token can move within a window);
- * - snapshot rows are inserted only for genuinely new content hashes.
+ * - snapshot rows are inserted only for genuinely new content hashes;
+ * - fetch-retry rows (ADR-0008 §3) upsert idempotently on
+ *   `(source, source_notice_id)` WITHOUT ever resetting `attempts`, and only
+ *   while the row is still `pending` — a `recovered`/`abandoned` row is
+ *   terminal and a later re-skip of the same notice must not resurrect it;
+ *   `recovered`/`abandoned` are one-way transitions out of `pending`, never
+ *   reversed.
  */
-import { and, desc, eq, isNull, lt } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, sql } from 'drizzle-orm';
 
 import type { Db } from '../client';
 import { newId } from '../id';
 import {
   ingestionCheckpoints,
   ingestionErrors,
+  ingestionFetchRetries,
   ingestionRuns,
   sourceSnapshots,
 } from '../schema/ingestion';
@@ -29,6 +36,10 @@ export type IngestionRun = typeof ingestionRuns.$inferSelect;
 export type IngestionCheckpoint = typeof ingestionCheckpoints.$inferSelect;
 export type IngestionError = typeof ingestionErrors.$inferSelect;
 export type SourceSnapshot = typeof sourceSnapshots.$inferSelect;
+export type IngestionFetchRetry = typeof ingestionFetchRetries.$inferSelect;
+
+/** Lifecycle state of a fetch-retry row (CHECK-backed, ADR-0008 §3). */
+export type IngestionFetchRetryStatus = 'pending' | 'recovered' | 'abandoned';
 
 /** Terminal states a running ingestion run may finish in (CHECK-backed). */
 export type IngestionRunTerminalStatus = 'succeeded' | 'partial' | 'failed';
@@ -85,6 +96,15 @@ export interface FinishRunArgs {
     readonly lotsCreated: number;
     readonly matchesScored: number;
     readonly errorsCount: number;
+    /**
+     * Per-notice XML fetch failures recorded as record-and-continue skips
+     * (ADR-0008 §1/§5) — a subset of `errorsCount`, isolated so watchdog/
+     * admin can distinguish "healthy partial" from "systemically degraded"
+     * with one indexed read. Optional (defaults to 0) so this repository
+     * change stays additive for the ADR-0008 §1 window-level caller
+     * (packages/procurement/src/run-window.ts), landing separately.
+     */
+    readonly noticesFetchFailed?: number;
   };
   /** Defaults to now. */
   readonly finishedAt?: number;
@@ -109,6 +129,7 @@ export async function finishRun(db: Db, args: FinishRunArgs): Promise<IngestionR
       lotsCreated: args.counts.lotsCreated,
       matchesScored: args.counts.matchesScored,
       errorsCount: args.counts.errorsCount,
+      noticesFetchFailed: args.counts.noticesFetchFailed ?? 0,
       finishedAt: args.finishedAt ?? now,
       updatedAt: now,
     })
@@ -174,6 +195,39 @@ export async function listErrorsForRun(
     .orderBy(desc(ingestionErrors.id))
     .limit(limit + 1);
   return toPage(rows, limit, (row) => row.id);
+}
+
+/**
+ * Count of `ingestion_errors` rows matching any of `errorCodes` recorded at
+ * or after `sinceMs` (ADR-0008 §5 watchdog condition (i):
+ * `FETCH_FAILURE_THRESHOLD_EXCEEDED` / `NOTICE_FETCH_ABANDONED` in the last
+ * 24h). `source` scopes to one ingestion source, matching every other
+ * function in this module.
+ */
+export async function countRecentErrorsByCode(
+  db: Db,
+  args: {
+    readonly source: string;
+    readonly errorCodes: readonly string[];
+    readonly sinceMs: number;
+  },
+): Promise<number> {
+  if (args.errorCodes.length === 0) {
+    return 0;
+  }
+  const row = (
+    await db
+      .select({ n: sql<number>`count(*)` })
+      .from(ingestionErrors)
+      .where(
+        and(
+          eq(ingestionErrors.source, args.source),
+          inArray(ingestionErrors.errorCode, [...args.errorCodes]),
+          gte(ingestionErrors.createdAt, args.sinceMs),
+        ),
+      )
+  )[0];
+  return row?.n ?? 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -431,4 +485,301 @@ export async function insertSnapshotIfNewHash(
     throw new Error('insertSnapshotIfNewHash: insert returned no row');
   }
   return { snapshot: row, created: true };
+}
+
+// ---------------------------------------------------------------------------
+// Fetch retries (ADR-0008 §3 — bounded per-notice XML fetch retry queue)
+// ---------------------------------------------------------------------------
+
+/** Linear daily backoff unit (ADR-0008 §3): `next_attempt_at = now + attempts days`. */
+const FETCH_RETRY_BACKOFF_MS_PER_ATTEMPT = 86_400_000;
+
+export interface UpsertFetchRetryArgs {
+  readonly source: string;
+  readonly sourceNoticeId: string;
+  readonly xmlUrl: string;
+  /** `YYYY-MM-DD` notice publication date. */
+  readonly publicationDate: string;
+  /** Stable machine code from the fetch failure that caused this skip. */
+  readonly errorCode: string;
+  /** Epoch-millis the row becomes due for its first drain pass. */
+  readonly nextAttemptAt: number;
+  /** Defaults to now. */
+  readonly now?: number;
+}
+
+/**
+ * Idempotent insert-or-refresh keyed on `(source, source_notice_id)`
+ * (ADR-0008 §3): the SAME notice being skipped again on a later day must
+ * refresh `xml_url`/`last_error_code`/`updated_at` on the existing row, not
+ * duplicate it — and must NEVER reset `attempts`, since that would erase the
+ * row's backoff progress and effectively restart its retry budget for free.
+ *
+ * The `onConflictDoUpdate` `where: status = 'pending'` guard makes the
+ * refresh a no-op against a `recovered`/`abandoned` row: a terminal outcome
+ * for a notice must never be resurrected into `pending` by a later,
+ * unrelated re-skip (SQLite UPSERT semantics — a false DO-UPDATE WHERE
+ * leaves the conflicting row untouched and RETURNING yields nothing for it,
+ * https://www.sqlite.org/lang_UPSERT.html). In that case this function
+ * re-reads and returns the untouched row so callers always get the current
+ * on-disk state back.
+ */
+export async function upsertFetchRetry(
+  db: Db,
+  args: UpsertFetchRetryArgs,
+): Promise<IngestionFetchRetry> {
+  assertIsoDate(args.publicationDate, 'publicationDate');
+  const now = args.now ?? Date.now();
+  const upserted = await db
+    .insert(ingestionFetchRetries)
+    .values({
+      id: newId(now),
+      source: args.source,
+      sourceNoticeId: args.sourceNoticeId,
+      xmlUrl: args.xmlUrl,
+      publicationDate: args.publicationDate,
+      attempts: 0,
+      nextAttemptAt: args.nextAttemptAt,
+      lastErrorCode: args.errorCode,
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [ingestionFetchRetries.source, ingestionFetchRetries.sourceNoticeId],
+      set: {
+        xmlUrl: args.xmlUrl,
+        lastErrorCode: args.errorCode,
+        updatedAt: now,
+      },
+      where: eq(ingestionFetchRetries.status, 'pending'),
+    })
+    .returning();
+  const row = upserted[0];
+  if (row !== undefined) {
+    return row;
+  }
+  // Conflict existed but the WHERE guard blocked the update (terminal row) —
+  // return the row as it stands, unmodified.
+  const existing = (
+    await db
+      .select()
+      .from(ingestionFetchRetries)
+      .where(
+        and(
+          eq(ingestionFetchRetries.source, args.source),
+          eq(ingestionFetchRetries.sourceNoticeId, args.sourceNoticeId),
+        ),
+      )
+      .limit(1)
+  )[0];
+  if (existing === undefined) {
+    throw new Error('upsertFetchRetry: upsert returned no row and no existing row was found');
+  }
+  return existing;
+}
+
+export interface ListDueFetchRetriesArgs {
+  /** Bounded batch size (caller applies `FETCH_RETRY_MAX_PER_RUN`). */
+  readonly limit: number;
+  /** Defaults to now. */
+  readonly now?: number;
+}
+
+/**
+ * The drain query (ADR-0008 §3): pending rows due for a retry, oldest first,
+ * bounded by `limit`. Served exactly by
+ * `idx_ingestion_fetch_retries__pending_next_attempt_at` — no in-memory
+ * sort, no scan of terminal rows.
+ */
+export async function listDueFetchRetries(
+  db: Db,
+  args: ListDueFetchRetriesArgs,
+): Promise<IngestionFetchRetry[]> {
+  const now = args.now ?? Date.now();
+  return db
+    .select()
+    .from(ingestionFetchRetries)
+    .where(
+      and(
+        eq(ingestionFetchRetries.status, 'pending'),
+        lte(ingestionFetchRetries.nextAttemptAt, now),
+      ),
+    )
+    .orderBy(asc(ingestionFetchRetries.nextAttemptAt), asc(ingestionFetchRetries.id))
+    .limit(args.limit);
+}
+
+export interface MarkFetchRetryArgs {
+  readonly id: string;
+  /** Defaults to now. */
+  readonly now?: number;
+}
+
+/**
+ * Terminal transition `pending -> recovered`: the retried fetch succeeded
+ * and the notice was persisted through the normal path. Guarded to
+ * `status = 'pending'`, matching the one-way-transition invariant in this
+ * module's header comment; a missing row or a row already in a terminal
+ * state throws — a re-fired drain pass must never silently rewrite a
+ * decided outcome.
+ */
+export async function markFetchRetryRecovered(
+  db: Db,
+  args: MarkFetchRetryArgs,
+): Promise<IngestionFetchRetry> {
+  const now = args.now ?? Date.now();
+  const updated = await db
+    .update(ingestionFetchRetries)
+    .set({ status: 'recovered', updatedAt: now })
+    .where(and(eq(ingestionFetchRetries.id, args.id), eq(ingestionFetchRetries.status, 'pending')))
+    .returning();
+  const row = updated[0];
+  if (row === undefined) {
+    throw new Error(
+      `markFetchRetryRecovered: retry row ${args.id} is not in 'pending' status (missing or already terminal)`,
+    );
+  }
+  return row;
+}
+
+/**
+ * Terminal transition `pending -> abandoned`: `FETCH_RETRY_MAX_ATTEMPTS`
+ * failed re-attempts have been exhausted (ADR-0008 §3 give-up). The caller
+ * is responsible for the accompanying durable `NOTICE_FETCH_ABANDONED`
+ * `ingestion_errors` row (`recordError`) — this function only moves the
+ * retry row's own state. Same guard/throw contract as
+ * `markFetchRetryRecovered`.
+ */
+export async function markFetchRetryAbandoned(
+  db: Db,
+  args: MarkFetchRetryArgs,
+): Promise<IngestionFetchRetry> {
+  const now = args.now ?? Date.now();
+  const updated = await db
+    .update(ingestionFetchRetries)
+    .set({ status: 'abandoned', updatedAt: now })
+    .where(and(eq(ingestionFetchRetries.id, args.id), eq(ingestionFetchRetries.status, 'pending')))
+    .returning();
+  const row = updated[0];
+  if (row === undefined) {
+    throw new Error(
+      `markFetchRetryAbandoned: retry row ${args.id} is not in 'pending' status (missing or already terminal)`,
+    );
+  }
+  return row;
+}
+
+/**
+ * Total `pending` retry-row backlog (ADR-0008 §5 watchdog condition (ii):
+ * pending retry backlog > 50 rows), regardless of whether each row is
+ * currently due — the alert is about accumulating unrecovered notices, not
+ * just today's drain queue. Served by the same partial pending index as
+ * `listDueFetchRetries` (leading column differs but the partial predicate
+ * matches, so this is still an index-only count, not a table scan).
+ */
+export async function countPendingFetchRetries(db: Db): Promise<number> {
+  const row = (
+    await db
+      .select({ n: sql<number>`count(*)` })
+      .from(ingestionFetchRetries)
+      .where(eq(ingestionFetchRetries.status, 'pending'))
+  )[0];
+  return row?.n ?? 0;
+}
+
+export interface ListFetchRetriesArgs extends Pagination {
+  /** Optional filter to one lifecycle state; omitted returns every status. */
+  readonly status?: IngestionFetchRetryStatus;
+}
+
+/**
+ * Admin read-only listing of `ingestion_fetch_retries` rows, newest first
+ * (ADR-0008 §5 admin surface). `id` is a time-sortable ULID (`newId(now)`
+ * used by `upsertFetchRetry`), so PK order is a stable single-column cursor.
+ */
+export async function listFetchRetries(
+  db: Db,
+  args: ListFetchRetriesArgs = {},
+): Promise<Page<IngestionFetchRetry>> {
+  const limit = normalizeLimit(args.limit);
+  const rows = await db
+    .select()
+    .from(ingestionFetchRetries)
+    .where(
+      and(
+        args.status === undefined ? undefined : eq(ingestionFetchRetries.status, args.status),
+        args.cursor === undefined ? undefined : lt(ingestionFetchRetries.id, args.cursor),
+      ),
+    )
+    .orderBy(desc(ingestionFetchRetries.id))
+    .limit(limit + 1);
+  return toPage(rows, limit, (row) => row.id);
+}
+
+/** Row counts per lifecycle state (ADR-0008 §5 admin surface — one indexed `GROUP BY`, not three separate counts). */
+export async function countFetchRetriesByStatus(
+  db: Db,
+): Promise<Record<IngestionFetchRetryStatus, number>> {
+  const rows = await db
+    .select({ status: ingestionFetchRetries.status, n: sql<number>`count(*)` })
+    .from(ingestionFetchRetries)
+    .groupBy(ingestionFetchRetries.status);
+  const counts: Record<IngestionFetchRetryStatus, number> = {
+    pending: 0,
+    recovered: 0,
+    abandoned: 0,
+  };
+  for (const row of rows) {
+    counts[row.status as IngestionFetchRetryStatus] = row.n;
+  }
+  return counts;
+}
+
+export interface RecordFetchRetryFailureArgs {
+  readonly id: string;
+  /** Stable machine code from this attempt's failure. */
+  readonly errorCode: string;
+  /** Defaults to now. */
+  readonly now?: number;
+}
+
+/**
+ * Records one failed re-attempt against a still-`pending` row: increments
+ * `attempts`, then computes `next_attempt_at` from the INCREMENTED value
+ * (ADR-0008 §3 linear daily backoff — `now + attempts_after_increment` days,
+ * so the first failure, 0 -> 1, schedules the next attempt one day out, not
+ * immediately). The increment and the backoff computation happen in ONE
+ * atomic UPDATE (SQL column expressions, not a read-then-write) so a
+ * concurrent caller can never double-count an attempt.
+ *
+ * Guarded to `status = 'pending'` — a terminal row can never be re-failed.
+ * The returned row's `attempts` IS the new count: the caller compares it to
+ * `FETCH_RETRY_MAX_ATTEMPTS` and calls `markFetchRetryAbandoned` itself when
+ * the budget is exhausted (this function never abandons on the caller's
+ * behalf, keeping the give-up policy — and its accompanying
+ * `NOTICE_FETCH_ABANDONED` diagnostic — entirely in the caller).
+ */
+export async function recordFetchRetryFailure(
+  db: Db,
+  args: RecordFetchRetryFailureArgs,
+): Promise<IngestionFetchRetry> {
+  const now = args.now ?? Date.now();
+  const updated = await db
+    .update(ingestionFetchRetries)
+    .set({
+      attempts: sql<number>`${ingestionFetchRetries.attempts} + 1`,
+      nextAttemptAt: sql<number>`${now} + (${ingestionFetchRetries.attempts} + 1) * ${FETCH_RETRY_BACKOFF_MS_PER_ATTEMPT}`,
+      lastErrorCode: args.errorCode,
+      updatedAt: now,
+    })
+    .where(and(eq(ingestionFetchRetries.id, args.id), eq(ingestionFetchRetries.status, 'pending')))
+    .returning();
+  const row = updated[0];
+  if (row === undefined) {
+    throw new Error(
+      `recordFetchRetryFailure: retry row ${args.id} is not in 'pending' status (missing or already terminal)`,
+    );
+  }
+  return row;
 }

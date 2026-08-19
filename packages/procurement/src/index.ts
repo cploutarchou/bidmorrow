@@ -25,6 +25,7 @@ export * from './search-row';
 export * from './checkpoint-windows';
 export * from './retention-eligibility';
 export * from './run-window';
+export * from './fetch-retry-drain';
 export * from './catch-up';
 export * from './purge';
 export * from './org-purge';

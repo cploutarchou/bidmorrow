@@ -16,7 +16,11 @@ import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
 import { createDb } from '@bidmorrow/db';
 import { createLogger } from '@bidmorrow/observability';
-import { isIngestionStale, lastSuccessfulRunAt } from '@bidmorrow/procurement';
+import {
+  checkFetchResilienceAlerts,
+  isIngestionStale,
+  lastSuccessfulRunAt,
+} from '@bidmorrow/procurement';
 
 import { createRequestAuth } from './auth-instance';
 import type {
@@ -202,11 +206,27 @@ async function scheduled(
       );
       return;
     case CRON_WATCHDOG: {
-      const lastSuccess = await lastSuccessfulRunAt(createDb(env.DB));
-      if (isIngestionStale(lastSuccess, Date.now())) {
+      const db = createDb(env.DB);
+      const nowMs = Date.now();
+      const lastSuccess = await lastSuccessfulRunAt(db);
+      if (isIngestionStale(lastSuccess, nowMs)) {
         logger.error('ingestion.stale', { last_successful_run_at: lastSuccess });
       } else {
         logger.info('ingestion.watchdog.ok', { last_successful_run_at: lastSuccess });
+      }
+      // ADR-0008 §5: three additional fetch-resilience alert conditions,
+      // independent of staleness — a healthy `partial` day must not alert,
+      // but a systemic threshold breach, an abandonment, a growing pending
+      // backlog, or a run of degraded windows must.
+      const alerts = await checkFetchResilienceAlerts(db, nowMs);
+      if (alerts.degraded) {
+        logger.error('ingestion.watchdog.fetch_resilience_degraded', {
+          threshold_or_abandonment: alerts.thresholdOrAbandonment,
+          pending_retry_backlog: alerts.pendingRetryBacklog,
+          consecutive_fetch_failed_runs: alerts.consecutiveFetchFailedRuns,
+        });
+      } else {
+        logger.info('ingestion.watchdog.fetch_resilience_ok', {});
       }
       return;
     }

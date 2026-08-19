@@ -32,6 +32,8 @@ import {
   insertTenderMatches,
   listOrgsEligibleForScoring,
   listOrgsWithDigestEnabled,
+  markFetchRetryAbandoned,
+  markFetchRetryRecovered,
   nullifyOrganizationCreator,
   replaceCompanyCapabilities,
   replaceCompanyCertifications,
@@ -45,6 +47,7 @@ import {
   upsertCustomerFeedback,
   upsertDigestPreferences,
   upsertMatchingPreferences,
+  upsertFetchRetry,
   upsertNoticeWithVersion,
   upsertSubscriptionByStripeCustomerId,
   type Db,
@@ -850,6 +853,82 @@ describe('runLedgerPurge — SEC-P11-04 time-based ledger purge', () => {
       .bind(digestRun.id)
       .first<{ email_delivery_id: string | null }>();
     expect(digestRunRow?.email_delivery_id).toBeNull();
+  });
+
+  it('ADR-0008 §3: purges terminal (recovered/abandoned) ingestion_fetch_retries rows past 90 days; leaves recent and pending rows untouched', async () => {
+    const db = createDb(env.DB);
+    const DAY_MS = 86_400_000;
+    const now = Date.now();
+    const oldAt = now - 91 * DAY_MS;
+
+    // Old + recovered -> purge-eligible.
+    const oldRecovered = await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId: `fetch-retry-purge-old-recovered-${String(now)}`,
+      xmlUrl: 'https://ted.europa.eu/notice/purge-old-recovered.xml',
+      publicationDate: '2026-01-01',
+      errorCode: 'NOTICE_FETCH_HTTP_500',
+      nextAttemptAt: now,
+    });
+    await markFetchRetryRecovered(db, { id: oldRecovered.id, now: oldAt });
+
+    // Old + abandoned -> purge-eligible.
+    const oldAbandoned = await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId: `fetch-retry-purge-old-abandoned-${String(now)}`,
+      xmlUrl: 'https://ted.europa.eu/notice/purge-old-abandoned.xml',
+      publicationDate: '2026-01-01',
+      errorCode: 'NOTICE_FETCH_HTTP_500',
+      nextAttemptAt: now,
+    });
+    await markFetchRetryAbandoned(db, { id: oldAbandoned.id, now: oldAt });
+
+    // Old + still pending -> NEVER purged by age, regardless of how old.
+    const oldPending = await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId: `fetch-retry-purge-old-pending-${String(now)}`,
+      xmlUrl: 'https://ted.europa.eu/notice/purge-old-pending.xml',
+      publicationDate: '2026-01-01',
+      errorCode: 'NOTICE_FETCH_HTTP_500',
+      nextAttemptAt: oldAt,
+      now: oldAt,
+    });
+
+    // Recent + recovered -> untouched (inside the 90-day window).
+    const recentRecovered = await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId: `fetch-retry-purge-recent-recovered-${String(now)}`,
+      xmlUrl: 'https://ted.europa.eu/notice/purge-recent-recovered.xml',
+      publicationDate: '2026-01-01',
+      errorCode: 'NOTICE_FETCH_HTTP_500',
+      nextAttemptAt: now,
+    });
+    await markFetchRetryRecovered(db, { id: recentRecovered.id, now: now - 1 * DAY_MS });
+
+    const result = await runLedgerPurge({ db, logger: createLogger({ test: true }) });
+    expect(result.fetchRetriesDeleted).toBeGreaterThanOrEqual(2);
+
+    expect(
+      await count(
+        'SELECT COUNT(*) as n FROM ingestion_fetch_retries WHERE id = ?',
+        oldRecovered.id,
+      ),
+    ).toBe(0);
+    expect(
+      await count(
+        'SELECT COUNT(*) as n FROM ingestion_fetch_retries WHERE id = ?',
+        oldAbandoned.id,
+      ),
+    ).toBe(0);
+    expect(
+      await count('SELECT COUNT(*) as n FROM ingestion_fetch_retries WHERE id = ?', oldPending.id),
+    ).toBe(1);
+    expect(
+      await count(
+        'SELECT COUNT(*) as n FROM ingestion_fetch_retries WHERE id = ?',
+        recentRecovered.id,
+      ),
+    ).toBe(1);
   });
 });
 
