@@ -322,6 +322,37 @@ permanent daily loop.** Sequence, with the real numbers:
    (wait) is a canary, not a plan. Two dispatch-only probes authored to
    convert inferred rows to verified ones. **ADR-0010 pending probe
    evidence — do not decide before it.**
+8. **Source-facts probe result (run 32347877913, 2026-08-20 08:15 UTC) —
+   the bulk address question is now half-answered.** (i) The inferred
+   `/packages/notice/daily/{id}` address is DEAD, proven by A/B: the real
+   issue id `202600157`, `definitely-not-an-issue` and `00000000` all
+   answered `202 / 0 bytes / content-type: text/html` identically, so it
+   is the website's catch-all async shell and every poll against it
+   measured nothing. (ii) The REAL addresses are published by TED itself
+   at `ted.europa.eu/en/simap/xml-bulk-download` (HTTP 200, 191,772
+   bytes) and carry NO `/notice/` segment:
+   `https://ted.europa.eu/packages/daily/{ojIssueId}` (listed for
+   `202600147`–`202600160`) and
+   `https://ted.europa.eu/packages/monthly/{year}-{n}`. `OJ` `157/2026`
+   → `202600157`, which appears in the published list, so the id encoding
+   is source-confirmed, not guessed. Note the same `/packages/daily/…`
+   prefix answered 400 in run 32343243004 — the earlier probe read the
+   real family's rejection of a malformed id as evidence against the
+   family. (iii) **ADR-0010 gate A-G1 is NOT measured**: the populate-rate
+   request returned `400 — "Parameter 'fields' contains unsupported
+value"`, so at least one requested field name is invalid, the whole
+   request was rejected, and the earlier "accepted-but-empty" reading is
+   unsupported. Follow-up `ted-package-probe` (PR #65) HEADs/GETs the
+   published address with the same garbage-id A/B plus content-type,
+   content-disposition, `file(1)`, magic bytes and an archive listing, and
+   closes A-G1 by mining the API's own supported-value enumeration then
+   measuring each field SEPARATELY. `ted-bulk-poll-probe.yml` is obsolete
+   (dead address); the 11:00 UTC re-poll trigger was rewritten to dispatch
+   `ted-package-probe` instead. **Gate still OPEN** — the question changed
+   from "does an unknown address exist" to "does the published address
+   deliver bytes". Standing rule reaffirmed: an address is proven by
+   delivering content a garbage id does not, never by response-code
+   routing alone.
 
 **OPEN RISK WITH A CLOCK — slow-motion abandonment**: during a sustained
 outage a drained retry row reaches terminal `NOTICE_FETCH_ABANDONED` ≈10
