@@ -1,0 +1,403 @@
+# ADR-0010: TED content-acquisition channel after the render outage (bulk packages primary; Search-API fields as gated interim)
+
+Status: Proposed (2026-08-20) — coordinator/owner flips to Accepted. The
+decision is structured as a **two-branch rule whose selection is gated on
+one running probe** (`ted-bulk-poll-probe`, merged 6c7c0b0): everything in
+both branches is fully specified now; the probe result picks which branch
+activates (§2). §5's branch-independent decisions are final regardless of
+the gate. Companion to ADR-0009 (whose §5 contingency framing this ADR
+resolves — ADR-0009 §5 now points here). Supersedes ADR-0005's raw-XML
+snapshot requirement ONLY under Branch A′, with the explicit scope in
+§4; under Branch B, ADR-0005 is preserved unchanged.
+
+## Context
+
+TED's anonymous notice-XML render pipeline completes no renders as of
+2026-08-20 (ADR-0009 §3; probe 32337551926; staging run 0/156). It is the
+only V1 content channel, and there is no authenticated XML endpoint
+(verified 2026-08-18, docs/ted-data-source.md). ADR-0009 §5 framed two
+candidate channels and dispatched the evidence work; the ted-data
+investigation delivered docs/ted-content-channel-options.md (field
+inventory, option mechanics, probe designs) and two probe runs whose
+results this ADR consumes. The Search API itself remained healthy through
+the entire outage — the two surfaces fail independently.
+
+### Option A evidence (Search API `fields`) — run 32343241481, window 2026-08-17
+
+VERIFIED:
+
+- **The lot-alignment crux — the make-or-break question from the field
+  inventory — is answered favorably.** Lot-scoped fields return as
+  parallel arrays and `BT-137-Lot` carries the lot identifier (values
+  like `"LOT-0001"`). Per-notice array lengths agree across lot-scoped
+  fields: 566482-2026 has `main-classification-lot`=6, `BT-137-Lot`=6,
+  `BT-5071-Lot`=6, `BT-262-Lot`=6; 566463-2026 is 3/3/3/3; 566567-2026
+  3/3/3; 566372-2026 2/2/2; most notices 1/1/1/1. Per-lot
+  title/description/main-CPV can therefore be reconstructed by index
+  against `BT-137-Lot`.
+- **Caveat 1 — multi-valued sub-attributes do NOT share lot
+  cardinality**: 566503-2026 has `BT-137-Lot`=1 but `BT-5071-Lot`=59;
+  566599-2026 has 2 vs 18. `additional-classification-lot`/`BT-263-Lot`
+  pair with each other at their own cardinality (21/21, 13/13, 9/9) but
+  not with the lot count. NUTS/place and additional CPV are therefore
+  **not attributable to a specific lot** from the flat arrays. (§4
+  decides what our semantics become.)
+- **Caveat 2 — `title-lot`/`description-lot`/`BT-21-Lot`/`BT-24-Lot`
+  return as objects keyed by language** (e.g. `{"pol": ["…"]}`); sampled
+  notices carried Polish only. Not a regression — the source XML is
+  equally single-language — but the consequence for English keyword
+  matching must be stated (§4).
+- **Description is not truncated**: lengths up to 1,793 chars observed
+  (1,554 / 1,424 / 1,377 / 1,331 …).
+- **Versioning**: `onlyLatestVersions=true` → `totalNoticeCount` 145;
+  `false` → 156, same query — 11 of 156 rows are superseded versions.
+  Our window query currently omits the flag (and observed 156, so the
+  effective default matches `false`).
+- The API **400s on unsupported field names** (observed in the same run:
+  "Parameter _fields_ contains unsupported value …") — acceptance of a
+  field name is machine-checkable.
+
+OPEN (inference, not measurement — must not be asserted):
+`deadline-receipt-tender-date-lot`, `estimated-value-lot`,
+`estimated-value-cur-lot` did **not appear** in the returned objects for
+the sampled notices. Because the combined request returned 200 and the
+API demonstrably 400s on unsupported names, the names are almost
+certainly accepted and simply empty/absent for these notices — but that
+is an inference. Deadline and value are two of the matching engine's most
+important inputs; §4 gates Option A adoption on a populate-rate probe.
+
+### Option B evidence (bulk packages) — run 32343243004 + corrected record
+
+- The v1 "URL pattern FALSIFIED" verdict was **wrong** and is corrected:
+  v1 counted only HTTP 200 as a hit, but every
+  `/packages/notice/daily/{id}` variant (issue ids, `20260817`,
+  `2026-08-17`) and `/packages/notice/monthly/2026-08` answered **202** —
+  TED's async "queued, come back later" — while `/packages/daily/…`
+  answered 400 and `/packages/monthly/…` 404. Distinct routing for
+  distinct shapes means **the endpoint is real**; v1 simply never polled.
+- The Search API exposes an **`OJ` field** giving the authoritative
+  gazette issue — `"157/2026"` for 2026-08-17. (v1 had guessed issue 163
+  from a weekday count — a live demonstration of why date→issue mapping
+  must come from the API, never from calendar arithmetic.)
+- **PENDING — the gate**: `ted-bulk-poll-probe` (merged 6c7c0b0, running
+  now) resolves the real issue from `OJ`, tries several id encodings, and
+  polls each candidate over ~10 minutes. It answers whether TED's async
+  generation completes for PACKAGES while completing for no NOTICES.
+
+Constraints in force: modular monolith on Workers, fixed infra < $100/mo
+(target $5–30), D1 10 GB with ≥40% 12-month headroom, ADR-0005 (R2 raw
+snapshots), ADR-0003 (scope/retention), ADR-0006 (queues+cron, no
+Workflows), source-agnostic `ProcurementSource` boundary, no paid
+procurement datasets, 128 MB Worker memory / 15-min invocation ceiling
+(docs/dependency-versions.md, verified 2026-08-14).
+
+## Decision
+
+### 1. End-state principle (branch-independent)
+
+The render front-end is **permanently demoted**: an undocumented website
+behavior that changed three times in one week (2026-08-16 client
+sensitivity, 2026-08-18 async rendering, 2026-08-20 total
+non-completion) is never again the sole content channel. Whatever branch
+activates, a 1-notice scheduled canary (re-using `ted-render-batch-probe`)
+tracks the render channel for recovery/latency telemetry only. The Search
+API remains the scoping/enumeration surface in every branch — the
+scope query, windows, checkpoints, and retention of ADR-0003 are
+untouched by this ADR.
+
+### 2. The branch gate
+
+- **Branch B activates** if `ted-bulk-poll-probe` (or a bounded follow-up
+  poll, see below) collects a completed daily package: HTTP 200 with
+  archive content for a resolved issue id.
+- **Branch A′ activates** if packages verifiably never complete.
+- **A 202-forever result within the ~10-minute probe horizon selects
+  neither branch by itself.** A multi-hundred-MB archive may legitimately
+  take longer than 10 minutes to generate; before declaring the whole
+  async subsystem down, one longer-horizon poll (re-poll the same
+  triggered candidates over several hours — the trigger requests have
+  already been made) is required. Only a completed package (→ B) or a
+  multi-hour never-completes result (→ A′) closes the gate. Branch B's
+  ingestion design tolerates multi-hour generation regardless (trigger
+  today, collect on a later cron — §3), so a slow-but-completing package
+  pipeline still selects B.
+
+### 3. Branch B — hybrid bulk-primary (adopt if packages complete)
+
+The recommendation of docs/ted-content-channel-options.md §6, adopted:
+Search API for scope/ids/metadata, the daily bulk package as the XML
+source. **Parser (`parseEformsNotice`), lot model, contract fixtures,
+content-hash versioning, `ingestion_errors` semantics, and ADR-0005 R2
+snapshots are all unchanged** — the package yields the same eForms UBL
+XML the front-end used to serve.
+
+- **Addressing**: add `OJ` to `SEARCH_FIELDS` (verified field, §5). The
+  window's search pass records the issue id for its publication date;
+  package URL = `/packages/notice/daily/{id}` with the encoding the probe
+  proves out. Date→issue mapping comes ONLY from the API's `OJ` value —
+  never weekday arithmetic (the 163-vs-157 miss is the recorded reason).
+- **Async acquisition**: the cron GETs the package URL; a 202 records a
+  package-pending state and later runs re-poll — the render-pending
+  machinery's shape at package granularity, but trivially cheap (one
+  request per re-poll, one package per publication day). Bounded
+  re-polls across runs with an alerting give-up (mirroring
+  `NOTICE_FETCH_ABANDONED`'s "loud, never silent" rule); give-up
+  constants set at implementation from the probe's measured completion
+  latency.
+- **R2 staging**: stream the package HTTP body directly into R2
+  (streaming/multipart put — pure streaming, memory-bounded; the exact
+  R2 put API surface must be re-verified against current Cloudflare docs
+  at implementation time per verify-current-docs). Staged archives are
+  transient: deleted after successful extraction, retained ≤7 days for
+  replay.
+- **Chunked extraction (queue consumer)**: stream the R2 object through
+  gzip decompression plus an incremental tar reader, keep only entries
+  whose notice id is in the window's in-scope publication-number set,
+  write each XML directly to its ADR-0005 snapshot key, and feed the
+  existing parse/persist path. Resume-after-limit re-streams from the
+  start and skips already-snapshotted ids — **idempotent via
+  `insertSnapshotIfNewHash`**, wasteful but correct and bounded. If the
+  probe shows daily packages small enough for one invocation, the resume
+  machinery is still built (ceiling days and monthly replays need it),
+  but the common path is single-pass. (`DecompressionStream` availability
+  and limits in the Workers runtime: verify against official docs at
+  implementation time — treated as unverified here.)
+- **The tar reader is the one new engineering artifact.** Preference
+  (dependency rule, cost model "deliberately avoided"): a small in-house
+  streaming tar-entry reader (the format is a stable 512-byte-header
+  archive; we need read-only, sequential access), tested against a real
+  package fixture — over importing a Node-ecosystem tar dependency of
+  unknown Workers compatibility. Final call at implementation with the
+  fixture in hand; either way it must be streaming and bounded-memory.
+- **Stranded retry rows are harvested from packages, not HTTP.** Retry
+  rows carry `source_notice_id` + `publication_date`: when a day's
+  package is extracted, pending retry rows for that `publication_date`
+  whose `source_notice_id` matches an extracted entry are fed through the
+  same `processOneNotice` path (XML sourced from the R2 snapshot instead
+  of an HTTP fetch) and marked `recovered`. The current 32 stranded rows
+  (window 2026-08-17, issue 157/2026) resolve with that one package.
+  Retry rows whose notice is absent from its day's package follow the
+  existing attempts/abandonment path — absence from the official gazette
+  archive is a real, per-notice signal, unlike a render 202.
+- **ADR impact**: ADR-0005 preserved and strengthened (provenance gains
+  package id + OJ issue). ADR-0006 gets a re-examination _note_ — the
+  resume-capable extraction is the shape Workflows exist for, but the
+  queues+cron sketch above meets it; no reversal. ADR-0003 untouched.
+- **Cost/size (cost-audit)**: TED requests drop to ~2 search pages + 1
+  package GET (plus bounded re-polls) per day — far below today's
+  ~350–800 and the 2,000 budget; politeness posture improves. R2:
+  staged archives at the INFERRED ~30–150 MB/day compressed × ≤7-day
+  retention ≈ ≤1 GB transient, on top of the existing ~2–6 GB snapshot
+  steady state — within docs/cost-model.md's existing $0 R2 posture
+  (re-verify the free-tier ceiling at implementation if the probe
+  measures larger packages; archive size is INFERRED until the probe
+  reports Content-Length). **12-month D1 projection** (ground rule): one
+  package-state row per publication day (~260/year × ~200 B ≈ **52
+  KB/year**) — negligible; notice/lot storage unchanged from ADR-0003's
+  model. No new paid component; totals stay ~$6 / ~$26.
+
+### 4. Branch A′ — Search-API fields as gated interim (adopt if packages never complete)
+
+If the longer-horizon poll confirms packages never complete, the correct
+diagnosis is that **TED's entire async document-generation subsystem is
+down** — websites-render and package-generation alike — which is a
+cleaner statement than "the render endpoint changed" and strengthens the
+expectation of eventual upstream recovery (TED's official bulk reuser
+channel cannot stay down indefinitely). Option A then ships as the
+**interim degraded mode — never the end-state** (its provenance losses
+below are why), retired in favor of Branch B whenever packages return.
+
+**Adoption gate A-G1 (blocking, before any Option A code ships)**: a
+targeted probe measuring the populate-rate of
+`deadline-receipt-tender-date-lot`, `estimated-value-lot`,
+`estimated-value-cur-lot` across a full window (plus acceptance of the
+remaining P-status fields in the inventory: languages alias, BT-11 buyer
+legal type, BT-27-Procedure, notice subtype), and deadline granularity
+(date-only vs date+time). Deadline and value are top matching inputs; if
+their populate-rate is materially below the XML's, that fact goes into
+the disclosure and the component weighting discussion — it does not get
+discovered in production.
+
+Design (per the favorable alignment evidence):
+
+- **Row-mapper** (sibling of `extractSearchRow`) maps the full field set
+  into the existing `NormalizedNotice`/`NormalizedLot` shape, bypassing
+  `parseEformsNotice`. Per-lot title, description, and main CPV are
+  reconstructed by index against `BT-137-Lot` — justified by the
+  verified cross-field length agreement (6/6/6/6, 3/3/3/3, 2/2/2,
+  1/1/1/1). A per-notice cardinality check guards it: if any
+  lot-aligned field's length disagrees with `BT-137-Lot`'s, the notice
+  is recorded to `ingestion_errors` (new stable code, e.g.
+  `LOT_ALIGNMENT_MISMATCH`) rather than mis-attributed — never silently
+  swallowed.
+- **Lot geography and additional CPV become notice-level facts** (the
+  Caveat-1 decision): `BT-5071-Lot`/place values and
+  `additional-classification-lot` values are attributed to **every lot
+  of the notice**, flagged as notice-level-derived (same honesty
+  mechanism as `value_is_derived`). The matching geography component's
+  semantics degrade from "this lot is performed in X" to "this notice
+  involves X" — conservative (over-inclusive, never fabricating per-lot
+  precision), surfaced in the match explanation and UI copy. This is a
+  schema-visible, documented degradation, not a silent one.
+- **Language** (Caveat 2): single-language notices are single-language
+  in the XML too — no regression — but the consequence is stated
+  plainly: a Polish-only notice is matchable by English keywords neither
+  today nor under Option A; the engine's existing language gating
+  (`source_languages_json`) continues to govern, fed from the languages
+  alias once A-G1 verifies it.
+- **Known losses, stored as explicitly unknown, never fabricated**:
+  eForms SDK version (no search equivalent) and buyer org id — buyer
+  dedupe degrades to name+country for interim-ingested notices
+  (documented in docs/data-model.md at implementation).
+- **ADR-0005 supersession (scoped to this branch only)**: the snapshot
+  artifact becomes the **canonicalized JSON of the notice's search row**
+  (deterministic serialization; content-hash over it; same R2 keying and
+  `insertSnapshotIfNewHash` idempotency). Recorded limitation:
+  reprocess-after-fix can never recover a field we did not request —
+  mitigated by requesting the full inventory superset from day one, and
+  bounded by the interim's lifespan. The versioning model is unchanged:
+  content-hash over the canonical row detects corrections exactly as it
+  did over XML.
+- **Cost/size (cost-audit)**: 1–2 search requests/day total (28–32
+  fields × 250/page stays under the verified
+  `len(fields) × limit ≤ 10,000` cap) — fewer TED requests than any
+  other design considered. Snapshots shrink (JSON rows ≪ XML).
+  **12-month D1 projection**: notice/lot row footprint is the same
+  normalized shape as today (bounded by the same fields), ≈ ADR-0003's
+  2.2 GB/year worst case unchanged; no new table. No new component;
+  totals stay ~$6 / ~$26.
+
+### 5. Branch-independent decisions (final now, regardless of the gate)
+
+1. **`onlyLatestVersions: false`, set explicitly** in the window search
+   request (today it is implicit). Our version model wants every
+   published version: corrections are new publications, content-hash
+   dedupes unchanged content, `tender_notice_versions` never overwrites
+   history, and recompute triggers on new versions. The observed default
+   already behaves this way (156 rows), but relying on an unpinned
+   upstream default for version completeness is fragile — pin it. (If
+   the default ever flipped, we would silently lose 11/156 ≈ 7% of rows
+   — superseded versions — and the version history they carry.)
+2. **Suspend retry attempt-burning during a confirmed upstream outage.**
+   The ADR-0009-flagged question, now decided — the clock is running
+   against the 32 stranded notices regardless of which branch wins. A
+   new `feature_flags` entry `fetch_retry_attempts_suspended`
+   (operator-set; this passes ADR-0008 §2's "runtime lever" test the
+   same way `ingestion_paused` does — outage confirmation is a human
+   judgment fed by `RENDER_PENDING_DEGRADED` alerts, not an algorithm).
+   While set, the drain processes only a small canary subset (first 3
+   due rows) per run and does **not** increment `attempts` on
+   `NOTICE_RENDER_PENDING` outcomes — recovery detection is preserved
+   (~≤18 requests/day) while the ~10-day abandonment clock stops running
+   against notices that were never our failure. Genuine
+   `TedRequestError` outcomes still increment (they are per-notice
+   evidence, outage or not). Clearing the flag restores full drain
+   behavior. Ships with the ADR-0009 implementation.
+3. **Add `OJ` to `SEARCH_FIELDS`** now (verified field; costless; needed
+   by Branch B and useful provenance under either branch).
+4. §1's render-channel demotion and canary posture.
+
+## Consequences
+
+Positive:
+
+- Either branch restores notice content through an official, documented
+  or at least officially-shaped channel, ends the dependence on website
+  render behavior, and REDUCES TED request volume (politeness improves
+  in both branches).
+- Branch B preserves the entire existing parse/persist/provenance stack;
+  Branch A′ is explicitly interim with its degradations named, flagged
+  in data, and disclosed — nothing silent.
+- The 32 stranded notices have a concrete harvest path in both branches
+  (package extraction by `source_notice_id`; or interim row-mapper
+  ingestion), and the abandonment clock is stopped meanwhile (§5.2).
+- `ProcurementSource` stays source-agnostic: both branches produce the
+  same `NormalizedNotice`/`NormalizedLot` domain shape; the channel is
+  an implementation detail behind the boundary.
+
+Negative / accepted:
+
+- Branch B carries the repo's first streaming-archive machinery (tar
+  reader, staging, resume) — real engineering surface, mitigated by
+  fixtures from the probe's actual package and by the idempotent-resume
+  design; ADR-0006 gains a Workflows re-examination note.
+- Branch A′ loses raw-XML provenance for interim-ingested notices
+  (scoped ADR-0005 supersession), degrades lot geography/additional-CPV
+  to notice level, weakens buyer dedupe, and cannot recover unrequested
+  fields retroactively — all documented, all reasons it is interim-only.
+- The gate adds one more waiting step; bounded by §2's explicit
+  longer-horizon poll rule, after which one branch MUST be declared.
+- Coverage disclosure (ADR-0009 §6 duty, unchanged owner): under B the
+  stranded day lands when its package processes; under A′ it lands as
+  degraded-provenance records; the phase-close disclosure pass reflects
+  whichever activates.
+- Test surface: date→issue mapping from `OJ`; package-pending state
+  machine; extraction idempotency/resume (B); row-mapper reconstruction
+  incl. the cardinality guard and `LOT_ALIGNMENT_MISMATCH`; notice-level
+  geo/CPV flagging (A′); `onlyLatestVersions` pinning; suspended-drain
+  canary behavior (attempts not burned on render-pending, still burned
+  on genuine errors).
+
+Cost-audit summary: no new platform service or paid dependency in either
+branch; TED request volume falls in both; R2 transient staging (B) rides
+the existing $0 R2 line with an implementation-time re-verify if the
+probe measures large packages; D1 deltas are 52 KB/year (B) or ~0 (A′);
+nothing moves any 0/10/100/1,000 column — totals remain ~$6 / ~$6 / ~$26
+per docs/cost-model.md; nothing approaches the $60–80 band. Cost-model
+gets its delta note when the gate closes and a branch activates (this
+ADR is spec; the activating branch's implementation updates the model
+with measured package sizes / field-set request sizes).
+
+## Verified / inferred / open ledger
+
+- VERIFIED (run 32343241481): lot-array alignment incl. `BT-137-Lot`
+  ids and the length-agreement examples; the two caveats
+  (sub-attribute cardinality, language-keyed objects); descriptions to
+  1,793 chars untruncated; `onlyLatestVersions` 145-vs-156; 400 on
+  unsupported field names.
+- VERIFIED (run 32343243004 + correction): `/packages/notice/daily/*`
+  and `/packages/notice/monthly/*` answer 202 (distinct from 400/404 on
+  other shapes) — the endpoint exists and queues work; `OJ` field gives
+  the authoritative issue (`157/2026` for 2026-08-17).
+- INFERRED (stated, not asserted): deadline/value field names are
+  accepted-but-empty for sampled notices (from the 200 + the proven
+  400-on-unsupported behavior); daily package size ~30–150 MB
+  compressed; archive format tar.gz of per-notice XML in submitted
+  (eForms UBL) format. Each has a probe (`A-G1`; `ted-bulk-poll-probe`
+  reports Content-Length/format/entries).
+- OPEN: whether package generation completes (the §2 gate — probe
+  running); deadline/value populate-rate and granularity (A-G1);
+  remaining P-status field aliases; Workers runtime surfaces
+  (`DecompressionStream`, streaming R2 put) — verify-current-docs at
+  implementation time.
+
+## Alternatives considered
+
+- **Option C — wait for render recovery**: unbounded product outage;
+  lots' deadlines burn down unseen, directly against the product
+  promise. Retained only as the 1-notice canary + drain-based recovery
+  detection running alongside the chosen branch. Rejected as the plan.
+- **Option A as the end-state** (even with the favorable alignment
+  evidence): permanently abandons raw-XML provenance (ADR-0005), SDK
+  versioning, buyer org ids, and per-lot geography — a strictly weaker
+  data platform adopted at the exact moment an official raw-XML channel
+  (Branch B) appears reachable. Rejected; A′ is interim-only with an
+  explicit retirement condition.
+- **Scraping the HTML notice pages**: re-creates the dependence on
+  undocumented website behavior that just failed us, adds fragile HTML
+  parsing of untrusted content, and violates the "boring, official
+  surfaces" bias. Rejected.
+- **Paid procurement data providers**: prohibited by ground rules (no
+  paid procurement datasets); also a fixed-cost violation at MVP scale.
+  Rejected.
+- **Cloudflare Workflows for the package extraction** (ADR-0006
+  reversal): the resume-capable extraction is Workflows-shaped, but the
+  queues+cron sketch meets the requirement with machinery we already
+  operate; a re-examination note on ADR-0006 suffices until the
+  extraction is built and measured. Rejected for now.
+- **Deciding the branch today without the poll probe**: Branch B's
+  superiority is conditional on packages actually completing — the one
+  fact still open, and this week has punished every unmeasured
+  assumption about TED's async subsystem (ADR-0008 A3, the v1
+  FALSIFIED-verdict error, the serialized-queue hypothesis). The gate
+  costs hours; a wrong channel commitment costs weeks. Rejected.
