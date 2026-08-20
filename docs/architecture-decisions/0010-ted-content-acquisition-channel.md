@@ -144,7 +144,7 @@ Three answers, all from TED's own responses:
    the authoritative name list.
 
 **Gate status: still OPEN, but the question has changed.** It is no
-longer "does an unknown address exist" — it is "does the *published*
+longer "does an unknown address exist" — it is "does the _published_
 address deliver bytes". `ted-package-probe` (this commit) HEADs and GETs
 `https://ted.europa.eu/packages/daily/{issue}` with the same garbage-id
 A/B discipline, checks `content-type`/`content-disposition`/magic bytes
