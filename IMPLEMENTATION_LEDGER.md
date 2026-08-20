@@ -241,6 +241,99 @@ mockup source committed at
 re-skin) starting next; the pending final slice (sample-verdict demo +
 category pages) will be built Control-Room-styled after the re-skin lands.
 
+**INGESTION CRISIS + ADR-0009 (2026-08-19 → 2026-08-20). TED's public
+notice-XML render pipeline stopped completing renders entirely; the
+poison-pill fix shipped the day before turned out to convert that into a
+permanent daily loop.** Sequence, with the real numbers:
+
+1. **2026-08-19 05:00 cron** (first run after the PR #51 render-cycling
+   fix): window 2026-08-17, 156 notices seen, 0 upserted — one notice
+   exhausted its 4 visits → `TedRenderPendingError` → window-fatal,
+   checkpoint held. Diagnosed as a poison pill; owner green-lit ADR-0008.
+2. **2026-08-19 ADR-0008 implemented and deployed** (PRs #59, merged
+   dcae4e3): record-and-continue + systemic threshold (≥5 AND >20%) +
+   `ingestion_fetch_retries` drain (≤25/day, full render cycle,
+   abandonment at 5) + watchdog + admin surface + retention. Amendment
+   A1–A4 folded render-pending into the same counter as genuine fetch
+   failures and bumped `MAX_RENDER_VISITS` 4→6. Security SIGN-OFF,
+   production-reviewer PASS.
+3. **2026-08-20 05:00 cron** (first run with ADR-0008 live): **156 seen,
+   0 upserted, 32 render-pending skips, threshold tripped at 32/156 =
+   20.51%, run `failed`, checkpoint held — and because a failed window
+   skips the drain, all 32 retry rows stranded `pending` at attempts=0.**
+   ZERO notices rendered across 6 visits over ~8–10 minutes; no HTTP and
+   no parse errors. Two design errors were now visible: (i) A1's decision
+   to count render-pending toward the systemic threshold — whose ADR-0008
+   §2 rationale ("must not advance past a day of unfetched notices") was
+   written when a skip meant LOSING the notice, which §3's retry table had
+   already changed; (ii) the drain-skip-on-failed-window rule, which turns
+   any permanently-failing window into a permanent retry stall.
+4. **Batch-size hypothesis REFUTED by evidence, not argument.** CI probe
+   `ted-render-batch-probe` (run 32337551926, Azure egress vs the worker's
+   Cloudflare egress): a 5-notice batch AND a 50-notice batch each
+   rendered **0** at trigger/+60s/+120s/+180s — 100 responses, `other=0`,
+   no 4xx/5xx/rate-limit. Since the 2026-08-18 single-notice probe DID
+   collect a render (200 + 12,953 bytes), TED's anonymous render pipeline
+   stopped completing renders somewhere between 08-18 and 08-20. Not load,
+   not egress identity, not our client. (First probe run died in 9 s on a
+   missing `actions/checkout` — coordinator error, fixed and re-run.)
+5. **ADR-0009 written (Accepted), superseding parts of ADR-0008**: §1
+   failure taxonomy splits on ORIGIN BEHAVIOR — HTTP/network failures
+   ("origin refusing us") keep the unchanged 5/20% threshold;
+   render-pending exhaustion ("origin cooperating but slow") gets its own
+   `notices_render_pending` counter with NO fail ceiling plus a distinct
+   `RENDER_PENDING_DEGRADED` signal + watchdog condition; §2 drain
+   independence via `failureCode` + pure `isSystemicWindowFailure` (skip
+   only for budget/threshold/search/fetch codes; unknown codes default to
+   RUN the drain — stranding-by-default was exactly the bug); §3 records
+   the refutation and decides **no client-side trigger strategy** (tuning
+   against an outage would encode the outage into the architecture); §4
+   re-justifies `MAX_RENDER_VISITS=6` as transient-state insurance and a
+   zero-deploy recovery detector; §5 frames the source-acquisition
+   contingency without deciding it.
+6. **Implemented + reviewed**: migration 0009 (`notices_render_pending`,
+   additive, drizzle zero-diff), taxonomy split, degraded signal, drain
+   gate, admin column. Gates: root vitest **530 pass / 3 skip**, worker
+   d1 **203**, db **63**, typecheck/lint/format/build green.
+   **production-reviewer PASS (2026-08-20)** — 0 Critical/High, every gate
+   re-run independently, the 2026-08-20 incident shape verified fixed end
+   to end (100%-render-pending day → `partial`, checkpoint ADVANCES, N
+   retry rows, exactly one degraded row, zero threshold rows) with the
+   ADR-0008 systemic protection intact; MEDIUM RV-0009-01 was this ledger
+   entry; LOWs RV-0009-02/03 (same-run drain pickup composition;
+   `terminatedByBudget` coverage) closed by follow-up tests. Reviewer
+   recorded that no security pass is required for this diff (no authz,
+   tenancy, or content-rendering surface; `ingestion_runs` is a
+   docs/security.md C6-exempt global ops table) — recorded here rather
+   than self-certified.
+7. **Content-channel investigation** (`docs/ted-content-channel-options.md`,
+   ted-data agent): Option B — TED's **official daily bulk XML packages** —
+   recommended as end-state, the only option leaving `parseEformsNotice`,
+   the lot-centric model, contract fixtures, content-hash versioning and
+   ADR-0005's raw-XML provenance UNCHANGED, and it replaces an
+   undocumented website behavior (which changed three times in one week)
+   with the documented reuser channel; risk is in-house engineering
+   (streaming tar.gz under Workers' limits → R2 staging + queue-driven
+   extraction). Option A — Search API `fields` as content — budget is
+   comfortable (~30 × 250 = 7,500 ≤ 10,000 cap; FEWER TED requests than
+   today) but degraded: lot-array alignment unverified (the index appears
+   notice-based; our model is lot-centric), no raw XML so ADR-0005 needs
+   supersession, SDK version + buyer org-id have no equivalent. Option C
+   (wait) is a canary, not a plan. Two dispatch-only probes authored to
+   convert inferred rows to verified ones. **ADR-0010 pending probe
+   evidence — do not decide before it.**
+
+**OPEN RISK WITH A CLOCK — slow-motion abandonment**: during a sustained
+outage a drained retry row reaches terminal `NOTICE_FETCH_ABANDONED` ≈10
+days after its first drain attempt (5 attempts, linear daily backoff), and
+abandoned notices are recoverable ONLY via a §5 channel — admin backfill
+cannot run behind the advance-only checkpoint. That ~10-day window is the
+decision deadline for the channel switch. Whether to suspend
+attempt-burning during a known outage is FLAGGED, NOT DECIDED (belongs
+with ADR-0010). Corrected projection: the retry table's 12-month
+total-outage worst case is ~33 MB, not 8 MB — pending rows never purge,
+only terminal ones do.
+
 **M6 Client-area follow-up SHIPPED (2026-08-18 evening, owner directive:
 auth/session polish, client billing + subscriptions, autocomplete, client
 logo, skills/agents).** Four workstreams, coordinated per the new

@@ -40,9 +40,26 @@ could not be fully verified.
   the window's work queue (max `MAX_RENDER_VISITS` visits, min
   `RENDER_RETRY_DELAY_MS` between visits to the same notice) so every
   render is triggered on the first pass and collected on later passes; an
-  exhausted notice stays window-fatal (checkpoint held — the next daily
-  retry collects the by-then-cached renders). This broke the first
+  exhausted notice is skipped into `ingestion_fetch_retries` and tracked
+  in its own `notices_render_pending` counter — never window-fatal and
+  never part of the systemic fetch-failure threshold (ADR-0008 as
+  superseded in part by ADR-0009). This async behavior broke the first
   non-empty staging window (2026-08-17, 156 in-scope notices).
+  **The render pipeline is currently completing NO renders at all**
+  (empirical, 2026-08-20). Evidence: (i) 05:00 UTC staging run — all 156
+  renders triggered, ZERO completed across 6 visits over ~8–10 minutes
+  (no HTTP or parse errors — 202/empty only); (ii) batch-size probe run
+  32337551926 (05:56–06:12 UTC, Azure egress, anonymous, ~1 s spacing,
+  identifying UA) — a 5-notice batch AND a 50-notice batch both at 0
+  rendered at pass 1 and at +60/+120/+180 s, `other=0` (no 4xx/5xx, no
+  rate-limit signal). This REFUTES the per-client-serialized-render
+  hypothesis: batch size is not the variable, and the effect is
+  egress-independent. Since the 2026-08-18 single-notice probe DID
+  collect a render (200 + 12,953 bytes minutes after trigger), the
+  pipeline stopped completing renders somewhere between 2026-08-18 and
+  2026-08-20 — an upstream outage or behavior change (cause/duration
+  unknown; ted-data investigation in progress — see ADR-0009 §3/§5 for
+  the architectural posture and the source-acquisition contingency).
 - **There is NO authenticated notice-XML download endpoint** (verified
   live 2026-08-18 against the owner's real key AND the API's own OpenAPI
   spec, ted-api-probe runs 32152093521/32155040026 — supersedes the
