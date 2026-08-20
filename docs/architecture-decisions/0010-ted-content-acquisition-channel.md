@@ -1,14 +1,18 @@
 # ADR-0010: TED content-acquisition channel after the render outage (bulk packages primary; Search-API fields as gated interim)
 
 Status: Proposed (2026-08-20) — coordinator/owner flips to Accepted. The
-decision is structured as a **two-branch rule whose selection is gated on
-one running probe** (`ted-bulk-poll-probe`, merged 6c7c0b0): everything in
-both branches is fully specified now; the probe result picks which branch
-activates (§2). §5's branch-independent decisions are final regardless of
-the gate. Companion to ADR-0009 (whose §5 contingency framing this ADR
-resolves — ADR-0009 §5 now points here). Supersedes ADR-0005's raw-XML
-snapshot requirement ONLY under Branch A′, with the explicit scope in
-§4; under Branch B, ADR-0005 is preserved unchanged.
+decision is a **two-branch rule whose selection is gated on evidence**:
+everything in both branches is fully specified now; §2's gate picks which
+branch activates. First gate poll (`ted-bulk-poll-probe`, run 32345639589) delivered no package and landed in §2's neither-branch
+case, so **the gate REMAINS OPEN**, to be closed by the scheduled
+longer-horizon re-poll plus `ted-source-facts-probe` (4b386a6). **§5's
+four branch-independent decisions are final and SHIP NOW regardless of
+the gate** — agreed with the coordinator; §5.2 stops the abandonment
+clock while the channel question is open. Companion to ADR-0009 (whose
+§5 contingency framing this ADR resolves — ADR-0009 §5 now points
+here). Supersedes ADR-0005's raw-XML snapshot requirement ONLY under
+Branch A′, with the explicit scope in §4; under Branch B, ADR-0005 is
+preserved unchanged.
 
 ## Context
 
@@ -68,21 +72,43 @@ important inputs; §4 gates Option A adoption on a populate-rate probe.
 
 ### Option B evidence (bulk packages) — run 32343243004 + corrected record
 
-- The v1 "URL pattern FALSIFIED" verdict was **wrong** and is corrected:
-  v1 counted only HTTP 200 as a hit, but every
+- The v1 "URL pattern FALSIFIED" verdict was **wrong** (v1 counted only
+  HTTP 200 as a hit): run 32343243004 showed every
   `/packages/notice/daily/{id}` variant (issue ids, `20260817`,
-  `2026-08-17`) and `/packages/notice/monthly/2026-08` answered **202** —
-  TED's async "queued, come back later" — while `/packages/daily/…`
-  answered 400 and `/packages/monthly/…` 404. Distinct routing for
-  distinct shapes means **the endpoint is real**; v1 simply never polled.
+  `2026-08-17`) and `/packages/notice/monthly/2026-08` answering **202**
+  while `/packages/daily/…` answered 400 and `/packages/monthly/…` 404.
+- That 202-routing was initially read as "the endpoint is real; v1
+  simply never polled" — **an over-correction, itself downgraded
+  same-day** (coordinator correction, 2026-08-20). The gate poll (run
+  32345639589, 07:47–07:57 UTC, issue resolved to `157/2026` from `OJ`)
+  polled four id encodings (`202600157`, `2026157`, `157-2026`,
+  `2026-157`) at trigger/+60/+120/+180/+240 s: **every response was 202,
+  0 bytes, `content-type: text/html; charset=UTF-8`** — no package
+  delivered. The `text/html` content-type undercuts the endpoint
+  inference: a package/file endpoint would not advertise HTML, and these
+  responses are equally consistent with TED's website returning a
+  generic async shell for ANY unrecognized path under
+  `/packages/notice/*` (the 400/404 differences then merely reflect
+  route prefixes). Honest state: **the daily-package endpoint's
+  existence and address are UNPROVEN** — not "real but slow".
 - The Search API exposes an **`OJ` field** giving the authoritative
   gazette issue — `"157/2026"` for 2026-08-17. (v1 had guessed issue 163
   from a weekday count — a live demonstration of why date→issue mapping
-  must come from the API, never from calendar arithmetic.)
-- **PENDING — the gate**: `ted-bulk-poll-probe` (merged 6c7c0b0, running
-  now) resolves the real issue from `OJ`, tries several id encodings, and
-  polls each candidate over ~10 minutes. It answers whether TED's async
-  generation completes for PACKAGES while completing for no NOTICES.
+  must come from the API, never from calendar arithmetic.) This datum is
+  VERIFIED independently of the endpoint question.
+- **PENDING — the gate**: two instruments now close it. (i) A scheduled
+  longer-horizon re-poll of the already-triggered candidates (§2's
+  third-outcome rule — run 32345639589 landed exactly in that case).
+  (ii) `ted-source-facts-probe` (committed 4b386a6, dispatching):
+  fetches TED's OWN bulk-download page (`/en/simap/xml-bulk-download`,
+  release calendar, data.europa.eu) and extracts the actual href links —
+  ending pattern-guessing — and A/B tests a real issue id against
+  deliberately garbage ids (`definitely-not-an-issue`, `00000000`); if
+  garbage answers identically, catch-all shell is proven and the
+  inferred address is dead. The same probe also measures the §4 gate
+  A-G1 populate rates (`deadline-receipt-tender-date-lot`,
+  `estimated-value-lot`, `estimated-value-cur-lot`, plus `BT-131-Lot`,
+  `BT-27-Lot`) across the whole 2026-08-17 window.
 
 Constraints in force: modular monolith on Workers, fixed infra < $100/mo
 (target $5–30), D1 10 GB with ≥40% 12-month headroom, ADR-0005 (R2 raw
@@ -107,17 +133,28 @@ untouched by this ADR.
 
 ### 2. The branch gate
 
-- **Branch B activates** if `ted-bulk-poll-probe` (or a bounded follow-up
-  poll, see below) collects a completed daily package: HTTP 200 with
-  archive content for a resolved issue id.
-- **Branch A′ activates** if packages verifiably never complete.
+- **Branch B activates** when a completed daily package (HTTP 200 with
+  archive content) is retrieved from a **proven** address — proven means
+  either the longer-horizon re-poll delivering on an already-triggered
+  candidate, or an address extracted from TED's own bulk-download page
+  hrefs (`ted-source-facts-probe`) delivering. An address is never
+  proven by response-code routing alone (the lesson of the downgraded
+  "endpoint is real" inference).
+- **Branch A′ activates** if the probes establish that no daily-package
+  address exists or that no proven address ever completes — i.e. bulk
+  packages are verifiably unavailable to us, whether because the async
+  subsystem never completes or because the channel does not exist in the
+  polled shape.
 - **A 202-forever result within the ~10-minute probe horizon selects
   neither branch by itself.** A multi-hundred-MB archive may legitimately
-  take longer than 10 minutes to generate; before declaring the whole
-  async subsystem down, one longer-horizon poll (re-poll the same
-  triggered candidates over several hours — the trigger requests have
-  already been made) is required. Only a completed package (→ B) or a
-  multi-hour never-completes result (→ A′) closes the gate. Branch B's
+  take longer than 10 minutes to generate; and a 202 `text/html` shell
+  may equally mean the address is simply wrong. **Run 32345639589
+  (2026-08-20 07:47–07:57 UTC) landed exactly in this case** — four id
+  encodings for issue `157/2026`, all 202 / 0 bytes / `text/html` at
+  every pass through +240 s — so the gate REMAINS OPEN, resolved by (i)
+  the scheduled longer-horizon re-poll and (ii) the
+  `ted-source-facts-probe` href-extraction + garbage-id A/B (which
+  distinguishes "slow" from "wrong address" definitively). Branch B's
   ingestion design tolerates multi-hour generation regardless (trigger
   today, collect on a later cron — §3), so a slow-but-completing package
   pipeline still selects B.
@@ -133,9 +170,12 @@ XML the front-end used to serve.
 
 - **Addressing**: add `OJ` to `SEARCH_FIELDS` (verified field, §5). The
   window's search pass records the issue id for its publication date;
-  package URL = `/packages/notice/daily/{id}` with the encoding the probe
-  proves out. Date→issue mapping comes ONLY from the API's `OJ` value —
-  never weekday arithmetic (the 163-vs-157 miss is the recorded reason).
+  the package URL uses ONLY the address the gate proved (an href from
+  TED's own bulk-download page, or a poll-confirmed pattern) — the
+  inferred `/packages/notice/daily/{id}` shape is UNPROVEN and must not
+  be hard-coded ahead of that proof. Date→issue mapping comes ONLY from
+  the API's `OJ` value — never weekday arithmetic (the 163-vs-157 miss
+  is the recorded reason).
 - **Async acquisition**: the cron GETs the package URL; a 202 records a
   package-pending state and later runs re-poll — the render-pending
   machinery's shape at package granularity, but trivially cheap (one
@@ -213,7 +253,9 @@ targeted probe measuring the populate-rate of
 `estimated-value-cur-lot` across a full window (plus acceptance of the
 remaining P-status fields in the inventory: languages alias, BT-11 buyer
 legal type, BT-27-Procedure, notice subtype), and deadline granularity
-(date-only vs date+time). Deadline and value are top matching inputs; if
+(date-only vs date+time). `ted-source-facts-probe` (committed 4b386a6)
+carries this measurement (`BT-131-Lot`, `BT-27-Lot` included) across the
+2026-08-17 window, so A-G1's data arrives with the gate evidence. Deadline and value are top matching inputs; if
 their populate-rate is materially below the XML's, that fact goes into
 the disclosure and the component weighting discussion — it does not get
 discovered in production.
@@ -268,6 +310,13 @@ Design (per the favorable alignment evidence):
   totals stay ~$6 / ~$26.
 
 ### 5. Branch-independent decisions (final now, regardless of the gate)
+
+**These four decisions SHIP NOW, ahead of gate closure — explicitly
+agreed with the coordinator (2026-08-20).** None depends on which branch
+activates, and §5.2 is time-critical: the attempt-burning suspension is
+what stops the ~10-day abandonment clock against the 32 stranded notices
+while the channel question is still open. Holding them hostage to the
+gate would spend real notices to buy nothing.
 
 1. **`onlyLatestVersions: false`, set explicitly** in the window search
    request (today it is implicit). Our version model wants every
@@ -355,18 +404,30 @@ with measured package sizes / field-set request sizes).
   (sub-attribute cardinality, language-keyed objects); descriptions to
   1,793 chars untruncated; `onlyLatestVersions` 145-vs-156; 400 on
   unsupported field names.
-- VERIFIED (run 32343243004 + correction): `/packages/notice/daily/*`
-  and `/packages/notice/monthly/*` answer 202 (distinct from 400/404 on
-  other shapes) — the endpoint exists and queues work; `OJ` field gives
-  the authoritative issue (`157/2026` for 2026-08-17).
+- VERIFIED (runs 32343243004, 32345639589): the raw response behavior
+  ONLY — `/packages/notice/daily/*` and `/packages/notice/monthly/*`
+  answer 202 / 0 bytes / `content-type: text/html` (through +240 s of
+  polling on four id encodings), while `/packages/daily/…` answers 400
+  and `/packages/monthly/…` 404. The `OJ` field gives the authoritative
+  gazette issue (`157/2026` for 2026-08-17).
+- DOWNGRADED (2026-08-20, coordinator correction): the earlier reading
+  of that routing as "the endpoint is real; it was simply never polled"
+  was an over-correction. `text/html` on a would-be package endpoint is
+  equally consistent with a catch-all async shell for any path under
+  `/packages/notice/*`. The daily-package endpoint's **existence and
+  address are UNPROVEN**.
 - INFERRED (stated, not asserted): deadline/value field names are
   accepted-but-empty for sampled notices (from the 200 + the proven
   400-on-unsupported behavior); daily package size ~30–150 MB
   compressed; archive format tar.gz of per-notice XML in submitted
-  (eForms UBL) format. Each has a probe (`A-G1`; `ted-bulk-poll-probe`
-  reports Content-Length/format/entries).
-- OPEN: whether package generation completes (the §2 gate — probe
-  running); deadline/value populate-rate and granularity (A-G1);
+  (eForms UBL) format. All package-shape inferences are downstream of
+  the UNPROVEN address above.
+- OPEN (all carried by the scheduled longer-horizon re-poll +
+  `ted-source-facts-probe`, 4b386a6): whether a daily-package address
+  exists at all (href extraction from TED's own bulk-download page;
+  garbage-id A/B — identical answers for garbage ids prove catch-all
+  shell); whether a proven address ever completes (the §2 gate);
+  deadline/value populate-rate and granularity (A-G1, same probe);
   remaining P-status field aliases; Workers runtime surfaces
   (`DecompressionStream`, streaming R2 put) — verify-current-docs at
   implementation time.
@@ -380,9 +441,10 @@ with measured package sizes / field-set request sizes).
 - **Option A as the end-state** (even with the favorable alignment
   evidence): permanently abandons raw-XML provenance (ADR-0005), SDK
   versioning, buyer org ids, and per-lot geography — a strictly weaker
-  data platform adopted at the exact moment an official raw-XML channel
-  (Branch B) appears reachable. Rejected; A′ is interim-only with an
-  explicit retirement condition.
+  data platform, adopted while an official raw-XML channel (Branch B)
+  may still exist (gate open; TED's bulk-download page is a documented
+  reuser surface even though our polled address is unproven). Rejected;
+  A′ is interim-only with an explicit retirement condition.
 - **Scraping the HTML notice pages**: re-creates the dependence on
   undocumented website behavior that just failed us, adds fragile HTML
   parsing of untrusted content, and violates the "boring, official
@@ -395,9 +457,11 @@ with measured package sizes / field-set request sizes).
   queues+cron sketch meets the requirement with machinery we already
   operate; a re-examination note on ADR-0006 suffices until the
   extraction is built and measured. Rejected for now.
-- **Deciding the branch today without the poll probe**: Branch B's
-  superiority is conditional on packages actually completing — the one
-  fact still open, and this week has punished every unmeasured
-  assumption about TED's async subsystem (ADR-0008 A3, the v1
-  FALSIFIED-verdict error, the serialized-queue hypothesis). The gate
-  costs hours; a wrong channel commitment costs weeks. Rejected.
+- **Deciding the branch today without the probes**: Branch B's
+  superiority is conditional on a package actually arriving from a
+  proven address — facts still open, and this week has punished every
+  unmeasured assumption about TED's async subsystem (ADR-0008 A3, the
+  v1 FALSIFIED-verdict error, the serialized-queue hypothesis, and the
+  "endpoint is real" over-correction downgraded within hours of being
+  made). The gate costs hours; a wrong channel commitment costs weeks.
+  Rejected.
