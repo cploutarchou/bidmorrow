@@ -1,0 +1,61 @@
+# Evidence probe (2026-08-20): the first ADR-0008 run showed ZERO of 156
+# triggered renders completing within ~10 minutes, while the 2026-08-18
+# single-notice diagnostic saw a render complete minutes after its trigger.
+# Hypothesis: TED's async render capacity is per-client and serialized, so
+# triggering a whole window at once builds a queue we then outpace — while a
+# SMALL batch completes quickly. This decides the redesign: batch-and-wait
+# (small concurrent trigger sets) vs. more patience. Read-only GETs against
+# already-published notices, ~1s spacing, identifying User-Agent.
+name: TED render batch probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      window:
+        description: 'Publication date to sample (YYYY-MM-DD)'
+        required: false
+        type: string
+        default: '2026-08-17'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ted-render-batch-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      WINDOW: ${{ inputs.window }}
+      UA: 'BidMorrow/1.0 (+https://bidmorrow.com; support@bidmorrow.com)'
+    steps:
+      - name: Validate input
+        run: |
+          [[ "$WINDOW" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "bad window"; exit 1; }
+
+      - name: Collect notice URLs from the anonymous Search API
+        run: |
+          d="${WINDOW//-/}"
+          q="classification-cpv IN (48*, 72*) AND form-type = competition AND publication-date >= ${d} AND publication-date <= ${d} SORT BY publication-date"
+          jq -n --arg q "$q" '{query: $q, fields: ["publication-number","links"], limit: 60}' > /tmp/req.json
+          code=$(curl -s -o /tmp/search.json -w '%{http_code}' --max-time 60 \
+            -X POST 'https://api.ted.europa.eu/v3/notices/search' \
+            -H 'Content-Type: application/json' -H "User-Agent: $UA" \
+            --data @/tmp/req.json)
+          echo "search status=${code}"
+          jq -r '.notices[]?.links.xml.MUL // empty' /tmp/search.json > /tmp/urls.txt
+          echo "collected $(wc -l < /tmp/urls.txt) notice URLs"
+          test "$(wc -l < /tmp/urls.txt)" -ge 20 || { echo "too few URLs to run the comparison"; exit 1; }
+
+      - name: Batch A — trigger 5, measure completion over 6 minutes
+        run: |
+          head -5 /tmp/urls.txt > /tmp/a.txt
+          bash .github/scripts/render-batch.sh /tmp/a.txt A
+
+      - name: Batch B — trigger 50, measure completion over 6 minutes
+        run: |
+          sed -n '6,55p' /tmp/urls.txt > /tmp/b.txt
+          bash .github/scripts/render-batch.sh /tmp/b.txt B
