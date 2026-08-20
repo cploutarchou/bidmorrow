@@ -49,7 +49,11 @@ Assumptions behind the request math:
   2026-08-19) adds ≤150 requests/day worst case (25 rows × 6 render
   visits) → ~350–800 outbound TED calls/day, inside the self-imposed
   2,000/run budget; these are outbound subrequests, not billed Worker
-  requests. Queue-batched normalization → well under 100k Worker
+  requests. ADR-0009 (2026-08-20) removes the early abort for
+  render-pending-only days: the degraded-day worst case (every render
+  pending, full 6 visits each) is ~936 fetches at 156 notices/day and
+  ~1,800 at the 300/day ceiling — still inside the 2,000/run budget; $0
+  billing impact (outbound subrequests). Queue-batched normalization → well under 100k Worker
   requests/mo and ~1M D1 row writes/mo including match recomputation.
   Matching writes ≈ orgs × new lots × ~10 component rows/day: at 100 orgs ×
   200 lots × 12 rows ≈ 240k writes/day ≈ 7.2M/mo — inside the 50M allowance.
@@ -95,8 +99,12 @@ with margin; no scope tightening needed (ADR-0003 trigger is >600/day).
   for per-notice fetch/render failures — pessimistic 1%/day at the 300/day
   ceiling ≈ **0.33 MB/year** worst case before the 90-day terminal-row
   purge (steady state a few KB). Measured render-pending incidence
-  2026-08-19: 1/156 ≈ 0.6%, inside the 1% assumption. Negligible vs the
-  10 GB cap; no headroom impact.
+  2026-08-19: 1/156 ≈ 0.6%. **The 1% assumption is falsified for burst
+  days** (2026-08-20: 32/156 ≈ 20.5% skipped render-pending; ADR-0009):
+  re-projected at a sustained 100% absolute worst case, 300 rows/day ×
+  90-day purge × ~300 B ≈ **8 MB steady state** — still negligible vs the
+  10 GB cap; no headroom impact. ADR-0009's `notices_render_pending`
+  run-column adds ~6 KB/year (noise).
 - **Steady state projection ≤ ~3–5 GB total at 100 customers** vs 10 GB
   limit → ≥50% headroom. Retention/archival (normalized rows pruned after
   deadline+90d; snapshots retained in R2) is what keeps this bounded and is
@@ -119,8 +127,11 @@ preferences (30) per org · bounded recompute windows · digest batching ·
 emergency pause flags (ingestion_paused, digest_paused) · CPV/country
 ingestion scope config · retention purge job · DB-size alert at 60% ·
 fetch-retry drain caps (≤25 rows × ≤6 render visits/run, 5 attempts, then
-alerting abandonment — ADR-0008) · systemic fetch-failure threshold
-(ADR-0008 §2).
+alerting abandonment — ADR-0008) · systemic fetch-failure threshold on
+genuine fetch failures (ADR-0008 §2 as narrowed by ADR-0009 §1; render-
+pending days alert via RENDER_PENDING_DEGRADED instead of failing) ·
+cause-classified drain skip on systemic/budget window failures
+(ADR-0009 §2).
 
 ## Deliberately avoided
 

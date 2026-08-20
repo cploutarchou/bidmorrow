@@ -40,9 +40,18 @@ could not be fully verified.
   the window's work queue (max `MAX_RENDER_VISITS` visits, min
   `RENDER_RETRY_DELAY_MS` between visits to the same notice) so every
   render is triggered on the first pass and collected on later passes; an
-  exhausted notice stays window-fatal (checkpoint held — the next daily
-  retry collects the by-then-cached renders). This broke the first
+  exhausted notice is skipped into `ingestion_fetch_retries` and tracked
+  in its own `notices_render_pending` counter — never window-fatal and
+  never part of the systemic fetch-failure threshold (ADR-0008 as
+  superseded in part by ADR-0009). This async behavior broke the first
   non-empty staging window (2026-08-17, 156 in-scope notices).
+  **Render completion appears load-dependent** (empirical, 2026-08-20
+  05:00 UTC staging run): with all 156 renders triggered, ZERO completed
+  across 6 visits over ~8–10 minutes (no HTTP or parse errors — 202/empty
+  only), while the 2026-08-18 single-notice CI probe saw its render
+  complete (200 + 12,953 bytes) minutes after the trigger. Hypothesis
+  under test (batch-size probe, ADR-0009 §3): per-client, serialized
+  render capacity — a large trigger set starves itself.
 - **There is NO authenticated notice-XML download endpoint** (verified
   live 2026-08-18 against the owner's real key AND the API's own OpenAPI
   spec, ted-api-probe runs 32152093521/32155040026 — supersedes the
