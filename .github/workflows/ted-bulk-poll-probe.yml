@@ -1,0 +1,98 @@
+# Bulk-package probe v2 (2026-08-20). v1 (run 32343243004) concluded "URL
+# pattern FALSIFIED" because it treated HTTP 202 as a miss — but 202 is
+# precisely TED's async "queued, come back later" signal, the same one the
+# notice-XML front-end returns. v1's own evidence argues the endpoint is
+# REAL: every /packages/notice/daily/{anything} answered 202 while
+# /packages/daily/... answered 400 and /packages/monthly/... answered 404,
+# so the server routes these paths distinctly. v1 also recovered the
+# authoritative OJ S issue from the Search API's `OJ` field: 157/2026 for
+# publication date 2026-08-17 (v1 guessed 163 from a weekday count).
+#
+# This probe therefore: (1) resolves the real issue number from the Search
+# API, (2) tries several id encodings of it, and (3) POLLS each 202 over
+# ~8 minutes exactly like the render probe — the decisive question being
+# whether TED's async generation completes for PACKAGES even though it is
+# currently completing for no NOTICES. If packages complete, the bulk
+# channel is viable today; if they also never complete, TED's whole async
+# document subsystem is down and waiting is the only honest read.
+name: TED bulk poll probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      probe_date:
+        description: 'Publication date to resolve (YYYY-MM-DD)'
+        required: false
+        type: string
+        default: '2026-08-17'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ted-bulk-poll-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PROBE_DATE: ${{ inputs.probe_date }}
+      UA: 'BidMorrow/1.0 (+https://bidmorrow.com; support@bidmorrow.com)'
+    steps:
+      - name: Validate input
+        run: |
+          [[ "$PROBE_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "bad probe_date"; exit 1; }
+
+      - name: 1 — Resolve the authoritative OJ S issue from the Search API
+        run: |
+          d="${PROBE_DATE//-/}"
+          q="publication-date >= ${d} AND publication-date <= ${d} AND form-type = competition"
+          jq -n --arg q "$q" '{query: $q, fields: ["OJ","publication-number"], limit: 1}' > /tmp/req.json
+          curl -s --max-time 60 -X POST 'https://api.ted.europa.eu/v3/notices/search' \
+            -H 'Content-Type: application/json' -H "User-Agent: $UA" \
+            --data @/tmp/req.json -o /tmp/s.json
+          oj=$(jq -r '.notices[0].OJ // empty' /tmp/s.json)
+          echo "OJ field for ${PROBE_DATE}: ${oj:-<none>}"
+          [ -n "$oj" ] || { echo "could not resolve OJ issue"; exit 1; }
+          num="${oj%%/*}"; year="${oj##*/}"
+          printf '%s\n' "$num" > /tmp/issue_num.txt
+          printf '%s\n' "$year" > /tmp/issue_year.txt
+          echo "issue number=${num} year=${year}"
+
+      - name: 2 — Poll candidate package URLs, treating 202 as queued (not a miss)
+        run: |
+          num=$(cat /tmp/issue_num.txt); year=$(cat /tmp/issue_year.txt)
+          padded=$(printf '%05d' "$num")
+          : > /tmp/urls.txt
+          for cand in \
+            "${year}${padded}" \
+            "${year}$(printf '%03d' "$num")" \
+            "${num}-${year}" \
+            "${year}-${num}" ; do
+            echo "https://ted.europa.eu/packages/notice/daily/${cand}" >> /tmp/urls.txt
+          done
+          echo "candidates:"; cat /tmp/urls.txt
+          probe_all() {
+            while read -r u; do
+              [ -z "$u" ] && continue
+              code=$(curl -s -o /tmp/h.bin -D /tmp/h.txt -w '%{http_code}' --max-time 60 -L \
+                -H "User-Agent: $UA" "$u" || echo 000)
+              bytes=$(wc -c < /tmp/h.bin | tr -d ' ')
+              ctype=$(grep -i '^content-type:' /tmp/h.txt | tail -1 | tr -d '\r' | cut -c1-60)
+              echo "  ${u##*/} status=${code} bytes=${bytes} ${ctype}"
+              if [ "$code" = "200" ] && [ "$bytes" -gt 10000 ]; then
+                echo "  *** PACKAGE DELIVERED — format detection ***"
+                file /tmp/h.bin
+                tar -tzf /tmp/h.bin 2>/dev/null | head -5 || unzip -Z1 /tmp/h.bin 2>/dev/null | head -5 || echo "  (unrecognized archive)"
+              fi
+              rm -f /tmp/h.bin /tmp/h.txt
+              sleep 1
+            done < /tmp/urls.txt
+          }
+          echo "== pass 1 (trigger) =="; probe_all
+          for w in 60 120 180 240; do
+            echo "== sleeping ${w}s =="; sleep "$w"
+            echo "== after +${w}s =="; probe_all
+          done

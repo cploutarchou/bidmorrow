@@ -322,6 +322,92 @@ permanent daily loop.** Sequence, with the real numbers:
    (wait) is a canary, not a plan. Two dispatch-only probes authored to
    convert inferred rows to verified ones. **ADR-0010 pending probe
    evidence — do not decide before it.**
+8. **Source-facts probe result (run 32347877913, 2026-08-20 08:15 UTC) —
+   the bulk address question is now half-answered.** (i) The inferred
+   `/packages/notice/daily/{id}` address is DEAD, proven by A/B: the real
+   issue id `202600157`, `definitely-not-an-issue` and `00000000` all
+   answered `202 / 0 bytes / content-type: text/html` identically, so it
+   is the website's catch-all async shell and every poll against it
+   measured nothing. (ii) The REAL addresses are published by TED itself
+   at `ted.europa.eu/en/simap/xml-bulk-download` (HTTP 200, 191,772
+   bytes) and carry NO `/notice/` segment:
+   `https://ted.europa.eu/packages/daily/{ojIssueId}` (listed for
+   `202600147`–`202600160`) and
+   `https://ted.europa.eu/packages/monthly/{year}-{n}`. `OJ` `157/2026`
+   → `202600157`, which appears in the published list, so the id encoding
+   is source-confirmed, not guessed. Note the same `/packages/daily/…`
+   prefix answered 400 in run 32343243004 — the earlier probe read the
+   real family's rejection of a malformed id as evidence against the
+   family. (iii) **ADR-0010 gate A-G1 is NOT measured**: the populate-rate
+   request returned `400 — "Parameter 'fields' contains unsupported
+value"`, so at least one requested field name is invalid, the whole
+   request was rejected, and the earlier "accepted-but-empty" reading is
+   unsupported. Follow-up `ted-package-probe` (PR #65) HEADs/GETs the
+   published address with the same garbage-id A/B plus content-type,
+   content-disposition, `file(1)`, magic bytes and an archive listing, and
+   closes A-G1 by mining the API's own supported-value enumeration then
+   measuring each field SEPARATELY. `ted-bulk-poll-probe.yml` is obsolete
+   (dead address); the 11:00 UTC re-poll trigger was rewritten to dispatch
+   `ted-package-probe` instead. **Gate still OPEN** — the question changed
+   from "does an unknown address exist" to "does the published address
+   deliver bytes". Standing rule reaffirmed: an address is proven by
+   delivering content a garbage id does not, never by response-code
+   routing alone.
+9. **ADR-0010 GATE CLOSED — Branch B ACTIVATED** (`ted-package-probe`
+   run 32352483245, 2026-08-20 09:10 UTC). The address TED publishes
+   DELIVERS: `GET https://ted.europa.eu/packages/daily/202600157` → HTTP
+   200, `application/gzip`, **19,980,923 bytes**,
+   `content-disposition: attachment; filename=20260817_2026157.tar.gz`,
+   magic `1f 8b 08 00`, ~207 MB uncompressed, and `tar tzf` listed real
+   members (`20260817_157/00566631_2026.xml`, …). The A/B holds: garbage
+   ids (`definitely-not-an-issue`, `00000000`) return **400 text/plain**,
+   so the real issue and garbage do NOT behave alike — that is what
+   proves the address, not the 200 alone. Monthly behaves the same
+   (`monthly/2026-1` → 200, gzip, 344,184,486 bytes). Delivery was
+   IMMEDIATE — no async generation step — so Branch B's tolerance for
+   multi-hour package generation is unused headroom. **The render outage
+   stops being existential**; the render front-end demotes to a telemetry
+   canary. Verified engineering facts: member naming
+   `{YYYYMMDD}_{issueNumber}/{documentNumber}_{year}.xml`, with ONE issue
+   appearing in THREE encodings in a single response (`202600157` in the
+   URL, `157` in the member dir, `20260817_2026157` in the filename) —
+   none derivable from another by assumption; and a daily package carries
+   ALL notices of its issue (~207 MB) against a ~156-notice in-scope
+   window, so selective extraction is mandatory, not an optimization.
+   OPEN: the `publication-number` ↔ member-filename mapping is NOT yet
+   verified against a real pair.
+10. **ADR-0010 gate A-G1 MEASURED** (same run, window 2026-08-17, 156
+    in-scope notices). Field names were mined from the API's own
+    supported-value enumeration (47,988 bytes in the 400 body for a
+    deliberately invalid field) instead of guessed. Results:
+    `BT-137-Lot` 156/156 (**100%**, `LOT-0001` — re-confirms lot
+    alignment); `deadline-receipt-tender-date-lot` 130/156 (**83.3%**,
+    `2026-09-14+02:00`); `estimated-value-lot` 57/156 (**36.5%**,
+    `200000.00`); `estimated-value-cur-lot` 57/156 (**36.5%**, `EUR`);
+    `BT-27-Lot` 57/156 (**36.5%** — identical to `estimated-value-lot`,
+    i.e. the alias and the BT id are the same datum); `BT-131-Lot`
+    **REJECTED 400** — it is not a valid `fields` value, the enumeration
+    splits it as `BT-131(d)-Lot` / `BT-131(t)-Lot`, which is what
+    docs/ted-data-source.md's field map already recorded (the probe used
+    the wrong name, not the API). Contract value at 36.5% is a material
+    weakness for Branch A′ — value is a top matching input and a channel
+    carrying it for ~1 in 3 notices would force a large "value unknown"
+    population or a reweighting. Not blocking, since Branch B supplies
+    full XML; recorded because A′ is the contingency. UNRESOLVED: whether
+    36.5% reflects the XML's own populate rate or a search index that
+    under-populates relative to source — Branch B makes this answerable
+    by comparing BT-27 presence in parsed XML against the index for the
+    same window. Until then the figure characterises THE SEARCH INDEX,
+    not TED's data.
+
+**RISK DOWNGRADED 2026-08-20 09:10 — the abandonment clock is no longer
+existential.** With ADR-0010 Branch B activated (item 9), a notice that
+reaches terminal `NOTICE_FETCH_ABANDONED` is recoverable from the daily
+bulk package, which is addressable by publication date via `OJ` and
+independent of both the render pipeline and the advance-only checkpoint.
+The clock below still governs how much work the drain burns in the
+meantime, and the ~10-day figure stands until Branch B ships — but it no
+longer sets a hard decision deadline. Original entry, kept for the record:
 
 **OPEN RISK WITH A CLOCK — slow-motion abandonment**: during a sustained
 outage a drained retry row reaches terminal `NOTICE_FETCH_ABANDONED` ≈10
