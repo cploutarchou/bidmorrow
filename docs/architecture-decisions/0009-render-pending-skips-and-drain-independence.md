@@ -1,12 +1,16 @@
 # ADR-0009: Render-pending skips leave the systemic threshold; the drain runs unless the failure was systemic
 
 Status: Proposed (2026-08-20) — spec for immediate implementation of §1 and
-§2; §3 (window trigger strategy) is an **evidence-pending placeholder** to
-be completed when the 2026-08-20 batch-size probe results arrive. Partially
-supersedes ADR-0008: replaces §2's counting of render-pending exhaustions
-toward the systemic fetch-failure threshold (introduced by Amendment §A1)
-and Amendment §A2's "skip the drain whenever catch-up ended `failed`" rule.
-All other ADR-0008 decisions stand.
+§2. §3 was completed same-day when the batch-size probe (run 32337551926)
+REFUTED the serialized-render-queue hypothesis: the anonymous render
+pipeline is currently completing no renders at all, so no client-side
+trigger strategy is designed. §5 frames — but deliberately does not decide
+— the source-acquisition contingency; a ted-data investigation running in
+parallel owns bringing that evidence. Partially supersedes ADR-0008:
+replaces §2's counting of render-pending exhaustions toward the systemic
+fetch-failure threshold (introduced by Amendment §A1) and Amendment §A2's
+"skip the drain whenever catch-up ended `failed`" rule. All other ADR-0008
+decisions stand.
 
 ## Context
 
@@ -27,9 +31,10 @@ XML across 6 visits over ~8–10 minutes — zero parse errors, zero HTTP
 errors, only 202/empty-body render-pending responses. TED was not blocking
 us; TED was accepting every request and rendering nothing in our window.
 (Contrast: the 2026-08-18 single-notice CI probe DID observe a render
-complete — 200 + 12,953 bytes — minutes after its trigger. Render
-completion appears to depend on load/trigger-set size; a probe comparing
-5-notice vs 50-notice trigger batches is running now — see §3.)
+complete — 200 + 12,953 bytes — minutes after its trigger. The same-day
+batch-size probe subsequently showed batch size is NOT the variable and
+that the render pipeline is currently completing no renders at all — see
+§3 for the numbers and what they rule out.)
 
 Two ADR-0008 decisions are thereby falsified:
 
