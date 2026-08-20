@@ -1,0 +1,110 @@
+# Two open questions, one dispatch (2026-08-20).
+#
+# Q1 — STOP GUESSING THE BULK URL. Every /packages/notice/daily/{id} answer
+# so far has been "202, 0 bytes, content-type: text/html" for every id
+# encoding tried, over a 10-minute poll. text/html materially weakens the
+# earlier "the endpoint is real, it's just async" inference: a file endpoint
+# would not advertise HTML. It is equally consistent with the website's
+# generic async shell answering any unrecognized /packages/notice/* path.
+# So: fetch TED's OWN bulk-download page and extract the real links rather
+# than inferring a pattern from search-result snippets.
+#
+# Q2 — ADR-0010 gate A-G1: deadline and contract value are two of the
+# matching engine's most important inputs, and they did NOT appear in the
+# sampled Search API responses. Unsupported field names 400 the whole
+# request and this one returned 200, so they are almost certainly
+# accepted-but-empty — but that is inference. Measure the POPULATE RATE
+# across a full window before Option A could be adopted.
+name: TED source facts probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      window:
+        description: 'Publication date to measure (YYYY-MM-DD)'
+        required: false
+        type: string
+        default: '2026-08-17'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ted-source-facts-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      WINDOW: ${{ inputs.window }}
+      UA: 'BidMorrow/1.0 (+https://bidmorrow.com; support@bidmorrow.com)'
+      SEARCH_URL: 'https://api.ted.europa.eu/v3/notices/search'
+    steps:
+      - name: Validate input
+        run: |
+          [[ "$WINDOW" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "bad window"; exit 1; }
+
+      - name: Q1a — Fetch TED's bulk-download page and extract real links
+        run: |
+          for page in \
+            'https://ted.europa.eu/en/simap/xml-bulk-download' \
+            'https://ted.europa.eu/en/release-calendar' \
+            'https://data.europa.eu/data/datasets?query=TED' ; do
+            code=$(curl -s -o /tmp/p.html -w '%{http_code}' --max-time 45 -L \
+              -H "User-Agent: $UA" -H 'Accept: text/html' "$page" || echo 000)
+            bytes=$(wc -c < /tmp/p.html | tr -d ' ')
+            echo "== ${page}: status=${code} bytes=${bytes} =="
+            if [ "$code" = "200" ] && [ "$bytes" -gt 500 ]; then
+              echo "-- hrefs mentioning package/bulk/download/xml (bounded) --"
+              grep -oE 'href="[^"]{0,200}"' /tmp/p.html \
+                | grep -iE 'package|bulk|download|\.tar|\.gz|\.zip|xml' \
+                | sort -u | head -25 || echo "  (none)"
+              echo "-- any absolute ted.europa.eu/packages links --"
+              grep -oE 'https://[a-z.]*europa\.eu[^"'"'"' ]{0,120}' /tmp/p.html \
+                | grep -i 'packag' | sort -u | head -15 || echo "  (none)"
+            fi
+            rm -f /tmp/p.html
+            sleep 2
+          done
+
+      - name: Q1b — Does a delivered package look different from the 202 shell?
+        run: |
+          # Compare a known-good TED page against the /packages/ responses:
+          # if /packages/notice/daily/<garbage> also 202s, the 202 is a
+          # catch-all shell and proves nothing about the endpoint existing.
+          for u in \
+            'https://ted.europa.eu/packages/notice/daily/202600157' \
+            'https://ted.europa.eu/packages/notice/daily/definitely-not-an-issue' \
+            'https://ted.europa.eu/packages/notice/daily/00000000' ; do
+            code=$(curl -s -o /tmp/b.bin -D /tmp/h.txt -w '%{http_code}' --max-time 45 -L \
+              -H "User-Agent: $UA" "$u" || echo 000)
+            bytes=$(wc -c < /tmp/b.bin | tr -d ' ')
+            ct=$(grep -i '^content-type:' /tmp/h.txt | tail -1 | tr -d '\r')
+            echo "${u##*/}: status=${code} bytes=${bytes} ${ct}"
+            rm -f /tmp/b.bin /tmp/h.txt
+            sleep 1
+          done
+          echo "INTERPRETATION: identical answers for a real issue id and for garbage => catch-all shell, endpoint UNPROVEN."
+
+      - name: Q2 — Populate rate of deadline / value fields across the window
+        run: |
+          d="${WINDOW//-/}"
+          q="classification-cpv IN (48*, 72*) AND form-type = competition AND publication-date >= ${d} AND publication-date <= ${d}"
+          jq -n --arg q "$q" '{query: $q, limit: 250, onlyLatestVersions: false,
+            fields: ["publication-number","deadline-receipt-tender-date-lot","estimated-value-lot","estimated-value-cur-lot","BT-131-Lot","BT-27-Lot","BT-137-Lot"]}' > /tmp/req.json
+          code=$(curl -s -o /tmp/r.json -w '%{http_code}' --max-time 60 \
+            -X POST "$SEARCH_URL" -H 'Content-Type: application/json' \
+            -H "User-Agent: $UA" --data @/tmp/req.json || echo 000)
+          echo "combined request: status=${code} totalNoticeCount=$(jq '.totalNoticeCount // "?"' /tmp/r.json 2>/dev/null)"
+          if [ "$code" != "200" ]; then
+            head -c 300 /tmp/r.json; echo; exit 0
+          fi
+          echo "-- populate counts over $(jq '.notices | length' /tmp/r.json) returned notices --"
+          for f in deadline-receipt-tender-date-lot estimated-value-lot estimated-value-cur-lot BT-131-Lot BT-27-Lot BT-137-Lot; do
+            n=$(jq --arg f "$f" '[.notices[] | select((.[$f] // null) != null)] | length' /tmp/r.json)
+            echo "  ${f}: present on ${n} notices"
+          done
+          echo "-- sample values (first notice that has a deadline or value) --"
+          jq -c '[.notices[] | select((."deadline-receipt-tender-date-lot" // ."BT-131-Lot" // ."estimated-value-lot" // null) != null)][0] // "none"' /tmp/r.json | head -c 600; echo

@@ -84,6 +84,58 @@ could not be fully verified.
   assume unlimited: polite throttling, exponential backoff on 429/5xx, and
   an admin-configurable request budget per run are mandatory.
 
+## Bulk XML packages (address verified 2026-08-20; delivery UNPROVEN)
+
+TED publishes daily and monthly bulk XML packages, and publishes their
+links itself at `https://ted.europa.eu/en/simap/xml-bulk-download`
+(HTTP 200). The real addresses, taken from that page's hrefs — never
+inferred:
+
+- daily: `https://ted.europa.eu/packages/daily/{ojIssueId}` (e.g.
+  `202600157`, listed for issues `202600147`–`202600160`)
+- monthly: `https://ted.europa.eu/packages/monthly/{year}-{n}` (e.g.
+  `2026-1`)
+
+The issue id comes ONLY from the Search API's `OJ` field (`157/2026` for
+publication date 2026-08-17 → `202600157`), never from weekday
+arithmetic.
+
+**`https://ted.europa.eu/packages/notice/daily/{id}` is NOT an endpoint**
+(verified 2026-08-20, ted-source-facts-probe run 32347877913): a real
+issue id, `definitely-not-an-issue`, and `00000000` all answer
+identically — `202`, 0 bytes, `content-type: text/html; charset=UTF-8`.
+That is the website's generic async shell answering any unrecognized
+path, so every poll against it measured nothing. Standing rule: an
+address is proven by delivering content a garbage id does not, never by
+response-code routing.
+
+**The daily package DELIVERS** (verified 2026-08-20, `ted-package-probe`
+run 32352483245). `GET /packages/daily/202600157` → HTTP 200,
+`content-type: application/gzip`, 19,980,923 bytes,
+`content-disposition: attachment; filename=20260817_2026157.tar.gz`,
+magic bytes `1f 8b 08 00`, ~207 MB uncompressed. Garbage ids
+(`definitely-not-an-issue`, `00000000`) return **400 text/plain** — the
+real issue and garbage do NOT behave alike, which is what proves the
+address. The monthly package behaves the same way (`monthly/2026-1` →
+200, `application/gzip`, 344,184,486 bytes, `2026-01.tar.gz`). Delivery
+was immediate; there is no async generation step on this channel.
+
+Archive members are named
+`{YYYYMMDD}_{issueNumber}/{documentNumber}_{year}.xml`, e.g.
+`20260817_157/00566631_2026.xml`. Note that ONE issue appears in three
+encodings in a single response — `202600157` in the URL, `157` in the
+member directory, `20260817_2026157` in the download filename — so no
+form may be derived from another by assumption. The URL form comes from
+the Search API's `OJ` field; the member form is read from the archive.
+The `publication-number` ↔ member-filename mapping is NOT yet verified
+against a real pair.
+
+A daily package contains ALL notices of its issue (~207 MB uncompressed),
+of which a typical in-scope CPV window is ~156 — selective extraction
+against search-derived ids is mandatory. This is ADR-0010 Branch B, now
+the activated acquisition channel; the render front-end is demoted to a
+telemetry canary.
+
 ## Expert query language (ingestion filter)
 
 Kebab-case eForms search aliases; boolean AND/OR/NOT, `=`, `~` (contains),
