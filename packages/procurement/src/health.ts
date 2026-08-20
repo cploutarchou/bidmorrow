@@ -42,10 +42,17 @@ export function isIngestionStale(lastSuccessMs: number | null, nowMs: number): b
 
 const MS_PER_DAY = 86_400_000;
 
-/** Codes that alert when seen within the lookback window (§5 condition i). */
+/**
+ * Codes that alert when seen within the lookback window (§5 condition i).
+ * `RENDER_PENDING_DEGRADED` (ADR-0009 §1) joins here rather than condition
+ * (iii): a degraded-render day is a real upstream signal worth a same-day
+ * alert, but it must not participate in (iii)'s genuine-fetch-failure
+ * streak (a slow-render day is normal TED behavior, not TED refusing us).
+ */
 const ALERTABLE_FETCH_ERROR_CODES = [
   'FETCH_FAILURE_THRESHOLD_EXCEEDED',
   'NOTICE_FETCH_ABANDONED',
+  'RENDER_PENDING_DEGRADED',
 ] as const;
 
 /** §5 condition (ii): pending retry backlog threshold. */
@@ -58,7 +65,7 @@ export const CONSECUTIVE_FETCH_FAILED_RUNS_ALERT_THRESHOLD = 3;
 const CONSECUTIVE_RUNS_SCAN_LIMIT = 20;
 
 export interface FetchResilienceAlerts {
-  /** (i): any `FETCH_FAILURE_THRESHOLD_EXCEEDED`/`NOTICE_FETCH_ABANDONED` in the last 24h. */
+  /** (i): any `FETCH_FAILURE_THRESHOLD_EXCEEDED`/`NOTICE_FETCH_ABANDONED`/`RENDER_PENDING_DEGRADED` (ADR-0009 §1) in the last 24h. */
   readonly thresholdOrAbandonment: boolean;
   /** (ii): pending retry backlog > `PENDING_RETRY_BACKLOG_ALERT_THRESHOLD`. */
   readonly pendingRetryBacklog: boolean;

@@ -1,0 +1,1 @@
+ALTER TABLE `ingestion_runs` ADD `notices_render_pending` integer DEFAULT 0 NOT NULL;

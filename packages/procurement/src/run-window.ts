@@ -110,6 +110,34 @@ export function isFetchFailureThresholdExceeded(
 }
 
 /**
+ * Degraded-render alert thresholds (ADR-0009 §1) — NOT a fail ceiling.
+ * Evaluated ONCE at window end (never per-skip; there is no abort). Same
+ * location rationale as §2's constants: a correctness/alerting parameter,
+ * not an operator-tunable `feature_flags` lever.
+ */
+export const RENDER_PENDING_DEGRADED_MIN = 5;
+export const RENDER_PENDING_DEGRADED_RATIO = 0.2;
+
+/**
+ * Pure threshold check (ADR-0009 §1) for the `RENDER_PENDING_DEGRADED`
+ * signal: `noticesRenderPending >= RENDER_PENDING_DEGRADED_MIN` AND
+ * `noticesRenderPending / noticesSeen > RENDER_PENDING_DEGRADED_RATIO`.
+ * Exported for direct unit testing without a database. Unlike
+ * `isFetchFailureThresholdExceeded`, a `true` result never aborts anything —
+ * it only decides whether the window-end diagnostic row/log fires.
+ */
+export function isRenderPendingDegraded(
+  noticesRenderPending: number,
+  noticesSeen: number,
+): boolean {
+  return (
+    noticesRenderPending >= RENDER_PENDING_DEGRADED_MIN &&
+    noticesSeen > 0 &&
+    noticesRenderPending / noticesSeen > RENDER_PENDING_DEGRADED_RATIO
+  );
+}
+
+/**
  * Internal signal thrown when `isFetchFailureThresholdExceeded` trips
  * (ADR-0008 §2). Caught by `runIngestionWindow`'s existing window-level
  * handler and mapped to the durable `FETCH_FAILURE_THRESHOLD_EXCEEDED`
@@ -142,6 +170,14 @@ export interface RunWindowResult {
    * asynchronous concern, never run inline here.
    */
   readonly newLotIds: readonly string[];
+  /**
+   * ADR-0009 §2: the `describeWindowFailure` machine error code for a
+   * `failed` window, `null` otherwise (including `succeeded`/`partial`).
+   * Lets `catch-up.ts` classify WHY the window failed (`isSystemicWindowFailure`)
+   * instead of treating every `failed` status alike when deciding whether to
+   * skip the drain.
+   */
+  readonly failureCode: string | null;
 }
 
 /** Exported so the ADR-0008 §3/A2 drain (fetch-retry-drain.ts) can build its own counts object for `processOneNotice`. */
@@ -164,12 +200,25 @@ export interface MutableCounts {
   matchesScored: number;
   errorsCount: number;
   /**
-   * Per-notice XML fetch failures recorded as record-and-continue skips
-   * (ADR-0008 §1/A1) — a subset of `errorsCount`. Drives the §2 systemic
-   * threshold and is passed through to `finishRun` (§5) so watchdog/admin can
-   * distinguish "healthy partial" from "systemically degraded".
+   * GENUINE per-notice XML fetch failures recorded as record-and-continue
+   * skips (`NOTICE_FETCH_HTTP_*` / `NOTICE_FETCH_NETWORK_ERROR` — origin
+   * refusing/failing us) — a subset of `errorsCount`. Drives the §2 systemic
+   * threshold (ADR-0009 §1: render-pending exhaustion no longer does) and is
+   * passed through to `finishRun` so watchdog/admin can distinguish "healthy
+   * partial" from "systemically degraded".
    */
   noticesFetchFailed: number;
+  /**
+   * Render-pending exhaustion skips (ADR-0009 §1): `NOTICE_RENDER_PENDING`
+   * after `MAX_RENDER_VISITS` — the origin is COOPERATING (202/accepted,
+   * just slow), not refusing us, so this counter has NO fail ceiling and
+   * never feeds the §2 threshold. Still a durable `ingestion_errors` row and
+   * an idempotent retry-table upsert per skip (no notice ever loses its
+   * retry row); evaluated once at window end against
+   * `RENDER_PENDING_DEGRADED_MIN`/`RENDER_PENDING_DEGRADED_RATIO` for the
+   * distinct `RENDER_PENDING_DEGRADED` alert row.
+   */
+  noticesRenderPending: number;
 }
 
 /**
@@ -204,6 +253,7 @@ export async function runIngestionWindow(
     matchesScored: 0,
     errorsCount: 0,
     noticesFetchFailed: 0,
+    noticesRenderPending: 0,
   };
   const newLotIds: string[] = [];
   // The notice currently mid-processing, so a window-level failure can name
@@ -267,17 +317,16 @@ export async function runIngestionWindow(
         }
         entry.visits += 1;
         if (entry.visits >= MAX_RENDER_VISITS) {
-          // Exhausted: record-and-continue (ADR-0008 Amendment §A1) — the
-          // notice is skipped exactly like a §1 fetch failure (durable
-          // diagnostic, noticesFetchFailed++, retry row). May itself throw
-          // FetchFailureThresholdError (§2), which propagates unchanged to
-          // the window-level catch below.
-          await recordFetchSkip(
+          // Exhausted: record-and-continue (ADR-0008 Amendment §A1, ADR-0009
+          // §1) — durable diagnostic + retry row, exactly like a genuine
+          // fetch failure, but counted separately: the origin is
+          // COOPERATING (202, render just slow), not refusing us, so this
+          // path has NO fail ceiling and never evaluates the §2 threshold.
+          await recordRenderPendingSkip(
             deps,
             run.id,
             entry.row,
             counts,
-            'NOTICE_RENDER_PENDING',
             cause.message,
             { url: truncateForDiagnostic(cause.url), status: cause.status, visits: entry.visits },
             now,
@@ -320,7 +369,14 @@ export async function runIngestionWindow(
     // incident hit. Recording one row makes every window failure diagnosable
     // from D1 alone ("surface, don't swallow"). Guarded: a failure to write
     // the diagnostic must never mask or replace the original error.
-    await recordWindowFailure(deps, run.id, currentNotice, window, cause, counts);
+    const failureCode = await recordWindowFailure(
+      deps,
+      run.id,
+      currentNotice,
+      window,
+      cause,
+      counts,
+    );
     const finished = await finishRun(deps.db, {
       runId: run.id,
       status: 'failed',
@@ -328,7 +384,15 @@ export async function runIngestionWindow(
       finishedAt: now(),
     });
     // Checkpoint intentionally NOT advanced — the window did not fully succeed.
-    return { run: finished, status: 'failed', newLotIds: [] };
+    return { run: finished, status: 'failed', newLotIds: [], failureCode };
+  }
+
+  // ADR-0009 §1: once, at window end (never per-skip — there is no abort),
+  // a significant share of render-pending skips gets ONE durable alert row.
+  // This is a signal, NOT a window failure — status/checkpoint below are
+  // unaffected by it either way.
+  if (isRenderPendingDegraded(counts.noticesRenderPending, counts.noticesSeen)) {
+    await recordRenderPendingDegraded(deps, run.id, window, counts);
   }
 
   const status: IngestionRunTerminalStatus = counts.errorsCount > 0 ? 'partial' : 'succeeded';
@@ -342,7 +406,7 @@ export async function runIngestionWindow(
     source: TED_SOURCE_ID,
     lastPublicationDate: window.windowTo,
   });
-  return { run: finished, status, newLotIds };
+  return { run: finished, status, newLotIds, failureCode: null };
 }
 
 /**
@@ -567,26 +631,22 @@ export async function processOneNotice(
 }
 
 /**
- * Records one ADR-0008 record-and-continue skip: a durable `ingestion_errors`
- * row, `errorsCount`/`noticesFetchFailed` increments, an idempotent
- * `ingestion_fetch_retries` upsert (due immediately — `next_attempt_at =
- * now()` — so the SAME run's drain, if any, can pick it up per Amendment
- * §A2), a structured warn log, and finally the §2 threshold check. Throws
- * `FetchFailureThresholdError` when the threshold trips; callers let that
- * propagate unchanged to `runIngestionWindow`'s window-level catch.
+ * Shared plumbing for BOTH record-and-continue skip paths (ADR-0009 §1): a
+ * durable `ingestion_errors` row, an idempotent `ingestion_fetch_retries`
+ * upsert (due immediately — `next_attempt_at = now()` — so the SAME run's
+ * drain, if any, can pick it up per ADR-0008 Amendment §A2), and a structured
+ * warn log. No skipped notice ever loses its retry row, regardless of which
+ * counter (`noticesFetchFailed` vs `noticesRenderPending`) the caller bumps.
  */
-async function recordFetchSkip(
+async function writeSkipDiagnostic(
   deps: RunWindowDeps,
   ingestionRunId: string,
   row: { sourceNoticeId: string; xmlUrl: string; publicationDate: string },
-  counts: MutableCounts,
   errorCode: string,
   message: string,
   detail: Readonly<Record<string, unknown>>,
   now: () => number,
 ): Promise<void> {
-  counts.errorsCount += 1;
-  counts.noticesFetchFailed += 1;
   await recordError(deps.db, {
     ingestionRunId,
     source: TED_SOURCE_ID,
@@ -610,9 +670,62 @@ async function recordFetchSkip(
     error_code: errorCode,
     attempts: detail['attempts'] ?? null,
   });
+}
+
+/**
+ * Records one GENUINE fetch-failure skip (`NOTICE_FETCH_HTTP_*` /
+ * `NOTICE_FETCH_NETWORK_ERROR` — origin refusing/failing us): bumps
+ * `errorsCount`/`noticesFetchFailed`, writes the shared diagnostic, then
+ * evaluates the §2 threshold. Throws `FetchFailureThresholdError` when the
+ * threshold trips; callers let that propagate unchanged to
+ * `runIngestionWindow`'s window-level catch.
+ */
+async function recordFetchSkip(
+  deps: RunWindowDeps,
+  ingestionRunId: string,
+  row: { sourceNoticeId: string; xmlUrl: string; publicationDate: string },
+  counts: MutableCounts,
+  errorCode: string,
+  message: string,
+  detail: Readonly<Record<string, unknown>>,
+  now: () => number,
+): Promise<void> {
+  counts.errorsCount += 1;
+  counts.noticesFetchFailed += 1;
+  await writeSkipDiagnostic(deps, ingestionRunId, row, errorCode, message, detail, now);
   if (isFetchFailureThresholdExceeded(counts.noticesFetchFailed, counts.noticesSeen)) {
     throw new FetchFailureThresholdError(counts.noticesFetchFailed, counts.noticesSeen);
   }
+}
+
+/**
+ * Records one render-pending-exhaustion skip (ADR-0009 §1): bumps
+ * `errorsCount`/`noticesRenderPending` and writes the shared diagnostic.
+ * NEVER evaluates the §2 threshold — the origin is cooperating (202,
+ * render just slow), not refusing us, so this path has no fail ceiling.
+ * The distinct `RENDER_PENDING_DEGRADED` signal is evaluated once, at
+ * window end, by `maybeRecordRenderPendingDegraded` below.
+ */
+async function recordRenderPendingSkip(
+  deps: RunWindowDeps,
+  ingestionRunId: string,
+  row: { sourceNoticeId: string; xmlUrl: string; publicationDate: string },
+  counts: MutableCounts,
+  message: string,
+  detail: Readonly<Record<string, unknown>>,
+  now: () => number,
+): Promise<void> {
+  counts.errorsCount += 1;
+  counts.noticesRenderPending += 1;
+  await writeSkipDiagnostic(
+    deps,
+    ingestionRunId,
+    row,
+    'NOTICE_RENDER_PENDING',
+    message,
+    detail,
+    now,
+  );
 }
 
 /**
@@ -715,6 +828,8 @@ function describeWindowFailure(
  * Fully guarded: if the diagnostic write itself fails (e.g. the failure that
  * killed the window was D1 being unavailable), it is logged and swallowed —
  * the ORIGINAL error still propagates to `finishRun('failed')`, never masked.
+ * Returns the classified error code (ADR-0009 §2's `RunWindowResult.failureCode`)
+ * regardless of whether the diagnostic write itself succeeded.
  */
 async function recordWindowFailure(
   deps: RunWindowDeps,
@@ -723,7 +838,7 @@ async function recordWindowFailure(
   window: PublicationWindow,
   cause: unknown,
   counts: MutableCounts,
-): Promise<void> {
+): Promise<string> {
   const diag = describeWindowFailure(cause, currentNotice !== null);
   try {
     await recordError(deps.db, {
@@ -745,6 +860,56 @@ async function recordWindowFailure(
     counts.errorsCount += 1;
   } catch (recordCause) {
     deps.logger.error('ingestion.window.failed.diagnostic_write_failed', {
+      source: TED_SOURCE_ID,
+      error: recordCause instanceof Error ? recordCause.message : String(recordCause),
+    });
+  }
+  return diag.errorCode;
+}
+
+/**
+ * ADR-0009 §1: writes the ONE durable `RENDER_PENDING_DEGRADED` diagnostic
+ * row + structured error log when render-pending skips are significant for
+ * this window (`isRenderPendingDegraded`). This is an alert, not a failure —
+ * called from the SUCCESS path only, never the window-failure catch, and
+ * never throws (a failure to write it must not turn a healthy-otherwise
+ * `partial` window into a hard failure — logged and swallowed, same
+ * guardedness as `recordWindowFailure`'s own diagnostic write).
+ */
+async function recordRenderPendingDegraded(
+  deps: RunWindowDeps,
+  ingestionRunId: string,
+  window: PublicationWindow,
+  counts: MutableCounts,
+): Promise<void> {
+  const ratio = counts.noticesSeen > 0 ? counts.noticesRenderPending / counts.noticesSeen : 0;
+  const detail = {
+    noticesRenderPending: counts.noticesRenderPending,
+    noticesSeen: counts.noticesSeen,
+    ratio,
+    min: RENDER_PENDING_DEGRADED_MIN,
+    minRatio: RENDER_PENDING_DEGRADED_RATIO,
+  };
+  deps.logger.error('ingestion.window.render_pending_degraded', {
+    source: TED_SOURCE_ID,
+    window_from: window.windowFrom,
+    window_to: window.windowTo,
+    ...detail,
+  });
+  try {
+    await recordError(deps.db, {
+      ingestionRunId,
+      source: TED_SOURCE_ID,
+      stage: 'fetch',
+      errorCode: 'RENDER_PENDING_DEGRADED',
+      message:
+        `render-pending skips (${String(counts.noticesRenderPending)}/` +
+        `${String(counts.noticesSeen)}) exceeded the degraded-render alert threshold`,
+      detail: { ...detail, windowFrom: window.windowFrom, windowTo: window.windowTo },
+    });
+    counts.errorsCount += 1;
+  } catch (recordCause) {
+    deps.logger.error('ingestion.window.render_pending_degraded.diagnostic_write_failed', {
       source: TED_SOURCE_ID,
       error: recordCause instanceof Error ? recordCause.message : String(recordCause),
     });

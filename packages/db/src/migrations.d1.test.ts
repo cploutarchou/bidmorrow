@@ -77,7 +77,7 @@ describe('migrations apply from an empty database', () => {
     expect(tables.has('_bootstrap')).toBe(false);
   });
 
-  it('records all eight migrations in d1_migrations', async () => {
+  it('records all nine migrations in d1_migrations', async () => {
     const result = await env.DB.prepare('SELECT name FROM d1_migrations ORDER BY name').all<{
       name: string;
     }>();
@@ -90,6 +90,7 @@ describe('migrations apply from an empty database', () => {
       '0006_org_created_by_nullable.sql',
       '0007_tender_matches_score_index.sql',
       '0008_ingestion_fetch_retries.sql',
+      '0009_ingestion_render_pending.sql',
     ]);
   });
 
@@ -167,6 +168,17 @@ describe('migrations apply from an empty database', () => {
       dflt_value: string | null;
     }>();
     const info = columns.results.find((c) => c.name === 'notices_fetch_failed');
+    expect(info?.notnull).toBe(1);
+    expect(info?.dflt_value).toBe('0');
+  });
+
+  it('0009 adds ingestion_runs.notices_render_pending defaulted to 0 (ADR-0009 §1)', async () => {
+    const columns = await env.DB.prepare('PRAGMA table_info(ingestion_runs)').all<{
+      name: string;
+      notnull: number;
+      dflt_value: string | null;
+    }>();
+    const info = columns.results.find((c) => c.name === 'notices_render_pending');
     expect(info?.notnull).toBe(1);
     expect(info?.dflt_value).toBe('0');
   });

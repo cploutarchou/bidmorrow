@@ -1,12 +1,16 @@
 # ADR-0009: Render-pending skips leave the systemic threshold; the drain runs unless the failure was systemic
 
 Status: Proposed (2026-08-20) — spec for immediate implementation of §1 and
-§2; §3 (window trigger strategy) is an **evidence-pending placeholder** to
-be completed when the 2026-08-20 batch-size probe results arrive. Partially
-supersedes ADR-0008: replaces §2's counting of render-pending exhaustions
-toward the systemic fetch-failure threshold (introduced by Amendment §A1)
-and Amendment §A2's "skip the drain whenever catch-up ended `failed`" rule.
-All other ADR-0008 decisions stand.
+§2. §3 was completed same-day when the batch-size probe (run 32337551926)
+REFUTED the serialized-render-queue hypothesis: the anonymous render
+pipeline is currently completing no renders at all, so no client-side
+trigger strategy is designed. §5 frames — but deliberately does not decide
+— the source-acquisition contingency; a ted-data investigation running in
+parallel owns bringing that evidence. Partially supersedes ADR-0008:
+replaces §2's counting of render-pending exhaustions toward the systemic
+fetch-failure threshold (introduced by Amendment §A1) and Amendment §A2's
+"skip the drain whenever catch-up ended `failed`" rule. All other ADR-0008
+decisions stand.
 
 ## Context
 
@@ -27,9 +31,10 @@ XML across 6 visits over ~8–10 minutes — zero parse errors, zero HTTP
 errors, only 202/empty-body render-pending responses. TED was not blocking
 us; TED was accepting every request and rendering nothing in our window.
 (Contrast: the 2026-08-18 single-notice CI probe DID observe a render
-complete — 200 + 12,953 bytes — minutes after its trigger. Render
-completion appears to depend on load/trigger-set size; a probe comparing
-5-notice vs 50-notice trigger batches is running now — see §3.)
+complete — 200 + 12,953 bytes — minutes after its trigger. The same-day
+batch-size probe subsequently showed batch size is NOT the variable and
+that the render pipeline is currently completing no renders at all — see
+§3 for the numbers and what they rule out.)
 
 Two ADR-0008 decisions are thereby falsified:
 
@@ -81,7 +86,8 @@ Concretely:
   `ingestion_runs` gains a `notices_render_pending` integer column
   (default 0, trivial migration). The Amendment-§A1 exhaustion path
   increments the NEW counter and no longer increments `noticesFetchFailed`
-  — so `notices_fetch_failed` reverts to its pre-amendment §5 semantics
+  — so `notices_fetch_failed` reverts to its pre-amendment ADR-0008 §5
+  semantics
   ("genuine fetch failures only"), which is what its consumers (watchdog
   condition (iii), admin ingestion views) were designed around.
   `recordFetchSkip` grows a discriminator (or splits into two thin
@@ -128,11 +134,14 @@ Concretely:
   Admin ingestion views surface the new column alongside
   `notices_fetch_failed`.
 
-At the 2026-08-20 numbers this yields: 32 render-pending skips → 32 retry
-rows, `notices_render_pending = 32`, ratio 20.5% → one
-`RENDER_PENDING_DEGRADED` alert row, window `partial`, checkpoint advances,
-124 remaining notices ingest normally the moment TED serves their renders —
-and the drain (§2) picks up the 32 the same run and daily thereafter.
+Replayed against 2026-08-20 this yields: no abort at the 32nd exhaustion —
+the window runs to completion, and while the §3 outage persists all 156
+notices skip into retry rows (`notices_render_pending = 156`, ratio 100% →
+one `RENDER_PENDING_DEGRADED` alert row), the window finishes `partial`,
+the checkpoint advances, and the drain (§2) re-attempts up to 25 rows the
+same run and daily thereafter — recovering them automatically if/when TED
+resumes rendering. On a merely _slow_ day (the pre-outage model), only the
+genuinely slow notices skip and the rest ingest normally.
 
 ### 2. The drain runs unless the window failed for a systemic or budget reason
 
@@ -178,42 +187,126 @@ those two justify skipping.
   the 5 retry attempts; whether that same-day attempt is worth its budget
   on systemically slow days is §3's question and may be revised there.
 
-### 3. Window trigger strategy — PLACEHOLDER, EVIDENCE PENDING
+### 3. Window trigger strategy: NO client-side strategy — the hypothesis is refuted, the origin is not rendering
 
-> **DO NOT IMPLEMENT anything from this section; it records the open
-> question only.** A CI probe (running as of 2026-08-20) compares a
-> 5-notice trigger batch against a 50-notice trigger batch, measuring
-> render completion at +60/+120/+180 s, to test the hypothesis that TED's
-> render capacity is per-client and serialized — i.e. that a 156-notice
-> trigger set starves itself and _no_ notice completes (consistent with
-> 2026-08-20: 0/156 in ~8–10 min) while a small set completes (consistent
-> with 2026-08-18: 1/1 in minutes).
->
-> Candidate designs to be weighed **only once the probe data arrives**:
-> (a) batch-and-wait within a run — trigger K, collect K, advance — with K
-> and the wait derived from measured render latency; (b) deliberately
-> carrying the remainder of a window into the retry table as the primary
-> throughput mechanism (drain caps re-sized accordingly); (c) multi-run
-> convergence with an explicitly documented "a publication day lands over
-> N days" coverage consequence. This section will be completed (with
-> request-budget and 15-min wall-clock math per candidate) when the
-> coordinator delivers the probe results. Until then the §1/§2 model —
-> full-window trigger set, skip on exhaustion, drain daily — is the
-> operative behavior.
+**Probe evidence** (CI run 32337551926, 2026-08-20 05:56–06:12 UTC, Azure
+egress — a _different_ network than the worker's Cloudflare egress —
+anonymous, ~1 s spacing, identifying UA), testing whether TED's render
+capacity is per-client and serialized (i.e. whether a 156-notice trigger
+set starves itself while a small set completes):
 
-### 4. `MAX_RENDER_VISITS = 6` and `RENDER_RETRY_DELAY_MS = 20s` are retained pending §3
+| Batch          | pass 1                 | +60 s | +120 s | +180 s |
+| -------------- | ---------------------- | ----- | ------ | ------ |
+| A — 5 notices  | rendered 0, pending 5  | 0/5   | 0/5    | 0/5    |
+| B — 50 notices | rendered 0, pending 50 | 0/50  | 0/50   | 0/50   |
 
-The 2026-08-20 evidence shows 6 visits / ~8–10 min was insufficient for
-_every_ notice in a 156-notice trigger set — which under the §3 hypothesis
-is a property of the trigger-set size, not of the per-notice patience, so
-retuning patience now would be tuning the wrong variable on one data
-point. Under §1 an exhaustion is cheap (skip + retry row, ~$0, no window
-failure), so the cost of the constants being wrong has collapsed. Both
-constants are re-decided in §3 once the probe fixes the model; if §3
-adopts batch-and-wait, the full-queue-pass arithmetic behind A3's "6"
-(visit horizon ≈ (visits − 1) × pass length) stops applying entirely.
+`other=0` in every pass: no 4xx/5xx, no rate-limit signal — every response
+was 202 or empty-200.
 
-### 5. Coverage-methodology disclosure
+**The per-client-serialized-render-queue hypothesis is REFUTED.** Batch
+size is not the variable: a 5-notice set starved exactly as completely as
+a 50-notice set (over ~6.5 and ~9 minutes respectively), from a different
+egress than the worker. Combined with the 2026-08-18 single-notice probe
+that DID collect a render (200 + 12,953 bytes), the evidence says TED's
+anonymous notice-XML render pipeline **stopped completing renders entirely
+somewhere between 2026-08-18 and 2026-08-20** — an upstream outage or
+behavior change, not a load or client-identity effect on our side.
+
+**Decision: no batch-and-wait, no pacing, no patience tuning is designed.**
+Every candidate previously listed here (batch-and-wait with derived K,
+retry-table-as-primary-throughput with re-sized drain caps, multi-run
+convergence) presupposed that _some_ trigger-set size or wait produces
+renders. The data shows none does right now: no client-side strategy can
+fix an origin that never completes renders, and tuning our behavior
+against an outage would encode the outage into the architecture. The
+operative behavior remains exactly §1/§2 — full-window trigger set, skip
+on exhaustion, retry rows, daily drain — which is the correct posture for
+an upstream outage: the checkpoint keeps advancing, the backlog
+accumulates as durable retry rows, and the drain harvests them
+automatically if/when TED recovers, with `RENDER_PENDING_DEGRADED` +
+backlog alerts marking every day the outage persists. If TED recovers with
+a _degraded_ (slow-but-working) render pipeline and measured latencies
+then justify a trigger strategy, that is a new decision on new evidence —
+a superseding ADR, not a revival of this section's candidates. The
+channel-viability question the outage raises is §5's.
+
+### 4. `MAX_RENDER_VISITS = 6` and `RENDER_RETRY_DELAY_MS = 20s` are retained — as cheap insurance, not a throughput lever
+
+Under the §3 finding these constants cannot currently affect throughput at
+all: while the origin completes no renders, 2 visits and 20 visits collect
+equally nothing, and once §1 makes exhaustion cheap (skip + retry row, no
+window failure, ~$0) the only costs of visits are requests and wall clock.
+They are retained because they are the right shape for the states around
+the outage: against a _transient_ pending state (the pre-2026-08-18
+behavior, where renders completed in minutes) 6 visits is bounded patience
+that collects same-run what would otherwise wait a day for the drain;
+against the current outage they cost a bounded ~936 fetches/day at 156
+notices (inside the 2,000 budget, $0 — outbound subrequests) as the price
+of automatically detecting recovery the moment it happens, with no deploy.
+Lowering them mid-outage would save requests we do not need to save and
+slow recovery detection; raising them buys nothing (§3). If the
+ceiling-volume wall-clock risk (Consequences) materializes before TED
+recovers, the lever is the source-acquisition contingency (§5), not
+patience arithmetic.
+
+### 5. Source-acquisition contingency — FRAMED, NOT DECIDED
+
+> **This section decides nothing.** A ted-data investigation is starting
+> in parallel and will bring the evidence; this section fixes its target
+> list so the investigation answers the questions the architecture
+> actually needs answered.
+
+If the render front-end's outage persists (or recurs), it may no longer be
+a viable **primary content channel** — and it is currently the _only_
+content channel (docs/ted-data-source.md, verified 2026-08-18: there is no
+authenticated notice-XML endpoint; the front-end route is THE supported
+path). Two candidate alternatives exist, to be kept source-agnostic behind
+the `ProcurementSource` boundary (the domain model must not become
+channel-shaped any more than it is TED-shaped):
+
+- **(a) Request the needed eForms fields directly from the Search API's
+  `fields` array.** docs/ted-data-source.md (verified 2026-08-14) records
+  that `fields` accepts BT ids/kebab-case aliases and caps at
+  `len(fields) × limit ≤ 10,000` per page — so ~20 fields × 250
+  notices/page is within budget, on the API that is demonstrably still
+  healthy. This bypasses rendering entirely. Open questions for the
+  investigation: **field coverage** — can the Search API deliver
+  everything `packages/ted`'s parser output and the matching engine's
+  inputs consume (multilingual titles/descriptions, per-lot
+  CPV/NUTS/values/deadlines, buyer identity/legal type, notice/procedure
+  types, SDK version), and with what fidelity vs the XML (per-lot
+  granularity, language coverage, truncation)? **Snapshot/provenance
+  duty** — ADR-0005's R2 raw-XML snapshot (audit trail, re-parse
+  capability) has no raw XML in this channel: does a canonicalized JSON
+  response snapshot satisfy ADR-0005's intent, or does ADR-0005 need a
+  superseding decision? **Cost**: same API, similar-or-fewer
+  requests/day — no new component expected, but response sizes must be
+  confirmed against the D1/R2 line items.
+- **(b) TED bulk XML download packages (daily/monthly OJ S archives)** — a
+  different acquisition channel entirely. Open questions: the surface as
+  it stands TODAY (existence, format, URLs — **unverified until the
+  investigation confirms it against docs.ted.europa.eu / official
+  channels; nothing here is asserted from memory**), cadence and
+  publication latency vs our daily-window model (is there a daily
+  package, and when is it available relative to the publication day?),
+  package size and the cost/wall-clock of downloading and filtering to
+  our CPV scope inside Worker limits (a whole-OJ-S archive is mostly
+  out-of-scope notices for us — where does the filter run, and does the
+  archive need R2 staging?), fixed-cost impact of storage/egress against
+  the < $100 (target $5–30) constraint, and provenance (bulk packages ARE
+  raw XML, so ADR-0005 is naturally satisfied — likely its cleanest fit).
+- Either way: the retry-table backlog built during the outage must be
+  harvestable by whichever channel wins. Retry rows carry
+  `source_notice_id` + `publication_date`, which both channels can key
+  on; the `xml_url` column is irrelevant to (a)/(b) but harmless.
+
+Decision criteria recorded now so the eventual choice is honest: coverage
+fidelity first (never silently degrade parsed fields), then ADR-0005
+provenance, then cost within the existing model, then implementation
+surface. Any adoption is a superseding/companion ADR with its own 12-month
+D1 projection and cost-model update.
+
+### 6. Coverage-methodology disclosure
 
 A publication day may now land **incrementally**: a `partial` window
 advances the checkpoint while up to all of its notices arrive over
@@ -224,10 +317,13 @@ extends beyond ADR-0008's "late arrival + abandonment" wording to state
 that same-day completeness of a publication day is not guaranteed and that
 notices can arrive over the following days. As with the ADR-0008
 amendment, execution of the wording change **transfers to the
-documentation agent at phase close**; §3's outcome may tighten or loosen
-the "N days" bound and must be reflected in the same pass.
+documentation agent at phase close**. While the §3 outage persists, the
+honest bound is open-ended ("until TED's render pipeline recovers or an
+alternative channel (§5) is adopted") — the wording must not promise an
+"N days" figure the current evidence cannot support; a §5 channel decision
+revisits the bound in the same pass.
 
-### 6. Out of scope / unchanged
+### 7. Out of scope / unchanged
 
 ADR-0008 §1 (record-and-continue for genuine fetch failures), §3 (retry
 table shape, 25/run cap, 5-attempt give-up, `NOTICE_FETCH_ABANDONED`
@@ -263,22 +359,42 @@ Negative / accepted costs:
   day is ~1,800 fetches (< 2,000) but ~15+ min of passes — the invocation
   can be wall-clock-killed mid-run, leaving the run `running` and the
   checkpoint held, covered by the ADR-0006 watchdog's stale-run detection.
-  This ceiling-volume gap existed under A3 too (its own note) and is a
-  primary input to §3, which is the mechanism that bounds pass length.
-- A publication day lands incrementally (§5 disclosure duty), and drain
-  throughput (25 rows/day) means a fully-skipped 156-notice day takes ≥7
-  calendar days to drain at current caps — acceptable only as a degraded
-  mode; §3 owns making it either rare (batch-and-wait) or fast
-  (re-sized drain as primary throughput).
+  This ceiling-volume gap existed under A3 too (its own note); with §3
+  ruling out a client-side pacing fix, the escape hatch if it materializes
+  mid-outage is the §5 contingency (a channel that does not render), not
+  patience arithmetic.
+- A publication day lands incrementally (§6 disclosure duty). While the
+  §3 outage persists, drain throughput is moot (nothing renders for
+  anyone) and the backlog simply accumulates — bounded in D1 terms (see
+  projection below), loud via `RENDER_PENDING_DEGRADED` + the backlog
+  alert, and self-healing on TED recovery. After recovery, 25 rows/day
+  means a fully-skipped 156-notice day takes ≥7 calendar days to drain;
+  if recovery arrives with a large backlog, re-sizing the drain caps is a
+  deliberate, evidence-based follow-up decision (superseding ADR), not a
+  pre-tuned guess.
 - One new `ingestion_runs` column, one new counter, two new constants, one
   new stable error code, one new `RunWindowResult` field + pure
   classifier. **12-month D1 projection** (ground rule): the new integer
   column adds ~8 bytes × ~730 run rows/year ≈ **6 KB/year** — noise.
   `ingestion_fetch_retries` re-projected now that the 1% incidence
-  assumption is falsified for burst days (2026-08-20: 32/156 ≈ 20.5%;
-  sustained worst case 100%): 300 rows/day × 90-day terminal purge ×
-  ~300 B ≈ **8 MB steady-state absolute worst case** — still negligible
-  against the 10 GB cap; ADR-0003's ≥40% headroom is unaffected.
+  assumption is falsified (2026-08-20: 32/156 ≈ 20.5%; §3 outage worst
+  case 100%): terminal rows purge after 90 days, but `pending` rows
+  accumulated during a sustained outage do not — absolute worst case, a
+  full 12 months of total outage at the 300/day ceiling ≈ 110k rows ×
+  ~300 B ≈ **33 MB** — still negligible against the 10 GB cap; ADR-0003's
+  ≥40% headroom is unaffected.
+- **Slow-motion abandonment risk during a sustained outage**: the drain
+  attempts the 25 oldest due rows daily; each failed cycle burns one of 5
+  attempts with linear backoff (next due `attempts` days later), so a
+  drained row reaches `NOTICE_FETCH_ABANDONED` ≥ ~10 days after its first
+  drain attempt — alertable at every step, but terminal: outage-era
+  notices that abandon are recoverable only via a §5 channel (retry rows
+  keep `source_notice_id` + `publication_date` for exactly that) or a
+  superseding decision, since admin backfill cannot run behind the
+  advance-only checkpoint. Whether to suspend attempt-burning while
+  degradation is confirmed (vs keeping attempts as the recovery probe) is
+  deliberately NOT decided here — it goes to the ted-data investigation's
+  target list with §5.
 - Test surface: counter split (render-pending increments the new counter
   only, never the threshold), no-ceiling behavior (100%-render-pending
   window → `partial`, checkpoint advances, N retry rows),
@@ -299,19 +415,26 @@ figures above. Nothing approaches the $60–80 alert band; totals unchanged.
 
 ## What remains unverified
 
-- **Why zero renders completed** on 2026-08-20 (per-client serialized
-  render capacity is a hypothesis; the probe now running is the test).
-  §3 and §4 are explicitly blocked on this.
-- **Whether the drain's ~100 s collection horizon recovers the current 32
-  rows**: the drain triggers only ≤25 renders at once, which under the
-  hypothesis should complete where 156 did not — but this is exactly the
-  unproven hypothesis. If the first post-deploy drains recover nothing,
-  that is itself probe-grade evidence for §3.
+- **The cause and duration of the render outage** (§3): the probe
+  establishes THAT the pipeline completes no renders for any tested
+  client/batch size between 2026-08-18 and 2026-08-20 — not WHY, nor
+  whether it is an outage (will recover) or a permanent behavior change
+  (front-end no longer serves anonymous XML). The parallel ted-data
+  investigation owns this; §5's contingency framing exists because the
+  answer may never come from TED.
+- **Everything in §5**: Search-API field coverage/fidelity, the
+  bulk-download surface (existence/format/cadence/size — asserted by no
+  one from memory; verify against official channels), and the ADR-0005
+  provenance question for channel (a). Deliberately framed, not decided.
+- While the outage persists, **the drain recovering anything is not
+  expected** — its daily empty-handed cycles double as the recovery
+  probe. The first drain that recovers rows is the recovery signal.
 - `RENDER_PENDING_DEGRADED_MIN/RATIO` initial values (5 / 0.2) are
   judgment values mirroring §2's constants; alert-only, so mis-tuning
   costs noise, not data.
-- Whether burning a retry attempt on the same-run drain cycle is the right
-  spend on systemically slow days (§2 last bullet; revisit in §3).
+- Whether burning retry attempts during a confirmed outage is the right
+  spend (Consequences, slow-motion abandonment) — flagged to the ted-data
+  investigation alongside §5.
 
 ## Alternatives considered
 
@@ -338,8 +461,20 @@ figures above. Nothing approaches the $60–80 alert band; totals unchanged.
   a second schedule, and more composition surface — for a problem the
   cause-classified skip solves inside the existing invocation (consistent
   with ADR-0006's queues+cron minimalism). Rejected.
-- **Guessing §3 now** (e.g. committing to batch-and-wait before the probe
-  reports): the 2026-08-19 amendment already shows the cost of designing
-  against an unmeasured render model — A3's patience bump was reasoned
-  correctly from the data available and still did not survive first
-  contact. Explicitly deferred instead.
+- **A batch-and-wait / paced trigger strategy** (trigger K, wait, collect
+  K — the leading candidate while the serialized-queue hypothesis stood):
+  refuted empirically before design — probe 32337551926 showed a 5-notice
+  batch starving identically to a 50-notice batch (0 renders across
+  +60/+120/+180 s, no error or rate-limit signal, different egress), so
+  batch size is not the variable and pacing cannot fix an origin that
+  completes no renders. Would also have hard-coded outage-era behavior
+  into the architecture. Rejected on evidence; revivable only via a
+  superseding ADR if TED recovers into a measurably slow-but-working
+  state.
+- **Retuning `MAX_RENDER_VISITS`/`RENDER_RETRY_DELAY_MS` now** (up for
+  patience, or down to save requests mid-outage): both directions are
+  no-ops against a non-rendering origin (§4); down also slows recovery
+  detection. The 2026-08-19 amendment already showed the cost of tuning
+  these against an unmeasured render model — A3's patience bump was
+  reasoned correctly from the data available and did not survive first
+  contact. Rejected.

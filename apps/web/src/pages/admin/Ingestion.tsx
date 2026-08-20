@@ -256,6 +256,7 @@ export function Ingestion(): ReactElement {
                     <th scope="col">Notices seen/upserted</th>
                     <th scope="col">Errors</th>
                     <th scope="col">Fetch failures</th>
+                    <th scope="col">Render pending</th>
                     <th scope="col">Started</th>
                     <th scope="col">Finished</th>
                   </tr>
@@ -273,6 +274,7 @@ export function Ingestion(): ReactElement {
                       </td>
                       <td>{run.errorsCount}</td>
                       <td>{run.noticesFetchFailed}</td>
+                      <td>{run.noticesRenderPending}</td>
                       <td>{formatIsoUtc(run.startedAt)}</td>
                       <td>{formatIsoUtc(run.finishedAt)}</td>
                     </tr>
