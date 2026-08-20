@@ -109,9 +109,32 @@ path, so every poll against it measured nothing. Standing rule: an
 address is proven by delivering content a garbage id does not, never by
 response-code routing.
 
-Whether the published `/packages/daily/{issue}` address actually delivers
-an archive is still unproven — see ADR-0010's gate and the
-`ted-package-probe` workflow.
+**The daily package DELIVERS** (verified 2026-08-20, `ted-package-probe`
+run 32352483245). `GET /packages/daily/202600157` → HTTP 200,
+`content-type: application/gzip`, 19,980,923 bytes,
+`content-disposition: attachment; filename=20260817_2026157.tar.gz`,
+magic bytes `1f 8b 08 00`, ~207 MB uncompressed. Garbage ids
+(`definitely-not-an-issue`, `00000000`) return **400 text/plain** — the
+real issue and garbage do NOT behave alike, which is what proves the
+address. The monthly package behaves the same way (`monthly/2026-1` →
+200, `application/gzip`, 344,184,486 bytes, `2026-01.tar.gz`). Delivery
+was immediate; there is no async generation step on this channel.
+
+Archive members are named
+`{YYYYMMDD}_{issueNumber}/{documentNumber}_{year}.xml`, e.g.
+`20260817_157/00566631_2026.xml`. Note that ONE issue appears in three
+encodings in a single response — `202600157` in the URL, `157` in the
+member directory, `20260817_2026157` in the download filename — so no
+form may be derived from another by assumption. The URL form comes from
+the Search API's `OJ` field; the member form is read from the archive.
+The `publication-number` ↔ member-filename mapping is NOT yet verified
+against a real pair.
+
+A daily package contains ALL notices of its issue (~207 MB uncompressed),
+of which a typical in-scope CPV window is ~156 — selective extraction
+against search-derived ids is mandatory. This is ADR-0010 Branch B, now
+the activated acquisition channel; the render front-end is demoted to a
+telemetry canary.
 
 ## Expert query language (ingestion filter)
 

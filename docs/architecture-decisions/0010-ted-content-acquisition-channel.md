@@ -3,12 +3,16 @@
 Status: Proposed (2026-08-20) — coordinator/owner flips to Accepted. The
 decision is a **two-branch rule whose selection is gated on evidence**:
 everything in both branches is fully specified now; §2's gate picks which
-branch activates. First gate poll (`ted-bulk-poll-probe`, run 32345639589) delivered no package and landed in §2's neither-branch
-case, so **the gate REMAINS OPEN**, to be closed by the scheduled
-longer-horizon re-poll plus `ted-source-facts-probe` (4b386a6). **§5's
-four branch-independent decisions are final and SHIP NOW regardless of
-the gate** — agreed with the coordinator; §5.2 stops the abandonment
-clock while the channel question is open. Companion to ADR-0009 (whose
+branch activates. **THE GATE IS CLOSED: Branch B is ACTIVATED**
+(`ted-package-probe`, run 32352483245, 2026-08-20 09:10 UTC —
+`https://ted.europa.eu/packages/daily/202600157` returns HTTP 200,
+`application/gzip`, 19,980,923 bytes of tarred eForms XML, while garbage
+ids return 400; see §2). Branch A′ (§4) is retained as the documented
+contingency should the bulk channel regress, with its A-G1 populate
+rates now measured. **§5's four branch-independent decisions remain
+final and ship regardless**; §5.2 stopped the abandonment clock while
+the channel question was open and its removal is now a Branch B
+implementation decision, not an open question. Companion to ADR-0009 (whose
 §5 contingency framing this ADR resolves — ADR-0009 §5 now points
 here). Supersedes ADR-0005's raw-XML snapshot requirement ONLY under
 Branch A′, with the explicit scope in §4; under Branch B, ADR-0005 is
@@ -205,6 +209,62 @@ untouched by this ADR.
   today, collect on a later cron — §3), so a slow-but-completing package
   pipeline still selects B.
 
+#### GATE CLOSED — Branch B ACTIVATED (run 32352483245, 2026-08-20 09:10 UTC)
+
+`ted-package-probe` fetched the address TED itself publishes. The
+garbage-id A/B is decisive — the real issue and garbage ids do NOT behave
+alike:
+
+| URL                                       | status  | content-type       | bytes       | content-disposition                            |
+| ----------------------------------------- | ------- | ------------------ | ----------- | ---------------------------------------------- |
+| `/packages/daily/202600157`               | **200** | `application/gzip` | 19,980,923  | `attachment; filename=20260817_2026157.tar.gz` |
+| `/packages/daily/definitely-not-an-issue` | 400     | `text/plain`       | 67          | —                                              |
+| `/packages/daily/00000000`                | 400     | `text/plain`       | 32          | —                                              |
+| `/packages/monthly/2026-1`                | **200** | `application/gzip` | 344,184,486 | `attachment; filename=2026-01.tar.gz`          |
+
+The GET delivered the full 19,980,923 bytes in ~2 s, magic bytes
+`1f 8b 08 00` (gzip), and `tar tzf` listed real member entries:
+
+```
+20260817_157/00566631_2026.xml
+20260817_157/00567983_2026.xml
+20260817_157/00568726_2026.xml
+```
+
+Uncompressed size ~207 MB (gzip trailer: 207,127,552). (`file -b` also
+printed "encrypted … from FAT filesystem" — that is `file`(1) misreading
+gzip flag bits on this stream; `tar tzf` succeeded, so it is an ordinary
+gzip tarball.)
+
+**This closes the gate in Branch B's favor and settles the acquisition
+question: the bulk channel exists, is addressable, and delivers.** The
+render outage stops being existential — it degrades to a telemetry
+signal, exactly as §3 anticipated. Note also that the package delivered
+IMMEDIATELY, with no async generation step at all, so §3's tolerance for
+multi-hour generation is unused headroom rather than a requirement.
+
+Two engineering facts this establishes for §3, both VERIFIED:
+
+- **Member naming**: `{YYYYMMDD}_{issueNumber}/{documentNumber}_{year}.xml`
+  — e.g. `20260817_157/00566631_2026.xml`. The directory uses the SHORT
+  issue number (`157`), the URL path uses the LONG form (`202600157`),
+  and the `content-disposition` filename uses a third form
+  (`20260817_2026157`). Three encodings of one issue in a single
+  response — none may be derived from another by assumption; the URL form
+  comes from `OJ`, the member form is read from the archive.
+- **Volume**: one day is ~20 MB compressed / ~207 MB uncompressed for ALL
+  notices of that issue, of which our CPV scope is ~156. Selective
+  extraction against search-derived ids is therefore mandatory, not an
+  optimization — §3's streaming + R2 staging design stands, and the
+  monthly package (344 MB compressed) is a backfill instrument only.
+
+**OPEN — `publication-number` ↔ member-filename mapping.** The Search API
+returns `publication-number`; archive members are named
+`00566631_2026.xml`. The mapping looks obvious but has NOT been verified
+against a real pair, and this ADR's own history is a record of what
+assuming an obvious encoding costs. §3 implementation must confirm it
+against actual data before relying on it.
+
 ### 3. Branch B — hybrid bulk-primary (adopt if packages complete)
 
 The recommendation of docs/ted-content-channel-options.md §6, adopted:
@@ -307,6 +367,50 @@ carries this measurement (`BT-131-Lot`, `BT-27-Lot` included) across the
 their populate-rate is materially below the XML's, that fact goes into
 the disclosure and the component weighting discussion — it does not get
 discovered in production.
+
+**A-G1 MEASURED (run 32352483245, window 2026-08-17, 156 in-scope
+notices, `onlyLatestVersions: false`).** Field names were first mined
+from the API's own supported-value enumeration (47,988 bytes, returned in
+the 400 body for a deliberately invalid field) rather than guessed — the
+previous attempt rejected the whole request on one bad name.
+
+| field                              | populated | rate           | sample                     |
+| ---------------------------------- | --------- | -------------- | -------------------------- |
+| `BT-137-Lot` (lot id)              | 156/156   | **100%**       | `["LOT-0001"]`             |
+| `deadline-receipt-tender-date-lot` | 130/156   | **83.3%**      | `["2026-09-14+02:00"]`     |
+| `estimated-value-lot`              | 57/156    | **36.5%**      | `["200000.00"]`            |
+| `estimated-value-cur-lot`          | 57/156    | **36.5%**      | `["EUR"]`                  |
+| `BT-27-Lot`                        | 57/156    | **36.5%**      | `["200000.00"]`            |
+| `BT-131-Lot`                       | —         | REJECTED (400) | not a valid `fields` value |
+
+Three findings:
+
+1. **`BT-131-Lot` does not exist as a `fields` value.** The enumeration
+   splits it by date and time: `BT-131(d)-Lot` and `BT-131(t)-Lot` (also
+   `BT-1311(d)/(t)-Lot`). This matches docs/ted-data-source.md's field
+   map, which already recorded `BT-131(d)/(t)-Lot` — the probe used the
+   wrong name, not the API. Any Option A code uses the parenthesised
+   names.
+2. **`BT-27-Lot` and `estimated-value-lot` are the same datum** — identical
+   count and identical sample. The kebab alias and the BT id are
+   interchangeable here.
+3. **Contract value is present on barely a third of in-scope notices
+   (36.5%).** Deadline is comfortable at 83.3%; lot identity is perfect at
+   100% (which also re-confirms the lot-alignment answer). Value at 36.5%
+   is a material weakness for Branch A′ specifically: value is a top
+   matching input, and a channel that carries it for ~1 in 3 notices
+   would force either a large "value unknown" population or a reweighting.
+
+**This does not block anything now** — Branch B is activated (§2) and
+supplies full XML, so A-G1's role is reduced to characterising the
+fallback. It is recorded because Branch A′ remains the contingency if the
+bulk channel ever regresses, and because of an unresolved question it
+raises: **whether the Search API's 36.5% reflects the XML's own populate
+rate or an index that under-populates relative to source.** Branch B
+makes that answerable — once packages are parsed, compare BT-27 presence
+in the XML against the search index for the same window. Until that
+comparison exists, the 36.5% figure characterises THE SEARCH INDEX, not
+TED's data.
 
 Design (per the favorable alignment evidence):
 
