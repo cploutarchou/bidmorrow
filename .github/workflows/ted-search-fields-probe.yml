@@ -1,0 +1,189 @@
+# Evidence probe (2026-08-20, docs/ted-content-channel-options.md Option A):
+# the anonymous XML front-end no longer completes renders (probe run
+# 32337551926: 0/55 across all passes), so we are evaluating the Search API
+# `fields` array as the notice-content channel. This probe answers, against
+# the live API, the questions the sandbox cannot (TED hosts are
+# egress-blocked there): (1) which candidate field names (kebab aliases and
+# raw eForms BT ids) the API accepts and returns, (2) whether lot-level
+# fields come back as per-lot arrays whose indexes ALIGN across fields on a
+# real multi-lot notice (the crux for our lot-centric model), (3) whether
+# description text is truncated, and (4) how onlyLatestVersions changes the
+# result set. Read-only anonymous POSTs, ~1 req/s, identifying User-Agent,
+# bounded sanitized output only (TED notices are public data; we still cap
+# and strip every dump).
+name: TED search fields probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      window:
+        description: 'Publication date to sample (YYYY-MM-DD, a weekday)'
+        required: false
+        type: string
+        default: '2026-08-17'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ted-search-fields-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      WINDOW: ${{ inputs.window }}
+      UA: 'BidMorrow/1.0 (+https://bidmorrow.com; support@bidmorrow.com)'
+      SEARCH_URL: 'https://api.ted.europa.eu/v3/notices/search'
+    steps:
+      - name: Validate input
+        run: |
+          [[ "$WINDOW" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "bad window"; exit 1; }
+
+      - name: 1 — Per-field acceptance sweep (candidate aliases + BT ids)
+        run: |
+          d="${WINDOW//-/}"
+          q="classification-cpv IN (48*, 72*) AND form-type = competition AND publication-date >= ${d} AND publication-date <= ${d}"
+          # Verified aliases (docs/ted-data-source.md) + candidates for every
+          # pipeline concept with no verified alias (P/✗ rows in
+          # docs/ted-content-channel-options.md §2).
+          cat > /tmp/candidates.txt <<'EOF'
+          publication-number
+          publication-date
+          links
+          form-type
+          notice-type
+          notice-subtype
+          notice-title
+          notice-language
+          buyer-name
+          buyer-country
+          buyer-legal-type
+          procedure-type
+          contract-nature
+          classification-cpv
+          place-of-performance
+          estimated-value
+          estimated-value-cur
+          estimated-value-lot
+          estimated-value-cur-lot
+          deadline-receipt-tender-date-lot
+          deadline-receipt-tender-time-lot
+          title-lot
+          description-lot
+          lot-identifier
+          main-classification-lot
+          additional-classification-lot
+          place-performance-country-lot
+          change-notice-version-identifier
+          BT-21-Lot
+          BT-24-Lot
+          BT-137-Lot
+          BT-262-Lot
+          BT-263-Lot
+          BT-5071-Lot
+          BT-27-Lot
+          BT-27-Procedure
+          BT-11-Procedure-Buyer
+          BT-131(d)-Lot
+          BT-131(t)-Lot
+          BT-702(a)-notice
+          OPP-070-notice
+          OPT-002-notice
+          EOF
+          : > /tmp/accepted.txt
+          while read -r f; do
+            [ -z "$f" ] && continue
+            jq -n --arg q "$q" --arg f "$f" \
+              '{query: $q, fields: [$f], limit: 1}' > /tmp/req.json
+            code=$(curl -s -o /tmp/body.json -w '%{http_code}' --max-time 30 \
+              -X POST "$SEARCH_URL" \
+              -H 'Content-Type: application/json' -H "User-Agent: $UA" \
+              --data @/tmp/req.json || echo 000)
+            bytes=$(wc -c < /tmp/body.json | tr -d ' ')
+            if [ "$code" = "200" ]; then
+              # Does the returned notice actually CARRY the field?
+              present=$(jq -r --arg f "$f" \
+                '(.notices[0] // {}) | has($f)' /tmp/body.json 2>/dev/null || echo parse-error)
+              echo "FIELD ${f}: status=200 present-in-row=${present}"
+              [ "$present" = "true" ] && echo "$f" >> /tmp/accepted.txt
+            else
+              head=$(head -c 160 /tmp/body.json | tr -d '\n' | tr -c 'a-zA-Z0-9{}[]<>?/=",. :-' '_')
+              echo "FIELD ${f}: status=${code} bytes=${bytes} head=${head}"
+            fi
+            rm -f /tmp/body.json
+            sleep 1
+          done < /tmp/candidates.txt
+          echo "== accepted fields: $(wc -l < /tmp/accepted.txt) =="
+          cat /tmp/accepted.txt
+          cp /tmp/accepted.txt /tmp/accepted.keep
+
+      - name: 2 — Combined request over the window (structure dump)
+        run: |
+          d="${WINDOW//-/}"
+          q="classification-cpv IN (48*, 72*) AND form-type = competition AND publication-date >= ${d} AND publication-date <= ${d}"
+          jq -n --arg q "$q" \
+            --rawfile fl /tmp/accepted.keep \
+            '{query: $q, fields: ($fl | split("\n") | map(select(length > 0))), limit: 25}' > /tmp/req.json
+          nfields=$(jq '.fields | length' /tmp/req.json)
+          echo "combined request: ${nfields} fields x limit 25 (budget: $((nfields * 25)) <= 10000)"
+          code=$(curl -s -o /tmp/combined.json -w '%{http_code}' --max-time 60 \
+            -X POST "$SEARCH_URL" \
+            -H 'Content-Type: application/json' -H "User-Agent: $UA" \
+            --data @/tmp/req.json || echo 000)
+          bytes=$(wc -c < /tmp/combined.json | tr -d ' ')
+          echo "combined: status=${code} bytes=${bytes}"
+          [ "$code" = "200" ] || { head -c 400 /tmp/combined.json; exit 1; }
+          echo "totalNoticeCount=$(jq '.totalNoticeCount' /tmp/combined.json)"
+          echo "--- structural dump of notice[0] (types + array lengths, values truncated) ---"
+          jq '.notices[0] | walk(
+                if type == "string" then .[0:40]
+                elif type == "array" then {len: length, sample: (.[0:2])}
+                else . end)' /tmp/combined.json | head -120
+
+      - name: 3 — Lot-alignment analysis (the crux)
+        run: |
+          # For each notice, print the LENGTH of every array-valued lot field.
+          # If lot fields are index-aligned, lengths must agree per notice and
+          # a lot-identifier field must exist to key them.
+          echo "--- per-notice lot-array lengths (field=len, up to 25 notices) ---"
+          jq -r '.notices[] | [
+              (."publication-number" // "?"),
+              ( to_entries
+                | map(select((.key | test("lot|Lot")) ))
+                | map("\(.key)=\(if (.value|type)=="array" then (.value|length) else (.value|type) end)")
+                | join(" ") )
+            ] | join(" | ")' /tmp/combined.json | head -30
+          echo "--- most-lotted notice: full lot fields, values truncated to 60 chars ---"
+          jq '[.notices[]]
+              | max_by([.[ "deadline-receipt-tender-date-lot" ]?, .["estimated-value-lot"]?]
+                       | map(if type=="array" then length else 0 end) | max)
+              | with_entries(select(.key | test("lot|Lot|publication-number")))
+              | walk(if type == "string" then .[0:60] else . end)' /tmp/combined.json | head -100
+
+      - name: 4 — Description truncation check
+        run: |
+          echo "--- description-lot / BT-24-Lot value lengths (chars) across notices ---"
+          jq -r '.notices[]
+            | [ (."publication-number" // "?"),
+                ( [ (."description-lot" // ."BT-24-Lot" // empty) ]
+                  | tostring | length | tostring ) ]
+            | join(" chars=")' /tmp/combined.json | sort -t= -k2 -rn | head -15
+
+      - name: 5 — onlyLatestVersions / correction behavior
+        run: |
+          d="${WINDOW//-/}"
+          q="classification-cpv IN (48*, 72*) AND form-type = competition AND publication-date >= ${d} AND publication-date <= ${d}"
+          for flag in true false; do
+            jq -n --arg q "$q" --argjson v "$flag" \
+              '{query: $q, fields: ["publication-number", "publication-date", "notice-type"], limit: 1, onlyLatestVersions: $v}' > /tmp/req.json
+            code=$(curl -s -o /tmp/v.json -w '%{http_code}' --max-time 30 \
+              -X POST "$SEARCH_URL" \
+              -H 'Content-Type: application/json' -H "User-Agent: $UA" \
+              --data @/tmp/req.json || echo 000)
+            echo "onlyLatestVersions=${flag}: status=${code} totalNoticeCount=$(jq '.totalNoticeCount' /tmp/v.json 2>/dev/null || echo '?')"
+            rm -f /tmp/v.json
+            sleep 1
+          done

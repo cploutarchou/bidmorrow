@@ -3,7 +3,13 @@
 Status: Accepted (2026-08-19) — implementation authorized by owner. Amended
 2026-08-19 (render-pending exhaustion joins record-and-continue — see the
 dated Amendment section at the end). Originally Proposed 2026-08-18 as spec
-only.
+only. **Partially superseded by ADR-0009 (2026-08-20)**: render-pending
+exhaustions no longer count toward the §2 systemic threshold (Amendment
+§A1's counting rule is replaced), and Amendment §A2's "skip the drain
+whenever catch-up ended `failed`" rule is replaced by cause-classified
+skipping. First-production-run evidence (2026-08-20: 0/156 renders
+completed, window threshold-failed on 32 render-pending skips, 32 retry
+rows permanently undrainable) falsified both. All other decisions stand.
 
 ## Context
 
@@ -71,6 +77,12 @@ after `MAX_RENDER_VISITS`) joins this record-and-continue path — see
 Amendment §A1._
 
 ### 2. Systemic-failure threshold — record-and-continue is bounded
+
+> _Superseded in part by ADR-0009 §1 (2026-08-20): this threshold now
+> applies to genuine fetch failures (`NOTICE_FETCH_HTTP_*` /
+> `NOTICE_FETCH_NETWORK_ERROR`) ONLY. Render-pending exhaustions (folded
+> in by Amendment §A1) are tracked in their own counter with no fail
+> ceiling and a distinct alert signal._
 
 The original protection ("TED blocking us must not advance the checkpoint
 past a day of unfetched notices") is preserved by a threshold: the window
@@ -284,6 +296,14 @@ shape, backoff, give-up, and abandonment semantics are unchanged.
 
 ### A1. Render-pending exhaustion is a §1 fetch failure
 
+> _Superseded in part by ADR-0009 §1 (2026-08-20): the skip itself
+> (diagnostic row, retry row, drop-and-continue) stands, but the
+> `noticesFetchFailed` increment — and therefore participation in the §2
+> threshold and the `notices_fetch_failed` column — is replaced by a
+> dedicated `noticesRenderPending` counter/column. The 2026-08-20 run
+> proved a slow-render day threshold-fails as a false "TED is blocking
+> us"._
+
 A notice that exhausts `MAX_RENDER_VISITS` is skipped exactly like a §1
 fetch failure. Handling lives at the Phase-2 requeue site in
 `runIngestionWindow` (the catch site differs from §1's
@@ -330,10 +350,14 @@ in-run revisit budget as window notices.
   `NOTICE_FETCH_ABANDONED` (§3 unchanged). Drain outcomes never feed the
   §2 threshold — that threshold is defined over a window's `noticesSeen`,
   and drain rows are windowless by design.
-- **Ordering/skip rules**: the drain runs after the catch-up loop in the
-  same invocation, and is skipped when the catch-up ended `failed` or
-  ingestion is paused — an origin that just failed a window systemically
-  should not be hammered further (budget + politeness).
+- **Ordering/skip rules** _(skip condition superseded by ADR-0009 §2,
+  2026-08-20: skipping on ANY `failed` catch-up deadlocked with A1 — a
+  daily-failing window made the retry rows permanently undrainable; the
+  drain now skips only for systemic/budget failure codes)_: the drain runs
+  after the catch-up loop in the same invocation, and is skipped when the
+  catch-up ended `failed` or ingestion is paused — an origin that just
+  failed a window systemically should not be hammered further (budget +
+  politeness).
   `TedBudgetExceededError` during the drain terminates the drain only
   (logged; rows remain due tomorrow) — no window is in flight, so nothing
   is window-fatal.
@@ -398,6 +422,14 @@ amendment time (a fully successful 156-notice window's ~1,000–1,250 D1
 calls sits far below 10,000). Recorded in docs/dependency-versions.md.
 
 ### A4. §2 threshold arithmetic re-checked with render-pending counting
+
+> _Superseded by ADR-0009 §1 (2026-08-20): render-pending no longer
+> counts toward the §2 threshold, so this section's all-202 arithmetic no
+> longer describes production behavior (an all-202 day now finishes
+> `partial` with a `RENDER_PENDING_DEGRADED` alert instead of
+> threshold-failing). Kept for the historical record: the 2026-08-20 run
+> matched this math exactly — abort at the 32nd exhaustion at 156 seen —
+> which is precisely what proved the model wrong._
 
 At 156 notices, `FETCH_FAILURE_FAIL_MIN = 5` and
 `FETCH_FAILURE_FAIL_RATIO = 0.2` trip at the **32nd** fetch failure
