@@ -43,6 +43,13 @@
       "when": 1787137778120,
       "tag": "0005_ingestion_fetch_retries",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1787205464504,
+      "tag": "0006_ingestion_render_pending",
+      "breakpoints": true
     }
   ]
 }

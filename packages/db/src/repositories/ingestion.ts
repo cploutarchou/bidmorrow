@@ -105,6 +105,16 @@ export interface FinishRunArgs {
      * (packages/procurement/src/run-window.ts), landing separately.
      */
     readonly noticesFetchFailed?: number;
+    /**
+     * Per-notice render-pending exhaustions recorded as record-and-continue
+     * skips (ADR-0009 §1) — split out of `noticesFetchFailed` because the
+     * origin is cooperating (202/empty-body, render queued but slow), not
+     * refusing, and must never count toward the ADR-0008 §2 systemic
+     * fetch-failure threshold. Optional (defaults to 0) so this repository
+     * change stays additive for the ADR-0009 §1 window-level caller
+     * (packages/procurement/src/run-window.ts), landing separately.
+     */
+    readonly noticesRenderPending?: number;
   };
   /** Defaults to now. */
   readonly finishedAt?: number;
@@ -130,6 +140,7 @@ export async function finishRun(db: Db, args: FinishRunArgs): Promise<IngestionR
       matchesScored: args.counts.matchesScored,
       errorsCount: args.counts.errorsCount,
       noticesFetchFailed: args.counts.noticesFetchFailed ?? 0,
+      noticesRenderPending: args.counts.noticesRenderPending ?? 0,
       finishedAt: args.finishedAt ?? now,
       updatedAt: now,
     })

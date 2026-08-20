@@ -30,6 +30,7 @@ const COUNTS = {
   matchesScored: 96,
   errorsCount: 2,
   noticesFetchFailed: 1,
+  noticesRenderPending: 3,
 } as const;
 
 describe('ingestion runs', () => {
@@ -64,6 +65,8 @@ describe('ingestion runs', () => {
     });
     // Explicit round-trip on the ADR-0008 §5 column, not just the spread above.
     expect(finished.noticesFetchFailed).toBe(1);
+    // Explicit round-trip on the ADR-0009 §1 column, not just the spread above.
+    expect(finished.noticesRenderPending).toBe(3);
   });
 
   it('defaults notices_fetch_failed to 0 when the caller omits it (backward-compatible finishRun)', async () => {
@@ -83,6 +86,25 @@ describe('ingestion runs', () => {
       finishedAt: T0 + 1,
     });
     expect(finished.noticesFetchFailed).toBe(0);
+  });
+
+  it('defaults notices_render_pending to 0 when the caller omits it (backward-compatible finishRun, ADR-0009 §1)', async () => {
+    const run = await createRun(db, {
+      source: SOURCE,
+      windowFrom: '2026-08-01',
+      windowTo: '2026-08-01',
+      startedAt: T0,
+    });
+    const { noticesRenderPending, ...countsWithoutRenderPending } = COUNTS;
+    void noticesRenderPending;
+
+    const finished = await finishRun(db, {
+      runId: run.id,
+      status: 'succeeded',
+      counts: countsWithoutRenderPending,
+      finishedAt: T0 + 1,
+    });
+    expect(finished.noticesRenderPending).toBe(0);
   });
 
   it('rejects the invalid transition of finishing an already-finished run', async () => {
