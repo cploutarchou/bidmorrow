@@ -110,6 +110,52 @@ important inputs; §4 gates Option A adoption on a populate-rate probe.
   `estimated-value-lot`, `estimated-value-cur-lot`, plus `BT-131-Lot`,
   `BT-27-Lot`) across the whole 2026-08-17 window.
 
+#### Source-facts probe result (run 32347877913, 2026-08-20 08:15 UTC)
+
+Three answers, all from TED's own responses:
+
+1. **The inferred address is DEAD — proven, not inferred.** The A/B came
+   back identical for all three ids: `202600157` (real),
+   `definitely-not-an-issue` and `00000000` each answered
+   `202, 0 bytes, content-type: text/html; charset=UTF-8`. A path that
+   answers a real issue exactly as it answers garbage is not addressing
+   the issue. `/packages/notice/daily/{id}` is a catch-all shell and is
+   struck from this ADR as a candidate; every earlier poll against it
+   measured nothing.
+2. **The REAL address is published by TED and has no `/notice/` segment.**
+   `https://ted.europa.eu/en/simap/xml-bulk-download` returned HTTP 200
+   (191,772 bytes) and lists absolute hrefs:
+   `https://ted.europa.eu/packages/daily/{ojIssueId}` for issues
+   `202600147`–`202600160`, and `https://ted.europa.eu/packages/monthly/{year}-{n}`
+   (e.g. `2026-1`). The `OJ` field's `157/2026` maps to `202600157` —
+   present in the published list, so the id encoding is confirmed by the
+   source rather than guessed. Note `/packages/daily/…` is the prefix
+   that answered **400** in run 32343243004 — i.e. the earlier probe read
+   the real family's rejection of a malformed id as evidence against the
+   family. (`/en/release-calendar` itself answered 202 — the same async
+   shell — and `data.europa.eu/data/datasets?query=TED` returned a
+   1,599-byte JS-rendered page with no hrefs; neither adds anything.)
+3. **A-G1 is NOT yet measured.** The populate-rate request returned
+   **HTTP 400 — "Parameter 'fields' contains unsupported value"**, so at
+   least one of the six requested names is not a valid `fields` value and
+   the whole request was rejected. No populate rate can be read from this
+   run; the previous "accepted-but-empty" inference is therefore also
+   unsupported. The error body enumerates every supported value, which is
+   the authoritative name list.
+
+**Gate status: still OPEN, but the question has changed.** It is no
+longer "does an unknown address exist" — it is "does the _published_
+address deliver bytes". `ted-package-probe` (this commit) HEADs and GETs
+`https://ted.europa.eu/packages/daily/{issue}` with the same garbage-id
+A/B discipline, checks `content-type`/`content-disposition`/magic bytes
+and attempts an archive listing, and closes A-G1 by mining the API's own
+supported-value enumeration and then measuring each field **separately**
+so one bad name cannot 400 the whole measurement again.
+
+**Standing rule, reaffirmed:** an address is never proven by
+response-code routing alone. It is proven by delivering content that a
+garbage id does not.
+
 Constraints in force: modular monolith on Workers, fixed infra < $100/mo
 (target $5–30), D1 10 GB with ≥40% 12-month headroom, ADR-0005 (R2 raw
 snapshots), ADR-0003 (scope/retention), ADR-0006 (queues+cron, no
@@ -170,10 +216,12 @@ XML the front-end used to serve.
 
 - **Addressing**: add `OJ` to `SEARCH_FIELDS` (verified field, §5). The
   window's search pass records the issue id for its publication date;
-  the package URL uses ONLY the address the gate proved (an href from
-  TED's own bulk-download page, or a poll-confirmed pattern) — the
-  inferred `/packages/notice/daily/{id}` shape is UNPROVEN and must not
-  be hard-coded ahead of that proof. Date→issue mapping comes ONLY from
+  the package URL uses ONLY the address the gate proved. The candidate
+  is now `https://ted.europa.eu/packages/daily/{ojIssueId}` — an href
+  published by TED's own bulk-download page (run 32347877913), NOT an
+  inferred pattern — and it still must not be hard-coded until it is
+  shown to deliver an archive. The `/packages/notice/daily/{id}` shape
+  is DISPROVEN (catch-all shell) and must never be used. Date→issue mapping comes ONLY from
   the API's `OJ` value — never weekday arithmetic (the 163-vs-157 miss
   is the recorded reason).
 - **Async acquisition**: the cron GETs the package URL; a 202 records a
