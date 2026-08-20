@@ -100,11 +100,13 @@ with margin; no scope tightening needed (ADR-0003 trigger is >600/day).
   ceiling ≈ **0.33 MB/year** worst case before the 90-day terminal-row
   purge (steady state a few KB). Measured render-pending incidence
   2026-08-19: 1/156 ≈ 0.6%. **The 1% assumption is falsified for burst
-  days** (2026-08-20: 32/156 ≈ 20.5% skipped render-pending; ADR-0009):
-  re-projected at a sustained 100% absolute worst case, 300 rows/day ×
-  90-day purge × ~300 B ≈ **8 MB steady state** — still negligible vs the
-  10 GB cap; no headroom impact. ADR-0009's `notices_render_pending`
-  run-column adds ~6 KB/year (noise).
+  days** (2026-08-20: 32/156 ≈ 20.5% skipped render-pending; ADR-0009 —
+  the TED render pipeline is currently completing no renders at all):
+  terminal rows purge after 90 days, but `pending` rows accumulated
+  during a sustained render outage do not — absolute worst case, 12
+  months of total outage at the 300/day ceiling ≈ 110k rows × ~300 B ≈
+  **33 MB** — still negligible vs the 10 GB cap; no headroom impact.
+  ADR-0009's `notices_render_pending` run-column adds ~6 KB/year (noise).
 - **Steady state projection ≤ ~3–5 GB total at 100 customers** vs 10 GB
   limit → ≥50% headroom. Retention/archival (normalized rows pruned after
   deadline+90d; snapshots retained in R2) is what keeps this bounded and is
