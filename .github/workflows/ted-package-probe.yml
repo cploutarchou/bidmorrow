@@ -1,0 +1,138 @@
+# Follow-up dispatch (2026-08-20), driven by ted-source-facts-probe run
+# 32347877913, which settled two things:
+#
+#  * The inferred /packages/notice/daily/{id} address is DEAD. A real issue
+#    id, "definitely-not-an-issue" and "00000000" all answered identically
+#    (202, 0 bytes, text/html) => generic async shell, not an endpoint.
+#  * TED's own bulk-download page (ted.europa.eu/en/simap/xml-bulk-download,
+#    HTTP 200) publishes the REAL pattern, with no /notice/ segment:
+#      https://ted.europa.eu/packages/daily/{ojIssueId}     e.g. 202600157
+#      https://ted.europa.eu/packages/monthly/{year}-{n}    e.g. 2026-1
+#
+# Q1 — does the REAL address deliver bytes? Same A/B discipline as before:
+# a real issue id must behave DIFFERENTLY from garbage, and the response
+# must look like an archive (content-type / content-disposition / magic
+# bytes), not like an HTML shell. Anything else leaves ADR-0010 gate open.
+#
+# Q2 — the populate-rate measurement 400'd: "Parameter 'fields' contains
+# unsupported value". The error body enumerates every supported value, so
+# ask for one deliberately-invalid field and mine that enumeration for the
+# real deadline / value / lot-id names instead of guessing again.
+name: TED package probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_id:
+        description: 'OJ daily issue id published on the bulk page (digits)'
+        required: false
+        type: string
+        default: '202600157'
+      window:
+        description: 'Publication date for the populate-rate measurement'
+        required: false
+        type: string
+        default: '2026-08-17'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ted-package-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ISSUE_ID: ${{ inputs.issue_id || '202600157' }}
+      WINDOW: ${{ inputs.window || '2026-08-17' }}
+      UA: 'BidMorrow/1.0 (+https://bidmorrow.com; support@bidmorrow.com)'
+      SEARCH_URL: 'https://api.ted.europa.eu/v3/notices/search'
+    steps:
+      - name: Validate inputs
+        run: |
+          [[ "$ISSUE_ID" =~ ^[0-9]{1,12}$ ]] || { echo "bad issue id"; exit 1; }
+          [[ "$WINDOW" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "bad window"; exit 1; }
+
+      - name: Q1a — HEAD the real package addresses (size before download)
+        run: |
+          for u in \
+            "https://ted.europa.eu/packages/daily/${ISSUE_ID}" \
+            'https://ted.europa.eu/packages/daily/definitely-not-an-issue' \
+            'https://ted.europa.eu/packages/daily/00000000' \
+            'https://ted.europa.eu/packages/monthly/2026-1' ; do
+            echo "== ${u} =="
+            curl -sI --max-time 45 -L -H "User-Agent: $UA" "$u" \
+              | grep -iE '^(HTTP/|content-type|content-length|content-disposition|location|retry-after)' \
+              | tr -d '\r' | head -12 || echo "  (no headers)"
+            sleep 2
+          done
+
+      - name: Q1b — GET the real issue and inspect what actually arrives
+        run: |
+          u="https://ted.europa.eu/packages/daily/${ISSUE_ID}"
+          code=$(curl -s -o /tmp/pkg.bin -D /tmp/pkg.h -w '%{http_code}' \
+            --max-time 300 -L -H "User-Agent: $UA" "$u" || echo 000)
+          bytes=$(wc -c < /tmp/pkg.bin | tr -d ' ')
+          echo "GET ${u}: status=${code} bytes=${bytes}"
+          grep -iE '^(content-type|content-disposition|content-length)' /tmp/pkg.h \
+            | tr -d '\r' | head -5 || true
+          echo "-- file(1) verdict --"
+          file -b /tmp/pkg.bin || true
+          echo "-- magic bytes (hex) --"
+          od -An -tx1 -N 8 /tmp/pkg.bin | tr -d '\n'; echo
+          if [ "$bytes" -gt 0 ] && file -b /tmp/pkg.bin | grep -qiE 'gzip|zip|tar|archive'; then
+            echo "-- archive listing (first 15 entries) --"
+            (tar tzf /tmp/pkg.bin 2>/dev/null || zcat /tmp/pkg.bin 2>/dev/null | head -c 400 \
+              || unzip -l /tmp/pkg.bin 2>/dev/null) | head -15
+            echo "VERDICT: package address DELIVERS an archive."
+          else
+            echo "-- first 300 bytes as text --"
+            head -c 300 /tmp/pkg.bin | tr -d '\000'; echo
+            echo "VERDICT: no archive delivered on this attempt."
+          fi
+          rm -f /tmp/pkg.bin /tmp/pkg.h
+
+      - name: Q2 — mine the API's own supported-field enumeration
+        run: |
+          jq -n '{query: "publication-number=1", limit: 1,
+                  fields: ["bidmorrow-deliberately-invalid-field"]}' > /tmp/bad.json
+          curl -s -o /tmp/err.json --max-time 60 -X POST "$SEARCH_URL" \
+            -H 'Content-Type: application/json' -H "User-Agent: $UA" \
+            --data @/tmp/bad.json || true
+          jq -r '.message // "no message"' /tmp/err.json > /tmp/msg.txt
+          echo "enumeration length: $(wc -c < /tmp/msg.txt) bytes"
+          tr ',' '\n' < /tmp/msg.txt | sed 's/^ *//' > /tmp/names.txt
+          for pat in deadline value-lot value-cur BT-131 BT-27 BT-137 'lot-identifier' 'estimated'; do
+            echo "-- names matching '${pat}' --"
+            grep -iE "$pat" /tmp/names.txt | sort -u | head -12 || echo "  (none)"
+          done
+
+      - name: Q2b — populate rate using names confirmed above
+        run: |
+          d="${WINDOW//-/}"
+          q="classification-cpv IN (48*, 72*) AND form-type = competition AND publication-date >= ${d} AND publication-date <= ${d}"
+          # Ask field-by-field so one unsupported name cannot 400 the whole
+          # measurement the way it did in run 32347877913.
+          for f in deadline-receipt-tender-date-lot estimated-value-lot \
+                   estimated-value-cur-lot BT-131-Lot BT-27-Lot BT-137-Lot ; do
+            jq -n --arg q "$q" --arg f "$f" \
+              '{query: $q, limit: 250, onlyLatestVersions: false,
+                fields: ["publication-number", $f]}' > /tmp/req.json
+            code=$(curl -s -o /tmp/r.json -w '%{http_code}' --max-time 60 \
+              -X POST "$SEARCH_URL" -H 'Content-Type: application/json' \
+              -H "User-Agent: $UA" --data @/tmp/req.json || echo 000)
+            if [ "$code" != "200" ]; then
+              echo "  ${f}: REJECTED (status=${code})"
+            else
+              total=$(jq '.notices | length' /tmp/r.json)
+              n=$(jq --arg f "$f" '[.notices[] | select((.[$f] // null) != null)] | length' /tmp/r.json)
+              echo "  ${f}: present on ${n}/${total} returned notices"
+              jq -c --arg f "$f" '[.notices[] | select((.[$f] // null) != null)][0][$f] // "none"' \
+                /tmp/r.json | head -c 300; echo
+            fi
+            rm -f /tmp/req.json /tmp/r.json
+            sleep 1
+          done

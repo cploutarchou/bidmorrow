@@ -84,6 +84,35 @@ could not be fully verified.
   assume unlimited: polite throttling, exponential backoff on 429/5xx, and
   an admin-configurable request budget per run are mandatory.
 
+## Bulk XML packages (address verified 2026-08-20; delivery UNPROVEN)
+
+TED publishes daily and monthly bulk XML packages, and publishes their
+links itself at `https://ted.europa.eu/en/simap/xml-bulk-download`
+(HTTP 200). The real addresses, taken from that page's hrefs — never
+inferred:
+
+- daily: `https://ted.europa.eu/packages/daily/{ojIssueId}` (e.g.
+  `202600157`, listed for issues `202600147`–`202600160`)
+- monthly: `https://ted.europa.eu/packages/monthly/{year}-{n}` (e.g.
+  `2026-1`)
+
+The issue id comes ONLY from the Search API's `OJ` field (`157/2026` for
+publication date 2026-08-17 → `202600157`), never from weekday
+arithmetic.
+
+**`https://ted.europa.eu/packages/notice/daily/{id}` is NOT an endpoint**
+(verified 2026-08-20, ted-source-facts-probe run 32347877913): a real
+issue id, `definitely-not-an-issue`, and `00000000` all answer
+identically — `202`, 0 bytes, `content-type: text/html; charset=UTF-8`.
+That is the website's generic async shell answering any unrecognized
+path, so every poll against it measured nothing. Standing rule: an
+address is proven by delivering content a garbage id does not, never by
+response-code routing.
+
+Whether the published `/packages/daily/{issue}` address actually delivers
+an archive is still unproven — see ADR-0010's gate and the
+`ted-package-probe` workflow.
+
 ## Expert query language (ingestion filter)
 
 Kebab-case eForms search aliases; boolean AND/OR/NOT, `=`, `~` (contains),
