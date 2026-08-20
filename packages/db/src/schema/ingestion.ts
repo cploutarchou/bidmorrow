@@ -44,6 +44,15 @@ export const ingestionRuns = sqliteTable(
      * grouping `ingestion_errors` by code prefix on every check.
      */
     noticesFetchFailed: integer('notices_fetch_failed').notNull().default(0),
+    /**
+     * Per-notice render-pending exhaustions recorded as record-and-continue
+     * skips (ADR-0009 §1) — distinct from `noticesFetchFailed`: the origin
+     * is cooperating (202/empty-body, render queued but slow), not
+     * refusing. Split out so it never counts toward the §2 systemic
+     * fetch-failure threshold, and so watchdog/admin can distinguish a
+     * slow-render day from a genuinely degraded one with one indexed read.
+     */
+    noticesRenderPending: integer('notices_render_pending').notNull().default(0),
     startedAt: integer('started_at').notNull(),
     /** Null while the run is still executing. */
     finishedAt: integer('finished_at'),
