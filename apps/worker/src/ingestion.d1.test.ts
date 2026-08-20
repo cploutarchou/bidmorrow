@@ -1430,6 +1430,82 @@ describe('ADR-0008 fetch resilience', () => {
     expect(retryRow?.status).toBe('recovered');
   });
 
+  it("RV-0009-02: ADR-0009 §2 same-run drain pickup — a notice that exhausts render-pending during the window's own pass is re-attempted and recovered by the SAME `runIngestionCatchUp` invocation's drain (upserted, retry row `recovered`, lot id in newLotIds)", async () => {
+    const db = createDb(env.DB);
+    const before = await getCheckpoint(db, { source: 'ted' });
+    const start = before?.lastPublicationDate ?? '2026-08-23';
+    await advanceCheckpoint(db, { source: 'ted', lastPublicationDate: start });
+    const windowDate = nextIsoDate(start, 1);
+
+    const sourceNoticeId = 'same-run-drain-1';
+    const xmlUrl = 'https://ted.europa.eu/notice/same-run-drain-1.xml';
+    // Stateful fake fetch keyed by call count on THIS url (the pattern
+    // already used above for the drain-cycle tests): the window's Phase 2
+    // trigger/collect cycle exhausts all MAX_RENDER_VISITS (6) as
+    // 202/render-pending, so `recordFetchSkip` lands a retry row with
+    // `nextAttemptAt = now()` and the window finishes `partial` (not
+    // failed -> not systemic -> the drain is not skipped). The SAME
+    // TedClient keeps counting hits into the drain that follows in the
+    // same `runIngestionCatchUp` call: the 7th hit (the drain's first
+    // visit for this row) serves the real XML — proving the drain picks
+    // up and lands the skip it JUST created, in one invocation.
+    let hits = 0;
+    const base = makeFakeFetch([{ notices: [searchRow(sourceNoticeId, windowDate, xmlUrl)] }], {});
+    const fetchImpl: TedFetch = (url, init) => {
+      if (url.endsWith('/v3/notices/search')) return base(url, init);
+      if (url !== xmlUrl) return base(url, init);
+      hits += 1;
+      if (hits <= 6) return Promise.resolve(alwaysPendingResponse());
+      return Promise.resolve(textResponse(normalXml));
+    };
+
+    const now = Date.parse('2026-10-06T00:00:00Z');
+    const result = await runIngestionCatchUp({
+      db,
+      client: makeClient(fetchImpl),
+      snapshots: env.SNAPSHOTS,
+      logger: createLogger({ test: true }),
+      maxWindowsPerRun: 1,
+      now: () => now,
+      renderRetryDelayMs: 0,
+    });
+
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0]?.status).toBe('partial');
+    expect(result.results[0]?.failureCode).toBeNull();
+    // The same invocation's drain ran (non-systemic) and swept up the row
+    // the window just created.
+    expect(result.drain).not.toBeNull();
+    // 6 exhausted visits inside the window's own pass + 1 drain re-attempt
+    // that lands the XML — proof the drain re-fetched in THIS invocation,
+    // not merely that the notice exists somewhere.
+    expect(hits).toBe(7);
+
+    const retryRow = await env.DB.prepare(
+      "SELECT status FROM ingestion_fetch_retries WHERE source = 'ted' AND source_notice_id = ?",
+    )
+      .bind(sourceNoticeId)
+      .first<{ status: string }>();
+    expect(retryRow?.status).toBe('recovered');
+
+    const notice = await getNoticeByPublicationNumber(db, {
+      source: 'ted',
+      publicationNumber: sourceNoticeId,
+    });
+    expect(notice).not.toBeNull();
+
+    const lot = await env.DB.prepare(
+      'SELECT id FROM tender_lots WHERE notice_version_id = (SELECT current_version_id FROM tender_notices WHERE id = ?)',
+    )
+      .bind(notice?.id)
+      .first<{ id: string }>();
+    expect(lot?.id).toBeDefined();
+    // The drain's freshly-created lot id surfaces in the catch-up's
+    // returned newLotIds — the composed result the worker enqueues to
+    // MATCH_QUEUE, not just the drain's own internal result.
+    expect(result.newLotIds).toContain(lot?.id);
+  });
+
   it('Amendment §A2 F-3a: a drain row that cycles through render-pending responses then succeeds is recovered WITHOUT incrementing attempts (a whole successful cycle is not a "failure")', async () => {
     const db = createDb(env.DB);
     const sourceNoticeId = 'drain-cycle-recover-1';
@@ -1608,6 +1684,118 @@ describe('ADR-0008 fetch resilience', () => {
       .bind(result.runId)
       .first<{ status: string }>();
     expect(runRow?.status).toBe('partial');
+  });
+
+  it('RV-0009-03: TedBudgetExceededError mid-drain breaks out but still finishes the run row; rows not yet reached stay pending/untouched, and the checkpoint is never touched', async () => {
+    const db = createDb(env.DB);
+    const beforeCheckpoint = await getCheckpoint(db, { source: 'ted' });
+
+    // Due strictly BEFORE T0: every OTHER retry row this shared-D1 file
+    // creates is due at T0 or later (see this describe block's earlier
+    // "shares one D1" notes; `grep nextAttemptAt:` confirms none go below
+    // T0), so a drain call `now`'d before T0 sweeps up ONLY these three
+    // rows, in this order (nextAttemptAt is the drain query's primary sort
+    // key) — regardless of what any other test in this file left pending.
+    const dueAt1 = T0 - 300_000;
+    const dueAt2 = T0 - 200_000;
+    const dueAt3 = T0 - 100_000;
+    const xmlUrl1 = 'https://ted.europa.eu/notice/budget-die-1.xml';
+    const xmlUrl2 = 'https://ted.europa.eu/notice/budget-die-2.xml';
+    const xmlUrl3 = 'https://ted.europa.eu/notice/budget-die-3.xml';
+    await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId: 'budget-die-1',
+      xmlUrl: xmlUrl1,
+      publicationDate: '2026-08-01',
+      errorCode: 'NOTICE_FETCH_HTTP_404',
+      nextAttemptAt: dueAt1,
+      now: dueAt1,
+    });
+    await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId: 'budget-die-2',
+      xmlUrl: xmlUrl2,
+      publicationDate: '2026-08-01',
+      errorCode: 'NOTICE_FETCH_HTTP_404',
+      nextAttemptAt: dueAt2,
+      now: dueAt2,
+    });
+    await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId: 'budget-die-3',
+      xmlUrl: xmlUrl3,
+      publicationDate: '2026-08-01',
+      errorCode: 'NOTICE_FETCH_HTTP_404',
+      nextAttemptAt: dueAt3,
+      now: dueAt3,
+    });
+
+    // Budget of 1: the first (oldest-due) row's single fetch spends the
+    // whole budget; the second row's very first fetch call finds the
+    // budget already exhausted. `TedClient` checks the budget BEFORE
+    // invoking the injected fetch (packages/ted/src/client.ts
+    // `performOnce`), so this fake fetch never even sees a request for
+    // xmlUrl2/xmlUrl3 — the client throws `TedBudgetExceededError`
+    // synchronously on the second row's first visit.
+    const client = makeClient(makeFakeFetch([], { [xmlUrl1]: normalXml }), 1);
+    const drainNow = T0 - 50_000; // after all three nextAttemptAt, strictly before T0.
+    const result = await drainFetchRetries({
+      db,
+      client,
+      snapshots: env.SNAPSHOTS,
+      logger: createLogger({ test: true }),
+      now: () => drainNow,
+    });
+
+    expect(result.terminatedByBudget).toBe(true);
+    expect(result.attempted).toBe(3);
+    expect(result.recovered).toBe(1);
+    expect(result.abandoned).toBe(0);
+    expect(result.stillPending).toBe(0);
+    expect(result.runId).not.toBeNull();
+
+    const runRow = await env.DB.prepare('SELECT status FROM ingestion_runs WHERE id = ?')
+      .bind(result.runId)
+      .first<{ status: string }>();
+    // The drain's own run row still finishes (recorded, not left `running`)
+    // even though the work queue was cut short by the budget.
+    expect(runRow?.status).toBe('succeeded');
+
+    const row1 = await env.DB.prepare(
+      'SELECT status FROM ingestion_fetch_retries WHERE source = ? AND source_notice_id = ?',
+    )
+      .bind('ted', 'budget-die-1')
+      .first<{ status: string }>();
+    expect(row1?.status).toBe('recovered');
+
+    // The row that hit the budget wall: its fetch WAS attempted, but the
+    // `TedBudgetExceededError` branch breaks before any repository write
+    // for it (fetch-retry-drain.ts: `terminatedByBudget = true; ...
+    // break;`, no `recordFetchRetryFailure` call) — its state must be
+    // exactly what it was before this drain call, not a recorded failure.
+    const row2 = await env.DB.prepare(
+      'SELECT status, attempts, next_attempt_at FROM ingestion_fetch_retries WHERE source = ? AND source_notice_id = ?',
+    )
+      .bind('ted', 'budget-die-2')
+      .first<{ status: string; attempts: number; next_attempt_at: number }>();
+    expect(row2?.status).toBe('pending');
+    expect(row2?.attempts).toBe(0);
+    expect(row2?.next_attempt_at).toBe(dueAt2);
+
+    // Never reached by the work queue at all.
+    const row3 = await env.DB.prepare(
+      'SELECT status, attempts, next_attempt_at FROM ingestion_fetch_retries WHERE source = ? AND source_notice_id = ?',
+    )
+      .bind('ted', 'budget-die-3')
+      .first<{ status: string; attempts: number; next_attempt_at: number }>();
+    expect(row3?.status).toBe('pending');
+    expect(row3?.attempts).toBe(0);
+    expect(row3?.next_attempt_at).toBe(dueAt3);
+
+    // The drain never touches the ingestion checkpoint (it is windowless
+    // by construction, ADR-0008 §3).
+    const afterCheckpoint = await getCheckpoint(db, { source: 'ted' });
+    expect(afterCheckpoint?.lastPublicationDate).toBe(beforeCheckpoint?.lastPublicationDate);
   });
 });
 
