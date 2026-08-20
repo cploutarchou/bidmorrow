@@ -255,6 +255,15 @@ patience arithmetic.
 > in parallel and will bring the evidence; this section fixes its target
 > list so the investigation answers the questions the architecture
 > actually needs answered.
+>
+> _Resolved by ADR-0010 (2026-08-20): the investigation delivered
+> docs/ted-content-channel-options.md plus probe evidence; ADR-0010
+> specifies both channels ((b) bulk packages as primary if package
+> generation completes; (a) Search-API fields as gated interim if not),
+> the branch gate, and the branch-independent decisions — including
+> suspending retry attempt-burning during the confirmed outage (this
+> ADR's flagged question). This section remains as the historical
+> framing; ADR-0010 owns the decision._
 
 If the render front-end's outage persists (or recurs), it may no longer be
 a viable **primary content channel** — and it is currently the _only_
@@ -393,8 +402,10 @@ Negative / accepted costs:
   superseding decision, since admin backfill cannot run behind the
   advance-only checkpoint. Whether to suspend attempt-burning while
   degradation is confirmed (vs keeping attempts as the recovery probe) is
-  deliberately NOT decided here — it goes to the ted-data investigation's
-  target list with §5.
+  deliberately NOT decided here — it went to the ted-data investigation's
+  target list with §5 and is now decided in ADR-0010 §5.2
+  (`fetch_retry_attempts_suspended` flag: canary-only drain, no attempt
+  burn on render-pending while set).
 - Test surface: counter split (render-pending increments the new counter
   only, never the threshold), no-ceiling behavior (100%-render-pending
   window → `partial`, checkpoint advances, N retry rows),
@@ -426,6 +437,10 @@ figures above. Nothing approaches the $60–80 alert band; totals unchanged.
   bulk-download surface (existence/format/cadence/size — asserted by no
   one from memory; verify against official channels), and the ADR-0005
   provenance question for channel (a). Deliberately framed, not decided.
+  _Update: substantially answered by the probes consumed in ADR-0010
+  (lot alignment verified, package endpoint real-but-async); the
+  remaining opens (package completion, deadline/value populate-rate)
+  are tracked in ADR-0010's ledger._
 - While the outage persists, **the drain recovering anything is not
   expected** — its daily empty-handed cycles double as the recovery
   probe. The first drain that recovers rows is the recovery signal.
@@ -434,7 +449,7 @@ figures above. Nothing approaches the $60–80 alert band; totals unchanged.
   costs noise, not data.
 - Whether burning retry attempts during a confirmed outage is the right
   spend (Consequences, slow-motion abandonment) — flagged to the ted-data
-  investigation alongside §5.
+  investigation alongside §5; since decided in ADR-0010 §5.2.
 
 ## Alternatives considered
 
