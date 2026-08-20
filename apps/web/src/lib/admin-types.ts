@@ -100,11 +100,19 @@ export interface AdminIngestionRun {
   matchesScored: number;
   errorsCount: number;
   /**
-   * Per-notice XML fetch failures recorded as record-and-continue skips
-   * (ADR-0008 §1/§5) — a subset of `errorsCount`, surfaced separately so the
-   * runs table distinguishes "healthy partial" from "systemically degraded".
+   * GENUINE per-notice XML fetch failures recorded as record-and-continue
+   * skips (ADR-0008 §1/§5, ADR-0009 §1) — a subset of `errorsCount`,
+   * surfaced separately so the runs table distinguishes "healthy partial"
+   * from "systemically degraded". No longer includes render-pending
+   * exhaustion (see `noticesRenderPending`).
    */
   noticesFetchFailed: number;
+  /**
+   * Render-pending exhaustion skips (ADR-0009 §1) — the origin cooperated
+   * (202/accepted, render just slow), split out of `noticesFetchFailed`
+   * because it has no fail ceiling and is not evidence TED is refusing us.
+   */
+  noticesRenderPending: number;
   startedAt: number;
   finishedAt: number | null;
 }

@@ -655,7 +655,11 @@ describe('runIngestionWindow', () => {
     // notice.
     expect(xmlHits).toBe(6);
     expect(result.run.errorsCount).toBe(1);
-    expect(result.run.noticesFetchFailed).toBe(1);
+    // ADR-0009 §1: render-pending exhaustion is a distinct counter with NO
+    // fail ceiling — it never bumps noticesFetchFailed (genuine failures
+    // only).
+    expect(result.run.noticesFetchFailed).toBe(0);
+    expect(result.run.noticesRenderPending).toBe(1);
     // Checkpoint advances — a partial window (isolated skip) is not window-fatal.
     const after = await getCheckpoint(db, { source: 'ted' });
     expect(after?.lastPublicationDate).toBe('2026-08-16');
@@ -935,7 +939,10 @@ describe('ADR-0008 fetch resilience', () => {
     expect(result.status).toBe('partial');
     expect(result.run.noticesUpserted).toBe(2); // exh-1, exh-2 — exh-stuck skipped
     expect(result.run.errorsCount).toBe(1);
-    expect(result.run.noticesFetchFailed).toBe(1);
+    // ADR-0009 §1: render-pending exhaustion increments the NEW counter
+    // only, never noticesFetchFailed (genuine fetch failures only).
+    expect(result.run.noticesFetchFailed).toBe(0);
+    expect(result.run.noticesRenderPending).toBe(1);
 
     const checkpoint = await getCheckpoint(db, { source: 'ted' });
     expect(checkpoint?.lastPublicationDate).toBe('2026-08-20');
@@ -1010,11 +1017,13 @@ describe('ADR-0008 fetch resilience', () => {
     expect(detail['maxRatio']).toBe(0.2);
   });
 
-  it('Amendment §A4: threshold breach via pure render-pending exhaustions fails the window (checkpoint held)', async () => {
+  it('ADR-0009 §1: a 100%-render-pending window (the 2026-08-20 incident shape) does NOT trip the threshold — partial, checkpoint ADVANCES, every notice gets a retry row, and one RENDER_PENDING_DEGRADED alert row is written', async () => {
     const db = createDb(env.DB);
-    const before = await getCheckpoint(db, { source: 'ted' });
     // 5 notices, ALL always-202 — every skip is a NOTICE_RENDER_PENDING
-    // exhaustion, no TedRequestError involved at all.
+    // exhaustion, no TedRequestError involved at all. Same shape as the
+    // ADR-0009 2026-08-20 incident (156/156 render-pending), scaled down to
+    // exactly RENDER_PENDING_DEGRADED_MIN so the degraded signal's floor is
+    // also exercised at 100% ratio.
     const rows = Array.from({ length: 5 }, (_, i) =>
       searchRow(
         `exh-thresh-${String(i)}`,
@@ -1041,16 +1050,100 @@ describe('ADR-0008 fetch resilience', () => {
       { windowFrom: '2026-08-22', windowTo: '2026-08-22' },
     );
 
-    expect(result.status).toBe('failed');
-    const after = await getCheckpoint(db, { source: 'ted' });
-    expect(after?.lastPublicationDate).toBe(before?.lastPublicationDate);
+    // No fail ceiling for render-pending: the window finishes partial, NOT
+    // failed, even at 100% render-pending.
+    expect(result.status).toBe('partial');
+    expect(result.failureCode).toBeNull();
+    expect(result.run.noticesSeen).toBe(5);
+    expect(result.run.noticesUpserted).toBe(0);
+    expect(result.run.noticesFetchFailed).toBe(0);
+    expect(result.run.noticesRenderPending).toBe(5);
 
-    const diag = await env.DB.prepare(
+    // Checkpoint ADVANCES — render-pending exhaustion is not window-fatal.
+    const after = await getCheckpoint(db, { source: 'ted' });
+    expect(after?.lastPublicationDate).toBe('2026-08-22');
+
+    // Every skipped notice landed a retry row (idempotent upsert, none lost).
+    const retryCount = await env.DB.prepare(
+      "SELECT COUNT(*) as n FROM ingestion_fetch_retries WHERE source = 'ted' AND source_notice_id LIKE 'exh-thresh-%' AND status = 'pending'",
+    ).first<{ n: number }>();
+    expect(retryCount?.n).toBe(5);
+
+    // Exactly one durable RENDER_PENDING_DEGRADED signal row for the whole
+    // window (evaluated once at window end, never per-skip).
+    const degraded = await env.DB.prepare(
+      "SELECT COUNT(*) as n FROM ingestion_errors WHERE ingestion_run_id = ? AND error_code = 'RENDER_PENDING_DEGRADED'",
+    )
+      .bind(result.run.id)
+      .first<{ n: number }>();
+    expect(degraded?.n).toBe(1);
+
+    const degradedDetail = await env.DB.prepare(
+      "SELECT detail_json FROM ingestion_errors WHERE ingestion_run_id = ? AND error_code = 'RENDER_PENDING_DEGRADED'",
+    )
+      .bind(result.run.id)
+      .first<{ detail_json: string }>();
+    const detail = JSON.parse(degradedDetail?.detail_json ?? '{}') as Record<string, unknown>;
+    expect(detail['noticesRenderPending']).toBe(5);
+    expect(detail['noticesSeen']).toBe(5);
+    expect(detail['ratio']).toBe(1);
+    expect(detail['min']).toBe(5);
+    expect(detail['minRatio']).toBe(0.2);
+
+    // No FETCH_FAILURE_THRESHOLD_EXCEEDED row — the §2 threshold was never
+    // evaluated for this window at all (render-pending skips do not feed it).
+    const thresholdRows = await env.DB.prepare(
       "SELECT COUNT(*) as n FROM ingestion_errors WHERE ingestion_run_id = ? AND error_code = 'FETCH_FAILURE_THRESHOLD_EXCEEDED'",
     )
       .bind(result.run.id)
       .first<{ n: number }>();
-    expect(diag?.n).toBe(1);
+    expect(thresholdRows?.n).toBe(0);
+  });
+
+  it('ADR-0009 §1: below the degraded-signal floor/ratio, render-pending skips write NO RENDER_PENDING_DEGRADED row', async () => {
+    const db = createDb(env.DB);
+    // 1 notice always-202 among 20 seen (5% ratio, and 1 < RENDER_PENDING_DEGRADED_MIN=5) —
+    // below BOTH the floor and the ratio, so no degraded signal fires.
+    const stuckUrl = 'https://ted.europa.eu/notice/degraded-floor-stuck.xml';
+    const goodUrls = Array.from(
+      { length: 19 },
+      (_, i) => `https://ted.europa.eu/notice/degraded-floor-good-${String(i)}.xml`,
+    );
+    const goodRows = goodUrls.map((url, i) =>
+      searchRow(`degraded-floor-good-${String(i)}`, '2026-08-22', url),
+    );
+    const rows = [searchRow('degraded-floor-stuck', '2026-08-22', stuckUrl), ...goodRows];
+    const xmlByUrl: Record<string, string> = Object.fromEntries(
+      goodUrls.map((url) => [url, normalXml]),
+    );
+    const base = makeFakeFetch([{ notices: rows }], xmlByUrl);
+    const fetchImpl: TedFetch = (url, init) => {
+      if (url === stuckUrl) return Promise.resolve(alwaysPendingResponse());
+      return base(url, init);
+    };
+
+    const result = await runIngestionWindow(
+      {
+        db,
+        client: makeClient(fetchImpl),
+        snapshots: env.SNAPSHOTS,
+        logger: createLogger({ test: true }),
+        scope: DEFAULT_INGESTION_SCOPE,
+        now: () => T0,
+        renderRetryDelayMs: 0,
+      },
+      { windowFrom: '2026-08-22', windowTo: '2026-08-22' },
+    );
+
+    expect(result.status).toBe('partial');
+    expect(result.run.noticesRenderPending).toBe(1);
+
+    const degraded = await env.DB.prepare(
+      "SELECT COUNT(*) as n FROM ingestion_errors WHERE ingestion_run_id = ? AND error_code = 'RENDER_PENDING_DEGRADED'",
+    )
+      .bind(result.run.id)
+      .first<{ n: number }>();
+    expect(degraded?.n).toBe(0);
   });
 
   it('idempotent re-run of a partial window day: no duplicate retry row or notice rows on retry', async () => {
@@ -1250,6 +1343,10 @@ describe('ADR-0008 fetch resilience', () => {
     });
 
     expect(result.results.some((r) => r.status === 'failed')).toBe(true);
+    // ADR-0009 §2: REQUEST_BUDGET_EXCEEDED is systemic -> drain skipped.
+    expect(result.results.find((r) => r.status === 'failed')?.failureCode).toBe(
+      'REQUEST_BUDGET_EXCEEDED',
+    );
     expect(result.drain).toBeNull();
 
     const retryRow = await env.DB.prepare(
@@ -1259,6 +1356,78 @@ describe('ADR-0008 fetch resilience', () => {
       .first<{ attempts: number; status: string }>();
     expect(retryRow?.attempts).toBe(0);
     expect(retryRow?.status).toBe('pending');
+  });
+
+  it('ADR-0009 §2: the drain RUNS after a non-systemic window failure (UNEXPECTED_WINDOW_ERROR) — a persistence bug says nothing about TED', async () => {
+    const db = createDb(env.DB);
+    const before = await getCheckpoint(db, { source: 'ted' });
+    const start = before?.lastPublicationDate ?? '2026-08-23';
+    await advanceCheckpoint(db, { source: 'ted', lastPublicationDate: start });
+
+    // A pending, due retry row for a DIFFERENT notice: if the drain runs, it
+    // recovers via this same client/fixture.
+    const drainNoticeId = 'drain-runs-nonsystemic-1';
+    const drainXmlUrl = 'https://ted.europa.eu/notice/drain-runs-nonsystemic-1.xml';
+    await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId: drainNoticeId,
+      xmlUrl: drainXmlUrl,
+      publicationDate: '2026-08-10',
+      errorCode: 'NOTICE_FETCH_HTTP_404',
+      nextAttemptAt: T0,
+      now: T0,
+    });
+
+    const windowNoticeUrl = 'https://ted.europa.eu/notice/nonsystemic-window-1.xml';
+    const client = makeClient(
+      makeFakeFetch(
+        Array.from({ length: 3 }, () => ({
+          notices: [searchRow('nonsystemic-window-1', start, windowNoticeUrl)],
+        })),
+        { [windowNoticeUrl]: normalXml, [drainXmlUrl]: normalXml },
+      ),
+    );
+
+    // R2 `.put` throws ONLY for the window's freshly-created snapshot (key
+    // contains the window notice's id) — an unexpected persistence failure,
+    // NOT a TedRequestError/budget/threshold error, so
+    // `describeWindowFailure` classifies it UNEXPECTED_WINDOW_ERROR (stage
+    // `persist`) rather than any systemic code. Everything else (including
+    // the drain's own snapshot write for a DIFFERENT notice) delegates to
+    // the real R2 binding so the drain can genuinely recover.
+    const selectivelyThrowingSnapshots = {
+      put: (key: string, ...rest: unknown[]) => {
+        if (key.includes('nonsystemic-window-1')) {
+          return Promise.reject(new Error('simulated R2 outage'));
+        }
+        return (
+          env.SNAPSHOTS as unknown as {
+            put: (k: string, ...r: unknown[]) => Promise<unknown>;
+          }
+        ).put(key, ...rest);
+      },
+    } as unknown as R2Bucket;
+
+    const result = await runIngestionCatchUp({
+      db,
+      client,
+      snapshots: selectivelyThrowingSnapshots,
+      logger: createLogger({ test: true }),
+      maxWindowsPerRun: 1,
+      now: () => Date.parse(`${start}T00:00:00Z`) + 5 * MS_PER_DAY,
+    });
+
+    const failed = result.results.find((r) => r.status === 'failed');
+    expect(failed?.failureCode).toBe('UNEXPECTED_WINDOW_ERROR');
+    // The drain ran (non-null result) and recovered the due row.
+    expect(result.drain).not.toBeNull();
+
+    const retryRow = await env.DB.prepare(
+      'SELECT status FROM ingestion_fetch_retries WHERE source = ? AND source_notice_id = ?',
+    )
+      .bind('ted', drainNoticeId)
+      .first<{ status: string }>();
+    expect(retryRow?.status).toBe('recovered');
   });
 
   it('Amendment §A2 F-3a: a drain row that cycles through render-pending responses then succeeds is recovered WITHOUT incrementing attempts (a whole successful cycle is not a "failure")', async () => {
@@ -1458,6 +1627,28 @@ describe('ADR-0008 §5: checkFetchResilienceAlerts (watchdog conditions i-iii)',
       stage: 'fetch',
       errorCode: 'NOTICE_FETCH_ABANDONED',
       message: 'test: abandoned notice',
+    });
+
+    const alerts = await checkFetchResilienceAlerts(db, nowMs);
+    expect(alerts.thresholdOrAbandonment).toBe(true);
+    expect(alerts.degraded).toBe(true);
+  });
+
+  it('ADR-0009 §1: a recent RENDER_PENDING_DEGRADED error also trips condition (i)', async () => {
+    const db = createDb(env.DB);
+    const run = await createRun(db, {
+      source: 'ted',
+      windowFrom: '2026-08-01',
+      windowTo: '2026-08-01',
+      startedAt: T0,
+    });
+    const nowMs = T0 + 5000;
+    await recordError(db, {
+      ingestionRunId: run.id,
+      source: 'ted',
+      stage: 'fetch',
+      errorCode: 'RENDER_PENDING_DEGRADED',
+      message: 'test: degraded render day',
     });
 
     const alerts = await checkFetchResilienceAlerts(db, nowMs);

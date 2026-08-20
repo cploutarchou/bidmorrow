@@ -126,7 +126,10 @@ export const RENDER_PENDING_DEGRADED_RATIO = 0.2;
  * `isFetchFailureThresholdExceeded`, a `true` result never aborts anything —
  * it only decides whether the window-end diagnostic row/log fires.
  */
-export function isRenderPendingDegraded(noticesRenderPending: number, noticesSeen: number): boolean {
+export function isRenderPendingDegraded(
+  noticesRenderPending: number,
+  noticesSeen: number,
+): boolean {
   return (
     noticesRenderPending >= RENDER_PENDING_DEGRADED_MIN &&
     noticesSeen > 0 &&
@@ -366,7 +369,14 @@ export async function runIngestionWindow(
     // incident hit. Recording one row makes every window failure diagnosable
     // from D1 alone ("surface, don't swallow"). Guarded: a failure to write
     // the diagnostic must never mask or replace the original error.
-    const failureCode = await recordWindowFailure(deps, run.id, currentNotice, window, cause, counts);
+    const failureCode = await recordWindowFailure(
+      deps,
+      run.id,
+      currentNotice,
+      window,
+      cause,
+      counts,
+    );
     const finished = await finishRun(deps.db, {
       runId: run.id,
       status: 'failed',
