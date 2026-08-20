@@ -205,6 +205,12 @@ export async function drainFetchRetries(
     matchesScored: 0,
     errorsCount: 0,
     noticesFetchFailed: 0,
+    // Drain rows are windowless (ADR-0008 §3): neither the §2 threshold nor
+    // the ADR-0009 §1 degraded-render signal applies to a drain run, so this
+    // counter stays 0 here — `processOneNotice`'s render-pending cycling
+    // inside the drain's own work queue is handled by `recordDrainCycleFailure`,
+    // never by `recordRenderPendingSkip`/`recordFetchSkip`.
+    noticesRenderPending: 0,
   };
   const newLotIds: string[] = [];
   const renderRetryDelayMs = deps.renderRetryDelayMs ?? RENDER_RETRY_DELAY_MS;
