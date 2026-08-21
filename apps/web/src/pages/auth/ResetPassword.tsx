@@ -44,17 +44,34 @@ export function ResetPassword(): ReactElement {
 
   if (token === null) {
     return (
-      <AuthLayout title="Reset your password">
+      <AuthLayout title="Reset your password" subtitle="This link cannot be used.">
         <p role="alert" className="form-error">
           This link is missing a reset token. Request a new link from{' '}
           <Link to="/forgot-password">forgot password</Link>.
         </p>
+        <Link className="cta" to="/forgot-password">
+          Request a new link
+        </Link>
       </AuthLayout>
     );
   }
 
+  const pwLongEnough = password.length >= 8;
+  const pwHint =
+    password.length === 0
+      ? '8 characters minimum'
+      : pwLongEnough
+        ? 'Long enough'
+        : `${String(8 - password.length)} more characters needed`;
+  const pwHintClass =
+    password.length === 0
+      ? 'pw-hint'
+      : pwLongEnough
+        ? 'pw-hint pw-hint--ok'
+        : 'pw-hint pw-hint--warn';
+
   return (
-    <AuthLayout title="Choose a new password">
+    <AuthLayout title="Choose a new password" subtitle="Set a new password and log in again.">
       <form onSubmit={(event) => void onSubmit(event)} noValidate>
         {error !== null && (
           <p role="alert" className="form-error">
@@ -70,9 +87,13 @@ export function ResetPassword(): ReactElement {
             autoComplete="new-password"
             minLength={8}
             required
+            aria-describedby="reset-password-hint"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
+          <span id="reset-password-hint" className={pwHintClass}>
+            {pwHint}
+          </span>
         </div>
         <button className="cta" type="submit" disabled={submitting}>
           {submitting ? 'Saving…' : 'Set new password'}

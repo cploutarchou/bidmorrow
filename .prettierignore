@@ -8,3 +8,4 @@ pnpm-lock.yaml
 migrations/
 tests/fixtures/
 docs/redesign/mockups/
+bidmorrow-repository-connection/

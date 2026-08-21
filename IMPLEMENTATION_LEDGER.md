@@ -2971,7 +2971,123 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
 
 ## In progress
 
-- Nothing mid-flight. Working tree committed at each checkpoint.
+- **Pre-launch mode + countdown + containerized dev (session 2026-08-21
+  evening, owner-directed)**: `prelaunch`/`launch_date` feature flags
+  (packages/config; admin Flags UI picks them up automatically; validator
+  cases in routes/admin.ts), environment-aware default (absent = closed on
+  production only), server gates on sign-up (index.ts middleware before the
+  Better Auth mount) and checkout (routes/billing.ts) both 403,
+  GET /api/public-config (secret-free, 60s cache), prelaunch.ts +
+  prelaunch.test.ts (8 tests). Web: lib/public-config.ts,
+  components/LaunchCountdown.tsx (minute granularity, textual date, no
+  negative counts), site-wide launch banner in MarketingLayout, signup
+  closed-state card, Settings billing "Subscriptions open at launch" note.
+  Containerized dev: Dockerfile.dev + docker-compose.yml (vite :5173 +
+  wrangler :8787, local simulators, auto-generated fake .dev.vars) +
+  .devcontainer/. Ops: docs/procedures/launch-mode.md + /launch-mode command
+  (go-live = one admin flag flip, no deploy — HUMAN_DECISION_BLOCKERS item
+  11). Gates green (68+17+9 files; worker 213 incl. new prelaunch tests);
+  full Playwright E2E **45 passed / 3 skipped (pre-existing)**. Merged to
+  main as **4448e09 (PR #69)** after CI green. Staging auto-deploy
+  verified: /api/public-config `prelaunch:false` — registrations stay
+  OPEN there (owner-directed). Production deploy dispatched on explicit
+  owner instruction (run 32506382104, success) and verified live:
+  /api/health/live 200, /api/public-config
+  `{"prelaunch":true,"launchDate":"2026-08-31T21:00:00Z"}`, sign-up POST
+  403 `signups_closed`, SPA shell 200 — production is CLOSED until the
+  go-live flag flip (blocker item 11). Containerized dev verified
+  end-to-end on the host: `docker compose build && up` → worker :8787
+  health 200 + public-config `prelaunch:false` (local env open, correct)
+  - vite :5173 200; stack shut down after. One post-merge fix needed:
+    docker-dev.sh's install sentinel `[ ! -d node_modules ]` never fired
+    (the empty compose named volume makes the dir exist), so wrangler was
+    missing on first boot — replaced with a wrangler-resolvability probe
+    from apps/worker.
+
+- **FULL 2026-08-21 design-handoff implementation (UNCOMMITTED,
+  session 2026-08-21, owner-directed)**: the owner exported "Bidmorrow
+  repository connection-handoff.zip" and directed implementation of ALL of
+  it. Owner decisions taken this session (supersede 2026-08-18 directives):
+  (1) **dark + light theme** with a toggle, dark default, OS preference
+  honoured when no stored choice — reverses "dark only"; (2) **self-hosted
+  Archivo (400–700 var) + Source Code Pro (400–500 var)** from
+  apps/web/public/fonts — reverses "system fonts only" (CSP font-src
+  'self' already allowed it; the screens' Archivo won over the Theme
+  Spec's older Newsreader/Plex trio, owner-confirmed).
+
+  Landed, all surfaces:
+  - **Theme layer v2** (styles.css head): Theme Spec §09 tokens
+    (bg-_/line-_/ink-_/accent-_/sig-_/fit-_), full pre-v2 alias block per
+    the §10 migration table (no selector broke), [data-theme='light'] +
+    prefers-color-scheme mirror, glass/backdrop-filter removed (opaque
+    stepped surfaces), glow shadows removed, @font-face for 10 self-hosted
+    woff2 subsets. lib/theme.ts + components/ThemeToggle.tsx (localStorage
+    `bm-theme`, storage/matchMedia sync); initTheme() in main.tsx;
+    index.html dual theme-color metas.
+  - **Marketing pages** (earlier same session): HowItWorks/Methodology/
+    Pricing rebuilt to `BidMorrow Marketing.dc.html`.
+  - **Homepage** rebuilt to `BidMorrow Homepage.dc.html`: hero grid bg,
+    demo feed panel with timezone/locale geo picker (no network), facts,
+    auto-advancing 4-step stepper + stage figures, truths, component
+    split, tiers, coverage, pricing, FAQ, closing CTA. All bars are native
+    <progress> (CSP); delays via nth-child.
+  - **Cookie consent (GDPR)** per the homepage prototype: lib/consent.ts +
+    components/CookieConsent.tsx (banner + preferences dialog + footer
+    controls in MarketingLayout; keys bm_consent_categories/
+    bm_analytics_consent; no pre-ticks; closing ≠ consent; withdraw
+    supported). GA4 loading STUBBED — needs measurement ID + CSP
+    allowlist, recorded as HUMAN_DECISION_BLOCKERS item 10.
+  - **Auth** rebuilt to `BidMorrow Auth.dc.html`: AuthLayout split
+    (routing-rules aside + form card, aside hidden <980px), all five
+    pages restyled with subtitles, live pw-length hints, "Sent to" panel,
+    neutral-reset note, missing-token CTA; logic/endpoints byte-identical.
+    Prototype-only affordances (screen tabs, account simulator) not
+    ported.
+  - **Onboarding**: chrome restyled to `BidMorrow Onboarding.dc.html`
+    (panel header + ThemeToggle, kicker-style progress line, pill rail,
+    Archivo titles); 12-screen structure/API flow untouched (prototype's
+    5-step condensation NOT adopted — would break the tested flow).
+  - **Client area**: AppShell header (pill nav, ThemeToggle, avatar
+    initials), TenderCard with score ring (SVG attrs, CSP-safe) + 3px fit
+    gutter, ScoreBadge moved to the Theme Spec §04 fit ramp
+    (solid/tint/outline/label-only; risk colors reserved for signals),
+    glow text-shadow removed. Prototype-only features with no backend
+    (pipeline kanban, saved searches, shelves, alerts bell, ⌘K palette,
+    Bid/Maybe/Pass, CSV export) deliberately NOT built — product-truth.
+  - **Admin**: AdminShell rebuilt to `BidMorrow Admin.dc.html` layout —
+    header strip + sticky 216px left rail with left-mark active state
+    (top-nav removed), ThemeToggle; all 10 section pages untouched.
+  - Handoff bundle unzipped at repo root is gitignored + lint/prettier-
+    ignored (`bidmorrow-repository-connection/`).
+
+  Gates at session end, ALL GREEN: format, lint, typecheck, unit+contract
+  tests (12 files / 110 web + full workspace suites), and the FULL
+  Playwright E2E suite — **45 passed, 0 failed, 3 skipped
+  (pre-existing)**. E2E findings fixed along the way: (a) light-mode axe
+  color-contrast — light `--ink-3` #6b7480→#5f6875 (was 4.09:1 on the
+  sunken footer; also cured a latent 4.45:1 on canvas that hit the
+  onboarding axe gate) and light `--sig-caution` #a16207→#935906 (was
+  4.31:1 on its tint at 11px); (b) two marketing.spec locators updated for
+  strict mode (the redesigned pages legitimately repeat "Join the founding
+  pilot" and "CPV fit"); (c) **pre-existing broken test repaired, NOT
+  redesign fallout**: critical-path "keyword cap (51 -> 422)" used
+  `#new-keyword` + `following-sibling::button[1]`, which resolves to zero
+  elements ever since PR #58 (2026-08-19) wrapped the input in the
+  Combobox's `.combobox__field` — E2E isn't in CI yet so nothing caught
+  it; locator now targets the add-row's real "Add" button and the test
+  passes in seconds. Visual QA (WebKit): auth dark+light, homepage
+  dark+light, marketing pages — match the prototypes; zero horizontal
+  overflow. Reviews COMPLETE (see
+  "Reviewer sign-offs per phase"): security PASS; production-reviewer
+  APPROVE after one remediation round (PR-001..PR-005 fixed same
+  session). Merged to main as
+  **a2a2f24 (PR #67)** after CI green (checks + secret-scan); staging
+  auto-deploy succeeded and verified serving the new frontend (dual
+  theme-color metas, /fonts 200); production deploy dispatched with the
+  typed confirmation on explicit owner instruction and verified live on
+  bidmorrow.com (new metas, fonts 200, /api/health/live ok, strict CSP
+  header unchanged). Production ingestion remains PAUSED — go-live is
+  still a separate deliberate owner step.
 
 ## Next (Phase 6 — Matching)
 
@@ -3118,6 +3234,32 @@ Baseline model established: ~$6/mo (0–10 customers), ~$26/mo (100),
 Nothing deployed. No Cloudflare resources exist yet.
 
 ## Reviewer sign-offs per phase
+
+- 2026-08-21 handoff redesign (pre-go-live website/UI overhaul, full
+  design bundle): **security PASS** — security agent, 2026-08-21.
+  No Critical/High/Medium findings; web-only change surface confirmed
+  (worker/packages/migrations/tests-security untouched); fonts verified
+  genuine woff2, all same-origin, no CSP change needed; consent/theme
+  storage defensively parsed, no HTML injection surface, GA4 genuinely
+  stubbed; auth flows unchanged (neutral reset confirmation, unverified
+  refusal, token handling intact); re-ran tests/security (11 passed),
+  worker (205 passed), root suite (530 passed). Findings: LOW (client
+  8-char password hint duplicates server policy constant — cosmetic),
+  INFO (.gitignore newline — fixed same session).
+- 2026-08-21 handoff redesign: **APPROVE** — production-reviewer,
+  2026-08-21, after one remediation round. Initial verdict REJECT on
+  PR-001 HIGH (homepage demo panel labeled "Live notices · scored this
+  morning" over invented tenders naming real public bodies, with a
+  fabricated citation — product-truth violation) + PR-002 MEDIUM
+  (consent dialog claimed an unimplemented 6-month retention) + PR-003/
+  004/005 LOW/INFO (present-tense GA4 copy; missing OFL license texts;
+  .gitignore newline). All five remediated and re-verified in source:
+  demo panel now explicitly illustrative with a visible disclaimer and
+  anonymized buyers, citation removed; consent copy accurate; analytics
+  note conditional; OFL texts shipped with the fonts. Post-remediation
+  gates re-run by the reviewer: format/lint/typecheck/test/build all
+  exit 0; full Playwright E2E **45 passed, 0 failed, 3 pre-existing
+  skips**. Open findings: none.
 
 - Phase 0: **PASS** — production-reviewer, 2026-08-14. Docs-only phase;
   gates honestly N/A (no code); completeness/consistency/truthfulness

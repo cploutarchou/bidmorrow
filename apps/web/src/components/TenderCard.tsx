@@ -18,6 +18,35 @@ const CLASS_TO_CARD_MODIFIER: Record<FeedRow['classification'], string> = {
   EXCLUDED: '',
 };
 
+/** r=16 circle circumference ≈ 100.5 — SVG attributes only (CSP-safe). */
+function ringDash(score: number): string {
+  return `${((score / 100) * 100.5).toFixed(1)} 100.5`;
+}
+
+/** Score ring from the 2026-08-21 handoff card anatomy — decorative
+ *  (`aria-hidden`); the ScoreBadge text stays the accessible carrier. */
+function ScoreRing({ score }: { score: number }): ReactElement {
+  return (
+    <span className="score-ring" aria-hidden="true">
+      <svg width="38" height="38" viewBox="0 0 38 38">
+        <circle cx="19" cy="19" r="16" fill="none" className="score-ring__track" strokeWidth="3" />
+        <circle
+          cx="19"
+          cy="19"
+          r="16"
+          fill="none"
+          className="score-ring__fill"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={ringDash(score)}
+          transform="rotate(-90 19 19)"
+        />
+      </svg>
+      <span className="score-ring__num">{score}</span>
+    </span>
+  );
+}
+
 export function TenderCard({
   item,
   now,
@@ -33,7 +62,10 @@ export function TenderCard({
   return (
     <article className={modifier.length > 0 ? `tender-card ${modifier}` : 'tender-card'}>
       <div className="tender-card__head">
-        <ScoreBadge score={item.score} classification={item.classification} />
+        <span className="tender-card__id">
+          {item.score !== null && <ScoreRing score={item.score} />}
+          <ScoreBadge score={item.score} classification={item.classification} />
+        </span>
         <p className="tender-card__deadline num">{formatRelativeDeadline(item.deadlineAt, now)}</p>
       </div>
       <h3 className="tender-card__title">

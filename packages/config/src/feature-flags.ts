@@ -40,6 +40,29 @@ export const FLAG_ENTITLEMENT_ENFORCED = 'entitlement_enforced';
  * `packages/billing/src/checkout.ts` for the Checkout-side wiring.
  */
 export const FLAG_STRIPE_TAX = 'stripe_tax_enabled';
+/**
+ * Pre-launch gate (owner decision 2026-08-21: registrations and new
+ * subscriptions stay closed in production until the end-of-August launch;
+ * staging/local keep full flows for testing and E2E). Value shape: a bare
+ * JSON boolean, e.g. `"false"`. Default (absent) is ENVIRONMENT-AWARE:
+ * `true` when `APP_ENV === 'production'`, `false` everywhere else — so a
+ * fresh production deploy is closed by construction and go-live is a
+ * single admin flag flip (`"false"`) with no deploy. Gates: POST
+ * /api/auth/sign-up/email and POST /api/billing/checkout (both 403), and
+ * drives the public countdown via GET /api/public-config. Log-in,
+ * password reset and every existing-account flow stay open.
+ */
+export const FLAG_PRELAUNCH = 'prelaunch';
+/**
+ * Launch moment shown by the public countdown (GET /api/public-config).
+ * Value shape: a JSON string ISO-8601 instant, e.g.
+ * `"2026-08-31T21:00:00Z"`. Default (absent): 2026-08-31T21:00:00Z —
+ * midnight Aug 31→Sep 1 Cyprus time, i.e. "end of August".
+ */
+export const FLAG_LAUNCH_DATE = 'launch_date';
+
+/** Default launch instant while `launch_date` is unset (see above). */
+export const DEFAULT_LAUNCH_DATE = '2026-08-31T21:00:00Z';
 
 export const FEATURE_FLAG_KEYS = [
   FLAG_FOUNDING_PLAN_OPEN,
@@ -49,6 +72,8 @@ export const FEATURE_FLAG_KEYS = [
   FLAG_INGESTION_CPV_SCOPE,
   FLAG_ENTITLEMENT_ENFORCED,
   FLAG_STRIPE_TAX,
+  FLAG_PRELAUNCH,
+  FLAG_LAUNCH_DATE,
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];

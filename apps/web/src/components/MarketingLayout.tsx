@@ -2,7 +2,11 @@ import { Menu, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
 import { DECISION_SUPPORT_DISCLAIMER, PRODUCT_NAME, TED_ATTRIBUTION } from '../copy';
+import { usePublicConfig } from '../lib/public-config';
+import { CookieConsent, ConsentFooterControls } from './CookieConsent';
+import { LaunchCountdown } from './LaunchCountdown';
 import { Logo } from './Logo';
+import { ThemeToggle } from './ThemeToggle';
 
 const NAV_LINKS: { to: string; label: string }[] = [
   { to: '/pricing', label: 'Pricing' },
@@ -44,6 +48,7 @@ export function MarketingLayout({
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const publicConfig = usePublicConfig();
 
   // Scroll-triggered reveals (docs/redesign/app-interface-spec.md §8.4) —
   // progressive enhancement: `.mkt-reveal` is only ever hidden under the
@@ -115,6 +120,14 @@ export function MarketingLayout({
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
+      {publicConfig?.prelaunch === true && (
+        <div className="launch-banner" role="status">
+          <div className="mkt-wrap launch-banner__inner">
+            <LaunchCountdown launchDate={publicConfig.launchDate} />
+            <span className="launch-banner__note">Registrations open at launch</span>
+          </div>
+        </div>
+      )}
       <header className="site-header glass">
         <nav className="mkt-wrap" aria-label="Main">
           <Link className="wordmark" to="/" aria-label="BidMorrow home">
@@ -130,6 +143,7 @@ export function MarketingLayout({
             ))}
           </ul>
           <div className="nav-actions">
+            <ThemeToggle />
             <Link to="/login">Log in</Link>
             <Link className="cta cta-small" to="/signup">
               Sign up
@@ -164,6 +178,7 @@ export function MarketingLayout({
               ))}
             </ul>
             <div className="mkt-menu-panel__actions">
+              <ThemeToggle />
               <Link to="/login" onClick={closeMenu}>
                 Log in
               </Link>
@@ -200,8 +215,10 @@ export function MarketingLayout({
               </li>
             </ul>
           </nav>
+          <ConsentFooterControls />
         </div>
       </footer>
+      <CookieConsent />
     </>
   );
 }

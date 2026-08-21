@@ -8,6 +8,9 @@ export default tseslint.config(
     ignores: [
       '**/dist/**',
       '**/node_modules/**',
+      // Design handoff bundle unzipped at the repo root — prototypes,
+      // not product code (gitignored; kept locally for reference).
+      'bidmorrow-repository-connection/**',
       '**/.wrangler/**',
       '**/coverage/**',
       '**/playwright-report/**',

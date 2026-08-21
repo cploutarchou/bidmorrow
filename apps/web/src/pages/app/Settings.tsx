@@ -5,6 +5,7 @@ import { Combobox } from '../../components/Combobox';
 import { ConfirmAction } from '../../components/ConfirmAction';
 import { CPV_SUGGESTIONS } from '../../data/cpv-suggestions';
 import { api, ApiError } from '../../lib/api';
+import { usePublicConfig } from '../../lib/public-config';
 import { useAuth } from '../../lib/auth-context';
 import { localComboboxSource, type ComboboxOption } from '../../lib/combobox-filter';
 import {
@@ -178,6 +179,7 @@ const SETTINGS_GROUPS: { id: string; label: string }[] = [
 ];
 
 export function Settings(): ReactElement {
+  const publicConfig = usePublicConfig();
   const navigate = useNavigate();
   const { refresh } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -612,26 +614,36 @@ export function Settings(): ReactElement {
                     Founding price is locked in for the life of your subscription — it never
                     migrates to the standard price later.
                   </p>
-                  <div className="button-row">
-                    {billing.foundingAvailable && (
+                  {publicConfig?.prelaunch === true ? (
+                    /* Pre-launch: new checkouts are refused server-side
+                       (403 subscriptions_closed) — show the honest state
+                       instead of a button that can only fail. */
+                    <p className="hint">
+                      Subscriptions open at launch, at the end of August. Your account and profile
+                      are ready — nothing to do until then.
+                    </p>
+                  ) : (
+                    <div className="button-row">
+                      {billing.foundingAvailable && (
+                        <button
+                          className="cta"
+                          type="button"
+                          disabled={billingBusy}
+                          onClick={() => void startCheckout('founding')}
+                        >
+                          Subscribe — Founding (€29/mo, limited spots)
+                        </button>
+                      )}
                       <button
                         className="cta"
                         type="button"
                         disabled={billingBusy}
-                        onClick={() => void startCheckout('founding')}
+                        onClick={() => void startCheckout('standard')}
                       >
-                        Subscribe — Founding (€29/mo, limited spots)
+                        Subscribe — Standard (€49/mo)
                       </button>
-                    )}
-                    <button
-                      className="cta"
-                      type="button"
-                      disabled={billingBusy}
-                      onClick={() => void startCheckout('standard')}
-                    >
-                      Subscribe — Standard (€49/mo)
-                    </button>
-                  </div>
+                    </div>
+                  )}
                   <BillingInvoiceHistory state={invoicesState} />
                 </>
               ) : (
