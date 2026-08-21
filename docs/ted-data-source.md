@@ -37,6 +37,38 @@ could not be fully verified.
   Multilingual fields are objects keyed by ISO 639-2 codes (`eng`, `deu`…).
   `links.xml.MUL` is the authoritative multilingual source XML per notice —
   ingestion fetches this for parsing + R2 snapshot.
+- **The render front-end is a SHORT-TTL CACHE, not a queue that fills up**
+  (measured 2026-08-21, `ted-render-batch-probe` run 32520323517, window
+  2026-08-17, times relative to trigger completion):
+
+  | Batch  | absent            | AVAILABLE               | absent again |
+  | ------ | ----------------- | ----------------------- | ------------ |
+  | A (5)  | —                 | **+7..+67s** (3/5)      | by +132s     |
+  | B (50) | +60..+112s (0/50) | **+232..+310s** (47/50) | by +490s     |
+
+  A GET either returns cached XML (200) or queues a render and answers 202.
+  Content APPEARS and then DISAPPEARS: present at one pass, gone at the
+  next, in both batches independently. `other=0` on every pass — no 4xx or
+  5xx anywhere — so this is re-queueing, not rate limiting or blocking.
+  Render latency scales with batch size (5 notices ready inside a minute,
+  50 took ~4 minutes), consistent with serialized per-client capacity.
+
+  **This resolves the contradiction in the earlier evidence.** The
+  2026-08-18 single-notice diagnostic saw a render complete because it
+  polled inside the window; the 2026-08-20 run saw 0/156 because a
+  156-notice cycle takes longer than the content survives — by the time
+  the collector came back around, the early renders had expired. It was a
+  treadmill, not an outage. Nothing was ever "down".
+
+  **Consequence: this channel cannot be a production content source**, and
+  ADR-0010 §1's permanent demotion stands on stronger evidence than when
+  it was written. Collecting 156 notices this way requires winning a
+  ~1-3 minute race per batch, with any slip losing the content until
+  re-triggered. Bulk packages are static files — no window, no race.
+  The exact TTL is NOT measured: content was present at one poll and
+  absent at the next, which bounds it above (~2 min for A, ~3 min for B)
+  without pinning it.
+
 - **The anonymous XML front-end renders ASYNCHRONOUSLY** (empirical,
   2026-08-18, ted-diagnose CI runs 32131289081/32131832286/32132169652 —
   supersedes the 2026-08-16 "identifying client" note): a GET of a

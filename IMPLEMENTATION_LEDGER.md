@@ -2971,6 +2971,38 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
 
 ## In progress
 
+- **Render channel: NOT an outage — a short-TTL cache (2026-08-21,
+  evidence)**. The §5.4 canary's first run looked like recovery (200,
+  244,469 bytes, ~1s). It was not. The batch probe (run 32520323517,
+  window 2026-08-17 — deliberately the window that previously returned
+  0/156) measured, relative to trigger completion: batch A (5 notices)
+  available +7..+67s, gone by +132s; batch B (50) absent at +60..+112s,
+  available +232..+310s (47/50), gone by +490s. `other=0` every pass — no
+  4xx/5xx — so re-queueing, not blocking. Latency scales with batch size.
+
+  **This resolves the contradiction that shaped ADR-0008/0009.** The
+  2026-08-18 diagnostic saw a render complete (polled inside the window);
+  the 2026-08-20 run saw 0/156 (a 156-notice cycle outlasts the content).
+  A treadmill, not an outage. Nothing was ever down — which also means the
+  "slow-motion abandonment" risk was never an outage clock either.
+
+  **ADR-0010 §1 is vindicated on mechanism rather than symptom.** The
+  original argument reasoned from instability ("changed three times in one
+  week"); the stronger form is that a full window through this channel
+  means winning a ~1-3 minute race per batch. Branch B remains correct and
+  is now the only structurally sound option, not merely the safer one.
+
+  Canary REFRAMED accordingly (its old verdict language said "expected
+  while the outage persists" and its ::notice said "recovered" — both the
+  wrong model): it now samples densely and early (0/+45/+90/+150 rather
+  than 0/+60/+180, which would routinely land after expiry and report a
+  false absence), reports render LATENCY, and states explicitly that a
+  single absence is not an outage signal. Recorded in
+  `docs/ted-data-source.md` and ADR-0010.
+
+  Exact TTL deliberately NOT measured — bounded above (~2 min A, ~3 min B)
+  by the poll spacing; no decision depends on the precise number.
+
 - **ADR-0010 §5 branch-independent decisions — SHIPPED (session
   2026-08-21, owner-directed "do what you believe is best")**. All four
   §5 items, chosen ahead of Branch B deliberately: they touch the exact

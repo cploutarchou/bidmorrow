@@ -530,6 +530,50 @@ to the Branch B implementation, not here.
 `workflow_dispatch` workflow is only dispatchable once it is on the
 default branch. First scheduled run is the first evidence.
 
+#### §1 VINDICATED — the render channel is a short-TTL cache (2026-08-21)
+
+The canary's first run returned 200 with 244,469 bytes in ~1s, which
+looked like recovery. It was not. The follow-up batch probe (run
+32520323517, window 2026-08-17 — deliberately the same window that
+previously returned 0/156) measured the real behavior, times relative to
+trigger completion:
+
+| Batch  | absent            | AVAILABLE               | absent again |
+| ------ | ----------------- | ----------------------- | ------------ |
+| A (5)  | —                 | **+7..+67s** (3/5)      | by +132s     |
+| B (50) | +60..+112s (0/50) | **+232..+310s** (47/50) | by +490s     |
+
+Content APPEARS and then DISAPPEARS, independently in both batches.
+`other=0` on every pass — no 4xx, no 5xx — so this is re-queueing, not
+rate limiting. Render latency scales with batch size, consistent with the
+serialized per-client capacity hypothesis.
+
+**Nothing was ever "down".** This resolves the contradiction that shaped
+ADR-0008/0009: the 2026-08-18 single-notice diagnostic saw a render
+complete because it polled inside the window; the 2026-08-20 run saw
+0/156 because a 156-notice cycle outlasts the content. A treadmill, not
+an outage.
+
+**§1's permanent demotion now rests on a mechanism, not a symptom.** The
+original argument was "an undocumented behavior that changed three times
+in one week is never again the sole content channel" — reasoning from
+instability. The stronger form: collecting a full window through this
+channel means winning a ~1-3 minute race per batch, with any slip losing
+the content until re-triggered. Bulk packages are static files. Branch B
+is not merely the safer choice; the render channel is structurally unfit
+for the job.
+
+The exact TTL is NOT measured — content was present at one poll and
+absent at the next, bounding it above (~2 min for A, ~3 min for B)
+without pinning it. Measuring it precisely is not worth the requests: no
+decision depends on the exact number.
+
+**Consequence for §5.2.** The `fetch_retry_attempts_suspended` flag is
+better justified than when written. A render-pending outcome really is
+evidence about TED's cache timing rather than about the notice, so
+burning one of the notice's five attempts on it was always charging the
+wrong account.
+
 #### Branch B prerequisite — the mapping probe (2026-08-21)
 
 `.github/workflows/ted-package-mapping-probe.yml` answers the one item
