@@ -127,7 +127,38 @@ could not be fully verified.
   assume unlimited: polite throttling, exponential backoff on 429/5xx, and
   an admin-configurable request budget per run are mandatory.
 
-## Bulk XML packages (address verified 2026-08-20; delivery UNPROVEN)
+## Bulk XML packages (addressing CONFIRMED end-to-end 2026-08-21)
+
+**The full chain from a publication date to a notice's XML is verified**
+(`ted-package-mapping-probe` run 32522822931, window 2026-08-17):
+
+| Link               | Value                                                                | How verified                                          |
+| ------------------ | -------------------------------------------------------------------- | ----------------------------------------------------- |
+| window → OJ issue  | `157/2026`                                                           | Search API `OJ`, single distinct value across all 156 |
+| OJ issue → package | `/packages/daily/202600157`                                          | HTTP 200, `application/gzip`                          |
+| package → archive  | 19,980,923 B gz → 207,127,552 B                                      | `content-disposition: 20260817_2026157.tar.gz`        |
+| archive → member   | `20260817_157/00566194_2026.xml`                                     | 3,190 members, ALL matching `NNNNNNNN_2026.xml`       |
+| member → notice    | `<efbc:NoticePublicationID schemeName="ojs-notice-id">00566194-2026` | extracted and read                                    |
+
+**ZERO-PADDING IS REQUIRED — the single most important implementation
+detail here.** The Search API returns `publication-number` unpadded
+(`566194-2026`, 6 digits), while BOTH the member filename and the
+canonical in-XML id use 8 digits (`00566194-2026`). A naive string match
+between the two fails. Derive with `num.padStart(8, '0')`.
+
+The member directory is `YYYYMMDD_<OJ sequence>` (`20260817_157`) — both
+components already available from the search row (`publication-date` and
+`OJ`), so no directory listing is needed to construct a member path.
+
+**Selectivity: 156 in-scope of 3,190 members = 4.9%, a 20.4x reduction.**
+At ~51 KB per member that is ~7.6 MB of actual interest inside a 207 MB
+archive — which is precisely why ADR-0010 §3 specifies selective
+extraction over whole-archive parsing.
+
+Evidence discipline: the correspondence was proven by CONTENT. Q4b ran a
+negative control (same-format ids that must not match) and reported 0
+false positives, so the 20/20 filename hit rate is real evidence rather
+than an artifact of a loose matcher.
 
 TED publishes daily and monthly bulk XML packages, and publishes their
 links itself at `https://ted.europa.eu/en/simap/xml-bulk-download`

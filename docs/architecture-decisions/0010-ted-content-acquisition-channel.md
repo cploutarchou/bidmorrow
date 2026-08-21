@@ -530,6 +530,43 @@ to the Branch B implementation, not here.
 `workflow_dispatch` workflow is only dispatchable once it is on the
 default branch. First scheduled run is the first evidence.
 
+#### PREREQUISITE CLOSED — member addressing CONFIRMED (run 32522822931)
+
+The last open item in this ADR is answered. Window 2026-08-17:
+
+| Link               | Value                                                                |
+| ------------------ | -------------------------------------------------------------------- |
+| window → OJ issue  | `157/2026` (single distinct `OJ` across all 156)                     |
+| OJ issue → package | `/packages/daily/202600157` → 200, `application/gzip`                |
+| archive            | 19,980,923 B gz → 207,127,552 B, 3,190 members                       |
+| member             | `20260817_157/00566194_2026.xml` (ALL 3,190 uniform)                 |
+| content proof      | `<efbc:NoticePublicationID schemeName="ojs-notice-id">00566194-2026` |
+
+Q4a matched 20/20; Q4b's negative control returned 0 false positives, so
+the hit rate is evidence rather than a loose-matcher artifact; Q5 proved
+it by extracting the member and reading the id inside.
+
+**Implementation requirements this pins down for §3:**
+
+1. **Zero-pad to 8 digits.** Search returns `566194-2026`; the member
+   filename and canonical in-XML id are `00566194-2026`. A direct string
+   match between search row and member path FAILS. This is the detail
+   most likely to be got wrong.
+2. **Member paths are constructible without listing the archive** —
+   `{YYYYMMDD}_{OJ-seq}/{padded}_{year}.xml`, both components already in
+   the search row (`publication-date`, `OJ`).
+3. **Selectivity 4.9%** (156 of 3,190; ~7.6 MB of interest inside 207 MB,
+   a 20.4x reduction) — quantifies why §3 specifies selective extraction
+   over whole-archive parsing.
+
+**Probe weakness found and fixed.** Q5's original assertion was
+`grep -q "$num"` — a bare substring search that would also pass on an
+unrelated occurrence, making the automated verdict weaker than the
+evidence it printed. (The 2026-08-21 CONFIRMED verdict is sound: the
+canonical `efbc:NoticePublicationID` line was printed and read directly.)
+Q5 now asserts on that element specifically and has a third WEAK outcome
+for "number present but not as the canonical id".
+
 #### §1 VINDICATED — the render channel is a short-TTL cache (2026-08-21)
 
 The canary's first run returned 200 with 244,469 bytes in ~1s, which
