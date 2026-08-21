@@ -102,6 +102,8 @@ describe('feature flag keys', () => {
       'ingestion_cpv_scope',
       'entitlement_enforced',
       'stripe_tax_enabled',
+      'prelaunch',
+      'launch_date',
     ]);
   });
 });

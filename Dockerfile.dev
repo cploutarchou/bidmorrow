@@ -1,0 +1,22 @@
+# Local development image (docker-compose.yml + .devcontainer) — NOT a
+# production artifact: production runs on Cloudflare Workers via the
+# deploy workflows, never in this container. Node 22 matches CI
+# (.github/workflows/*.yml `node-version: 22`); pnpm comes from corepack
+# pinned by package.json `packageManager`.
+FROM node:22-bookworm-slim
+
+# Playwright/workerd runtime libs wrangler needs are in the base image;
+# add git + a few conveniences for devcontainer use.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN corepack enable
+
+WORKDIR /workspace
+
+# Dependencies are installed at container start (scripts/docker-dev.sh)
+# against the bind-mounted source, cached in a named volume — so the image
+# stays generic and the lockfile stays the single source of truth.
+EXPOSE 8787 5173
+CMD ["bash", "scripts/docker-dev.sh"]

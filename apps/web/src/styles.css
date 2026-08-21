@@ -4984,6 +4984,53 @@ td {
 }
 
 /* ============================================================
+   LAUNCH COUNTDOWN — pre-launch announcement bar + countdown numerals
+   (owner decision 2026-08-21: end-of-August launch; prelaunch.ts /
+   public-config drive visibility, so staging/local never show it unless
+   the flag is flipped on deliberately).
+   ============================================================ */
+.launch-banner {
+  background: var(--accent-tint);
+  border-bottom: 1px solid var(--accent-line);
+}
+
+.launch-banner__inner {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0;
+}
+
+.launch-banner__note {
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.launch-countdown {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.launch-countdown__label {
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.launch-countdown__value {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+
+/* ============================================================
    THEME TOGGLE — the Light/Dark pill every handoff screen's header
    carries (components/ThemeToggle.tsx).
    ============================================================ */

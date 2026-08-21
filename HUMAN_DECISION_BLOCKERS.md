@@ -321,6 +321,27 @@ the day analytics is turned on.
 
 ---
 
+## 11. Go-live flag flip — end-of-August launch — OPEN (2026-08-21)
+
+Pre-launch mode shipped 2026-08-21 (owner instruction): production keeps
+REGISTRATIONS and NEW SUBSCRIPTIONS closed by default (`prelaunch` flag,
+environment-aware default — absent = closed on production, open on
+staging/local), with a public countdown to `launch_date` (default
+2026-08-31T21:00:00Z, end of August, Cyprus midnight). Log-in and every
+existing-account flow stay open.
+
+**Owner action on launch day** (procedure of record:
+`.claude/skills/launch-mode/SKILL.md`, or run `/launch-mode`):
+
+1. Production admin → Flags → set `prelaunch` to `false` (UPDATE_FLAG
+   typed confirmation; audited).
+2. Verify `https://bidmorrow.com/api/public-config` returns
+   `"prelaunch":false` and a real signup works.
+3. Separately: the ingestion un-pause + Phase 13/14 pipeline (item above)
+   remains its own go-live decision.
+
+---
+
 ## Not blockers (deliberately)
 
 - **TED API: public, no credential required** — reinstated 2026-08-18
