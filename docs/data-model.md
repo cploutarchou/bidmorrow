@@ -656,8 +656,14 @@ enforced in the app layer, never rendered to customers).
 Admin-editable runtime configuration. Values are JSON so one table serves
 booleans, numbers and structured config.
 
-- `id TEXT PK` · `key TEXT NOT NULL` — **unique**: `founding_plan_open`,
-  `founding_cap`, `ingestion_paused`, `digest_paused`, `ingestion_cpv_scope`.
+- `id TEXT PK` · `key TEXT NOT NULL` — **unique**. The authoritative key
+  list is `FEATURE_FLAG_KEYS` in `packages/config/src/feature-flags.ts`
+  (each constant carries its value shape and absent-default in a doc
+  comment); `packages/config/src/env.test.ts` asserts the exact list, so a
+  new flag cannot land without updating it. As of 2026-08-21:
+  `founding_plan_open`, `founding_cap`, `ingestion_paused`, `digest_paused`,
+  `ingestion_cpv_scope`, `entitlement_enforced`, `stripe_tax_enabled`,
+  `prelaunch`, `launch_date`, `fetch_retry_attempts_suspended`.
 - `value_json TEXT NOT NULL` — e.g. `true`, `20`,
   `{"divisions":["72","79"],"extra_codes":[...]}`.
 - `description TEXT NOT NULL` — what the flag does and safe values.

@@ -1,0 +1,175 @@
+# ADR-0010 Branch B prerequisite (the one open item the gate-closure record
+# deliberately left open): given a notice's `publication-number`, WHICH member
+# of the daily package carries its XML?
+#
+# Branch B's selective extraction depends entirely on this. A day's package
+# holds every notice EU-wide (~19.9 MB gz / ~207 MB uncompressed for issue
+# 202600157) while our in-scope set is ~156, so we must address members
+# directly rather than parse the whole archive inside a Worker.
+#
+# Discipline carried over from the gate probes: a correspondence is proven by
+# CONTENT, never by a filename that merely looks right. Step 5 therefore
+# extracts a member and checks the publication-number inside the XML, and
+# step 4b runs a negative control — ids that must NOT match. A filename-shape
+# match alone would be exactly the kind of inference that got downgraded when
+# `/packages/notice/daily/{id}` turned out not to exist.
+name: TED package mapping probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      window:
+        description: 'Publication date to sample (YYYY-MM-DD)'
+        required: false
+        type: string
+        default: '2026-08-17'
+      issue_id:
+        description: 'OJ S daily issue id for that date (e.g. 202600157)'
+        required: false
+        type: string
+        default: '202600157'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ted-package-mapping-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      WINDOW: ${{ inputs.window }}
+      ISSUE_ID: ${{ inputs.issue_id }}
+      UA: 'BidMorrow/1.0 (+https://bidmorrow.com; support@bidmorrow.com)'
+    steps:
+      - name: Validate inputs
+        run: |
+          [[ "$WINDOW" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "bad window"; exit 1; }
+          [[ "$ISSUE_ID" =~ ^[0-9]{6,12}$ ]] || { echo "bad issue id"; exit 1; }
+
+      - name: Q1 — publication numbers for the window, and the OJ issue TED itself reports
+        run: |
+          set -u
+          d="${WINDOW//-/}"
+          q="classification-cpv IN (48*, 72*) AND form-type = competition AND publication-date >= ${d} AND publication-date <= ${d} SORT BY publication-date"
+          jq -n --arg q "$q" \
+            '{query: $q, fields: ["publication-number","OJ"], limit: 250, onlyLatestVersions: false}' \
+            > /tmp/req.json
+          code=$(curl -s -o /tmp/search.json -w '%{http_code}' --max-time 60 \
+            -X POST 'https://api.ted.europa.eu/v3/notices/search' \
+            -H 'Content-Type: application/json' -H "User-Agent: $UA" \
+            --data @/tmp/req.json || echo 000)
+          echo "search status=${code}"
+          jq -r '.totalNoticeCount // 0' /tmp/search.json | sed 's/^/total in scope: /'
+          jq -r '.notices[]?."publication-number" // empty' /tmp/search.json | sort -u > /tmp/pubnums.txt
+          echo "publication numbers: $(wc -l < /tmp/pubnums.txt)"
+          # The OJ values TED reports for this window. If they disagree with the
+          # issue id we are about to fetch, the mapping question is answered
+          # differently than assumed and the rest of the probe is meaningless.
+          echo "--- distinct OJ values reported ---"
+          jq -r '[.notices[]?.OJ // empty] | unique[]' /tmp/search.json | head -5
+          test -s /tmp/pubnums.txt || { echo "no notices for this window"; exit 1; }
+
+      - name: Q2 — fetch the daily package
+        run: |
+          set -u
+          u="https://ted.europa.eu/packages/daily/${ISSUE_ID}"
+          code=$(curl -s -o /tmp/pkg.tar.gz -D /tmp/pkg.h -w '%{http_code}' \
+            --max-time 600 -L -H "User-Agent: $UA" "$u" || echo 000)
+          bytes=$(wc -c < /tmp/pkg.tar.gz | tr -d ' ')
+          echo "http=${code} bytes=${bytes}"
+          grep -i 'content-disposition\|content-type' /tmp/pkg.h || true
+          [ "$code" = "200" ] || { echo "VERDICT: package not delivered — nothing to map"; exit 1; }
+          file -b /tmp/pkg.tar.gz
+
+      - name: Q3 — enumerate members
+        run: |
+          set -u
+          tar tzf /tmp/pkg.tar.gz > /tmp/members.txt
+          echo "members: $(wc -l < /tmp/members.txt)"
+          echo "--- first 10 member paths (the naming scheme) ---"
+          head -10 /tmp/members.txt
+          echo "--- distinct path depths / extensions ---"
+          sed 's:.*/::' /tmp/members.txt | sed 's/^[0-9]*//' | sort | uniq -c | sort -rn | head -5
+
+      - name: Q4a — do our publication numbers appear in member names?
+        run: |
+          set -u
+          hits=0; misses=0; : > /tmp/matched.txt
+          while read -r pn; do
+            num="${pn%%-*}"   # 568795-2026 -> 568795
+            m=$(grep -m1 -E "(^|/)0*${num}[_.-]" /tmp/members.txt || true)
+            if [ -n "$m" ]; then
+              hits=$((hits+1)); echo "${pn} ${m}" >> /tmp/matched.txt
+            else
+              misses=$((misses+1))
+            fi
+          done < <(head -20 /tmp/pubnums.txt)
+          echo "matched ${hits}, unmatched ${misses} (of the first 20)"
+          echo "--- sample pairings ---"
+          head -5 /tmp/matched.txt || true
+          # A zero hit rate does NOT mean the mapping is absent — the anchored
+          # pattern above requires the number at a path boundary, so a scheme
+          # like `notice-568795.xml` misses. Before concluding anything, look
+          # for the number ANYWHERE in a member name and report what turns up;
+          # this is diagnostic output for choosing the real pattern, never a
+          # verdict on its own (an unanchored match is exactly the loose
+          # inference Q4b exists to catch).
+          if [ "$hits" -eq 0 ]; then
+            echo "--- zero anchored hits: unanchored diagnostic ---"
+            head -3 /tmp/pubnums.txt | while read -r pn; do
+              num="${pn%%-*}"
+              echo "${pn}: $(grep -m3 -- "${num}" /tmp/members.txt | tr '\n' ' ' || echo '<absent entirely>')"
+            done
+            echo "If the number appears above but not at a path boundary, the"
+            echo "scheme differs — re-run with a pattern fitted to Q3's output."
+          fi
+
+      - name: Q4b — NEGATIVE CONTROL — ids that must NOT match
+        run: |
+          set -u
+          # Same format, deliberately not in this issue. If these "match", the
+          # matcher is loose and Q4a proves nothing.
+          false_hits=0
+          for num in 99999991 99999992 99999993; do
+            if grep -qE "(^|/)0*${num}[_.-]" /tmp/members.txt; then
+              echo "FALSE POSITIVE for ${num}"; false_hits=$((false_hits+1))
+            fi
+          done
+          echo "false positives: ${false_hits}"
+          [ "$false_hits" -eq 0 ] || echo "WARNING: matcher is too loose — Q4a's hit rate is not evidence"
+
+      - name: Q5 — CONTENT PROOF — extract one matched member and read its id
+        run: |
+          set -u
+          test -s /tmp/matched.txt || { echo "VERDICT: no member matched; mapping NOT established"; exit 0; }
+          read -r pn member < <(head -1 /tmp/matched.txt)
+          echo "extracting ${member} for ${pn}"
+          tar xzf /tmp/pkg.tar.gz -C /tmp "${member}"
+          f="/tmp/${member}"
+          echo "size: $(wc -c < "$f") bytes"
+          # The publication number as it appears inside eForms XML.
+          echo "--- ids found inside the member ---"
+          grep -oE '<(cbc:ID|efbc:NoticePublicationID)[^>]*>[^<]+' "$f" | head -5 || true
+          # Assert on the CANONICAL id element, not a bare substring. A loose
+          # `grep -q 566194` would also pass on an unrelated occurrence (a
+          # reference number, a date fragment), which would make the verdict
+          # weaker than the evidence printed above it. The 2026-08-21 run
+          # established the exact form: zero-padded to 8 digits inside
+          # <efbc:NoticePublicationID schemeName="ojs-notice-id">.
+          num="${pn%%-*}"; year="${pn##*-}"
+          padded=$(printf '%08d' "$num")
+          if grep -qE "<efbc:NoticePublicationID[^>]*>${padded}-${year}<" "$f"; then
+            echo "VERDICT: CONFIRMED — ${member} carries NoticePublicationID ${padded}-${year}."
+            echo "Branch B can address members directly from search-derived ids."
+          elif grep -q "${num}" "$f"; then
+            echo "VERDICT: WEAK — ${num} appears in the XML but not as a"
+            echo "canonical <efbc:NoticePublicationID>${padded}-${year}<. Inspect"
+            echo "the ids printed above before building extraction on this."
+          else
+            echo "VERDICT: REFUTED — the filename matched but the XML does not carry ${pn}."
+            echo "Filename correspondence was coincidence; do NOT build extraction on it."
+          fi
