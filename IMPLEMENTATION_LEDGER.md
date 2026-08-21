@@ -3047,7 +3047,14 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
   overflow. Reviews COMPLETE (see
   "Reviewer sign-offs per phase"): security PASS; production-reviewer
   APPROVE after one remediation round (PR-001..PR-005 fixed same
-  session). Committed on branch `redesign/handoff-2026-08-21`.
+  session). Merged to main as
+  **a2a2f24 (PR #67)** after CI green (checks + secret-scan); staging
+  auto-deploy succeeded and verified serving the new frontend (dual
+  theme-color metas, /fonts 200); production deploy dispatched with the
+  typed confirmation on explicit owner instruction and verified live on
+  bidmorrow.com (new metas, fonts 200, /api/health/live ok, strict CSP
+  header unchanged). Production ingestion remains PAUSED — go-live is
+  still a separate deliberate owner step.
 
 ## Next (Phase 6 — Matching)
 
