@@ -22,10 +22,53 @@ could not be fully verified.
   query**; **ITERATION mode** (point-in-time scroll, token valid ≥24 h) has
   no cap — ingestion uses ITERATION within a bounded daily window.
 - Caps: 250 notices/page; `len(fields) × limit ≤ 10,000` fields/page.
+- **What ingestion actually requests** (`SEARCH_FIELDS`,
+  `packages/procurement/src/run-window.ts`): `publication-number`,
+  `publication-date`, `links`, `OJ` — 4 × 250 = 1,000, well inside the cap.
+  `OJ` (ADR-0010 §5.3) is the authoritative OJ S gazette issue, the key that
+  maps a notice to its daily bulk package.
+- **`onlyLatestVersions` is pinned to `false`** on the window search
+  (ADR-0010 §5.1), not left to the upstream default. Corrections are new
+  publications in our version model, so every published version must be
+  seen. Measured 2026-08-17 on the same window: `true` → 145 notices,
+  `false` → 156 — an unpinned default that flipped would silently drop those
+  11 superseded versions (~7%) and the history they carry.
 - Response: `notices[]`, `totalNoticeCount`, `iterationNextToken`.
   Multilingual fields are objects keyed by ISO 639-2 codes (`eng`, `deu`…).
   `links.xml.MUL` is the authoritative multilingual source XML per notice —
   ingestion fetches this for parsing + R2 snapshot.
+- **The render front-end is a SHORT-TTL CACHE, not a queue that fills up**
+  (measured 2026-08-21, `ted-render-batch-probe` run 32520323517, window
+  2026-08-17, times relative to trigger completion):
+
+  | Batch  | absent            | AVAILABLE               | absent again |
+  | ------ | ----------------- | ----------------------- | ------------ |
+  | A (5)  | —                 | **+7..+67s** (3/5)      | by +132s     |
+  | B (50) | +60..+112s (0/50) | **+232..+310s** (47/50) | by +490s     |
+
+  A GET either returns cached XML (200) or queues a render and answers 202.
+  Content APPEARS and then DISAPPEARS: present at one pass, gone at the
+  next, in both batches independently. `other=0` on every pass — no 4xx or
+  5xx anywhere — so this is re-queueing, not rate limiting or blocking.
+  Render latency scales with batch size (5 notices ready inside a minute,
+  50 took ~4 minutes), consistent with serialized per-client capacity.
+
+  **This resolves the contradiction in the earlier evidence.** The
+  2026-08-18 single-notice diagnostic saw a render complete because it
+  polled inside the window; the 2026-08-20 run saw 0/156 because a
+  156-notice cycle takes longer than the content survives — by the time
+  the collector came back around, the early renders had expired. It was a
+  treadmill, not an outage. Nothing was ever "down".
+
+  **Consequence: this channel cannot be a production content source**, and
+  ADR-0010 §1's permanent demotion stands on stronger evidence than when
+  it was written. Collecting 156 notices this way requires winning a
+  ~1-3 minute race per batch, with any slip losing the content until
+  re-triggered. Bulk packages are static files — no window, no race.
+  The exact TTL is NOT measured: content was present at one poll and
+  absent at the next, which bounds it above (~2 min for A, ~3 min for B)
+  without pinning it.
+
 - **The anonymous XML front-end renders ASYNCHRONOUSLY** (empirical,
   2026-08-18, ted-diagnose CI runs 32131289081/32131832286/32132169652 —
   supersedes the 2026-08-16 "identifying client" note): a GET of a
@@ -84,7 +127,38 @@ could not be fully verified.
   assume unlimited: polite throttling, exponential backoff on 429/5xx, and
   an admin-configurable request budget per run are mandatory.
 
-## Bulk XML packages (address verified 2026-08-20; delivery UNPROVEN)
+## Bulk XML packages (addressing CONFIRMED end-to-end 2026-08-21)
+
+**The full chain from a publication date to a notice's XML is verified**
+(`ted-package-mapping-probe` run 32522822931, window 2026-08-17):
+
+| Link               | Value                                                                | How verified                                          |
+| ------------------ | -------------------------------------------------------------------- | ----------------------------------------------------- |
+| window → OJ issue  | `157/2026`                                                           | Search API `OJ`, single distinct value across all 156 |
+| OJ issue → package | `/packages/daily/202600157`                                          | HTTP 200, `application/gzip`                          |
+| package → archive  | 19,980,923 B gz → 207,127,552 B                                      | `content-disposition: 20260817_2026157.tar.gz`        |
+| archive → member   | `20260817_157/00566194_2026.xml`                                     | 3,190 members, ALL matching `NNNNNNNN_2026.xml`       |
+| member → notice    | `<efbc:NoticePublicationID schemeName="ojs-notice-id">00566194-2026` | extracted and read                                    |
+
+**ZERO-PADDING IS REQUIRED — the single most important implementation
+detail here.** The Search API returns `publication-number` unpadded
+(`566194-2026`, 6 digits), while BOTH the member filename and the
+canonical in-XML id use 8 digits (`00566194-2026`). A naive string match
+between the two fails. Derive with `num.padStart(8, '0')`.
+
+The member directory is `YYYYMMDD_<OJ sequence>` (`20260817_157`) — both
+components already available from the search row (`publication-date` and
+`OJ`), so no directory listing is needed to construct a member path.
+
+**Selectivity: 156 in-scope of 3,190 members = 4.9%, a 20.4x reduction.**
+At ~51 KB per member that is ~7.6 MB of actual interest inside a 207 MB
+archive — which is precisely why ADR-0010 §3 specifies selective
+extraction over whole-archive parsing.
+
+Evidence discipline: the correspondence was proven by CONTENT. Q4b ran a
+negative control (same-format ids that must not match) and reported 0
+false positives, so the 20/20 filename hit rate is real evidence rather
+than an artifact of a loose matcher.
 
 TED publishes daily and monthly bulk XML packages, and publishes their
 links itself at `https://ted.europa.eu/en/simap/xml-bulk-download`

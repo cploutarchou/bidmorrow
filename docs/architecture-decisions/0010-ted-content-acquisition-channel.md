@@ -498,6 +498,147 @@ gate would spend real notices to buy nothing.
    by Branch B and useful provenance under either branch).
 4. §1's render-channel demotion and canary posture.
 
+#### §5 IMPLEMENTED — 2026-08-21
+
+All four ship in one change; gates green (format, lint, typecheck, 530 +
+217 + 63 tests, build).
+
+| §   | What landed                                                                                                                                                                                                |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 5.1 | `onlyLatestVersions` added to `TedSearchRequest` and pinned `false` on the window search (`run-window.ts`). Previously implicit.                                                                           |
+| 5.2 | `fetch_retry_attempts_suspended` flag (`packages/config`), reader `isFetchRetryAttemptsSuspended` (`scope.ts`), drain honors it (`fetch-retry-drain.ts`), admin validator case. 4 new D1 tests (S-1..S-4). |
+| 5.3 | `OJ` added to `SEARCH_FIELDS`. Cap re-checked: 4 × 250 = 1,000 ≤ 10,000.                                                                                                                                   |
+| 5.4 | `.github/workflows/ted-render-canary.yml` — 1-notice daily canary, 11:00 UTC, telemetry-only (never fails on a pending render; `::notice` on recovery).                                                    |
+
+**§5.2 semantics as built.** While the flag is set the drain pulls only
+`FETCH_RETRY_SUSPENDED_CANARY_ROWS` (3) due rows and a render-pending
+cycle exhaustion leaves BOTH `attempts` and `next_attempt_at` untouched —
+so the row stays due and is re-probed rather than being pushed a day out
+by a failure that was never its own. `TedRequestError` outcomes burn
+normally. Upper bound 3 × `MAX_RENDER_VISITS` (6) = 18 requests/day,
+matching §5.2's estimate. `DrainFetchRetriesResult.attemptsSuspended`
+surfaces the posture to the caller and the completion log.
+
+**§5.4 boundary — deliberately partial.** The canary is the shippable
+half of §1. The code-side demotion is NOT done: `processOneNotice` still
+fetches notice XML through the render front-end, because that is still
+the only implemented content path. Removing it before Branch B exists
+would leave ingestion with no content channel at all. The switch belongs
+to the Branch B implementation, not here.
+
+**Unverified.** The canary workflow has never executed — a
+`workflow_dispatch` workflow is only dispatchable once it is on the
+default branch. First scheduled run is the first evidence.
+
+#### PREREQUISITE CLOSED — member addressing CONFIRMED (run 32522822931)
+
+The last open item in this ADR is answered. Window 2026-08-17:
+
+| Link               | Value                                                                |
+| ------------------ | -------------------------------------------------------------------- |
+| window → OJ issue  | `157/2026` (single distinct `OJ` across all 156)                     |
+| OJ issue → package | `/packages/daily/202600157` → 200, `application/gzip`                |
+| archive            | 19,980,923 B gz → 207,127,552 B, 3,190 members                       |
+| member             | `20260817_157/00566194_2026.xml` (ALL 3,190 uniform)                 |
+| content proof      | `<efbc:NoticePublicationID schemeName="ojs-notice-id">00566194-2026` |
+
+Q4a matched 20/20; Q4b's negative control returned 0 false positives, so
+the hit rate is evidence rather than a loose-matcher artifact; Q5 proved
+it by extracting the member and reading the id inside.
+
+**Implementation requirements this pins down for §3:**
+
+1. **Zero-pad to 8 digits.** Search returns `566194-2026`; the member
+   filename and canonical in-XML id are `00566194-2026`. A direct string
+   match between search row and member path FAILS. This is the detail
+   most likely to be got wrong.
+2. **Member paths are constructible without listing the archive** —
+   `{YYYYMMDD}_{OJ-seq}/{padded}_{year}.xml`, both components already in
+   the search row (`publication-date`, `OJ`).
+3. **Selectivity 4.9%** (156 of 3,190; ~7.6 MB of interest inside 207 MB,
+   a 20.4x reduction) — quantifies why §3 specifies selective extraction
+   over whole-archive parsing.
+
+**Probe weakness found and fixed.** Q5's original assertion was
+`grep -q "$num"` — a bare substring search that would also pass on an
+unrelated occurrence, making the automated verdict weaker than the
+evidence it printed. (The 2026-08-21 CONFIRMED verdict is sound: the
+canonical `efbc:NoticePublicationID` line was printed and read directly.)
+Q5 now asserts on that element specifically and has a third WEAK outcome
+for "number present but not as the canonical id".
+
+#### §1 VINDICATED — the render channel is a short-TTL cache (2026-08-21)
+
+The canary's first run returned 200 with 244,469 bytes in ~1s, which
+looked like recovery. It was not. The follow-up batch probe (run
+32520323517, window 2026-08-17 — deliberately the same window that
+previously returned 0/156) measured the real behavior, times relative to
+trigger completion:
+
+| Batch  | absent            | AVAILABLE               | absent again |
+| ------ | ----------------- | ----------------------- | ------------ |
+| A (5)  | —                 | **+7..+67s** (3/5)      | by +132s     |
+| B (50) | +60..+112s (0/50) | **+232..+310s** (47/50) | by +490s     |
+
+Content APPEARS and then DISAPPEARS, independently in both batches.
+`other=0` on every pass — no 4xx, no 5xx — so this is re-queueing, not
+rate limiting. Render latency scales with batch size, consistent with the
+serialized per-client capacity hypothesis.
+
+**Nothing was ever "down".** This resolves the contradiction that shaped
+ADR-0008/0009: the 2026-08-18 single-notice diagnostic saw a render
+complete because it polled inside the window; the 2026-08-20 run saw
+0/156 because a 156-notice cycle outlasts the content. A treadmill, not
+an outage.
+
+**§1's permanent demotion now rests on a mechanism, not a symptom.** The
+original argument was "an undocumented behavior that changed three times
+in one week is never again the sole content channel" — reasoning from
+instability. The stronger form: collecting a full window through this
+channel means winning a ~1-3 minute race per batch, with any slip losing
+the content until re-triggered. Bulk packages are static files. Branch B
+is not merely the safer choice; the render channel is structurally unfit
+for the job.
+
+The exact TTL is NOT measured — content was present at one poll and
+absent at the next, bounding it above (~2 min for A, ~3 min for B)
+without pinning it. Measuring it precisely is not worth the requests: no
+decision depends on the exact number.
+
+**Consequence for §5.2.** The `fetch_retry_attempts_suspended` flag is
+better justified than when written. A render-pending outcome really is
+evidence about TED's cache timing rather than about the notice, so
+burning one of the notice's five attempts on it was always charging the
+wrong account.
+
+#### Branch B prerequisite — the mapping probe (2026-08-21)
+
+`.github/workflows/ted-package-mapping-probe.yml` answers the one item
+this ADR's gate-closure record deliberately left open: given a
+`publication-number`, WHICH member of the daily package carries its XML.
+Branch B's selective extraction has no design without it — a day's
+package holds every notice EU-wide while our in-scope set is ~156, so
+members must be addressed directly rather than the archive parsed whole.
+
+The probe is built to the same discipline that resolved the gate: a
+correspondence is proven by CONTENT, never by a filename that merely
+looks right.
+
+1. Q4a measures how many of our publication numbers appear in member
+   names (anchored at a path boundary, leading zeros allowed).
+2. Q4b is a NEGATIVE CONTROL — same-format ids that must not match. If
+   they do, the matcher is loose and Q4a's hit rate is not evidence.
+3. Q5 extracts a matched member and checks the publication-number
+   INSIDE the XML. Only Q5 can return CONFIRMED.
+
+A zero hit rate in Q4a is explicitly NOT a verdict: the anchored pattern
+misses a scheme like `notice-568795.xml`, so the probe falls back to an
+unanchored diagnostic that reports what it actually finds rather than
+concluding the mapping is absent. Q1 also cross-checks the `OJ` values
+TED reports for the window against the issue id being fetched — if those
+disagree, the addressing scheme in §3 is wrong and Branch B needs
+rethinking before implementation starts.
+
 ## Consequences
 
 Positive:

@@ -6,7 +6,11 @@
  * the flag row does not exist yet, exactly like every other flag reader in
  * this codebase).
  */
-import { FLAG_INGESTION_CPV_SCOPE, FLAG_INGESTION_PAUSED } from '@bidmorrow/config';
+import {
+  FLAG_FETCH_RETRY_ATTEMPTS_SUSPENDED,
+  FLAG_INGESTION_CPV_SCOPE,
+  FLAG_INGESTION_PAUSED,
+} from '@bidmorrow/config';
 import { getFeatureFlag } from '@bidmorrow/db';
 import type { Db } from '@bidmorrow/db';
 import type { Logger } from '@bidmorrow/observability';
@@ -75,6 +79,30 @@ export async function isIngestionPaused(db: Db, logger?: Logger): Promise<boolea
     return JSON.parse(flag.valueJson) === true;
   } catch (cause) {
     logger?.warn('ingestion.paused_flag.malformed', {
+      value_json: flag.valueJson,
+      error: cause instanceof Error ? cause.message : String(cause),
+    });
+    return false;
+  }
+}
+
+/**
+ * Reads the `fetch_retry_attempts_suspended` flag (ADR-0010 §5.2);
+ * absent/malformed defaults to NOT suspended. Fail-open for the same reason
+ * `isIngestionPaused` does: a malformed value must not silently change drain
+ * semantics. The safe default here is normal ADR-0008 §3 behavior, because
+ * suspension is the exceptional posture an operator opts into during a
+ * confirmed upstream outage.
+ */
+export async function isFetchRetryAttemptsSuspended(db: Db, logger?: Logger): Promise<boolean> {
+  const flag = await getFeatureFlag(db, FLAG_FETCH_RETRY_ATTEMPTS_SUSPENDED);
+  if (flag === null) {
+    return false;
+  }
+  try {
+    return JSON.parse(flag.valueJson) === true;
+  } catch (cause) {
+    logger?.warn('ingestion.fetch_retry_suspended_flag.malformed', {
       value_json: flag.valueJson,
       error: cause instanceof Error ? cause.message : String(cause),
     });
