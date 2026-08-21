@@ -224,7 +224,14 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     await expect(page.getByRole('heading', { name: 'Company profile' })).toBeVisible();
 
     const input = page.getByLabel('Add keyword');
-    const addButton = page.locator('#new-keyword').locator('xpath=following-sibling::button[1]');
+    // PR #58 wrapped the keyword input in the Combobox's `.combobox__field`
+    // div, so the input no longer HAS a following-sibling button — the old
+    // xpath resolved to zero elements and this test hung from 2026-08-19 on
+    // (E2E is not in CI yet, so nothing caught it). Target the add-row's
+    // real "Add" button instead.
+    const addButton = page
+      .locator('.combobox-add-row', { has: page.locator('#new-keyword') })
+      .getByRole('button', { name: 'Add', exact: true });
     // Existing keywords from onboarding (preset + 1 manual) plus these must
     // exceed the 50-item cap (docs: COMPANY_KEYWORDS_CAP = 50).
     for (let i = 0; i < 55; i += 1) {

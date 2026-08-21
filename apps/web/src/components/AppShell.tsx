@@ -3,11 +3,25 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { PRODUCT_NAME } from '../copy';
 import { useAuth } from '../lib/auth-context';
 import { Logo } from './Logo';
+import { ThemeToggle } from './ThemeToggle';
 
 export function AppShell({ children }: { children: ReactNode }): ReactElement {
   const navigate = useNavigate();
   const location = useLocation();
-  const { refresh } = useAuth();
+  const { refresh, user } = useAuth();
+  // Avatar initials from the signed-in account (handoff header) — falls
+  // back to the email's first letter, then a generic mark.
+  const initials = (() => {
+    const name = user?.name?.trim() ?? '';
+    if (name.length > 0) {
+      const parts = name.split(/\s+/);
+      const first = parts[0]?.[0] ?? '';
+      const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
+      return `${first}${last}`.toUpperCase();
+    }
+    const email = user?.email ?? '';
+    return email.length > 0 ? (email[0]?.toUpperCase() ?? '·') : '·';
+  })();
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const isFeed = location.pathname === '/app' || location.pathname.startsWith('/app/tenders/');
   const isSettings = location.pathname.startsWith('/app/settings');
@@ -55,9 +69,13 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
             </li>
           </ul>
           <div className="app-nav-actions">
+            <ThemeToggle />
             <button className="btn-quiet btn-sm" type="button" onClick={() => void signOut()}>
               Log out
             </button>
+            <span className="app-avatar" aria-hidden="true">
+              {initials}
+            </span>
           </div>
         </nav>
       </header>

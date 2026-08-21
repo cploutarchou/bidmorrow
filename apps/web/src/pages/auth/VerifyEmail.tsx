@@ -49,19 +49,36 @@ export function VerifyEmail(): ReactElement {
   }
 
   return (
-    <AuthLayout title="Verify your email">
+    <AuthLayout
+      title="Verify your email"
+      subtitle={
+        error !== null
+          ? 'That link can no longer be used.'
+          : 'One email, one link. The account exists but stays closed until it is followed.'
+      }
+    >
       {error !== null ? (
         <>
           <p role="alert" className="form-error">
             That verification link is invalid or has expired.
           </p>
-          <p>Try logging in again — we'll offer to resend the verification email from there.</p>
+          <p className="auth-card__sub">
+            Try logging in again — we'll offer to resend the verification email from there.
+          </p>
+          <Link className="cta" to="/login">
+            Back to log in
+          </Link>
         </>
       ) : (
         <>
-          <p>
-            Check your inbox{email !== null ? ` for ${email}` : ''} for a verification email and
-            click the link inside, then <Link to="/login">log in</Link>. Not there? Check your spam
+          {email !== null && (
+            <div className="auth-sentbox">
+              <p className="auth-sentbox__cap">Sent to</p>
+              <p className="auth-sentbox__addr">{email}</p>
+            </div>
+          )}
+          <p className="auth-card__sub">
+            Click the link inside, then <Link to="/login">log in</Link>. Not there? Check your spam
             folder.
           </p>
           {email !== null && (
@@ -69,20 +86,25 @@ export function VerifyEmail(): ReactElement {
               <p role="status" aria-live="polite" className="visually-hidden-status">
                 {resent ? 'Verification email resent.' : ''}
               </p>
-              {resent && <p>Sent again — give it a minute to arrive.</p>}
+              {resent && <p className="auth-status">Sent again — give it a minute to arrive.</p>}
               {resendError !== null && (
                 <p role="alert" className="form-error">
                   {resendError}
                 </p>
               )}
-              <button
-                type="button"
-                className="link-button"
-                disabled={resending}
-                onClick={() => void resendVerification()}
-              >
-                {resending ? 'Resending…' : 'Resend verification email'}
-              </button>
+              <div className="button-row">
+                <Link className="cta" to="/login">
+                  Log in
+                </Link>
+                <button
+                  type="button"
+                  className="mkt-btn-quiet"
+                  disabled={resending}
+                  onClick={() => void resendVerification()}
+                >
+                  {resending ? 'Resending…' : 'Resend verification email'}
+                </button>
+              </div>
             </>
           )}
         </>
