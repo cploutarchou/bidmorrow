@@ -48,4 +48,12 @@ export interface TedSearchRequest {
   paginationMode?: TedPaginationMode;
   /** Scroll token returned by the previous ITERATION-mode response. */
   iterationNextToken?: string;
+  /**
+   * Whether the response collapses a notice's version history to its latest
+   * publication only. ADR-0010 §5.1: ingestion pins this to `false` — a
+   * correction is a NEW publication in our version model, so every published
+   * version must be seen. Measured 2026-08-17: `true` -> 145 notices,
+   * `false` -> 156 for the same window (11 superseded versions, ~7%).
+   */
+  onlyLatestVersions?: boolean;
 }

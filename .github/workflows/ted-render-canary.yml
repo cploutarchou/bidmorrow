@@ -1,0 +1,114 @@
+# ADR-0010 §1 / §5.4 — the render front-end is PERMANENTLY DEMOTED. Bulk XML
+# packages are the content channel (Branch B, gate closed 2026-08-20); the
+# notice-XML render front-end is no longer a content source at all. This
+# workflow is what remains of it: a 1-notice daily canary whose ONLY job is
+# recovery/latency telemetry, so that if TED's async render subsystem starts
+# completing again we find out from a measurement instead of an assumption.
+#
+# Deliberately toothless. It never gates ingestion, never blocks a deploy and
+# never fails on a pending render — a red run every day during a known outage
+# is alarm fatigue, not signal. It exits 0 always and reports its verdict to
+# the job summary, raising a ::notice only on the event worth seeing: the
+# render channel answering with real XML again.
+name: TED render canary
+
+on:
+  schedule:
+    - cron: '0 11 * * *' # 11:00 UTC daily — clear of the worker crons (05:00,
+      # 06:30, 09:00, :15) and the 03:00 nightly E2E.
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ted-render-canary
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      UA: 'BidMorrow/1.0 (+https://bidmorrow.com; support@bidmorrow.com)'
+      ACC: 'application/xml, text/xml;q=0.9, */*;q=0.5'
+    steps:
+      - name: Pick ONE recently-published in-scope notice
+        run: |
+          set -u
+          # A 7-day trailing window: wide enough that a quiet publication day
+          # never leaves the canary with nothing to measure.
+          to=$(date -u +%Y%m%d)
+          from=$(date -u -d '7 days ago' +%Y%m%d)
+          q="classification-cpv IN (48*, 72*) AND form-type = competition AND publication-date >= ${from} AND publication-date <= ${to} SORT BY publication-date DESC"
+          jq -n --arg q "$q" \
+            '{query: $q, fields: ["publication-number","links"], limit: 1, onlyLatestVersions: false}' \
+            > /tmp/req.json
+          code=$(curl -s -o /tmp/search.json -w '%{http_code}' --max-time 60 \
+            -X POST 'https://api.ted.europa.eu/v3/notices/search' \
+            -H 'Content-Type: application/json' -H "User-Agent: $UA" \
+            --data @/tmp/req.json || echo 000)
+          echo "search status=${code}"
+          url=$(jq -r '.notices[0]?.links.xml.MUL // empty' /tmp/search.json)
+          id=$(jq -r '.notices[0]?."publication-number" // empty' /tmp/search.json)
+          if [ -z "$url" ]; then
+            # No notice to measure is a fact about the search, not about the
+            # render channel — record it and stop without a verdict.
+            echo "SEARCH_UNAVAILABLE (status ${code}) — no notice to probe" \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "skip=true" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "notice=${id}" >> "$GITHUB_ENV"
+          echo "url=${url}" >> "$GITHUB_ENV"
+          echo "picked ${id}"
+
+      - name: Trigger the render and re-poll over a bounded horizon
+        if: env.skip != 'true'
+        run: |
+          set -u
+          probe() { # echoes "<http_code> <bytes>"
+            code=$(curl -s -o /tmp/body.out -w '%{http_code}' --max-time 30 \
+              -H "Accept: ${ACC}" -H "User-Agent: ${UA}" "$url" || echo 000)
+            bytes=$(wc -c < /tmp/body.out | tr -d ' ')
+            rm -f /tmp/body.out
+            echo "${code} ${bytes}"
+          }
+          rendered=''
+          started=$(date -u +%s)
+          # Pass 1 triggers the render; the later passes collect it. A real
+          # notice XML is comfortably over 500 bytes — the 202/empty and
+          # 200/short-shell cases both read as "still pending".
+          for wait in 0 60 180; do
+            [ "$wait" -gt 0 ] && sleep "$wait"
+            read -r code bytes <<< "$(probe)"
+            elapsed=$(( $(date -u +%s) - started ))
+            echo "t+${elapsed}s: http=${code} bytes=${bytes}"
+            if [ "$code" = "200" ] && [ "$bytes" -gt 500 ]; then
+              rendered="${elapsed}"
+              break
+            fi
+          done
+          {
+            echo "### TED render canary"
+            echo ""
+            echo "- notice: \`${notice}\`"
+            if [ -n "$rendered" ]; then
+              echo "- verdict: **RENDERED** after ~${rendered}s"
+              echo ""
+              echo "The render front-end is completing again. This does NOT"
+              echo "re-promote it (ADR-0010 §1 demotes it permanently), but it"
+              echo "is the recovery signal the canary exists to catch."
+            else
+              echo "- verdict: **STILL PENDING** across the probe horizon"
+              echo ""
+              echo "Expected while the outage persists. Bulk packages"
+              echo "(ADR-0010 Branch B) are the content channel; this is"
+              echo "telemetry only."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$rendered" ]; then
+            echo "::notice title=TED render channel recovered::${notice} rendered after ~${rendered}s"
+          fi
+          # Telemetry only — never fail the run on a pending render.
+          exit 0

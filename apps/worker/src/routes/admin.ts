@@ -28,6 +28,7 @@ import {
   FEATURE_FLAG_KEYS,
   FLAG_DIGEST_PAUSED,
   FLAG_ENTITLEMENT_ENFORCED,
+  FLAG_FETCH_RETRY_ATTEMPTS_SUSPENDED,
   FLAG_FOUNDING_CAP,
   FLAG_FOUNDING_PLAN_OPEN,
   FLAG_INGESTION_CPV_SCOPE,
@@ -845,6 +846,7 @@ function validateFlagValue(key: FeatureFlagKey, value: unknown): string | null {
     case FLAG_ENTITLEMENT_ENFORCED:
     case FLAG_STRIPE_TAX:
     case FLAG_PRELAUNCH:
+    case FLAG_FETCH_RETRY_ATTEMPTS_SUSPENDED:
       return typeof value === 'boolean' ? valueJson : null;
     case FLAG_LAUNCH_DATE:
       // ISO-8601 instant the countdown targets (prelaunch.ts) — a bad

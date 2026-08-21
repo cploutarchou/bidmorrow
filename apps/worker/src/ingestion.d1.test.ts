@@ -12,6 +12,7 @@ import type { TedFetch } from '@bidmorrow/ted';
 import {
   DEFAULT_INGESTION_SCOPE,
   FETCH_RETRY_MAX_ATTEMPTS,
+  FETCH_RETRY_SUSPENDED_CANARY_ROWS,
   PENDING_RETRY_BACKLOG_ALERT_THRESHOLD,
   checkFetchResilienceAlerts,
   computeCatchUpWindows,
@@ -39,7 +40,7 @@ import {
   upsertNoticeWithVersion,
 } from '@bidmorrow/db';
 import { schema } from '@bidmorrow/db';
-import { FLAG_INGESTION_PAUSED } from '@bidmorrow/config';
+import { FLAG_FETCH_RETRY_ATTEMPTS_SUSPENDED, FLAG_INGESTION_PAUSED } from '@bidmorrow/config';
 
 // pool-workers tests run inside sandboxed workerd, not Node — real
 // filesystem reads (`node:fs`) are not available for arbitrary host paths,
@@ -1796,6 +1797,196 @@ describe('ADR-0008 fetch resilience', () => {
     // by construction, ADR-0008 §3).
     const afterCheckpoint = await getCheckpoint(db, { source: 'ted' });
     expect(afterCheckpoint?.lastPublicationDate).toBe(beforeCheckpoint?.lastPublicationDate);
+  });
+});
+
+describe('ADR-0010 §5.2: fetch_retry_attempts_suspended (outage attempt-burn suspension)', () => {
+  // The D1 file is shared across every test in this file, so other suites'
+  // pending retry rows are also "due". These tests back-date their own rows
+  // well before any of those so `listDueFetchRetries`' (next_attempt_at ASC)
+  // ordering puts them at the front of the canary subset deterministically.
+  const DUE_LONG_AGO = T0 - 30 * MS_PER_DAY;
+
+  /** Sets the operator flag and always clears it again — the D1 file is shared. */
+  async function withSuspension<T>(
+    db: ReturnType<typeof createDb>,
+    run: () => Promise<T>,
+  ): Promise<T> {
+    await setFeatureFlag(db, {
+      key: FLAG_FETCH_RETRY_ATTEMPTS_SUSPENDED,
+      valueJson: 'true',
+      description: 'test: confirmed upstream render outage',
+    });
+    try {
+      return await run();
+    } finally {
+      await setFeatureFlag(db, {
+        key: FLAG_FETCH_RETRY_ATTEMPTS_SUSPENDED,
+        valueJson: 'false',
+        description: 'test: outage cleared',
+      });
+    }
+  }
+
+  async function seedDueRetry(
+    db: ReturnType<typeof createDb>,
+    sourceNoticeId: string,
+    errorCode: string,
+  ): Promise<string> {
+    const xmlUrl = `https://ted.europa.eu/notice/${sourceNoticeId}.xml`;
+    await upsertFetchRetry(db, {
+      source: 'ted',
+      sourceNoticeId,
+      xmlUrl,
+      publicationDate: '2026-08-10',
+      errorCode,
+      nextAttemptAt: DUE_LONG_AGO,
+      now: DUE_LONG_AGO,
+    });
+    return xmlUrl;
+  }
+
+  function retryRowOf(sourceNoticeId: string) {
+    return env.DB.prepare(
+      'SELECT status, attempts, next_attempt_at FROM ingestion_fetch_retries WHERE source = ? AND source_notice_id = ?',
+    )
+      .bind('ted', sourceNoticeId)
+      .first<{ status: string; attempts: number; next_attempt_at: number }>();
+  }
+
+  it('S-1: render-pending exhaustion does NOT burn an attempt while suspended — attempts and next_attempt_at both unchanged, so the row stays due and is re-probed', async () => {
+    const db = createDb(env.DB);
+    const sourceNoticeId = 'suspended-render-pending-1';
+    const xmlUrl = await seedDueRetry(db, sourceNoticeId, 'NOTICE_RENDER_PENDING');
+
+    let hits = 0;
+    const fetchImpl: TedFetch = (url) => {
+      if (url !== xmlUrl) {
+        return Promise.resolve({
+          ok: false,
+          status: 404,
+          headers: { get: () => null },
+          json: () => Promise.reject(new Error('not found')),
+          text: () => Promise.resolve(''),
+        });
+      }
+      hits += 1;
+      return Promise.resolve(alwaysPendingResponse());
+    };
+
+    const result = await withSuspension(db, () =>
+      drainFetchRetries({
+        db,
+        client: makeClient(fetchImpl, 500),
+        snapshots: env.SNAPSHOTS,
+        logger: createLogger({ test: true }),
+        now: () => T0 + 1000,
+        renderRetryDelayMs: 0,
+      }),
+    );
+
+    expect(result.attemptsSuspended).toBe(true);
+    expect(result.stillPending).toBeGreaterThanOrEqual(1);
+    // Recovery detection is PRESERVED: the row was really fetched, a full
+    // render-visit cycle, exactly as an unsuspended drain would.
+    expect(hits).toBe(6);
+
+    const retryRow = await retryRowOf(sourceNoticeId);
+    expect(retryRow?.status).toBe('pending');
+    // The whole point of §5.2: the abandonment clock did not advance.
+    expect(retryRow?.attempts).toBe(0);
+    // next_attempt_at untouched too, so the row remains due and is re-probed
+    // rather than being pushed a day out by a failure that was not its own.
+    expect(retryRow?.next_attempt_at).toBe(DUE_LONG_AGO);
+  });
+
+  it('S-2: a genuine TedRequestError still burns an attempt while suspended — HTTP failures are per-notice evidence, outage or not', async () => {
+    const db = createDb(env.DB);
+    const sourceNoticeId = 'suspended-http-404-1';
+    await seedDueRetry(db, sourceNoticeId, 'NOTICE_FETCH_HTTP_404');
+
+    // 404 is deliberately NOT a retryable status (client.ts isRetryableStatus),
+    // so this raises TedRequestError immediately instead of spending the test
+    // budget on real backoff sleeps.
+    const fetchImpl: TedFetch = () =>
+      Promise.resolve({
+        ok: false,
+        status: 404,
+        headers: { get: () => null },
+        json: () => Promise.reject(new Error('not found')),
+        text: () => Promise.resolve(''),
+      });
+
+    const result = await withSuspension(db, () =>
+      drainFetchRetries({
+        db,
+        client: makeClient(fetchImpl, 500),
+        snapshots: env.SNAPSHOTS,
+        logger: createLogger({ test: true }),
+        now: () => T0 + 1000,
+        renderRetryDelayMs: 0,
+      }),
+    );
+
+    expect(result.attemptsSuspended).toBe(true);
+
+    const retryRow = await retryRowOf(sourceNoticeId);
+    expect(retryRow?.status).toBe('pending');
+    expect(retryRow?.attempts).toBe(1);
+    // Normal linear daily backoff off the incremented value — suspension does
+    // not touch the HTTP-failure path at all.
+    expect(retryRow?.next_attempt_at).toBe(T0 + 1000 + MS_PER_DAY);
+  });
+
+  it('S-3: while suspended the drain pulls only the canary subset, not FETCH_RETRY_MAX_PER_RUN', async () => {
+    const db = createDb(env.DB);
+    const ids = ['canary-a', 'canary-b', 'canary-c', 'canary-d', 'canary-e'];
+    for (const id of ids) {
+      await seedDueRetry(db, id, 'NOTICE_RENDER_PENDING');
+    }
+    expect(FETCH_RETRY_SUSPENDED_CANARY_ROWS).toBeLessThan(ids.length);
+
+    const result = await withSuspension(db, () =>
+      drainFetchRetries({
+        db,
+        client: makeClient(() => Promise.resolve(alwaysPendingResponse()), 500),
+        snapshots: env.SNAPSHOTS,
+        logger: createLogger({ test: true }),
+        now: () => T0 + 1000,
+        renderRetryDelayMs: 0,
+      }),
+    );
+
+    expect(result.attemptsSuspended).toBe(true);
+    expect(result.attempted).toBe(FETCH_RETRY_SUSPENDED_CANARY_ROWS);
+    // No row anywhere burned an attempt this run: the three that were probed
+    // were render-pending (suspended), and the rest were never touched.
+    const burned = await env.DB.prepare(
+      'SELECT COUNT(*) as n FROM ingestion_fetch_retries WHERE source_notice_id IN (?, ?, ?, ?, ?) AND attempts > 0',
+    )
+      .bind(...ids)
+      .first<{ n: number }>();
+    expect(burned?.n).toBe(0);
+  });
+
+  it('S-4: with the flag off the drain reports attemptsSuspended false and burns attempts normally (default posture unchanged)', async () => {
+    const db = createDb(env.DB);
+    const sourceNoticeId = 'unsuspended-default-1';
+    await seedDueRetry(db, sourceNoticeId, 'NOTICE_RENDER_PENDING');
+
+    const result = await drainFetchRetries({
+      db,
+      client: makeClient(() => Promise.resolve(alwaysPendingResponse()), 500),
+      snapshots: env.SNAPSHOTS,
+      logger: createLogger({ test: true }),
+      now: () => T0 + 1000,
+      renderRetryDelayMs: 0,
+    });
+
+    expect(result.attemptsSuspended).toBe(false);
+
+    const retryRow = await retryRowOf(sourceNoticeId);
+    expect(retryRow?.attempts).toBe(1);
   });
 });
 

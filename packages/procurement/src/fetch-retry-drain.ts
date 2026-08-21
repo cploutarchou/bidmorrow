@@ -32,6 +32,19 @@
  * - `TedBudgetExceededError` during the drain terminates the drain ONLY
  *   (logged; due rows remain due tomorrow) — no window is in flight, so
  *   nothing here is window-fatal.
+ *
+ * ADR-0010 §5.2 — SUSPENDED POSTURE. While the operator-set
+ * `fetch_retry_attempts_suspended` flag is on, the drain stops being a drain
+ * and becomes a recovery probe: it pulls only
+ * `FETCH_RETRY_SUSPENDED_CANARY_ROWS` due rows, and a render-pending cycle
+ * exhaustion no longer increments `attempts`. The rationale is that
+ * render-pending during a confirmed upstream outage is evidence about TED's
+ * render farm, not about the notice — burning the notice's five attempts on
+ * it abandons real procurement records for a failure that was never theirs.
+ * Recovery detection is preserved (the canary rows are still fetched every
+ * run, ~<=18 requests/day), and clearing the flag restores full behavior with
+ * no attempts spent. `TedRequestError` outcomes are unaffected: an HTTP or
+ * network failure is per-notice evidence whether or not an outage is running.
  */
 import {
   TED_SOURCE_ID,
@@ -54,6 +67,7 @@ import {
 
 import { todayUtc } from './checkpoint-windows';
 import type { SearchRowFields } from './search-row';
+import { isFetchRetryAttemptsSuspended } from './scope';
 import type { IngestionScope } from './scope';
 import {
   MAX_RENDER_VISITS,
@@ -68,6 +82,16 @@ export const FETCH_RETRY_MAX_PER_RUN = 25;
 
 /** Failed re-attempts before a row is abandoned (ADR-0008 §3 give-up). */
 export const FETCH_RETRY_MAX_ATTEMPTS = 5;
+
+/**
+ * Due rows one drain invocation touches while `fetch_retry_attempts_suspended`
+ * is set (ADR-0010 §5.2). The drain becomes a recovery PROBE rather than a
+ * drain: enough rows to detect that the upstream render channel came back,
+ * few enough that a confirmed outage costs almost nothing. Upper bound per
+ * run is `FETCH_RETRY_SUSPENDED_CANARY_ROWS * MAX_RENDER_VISITS` = 18
+ * requests.
+ */
+export const FETCH_RETRY_SUSPENDED_CANARY_ROWS = 3;
 
 export interface FetchRetryDrainDeps {
   readonly db: Db;
@@ -94,6 +118,12 @@ export interface DrainFetchRetriesResult {
   readonly terminatedByBudget: boolean;
   /** Null when there were no due rows (no `ingestion_runs` row was created). */
   readonly runId: string | null;
+  /**
+   * True when `fetch_retry_attempts_suspended` was set for this invocation:
+   * the batch was capped to the canary subset and render-pending outcomes did
+   * not burn attempts (ADR-0010 §5.2).
+   */
+  readonly attemptsSuspended: boolean;
 }
 
 const EMPTY_RESULT: DrainFetchRetriesResult = {
@@ -104,6 +134,7 @@ const EMPTY_RESULT: DrainFetchRetriesResult = {
   newLotIds: [],
   terminatedByBudget: false,
   runId: null,
+  attemptsSuspended: false,
 };
 
 function sleep(ms: number): Promise<void> {
@@ -131,7 +162,24 @@ async function recordDrainCycleFailure(
   errorCode: string,
   message: string,
   now: () => number,
+  /**
+   * ADR-0010 §5.2 — `fetch_retry_attempts_suspended` is set. A render-pending
+   * outcome is then evidence about TED's render farm, not about this notice,
+   * so it must not consume one of the row's five attempts. The row keeps its
+   * `attempts` AND its `nextAttemptAt`, so it stays due and is re-probed on
+   * the next run; nothing is lost when the flag clears. Genuine
+   * `TedRequestError` outcomes are per-notice evidence and still burn.
+   */
+  attemptsSuspended: boolean,
 ): Promise<'abandoned' | 'still-pending'> {
+  if (attemptsSuspended && errorCode === 'NOTICE_RENDER_PENDING') {
+    deps.logger.info('ingestion.fetch_retry.attempt_suspended', {
+      source_notice_id: retryRow.sourceNoticeId,
+      attempts: retryRow.attempts,
+      error_code: errorCode,
+    });
+    return 'still-pending';
+  }
   const updated = await recordFetchRetryFailure(deps.db, {
     id: retryRow.id,
     errorCode,
@@ -182,8 +230,12 @@ export async function drainFetchRetries(
   deps: FetchRetryDrainDeps,
 ): Promise<DrainFetchRetriesResult> {
   const now = deps.now ?? Date.now;
+  // ADR-0010 §5.2 — read BEFORE listing, so a suspended run also caps how many
+  // rows it pulls: during a confirmed outage the drain is a recovery probe,
+  // not a drain.
+  const attemptsSuspended = await isFetchRetryAttemptsSuspended(deps.db, deps.logger);
   const dueRows = await listDueFetchRetries(deps.db, {
-    limit: FETCH_RETRY_MAX_PER_RUN,
+    limit: attemptsSuspended ? FETCH_RETRY_SUSPENDED_CANARY_ROWS : FETCH_RETRY_MAX_PER_RUN,
     now: now(),
   });
   if (dueRows.length === 0) {
@@ -279,6 +331,7 @@ export async function drainFetchRetries(
           'NOTICE_RENDER_PENDING',
           cause.message,
           now,
+          attemptsSuspended,
         );
         if (outcome === 'abandoned') {
           abandoned += 1;
@@ -299,6 +352,7 @@ export async function drainFetchRetries(
           errorCode,
           cause.message,
           now,
+          attemptsSuspended,
         );
         if (outcome === 'abandoned') {
           abandoned += 1;
@@ -321,6 +375,7 @@ export async function drainFetchRetries(
     abandoned,
     still_pending: stillPending,
     terminated_by_budget: terminatedByBudget,
+    attempts_suspended: attemptsSuspended,
   });
 
   return {
@@ -331,6 +386,7 @@ export async function drainFetchRetries(
     newLotIds,
     terminatedByBudget,
     runId: run.id,
+    attemptsSuspended,
   };
 }
 

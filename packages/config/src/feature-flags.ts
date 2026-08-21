@@ -52,6 +52,27 @@ export const FLAG_STRIPE_TAX = 'stripe_tax_enabled';
  * drives the public countdown via GET /api/public-config. Log-in,
  * password reset and every existing-account flow stay open.
  */
+/**
+ * Operator kill-switch for retry attempt-burning during a CONFIRMED upstream
+ * outage (ADR-0010 §5.2, deciding the question ADR-0009 flagged). Value
+ * shape: a bare JSON boolean, e.g. `"true"`. Default (absent) is `false` —
+ * the drain behaves exactly as ADR-0008 §3 specifies.
+ *
+ * While `true`, `drainFetchRetries`:
+ * - processes only the first `FETCH_RETRY_SUSPENDED_CANARY_ROWS` due rows per
+ *   run (a recovery probe, not a drain), and
+ * - does NOT increment `attempts` on `NOTICE_RENDER_PENDING` outcomes, so the
+ *   5-attempt abandonment clock stops running against notices whose only
+ *   failure is that TED never rendered them. Genuine `TedRequestError`
+ *   outcomes still increment — those are per-notice evidence, outage or not.
+ *
+ * This is an operator lever, not an algorithm: confirming an outage is a
+ * human judgment fed by `RENDER_PENDING_DEGRADED` alerts, exactly the
+ * "runtime lever" test `ingestion_paused` passes (ADR-0008 §2). Clearing the
+ * flag restores full drain behavior with no attempts lost.
+ */
+export const FLAG_FETCH_RETRY_ATTEMPTS_SUSPENDED = 'fetch_retry_attempts_suspended';
+
 export const FLAG_PRELAUNCH = 'prelaunch';
 /**
  * Launch moment shown by the public countdown (GET /api/public-config).
@@ -74,6 +95,7 @@ export const FEATURE_FLAG_KEYS = [
   FLAG_STRIPE_TAX,
   FLAG_PRELAUNCH,
   FLAG_LAUNCH_DATE,
+  FLAG_FETCH_RETRY_ATTEMPTS_SUSPENDED,
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];

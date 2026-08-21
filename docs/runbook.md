@@ -20,8 +20,9 @@ Open the admin health page (INTERNAL_ADMIN) and confirm:
 - [ ] Stripe webhook: no unprocessed/failed events (Stripe Dashboard →
       Webhooks shows delivery status).
 - [ ] Retention purge ran and recorded counts.
-- [ ] Pause flags (`ingestion_paused`, `digest_paused`) are OFF unless
-      deliberately set — a forgotten pause is itself an incident.
+- [ ] Pause flags (`ingestion_paused`, `digest_paused`) and
+      `fetch_retry_attempts_suspended` are OFF unless deliberately set — a
+      forgotten pause or suspension is itself an incident.
 
 ## Emergency pause / unpause
 
@@ -37,6 +38,32 @@ audit_events row.
 
 Use pauses first whenever a pipeline misbehaves: stopping the bleeding is
 always safe; both pipelines resume idempotently.
+
+### `fetch_retry_attempts_suspended` — confirmed upstream render outage
+
+A third operator flag, narrower than the pauses (ADR-0010 §5.2). Set it to
+`true` ONLY when a TED-side outage is confirmed — the signal is sustained
+`RENDER_PENDING_DEGRADED` alerts, i.e. notices failing solely because TED
+never renders their XML, not because of anything per-notice.
+
+While set, `drainFetchRetries`:
+
+- pulls only 3 due rows per run instead of 25 (the drain becomes a recovery
+  probe — bounded at 18 requests/day), and
+- does **not** increment `attempts` on render-pending outcomes, so the
+  5-attempt abandonment clock stops. Both `attempts` and `next_attempt_at`
+  are left untouched, so those rows stay due and keep being re-probed.
+- Genuine HTTP/network failures still burn attempts — those are per-notice
+  evidence whether or not an outage is running.
+
+Why it exists: without it, a multi-day upstream outage silently abandons
+real procurement records for a failure that was never theirs. Clearing the
+flag restores full drain behavior with nothing lost.
+
+**Leaving it on is its own incident** — the retry backlog stops draining
+while it is set. Check it alongside the pause flags in the daily review, and
+clear it as soon as the render canary (`ted-render-canary` workflow) reports
+RENDERED again.
 
 ## Common incidents
 

@@ -39,8 +39,15 @@ import type { IngestionScope, PublicationWindow } from './scope';
 import { buildSnapshotR2Key, gzipText, sha256Hex } from './snapshot';
 import { deriveValueEur, divideValueAcrossLots } from './value';
 
-/** Search API fields the orchestrator requires (docs/ted-data-source.md field map). */
-export const SEARCH_FIELDS = ['publication-number', 'publication-date', 'links'] as const;
+/**
+ * Search API fields the orchestrator requires (docs/ted-data-source.md field
+ * map). `OJ` (ADR-0010 §5.3) is the authoritative OJ S gazette issue a notice
+ * was published in — the key that maps a notice to its daily bulk package
+ * (`/packages/daily/{ojIssueId}`), and useful provenance regardless of which
+ * acquisition channel is active. Cap check: `fields.length * limit` must stay
+ * <= 10,000; 4 * 250 = 1,000.
+ */
+export const SEARCH_FIELDS = ['publication-number', 'publication-date', 'links', 'OJ'] as const;
 
 /** Notices per search page (max 250 per the documented API cap). */
 const SEARCH_PAGE_LIMIT = 250;
@@ -272,6 +279,13 @@ export async function runIngestionWindow(
       query,
       fields: SEARCH_FIELDS,
       limit: SEARCH_PAGE_LIMIT,
+      // ADR-0010 §5.1 — pinned, not left to the upstream default. Corrections
+      // are new publications in our version model (`tender_notice_versions`
+      // never overwrites, content-hash dedupes unchanged content, recompute
+      // triggers on new versions), so we need EVERY published version. The
+      // observed default already behaves this way, but if it ever flipped we
+      // would silently lose the superseded versions and their history.
+      onlyLatestVersions: false,
     })) {
       for (const row of page.notices) {
         counts.noticesSeen += 1;

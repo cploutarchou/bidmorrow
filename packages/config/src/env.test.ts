@@ -104,6 +104,7 @@ describe('feature flag keys', () => {
       'stripe_tax_enabled',
       'prelaunch',
       'launch_date',
+      'fetch_retry_attempts_suspended',
     ]);
   });
 });

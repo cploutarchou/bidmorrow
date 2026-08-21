@@ -22,6 +22,17 @@ could not be fully verified.
   query**; **ITERATION mode** (point-in-time scroll, token valid ≥24 h) has
   no cap — ingestion uses ITERATION within a bounded daily window.
 - Caps: 250 notices/page; `len(fields) × limit ≤ 10,000` fields/page.
+- **What ingestion actually requests** (`SEARCH_FIELDS`,
+  `packages/procurement/src/run-window.ts`): `publication-number`,
+  `publication-date`, `links`, `OJ` — 4 × 250 = 1,000, well inside the cap.
+  `OJ` (ADR-0010 §5.3) is the authoritative OJ S gazette issue, the key that
+  maps a notice to its daily bulk package.
+- **`onlyLatestVersions` is pinned to `false`** on the window search
+  (ADR-0010 §5.1), not left to the upstream default. Corrections are new
+  publications in our version model, so every published version must be
+  seen. Measured 2026-08-17 on the same window: `true` → 145 notices,
+  `false` → 156 — an unpinned default that flipped would silently drop those
+  11 superseded versions (~7%) and the history they carry.
 - Response: `notices[]`, `totalNoticeCount`, `iterationNextToken`.
   Multilingual fields are objects keyed by ISO 639-2 codes (`eng`, `deu`…).
   `links.xml.MUL` is the authoritative multilingual source XML per notice —
