@@ -498,6 +498,38 @@ gate would spend real notices to buy nothing.
    by Branch B and useful provenance under either branch).
 4. §1's render-channel demotion and canary posture.
 
+#### §5 IMPLEMENTED — 2026-08-21
+
+All four ship in one change; gates green (format, lint, typecheck, 530 +
+217 + 63 tests, build).
+
+| §   | What landed                                                                                                                                                                                                |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 5.1 | `onlyLatestVersions` added to `TedSearchRequest` and pinned `false` on the window search (`run-window.ts`). Previously implicit.                                                                           |
+| 5.2 | `fetch_retry_attempts_suspended` flag (`packages/config`), reader `isFetchRetryAttemptsSuspended` (`scope.ts`), drain honors it (`fetch-retry-drain.ts`), admin validator case. 4 new D1 tests (S-1..S-4). |
+| 5.3 | `OJ` added to `SEARCH_FIELDS`. Cap re-checked: 4 × 250 = 1,000 ≤ 10,000.                                                                                                                                   |
+| 5.4 | `.github/workflows/ted-render-canary.yml` — 1-notice daily canary, 11:00 UTC, telemetry-only (never fails on a pending render; `::notice` on recovery).                                                    |
+
+**§5.2 semantics as built.** While the flag is set the drain pulls only
+`FETCH_RETRY_SUSPENDED_CANARY_ROWS` (3) due rows and a render-pending
+cycle exhaustion leaves BOTH `attempts` and `next_attempt_at` untouched —
+so the row stays due and is re-probed rather than being pushed a day out
+by a failure that was never its own. `TedRequestError` outcomes burn
+normally. Upper bound 3 × `MAX_RENDER_VISITS` (6) = 18 requests/day,
+matching §5.2's estimate. `DrainFetchRetriesResult.attemptsSuspended`
+surfaces the posture to the caller and the completion log.
+
+**§5.4 boundary — deliberately partial.** The canary is the shippable
+half of §1. The code-side demotion is NOT done: `processOneNotice` still
+fetches notice XML through the render front-end, because that is still
+the only implemented content path. Removing it before Branch B exists
+would leave ingestion with no content channel at all. The switch belongs
+to the Branch B implementation, not here.
+
+**Unverified.** The canary workflow has never executed — a
+`workflow_dispatch` workflow is only dispatchable once it is on the
+default branch. First scheduled run is the first evidence.
+
 ## Consequences
 
 Positive:

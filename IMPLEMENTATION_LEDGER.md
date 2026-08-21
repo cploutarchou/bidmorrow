@@ -2971,6 +2971,73 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
 
 ## In progress
 
+- **ADR-0010 §5 branch-independent decisions — SHIPPED (session
+  2026-08-21, owner-directed "do what you believe is best")**. All four
+  §5 items, chosen ahead of Branch B deliberately: they touch the exact
+  ingestion surface Branch B builds on, so landing them first means the
+  big change is not built on config about to move underneath it.
+
+  - **§5.1 `onlyLatestVersions` pinned `false`.** Added to
+    `TedSearchRequest` (`packages/ted/src/index.ts`) and set explicitly on
+    the window search (`run-window.ts`). Previously implicit — the
+    observed default already behaved this way (156 rows), but an upstream
+    flip would have silently cost 11/156 (~7%) superseded versions and
+    their history.
+  - **§5.2 `fetch_retry_attempts_suspended` operator flag.** New constant
+    (`packages/config`), fail-open reader `isFetchRetryAttemptsSuspended`
+    (`scope.ts`, same shape as `isIngestionPaused`), drain wiring
+    (`fetch-retry-drain.ts`), admin PUT validator case. While set: the
+    drain pulls `FETCH_RETRY_SUSPENDED_CANARY_ROWS` (3) due rows instead
+    of 25, and a render-pending cycle exhaustion leaves BOTH `attempts`
+    and `next_attempt_at` untouched — the row stays due and is re-probed
+    rather than pushed a day out by a failure that was never its own.
+    `TedRequestError` still burns (per-notice evidence, outage or not).
+    Bound 3 × `MAX_RENDER_VISITS` (6) = 18 requests/day, matching the
+    ADR's estimate. `DrainFetchRetriesResult.attemptsSuspended` surfaces
+    the posture. **This is what actually stops the abandonment clock** —
+    the risk carried since ADR-0009 is now operator-actionable.
+  - **§5.3 `OJ` added to `SEARCH_FIELDS`.** Cap re-checked: 4 × 250 =
+    1,000 ≤ 10,000. `extractSearchRow` reads by key so the extra field is
+    non-breaking. Branch B needs it to map a notice to its daily package.
+  - **§5.4 render canary.** New `.github/workflows/ted-render-canary.yml`
+    — 1 notice, daily 11:00 UTC (clear of the worker crons 05:00/06:30/
+    09:00/:15 and the 03:00 nightly E2E), trigger + re-poll at +60s/+180s,
+    telemetry-only: exits 0 always, writes a verdict to the job summary,
+    raises `::notice` only on RECOVERY. A red run every day during a known
+    outage is alarm fatigue, not signal.
+
+  **§5.4 is deliberately partial and that is recorded in the ADR**: the
+  canary shipped, the code-side demotion did NOT. `processOneNotice` still
+  fetches notice XML through the render front-end because that is still
+  the only implemented content path — removing it before Branch B exists
+  would leave ingestion with no content channel at all. The switch belongs
+  to Branch B.
+
+  **Tests**: 4 new D1 tests (S-1..S-4 in `ingestion.d1.test.ts`) covering
+  no-burn on render-pending, burn on `TedRequestError`, the canary-subset
+  cap, and the flag-off default. Two failed on the first run and both were
+  my test's fault, not the implementation's: (i) the D1 file is shared
+  across the suite, so other suites' due retry rows competed for the
+  3 canary slots — fixed by back-dating the tests' own rows 30 days so
+  `next_attempt_at ASC` puts them first deterministically; (ii) HTTP 500 is
+  a RETRYABLE status (`client.ts isRetryableStatus`), so the client spent
+  the 30s test budget on real backoff sleeps — switched to 404, which
+  raises `TedRequestError` immediately. `packages/config/src/env.test.ts`'s
+  flag-registry guard also failed, correctly, and was updated — that test
+  is doing its job.
+
+  **Gates green**: format, lint, typecheck, tests (530 + 217 + 63, 3
+  pre-existing skips), build. Docs updated: ADR-0010 §5 implementation
+  record, `docs/ted-data-source.md` (the request shape ingestion actually
+  sends), `docs/runbook.md` (operator procedure for the new flag +
+  daily-review checklist), `docs/data-model.md` (its flag list was already
+  stale by four keys — now points at `FEATURE_FLAG_KEYS` as the source of
+  truth rather than drifting again).
+
+  **Unverified**: the canary workflow has never executed — `workflow_dispatch`
+  needs the workflow on the default branch first. To be dispatched once
+  merged.
+
 - **Pre-launch mode + countdown + containerized dev (session 2026-08-21
   evening, owner-directed)**: `prelaunch`/`launch_date` feature flags
   (packages/config; admin Flags UI picks them up automatically; validator
