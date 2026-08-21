@@ -239,7 +239,10 @@ export async function drainFetchRetries(
     now: now(),
   });
   if (dueRows.length === 0) {
-    return EMPTY_RESULT;
+    // Carry the posture even on the empty path: the flag was already read, so
+    // reporting `false` here would misreport live operator state to anything
+    // logging this result.
+    return { ...EMPTY_RESULT, attemptsSuspended };
   }
 
   const today = todayUtc(now());
