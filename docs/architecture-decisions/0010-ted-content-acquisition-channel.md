@@ -530,6 +530,34 @@ to the Branch B implementation, not here.
 `workflow_dispatch` workflow is only dispatchable once it is on the
 default branch. First scheduled run is the first evidence.
 
+#### Branch B prerequisite — the mapping probe (2026-08-21)
+
+`.github/workflows/ted-package-mapping-probe.yml` answers the one item
+this ADR's gate-closure record deliberately left open: given a
+`publication-number`, WHICH member of the daily package carries its XML.
+Branch B's selective extraction has no design without it — a day's
+package holds every notice EU-wide while our in-scope set is ~156, so
+members must be addressed directly rather than the archive parsed whole.
+
+The probe is built to the same discipline that resolved the gate: a
+correspondence is proven by CONTENT, never by a filename that merely
+looks right.
+
+1. Q4a measures how many of our publication numbers appear in member
+   names (anchored at a path boundary, leading zeros allowed).
+2. Q4b is a NEGATIVE CONTROL — same-format ids that must not match. If
+   they do, the matcher is loose and Q4a's hit rate is not evidence.
+3. Q5 extracts a matched member and checks the publication-number
+   INSIDE the XML. Only Q5 can return CONFIRMED.
+
+A zero hit rate in Q4a is explicitly NOT a verdict: the anchored pattern
+misses a scheme like `notice-568795.xml`, so the probe falls back to an
+unanchored diagnostic that reports what it actually finds rather than
+concluding the mapping is absent. Q1 also cross-checks the `OJ` values
+TED reports for the window against the issue id being fetched — if those
+disagree, the addressing scheme in §3 is wrong and Branch B needs
+rethinking before implementation starts.
+
 ## Consequences
 
 Positive:
