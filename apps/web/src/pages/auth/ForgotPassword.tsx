@@ -25,11 +25,20 @@ export function ForgotPassword(): ReactElement {
   }
 
   return (
-    <AuthLayout title="Reset your password">
+    <AuthLayout
+      title="Reset your password"
+      subtitle={sent ? 'Check your inbox.' : 'We send a single-use link that expires.'}
+    >
       {sent ? (
-        <p role="status">
-          If an account exists for that email, a password reset link has been sent.
-        </p>
+        <>
+          <p role="status" className="auth-status">
+            If an account exists for that email, a password reset link has been sent.
+          </p>
+          <p className="auth-note">
+            The same confirmation shows whether or not the address is registered — an
+            unauthenticated caller is never told which accounts exist.
+          </p>
+        </>
       ) : (
         <form onSubmit={(event) => void onSubmit(event)} noValidate>
           <div className="form-field">
@@ -39,6 +48,7 @@ export function ForgotPassword(): ReactElement {
               name="email"
               type="email"
               autoComplete="email"
+              placeholder="you@company.eu"
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}

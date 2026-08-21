@@ -25,6 +25,7 @@ import {
   type SubscriptionStatus,
 } from '@bidmorrow/billing';
 import { createDb, getSubscription, insertAuditEvent, insertProductEvent } from '@bidmorrow/db';
+import { readPrelaunchState } from '../prelaunch';
 
 import { resolveBillingConfig } from '../billing';
 import type { AppBindings } from '../env';
@@ -57,6 +58,16 @@ billingRoutes.post(
       return c.json({ error: 'not_configured' }, 503);
     }
     const db = createDb(c.env.DB);
+    // Pre-launch gate (prelaunch.ts): NEW subscriptions are closed while
+    // pre-launch is active. Portal/cancel/existing-subscription flows are
+    // deliberately NOT gated — only starting a new checkout is.
+    const { prelaunch } = await readPrelaunchState(db, c.env.APP_ENV);
+    if (prelaunch) {
+      return c.json(
+        { error: 'subscriptions_closed', message: 'Subscriptions open at launch.' },
+        403,
+      );
+    }
     const { plan } = c.req.valid('json');
     let result;
     try {

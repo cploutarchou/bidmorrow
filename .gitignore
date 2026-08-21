@@ -25,3 +25,9 @@ test-results/
 .vscode/*
 !.vscode/extensions.json
 
+bidmorrow-repository-connection
+Bidmorrow repository connection-handoff.zip
+
+# pnpm content-addressable store written by the containerized dev stack
+# (bind mount) — lives in a compose named volume, never in the checkout
+.pnpm-store/

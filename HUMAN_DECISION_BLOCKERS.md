@@ -298,6 +298,50 @@ the probe prove the endpoint doesn't exist; see resolution above).
 
 ---
 
+## 10. GA4 analytics — measurement ID + CSP allowlist decision — OPEN (2026-08-21)
+
+The 2026-08-21 handoff redesign shipped the full GDPR cookie-consent UI
+(banner + preferences dialog + footer controls; keys
+`bm_consent_categories` / `bm_analytics_consent`, no pre-ticks, nothing
+non-essential before an explicit choice). Actually LOADING Google
+Analytics 4 needs two owner decisions the assistant must not make:
+
+1. A real GA4 measurement ID (the prototype ships `G-XXXXXXXXXX` and
+   deliberately refuses to load with a placeholder).
+2. A CSP change: `script-src`/`connect-src` are `'self'` today; GA4 needs
+   `https://www.googletagmanager.com` (+ region `google-analytics.com`
+   endpoints) allowlisted — a security-posture decision (docs/security.md
+   C3), and a cost/privacy call.
+
+Until both are provided, consent is recorded but no third-party script
+ever loads (`apps/web/src/lib/consent.ts` documents this). Not launch-
+blocking — V1 explicitly ships without analytics SaaS (see "Not blockers"
+below); this item exists so the consent UI's analytics toggle is honest
+the day analytics is turned on.
+
+---
+
+## 11. Go-live flag flip — end-of-August launch — OPEN (2026-08-21)
+
+Pre-launch mode shipped 2026-08-21 (owner instruction): production keeps
+REGISTRATIONS and NEW SUBSCRIPTIONS closed by default (`prelaunch` flag,
+environment-aware default — absent = closed on production, open on
+staging/local), with a public countdown to `launch_date` (default
+2026-08-31T21:00:00Z, end of August, Cyprus midnight). Log-in and every
+existing-account flow stay open.
+
+**Owner action on launch day** (procedure of record:
+`docs/procedures/launch-mode.md`, or run `/launch-mode`):
+
+1. Production admin → Flags → set `prelaunch` to `false` (UPDATE_FLAG
+   typed confirmation; audited).
+2. Verify `https://bidmorrow.com/api/public-config` returns
+   `"prelaunch":false` and a real signup works.
+3. Separately: the ingestion un-pause + Phase 13/14 pipeline (item above)
+   remains its own go-live decision.
+
+---
+
 ## Not blockers (deliberately)
 
 - **TED API: public, no credential required** — reinstated 2026-08-18

@@ -1,0 +1,31 @@
+# Containerized local dev (owner request 2026-08-21): `docker compose up`
+# gives the full local stack with zero host toolchain —
+#   http://localhost:5173  vite dev (HMR frontend, /api proxied)
+#   http://localhost:8787  wrangler dev (API + local D1/queues/R2 simulators)
+# No Cloudflare credentials involved: everything runs in wrangler's local
+# simulators, and .dev.vars is auto-generated with fake local secrets.
+# Named volumes keep node_modules (linux-native binaries) and the local D1
+# state out of the host checkout and persistent across restarts.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - '5173:5173'
+      - '8787:8787'
+    volumes:
+      - .:/workspace
+      - node_modules:/workspace/node_modules
+      - wrangler_state:/workspace/apps/worker/.wrangler
+      # pnpm picks a store on the same device as node_modules; without this
+      # volume it lands in the bind-mounted checkout as ./.pnpm-store
+      - pnpm_store:/workspace/.pnpm-store
+    environment:
+      # wrangler in-container: never prompt for login; local mode only.
+      WRANGLER_SEND_METRICS: 'false'
+
+volumes:
+  node_modules:
+  wrangler_state:
+  pnpm_store:
