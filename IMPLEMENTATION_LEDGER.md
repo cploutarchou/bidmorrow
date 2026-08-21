@@ -2998,11 +2998,11 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
   go-live flag flip (blocker item 11). Containerized dev verified
   end-to-end on the host: `docker compose build && up` → worker :8787
   health 200 + public-config `prelaunch:false` (local env open, correct)
-  + vite :5173 200; stack shut down after. One post-merge fix needed:
-  docker-dev.sh's install sentinel `[ ! -d node_modules ]` never fired
-  (the empty compose named volume makes the dir exist), so wrangler was
-  missing on first boot — replaced with a wrangler-resolvability probe
-  from apps/worker.
+  - vite :5173 200; stack shut down after. One post-merge fix needed:
+    docker-dev.sh's install sentinel `[ ! -d node_modules ]` never fired
+    (the empty compose named volume makes the dir exist), so wrangler was
+    missing on first boot — replaced with a wrangler-resolvability probe
+    from apps/worker.
 
 - **FULL 2026-08-21 design-handoff implementation (UNCOMMITTED,
   session 2026-08-21, owner-directed)**: the owner exported "Bidmorrow
