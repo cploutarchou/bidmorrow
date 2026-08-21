@@ -2971,6 +2971,38 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
 
 ## In progress
 
+- **Branch B prerequisite CLOSED — member addressing CONFIRMED
+  (2026-08-21, run 32522822931)**. The last open item in ADR-0010 is
+  answered by content, not inference. Window 2026-08-17: Search returned
+  156 notices with a SINGLE distinct `OJ` value (`157/2026`);
+  `/packages/daily/202600157` delivered 19,980,923 B gzip →
+  207,127,552 B; 3,190 members, ALL matching `20260817_157/NNNNNNNN_2026.xml`;
+  Q4a matched 20/20; Q4b negative control 0 false positives; Q5 extracted
+  `00566194_2026.xml` (50,965 B) and read
+  `<efbc:NoticePublicationID schemeName="ojs-notice-id">00566194-2026`.
+
+  **Three facts Branch B implementation depends on:**
+  1. **ZERO-PAD TO 8 DIGITS.** Search returns `566194-2026` (6 digits);
+     member filename AND canonical in-XML id are `00566194-2026`. A direct
+     string match between the two FAILS. `num.padStart(8, '0')`. This is
+     the detail most likely to be got wrong.
+  2. Member paths are **constructible without listing the archive**:
+     `{YYYYMMDD}_{OJ-seq}/{padded}_{year}.xml`, both components already in
+     the search row.
+  3. **Selectivity 4.9%** — 156 of 3,190 members, ~7.6 MB of interest
+     inside 207 MB (20.4x reduction). Quantifies ADR-0010 §3's selective
+     extraction over whole-archive parsing.
+
+  **Probe weakness found and fixed in the same pass**: Q5 asserted with a
+  bare `grep -q "$num"` substring search, which would also pass on an
+  unrelated occurrence — the automated verdict was weaker than the
+  evidence it printed. The CONFIRMED result itself is sound (the canonical
+  element was printed and read directly). Q5 now asserts on
+  `<efbc:NoticePublicationID ...>{padded}-{year}<` and has a third WEAK
+  outcome. Pattern verified offline against the real observed line.
+
+  **Branch B is now unblocked.** Next session: plan mode, per CLAUDE.md.
+
 - **Render channel: NOT an outage — a short-TTL cache (2026-08-21,
   evidence)**. The §5.4 canary's first run looked like recovery (200,
   244,469 bytes, ~1s). It was not. The batch probe (run 32520323517,

@@ -154,9 +154,21 @@ jobs:
           # The publication number as it appears inside eForms XML.
           echo "--- ids found inside the member ---"
           grep -oE '<(cbc:ID|efbc:NoticePublicationID)[^>]*>[^<]+' "$f" | head -5 || true
-          if grep -q "${pn%%-*}" "$f"; then
-            echo "VERDICT: CONFIRMED — member ${member} carries publication-number ${pn}."
+          # Assert on the CANONICAL id element, not a bare substring. A loose
+          # `grep -q 566194` would also pass on an unrelated occurrence (a
+          # reference number, a date fragment), which would make the verdict
+          # weaker than the evidence printed above it. The 2026-08-21 run
+          # established the exact form: zero-padded to 8 digits inside
+          # <efbc:NoticePublicationID schemeName="ojs-notice-id">.
+          num="${pn%%-*}"; year="${pn##*-}"
+          padded=$(printf '%08d' "$num")
+          if grep -qE "<efbc:NoticePublicationID[^>]*>${padded}-${year}<" "$f"; then
+            echo "VERDICT: CONFIRMED — ${member} carries NoticePublicationID ${padded}-${year}."
             echo "Branch B can address members directly from search-derived ids."
+          elif grep -q "${num}" "$f"; then
+            echo "VERDICT: WEAK — ${num} appears in the XML but not as a"
+            echo "canonical <efbc:NoticePublicationID>${padded}-${year}<. Inspect"
+            echo "the ids printed above before building extraction on this."
           else
             echo "VERDICT: REFUTED — the filename matched but the XML does not carry ${pn}."
             echo "Filename correspondence was coincidence; do NOT build extraction on it."
