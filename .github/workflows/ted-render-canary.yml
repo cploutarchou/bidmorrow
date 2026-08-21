@@ -1,15 +1,24 @@
 # ADR-0010 §1 / §5.4 — the render front-end is PERMANENTLY DEMOTED. Bulk XML
 # packages are the content channel (Branch B, gate closed 2026-08-20); the
 # notice-XML render front-end is no longer a content source at all. This
-# workflow is what remains of it: a 1-notice daily canary whose ONLY job is
-# recovery/latency telemetry, so that if TED's async render subsystem starts
-# completing again we find out from a measurement instead of an assumption.
+# workflow is what remains of it: a 1-notice daily canary tracking render
+# LATENCY and AVAILABILITY.
+#
+# What the channel actually does (measured 2026-08-21, batch probe run
+# 32520323517): it is a render-on-demand cache with a SHORT TTL — not a queue,
+# and not an outage. A GET returns cached XML (200) or queues a render and
+# answers 202. Content appears about a minute after the trigger for a small
+# batch and then EXPIRES: batch A was available at +7..+67s and gone by +132s;
+# batch B (50 notices) appeared at +232..+310s and was gone by +490s. Every
+# pass saw other=0 — no 4xx, no 5xx — so this is re-queueing, not blocking.
+#
+# So "not available" here does NOT mean "TED is down". It means this sample
+# missed the window, which is an ordinary outcome. The canary therefore polls
+# densely and early, reports the elapsed time at which content became
+# available, and never treats a single absence as an incident.
 #
 # Deliberately toothless. It never gates ingestion, never blocks a deploy and
-# never fails on a pending render — a red run every day during a known outage
-# is alarm fatigue, not signal. It exits 0 always and reports its verdict to
-# the job summary, raising a ::notice only on the event worth seeing: the
-# render channel answering with real XML again.
+# never fails — it exits 0 always and reports to the job summary.
 name: TED render canary
 
 on:
@@ -79,7 +88,10 @@ jobs:
           # Pass 1 triggers the render; the later passes collect it. A real
           # notice XML is comfortably over 500 bytes — the 202/empty and
           # 200/short-shell cases both read as "still pending".
-          for wait in 0 60 180; do
+          # Dense and early: a 1-notice trigger renders in well under a
+          # minute and the content does not persist, so sampling out at +180s
+          # would routinely land AFTER expiry and report a false absence.
+          for wait in 0 45 45 60; do
             [ "$wait" -gt 0 ] && sleep "$wait"
             read -r code bytes <<< "$(probe)"
             elapsed=$(( $(date -u +%s) - started ))
@@ -94,21 +106,23 @@ jobs:
             echo ""
             echo "- notice: \`${notice}\`"
             if [ -n "$rendered" ]; then
-              echo "- verdict: **RENDERED** after ~${rendered}s"
+              echo "- verdict: **AVAILABLE** at t+${rendered}s"
               echo ""
-              echo "The render front-end is completing again. This does NOT"
-              echo "re-promote it (ADR-0010 §1 demotes it permanently), but it"
-              echo "is the recovery signal the canary exists to catch."
+              echo "Single-notice render latency. This does not re-promote"
+              echo "the channel — ADR-0010 §1 demotes it permanently, and"
+              echo "the short cache TTL measured on 2026-08-21 is exactly"
+              echo "why a production pipeline cannot depend on it."
             else
-              echo "- verdict: **STILL PENDING** across the probe horizon"
+              echo "- verdict: **not available at the sampled instants**"
               echo ""
-              echo "Expected while the outage persists. Bulk packages"
-              echo "(ADR-0010 Branch B) are the content channel; this is"
-              echo "telemetry only."
+              echo "NOT an outage signal on its own: the render cache has a"
+              echo "short TTL, so a sample can legitimately miss the window."
+              echo "Worth investigating only if it repeats across several"
+              echo "days, which would mean the latency has moved."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
           if [ -n "$rendered" ]; then
-            echo "::notice title=TED render channel recovered::${notice} rendered after ~${rendered}s"
+            echo "::notice title=TED render latency::${notice} available at t+${rendered}s"
           fi
-          # Telemetry only — never fail the run on a pending render.
+          # Telemetry only — never fail the run.
           exit 0
