@@ -1,5 +1,8 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { useNavigate } from 'react-router';
+import { Link } from 'react-router';
+import { LaunchCountdown } from '../../components/LaunchCountdown';
+import { usePublicConfig } from '../../lib/public-config';
 import { useRedirectIfAuthenticated } from '../../lib/use-redirect-if-authenticated';
 import { AuthLayout } from './AuthLayout';
 
@@ -14,6 +17,7 @@ export function Signup(): ReactElement {
   // (auth/session-flow-polish R1) — this must run for every render, so it's
   // declared before the early loading-state return below.
   const { ready } = useRedirectIfAuthenticated();
+  const publicConfig = usePublicConfig();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -60,6 +64,32 @@ export function Signup(): ReactElement {
       <main id="main-content">
         <p>Loading…</p>
       </main>
+    );
+  }
+
+  // Pre-launch (public-config): registrations are closed in production
+  // until the go-live flag flip; the server refuses sign-up with 403
+  // regardless, this is the honest UI for it. Log-in stays open.
+  if (publicConfig?.prelaunch === true) {
+    return (
+      <AuthLayout
+        title="Registrations open at launch"
+        subtitle="We are putting the final pieces in place — new accounts open when the countdown ends."
+      >
+        <div className="auth-sentbox">
+          <p className="auth-sentbox__cap">Launch</p>
+          <p className="auth-sentbox__addr">
+            <LaunchCountdown launchDate={publicConfig.launchDate} />
+          </p>
+        </div>
+        <p className="auth-note">
+          Already have an account? <Link to="/login">Log in</Link> — existing accounts are not
+          affected.
+        </p>
+        <Link className="cta" to="/">
+          Back to the homepage
+        </Link>
+      </AuthLayout>
     );
   }
 

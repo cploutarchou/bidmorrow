@@ -1,0 +1,22 @@
+{
+  "name": "bidmorrow",
+  "build": { "context": "..", "dockerfile": "../Dockerfile.dev" },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "workspaceFolder": "/workspace",
+  "forwardPorts": [5173, 8787],
+  "portsAttributes": {
+    "5173": { "label": "vite dev (HMR)" },
+    "8787": { "label": "wrangler dev (API + SPA)" }
+  },
+  "postCreateCommand": "corepack enable && pnpm install --frozen-lockfile && pnpm db:migrate:local",
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      }
+    }
+  },
+  "remoteEnv": { "WRANGLER_SEND_METRICS": "false" }
+}

@@ -15,6 +15,7 @@ import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
 import { createDb } from '@bidmorrow/db';
+import { readPrelaunchState } from './prelaunch';
 import { createLogger } from '@bidmorrow/observability';
 import {
   checkFetchResilienceAlerts,
@@ -128,6 +129,37 @@ app.get('/api/health/ready', async (c) => {
     c.get('logger').error('readiness: ingestion staleness check failed', { cause });
   }
   return c.json({ status: 'ok', db: 'ok', lastSuccessfulIngestionAt, stale });
+});
+
+// Public runtime config for the SPA — unauthenticated by design and
+// secret-free: only the pre-launch gate state and the countdown target
+// (apps/web lib/public-config.ts). Cached briefly so marketing traffic
+// doesn't turn into a D1 read per pageview.
+app.get('/api/public-config', async (c) => {
+  const state = await readPrelaunchState(createDb(c.env.DB), c.env.APP_ENV);
+  c.header('cache-control', 'public, max-age=60');
+  return c.json(state);
+});
+
+// Pre-launch gate (prelaunch.ts): NEW account creation is closed while
+// pre-launch is active (production default until the go-live flag flip).
+// Registered BEFORE the Better Auth mount so the request never reaches it;
+// every other /api/auth/* flow (log-in, verification, password reset)
+// passes through untouched.
+app.use('/api/auth/sign-up/email', async (c, next) => {
+  if (c.req.method === 'POST') {
+    const { prelaunch } = await readPrelaunchState(createDb(c.env.DB), c.env.APP_ENV);
+    if (prelaunch) {
+      return c.json(
+        {
+          error: 'signups_closed',
+          message: 'Registrations open at launch — see the countdown on the homepage.',
+        },
+        403,
+      );
+    }
+  }
+  await next();
 });
 
 // Better Auth core (ADR-0002, ADR-0007: authentication only, no org

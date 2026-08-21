@@ -33,6 +33,8 @@ import {
   FLAG_INGESTION_CPV_SCOPE,
   FLAG_INGESTION_PAUSED,
   FLAG_STRIPE_TAX,
+  FLAG_PRELAUNCH,
+  FLAG_LAUNCH_DATE,
 } from '@bidmorrow/config';
 import type { FeatureFlagKey } from '@bidmorrow/config';
 import {
@@ -842,7 +844,12 @@ function validateFlagValue(key: FeatureFlagKey, value: unknown): string | null {
     case FLAG_DIGEST_PAUSED:
     case FLAG_ENTITLEMENT_ENFORCED:
     case FLAG_STRIPE_TAX:
+    case FLAG_PRELAUNCH:
       return typeof value === 'boolean' ? valueJson : null;
+    case FLAG_LAUNCH_DATE:
+      // ISO-8601 instant the countdown targets (prelaunch.ts) — a bad
+      // date must never wedge the public-config endpoint.
+      return typeof value === 'string' && !Number.isNaN(Date.parse(value)) ? valueJson : null;
     case FLAG_FOUNDING_CAP:
       return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 10_000
         ? valueJson

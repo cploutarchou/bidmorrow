@@ -2971,6 +2971,24 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
 
 ## In progress
 
+- **Pre-launch mode + countdown + containerized dev (session 2026-08-21
+  evening, owner-directed)**: `prelaunch`/`launch_date` feature flags
+  (packages/config; admin Flags UI picks them up automatically; validator
+  cases in routes/admin.ts), environment-aware default (absent = closed on
+  production only), server gates on sign-up (index.ts middleware before the
+  Better Auth mount) and checkout (routes/billing.ts) both 403,
+  GET /api/public-config (secret-free, 60s cache), prelaunch.ts +
+  prelaunch.test.ts (8 tests). Web: lib/public-config.ts,
+  components/LaunchCountdown.tsx (minute granularity, textual date, no
+  negative counts), site-wide launch banner in MarketingLayout, signup
+  closed-state card, Settings billing "Subscriptions open at launch" note.
+  Containerized dev: Dockerfile.dev + docker-compose.yml (vite :5173 +
+  wrangler :8787, local simulators, auto-generated fake .dev.vars) +
+  .devcontainer/. Ops: .claude/skills/launch-mode + /launch-mode command
+  (go-live = one admin flag flip, no deploy — HUMAN_DECISION_BLOCKERS item
+  11). Gates green (68+17+9 files; worker 213 incl. new prelaunch tests);
+  E2E + deploy pending this entry's write.
+
 - **FULL 2026-08-21 design-handoff implementation (UNCOMMITTED,
   session 2026-08-21, owner-directed)**: the owner exported "Bidmorrow
   repository connection-handoff.zip" and directed implementation of ALL of
