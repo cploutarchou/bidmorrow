@@ -63,8 +63,25 @@ export function Signup(): ReactElement {
     );
   }
 
+  const pwLongEnough = password.length >= 8;
+  const pwHint =
+    password.length === 0
+      ? '8 characters minimum'
+      : pwLongEnough
+        ? 'Long enough'
+        : `${String(8 - password.length)} more characters needed`;
+  const pwHintClass =
+    password.length === 0
+      ? 'pw-hint'
+      : pwLongEnough
+        ? 'pw-hint pw-hint--ok'
+        : 'pw-hint pw-hint--warn';
+
   return (
-    <AuthLayout title="Create your account">
+    <AuthLayout
+      title="Create your account"
+      subtitle="One account per person; organizations are joined or created during onboarding."
+    >
       <form onSubmit={(event) => void onSubmit(event)} noValidate>
         {error !== null && (
           <p role="alert" className="form-error">
@@ -90,6 +107,7 @@ export function Signup(): ReactElement {
             name="email"
             type="email"
             autoComplete="email"
+            placeholder="you@company.eu"
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
@@ -104,14 +122,22 @@ export function Signup(): ReactElement {
             autoComplete="new-password"
             minLength={8}
             required
+            aria-describedby="signup-password-hint"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
+          <span id="signup-password-hint" className={pwHintClass}>
+            {pwHint}
+          </span>
         </div>
         <button className="cta" type="submit" disabled={submitting}>
           {submitting ? 'Creating account…' : 'Create account'}
         </button>
       </form>
+      <p className="auth-note">
+        Verification is required before the first login — the account exists, but the feed stays
+        closed until the emailed link is followed.
+      </p>
     </AuthLayout>
   );
 }

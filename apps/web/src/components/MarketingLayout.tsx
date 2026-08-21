@@ -2,7 +2,9 @@ import { Menu, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
 import { DECISION_SUPPORT_DISCLAIMER, PRODUCT_NAME, TED_ATTRIBUTION } from '../copy';
+import { CookieConsent, ConsentFooterControls } from './CookieConsent';
 import { Logo } from './Logo';
+import { ThemeToggle } from './ThemeToggle';
 
 const NAV_LINKS: { to: string; label: string }[] = [
   { to: '/pricing', label: 'Pricing' },
@@ -130,6 +132,7 @@ export function MarketingLayout({
             ))}
           </ul>
           <div className="nav-actions">
+            <ThemeToggle />
             <Link to="/login">Log in</Link>
             <Link className="cta cta-small" to="/signup">
               Sign up
@@ -164,6 +167,7 @@ export function MarketingLayout({
               ))}
             </ul>
             <div className="mkt-menu-panel__actions">
+              <ThemeToggle />
               <Link to="/login" onClick={closeMenu}>
                 Log in
               </Link>
@@ -200,8 +204,10 @@ export function MarketingLayout({
               </li>
             </ul>
           </nav>
+          <ConsentFooterControls />
         </div>
       </footer>
+      <CookieConsent />
     </>
   );
 }

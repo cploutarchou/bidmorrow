@@ -84,7 +84,10 @@ export function Login(): ReactElement {
   }
 
   return (
-    <AuthLayout title="Log in">
+    <AuthLayout
+      title="Log in"
+      subtitle="Email and password. Where you land is worked out after you are signed in."
+    >
       <form onSubmit={(event) => void onSubmit(event)} noValidate>
         {error !== null && (
           <p role="alert" className="form-error">
@@ -106,6 +109,7 @@ export function Login(): ReactElement {
             name="email"
             type="email"
             autoComplete="email"
+            placeholder="you@company.eu"
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
@@ -127,9 +131,12 @@ export function Login(): ReactElement {
           {submitting ? 'Logging in…' : 'Log in'}
         </button>
       </form>
-      <p>
+      <div className="auth-links">
         <Link to="/forgot-password">Forgot your password?</Link>
-      </p>
+        <Link className="auth-link--muted" to="/signup">
+          Create an account
+        </Link>
+      </div>
     </AuthLayout>
   );
 }

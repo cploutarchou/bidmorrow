@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { COMPANY_PRESETS, CONTRACT_NATURES, type ContractNature } from '@bidmorrow/domain';
 import { Combobox } from '../../components/Combobox';
 import { Logo } from '../../components/Logo';
+import { ThemeToggle } from '../../components/ThemeToggle';
 import { PRODUCT_NAME } from '../../copy';
 import { CPV_SUGGESTIONS } from '../../data/cpv-suggestions';
 import { api, ApiError } from '../../lib/api';
@@ -1851,9 +1852,12 @@ function OnboardingHeader(): ReactElement {
         <Logo className="brand-mark" />
         <span className="product-name">{PRODUCT_NAME}</span>
       </span>
-      <button type="button" onClick={() => void signOut()}>
-        Log out
-      </button>
+      <span className="assistant-header__actions">
+        <ThemeToggle />
+        <button type="button" onClick={() => void signOut()}>
+          Log out
+        </button>
+      </span>
       {signOutError !== null && (
         <p role="alert" className="form-error">
           {signOutError}
