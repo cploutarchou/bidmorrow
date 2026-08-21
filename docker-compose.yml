@@ -18,6 +18,9 @@ services:
       - .:/workspace
       - node_modules:/workspace/node_modules
       - wrangler_state:/workspace/apps/worker/.wrangler
+      # pnpm picks a store on the same device as node_modules; without this
+      # volume it lands in the bind-mounted checkout as ./.pnpm-store
+      - pnpm_store:/workspace/.pnpm-store
     environment:
       # wrangler in-container: never prompt for login; local mode only.
       WRANGLER_SEND_METRICS: 'false'
@@ -25,3 +28,4 @@ services:
 volumes:
   node_modules:
   wrangler_state:
+  pnpm_store:

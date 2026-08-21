@@ -11,7 +11,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-if [ ! -d node_modules ]; then
+# `-d node_modules` is useless as an install sentinel here: the compose
+# named volume mounts an (initially empty) directory over it, so the dir
+# always exists. Probe for an actually-usable install instead — wrangler
+# resolvable from apps/worker via the linux-native store in the volume.
+if ! (cd apps/worker && node -e 'require.resolve("wrangler/package.json")') >/dev/null 2>&1; then
   echo "[dev] installing dependencies..."
   pnpm install --frozen-lockfile
 fi

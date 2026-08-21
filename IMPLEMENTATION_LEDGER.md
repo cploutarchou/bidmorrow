@@ -2987,7 +2987,22 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
   .devcontainer/. Ops: .claude/skills/launch-mode + /launch-mode command
   (go-live = one admin flag flip, no deploy — HUMAN_DECISION_BLOCKERS item
   11). Gates green (68+17+9 files; worker 213 incl. new prelaunch tests);
-  E2E + deploy pending this entry's write.
+  full Playwright E2E **45 passed / 3 skipped (pre-existing)**. Merged to
+  main as **4448e09 (PR #69)** after CI green. Staging auto-deploy
+  verified: /api/public-config `prelaunch:false` — registrations stay
+  OPEN there (owner-directed). Production deploy dispatched on explicit
+  owner instruction (run 32506382104, success) and verified live:
+  /api/health/live 200, /api/public-config
+  `{"prelaunch":true,"launchDate":"2026-08-31T21:00:00Z"}`, sign-up POST
+  403 `signups_closed`, SPA shell 200 — production is CLOSED until the
+  go-live flag flip (blocker item 11). Containerized dev verified
+  end-to-end on the host: `docker compose build && up` → worker :8787
+  health 200 + public-config `prelaunch:false` (local env open, correct)
+  - vite :5173 200; stack shut down after. One post-merge fix needed:
+    docker-dev.sh's install sentinel `[ ! -d node_modules ]` never fired
+    (the empty compose named volume makes the dir exist), so wrangler was
+    missing on first boot — replaced with a wrangler-resolvability probe
+    from apps/worker.
 
 - **FULL 2026-08-21 design-handoff implementation (UNCOMMITTED,
   session 2026-08-21, owner-directed)**: the owner exported "Bidmorrow
