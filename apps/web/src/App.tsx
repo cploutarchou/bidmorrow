@@ -18,6 +18,7 @@ import { Pilot } from './pages/marketing/Pilot';
 import { Pricing } from './pages/marketing/Pricing';
 import { Privacy } from './pages/marketing/Privacy';
 import { Terms } from './pages/marketing/Terms';
+import { BillingSuccess } from './pages/app/BillingSuccess';
 import { Feed } from './pages/app/Feed';
 import { Onboarding } from './pages/app/Onboarding';
 import { Settings } from './pages/app/Settings';
@@ -135,6 +136,16 @@ export function App(): ReactElement {
               <ProtectedRoute>
                 <AppShell>
                   <TenderDetail />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/billing/success"
+            element={
+              <ProtectedRoute>
+                <AppShell>
+                  <BillingSuccess />
                 </AppShell>
               </ProtectedRoute>
             }
