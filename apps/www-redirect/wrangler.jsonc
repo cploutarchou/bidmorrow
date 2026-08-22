@@ -1,0 +1,26 @@
+// Dedicated www -> apex redirect worker (HUMAN_DECISION_BLOCKERS item 12).
+//
+// www.bidmorrow.com had no DNS record at all (external probe run
+// 32563373663, 2026-08-22), so any www visitor got a browser DNS error.
+// Deploying this worker attaches www.bidmorrow.com as a Workers custom
+// domain, which makes wrangler create the zone DNS record + certificate
+// itself — the same proven mechanism that attached bidmorrow.com and
+// staging.bidmorrow.com (see apps/worker/wrangler.jsonc env comments).
+//
+// A separate worker (rather than a second custom domain on the main
+// worker) because the main worker serves static assets BEFORE worker code
+// for non-/api paths — attaching www there would serve the SPA on a
+// duplicate origin instead of redirecting. This worker owns the whole
+// host and 301s every request to the apex, preserving path and query.
+//
+// No environments: www exists only on the production zone. Deploys go
+// through .github/workflows/deploy-www-redirect.yml (owner-gated typed
+// confirmation, same convention as deploy-production).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bidmorrow-www-redirect",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-01",
+  "workers_dev": false,
+  "routes": [{ "pattern": "www.bidmorrow.com", "custom_domain": true }],
+}
