@@ -342,6 +342,28 @@ existing-account flow stay open.
 
 ---
 
+## 12. `www.bidmorrow.com` has no DNS record — OPEN (2026-08-22)
+
+External probe (site-health run 32563373663, 2026-08-22 08:51 UTC) confirmed
+`bidmorrow.com` and `staging.bidmorrow.com` serving 200 with healthy
+`/api/health/*`, but `www.bidmorrow.com` does not resolve at all — any
+visitor typing `www.` gets a browser DNS error. Cheapest fix is owner-side
+in the Cloudflare dashboard (zone `bidmorrow.com`):
+
+1. DNS → add record `www` (A `192.0.2.1` or CNAME `bidmorrow.com`),
+   **Proxied**.
+2. Rules → Redirect Rules → single redirect: hostname `www.bidmorrow.com`
+   → `https://bidmorrow.com` 301, preserve path/query.
+
+Alternative (code-side, no dashboard): add `www.bidmorrow.com` as a second
+Workers custom domain — but that serves the SPA on a duplicate origin
+rather than redirecting (assets are served before worker code for non-API
+paths), so the dashboard redirect is the correct mechanism. Session
+sandbox cannot do this: no Cloudflare zone/DNS API access is granted to
+the deploy token, and the dashboard needs the owner's login.
+
+---
+
 ## Not blockers (deliberately)
 
 - **TED API: public, no credential required** — reinstated 2026-08-18
