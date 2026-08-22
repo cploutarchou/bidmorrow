@@ -2971,6 +2971,44 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
 
 ## In progress
 
+- **Template-conversion audit + site-availability check (2026-08-22).**
+  Owner reported bidmorrow.com/staging unreachable and asked what remains
+  of the template conversion; owner also pushed the Claude Design project
+  export to branch `upload-template` (`4e9341b`, the
+  `connection-handoff.zip`; design-side sync 2026-08-20T11:26Z).
+
+  **Availability: NOT an outage.** New dispatch-only workflow
+  `.github/workflows/site-health.yml` (PR #75, merged `08f81aa`) probes
+  DNS+HTTPS from a GitHub runner because the session sandbox's egress
+  proxy denies CONNECT to the domains. Run 32563373663 (08:51 UTC):
+  apex 200 (full page, CSP), `/api/health/live|ready` 200 on both envs,
+  staging `stale:false` with lastSuccessfulIngestionAt 05:08 UTC today;
+  **`www.bidmorrow.com` does not resolve — no DNS record** (new blocker
+  item 12, owner dashboard fix: proxied `www` record + 301 redirect
+  rule). Owner's message contained the typo domain "bitmorrow.com" —
+  likely proximate cause of the report.
+
+  **Audit of record: `docs/redesign/template-conversion-audit.md`** (two
+  fan-out audits, 15 agents, all claims source-verified). Surface
+  verdicts: Homepage FULLY, Marketing FULLY, Auth MOSTLY, Theme Spec
+  MOSTLY, Client Area PARTIAL (Pipeline view, Insights view, detail
+  slide-over sheet, feed left rail/saved searches, ⌘K palette all
+  absent), Onboarding PARTIAL (5-step redesign, 12-sector picker,
+  scope-estimate panel absent — current onboarding only fits IT
+  companies), Admin PARTIAL (shell converted, all ten page bodies
+  untouched pre-design HTML). Plan side: M0.2 SEO artifacts NOT started;
+  plan-M4 hardening NOT done (single 478 kB bundle vs 150 kB budget,
+  admin in customer bundle, no mobile project/baselines);
+  `/app/billing/success` missing (Stripe success_url points at an
+  ignored query); M3 final slice (sample-verdict demo, category pages,
+  comparison module) silently dropped though policy-locked IN scope.
+  Record-keeping contradictions (ledger "M2 COMPLETE" vs absent accept
+  criteria; blockers item 7 "EMPTY" vs item 4 unconfirmed; ledger-M4 ≠
+  plan-M4) are listed in the audit doc — correct them when those items
+  are next touched. Recommended implementation order is in the audit
+  doc §Recommended implementation order; next session should start
+  there in plan mode.
+
 - **Branch B prerequisite CLOSED — member addressing CONFIRMED
   (2026-08-21, run 32522822931)**. The last open item in ADR-0010 is
   answered by content, not inference. Window 2026-08-17: Search returned
