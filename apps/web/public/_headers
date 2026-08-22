@@ -36,7 +36,12 @@
 # `<script type="module" crossorigin src="/assets/...">` and one external
 # `<link rel="stylesheet" crossorigin href="/assets/...">`, both same-origin,
 # so no inline-script/inline-style CSP exception (hash, nonce, or the
-# unsafe- keyword) is needed.
+# unsafe- keyword) is needed. Re-checked 2026-08-22 after route-level code
+# splitting landed: the multi-chunk build adds only same-origin
+# `<link rel="modulepreload" crossorigin href="/assets/...">` tags, still with
+# no inline script, so the policy is unchanged. (Worth re-checking whenever
+# the bundler's HTML output changes — the header test reads this file, never
+# index.html, so it would not catch a regression here.)
 /*
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
