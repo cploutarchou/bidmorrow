@@ -179,6 +179,33 @@
   --sig-info: #7fb3ea;
   --sig-ok: var(--accent);
 
+  /* type scale — Theme Spec §09's seven steps, verbatim. Written in the
+     `font` shorthand's `size/line-height` form, which is how the spec
+     defines them: `font: var(--t-body) var(--font-ui)`.
+
+     Introduced additively; no existing call site is migrated here. The file
+     carries 215 `font-size` declarations across 52 distinct values, and a
+     scan found only TWO whose size AND line-height already match a step
+     exactly (.mkt-hold__lede, .hp-plan__desc, both --t-body). Even those are
+     left alone: the `font` shorthand also resets weight, style, variant and
+     stretch, so adopting it is not the no-op it looks like. Migrating the
+     other 26 size-only near-matches would move type on a live, signed-off
+     design, so consolidation is a deliberate follow-up PR.
+
+     First consumers are therefore new CSS only (.btn-ghost--sm and the
+     not-yet-shipped .billing-success copy).
+
+     No light/dark variants: type sizes do not change with theme, so unlike
+     the color tokens these are defined once and are not repeated in the
+     [data-theme='light'] and prefers-color-scheme blocks below. */
+  --t-display: 3.25rem/1.05;
+  --t-h1: 2.125rem/1.15;
+  --t-h2: 1.5rem/1.25;
+  --t-h3: 1.0625rem/1.35;
+  --t-body: 0.9375rem/1.6;
+  --t-small: 0.8125rem/1.5;
+  --t-micro: 0.6875rem/1.45;
+
   /* type — self-hosted (see @font-face above) */
   --font-head: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-ui: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -391,6 +418,14 @@
 /* Increased contrast: strengthen strokes and widen the focus ring. */
 @media (prefers-contrast: more) {
   :root {
+    /* v2 names. These were missing: the block below only re-pointed the
+       pre-v2 aliases, which are themselves defined AS var(--line) /
+       var(--line-hair) — so every selector written against the v2 names
+       (~34 call sites, including .tender-card's border and fit gutter) got
+       no contrast boost at all for users who ask for one. */
+    --line: var(--line-strong);
+    --line-hair: var(--line-strong);
+    /* pre-v2 aliases, kept for selectors not yet migrated */
     --stroke: var(--stroke-strong);
     --stroke-faint: var(--stroke-strong);
   }
@@ -6605,6 +6640,58 @@ button.danger:active,
   font-size: 0.85rem;
 }
 
+/* Ghost / tertiary button — Theme Spec §06's third rank ("three ranks, two
+   heights, one radius"), which the codebase never had: every quiet button
+   today still carries a 1px accent border (.btn-quiet, .mkt-btn-quiet), so
+   there is no borderless rank for low-emphasis actions.
+
+   Added as NEW classes rather than by changing .cta / .btn-quiet /
+   .mkt-btn-*. Re-pointing those would move pixels across a live, signed-off
+   design; new surfaces adopt this rank, and consolidating the three existing
+   button vocabularies is a follow-up.
+
+   Note the spec's own inconsistency: it sets buttons at 14px, which is not a
+   step on its seven-step type scale (--t-body is 15px, --t-small 13px). The
+   14px is kept here because it is what the button spec says; the small
+   variant does sit exactly on --t-small. */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 150ms var(--ease),
+    background-color 150ms var(--ease);
+}
+
+.btn-ghost:hover {
+  color: var(--ink-1);
+  background: var(--bg-raised);
+}
+
+.btn-ghost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-ghost--sm {
+  height: 30px;
+  padding: 0 8px;
+  font: var(--t-small) var(--font-ui);
+  font-weight: 500;
+  line-height: 1;
+}
+
 /* Post-checkout confirmation (/app/billing/success). Deliberately plain: it
    reuses the Settings plan card and the feed's skeleton so the page needs no
    vocabulary of its own. */
@@ -6615,6 +6702,14 @@ button.danger:active,
   display: flex;
   flex-direction: column;
   gap: var(--s3);
+}
+
+/* First consumer of the type scale for running copy. Safe to adopt here
+   because this page is new and has never shipped, so there is no rendered
+   design to preserve — unlike the 200+ existing font-size declarations,
+   which keep their literals until a deliberate migration PR. */
+.billing-success p {
+  font: var(--t-body) var(--font-ui);
 }
 
 .billing-success__actions {
