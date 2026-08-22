@@ -216,4 +216,15 @@ jobs:
           code=$(curl -s -o /dev/null -w '%{http_code}' "$base/api/test/mailbox")
           test "$code" = "404"
           curl -s "$base/api/definitely-not-a-route" | grep -q 'not_found'
+          # robots.txt is Worker-served and branches on APP_ENV, which is an
+          # untyped string: a missing or mis-cased value would silently serve
+          # the non-production body — a blanket `Disallow: /` — and deindex the
+          # live site. Assert the production body here, where it is cheap to
+          # catch, rather than discovering it in Search Console weeks later.
+          robots=$(curl -sf "$base/robots.txt")
+          echo "$robots" | grep -q 'Sitemap: https://bidmorrow.com/sitemap.xml' || {
+            echo "robots.txt is not serving the production body:"; echo "$robots"; exit 1; }
+          echo "$robots" | grep -qx 'Disallow: /' && {
+            echo "robots.txt is blanket-disallowing production:"; echo "$robots"; exit 1; }
+          curl -sf "$base/sitemap.xml" | grep -q '<loc>https://bidmorrow.com/</loc>'
           echo "production smoke tests passed"

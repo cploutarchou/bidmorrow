@@ -13,9 +13,13 @@
     // `/robots.txt` is Worker-served so it can differ per environment
     // (production rules vs. a blanket Disallow on staging) — the built assets
     // are identical across environments, so a static file could not.
-    // Verified against Cloudflare's Workers static-assets docs 2026-08-22:
-    // `run_worker_first` takes `boolean | string[]`, patterns support `*` and
-    // an `!` exception prefix, and each must begin with `/`.
+    // Syntax verified 2026-08-22 via the Cloudflare docs MCP and the installed
+    // wrangler 4.123.0 config schema (developers.cloudflare.com itself is
+    // proxy-blocked from the dev sandbox, as recorded in web/public/_headers):
+    // `run_worker_first` takes `boolean | string[]`, patterns support a
+    // trailing `*` and an `!` exception prefix, and each must begin with `/`.
+    // `/robots.txt` is an exact, non-wildcard rule, so it cannot widen
+    // `/api/*` or make any other path Worker-first.
     "run_worker_first": ["/api/*", "/robots.txt"],
   },
   "d1_databases": [

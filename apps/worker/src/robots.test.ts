@@ -15,10 +15,17 @@ describe('robotsTxt (pure)', () => {
   it('production disallows the app surfaces and points at the sitemap', () => {
     const body = robotsTxt('production');
     expect(body).toContain('User-agent: *');
-    for (const path of ['/app', '/admin', '/onboarding', '/api']) {
+    for (const path of ['/app', '/onboarding', '/api']) {
       expect(body).toContain(`Disallow: ${path}`);
     }
     expect(body).toContain('Sitemap: https://bidmorrow.com/sitemap.xml');
+  });
+
+  it('production never advertises /admin — the cloaked surface stays uncloaked', () => {
+    // docs/threat-model.md C11: admin isolation is 404 cloaking. robots.txt is
+    // the first file a scanner fetches; naming /admin there would hand over
+    // the one path the server refuses to confirm exists.
+    expect(robotsTxt('production')).not.toContain('/admin');
   });
 
   it('production leaves the auth routes crawlable so their noindex is readable', () => {

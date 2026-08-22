@@ -14,7 +14,10 @@
  * - "life of your subscription" price hold: Pricing.tsx:32, Home.tsx:951.
  * - eight score components summing to 100, five hard-exclusion rules:
  *   docs/matching-engine.md.
- * - support@bidmorrow.com: pages/marketing/Contact.tsx.
+ * - support@bidmorrow.com for general contact (pages/marketing/Contact.tsx),
+ *   privacy@bidmorrow.com for data requests (pages/marketing/Privacy.tsx) —
+ *   the /contact description names both, because routing every question to
+ *   support@ would have contradicted the privacy page it links to.
  * - no third-party analytics / no session replay / no data sales:
  *   pages/marketing/Privacy.tsx.
  *
@@ -52,9 +55,9 @@ export const MARKETING_META = {
     canonical: `${SITE_ORIGIN}/`,
   },
   howItWorks: {
-    title: 'How BidMorrow Works — TED Notices to a Shortlist',
+    title: 'How BidMorrow Works — Scoring, Step by Step',
     description:
-      'From daily TED ingestion to a scored shortlist: profile setup, scoped CPV coverage, deterministic 0–100 scoring, and one daily digest email.',
+      'How BidMorrow works, step by step: profile setup, scoped daily TED ingestion, deterministic 0–100 scoring, and one daily digest email.',
     canonical: `${SITE_ORIGIN}/how-it-works`,
   },
   methodology: {
@@ -78,7 +81,7 @@ export const MARKETING_META = {
   contact: {
     title: 'Contact — BidMorrow',
     description:
-      'Support, billing, privacy, and general questions — email support@bidmorrow.com. Email-only by design.',
+      'Support, billing and general questions — support@bidmorrow.com. Privacy and data requests — privacy@bidmorrow.com. Email-only by design.',
     canonical: `${SITE_ORIGIN}/contact`,
   },
   privacy: {

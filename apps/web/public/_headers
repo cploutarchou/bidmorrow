@@ -6,10 +6,12 @@
 # parsed at deploy time and applied to matching response paths, independent
 # of any Worker code — this is the only way to attach headers to assets
 # served directly by the platform without invoking the Worker (`run_worker_
-# first` in wrangler.jsonc only routes `/api/*` through the Worker; every
-# other path, including `/` and hashed asset files, is served by the
-# platform's static-assets layer, which never runs `apps/worker/src/index.ts`'s
-# `secureHeaders()` middleware). Format: one or more path patterns, each
+# first` in wrangler.jsonc routes only `/api/*` and `/robots.txt` through the
+# Worker; every other path, including `/` and hashed asset files, is served by
+# the platform's static-assets layer, which never runs
+# `apps/worker/src/index.ts`'s `secureHeaders()` middleware. `/robots.txt` is
+# the exception because it must differ per environment — it gets the Worker's
+# own, stricter headers rather than this file's). Format: one or more path patterns, each
 # followed by indented `Header: value` lines; `/*` matches every path.
 # Per-rule limits documented by Cloudflare (shared Pages/Static-Assets
 # mechanism): ≤100 header rules per project, ≤2,000 characters per header
