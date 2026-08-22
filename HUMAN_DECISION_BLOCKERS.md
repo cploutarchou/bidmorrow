@@ -342,25 +342,33 @@ existing-account flow stay open.
 
 ---
 
-## 12. `www.bidmorrow.com` has no DNS record — OPEN (2026-08-22)
+## 12. `www.bidmorrow.com` had no DNS record — CLOSED (2026-08-22)
 
 External probe (site-health run 32563373663, 2026-08-22 08:51 UTC) confirmed
 `bidmorrow.com` and `staging.bidmorrow.com` serving 200 with healthy
 `/api/health/*`, but `www.bidmorrow.com` does not resolve at all — any
-visitor typing `www.` gets a browser DNS error. Cheapest fix is owner-side
-in the Cloudflare dashboard (zone `bidmorrow.com`):
+visitor typing `www.` gets a browser DNS error.
 
-1. DNS → add record `www` (A `192.0.2.1` or CNAME `bidmorrow.com`),
-   **Proxied**.
-2. Rules → Redirect Rules → single redirect: hostname `www.bidmorrow.com`
-   → `https://bidmorrow.com` 301, preserve path/query.
+**Fix chosen (owner instruction 2026-08-22, "can you fix it also"):**
+a dedicated redirect worker, `apps/www-redirect` — deploying it attaches
+`www.bidmorrow.com` as a Workers custom domain, which makes wrangler
+create the zone DNS record + certificate itself (the proven mechanism
+that attached the apex and staging domains; the deploy token has these
+zone permissions, so no dashboard access is needed after all). The worker
+301s every request to `https://bidmorrow.com`, preserving path and query
+— a second custom domain on the MAIN worker was rejected because assets
+serve before worker code for non-API paths, which would expose the SPA on
+a duplicate origin instead of redirecting.
 
-Alternative (code-side, no dashboard): add `www.bidmorrow.com` as a second
-Workers custom domain — but that serves the SPA on a duplicate origin
-rather than redirecting (assets are served before worker code for non-API
-paths), so the dashboard redirect is the correct mechanism. Session
-sandbox cannot do this: no Cloudflare zone/DNS API access is granted to
-the deploy token, and the dashboard needs the owner's login.
+Deploy: `.github/workflows/deploy-www-redirect.yml` (typed confirmation
+`deploy-www-redirect`, production environment, built-in 301 smoke test).
+
+**CLOSED 2026-08-22 09:34 UTC**: deploy run 32565287435 green in 53s —
+custom domain attached, DNS + certificate provisioned, and the smoke test
+verified `301` with exact `location` for both `/` and `/pricing?x=1`
+("www redirect smoke tests passed" in the job log). Independently
+confirmed by a site-health probe re-run after the deploy. No owner action
+remains for this item.
 
 ---
 
