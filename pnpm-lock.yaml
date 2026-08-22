@@ -134,6 +134,18 @@ importers:
         specifier: ^4.123.0
         version: 4.123.0(@cloudflare/workers-types@5.20260814.1)
 
+  apps/www-redirect:
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^5.20260814.1
+        version: 5.20260814.1
+      typescript:
+        specifier: ~5.9.2
+        version: 5.9.3
+      wrangler:
+        specifier: ^4.123.0
+        version: 4.123.0(@cloudflare/workers-types@5.20260814.1)
+
   packages/analytics:
     devDependencies:
       typescript:
