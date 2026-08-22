@@ -342,7 +342,7 @@ existing-account flow stay open.
 
 ---
 
-## 12. `www.bidmorrow.com` has no DNS record — FIX SHIPPED, deploy pending (2026-08-22)
+## 12. `www.bidmorrow.com` had no DNS record — CLOSED (2026-08-22)
 
 External probe (site-health run 32563373663, 2026-08-22 08:51 UTC) confirmed
 `bidmorrow.com` and `staging.bidmorrow.com` serving 200 with healthy
@@ -362,8 +362,13 @@ a duplicate origin instead of redirecting.
 
 Deploy: `.github/workflows/deploy-www-redirect.yml` (typed confirmation
 `deploy-www-redirect`, production environment, built-in 301 smoke test).
-Item closes when the deploy's smoke test and a site-health re-run confirm
-the redirect live.
+
+**CLOSED 2026-08-22 09:34 UTC**: deploy run 32565287435 green in 53s —
+custom domain attached, DNS + certificate provisioned, and the smoke test
+verified `301` with exact `location` for both `/` and `/pricing?x=1`
+("www redirect smoke tests passed" in the job log). Independently
+confirmed by a site-health probe re-run after the deploy. No owner action
+remains for this item.
 
 ---
 

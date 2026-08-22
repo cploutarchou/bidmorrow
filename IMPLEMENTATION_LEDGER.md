@@ -2986,7 +2986,18 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
   **`www.bidmorrow.com` does not resolve — no DNS record** (new blocker
   item 12, owner dashboard fix: proxied `www` record + 301 redirect
   rule). Owner's message contained the typo domain "bitmorrow.com" —
-  likely proximate cause of the report.
+  likely proximate cause of the report. **www FIXED same session (owner
+  instruction "can you fix it also")**: dedicated redirect worker
+  `apps/www-redirect` (PR #77, `90522e9`) — deploying attaches
+  `www.bidmorrow.com` as a Workers custom domain (wrangler creates the
+  zone DNS record + certificate itself; the production deploy token has
+  these zone permissions, so no dashboard was needed) and 301s every
+  request to the apex preserving path+query. Deploy run 32565287435
+  (09:34 UTC, via the new owner-gated `deploy-www-redirect` workflow)
+  green in 53s incl. its 301 smoke test; blocker item 12 CLOSED. The
+  main worker deliberately does NOT get a second custom domain: assets
+  serve before worker code for non-/api paths, which would expose the
+  SPA on a duplicate origin instead of redirecting.
 
   **Audit of record: `docs/redesign/template-conversion-audit.md`** (two
   fan-out audits, 15 agents, all claims source-verified). Surface
