@@ -1,16 +1,13 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { DECISION_SUPPORT_DISCLAIMER } from '../../copy';
+import { PageMeta } from '../../components/PageMeta';
+import { MARKETING_META } from '../../lib/seo';
 
 export function Terms(): ReactElement {
   return (
     <>
-      <title>Terms — BidMorrow</title>
-      <meta
-        name="description"
-        content="BidMorrow terms of service summary — final legal text pending."
-      />
-      <link rel="canonical" href="https://bidmorrow.com/terms" />
+      <PageMeta {...MARKETING_META.terms} />
 
       <p className="mkt-eyebrow">Terms</p>
       <h1>Terms</h1>

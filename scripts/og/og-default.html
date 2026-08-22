@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>BidMorrow share card</title>
+    <style>
+      /*
+        Source for /og/og-default.png (1200x630). Rendered by
+        scripts/generate-og-image.mjs — never hand-edit the PNG.
+
+        Colors are the light-theme tokens from apps/web/src/styles.css so the
+        card matches the site it links to. Type is the self-hosted Archivo the
+        site already ships.
+
+        Every number below is the canonical worked example from
+        docs/matching-engine.md (84.5/100, engine v1). Nothing here is
+        invented, and this is a documented example rather than a customer's
+        real result.
+      */
+      @font-face {
+        font-family: 'Archivo';
+        src: url('../../apps/web/public/fonts/archivo-latin.woff2') format('woff2');
+        font-weight: 100 900;
+        font-display: block;
+      }
+
+      :root {
+        --bg-canvas: #f7f8f9;
+        --bg-panel: #ffffff;
+        --line-hair: #e6e9ec;
+        --line: #d5dae0;
+        --ink-1: #14181d;
+        --ink-2: #4d5661;
+        --ink-3: #5f6875;
+        --accent: #0f7d6f;
+        --accent-text: #0b6a5e;
+        --accent-tint: rgba(15, 125, 111, 0.1);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        width: 1200px;
+        height: 630px;
+        background: var(--bg-canvas);
+        font-family: 'Archivo', system-ui, sans-serif;
+        color: var(--ink-1);
+        overflow: hidden;
+      }
+
+      /* Safe area: 1120x550 centred — LinkedIn and WhatsApp crop the edges. */
+      .card {
+        width: 1120px;
+        height: 550px;
+        margin: 40px;
+        display: grid;
+        grid-template-columns: 1fr 440px;
+        gap: 56px;
+        align-items: center;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 34px;
+      }
+      .brand__mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: var(--accent);
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .brand__name {
+        font-size: 25px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      h1 {
+        font-size: 60px;
+        line-height: 1.08;
+        font-weight: 600;
+        letter-spacing: -0.025em;
+        max-width: 15ch;
+      }
+      .lede {
+        margin-top: 24px;
+        font-size: 21px;
+        line-height: 1.45;
+        color: var(--ink-2);
+        max-width: 30ch;
+      }
+
+      .panel {
+        background: var(--bg-panel);
+        border: 1px solid var(--line-hair);
+        border-radius: 18px;
+        padding: 28px 30px;
+        box-shadow: 0 34px 80px -26px rgba(20, 24, 29, 0.24);
+      }
+      .panel__eyebrow {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+      }
+      .panel__score {
+        margin-top: 10px;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .panel__score b {
+        font-size: 54px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+      }
+      .panel__score span {
+        font-size: 20px;
+        color: var(--ink-3);
+        font-variant-numeric: tabular-nums;
+      }
+      .verdict {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: var(--accent-tint);
+        color: var(--accent-text);
+        font-size: 13px;
+        font-weight: 650;
+        letter-spacing: 0.06em;
+      }
+
+      .rows {
+        margin-top: 22px;
+        border-top: 1px solid var(--line-hair);
+        padding-top: 6px;
+        list-style: none;
+      }
+      .rows li {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 14px;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--line-hair);
+        font-size: 16px;
+        color: var(--ink-2);
+      }
+      .rows li:last-child {
+        border-bottom: 0;
+      }
+      .rows b {
+        color: var(--ink-1);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .rows .bar {
+        grid-column: 1 / -1;
+        height: 3px;
+        border-radius: 2px;
+        background: var(--line);
+        overflow: hidden;
+      }
+      .rows .bar i {
+        display: block;
+        height: 100%;
+        background: var(--accent);
+      }
+      .foot {
+        margin-top: 18px;
+        font-size: 13px;
+        color: var(--ink-3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div>
+        <div class="brand">
+          <span class="brand__mark">B</span>
+          <span class="brand__name">BidMorrow</span>
+        </div>
+        <h1>Find the tenders worth pursuing. Skip the rest.</h1>
+        <p class="lede">
+          Every TED notice scored 0–100 against your company profile — deterministic, and explained
+          point by point.
+        </p>
+      </div>
+
+      <div class="panel">
+        <p class="panel__eyebrow">Worked example · engine v1</p>
+        <p class="panel__score"><b>84.5</b><span>/ 100</span></p>
+        <span class="verdict">STRONG MATCH</span>
+        <ul class="rows">
+          <li>
+            <span>CPV fit</span><b>+27</b><span class="bar"><i style="width: 77%"></i></span>
+          </li>
+          <li>
+            <span>Capabilities</span><b>+15</b><span class="bar"><i style="width: 75%"></i></span>
+          </li>
+          <li>
+            <span>Geography</span><b>+15</b><span class="bar"><i style="width: 100%"></i></span>
+          </li>
+          <li>
+            <span>Value</span><b>+10</b><span class="bar"><i style="width: 100%"></i></span>
+          </li>
+          <li>
+            <span>Eligibility — unknown</span><b>+2.5</b
+            ><span class="bar"><i style="width: 50%"></i></span>
+          </li>
+        </ul>
+        <p class="foot">Documented example from the published methodology.</p>
+      </div>
+    </div>
+  </body>
+</html>

@@ -4,6 +4,7 @@ import { PRODUCT_NAME } from '../copy';
 import { useAuth } from '../lib/auth-context';
 import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
+import { NoIndex } from './NoIndex';
 
 export function AppShell({ children }: { children: ReactNode }): ReactElement {
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
 
   return (
     <>
+      <NoIndex />
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>

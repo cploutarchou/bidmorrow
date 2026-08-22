@@ -8,7 +8,10 @@ import { expect, test } from '@playwright/test';
 
 test('home page renders headline and CTA', async ({ page }) => {
   await page.goto('/');
-  await expect(page).toHaveTitle(/BidMorrow.*EU public procurement/);
+  // Home's title is now the M0.2 metadata string (lib/seo.ts MARKETING_META.home).
+  // Asserting it here also proves React's hoisted per-page title wins over the
+  // neutral static fallback in index.html.
+  await expect(page).toHaveTitle(/BidMorrow — Bid\/No-Bid Intelligence for EU Tenders/);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   // The 2026-08-21 handoff homepage repeats the CTA deliberately (hero,
   // pricing section, closing panel) — assert the first, not a unique one.

@@ -10,7 +10,13 @@
     "directory": "../web/dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"],
+    // `/robots.txt` is Worker-served so it can differ per environment
+    // (production rules vs. a blanket Disallow on staging) — the built assets
+    // are identical across environments, so a static file could not.
+    // Verified against Cloudflare's Workers static-assets docs 2026-08-22:
+    // `run_worker_first` takes `boolean | string[]`, patterns support `*` and
+    // an `!` exception prefix, and each must begin with `/`.
+    "run_worker_first": ["/api/*", "/robots.txt"],
   },
   "d1_databases": [
     {

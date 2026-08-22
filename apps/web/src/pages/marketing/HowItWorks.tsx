@@ -1,5 +1,7 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
+import { PageMeta } from '../../components/PageMeta';
+import { MARKETING_META } from '../../lib/seo';
 
 /**
  * "How it works" — 2026-08-21 handoff redesign (`BidMorrow
@@ -32,12 +34,7 @@ const SCORE_BARS: { label: string; value: string; variant?: 'lead' | 'unknown' }
 export function HowItWorks(): ReactElement {
   return (
     <>
-      <title>How it works — BidMorrow</title>
-      <meta
-        name="description"
-        content="How BidMorrow turns TED procurement notices into a daily shortlist of tenders worth investigating."
-      />
-      <link rel="canonical" href="https://bidmorrow.com/how-it-works" />
+      <PageMeta {...MARKETING_META.howItWorks} />
 
       <p className="mkt-eyebrow">How it works</p>
       <h1>From profile to shortlist, in five moves.</h1>

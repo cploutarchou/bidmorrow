@@ -1,11 +1,11 @@
 import type { ReactElement } from 'react';
+import { PageMeta } from '../../components/PageMeta';
+import { MARKETING_META } from '../../lib/seo';
 
 export function Contact(): ReactElement {
   return (
     <>
-      <title>Contact — BidMorrow</title>
-      <meta name="description" content="Contact BidMorrow support." />
-      <link rel="canonical" href="https://bidmorrow.com/contact" />
+      <PageMeta {...MARKETING_META.contact} />
 
       <p className="mkt-eyebrow">Contact</p>
       <h1>Contact</h1>

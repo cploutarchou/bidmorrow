@@ -1,6 +1,8 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 import { DECISION_SUPPORT_DISCLAIMER, TED_ATTRIBUTION } from '../../copy';
+import { PageMeta } from '../../components/PageMeta';
+import { MARKETING_META } from '../../lib/seo';
 
 /**
  * Methodology — 2026-08-21 handoff redesign (`BidMorrow Marketing.dc.html`,
@@ -117,12 +119,7 @@ const EXCLUSION_RULES = [
 export function Methodology(): ReactElement {
   return (
     <>
-      <title>Methodology — BidMorrow</title>
-      <meta
-        name="description"
-        content="Exactly how BidMorrow scores tenders: score components, missing-data policy, exclusions, risk-flag confidence, and coverage scope."
-      />
-      <link rel="canonical" href="https://bidmorrow.com/methodology" />
+      <PageMeta {...MARKETING_META.methodology} />
 
       <p className="mkt-eyebrow">Methodology</p>
       <h1>Deterministic on purpose.</h1>

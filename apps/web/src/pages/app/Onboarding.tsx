@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { COMPANY_PRESETS, CONTRACT_NATURES, type ContractNature } from '@bidmorrow/domain';
 import { Combobox } from '../../components/Combobox';
 import { Logo } from '../../components/Logo';
+import { NoIndex } from '../../components/NoIndex';
 import { ThemeToggle } from '../../components/ThemeToggle';
 import { PRODUCT_NAME } from '../../copy';
 import { CPV_SUGGESTIONS } from '../../data/cpv-suggestions';
@@ -739,6 +740,7 @@ export function Onboarding(): ReactElement {
           Skip to main content
         </a>
         <title>{`You're all set — Onboarding — ${PRODUCT_NAME}`}</title>
+        <NoIndex />
         <OnboardingHeader />
         <main id="main-content" className="assistant-main">
           <PhaseStepper currentPhase={3} />
@@ -808,6 +810,7 @@ export function Onboarding(): ReactElement {
         Skip to main content
       </a>
       <title>{`${currentScreen.title} — Onboarding — ${PRODUCT_NAME}`}</title>
+      <NoIndex />
       <OnboardingHeader />
       <main id="main-content" className="assistant-main">
         <PhaseStepper currentPhase={currentScreen.phase} />
