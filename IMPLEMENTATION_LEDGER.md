@@ -2971,6 +2971,64 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
 
 ## In progress
 
+- **Template-conversion pending list — first four items implemented
+  (2026-08-22, branch `claude/bidmorrow-production-impl-btj2rw`).** Owner
+  approved shipping all four with the theme work made value-preserving.
+  Plan of record: the approved session plan; audit of record:
+  `docs/redesign/template-conversion-audit.md`.
+
+  1. **M0.2 SEO artifacts** (`d0bfd81` + review fixes `72745f9`, PR #79).
+     `PageMeta` + `lib/seo.ts` (length limits enforced by `seo.test.ts`),
+     `NoIndex` on auth/app/onboarding/admin/NotFound, **Worker-served
+     env-aware robots.txt** (a static file would have published production
+     rules and the production sitemap on staging), `sitemap.xml` with
+     `lastmod` omitted rather than faked, and a generated 1200x630 OG image
+     (77 KB) built by `scripts/generate-og-image.mjs` from a reviewable HTML
+     source using the canonical 84.5/100 worked example.
+  2. **Post-checkout confirmation** (`c5ca3b4`). `/app/billing/success`
+     polls `GET /api/billing/status` with three honest states; the retry
+     logic is a pure injectable `pollForSubscription` with 7 tests, because
+     the web app has no component-test infrastructure and burying it in an
+     effect would have shipped it untested. `BillingStatus` lifted to
+     `lib/billing.ts`, shared with Settings.
+  3. **Route-level code splitting** (`10beccc`). Marketing entry **478.00 kB
+     -> 58.28 kB first-party** plus a 230.57 kB vendor chunk (React/DOM/router
+     — irreducible without changing frameworks, and now cached across
+     deploys). Admin's absence from the customer bundle is **verified**: the
+     typed-confirmation literals appear in zero entry/vendor chunks.
+     `RouteChunkBoundary` handles the stale-deploy case, where SPA fallback
+     returns index.html 200 for a missing chunk so the import fails on MIME.
+  4. **Theme foundation** (`b7c85fe`). `--t-*` seven-step scale (`:root`
+     only — sizes are theme-independent, so they must not be triplicated into
+     the light blocks); **`prefers-contrast: more` bug fixed** — it re-pointed
+     only pre-v2 aliases, so ~34 v2-named call sites including `.tender-card`
+     got no boost at all; ghost/tertiary button rank added as NEW classes.
+
+  **Reviews.** `security` PASS (2 Low + 4 Info, all addressed — notably
+  robots.txt no longer names `/admin`, which had partially undone the C11
+  404-cloaking design). `product` FAIL -> addressed: the share image claimed
+  "Every TED notice" (exhaustive-coverage overclaim) and showed 5 of 8 score
+  components against the full 84.5 badge; both fixed, plus contact/how-it-works
+  copy corrections. A GA4 tripwire (`tests/security/analytics-claim.test.ts`)
+  now fails if an analytics loader is added while the "no third-party
+  analytics" promise ships.
+
+  **BLOCKED ON CI — owner action.** GitHub Actions stopped running at
+  ~16:41 UTC: runs 205/206 and a manual re-run all fail in 2-3 s with zero
+  steps executed, no logs (404) and empty check-run output, on two commits,
+  while `ci.yml` is unchanged since 2026-08-16. That signature is exhausted
+  Actions minutes / a spending limit on a private repo. `main` is
+  ruleset-protected on green checks, so **nothing here can merge until
+  Actions runs again**. All four commits are on the branch with full local
+  gates green (format, lint, typecheck, **851 tests**, build).
+
+  **Follow-ups recorded, not silently dropped:** CSS is still 91 kB against
+  a 25 kB budget (one global stylesheet — splitting it per surface is the
+  fix, and code splitting cannot do it); the 26 size-only type-scale
+  near-matches await a deliberate migration PR; `--accent-hover`/`--press`,
+  `--field-inner-lit` and `--bg-overlay` remain unwired pending a reviewed
+  restyling PR.
+
 - **Template-conversion audit + site-availability check (2026-08-22).**
   Owner reported bidmorrow.com/staging unreachable and asked what remains
   of the template conversion; owner also pushed the Claude Design project
