@@ -1,0 +1,49 @@
+# On-demand external reachability probe for the public domains.
+# The development sandbox's egress proxy cannot reach bidmorrow.com at all
+# (policy denial at CONNECT), so live-site diagnosis runs from a GitHub
+# runner instead. Read-only: DNS + HTTPS GETs against public endpoints;
+# no secrets, no state changes. Always exits 0 — the log is the deliverable.
+name: Site health probe
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: DNS
+        run: |
+          for h in bidmorrow.com www.bidmorrow.com staging.bidmorrow.com; do
+            echo "=== dig $h ==="
+            dig +short A "$h" || true
+            dig +short AAAA "$h" || true
+            dig +short CNAME "$h" || true
+          done
+          echo "=== NS bidmorrow.com ==="
+          dig +short NS bidmorrow.com || true
+
+      - name: HTTPS probes
+        run: |
+          probe() {
+            url="$1"
+            echo "=== $url ==="
+            code=$(curl -sS -o /tmp/body -D /tmp/hdrs -w '%{http_code}' --max-time 20 "$url" 2>/tmp/err) || {
+              echo "curl error: $(cat /tmp/err)"; return 0; }
+            echo "status: $code"
+            head -12 /tmp/hdrs
+            echo "body (first 300 bytes):"
+            head -c 300 /tmp/body; echo
+          }
+          probe https://bidmorrow.com/
+          probe https://bidmorrow.com/api/health/live
+          probe https://bidmorrow.com/api/health/ready
+          probe https://www.bidmorrow.com/
+          probe https://staging.bidmorrow.com/
+          probe https://staging.bidmorrow.com/api/health/live
+          probe https://staging.bidmorrow.com/api/health/ready
+          echo "probe complete"
