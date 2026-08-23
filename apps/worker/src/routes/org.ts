@@ -12,6 +12,7 @@ import {
   CapExceededError,
   createDb,
   createOrganization,
+  estimateScope,
   getCompanyProfile,
   getDigestPreferences,
   getMatchingPreferences,
@@ -101,6 +102,18 @@ const cpvPreferencesSchema = z
     // Sanity bound distinct from the repository's business cap (30) — the
     // 422 CapExceededError path below is what actually enforces the cap.
     cpvCodes: z.array(z.string().trim().min(1).max(20)).max(200),
+  })
+  .strict();
+
+/**
+ * The estimate is a read-only description of the corpus, so the bounds here
+ * are abuse limits rather than product caps — the caller is mid-onboarding
+ * and has not persisted anything yet.
+ */
+const scopeEstimateSchema = z
+  .object({
+    cpvCodes: z.array(z.string().trim().min(2).max(20)).max(200),
+    countryCodes: z.array(z.string().trim().length(2)).max(60).optional(),
   })
   .strict();
 
@@ -214,6 +227,7 @@ orgRoutes.get('/presets', (c) => c.json({ presets: COMPANY_PRESETS }));
 orgRoutes.use('/profile', requireOrganization);
 orgRoutes.use('/keywords', requireOrganization);
 orgRoutes.use('/cpv-preferences', requireOrganization);
+orgRoutes.use('/onboarding/scope-estimate', requireOrganization);
 orgRoutes.use('/geographies', requireOrganization);
 orgRoutes.use('/capabilities', requireOrganization);
 orgRoutes.use('/certifications', requireOrganization);
@@ -343,6 +357,54 @@ orgRoutes.put(
     return c.json({ keywords: page.items.map(toKeywordDto) });
   },
 );
+
+/**
+ * Onboarding scope estimate — what the chosen CPV codes and countries WOULD
+ * have returned over the last 30 days.
+ *
+ * A count of real rows over a real window, never a forecast. It exists so a
+ * company can see, before finishing onboarding, that its selection currently
+ * matches nothing — which is the honest answer for any sector outside the
+ * ingested CPV scope (`72*`, `48*`, `79417000` — docs/ted-ingestion-scope.md)
+ * rather than an empty feed discovered later.
+ *
+ * POST, not GET: the CPV list can run to dozens of codes, which belongs in a
+ * body rather than a query string. It writes nothing.
+ */
+orgRoutes.post('/onboarding/scope-estimate', zValidator('json', scopeEstimateSchema), async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
+
+  const { cpvCodes, countryCodes } = c.req.valid('json');
+  const windowDays = 30;
+  const to = new Date();
+  const from = new Date(to.getTime() - windowDays * 24 * 60 * 60 * 1000);
+  const iso = (d: Date): string => d.toISOString().slice(0, 10);
+
+  const scope = await loadIngestionScope(db);
+  const estimate = await estimateScope(db, {
+    cpvCodes,
+    countryCodes: countryCodes ?? [],
+    windowFrom: iso(from),
+    windowTo: iso(to),
+  });
+
+  return c.json({
+    windowDays,
+    windowFrom: iso(from),
+    windowTo: iso(to),
+    scorableLots: estimate.scorableLots,
+    inChosenCountries: estimate.inChosenCountries,
+    /**
+     * What ingestion actually covers RIGHT NOW, read from the live
+     * `ingestion_cpv_scope` flag rather than hardcoded. An operator who
+     * widens the scope should not have to ship a frontend change for
+     * onboarding to stop calling those codes out of scope.
+     */
+    ingestedCpvFamilies: scope.cpvFamilies,
+  });
+});
 
 orgRoutes.get('/cpv-preferences', async (c) => {
   const db = createDb(c.env.DB);

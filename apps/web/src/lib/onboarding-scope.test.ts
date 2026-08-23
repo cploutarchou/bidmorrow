@@ -33,4 +33,17 @@ describe('computeCpvScopeOverlap', () => {
     const result = computeCpvScopeOverlap(['33000000'], ['33']);
     expect(result.hasOverlap).toBe(true);
   });
+
+  it('does NOT treat the rest of division 79 as covered by the 79417000 entry', () => {
+    // Ingestion takes 79417000 exactly, never 79417000* and never all of 79
+    // (packages/procurement/src/scope.ts). An earlier division-based
+    // implementation reported 79400000 as in scope, which told business-
+    // services companies they were covered when they were not.
+    const result = computeCpvScopeOverlap(['79400000', '79710000', '79000000']);
+    expect(result).toEqual({ totalCount: 3, inScopeCount: 0, hasOverlap: false });
+  });
+
+  it('still counts the one 79 code that IS ingested', () => {
+    expect(computeCpvScopeOverlap(['79417000']).inScopeCount).toBe(1);
+  });
 });

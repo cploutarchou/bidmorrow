@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { COMPANY_PRESETS, CONTRACT_NATURES, type ContractNature } from '@bidmorrow/domain';
+import { CPV_SECTORS, SECTOR_LABEL_NOTE, findSector } from '../../lib/cpv-sectors';
+import { isIngestedCpvCode } from '../../lib/onboarding-scope';
+import { ScopeEstimate } from '../../components/ScopeEstimate';
 import { Combobox } from '../../components/Combobox';
 import { Logo } from '../../components/Logo';
 import { NoIndex } from '../../components/NoIndex';
@@ -179,6 +182,8 @@ export function Onboarding(): ReactElement {
 
   // Company basics + preset
   const [presetKey, setPresetKey] = useState<string>('');
+  /** Sector shortcut chosen on the preset screen; pre-fills CPV codes only. */
+  const [sectorId, setSectorId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');
   const [website, setWebsite] = useState('');
@@ -484,6 +489,25 @@ export function Onboarding(): ReactElement {
       presetKey: key,
     });
     if (ok) setSaved((s) => ({ ...s, profile: true }));
+  }
+
+  /**
+   * Sector shortcut — pre-fills CPV codes only.
+   *
+   * Deliberately narrower than `selectPreset`: a preset also carries keywords
+   * and capabilities that were written for IT consultancies, and applying
+   * those to a catering company would be worse than leaving them empty.
+   * Sector selection is also not persisted as `presetKey`, because it is not
+   * one of the bundled presets and claiming otherwise would misreport what
+   * the profile was built from.
+   */
+  function selectSector(id: string): void {
+    const sector = findSector(id);
+    if (sector === null) return;
+    setSectorId(id);
+    setPresetKey('');
+    setCpvCodes(sector.codes.map((entry) => entry.code));
+    setSaved((s) => ({ ...s, cpv: false }));
   }
 
   async function saveCpv(): Promise<boolean> {
@@ -964,6 +988,40 @@ export function Onboarding(): ReactElement {
                   screens save each one to your account, and you can edit everything before it's
                   used.
                 </p>
+
+                <fieldset className="ob-sector-fieldset">
+                  <legend>Not an IT company? Start from your sector</legend>
+                  <p className="hint">
+                    Every CPV sector, not just IT. Picking one fills in a starting set of CPV codes
+                    on the next screen — you see every code there and can change all of it.
+                  </p>
+                  <div className="ob-sector-grid">
+                    {CPV_SECTORS.map((sector) => (
+                      <label
+                        key={sector.id}
+                        className={
+                          sectorId === sector.id
+                            ? 'ob-sector-card ob-sector-card--selected'
+                            : 'ob-sector-card'
+                        }
+                      >
+                        <input
+                          type="radio"
+                          name="sector"
+                          value={sector.id}
+                          checked={sectorId === sector.id}
+                          onChange={() => selectSector(sector.id)}
+                        />
+                        <span className="ob-sector-card__label">{sector.label}</span>
+                        <span className="ob-sector-card__divisions num">
+                          CPV {sector.divisions}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="hint">{SECTOR_LABEL_NOTE}</p>
+                </fieldset>
+
                 <div className="ob-preset-grid" role="radiogroup" aria-label="Company preset">
                   {COMPANY_PRESETS.map((preset) => (
                     <div
@@ -1043,10 +1101,13 @@ export function Onboarding(): ReactElement {
                 </p>
                 <p>
                   There's no skip on this screen: without at least one CPV code, BidMorrow has
-                  nothing to match you against. The fastest way to a valid list is a preset (go Back
-                  to pick one) — every preset code is chosen to sit inside BidMorrow's current
-                  ingestion scope.
+                  nothing to match you against. The fastest way to a valid list is a preset or a
+                  sector (go Back to pick one). Every <em>preset</em> code sits inside BidMorrow's
+                  current ingestion scope; sector codes outside it are saved to your profile but
+                  return nothing until ingestion is widened — the panel below shows exactly what
+                  your current selection would have returned.
                 </p>
+                <ScopeEstimate cpvCodes={cpvCodes} countryCodes={countries} />
                 <div className="form-field">
                   <label htmlFor="cpv-search">Search CPV codes</label>
                   <input
@@ -1058,19 +1119,36 @@ export function Onboarding(): ReactElement {
                   />
                 </div>
                 <fieldset>
-                  <legend>CPV codes from the bundled presets</legend>
+                  <legend>Suggested CPV codes</legend>
                   {/* Client-side filter only — selected codes filtered out of
                     view stay selected (state is the source of truth), same
                     behavior as the country search above. */}
                   {(() => {
+                    // The bundled presets, plus the chosen sector's codes,
+                    // plus anything already selected. Without the last two a
+                    // sector pick would leave codes selected but invisible —
+                    // and therefore impossible to remove here.
+                    const labels = new Map<string, string>();
+                    for (const code of PRESET_CPV_CODES) {
+                      labels.set(code, CPV_SHORTHAND_LABELS[code] ?? 'CPV code');
+                    }
+                    for (const entry of findSector(sectorId)?.codes ?? []) {
+                      labels.set(entry.code, entry.label);
+                    }
+                    for (const code of cpvCodes) {
+                      if (!labels.has(code)) {
+                        labels.set(code, CPV_SHORTHAND_LABELS[code] ?? 'CPV code');
+                      }
+                    }
+                    const allCodes = [...labels.keys()];
                     const query = cpvSearch.trim().toLowerCase();
                     const visibleCodes =
                       query.length === 0
-                        ? PRESET_CPV_CODES
-                        : PRESET_CPV_CODES.filter(
+                        ? allCodes
+                        : allCodes.filter(
                             (code) =>
                               code.toLowerCase().includes(query) ||
-                              (CPV_SHORTHAND_LABELS[code] ?? '').toLowerCase().includes(query),
+                              (labels.get(code) ?? '').toLowerCase().includes(query),
                           );
                     if (visibleCodes.length === 0) {
                       return <p className="hint">No codes match your search.</p>;
@@ -1093,8 +1171,11 @@ export function Onboarding(): ReactElement {
                               />
                               <span className="ob-chip-toggle__code num">{code}</span>
                               <span className="ob-chip-toggle__label">
-                                {CPV_SHORTHAND_LABELS[code] ?? 'CPV code'}
+                                {labels.get(code) ?? 'CPV code'}
                               </span>
+                              {!isIngestedCpvCode(code) && (
+                                <span className="ob-chip-toggle__oos">out of scope</span>
+                              )}
                             </label>
                           </li>
                         ))}
