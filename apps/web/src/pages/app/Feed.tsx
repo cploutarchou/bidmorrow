@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { api, ApiError } from '../../lib/api';
 import { appendCursor, startCursor, type CursorState } from '../../lib/cursor';
 import type { FeedResponse, FeedRow } from '../../lib/types';
+import { subscribeToMatchUpdates } from '../../lib/match-events';
 import { TenderCard } from '../../components/TenderCard';
 import { SubscriptionRequiredNotice } from '../../components/SubscriptionRequiredNotice';
 
@@ -228,6 +229,37 @@ export function Feed(): ReactElement {
     setUseCustomCountry(false);
     void load(tab, EMPTY_FILTERS);
   }
+
+  // The detail sheet stays open OVER this feed, so a save or ignore made in
+  // it must be reflected on the card underneath. Patching the one row beats
+  // refetching on close, which would cost a request and could reorder or drop
+  // the row the user was just reading (lib/match-events.ts).
+  useEffect(
+    () =>
+      subscribeToMatchUpdates((update) => {
+        setState((prev) =>
+          prev === null
+            ? prev
+            : {
+                ...prev,
+                items: prev.items.map((item) =>
+                  item.matchId === update.matchId
+                    ? {
+                        ...item,
+                        ...(update.savedByYou !== undefined
+                          ? { savedByYou: update.savedByYou }
+                          : {}),
+                        ...(update.ignoredByYou !== undefined
+                          ? { ignoredByYou: update.ignoredByYou }
+                          : {}),
+                      }
+                    : item,
+                ),
+              },
+        );
+      }),
+    [],
+  );
 
   async function handleSave(matchId: string, nextSaved: boolean): Promise<void> {
     if (state === null) return;

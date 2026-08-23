@@ -7280,3 +7280,197 @@ button.danger:active,
   flex: 1 1 16rem;
   margin-bottom: 0;
 }
+
+/* ============================================================
+   DETAIL SLIDE-OVER — 2026-08-21 handoff (`BidMorrow Client Area.dc.html`).
+   Opens a tender beside the feed instead of navigating away from it.
+   Behaviour, routing and the accessibility contract live in
+   components/DetailSheet.tsx; this is only the surface.
+   ============================================================ */
+
+/* Set on <body> while a sheet is open, so the page behind cannot be scrolled
+   away underneath it. A class rather than an inline style: this app ships
+   `style-src 'self'` and keeps zero inline styles. */
+body.sheet-open {
+  overflow: hidden;
+}
+
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 9, 0.55);
+  z-index: 50;
+}
+
+.sheet-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(42.5rem, 100%);
+  background: var(--bg-panel);
+  border-left: 1px solid var(--line);
+  border-radius: 1.5rem 0 0 1.5rem;
+  box-shadow: var(--shadow-panel);
+  z-index: 51;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(1rem, 2.5vw, 1.75rem);
+  display: grid;
+  gap: var(--s4);
+  align-content: start;
+}
+
+/* The panel takes focus on open; it is a scroll container, so it must show
+   that it has focus without drawing a ring around the whole viewport edge. */
+.sheet-panel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -4px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sheet-scrim {
+    animation: sheet-fade 140ms ease-out both;
+  }
+  .sheet-panel {
+    animation: sheet-slide 180ms ease-out both;
+  }
+}
+
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-slide {
+  from {
+    transform: translateX(1.5rem);
+    opacity: 0;
+  }
+}
+
+/* On a phone the sheet is the whole screen, so the inner corner radius and
+   the left border have nothing to sit against. */
+@media (max-width: 44rem) {
+  .sheet-panel {
+    border-radius: 0;
+    border-left: 0;
+  }
+}
+
+.sheet-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+}
+
+.sheet-head__id {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex-wrap: wrap;
+}
+
+.sheet-head__deadline {
+  font-size: 0.78125rem;
+  color: var(--ink-2);
+}
+
+.sheet-close {
+  margin-left: auto;
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+  /* 2.75rem, not the design's 30px: this is the sheet's only dismissal
+     control besides Escape, and it has to clear the 44px touch target the
+     rest of the app already meets. */
+  width: 2.75rem;
+  height: 2.75rem;
+  color: var(--ink-2);
+  cursor: pointer;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.sheet-close:hover {
+  color: var(--ink-1);
+  border-color: var(--line-strong);
+}
+
+.sheet-title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ink-1);
+  text-wrap: pretty;
+}
+
+.sheet-meta {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.sheet-tabs {
+  display: flex;
+  gap: var(--s4);
+  border-bottom: 1px solid var(--line-hair);
+}
+
+.sheet-tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  padding: 0.625rem 0.125rem;
+  /* Keeps the row a 44px target even though the control is visually a label. */
+  min-height: 2.75rem;
+  margin-bottom: -1px;
+}
+
+.sheet-tab:hover {
+  color: var(--ink-1);
+}
+
+.sheet-tab[aria-selected='true'] {
+  color: var(--ink-1);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+
+.sheet-panel-body {
+  display: grid;
+  gap: var(--s4);
+  align-content: start;
+}
+
+/* The panel body is focusable so a keyboard user can scroll it; that focus
+   should read as "you are in this region", not as a control. */
+.sheet-panel-body:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--r-m);
+}
+
+.sheet-body {
+  display: grid;
+  gap: var(--s4);
+}
+
+/* Inside the sheet the score table is the widest thing on a narrow panel. */
+.sheet-panel .score-anatomy table {
+  display: block;
+  overflow-x: auto;
+}

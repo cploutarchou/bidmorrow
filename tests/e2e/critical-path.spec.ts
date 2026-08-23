@@ -154,29 +154,58 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     expect(count).toBeGreaterThan(0);
   });
 
-  test('tender detail: score breakdown, TED link, save', async () => {
+  test('tender detail: opens as a slide-over over the feed, score breakdown, TED link, save', async () => {
     const firstCardLink = page.locator('article.tender-card h3 a').first();
     firstMatchHref = await firstCardLink.getAttribute('href');
     await firstCardLink.click();
+    // The sheet is a real route, not a state-only overlay: the URL changes,
+    // so the tender stays linkable and Back closes it.
     await expect(page).toHaveURL(/\/app\/tenders\//);
 
-    await expect(page.getByRole('heading', { name: 'Score breakdown' })).toBeVisible();
-    await expect(page.getByRole('table', { name: 'Score component breakdown' })).toBeVisible();
-    const rows = page.locator('table:has(caption:has-text("Score component breakdown")) tbody tr');
+    // Everything below is scoped to the dialog. The feed stays mounted
+    // underneath with its own Save buttons and its own `role="status"`
+    // region, so unscoped locators would match two nodes and fail strict
+    // mode — a fair reflection of the fact that both are really on the page.
+    const sheet = page.getByRole('dialog');
+    await expect(sheet).toBeVisible();
+    await expect(page.locator('article.tender-card').first()).toBeVisible();
+
+    // Summary lands first; the breakdown lives behind the Score tab.
+    await sheet.getByRole('tab', { name: 'Score' }).click();
+    await expect(sheet.getByRole('heading', { name: 'Score breakdown' })).toBeVisible();
+    await expect(sheet.getByRole('table', { name: 'Score component breakdown' })).toBeVisible();
+    const rows = sheet.locator('table:has(caption:has-text("Score component breakdown")) tbody tr');
     expect(await rows.count()).toBeGreaterThan(0);
 
-    const tedLink = page.getByRole('link', { name: 'Open original TED notice' });
+    await sheet.getByRole('tab', { name: 'Summary' }).click();
+    const tedLink = sheet.getByRole('link', { name: 'Open original TED notice' });
     await expect(tedLink).toBeVisible();
     const href = await tedLink.getAttribute('href');
     expect(href).toMatch(/^https:\/\/example\.invalid\/ted\/notice\//);
     await expect(tedLink).toHaveAttribute('target', '_blank');
     await expect(tedLink).toHaveAttribute('rel', 'noopener noreferrer');
 
-    await page.getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByRole('button', { name: 'Saved' })).toHaveAttribute(
+    await sheet.getByRole('button', { name: 'Save' }).click();
+    await expect(sheet.getByRole('button', { name: 'Saved' })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
+
+    // The card underneath must not still claim the tender is unsaved: the
+    // sheet publishes the change so the feed patches the row in place
+    // (apps/web/src/lib/match-events.ts).
+    await expect(
+      page.locator('article.tender-card').first().getByRole('button', { name: 'Saved' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('tender detail: Escape closes the sheet and returns to the feed URL', async () => {
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/app$/);
+    // The feed was never unmounted, so its cards are still there.
+    await expect(page.locator('article.tender-card').first()).toBeVisible();
   });
 
   test('feed: saved item appears in the Saved tab', async () => {
