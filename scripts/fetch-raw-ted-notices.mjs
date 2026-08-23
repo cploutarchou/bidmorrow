@@ -131,6 +131,26 @@ for (const notice of picked) {
     console.log(`skipping row without publication-number/links.xml.MUL`);
     continue;
   }
+  // Both values come from the API response and both are used unsafely by
+  // default: `number` becomes a filesystem path and `xmlUrl` a fetch target.
+  // A traversal publication-number would write outside raw-fixtures/, and an
+  // off-origin link would send this runner's request somewhere TED did not
+  // publish. Neither is reachable without a compromised API over TLS, but
+  // neither costs anything to rule out either.
+  if (!/^\d{1,10}-\d{4}$/.test(number)) {
+    console.log(`skipping row with an unexpected publication-number shape: ${number}`);
+    continue;
+  }
+  let xmlHost = null;
+  try {
+    xmlHost = new URL(xmlUrl).host;
+  } catch {
+    xmlHost = null;
+  }
+  if (xmlHost !== 'ted.europa.eu' && xmlHost !== 'api.ted.europa.eu') {
+    console.log(`skipping ${number}: links.xml.MUL points off-origin (${String(xmlHost)})`);
+    continue;
+  }
   const xmlResponse = await fetch(xmlUrl, {
     headers: XML_REQUEST_HEADERS,
     redirect: 'follow',

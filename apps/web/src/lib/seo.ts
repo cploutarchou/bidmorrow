@@ -66,6 +66,12 @@ export const MARKETING_META = {
       'Exactly how BidMorrow scores tenders: eight components to 100 points, a documented missing-data policy, and five hard-exclusion rules.',
     canonical: `${SITE_ORIGIN}/methodology`,
   },
+  sampleVerdicts: {
+    title: 'Sample Verdicts — Real Tenders, Scored — BidMorrow',
+    description:
+      'Four real TED tenders scored by BidMorrow, each broken down component by component — including one the engine excluded before scoring. No signup.',
+    canonical: `${SITE_ORIGIN}/sample-verdicts`,
+  },
   pricing: {
     title: 'Pricing — €29 or €49/Month Flat — BidMorrow',
     description:
@@ -103,6 +109,7 @@ export const SITEMAP_PATHS = [
   '/',
   '/how-it-works',
   '/methodology',
+  '/sample-verdicts',
   '/pricing',
   '/pilot',
   '/contact',

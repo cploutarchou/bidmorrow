@@ -132,8 +132,37 @@ localStorage ops-state) was excluded from the comparison by instruction.
    confirmation for paying customers.
 10. Route code splitting + budget compliance (admin out of customer
     bundle).
-11. M3 final slice: sample-verdict demo, category pages, comparison
-    module (all policy-locked IN scope).
+11. M3 final slice — **SAMPLE-VERDICT DEMO DONE 2026-08-23**; category
+    pages and the comparison module still open (all policy-locked IN
+    scope).
+    - `/sample-verdicts`: four real TED-published notices scored by the
+      production engine against two representative supplier profiles,
+      spanning Strong match / Worth reviewing / Low fit / Excluded, each
+      with its full component breakdown and a link to the notice on TED.
+      Nothing on the page is hand-written except the one-line "why we
+      chose this one", which is labelled as ours.
+    - The data is generated, not authored
+      (`packages/procurement/scripts/generate-sample-verdicts.ts` →
+      `apps/web/src/lib/sample-verdicts.generated.ts`), and
+      `tests/integration/sample-verdicts-committed.test.ts` fails if the
+      committed file stops matching a fresh engine run — the failure mode
+      that mattered was a page confidently showing numbers the engine no
+      longer produces.
+    - Four new fixtures under `tests/fixtures/ted/1.13/` (real German,
+      Czech and Slovak notices, fetched via the `ted-fixture-fetch`
+      workflow, which gained a CPV-prefix filter for the purpose). The
+      sandbox cannot reach ted.europa.eu — the agent proxy denies the
+      CONNECT — so the fetch has to run in CI.
+    - The notice → `LotInput` mapping the demo needs is now a shared,
+      tested module (`packages/procurement/src/notice-lot-input.ts`)
+      rather than a lookalike written for the generator. The lookalike
+      read the deadline off a property that does not exist and the country
+      off a lot field `NormalizedLot` has never had, and the engine
+      scored the wrong input without complaining: every sample verdict
+      was understated by 15 geography points and reported "no deadline
+      published".
+    - No `WORTH_REVIEWING`-to-`STRONG_MATCH` tuning was done. The profiles
+      were written once and the four scores are whatever came out.
 
 ### Minors (grouped)
 

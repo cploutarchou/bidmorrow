@@ -1,0 +1,787 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><ContractNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:ccts-cct="urn:un:unece:uncefact:data:specification:CoreComponentTypeSchemaModule:2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:qdt="urn:oasis:names:specification:ubl:schema:xsd:QualifiedDataTypes-2" xmlns:udt="urn:oasis:names:specification:bdndr:schema:xsd:UnqualifiedDataTypes-1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<ext:UBLExtensions>
+		<ext:UBLExtension>
+			<ext:ExtensionContent>
+				<efext:EformsExtension>
+					<efac:Changes>
+						<efbc:ChangedNoticeIdentifier>2b15a5d3-3732-4a16-ae1b-6d92e38ec9ac-01</efbc:ChangedNoticeIdentifier>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="DEU">Die Abfrage der Referenzen im Teilnahmeformular Eignungskriterien und Ausschlussgründe wurde angepasst.</efbc:ChangeDescription>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>PROCEDURE</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:ChangeReason>
+							<cbc:ReasonCode listName="change-corrig-justification">cor-buy</cbc:ReasonCode>
+							<efbc:ReasonDescription languageID="DEU">Die Abfrage der Referenzen im Teilnahmeformular Eignungskriterien und Ausschlussgründe wurde angepasst.  Statt:   Eigenerklärung durch Nennung von Referenzen über Leistungen im Breitband-ausbau über den Ausbau und den Betrieb einer aktiven Telekommunikationsinf-rastruktur im Bereich Glasfaser gegliedert nach a) Name des Auftraggebers, b) Erbringungszeitraum innerhalb der letzten drei Geschäftsjahre vor Ablauf der Teilnahmefrist, sowie c) Wert in Euro, d) den Leistungserbringer, e) die Anzahl der ausgebauten Adressen und f) Angaben zur Förderung. Die Referenz 1 (Mindestreferenz) ist erbracht, wenn die geforderten Mindestan-forderungen erfüllt sind; andernfalls erfolgt der Ausschluss. Die Mindestanfor-derungen sind erfüllt, wenn der Bewerber a) den Namen des Auftraggebers, b) den Erbringungszeitraum innerhalb der letzten drei Geschäftsjahre vor Ablauf der Teilnahmefrist, sowie c) den Wert in Euro, d) den Leistungserbringer e) die Anzahl der ausgebauten Adressen und f) ggf. das Förderprogramm benannt hat. Die Mindestreferenz muss dabei im geförderten Bereich stattgefunden haben. Die Referenz 1 (Mindestreferenz) wird - soweit kein Ausschluss erfolgt - hinsicht-lich der ihr zuerkannten Bedeutung für die zu vergebenden Leistungen gewichtet und mit einem Punktesystem bewertet. Die Referenzen 2 bis 5 werden - soweit die geforderten Mindestanforderungen erfüllt sind; andernfalls erfolgt die Nichtwertung der Referenz - hinsichtlich der ihnen zuerkannten Bedeutung für die zu vergebenden Leistungen gewichtet und mit einem Punktesystem bewertet. Die Mindestanforderungen der weiteren Refe-renzen sind erfüllt, wenn der Bewerber a) den Namen des Auftraggebers, b) den Erbringungszeitraum innerhalb der letzten drei Geschäftsjahre vor Ablauf der Teilnahmefrist, sowie c) den Wert in Euro, d) den Leistungserbringer e) die An-zahl der ausgebauten Adressen und f) ggf. das Förderprogramm benannt hat. Es dürfen insgesamt höchstens fünf Referenzen benannt werden.  heißt es nun:  Eigenerklärung durch Nennung von Referenzen über Leistungen im Breitband-ausbau über den Ausbau und den Betrieb einer aktiven Telekommunikationsinf-rastruktur im Bereich Glasfaser gegliedert nach a) Name des Auftraggebers, b) Erbringungszeitraum innerhalb der letzten drei Geschäftsjahre vor Ablauf der Teilnahmefrist, sowie c) Wert in Euro, d) den Leistungserbringer und e) die An-zahl der ausgebauten Adressen. Die Referenz 1 (Mindestreferenz) ist erbracht, wenn die geforderten Mindestan-forderungen erfüllt sind; andernfalls erfolgt der Ausschluss. Die Mindestanfor-derungen sind erfüllt, wenn der Bewerber a) den Namen des Auftraggebers, b) den Erbringungszeitraum innerhalb der letzten drei Geschäftsjahre vor Ablauf der Teilnahmefrist, sowie c) den Wert in Euro, d) den Leistungserbringer und e) die Anzahl der ausgebauten Adressen. Die Referenz 1 (Mindestreferenz) wird - soweit kein Ausschluss erfolgt - hinsicht-lich der ihr zuerkannten Bedeutung für die zu vergebenden Leistungen gewichtet und mit einem Punktesystem bewertet. Die Referenzen 2 bis 5 werden - soweit die geforderten Mindestanforderungen erfüllt sind; andernfalls erfolgt die Nichtwertung der Referenz - hinsichtlich der ihnen zuerkannten Bedeutung für die zu vergebenden Leistungen gewichtet und mit einem Punktesystem bewertet. Die Mindestanforderungen der weiteren Refe-renzen sind erfüllt, wenn der Bewerber a) den Namen des Auftraggebers, b) den Erbringungszeitraum innerhalb der letzten drei Geschäftsjahre vor Ablauf der Teilnahmefrist, sowie c) den Wert in Euro, d) den Leistungserbringer und e) die Anzahl der ausgebauten Adressen. Es dürfen insgesamt höchstens fünf Referenzen benannt werden.</efbc:ReasonDescription>
+						</efac:ChangeReason>
+					</efac:Changes>
+					<efac:NoticeSubType>
+						<cbc:SubTypeCode listName="notice-subtype">16</cbc:SubTypeCode>
+					</efac:NoticeSubType>
+					<efac:Organizations>
+						<efac:Organization>
+							<efac:Company>
+								<cac:PartyIdentification>
+									<cbc:ID>ORG-0001</cbc:ID>
+								</cac:PartyIdentification>
+								<cac:PartyName>
+									<cbc:Name languageID="DEU">Hilpoltstein</cbc:Name>
+								</cac:PartyName>
+								<cac:PostalAddress>
+									<cbc:StreetName>Marktstraße 1</cbc:StreetName>
+									<cbc:CityName>Hilpoltstein</cbc:CityName>
+									<cbc:PostalZone>91161</cbc:PostalZone>
+									<cbc:CountrySubentityCode listName="nuts-lvl3">DE25B</cbc:CountrySubentityCode>
+									<cac:Country>
+										<cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+									</cac:Country>
+								</cac:PostalAddress>
+								<cac:PartyLegalEntity>
+									<cbc:CompanyID>09174 978-0</cbc:CompanyID>
+								</cac:PartyLegalEntity>
+								<cac:Contact>
+									<cbc:Telephone>091191931332</cbc:Telephone>
+									<cbc:ElectronicMail>NUREMBERG.VERGABE.PS@roedl.com</cbc:ElectronicMail>
+								</cac:Contact>
+							</efac:Company>
+						</efac:Organization>
+						<efac:Organization>
+							<efac:Company>
+								<cac:PartyIdentification>
+									<cbc:ID>ORG-0002</cbc:ID>
+								</cac:PartyIdentification>
+								<cac:PartyName>
+									<cbc:Name languageID="DEU">Vergabekammer Nordbayern</cbc:Name>
+								</cac:PartyName>
+								<cac:PostalAddress>
+									<cbc:StreetName>Promenade 27</cbc:StreetName>
+									<cbc:CityName>Ansbach</cbc:CityName>
+									<cbc:PostalZone>91522</cbc:PostalZone>
+									<cbc:CountrySubentityCode listName="nuts-lvl3">DE251</cbc:CountrySubentityCode>
+									<cac:Country>
+										<cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+									</cac:Country>
+								</cac:PostalAddress>
+								<cac:PartyLegalEntity>
+									<cbc:CompanyID>+49 981 53-1277</cbc:CompanyID>
+								</cac:PartyLegalEntity>
+							</efac:Company>
+						</efac:Organization>
+					<efac:Organization><efac:Company><cac:PartyIdentification><cbc:ID schemeName="organization">ORG-0003</cbc:ID></cac:PartyIdentification><cac:PartyName><cbc:Name languageID="DEU">Datenservice Öffentlicher Einkauf (in Verantwortung des Beschaffungsamts des BMI)</cbc:Name></cac:PartyName><cac:PostalAddress><cbc:CityName>Bonn</cbc:CityName><cbc:PostalZone>53119</cbc:PostalZone><cbc:CountrySubentityCode listName="nuts">DEA22</cbc:CountrySubentityCode><cac:Country><cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode></cac:Country></cac:PostalAddress><cac:PartyLegalEntity><cbc:CompanyID schemeID="002">0204:994-DOEVD-83</cbc:CompanyID></cac:PartyLegalEntity><cac:Contact><cbc:Telephone>+49228996100</cbc:Telephone><cbc:ElectronicMail>noreply.esender_hub@bescha.bund.de</cbc:ElectronicMail></cac:Contact></efac:Company></efac:Organization></efac:Organizations>
+				<efac:Publication><efbc:NoticePublicationID schemeName="ojs-notice-id">00579541-2026</efbc:NoticePublicationID><efbc:GazetteID schemeName="ojs-id">161/2026</efbc:GazetteID><efbc:PublicationDate>2026-08-21+02:00</efbc:PublicationDate></efac:Publication></efext:EformsExtension>
+			</ext:ExtensionContent>
+		</ext:UBLExtension>
+	</ext:UBLExtensions>
+	<cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+	<cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+	<cbc:ProfileID>eforms-sdk-1.13</cbc:ProfileID>
+	<cbc:ID schemeName="notice-id">9534724d-efec-4f76-9a73-e047f08c9824</cbc:ID>
+	<cbc:ContractFolderID>08624a02-34d2-466e-bef1-f5b260ba56a3</cbc:ContractFolderID>
+	<cbc:IssueDate>2026-08-20+02:00</cbc:IssueDate>
+	<cbc:IssueTime>14:52:15+02:00</cbc:IssueTime>
+	<cbc:VersionID>01</cbc:VersionID>
+	<cbc:RequestedPublicationDate>2026-08-20+02:00</cbc:RequestedPublicationDate>
+	<cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+	<cbc:NoticeTypeCode listName="competition">cn-standard</cbc:NoticeTypeCode>
+	<cbc:NoticeLanguageCode listID="eu-official-language">DEU</cbc:NoticeLanguageCode>
+	<cac:ContractingParty>
+		<cac:ContractingPartyType>
+			<cbc:PartyTypeCode listName="buyer-legal-type">la</cbc:PartyTypeCode>
+		</cac:ContractingPartyType>
+		<cac:ContractingActivity>
+			<cbc:ActivityTypeCode listName="authority-activity">gen-pub</cbc:ActivityTypeCode>
+		</cac:ContractingActivity>
+		<cac:Party>
+			<cac:PartyIdentification>
+				<cbc:ID>ORG-0001</cbc:ID>
+			</cac:PartyIdentification>
+		<cac:ServiceProviderParty><cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode><cac:Party><cac:PartyIdentification><cbc:ID schemeName="organization">ORG-0003</cbc:ID></cac:PartyIdentification></cac:Party></cac:ServiceProviderParty></cac:Party>
+	</cac:ContractingParty>
+	<cac:TenderingTerms>
+		<ext:UBLExtensions>
+			<ext:UBLExtension>
+				<ext:ExtensionContent>
+					<efext:EformsExtension>
+						<efac:StrategicProcurement>
+							<efbc:ApplicableLegalBasis listName="cvd-scope">false</efbc:ApplicableLegalBasis>
+						</efac:StrategicProcurement>
+						<efac:StrategicProcurement>
+							<efbc:ApplicableLegalBasis listName="eed-scope">false</efbc:ApplicableLegalBasis>
+						</efac:StrategicProcurement>
+					</efext:EformsExtension>
+				</ext:ExtensionContent>
+			</ext:UBLExtension>
+		</ext:UBLExtensions>
+		<cbc:FundingProgramCode listName="eu-funded">eu-funds</cbc:FundingProgramCode>
+		<cac:RequiredFinancialGuarantee>
+			<cbc:GuaranteeTypeCode listName="tender-guarantee-required">false</cbc:GuaranteeTypeCode>
+		</cac:RequiredFinancialGuarantee>
+		<cac:ProcurementLegislationDocumentReference>
+			<cbc:ID>vgv</cbc:ID>
+		</cac:ProcurementLegislationDocumentReference>
+		<cac:CallForTendersDocumentReference>
+			<ext:UBLExtensions>
+				<ext:UBLExtension>
+					<ext:ExtensionContent>
+						<efext:EformsExtension>
+							<efac:OfficialLanguages>
+								<cac:Language>
+									<cbc:ID>DEU</cbc:ID>
+								</cac:Language>
+							</efac:OfficialLanguages>
+						</efext:EformsExtension>
+					</ext:ExtensionContent>
+				</ext:UBLExtension>
+			</ext:UBLExtensions>
+			<cbc:ID>SomeTenderDocID1</cbc:ID>
+			<cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+		</cac:CallForTendersDocumentReference>
+		<cac:TendererQualificationRequest>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-part</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-terror</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-laund</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-fraud</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-corrpt</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-traffick</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-pmt-bre-tax</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-pmt-bre-ssc</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-bre-env-law</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-bre-soc-law</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-bre-lab-law</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-insolvency</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-liq-admin</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-as-susp</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-other</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-misconduct</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-distortion</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-partic-confl</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-prep-confl</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-sanction</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-misrepresent</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+		</cac:TendererQualificationRequest>
+		<cac:TendererQualificationRequest>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-grounds-source">epo-notice</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-grounds-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+		</cac:TendererQualificationRequest>
+		<cac:TenderRecipientParty>
+			<cac:PartyIdentification>
+				<cbc:ID>ORG-0001</cbc:ID>
+			</cac:PartyIdentification>
+		</cac:TenderRecipientParty>
+		<cac:AppealTerms>
+			<cac:PresentationPeriod>
+				<cbc:Description languageID="DEU">1) Die Vergabekammer leitet ein Nachprüfungsverfahren nur auf Antrag ein. Der Antrag ist schriftlich bei der Vergabekammer einzureichen und unverzüglich zu begründen. Er soll ein bestimmtes Begehren enthalten. Ein Antragsteller ohne Wohnsitz oder gewöhnlichen Aufenthalt, Sitz oder Geschäftsleitung in der Bundesrepublik Deutschland hat einen Empfangsbevollmächtigten in der Bundesrepublik Deutschland zu benennen. Die Begründung muss die Bezeichnung des Antragsgegners, eine Beschreibung der behaupteten Rechtsverletzung mit Sachverhaltsdarstellung und die Bezeichnung der verfügbaren Beweismittel enthalten sowie darlegen, dass die Rüge gegenüber dem Auftraggeber erfolgt ist; sie soll, soweit bekannt, die sonstigen Beteiligten nennen. 2) Nach § 160 Abs. 3 Nr. 1 GWB ist ein Nachprüfungsantrag unzulässig, soweit der Antragsteller den geltend gemachten Verstoß gegen Vergabevorschriften vor Einreichen des Nachprüfungsantrags erkannt und gegenüber dem Auftraggeber nicht innerhalb einer Frist von zehn Kalendertagen gerügt hat; der Ablauf der Frist nach § 134 Abs. 2 GWB bleibt unberührt. Verstöße gegen Vergabevorschriften, die aufgrund der Bekanntmachung erkennbar sind, sind spätestens bis zum Ablauf der in der Bekanntmachung benannten Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber zu rügen (§ 160 Abs. 3 Nr. 2 GWB). Verstöße gegen Vergabevorschriften, die aufgrund der Vergabeunterlagen erkennbar sind, sind spätestens bis zum Ablauf der Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber zu rügen (§ 160 Abs. 3 Nr. 3 GWB). Teilt die Vergabestelle mit, dass einer Rüge nicht abgeholfen wird, kann ein Nachprüfungsantrag bei der unten angegebenen Vergabekammer nur  innerhalb von 15 Kalendertagen nach Eingang dieser Mitteilung schriftlich gestellt werden (§ 160 Abs. 3 Nr. 4 GWB).</cbc:Description>
+			</cac:PresentationPeriod>
+			<cac:AppealReceiverParty>
+				<cac:PartyIdentification>
+					<cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+				</cac:PartyIdentification>
+			</cac:AppealReceiverParty>
+		</cac:AppealTerms>
+		<cac:Language>
+			<cbc:ID>DEU</cbc:ID>
+		</cac:Language>
+		<cac:LotDistribution>
+			<cbc:MaximumLotsAwardedNumeric>2</cbc:MaximumLotsAwardedNumeric>
+			<cbc:MaximumLotsSubmittedNumeric>2</cbc:MaximumLotsSubmittedNumeric>
+		</cac:LotDistribution>
+	</cac:TenderingTerms>
+	<cac:TenderingProcess>
+		<cbc:Description languageID="DEU">Der Bewerber/Die Bewerbergemeinschaft hat seinen/ihren Teilnahmeantrag unter zwingender Nutzung dieses Teilnahmeformulars "Eignungskriterien und Ausschlussgründe" beim Auftraggeber einzureichen.</cbc:Description>
+		<cbc:ProcedureCode listName="procurement-procedure-type">neg-w-call</cbc:ProcedureCode>
+		<cbc:AccessToolsURI>https://www.dtvp.de/Satellite/notice/CXP4D5GMQ9G</cbc:AccessToolsURI>
+		<cac:ProcessJustification>
+			<cbc:ProcessReasonCode listName="accelerated-procedure">false</cbc:ProcessReasonCode>
+		</cac:ProcessJustification>
+		<cac:AuctionTerms>
+			<cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+		</cac:AuctionTerms>
+	</cac:TenderingProcess>
+	<cac:ProcurementProject>
+		<cbc:ID schemeName="internalID">260806_VS</cbc:ID>
+		<cbc:Name languageID="DEU">Hilpoltstein - Ausschreibung Wirtschaftlichkeitslückenmodell - 2.0</cbc:Name>
+		<cbc:Description languageID="DEU">Ausschreibung Breitband Wirtschaftlichkeitslückenmodell - Wirtschaftlichkeitslückenmodell 2.0</cbc:Description>
+		<cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+		<cbc:Note languageID="DEU">#Bekanntmachungs-ID: CXP4D5GMQ9G#</cbc:Note>
+		<cac:MainCommodityClassification>
+			<cbc:ItemClassificationCode listName="cpv">72400000</cbc:ItemClassificationCode>
+		</cac:MainCommodityClassification>
+		<cac:RealizedLocation>
+			<cac:Address>
+				<cbc:CityName>Hilpoltstein</cbc:CityName>
+				<cbc:PostalZone>91161</cbc:PostalZone>
+				<cbc:CountrySubentityCode listName="nuts">DE25B</cbc:CountrySubentityCode>
+				<cac:Country>
+					<cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+				</cac:Country>
+			</cac:Address>
+		</cac:RealizedLocation>
+	</cac:ProcurementProject>
+	<cac:ProcurementProjectLot>
+		<cbc:ID schemeName="Lot">LOT-0001</cbc:ID>
+		<cac:TenderingTerms>
+			<ext:UBLExtensions>
+				<ext:UBLExtension>
+					<ext:ExtensionContent>
+						<efext:EformsExtension>
+							<efac:SelectionCriteria>
+								<cbc:TendererRequirementTypeCode listName="selection-criterion">slc-suit-reg-trade</cbc:TendererRequirementTypeCode>
+								<cbc:Description languageID="DEU">Eigenerklärung darüber, dass der Bewerber in das Berufsregister (z.B. Handelsregister) seines Sitzes oder Wohnsitzes eingetragen ist.</cbc:Description>
+								<efbc:SecondStageIndicator>false</efbc:SecondStageIndicator>
+							</efac:SelectionCriteria>
+							<efac:SelectionCriteria>
+								<cbc:TendererRequirementTypeCode listName="selection-criterion">slc-suit-auth-mbrshp</cbc:TendererRequirementTypeCode>
+								<cbc:Description languageID="DEU">Vorlage des Nachweises über die Registrierung als Betreiber öffentlicher Telekommunikationsnetze im Sinne des § 5 Telekommunikationsgesetz (TKG) bei der BNetzA.</cbc:Description>
+								<efbc:SecondStageIndicator>false</efbc:SecondStageIndicator>
+							</efac:SelectionCriteria>
+							<efac:SelectionCriteria>
+								<cbc:TendererRequirementTypeCode listName="selection-criterion">slc-stand-to-gen</cbc:TendererRequirementTypeCode>
+								<cbc:Description languageID="DEU">Vorlage des aktuellsten testierten Jahresabschlusses des Unternehmens</cbc:Description>
+								<efbc:SecondStageIndicator>false</efbc:SecondStageIndicator>
+							</efac:SelectionCriteria>
+							<efac:SelectionCriteria>
+								<cbc:TendererRequirementTypeCode listName="selection-criterion">slc-stand-to-gen</cbc:TendererRequirementTypeCode>
+								<cbc:Description languageID="DEU">Eigenerklärung über den Gesamtumsatz und über den Umsatz in dem Tätigkeitsbereich des Auftrags, bezogen auf die letzten drei Geschäftsjahre.</cbc:Description>
+								<efbc:SecondStageIndicator>false</efbc:SecondStageIndicator>
+							</efac:SelectionCriteria>
+							<efac:SelectionCriteria>
+								<cbc:TendererRequirementTypeCode listName="selection-criterion">slc-abil-ref-work</cbc:TendererRequirementTypeCode>
+								<cbc:Description languageID="DEU">Eigenerklärung durch Nennung von Referenzen über Leistungen im Breitbandausbau über den Ausbau und den Betrieb einer aktiven Telekommunikationsinfrastruktur im Bereich Glasfaser gegliedert nach a) Name des Auftraggebers, b) Erbringungszeitraum innerhalb der letzten drei Geschäftsjahre vor Ablauf der Teilnahmefrist, sowie c) Wert in Euro, d) den Leistungserbringer und e) die Anzahl der ausgebauten Adressen.   Die Referenz 1 (Mindestreferenz) ist erbracht, wenn die geforderten Mindestanforderungen erfüllt sind; andernfalls erfolgt der Ausschluss. Die Mindestanforderungen sind erfüllt, wenn der Bewerber a) den Namen des Auftraggebers, b) den Erbringungszeitraum innerhalb der letzten drei Geschäftsjahre vor Ablauf der Teilnahmefrist, sowie c) den Wert in Euro, d) den Leistungserbringer und e) die Anzahl der ausgebauten Adressen benannt hat.  Die Mindestreferenz muss dabei im geförderten Bereich stattgefunden haben.  Die Referenz 1 (Mindestreferenz) wird - soweit kein Ausschluss erfolgt - hinsichtlich der ihr zuerkannten Bedeutung für die zu vergebenden Leistungen gewichtet und mit einem Punktesystem bewertet.  Die Referenzen 2 bis 5 werden - soweit die geforderten Mindestanforderungen erfüllt sind; andernfalls erfolgt die Nichtwertung der Referenz - hinsichtlich der ihnen zuerkannten Bedeutung für die zu vergebenden Leistungen gewichtet und  mit einem Punktesystem bewertet. Die Mindestanforderungen der weiteren Referenzen sind erfüllt, wenn der Bewerber a) den Namen des Auftraggebers, b) den Erbringungszeitraum innerhalb der letzten drei Geschäftsjahre vor Ablauf der Teilnahmefrist, sowie c) den Wert in Euro, d) den Leistungserbringer und e) die Anzahl der ausgebauten Adressen benannt hat.   Es dürfen insgesamt höchstens fünf Referenzen benannt werden.</cbc:Description>
+								<efbc:SecondStageIndicator>true</efbc:SecondStageIndicator>
+								<efac:CriterionParameter>
+									<efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+									<efbc:ParameterNumeric>500.0</efbc:ParameterNumeric>
+								</efac:CriterionParameter>
+							</efac:SelectionCriteria>
+							<efac:StrategicProcurement>
+								<efbc:ApplicableLegalBasis listName="cvd-scope">false</efbc:ApplicableLegalBasis>
+							</efac:StrategicProcurement>
+							<efac:StrategicProcurement>
+								<efbc:ApplicableLegalBasis listName="eed-scope">false</efbc:ApplicableLegalBasis>
+							</efac:StrategicProcurement>
+						</efext:EformsExtension>
+					</ext:ExtensionContent>
+				</ext:UBLExtension>
+			</ext:UBLExtensions>
+			<cbc:VariantConstraintCode listName="permission">not-allowed</cbc:VariantConstraintCode>
+			<cbc:FundingProgramCode listName="eu-funded">eu-funds</cbc:FundingProgramCode>
+			<cbc:RequiredCurriculaCode listName="requirement-stage">not-requ</cbc:RequiredCurriculaCode>
+			<cbc:MultipleTendersCode listName="permission">not-allowed</cbc:MultipleTendersCode>
+			<cac:RequiredFinancialGuarantee>
+				<cbc:GuaranteeTypeCode listName="tender-guarantee-required">false</cbc:GuaranteeTypeCode>
+			</cac:RequiredFinancialGuarantee>
+			<cac:CallForTendersDocumentReference>
+				<ext:UBLExtensions>
+					<ext:UBLExtension>
+						<ext:ExtensionContent>
+							<efext:EformsExtension>
+								<efac:OfficialLanguages>
+									<cac:Language>
+										<cbc:ID>DEU</cbc:ID>
+									</cac:Language>
+								</efac:OfficialLanguages>
+							</efext:EformsExtension>
+						</ext:ExtensionContent>
+					</ext:UBLExtension>
+				</ext:UBLExtensions>
+				<cbc:ID>SomeTenderDocID1</cbc:ID>
+				<cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+				<cac:Attachment>
+					<cac:ExternalReference>
+						<cbc:URI>https://www.dtvp.de/Satellite/notice/CXP4D5GMQ9G/documents</cbc:URI>
+					</cac:ExternalReference>
+				</cac:Attachment>
+			</cac:CallForTendersDocumentReference>
+			<cac:TendererQualificationRequest>
+				<cbc:CompanyLegalFormCode listName="required">false</cbc:CompanyLegalFormCode>
+			</cac:TendererQualificationRequest>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="missing-info-submission">late-some</cbc:TendererRequirementTypeCode>
+					<cbc:Description languageID="DEU">Der vorstehende Textpassus ist systemseitig vorgegeben und wie folgt zu verstehen: 1) Sämtliche im Formular geforderten Eigenerklärungen müssen grundsätzlich spätestens im Zeitpunkt des Schlusstermins für den Eingang der Teilnahmeanträge beim Auftraggeber vorliegen. Eine fehlende, unvollständige oder fehlerhafte Eigenerklärung führt grundsätzlich zum Ausschluss. Eine fehlende, unvollständige oder fehlerhafte Eigenerklärung kann nur ausnahmsweise auf gesonderte Anforderung des Auftraggebers bis zum Ablauf einer vom Auftraggeber zu bestimmenden Nachfrist vorgelegt werden. Erklärt das Unternehmen im Formular, für eine oder mehrere der unter Abschnitt III und/oder V des Formulars geforderten Eigenerklärungen, diese nicht abgeben zu können, so erfolgt der Ausschluss des Bewerbers. Eine gesonderte Aufforderung des Auftraggebers bis zum Ablauf einer vom Auftraggeber zu bestimmenden Nachfrist erfolgt nicht. Der Auftraggeber kann bei Übermittlung einer Einheitlichen Europäischen Eigenerklärung den Bewerber jederzeit während des Verfahrens auffordern, sämtliche oder einen Teil der unter den Abschnitten III, IV und V des Formulars geforderten Erklärungen beizubringen, wenn dies zur angemessenen Durchführung des Verfahrens erforderlich ist.  2) Vgl. ergänzend § 56 VgV.</cbc:Description>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-notice</cbc:TendererRequirementTypeCode>
+				</cac:SpecificTendererRequirement>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="einvoicing">not-allowed</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="conditions">performance</cbc:ExecutionRequirementCode>
+				<cbc:Description languageID="DEU">Bedingungen für die Ausführung des Auftrags: vgl. Vergabeunterlagen, dort insb. Vertragsunterlagen.</cbc:Description>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="fsr">false</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:AwardingTerms>
+				<cbc:NoFurtherNegotiationIndicator>true</cbc:NoFurtherNegotiationIndicator>
+				<cac:AwardingCriterion>
+					<cac:SubordinateAwardingCriterion>
+						<ext:UBLExtensions>
+							<ext:UBLExtension>
+								<ext:ExtensionContent>
+									<efext:EformsExtension>
+										<efac:AwardCriterionParameter>
+											<efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+											<efbc:ParameterNumeric>85.0</efbc:ParameterNumeric>
+										</efac:AwardCriterionParameter>
+									</efext:EformsExtension>
+								</ext:ExtensionContent>
+							</ext:UBLExtension>
+						</ext:UBLExtensions>
+						<cbc:AwardingCriterionTypeCode listName="award-criterion-type">cost</cbc:AwardingCriterionTypeCode>
+						<cbc:Name languageID="DEU">Höhe der Wirtschaftlichkeitslücke</cbc:Name>
+						<cbc:Description languageID="DEU">Das Angebot hat eine detaillierte und plausible Darstellung der  Wirtschaftlichkeitslücke zu enthalten. Als Betrachtungszeitraum gilt hierbei ein Zeitraum von mindestens sieben Jahren ab Inbetriebnahme. Für die Angebotswertung wird eine Punkteskala festgelegt. Die volle Punktzahl erhält das Angebot mit der niedrigsten Wirtschaftlichkeitslücke. 0 Punkte erhält ein Angebot mit dem 2-fachen der niedrigsten Wirtschaftlichkeitslücke. Alle Angebote darüber erhalten ebenfalls 0 Punkte. Die Punktebewertung für die dazwischenliegenden Wirtschaftlichkeitslücken erfolgt über eine lineare Interpolation mit bis zu zwei Stellen nach dem Komma.</cbc:Description>
+					</cac:SubordinateAwardingCriterion>
+					<cac:SubordinateAwardingCriterion>
+						<ext:UBLExtensions>
+							<ext:UBLExtension>
+								<ext:ExtensionContent>
+									<efext:EformsExtension>
+										<efac:AwardCriterionParameter>
+											<efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+											<efbc:ParameterNumeric>10.0</efbc:ParameterNumeric>
+										</efac:AwardCriterionParameter>
+									</efext:EformsExtension>
+								</ext:ExtensionContent>
+							</ext:UBLExtension>
+						</ext:UBLExtensions>
+						<cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+						<cbc:Name languageID="DEU">Realisierungszeit</cbc:Name>
+						<cbc:Description languageID="DEU">Der Bieter hat mit seinem Angebot im Angebotsblatt die Ausbaudauer bis zur Inbetriebnahme in Monaten anzugeben.  Der Bieter mit der geringsten Realisierungszeit erhält 10 Punkte. Bei doppelter Realisierungszeit des Bestbieters werden 0 Leistungspunkte vergeben. Dazwischen erfolgt eine lineare Interpolation.</cbc:Description>
+					</cac:SubordinateAwardingCriterion>
+					<cac:SubordinateAwardingCriterion>
+						<ext:UBLExtensions>
+							<ext:UBLExtension>
+								<ext:ExtensionContent>
+									<efext:EformsExtension>
+										<efac:AwardCriterionParameter>
+											<efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+											<efbc:ParameterNumeric>5.0</efbc:ParameterNumeric>
+										</efac:AwardCriterionParameter>
+									</efext:EformsExtension>
+								</ext:ExtensionContent>
+							</ext:UBLExtension>
+						</ext:UBLExtensions>
+						<cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+						<cbc:Name languageID="DEU">Alternative Verlegemethoden</cbc:Name>
+						<cbc:Description languageID="DEU">Im Angebotsblatt ist zu kennzeichnen, ob diese zum Einsatz kommen oder ob diese nicht zum Einsatz kommen werden.  Für die Angebotswertung wird je nach Angabe des Bieters, die im Angebotsblatt hinterlegte Punktzahl zugrunde gelegt. Der Bieter kann 0  oder die volle Punktzahl, je nach Kennzeichnung im Angebotsblatt erreichen.</cbc:Description>
+					</cac:SubordinateAwardingCriterion>
+				</cac:AwardingCriterion>
+			</cac:AwardingTerms>
+			<cac:AdditionalInformationParty>
+				<cac:PartyIdentification>
+					<cbc:ID>ORG-0001</cbc:ID>
+				</cac:PartyIdentification>
+			</cac:AdditionalInformationParty>
+			<cac:TenderRecipientParty>
+				<cbc:EndpointID>https://www.dtvp.de/Satellite/notice/CXP4D5GMQ9G</cbc:EndpointID>
+				<cac:PartyIdentification>
+					<cbc:ID>ORG-0001</cbc:ID>
+				</cac:PartyIdentification>
+			</cac:TenderRecipientParty>
+			<cac:AppealTerms>
+				<cac:PresentationPeriod>
+					<cbc:Description languageID="DEU">1) Die Vergabekammer leitet ein Nachprüfungsverfahren nur auf Antrag ein. Der Antrag ist schriftlich bei der Vergabekammer einzureichen und unverzüglich zu begründen. Er soll ein bestimmtes Begehren enthalten. Ein Antragsteller ohne Wohnsitz oder gewöhnlichen Aufenthalt, Sitz oder Geschäftsleitung in der Bundesrepublik Deutschland hat einen Empfangsbevollmächtigten in der Bundesrepublik Deutschland zu benennen. Die Begründung muss die Bezeichnung des Antragsgegners, eine Beschreibung der behaupteten Rechtsverletzung mit Sachverhaltsdarstellung und die Bezeichnung der verfügbaren Beweismittel enthalten sowie darlegen, dass die Rüge gegenüber dem Auftraggeber erfolgt ist; sie soll, soweit bekannt, die sonstigen Beteiligten nennen. 2) Nach § 160 Abs. 3 Nr. 1 GWB ist ein Nachprüfungsantrag unzulässig, soweit der Antragsteller den geltend gemachten Verstoß gegen Vergabevorschriften vor Einreichen des Nachprüfungsantrags erkannt und gegenüber dem Auftraggeber nicht innerhalb einer Frist von zehn Kalendertagen gerügt hat; der Ablauf der Frist nach § 134 Abs. 2 GWB bleibt unberührt. Verstöße gegen Vergabevorschriften, die aufgrund der Bekanntmachung erkennbar sind, sind spätestens bis zum Ablauf der in der Bekanntmachung benannten Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber zu rügen (§ 160 Abs. 3 Nr. 2 GWB). Verstöße gegen Vergabevorschriften, die aufgrund der Vergabeunterlagen erkennbar sind, sind spätestens bis zum Ablauf der Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber zu rügen (§ 160 Abs. 3 Nr. 3 GWB). Teilt die Vergabestelle mit, dass einer Rüge nicht abgeholfen wird, kann ein Nachprüfungsantrag bei der unten angegebenen Vergabekammer nur  innerhalb von 15 Kalendertagen nach Eingang dieser Mitteilung schriftlich gestellt werden (§ 160 Abs. 3 Nr. 4 GWB).</cbc:Description>
+				</cac:PresentationPeriod>
+				<cac:AppealReceiverParty>
+					<cac:PartyIdentification>
+						<cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+					</cac:PartyIdentification>
+				</cac:AppealReceiverParty>
+			</cac:AppealTerms>
+			<cac:Language>
+				<cbc:ID>DEU</cbc:ID>
+			</cac:Language>
+			<cac:LotDistribution>
+				<cbc:MaximumLotsAwardedNumeric>2</cbc:MaximumLotsAwardedNumeric>
+				<cbc:MaximumLotsSubmittedNumeric>2</cbc:MaximumLotsSubmittedNumeric>
+			</cac:LotDistribution>
+			<cac:PostAwardProcess>
+				<cbc:ElectronicOrderUsageIndicator>false</cbc:ElectronicOrderUsageIndicator>
+				<cbc:ElectronicPaymentUsageIndicator>false</cbc:ElectronicPaymentUsageIndicator>
+			</cac:PostAwardProcess>
+			<cac:SecurityClearanceTerm>
+				<cbc:Code listName="required">false</cbc:Code>
+			</cac:SecurityClearanceTerm>
+		</cac:TenderingTerms>
+		<cac:TenderingProcess>
+			<cbc:SubmissionMethodCode listName="esubmission">required</cbc:SubmissionMethodCode>
+			<cbc:CandidateReductionConstraintIndicator>true</cbc:CandidateReductionConstraintIndicator>
+			<cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+			<cbc:AccessToolsURI>https://www.dtvp.de/Satellite/notice/CXP4D5GMQ9G</cbc:AccessToolsURI>
+			<cac:ParticipationRequestReceptionPeriod>
+				<cbc:EndDate>2026-09-10+02:00</cbc:EndDate>
+				<cbc:EndTime>10:00:00+02:00</cbc:EndTime>
+			</cac:ParticipationRequestReceptionPeriod>
+			<cac:EconomicOperatorShortList>
+				<cbc:LimitationDescription>true</cbc:LimitationDescription>
+				<cbc:MaximumQuantity>3</cbc:MaximumQuantity>
+				<cbc:MinimumQuantity>3</cbc:MinimumQuantity>
+			</cac:EconomicOperatorShortList>
+			<cac:AuctionTerms>
+				<cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+			</cac:AuctionTerms>
+			<cac:ContractingSystem>
+				<cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+			</cac:ContractingSystem>
+			<cac:ContractingSystem>
+				<cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+			</cac:ContractingSystem>
+		</cac:TenderingProcess>
+		<cac:ProcurementProject>
+			<cbc:ID schemeName="internalID">Los 1</cbc:ID>
+			<cbc:Name languageID="DEU">Los 1 West</cbc:Name>
+			<cbc:Description languageID="DEU">Ein Branchendialog und eine Markterkundung hat / haben ergeben, dass für den Teilbereich der Gebietskörperschaft derzeit keine leistungsfähige Gigabitinfrastruktur mit einem Angebot entsprechender Telekommunikationsdienste flächendeckend gemäß den Zielen der Gigabit-Rahmenregelung 2.0 verfügbar ist und in den nächsten Jahren verfügbar sein wird. Die Gebietskörperschaft hat daher Fördermittel für einen flächendeckenden Gigabitausbau - bezogen auf den unterversorgten Teilbereich im Wirtschaftlichkeitslückenmodell im Rahmen der Richtlinie "Förderung zur Unterstützung des Gigabitausbaus der Telekommunikationsnetze in der Bundesrepublik Deutschland - Gigabit-Richtlinie des Bundes 2.0 (Gigabit-RL 2.0)" vom 31. März 2023 in der Fassung der Änderung vom 13.01.2025 ("Gigabit-Richtlinie 2.0") beantragt und bewilligt erhalten. Die in diesem Förderprogramm im Wirtschaftlichkeitslückenmodell bereitgestellten Fördermittel (im Folgenden: Mittel) sollen durch Gebietskörperschaften an Telekommunikationsunternehmen im EU-beihilfenrechtlichen Sinne als Investitionskostenbeihilfe für den Bau und Betrieb von Gigabitnetzen weitergeleitet werden.</cbc:Description>
+			<cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+			<cbc:Note languageID="DEU">#Besonders auch geeignet für:other-sme#
+
+
+1) Ziel des Teilnahmewettbewerbs ist es, höchstens drei Bewerber auszuwählen. Die objektiven Kriterien für die Auswahl dieser höchstens drei geeigneten Bewerber sind in den Abschnitten III bis V aufgeführt. Die unter Abschnitt III und IV aufgeführten Teilnahmekriterien sind als zwingende und fakultative Ausschlusskriterien formuliert. Die im Abschnitt V aufgeführten Eignungskriterien werden - soweit die in Abschnitt V genannten Mindestanforderungen erfüllt sind und kein Ausschluss erfolgt - hinsichtlich der ihnen zuerkannten Bedeutung für die zu vergebenden Leistungen gewichtet und mit einem Punktesystem bewertet.  2) Der Bewerber hat seinen Teilnahmeantrag unter zwingender Nutzung dieses Formulars elektronisch in Textform nach § 126b BGB auf dem elektronischen Vergabeportal beim Auftraggeber bis spätestens im Zeitpunkt des Schlusstermins für den Eingang der Teilnahmeanträge einzureichen.   3) Sämtliche im Formular geforderten Eigenerklärungen müssen grundsätzlich spätestens im Zeitpunkt des Schlusstermins für den Eingang der Teilnahmeanträge beim Auftraggeber vorliegen. Eine fehlende, unvollständige oder fehlerhafte Eigenerklärung führt grundsätzlich zum Ausschluss. Eine fehlende, unvollständige oder fehlerhafte Eigenerklärung kann nur ausnahmsweise auf gesonderte Anforderung des Auftraggebers bis zum Ablauf einer vom Auftraggeber zu bestimmenden Nachfrist vorgelegt werden. Erklärt das Unternehmen im Formular, für eine oder mehrere der unter Abschnitt III und/oder V des Formulars geforderten Eigenerklärungen, diese nicht abgeben zu können, so erfolgt der Ausschluss des Bewerbers. Eine gesonderte Aufforderung des Auftraggebers bis zum Ablauf einer vom Auftraggeber zu bestimmenden Nachfrist erfolgt nicht. Der Auftraggeber kann bei Übermittlung einer Einheitlichen Europäischen Eigenerklärung den Bewerber jederzeit während des Verfahrens auffordern, sämtliche oder einen Teil der unter den Abschnitten III, IV und V des Formulars geforderten Erklärungen beizubringen, wenn dies zur angemessenen Durchführung des Verfahrens erforderlich ist.   4) Eine Bewerbergemeinschaft muss mit ihrem Teilnahmeantrag eine alle Mitglieder umfassende Erklärung zur Bewerber-/Bietergemeinschaft vorlegen. Die Eigenerklärungen nach den Abschnitten III und IV des Formulars sind für jedes Mitglied der Bewerbergemeinschaft zu erbringen. Für jedes Mitglied der Bewerbergemeinschaft ist das Formular insoweit zu vervielfältigen und entsprechend zu bearbeiten; der Name des Mitglieds einer Bewerbergemeinschaft ist jeweils auf dem Deckblatt/Seite 1 des vervielfältigten Formulars zu vermerken, der Name des Erklärenden für das Mitglied einer Bewerbergemeinschaft ist im entsprechenden Unterschriftsfeld des vervielfältigten Formulars zu vermerken.   5) Beabsichtigt der Bewerber, sich bei der Erfüllung des Auftrages der Fähigkeiten anderer, rechtlich selbständiger Unternehmen zu bedienen ("Unterauftragnehmer"), muss er die Teile des Auftrages, die im Wege der Unterauftragsvergabe vergeben werden sollen, unter Abschnitt II Ziffer 2 des Formulars bezeichnen. Zum Nachweis, dass ihm die erforderlichen Fähigkeiten (Mittel, Kapazitäten) der anderen Unternehmen zur Verfügung stehen, hat der Bewerber mit seinem Teilnahmeantrag diese Unternehmen zu benennen (vgl. Abschnitt II Ziffer 2 und Ziffer 4 des Formulars) und entsprechende Verpflichtungserklärungen dieser Unternehmen (vgl. Abschnitt II Ziffer 4 des Formulars) vorzulegen. Die Eigenerklärungen nach den Abschnitten III und IV des Formulars sind auch für die vorgesehenen Unterauftragnehmer zu erbringen. Für jeden vorgesehenen Unterauftragnehmer ist das Formular insoweit zu vervielfältigen und entsprechend zu bearbeiten; der Name des vorgesehenen Unterauftragnehmers ist jeweils auf dem Deckblatt/Seite 1 des vervielfältigten Formulars zu vermerken, der Name des Erklärenden für den Unterauftragnehmer ist im entsprechenden Feld des vervielfältigten Formulars zu vermerken. Bei Vorliegen zwingender Ausschlussgründe verlangt der Auftraggeber die Ersetzung des Unterauftragnehmers. Bei Vorliegen fakultativer Ausschlussgründe kann der Auftraggeber verlangen, dass dieser Unterauftragnehmer ersetzt wird. Der Auftraggeber kann dem Bewerber dafür eine Frist setzen.  Sollte der Bewerber/die Bewerbergemeinschaft den Unterauftragnehmer nicht im Rahmen der Eignungsleihe einsetzen (vgl. Abschnitt I Ziffer 5), ist es ausreichend, die Leistungen, für die ein Unterauftragnehmer eingesetzt werden soll, unter Abschnitt II Ziffer 2 zu benennen. Der oder die Unterauftragnehmer ist/sind in diesem Fall grundsätzlich mit dem Erstangebot zu benennen und es ist nachzuweisen, dass dem Bewerber/der Bewerbergemeinschaft die erforderlichen Mittel dieser Unterauftragnehmer zur Verfügung stehen werden, indem er/sie beispielsweise eine entsprechende Verpflichtungserklärung dieser Unternehmen vorlegt. Die vorstehend geforderten Erklärungen für die Unterauftragnehmer sind in diesem Fall mit dem Erstangebot einzureichen.  6) Der Bewerber kann im Hinblick auf die erforderliche wirtschaftliche und finanzielle sowie die technische und berufliche Leistungsfähigkeit (vgl. hierzu Abschnitt V des Formulars) die Kapazitäten anderer Unternehmen in Anspruch nehmen ("Eignungsleihe"), wenn er nachweist, dass ihm die für den Auftrag erforderlichen Mittel tatsächlich zur Verfügung stehen werden, indem er beispielsweise eine entsprechende Verpflichtungserklärung dieser Unternehmen vorlegt (vgl. hierzu Abschnitt II Ziffer 4 des Formulars). Der Bewerber benennt diese Unternehmen unter Abschnitt II Ziffer 3 sowie Ziffer 4 des Formulars und bezeichnet unter Abschnitt II Ziffer 3 des Formulars das jeweilige Eignungskriterium (vgl. Abschnitt V des Formulars). Die Unternehmen, deren Kapazitäten der Bewerber für die Erfüllung bestimmter Eignungskriterien nach Abschnitt V des Formulars in Anspruch nehmen will, haben die Eigenerklärungen zu diesen Eignungskriterien nach Abschnitt V des Formulars sowie alle Eigenerklärungen nach den Abschnitten III und IV des Formulars vorzulegen. Für jedes eignungsverleihende Unternehmen ist das Formular insoweit zu vervielfältigen und entsprechend zu bearbeiten; der Name des eignungsverleihenden Unternehmens ist jeweils auf dem Deckblatt/Seite 1 des vervielfältigten Formulars zu vermerken, der Name des Erklärenden für das eignungsverleihende Unternehmen ist auf der entsprechenden Seite des vervielfältigten Formulars zu vermerken. Der Bewerber kann jedoch im Hinblick auf Nachweise für die erforderliche berufliche Leistungsfähigkeit oder die einschlägige berufliche Erfahrung (z.B. Referenzen) die Kapazitäten anderer Unternehmen nur dann in Anspruch nehmen, wenn diese die Leistung auch als Unterauftragnehmer erbringen. Der Auftraggeber verlangt bei Vorliegen zwingender Ausschlussgründe die Ersetzung des eignungsverleihenden Unternehmens; bei Vorliegen fakultativer Ausschlussgründe kann der Auftraggeber verlangen, dass dieses eignungsverleihende Unternehmen ersetzt wird. Der Auftraggeber kann dem Bewerber dafür eine Frist setzen.   7) Der Auftraggeber schließt einen Bewerber, bei dem ein Ausschlussgrund nach Abschnitt III oder IV des Formulars vorliegt, nicht von der Teilnahme an dem Vergabeverfahren aus, wenn der Bewerber nachgewiesen hat ("Selbstreinigung"), dass er für jeden durch eine Straftat oder ein Fehlverhalten verursachten Schaden einen Ausgleich gezahlt oder sich zur Zahlung eines Ausgleichs verpflichtet hat, die Tatsachen und Umstände, die mit der Straftat oder  dem Fehlverhalten und dem dadurch verursachten Schaden in Zusammenhang stehen, durch eine aktive Zusammenarbeit mit den Ermittlungsbehörden und dem Auftraggeber umfassend geklärt hat, und konkrete technische, organisatorische und personelle Maßnahmen ergriffen hat, die geeignet sind, weitere Straftaten oder weiteres Fehlverhalten zu vermeiden.</cbc:Note>
+			<cbc:SMESuitableIndicator>true</cbc:SMESuitableIndicator>
+			<cac:ProcurementAdditionalType>
+				<cbc:ProcurementTypeCode listName="strategic-procurement">none</cbc:ProcurementTypeCode>
+			</cac:ProcurementAdditionalType>
+			<cac:MainCommodityClassification>
+				<cbc:ItemClassificationCode listName="cpv">72400000</cbc:ItemClassificationCode>
+			</cac:MainCommodityClassification>
+			<cac:RealizedLocation>
+				<cac:Address>
+					<cbc:CityName>Hilpoltstein</cbc:CityName>
+					<cbc:PostalZone>91161</cbc:PostalZone>
+					<cbc:CountrySubentityCode listName="nuts">DE25B</cbc:CountrySubentityCode>
+					<cac:Country>
+						<cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+					</cac:Country>
+				</cac:Address>
+			</cac:RealizedLocation>
+			<cac:PlannedPeriod>
+				<cbc:DurationMeasure unitCode="YEAR">7</cbc:DurationMeasure>
+			</cac:PlannedPeriod>
+		</cac:ProcurementProject>
+	</cac:ProcurementProjectLot>
+	<cac:ProcurementProjectLot>
+		<cbc:ID schemeName="Lot">LOT-0002</cbc:ID>
+		<cac:TenderingTerms>
+			<ext:UBLExtensions>
+				<ext:UBLExtension>
+					<ext:ExtensionContent>
+						<efext:EformsExtension>
+							<efac:SelectionCriteria>
+								<cbc:TendererRequirementTypeCode listName="selection-criterion">slc-suit-reg-trade</cbc:TendererRequirementTypeCode>
+								<cbc:Description languageID="DEU">Eigenerklärung darüber, dass der Bewerber in das Berufsregister (z.B. Handelsregister) seines Sitzes oder Wohnsitzes eingetragen ist.</cbc:Description>
+								<efbc:SecondStageIndicator>false</efbc:SecondStageIndicator>
+							</efac:SelectionCriteria>
+							<efac:SelectionCriteria>
+								<cbc:TendererRequirementTypeCode listName="selection-criterion">slc-suit-auth-mbrshp</cbc:TendererRequirementTypeCode>
+								<cbc:Description languageID="DEU">Vorlage des Nachweises über die Registrierung als Betreiber öffentlicher Telekommunikationsnetze im Sinne des § 5 Telekommunikationsgesetz (TKG) bei der BNetzA.</cbc:Description>
+								<efbc:SecondStageIndicator>false</efbc:SecondStageIndicator>
+							</efac:SelectionCriteria>
+							<efac:SelectionCriteria>
+								<cbc:TendererRequirementTypeCode listName="selection-criterion">slc-stand-to-gen</cbc:TendererRequirementTypeCode>
+								<cbc:Description languageID="DEU">Vorlage des aktuellsten testierten Jahresabschlusses des Unternehmens</cbc:Description>
+								<efbc:SecondStageIndicator>false</efbc:SecondStageIndicator>
+							</efac:SelectionCriteria>
+							<efac:SelectionCriteria>
+								<cbc:TendererRequirementTypeCode listName="selection-criterion">slc-stand-to-gen</cbc:TendererRequirementTypeCode>
+								<cbc:Description languageID="DEU">Eigenerklärung über den Gesamtumsatz und über den Umsatz in dem Tätigkeitsbereich des Auftrags, bezogen auf die letzten drei Geschäftsjahre.</cbc:Description>
+								<efbc:SecondStageIndicator>false</efbc:SecondStageIndicator>
+							</efac:SelectionCriteria>
+							<efac:SelectionCriteria>
+								<cbc:TendererRequirementTypeCode listName="selection-criterion">slc-abil-ref-work</cbc:TendererRequirementTypeCode>
+								<cbc:Description languageID="DEU">Eigenerklärung durch Nennung von Referenzen über Leistungen im Breitbandausbau über den Ausbau und den Betrieb einer aktiven Telekommunikationsinfrastruktur im Bereich Glasfaser gegliedert nach a) Name des Auftraggebers, b) Erbringungszeitraum innerhalb der letzten drei Geschäftsjahre vor Ablauf der Teilnahmefrist, sowie c) Wert in Euro, d) den Leistungserbringer und e) die Anzahl der ausgebauten Adressen.   Die Referenz 1 (Mindestreferenz) ist erbracht, wenn die geforderten Mindestanforderungen erfüllt sind; andernfalls erfolgt der Ausschluss. Die Mindestanforderungen sind erfüllt, wenn der Bewerber a) den Namen des Auftraggebers, b) den Erbringungszeitraum innerhalb der letzten drei Geschäftsjahre vor Ablauf der Teilnahmefrist, sowie c) den Wert in Euro, d) den Leistungserbringer und e) die Anzahl der ausgebauten Adressen benannt hat.  Die Mindestreferenz muss dabei im geförderten Bereich stattgefunden haben.  Die Referenz 1 (Mindestreferenz) wird - soweit kein Ausschluss erfolgt - hinsichtlich der ihr zuerkannten Bedeutung für die zu vergebenden Leistungen gewichtet und mit einem Punktesystem bewertet.  Die Referenzen 2 bis 5 werden - soweit die geforderten Mindestanforderungen erfüllt sind; andernfalls erfolgt die Nichtwertung der Referenz - hinsichtlich der ihnen zuerkannten Bedeutung für die zu vergebenden Leistungen gewichtet und  mit einem Punktesystem bewertet. Die Mindestanforderungen der weiteren Referenzen sind erfüllt, wenn der Bewerber a) den Namen des Auftraggebers, b) den Erbringungszeitraum innerhalb der letzten drei Geschäftsjahre vor Ablauf der Teilnahmefrist, sowie c) den Wert in Euro, d) den Leistungserbringer und e) die Anzahl der ausgebauten Adressen benannt hat.   Es dürfen insgesamt höchstens fünf Referenzen benannt werden.</cbc:Description>
+								<efbc:SecondStageIndicator>true</efbc:SecondStageIndicator>
+								<efac:CriterionParameter>
+									<efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+									<efbc:ParameterNumeric>500.0</efbc:ParameterNumeric>
+								</efac:CriterionParameter>
+							</efac:SelectionCriteria>
+							<efac:StrategicProcurement>
+								<efbc:ApplicableLegalBasis listName="cvd-scope">false</efbc:ApplicableLegalBasis>
+							</efac:StrategicProcurement>
+							<efac:StrategicProcurement>
+								<efbc:ApplicableLegalBasis listName="eed-scope">false</efbc:ApplicableLegalBasis>
+							</efac:StrategicProcurement>
+						</efext:EformsExtension>
+					</ext:ExtensionContent>
+				</ext:UBLExtension>
+			</ext:UBLExtensions>
+			<cbc:VariantConstraintCode listName="permission">not-allowed</cbc:VariantConstraintCode>
+			<cbc:FundingProgramCode listName="eu-funded">eu-funds</cbc:FundingProgramCode>
+			<cbc:RequiredCurriculaCode listName="requirement-stage">not-requ</cbc:RequiredCurriculaCode>
+			<cbc:MultipleTendersCode listName="permission">not-allowed</cbc:MultipleTendersCode>
+			<cac:RequiredFinancialGuarantee>
+				<cbc:GuaranteeTypeCode listName="tender-guarantee-required">false</cbc:GuaranteeTypeCode>
+			</cac:RequiredFinancialGuarantee>
+			<cac:CallForTendersDocumentReference>
+				<ext:UBLExtensions>
+					<ext:UBLExtension>
+						<ext:ExtensionContent>
+							<efext:EformsExtension>
+								<efac:OfficialLanguages>
+									<cac:Language>
+										<cbc:ID>DEU</cbc:ID>
+									</cac:Language>
+								</efac:OfficialLanguages>
+							</efext:EformsExtension>
+						</ext:ExtensionContent>
+					</ext:UBLExtension>
+				</ext:UBLExtensions>
+				<cbc:ID>SomeTenderDocID1</cbc:ID>
+				<cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+				<cac:Attachment>
+					<cac:ExternalReference>
+						<cbc:URI>https://www.dtvp.de/Satellite/notice/CXP4D5GMQ9G/documents</cbc:URI>
+					</cac:ExternalReference>
+				</cac:Attachment>
+			</cac:CallForTendersDocumentReference>
+			<cac:TendererQualificationRequest>
+				<cbc:CompanyLegalFormCode listName="required">false</cbc:CompanyLegalFormCode>
+			</cac:TendererQualificationRequest>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="missing-info-submission">late-some</cbc:TendererRequirementTypeCode>
+					<cbc:Description languageID="DEU">Der vorstehende Textpassus ist systemseitig vorgegeben und wie folgt zu verstehen: 1) Sämtliche im Formular geforderten Eigenerklärungen müssen grundsätzlich spätestens im Zeitpunkt des Schlusstermins für den Eingang der Teilnahmeanträge beim Auftraggeber vorliegen. Eine fehlende, unvollständige oder fehlerhafte Eigenerklärung führt grundsätzlich zum Ausschluss. Eine fehlende, unvollständige oder fehlerhafte Eigenerklärung kann nur ausnahmsweise auf gesonderte Anforderung des Auftraggebers bis zum Ablauf einer vom Auftraggeber zu bestimmenden Nachfrist vorgelegt werden. Erklärt das Unternehmen im Formular, für eine oder mehrere der unter Abschnitt III und/oder V des Formulars geforderten Eigenerklärungen, diese nicht abgeben zu können, so erfolgt der Ausschluss des Bewerbers. Eine gesonderte Aufforderung des Auftraggebers bis zum Ablauf einer vom Auftraggeber zu bestimmenden Nachfrist erfolgt nicht. Der Auftraggeber kann bei Übermittlung einer Einheitlichen Europäischen Eigenerklärung den Bewerber jederzeit während des Verfahrens auffordern, sämtliche oder einen Teil der unter den Abschnitten III, IV und V des Formulars geforderten Erklärungen beizubringen, wenn dies zur angemessenen Durchführung des Verfahrens erforderlich ist.  2) Vgl. ergänzend § 56 VgV.</cbc:Description>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-notice</cbc:TendererRequirementTypeCode>
+				</cac:SpecificTendererRequirement>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="einvoicing">not-allowed</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="conditions">performance</cbc:ExecutionRequirementCode>
+				<cbc:Description languageID="DEU">Bedingungen für die Ausführung des Auftrags: vgl. Vergabeunterlagen, dort insb. Vertragsunterlagen.</cbc:Description>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="fsr">false</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:AwardingTerms>
+				<cbc:NoFurtherNegotiationIndicator>true</cbc:NoFurtherNegotiationIndicator>
+				<cac:AwardingCriterion>
+					<cac:SubordinateAwardingCriterion>
+						<ext:UBLExtensions>
+							<ext:UBLExtension>
+								<ext:ExtensionContent>
+									<efext:EformsExtension>
+										<efac:AwardCriterionParameter>
+											<efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+											<efbc:ParameterNumeric>85.0</efbc:ParameterNumeric>
+										</efac:AwardCriterionParameter>
+									</efext:EformsExtension>
+								</ext:ExtensionContent>
+							</ext:UBLExtension>
+						</ext:UBLExtensions>
+						<cbc:AwardingCriterionTypeCode listName="award-criterion-type">cost</cbc:AwardingCriterionTypeCode>
+						<cbc:Name languageID="DEU">Höhe der Wirtschaftlichkeitslücke</cbc:Name>
+						<cbc:Description languageID="DEU">Das Angebot hat eine detaillierte und plausible Darstellung der  Wirtschaftlichkeitslücke zu enthalten. Als Betrachtungszeitraum gilt hierbei ein Zeitraum von mindestens sieben Jahren ab Inbetriebnahme. Für die Angebotswertung wird eine Punkteskala festgelegt. Die volle Punktzahl erhält das Angebot mit der niedrigsten Wirtschaftlichkeitslücke. 0 Punkte erhält ein Angebot mit dem 2-fachen der niedrigsten Wirtschaftlichkeitslücke. Alle Angebote darüber erhalten ebenfalls 0 Punkte. Die Punktebewertung für die dazwischenliegenden Wirtschaftlichkeitslücken erfolgt über eine lineare Interpolation mit bis zu zwei Stellen nach dem Komma.</cbc:Description>
+					</cac:SubordinateAwardingCriterion>
+					<cac:SubordinateAwardingCriterion>
+						<ext:UBLExtensions>
+							<ext:UBLExtension>
+								<ext:ExtensionContent>
+									<efext:EformsExtension>
+										<efac:AwardCriterionParameter>
+											<efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+											<efbc:ParameterNumeric>10.0</efbc:ParameterNumeric>
+										</efac:AwardCriterionParameter>
+									</efext:EformsExtension>
+								</ext:ExtensionContent>
+							</ext:UBLExtension>
+						</ext:UBLExtensions>
+						<cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+						<cbc:Name languageID="DEU">Realisierungszeit</cbc:Name>
+						<cbc:Description languageID="DEU">Der Bieter hat mit seinem Angebot im Angebotsblatt die Ausbaudauer bis zur Inbetriebnahme in Monaten anzugeben.  Der Bieter mit der geringsten Realisierungszeit erhält 10 Punkte. Bei doppelter Realisierungszeit des Bestbieters werden 0 Leistungspunkte vergeben. Dazwischen erfolgt eine lineare Interpolation.</cbc:Description>
+					</cac:SubordinateAwardingCriterion>
+					<cac:SubordinateAwardingCriterion>
+						<ext:UBLExtensions>
+							<ext:UBLExtension>
+								<ext:ExtensionContent>
+									<efext:EformsExtension>
+										<efac:AwardCriterionParameter>
+											<efbc:ParameterCode listName="number-weight">poi-exa</efbc:ParameterCode>
+											<efbc:ParameterNumeric>5.0</efbc:ParameterNumeric>
+										</efac:AwardCriterionParameter>
+									</efext:EformsExtension>
+								</ext:ExtensionContent>
+							</ext:UBLExtension>
+						</ext:UBLExtensions>
+						<cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+						<cbc:Name languageID="DEU">Alternative Verlegemethoden</cbc:Name>
+						<cbc:Description languageID="DEU">Im Angebotsblatt ist zu kennzeichnen, ob diese zum Einsatz kommen oder ob diese nicht zum Einsatz kommen werden.  Für die Angebotswertung wird je nach Angabe des Bieters, die im Angebotsblatt hinterlegte Punktzahl zugrunde gelegt. Der Bieter kann 0  oder die volle Punktzahl, je nach Kennzeichnung im Angebotsblatt erreichen.</cbc:Description>
+					</cac:SubordinateAwardingCriterion>
+				</cac:AwardingCriterion>
+			</cac:AwardingTerms>
+			<cac:AdditionalInformationParty>
+				<cac:PartyIdentification>
+					<cbc:ID>ORG-0001</cbc:ID>
+				</cac:PartyIdentification>
+			</cac:AdditionalInformationParty>
+			<cac:TenderRecipientParty>
+				<cbc:EndpointID>https://www.dtvp.de/Satellite/notice/CXP4D5GMQ9G</cbc:EndpointID>
+				<cac:PartyIdentification>
+					<cbc:ID>ORG-0001</cbc:ID>
+				</cac:PartyIdentification>
+			</cac:TenderRecipientParty>
+			<cac:AppealTerms>
+				<cac:PresentationPeriod>
+					<cbc:Description languageID="DEU">1) Die Vergabekammer leitet ein Nachprüfungsverfahren nur auf Antrag ein. Der Antrag ist schriftlich bei der Vergabekammer einzureichen und unverzüglich zu begründen. Er soll ein bestimmtes Begehren enthalten. Ein Antragsteller ohne Wohnsitz oder gewöhnlichen Aufenthalt, Sitz oder Geschäftsleitung in der Bundesrepublik Deutschland hat einen Empfangsbevollmächtigten in der Bundesrepublik Deutschland zu benennen. Die Begründung muss die Bezeichnung des Antragsgegners, eine Beschreibung der behaupteten Rechtsverletzung mit Sachverhaltsdarstellung und die Bezeichnung der verfügbaren Beweismittel enthalten sowie darlegen, dass die Rüge gegenüber dem Auftraggeber erfolgt ist; sie soll, soweit bekannt, die sonstigen Beteiligten nennen. 2) Nach § 160 Abs. 3 Nr. 1 GWB ist ein Nachprüfungsantrag unzulässig, soweit der Antragsteller den geltend gemachten Verstoß gegen Vergabevorschriften vor Einreichen des Nachprüfungsantrags erkannt und gegenüber dem Auftraggeber nicht innerhalb einer Frist von zehn Kalendertagen gerügt hat; der Ablauf der Frist nach § 134 Abs. 2 GWB bleibt unberührt. Verstöße gegen Vergabevorschriften, die aufgrund der Bekanntmachung erkennbar sind, sind spätestens bis zum Ablauf der in der Bekanntmachung benannten Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber zu rügen (§ 160 Abs. 3 Nr. 2 GWB). Verstöße gegen Vergabevorschriften, die aufgrund der Vergabeunterlagen erkennbar sind, sind spätestens bis zum Ablauf der Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber zu rügen (§ 160 Abs. 3 Nr. 3 GWB). Teilt die Vergabestelle mit, dass einer Rüge nicht abgeholfen wird, kann ein Nachprüfungsantrag bei der unten angegebenen Vergabekammer nur  innerhalb von 15 Kalendertagen nach Eingang dieser Mitteilung schriftlich gestellt werden (§ 160 Abs. 3 Nr. 4 GWB).</cbc:Description>
+				</cac:PresentationPeriod>
+				<cac:AppealReceiverParty>
+					<cac:PartyIdentification>
+						<cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+					</cac:PartyIdentification>
+				</cac:AppealReceiverParty>
+			</cac:AppealTerms>
+			<cac:Language>
+				<cbc:ID>DEU</cbc:ID>
+			</cac:Language>
+			<cac:LotDistribution>
+				<cbc:MaximumLotsAwardedNumeric>2</cbc:MaximumLotsAwardedNumeric>
+				<cbc:MaximumLotsSubmittedNumeric>2</cbc:MaximumLotsSubmittedNumeric>
+			</cac:LotDistribution>
+			<cac:PostAwardProcess>
+				<cbc:ElectronicOrderUsageIndicator>false</cbc:ElectronicOrderUsageIndicator>
+				<cbc:ElectronicPaymentUsageIndicator>false</cbc:ElectronicPaymentUsageIndicator>
+			</cac:PostAwardProcess>
+			<cac:SecurityClearanceTerm>
+				<cbc:Code listName="required">false</cbc:Code>
+			</cac:SecurityClearanceTerm>
+		</cac:TenderingTerms>
+		<cac:TenderingProcess>
+			<cbc:SubmissionMethodCode listName="esubmission">required</cbc:SubmissionMethodCode>
+			<cbc:CandidateReductionConstraintIndicator>true</cbc:CandidateReductionConstraintIndicator>
+			<cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+			<cbc:AccessToolsURI>https://www.dtvp.de/Satellite/notice/CXP4D5GMQ9G</cbc:AccessToolsURI>
+			<cac:ParticipationRequestReceptionPeriod>
+				<cbc:EndDate>2026-09-10+02:00</cbc:EndDate>
+				<cbc:EndTime>10:00:00+02:00</cbc:EndTime>
+			</cac:ParticipationRequestReceptionPeriod>
+			<cac:EconomicOperatorShortList>
+				<cbc:LimitationDescription>true</cbc:LimitationDescription>
+				<cbc:MaximumQuantity>3</cbc:MaximumQuantity>
+				<cbc:MinimumQuantity>3</cbc:MinimumQuantity>
+			</cac:EconomicOperatorShortList>
+			<cac:AuctionTerms>
+				<cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+			</cac:AuctionTerms>
+			<cac:ContractingSystem>
+				<cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+			</cac:ContractingSystem>
+			<cac:ContractingSystem>
+				<cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+			</cac:ContractingSystem>
+		</cac:TenderingProcess>
+		<cac:ProcurementProject>
+			<cbc:ID schemeName="internalID">Los 2</cbc:ID>
+			<cbc:Name languageID="DEU">Los 2 Ost</cbc:Name>
+			<cbc:Description languageID="DEU">Ein Branchendialog und eine Markterkundung hat / haben ergeben, dass für den Teilbereich der Gebietskörperschaft derzeit keine leistungsfähige Gigabitinfrastruktur mit einem Angebot entsprechender Telekommunikationsdienste flächendeckend gemäß den Zielen der Gigabit-Rahmenregelung 2.0 verfügbar ist und in den nächsten Jahren verfügbar sein wird. Die Gebietskörperschaft hat daher Fördermittel für einen flächendeckenden Gigabitausbau - bezogen auf den unterversorgten Teilbereich im Wirtschaftlichkeitslückenmodell im Rahmen der Richtlinie "Förderung zur Unterstützung des Gigabitausbaus der Telekommunikationsnetze in der Bundesrepublik Deutschland - Gigabit-Richtlinie des Bundes 2.0 (Gigabit-RL 2.0)" vom 31. März 2023 in der Fassung der Änderung vom 13.01.2025 ("Gigabit-Richtlinie 2.0") beantragt und bewilligt erhalten. Die in diesem Förderprogramm im Wirtschaftlichkeitslückenmodell bereitgestellten Fördermittel (im Folgenden: Mittel) sollen durch Gebietskörperschaften an Telekommunikationsunternehmen im EU-beihilfenrechtlichen Sinne als Investitionskostenbeihilfe für den Bau und Betrieb von Gigabitnetzen weitergeleitet werden.</cbc:Description>
+			<cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+			<cbc:Note languageID="DEU">#Besonders auch geeignet für:other-sme#
+
+
+1) Ziel des Teilnahmewettbewerbs ist es, höchstens drei Bewerber auszuwählen. Die objektiven Kriterien für die Auswahl dieser höchstens drei geeigneten Bewerber sind in den Abschnitten III bis V aufgeführt. Die unter Abschnitt III und IV aufgeführten Teilnahmekriterien sind als zwingende und fakultative Ausschlusskriterien formuliert. Die im Abschnitt V aufgeführten Eignungskriterien werden - soweit die in Abschnitt V genannten Mindestanforderungen erfüllt sind und kein Ausschluss erfolgt - hinsichtlich der ihnen zuerkannten Bedeutung für die zu vergebenden Leistungen gewichtet und mit einem Punktesystem bewertet.  2) Der Bewerber hat seinen Teilnahmeantrag unter zwingender Nutzung dieses Formulars elektronisch in Textform nach § 126b BGB auf dem elektronischen Vergabeportal beim Auftraggeber bis spätestens im Zeitpunkt des Schlusstermins für den Eingang der Teilnahmeanträge einzureichen.   3) Sämtliche im Formular geforderten Eigenerklärungen müssen grundsätzlich spätestens im Zeitpunkt des Schlusstermins für den Eingang der Teilnahmeanträge beim Auftraggeber vorliegen. Eine fehlende, unvollständige oder fehlerhafte Eigenerklärung führt grundsätzlich zum Ausschluss. Eine fehlende, unvollständige oder fehlerhafte Eigenerklärung kann nur ausnahmsweise auf gesonderte Anforderung des Auftraggebers bis zum Ablauf einer vom Auftraggeber zu bestimmenden Nachfrist vorgelegt werden. Erklärt das Unternehmen im Formular, für eine oder mehrere der unter Abschnitt III und/oder V des Formulars geforderten Eigenerklärungen, diese nicht abgeben zu können, so erfolgt der Ausschluss des Bewerbers. Eine gesonderte Aufforderung des Auftraggebers bis zum Ablauf einer vom Auftraggeber zu bestimmenden Nachfrist erfolgt nicht. Der Auftraggeber kann bei Übermittlung einer Einheitlichen Europäischen Eigenerklärung den Bewerber jederzeit während des Verfahrens auffordern, sämtliche oder einen Teil der unter den Abschnitten III, IV und V des Formulars geforderten Erklärungen beizubringen, wenn dies zur angemessenen Durchführung des Verfahrens erforderlich ist.   4) Eine Bewerbergemeinschaft muss mit ihrem Teilnahmeantrag eine alle Mitglieder umfassende Erklärung zur Bewerber-/Bietergemeinschaft vorlegen. Die Eigenerklärungen nach den Abschnitten III und IV des Formulars sind für jedes Mitglied der Bewerbergemeinschaft zu erbringen. Für jedes Mitglied der Bewerbergemeinschaft ist das Formular insoweit zu vervielfältigen und entsprechend zu bearbeiten; der Name des Mitglieds einer Bewerbergemeinschaft ist jeweils auf dem Deckblatt/Seite 1 des vervielfältigten Formulars zu vermerken, der Name des Erklärenden für das Mitglied einer Bewerbergemeinschaft ist im entsprechenden Unterschriftsfeld des vervielfältigten Formulars zu vermerken.   5) Beabsichtigt der Bewerber, sich bei der Erfüllung des Auftrages der Fähigkeiten anderer, rechtlich selbständiger Unternehmen zu bedienen ("Unterauftragnehmer"), muss er die Teile des Auftrages, die im Wege der Unterauftragsvergabe vergeben werden sollen, unter Abschnitt II Ziffer 2 des Formulars bezeichnen. Zum Nachweis, dass ihm die erforderlichen Fähigkeiten (Mittel, Kapazitäten) der anderen Unternehmen zur Verfügung stehen, hat der Bewerber mit seinem Teilnahmeantrag diese Unternehmen zu benennen (vgl. Abschnitt II Ziffer 2 und Ziffer 4 des Formulars) und entsprechende Verpflichtungserklärungen dieser Unternehmen (vgl. Abschnitt II Ziffer 4 des Formulars) vorzulegen. Die Eigenerklärungen nach den Abschnitten III und IV des Formulars sind auch für die vorgesehenen Unterauftragnehmer zu erbringen. Für jeden vorgesehenen Unterauftragnehmer ist das Formular insoweit zu vervielfältigen und entsprechend zu bearbeiten; der Name des vorgesehenen Unterauftragnehmers ist jeweils auf dem Deckblatt/Seite 1 des vervielfältigten Formulars zu vermerken, der Name des Erklärenden für den Unterauftragnehmer ist im entsprechenden Feld des vervielfältigten Formulars zu vermerken. Bei Vorliegen zwingender Ausschlussgründe verlangt der Auftraggeber die Ersetzung des Unterauftragnehmers. Bei Vorliegen fakultativer Ausschlussgründe kann der Auftraggeber verlangen, dass dieser Unterauftragnehmer ersetzt wird. Der Auftraggeber kann dem Bewerber dafür eine Frist setzen.  Sollte der Bewerber/die Bewerbergemeinschaft den Unterauftragnehmer nicht im Rahmen der Eignungsleihe einsetzen (vgl. Abschnitt I Ziffer 5), ist es ausreichend, die Leistungen, für die ein Unterauftragnehmer eingesetzt werden soll, unter Abschnitt II Ziffer 2 zu benennen. Der oder die Unterauftragnehmer ist/sind in diesem Fall grundsätzlich mit dem Erstangebot zu benennen und es ist nachzuweisen, dass dem Bewerber/der Bewerbergemeinschaft die erforderlichen Mittel dieser Unterauftragnehmer zur Verfügung stehen werden, indem er/sie beispielsweise eine entsprechende Verpflichtungserklärung dieser Unternehmen vorlegt. Die vorstehend geforderten Erklärungen für die Unterauftragnehmer sind in diesem Fall mit dem Erstangebot einzureichen.  6) Der Bewerber kann im Hinblick auf die erforderliche wirtschaftliche und finanzielle sowie die technische und berufliche Leistungsfähigkeit (vgl. hierzu Abschnitt V des Formulars) die Kapazitäten anderer Unternehmen in Anspruch nehmen ("Eignungsleihe"), wenn er nachweist, dass ihm die für den Auftrag erforderlichen Mittel tatsächlich zur Verfügung stehen werden, indem er beispielsweise eine entsprechende Verpflichtungserklärung dieser Unternehmen vorlegt (vgl. hierzu Abschnitt II Ziffer 4 des Formulars). Der Bewerber benennt diese Unternehmen unter Abschnitt II Ziffer 3 sowie Ziffer 4 des Formulars und bezeichnet unter Abschnitt II Ziffer 3 des Formulars das jeweilige Eignungskriterium (vgl. Abschnitt V des Formulars). Die Unternehmen, deren Kapazitäten der Bewerber für die Erfüllung bestimmter Eignungskriterien nach Abschnitt V des Formulars in Anspruch nehmen will, haben die Eigenerklärungen zu diesen Eignungskriterien nach Abschnitt V des Formulars sowie alle Eigenerklärungen nach den Abschnitten III und IV des Formulars vorzulegen. Für jedes eignungsverleihende Unternehmen ist das Formular insoweit zu vervielfältigen und entsprechend zu bearbeiten; der Name des eignungsverleihenden Unternehmens ist jeweils auf dem Deckblatt/Seite 1 des vervielfältigten Formulars zu vermerken, der Name des Erklärenden für das eignungsverleihende Unternehmen ist auf der entsprechenden Seite des vervielfältigten Formulars zu vermerken. Der Bewerber kann jedoch im Hinblick auf Nachweise für die erforderliche berufliche Leistungsfähigkeit oder die einschlägige berufliche Erfahrung (z.B. Referenzen) die Kapazitäten anderer Unternehmen nur dann in Anspruch nehmen, wenn diese die Leistung auch als Unterauftragnehmer erbringen. Der Auftraggeber verlangt bei Vorliegen zwingender Ausschlussgründe die Ersetzung des eignungsverleihenden Unternehmens; bei Vorliegen fakultativer Ausschlussgründe kann der Auftraggeber verlangen, dass dieses eignungsverleihende Unternehmen ersetzt wird. Der Auftraggeber kann dem Bewerber dafür eine Frist setzen.   7) Der Auftraggeber schließt einen Bewerber, bei dem ein Ausschlussgrund nach Abschnitt III oder IV des Formulars vorliegt, nicht von der Teilnahme an dem Vergabeverfahren aus, wenn der Bewerber nachgewiesen hat ("Selbstreinigung"), dass er für jeden durch eine Straftat oder ein Fehlverhalten verursachten Schaden einen Ausgleich gezahlt oder sich zur Zahlung eines Ausgleichs verpflichtet hat, die Tatsachen und Umstände, die mit der Straftat oder  dem Fehlverhalten und dem dadurch verursachten Schaden in Zusammenhang stehen, durch eine aktive Zusammenarbeit mit den Ermittlungsbehörden und dem Auftraggeber umfassend geklärt hat, und konkrete technische, organisatorische und personelle Maßnahmen ergriffen hat, die geeignet sind, weitere Straftaten oder weiteres Fehlverhalten zu vermeiden.</cbc:Note>
+			<cbc:SMESuitableIndicator>true</cbc:SMESuitableIndicator>
+			<cac:ProcurementAdditionalType>
+				<cbc:ProcurementTypeCode listName="strategic-procurement">none</cbc:ProcurementTypeCode>
+			</cac:ProcurementAdditionalType>
+			<cac:MainCommodityClassification>
+				<cbc:ItemClassificationCode listName="cpv">72400000</cbc:ItemClassificationCode>
+			</cac:MainCommodityClassification>
+			<cac:RealizedLocation>
+				<cac:Address>
+					<cbc:CityName>Hilpoltstein</cbc:CityName>
+					<cbc:PostalZone>91161</cbc:PostalZone>
+					<cbc:CountrySubentityCode listName="nuts">DE25B</cbc:CountrySubentityCode>
+					<cac:Country>
+						<cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+					</cac:Country>
+				</cac:Address>
+			</cac:RealizedLocation>
+			<cac:PlannedPeriod>
+				<cbc:DurationMeasure unitCode="YEAR">7</cbc:DurationMeasure>
+			</cac:PlannedPeriod>
+		</cac:ProcurementProject>
+	</cac:ProcurementProjectLot>
+</ContractNotice>

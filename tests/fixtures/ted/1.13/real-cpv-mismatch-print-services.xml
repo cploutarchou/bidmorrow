@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><ContractNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<ext:UBLExtensions>
+		<ext:UBLExtension>
+			<ext:ExtensionContent>
+				<efext:EformsExtension>
+					<efac:Changes>
+						<efbc:ChangedNoticeIdentifier>523351-2026</efbc:ChangedNoticeIdentifier>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="CES">Zadavatel prodlužuje lhůtu pro podání nabídek z důvodu změny zadávacích podmínek.</efbc:ChangeDescription>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>LOT-0001</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:ChangeReason>
+							<cbc:ReasonCode listName="change-corrig-justification">update-add</cbc:ReasonCode>
+							<efbc:ReasonDescription languageID="CES">Zadavatel prodlužuje lhůtu pro podání nabídek z důvodu změny zadávacích podmínek.</efbc:ReasonDescription>
+						</efac:ChangeReason>
+					</efac:Changes>
+					<efac:NoticeSubType>
+						<cbc:SubTypeCode listName="notice-subtype">16</cbc:SubTypeCode>
+					</efac:NoticeSubType>
+					<efac:Organizations>
+						<efac:Organization>
+							<efbc:AcquiringCPBIndicator>false</efbc:AcquiringCPBIndicator>
+							<efbc:AwardingCPBIndicator>false</efbc:AwardingCPBIndicator>
+							<efac:Company>
+								<cac:PartyIdentification>
+									<cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+								</cac:PartyIdentification>
+								<cac:PartyName>
+									<cbc:Name languageID="CES">Pražské služby, a.s.</cbc:Name>
+								</cac:PartyName>
+								<cac:PostalAddress>
+									<cbc:StreetName>Pod šancemi 444</cbc:StreetName>
+									<cbc:CityName>Praha</cbc:CityName>
+									<cbc:PostalZone>19000</cbc:PostalZone>
+									<cbc:CountrySubentityCode listName="nuts">CZ010</cbc:CountrySubentityCode>
+									<cac:Country>
+										<cbc:IdentificationCode listName="country">CZE</cbc:IdentificationCode>
+									</cac:Country>
+								</cac:PostalAddress>
+								<cac:PartyLegalEntity>
+									<cbc:CompanyID>60194120</cbc:CompanyID>
+								</cac:PartyLegalEntity>
+								<cac:Contact>
+									<cbc:Telephone>+00 0000 000000</cbc:Telephone>
+									<cbc:ElectronicMail>contact@example-buyer.example</cbc:ElectronicMail>
+								</cac:Contact>
+							</efac:Company>
+						</efac:Organization>
+						<efac:Organization>
+							<efac:Company>
+								<cbc:WebsiteURI>https://uohs.gov.cz</cbc:WebsiteURI>
+								<cac:PartyIdentification>
+									<cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+								</cac:PartyIdentification>
+								<cac:PartyName>
+									<cbc:Name languageID="CES">Úřad pro ochranu hospodářské soutěže</cbc:Name>
+								</cac:PartyName>
+								<cac:PostalAddress>
+									<cbc:StreetName>třída Kpt. Jaroše 1926/7</cbc:StreetName>
+									<cbc:CityName>Brno</cbc:CityName>
+									<cbc:PostalZone>60200</cbc:PostalZone>
+									<cbc:CountrySubentityCode listName="nuts">CZ064</cbc:CountrySubentityCode>
+									<cac:Country>
+										<cbc:IdentificationCode listName="country">CZE</cbc:IdentificationCode>
+									</cac:Country>
+								</cac:PostalAddress>
+								<cac:PartyLegalEntity>
+									<cbc:CompanyID>65349423</cbc:CompanyID>
+								</cac:PartyLegalEntity>
+								<cac:Contact>
+									<cbc:Telephone>+420 542167111</cbc:Telephone>
+									<cbc:ElectronicMail>posta@uohs.cz</cbc:ElectronicMail>
+								</cac:Contact>
+							</efac:Company>
+						</efac:Organization>
+					</efac:Organizations>
+				<efac:Publication><efbc:NoticePublicationID schemeName="ojs-notice-id">00578736-2026</efbc:NoticePublicationID><efbc:GazetteID schemeName="ojs-id">161/2026</efbc:GazetteID><efbc:PublicationDate>2026-08-21+02:00</efbc:PublicationDate></efac:Publication></efext:EformsExtension>
+			</ext:ExtensionContent>
+		</ext:UBLExtension>
+	</ext:UBLExtensions>
+	<cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+	<cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+	<cbc:ID schemeName="notice-id">78780efd-aeda-46bf-8d29-a236e64da303</cbc:ID>
+	<cbc:ContractFolderID>15b75af9-d37b-42e4-92a9-14bc9f901654</cbc:ContractFolderID>
+	<cbc:IssueDate>2026-08-20+02:00</cbc:IssueDate>
+	<cbc:IssueTime>08:39:18+02:00</cbc:IssueTime>
+	<cbc:VersionID>01</cbc:VersionID>
+	<cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+	<cbc:NoticeTypeCode listName="competition">cn-standard</cbc:NoticeTypeCode>
+	<cbc:NoticeLanguageCode>CES</cbc:NoticeLanguageCode>
+	<cac:ContractingParty>
+		<cbc:BuyerProfileURI>https://www.tenderarena.cz/profily/psas</cbc:BuyerProfileURI>
+		<cac:ContractingPartyType>
+			<cbc:PartyTypeCode listName="buyer-legal-type">body-pl-cga</cbc:PartyTypeCode>
+		</cac:ContractingPartyType>
+		<cac:ContractingActivity>
+			<cbc:ActivityTypeCode listName="authority-activity">gen-pub</cbc:ActivityTypeCode>
+		</cac:ContractingActivity>
+		<cac:Party>
+			<cac:PartyIdentification>
+				<cbc:ID>ORG-0001</cbc:ID>
+			</cac:PartyIdentification>
+		</cac:Party>
+	</cac:ContractingParty>
+	<cac:TenderingTerms>
+		<cac:ProcurementLegislationDocumentReference>
+			<cbc:ID>CrossBorderLaw</cbc:ID>
+			<cbc:DocumentDescription languageID="CES">Zákon č. 134/2016 Sb., o zadávání veřejných zakázek</cbc:DocumentDescription>
+		</cac:ProcurementLegislationDocumentReference>
+		<cac:ProcurementLegislationDocumentReference>
+			<cbc:ID>LocalLegalBasis</cbc:ID>
+			<cbc:DocumentDescription languageID="CES">Zákon č. 134/2016 Sb., o zadávání veřejných zakázek</cbc:DocumentDescription>
+		</cac:ProcurementLegislationDocumentReference>
+		<cac:TendererQualificationRequest>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-grounds-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+		</cac:TendererQualificationRequest>
+	</cac:TenderingTerms>
+	<cac:TenderingProcess>
+		<cbc:ProcedureCode listName="procurement-procedure-type">open</cbc:ProcedureCode>
+		<cac:ProcessJustification>
+			<cbc:ProcessReasonCode listName="accelerated-procedure">false</cbc:ProcessReasonCode>
+		</cac:ProcessJustification>
+	</cac:TenderingProcess>
+	<cac:ProcurementProject>
+		<cbc:ID>VZ00706</cbc:ID>
+		<cbc:Name languageID="CES">Pronájem, správa a servis tiskáren</cbc:Name>
+		<cbc:Description languageID="CES">Předmětem veřejné zakázky je uzavření rámcové smlouvy, jejímž předmětem bude zajištění poskytování komplexních služeb v oblasti řízeného tisku, kopírování a skenování pro PS, a.s. </cbc:Description>
+		<cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+		<cac:RequestedTenderTotal>
+			<cbc:EstimatedOverallContractAmount currencyID="CZK">22000000</cbc:EstimatedOverallContractAmount>
+		</cac:RequestedTenderTotal>
+		<cac:MainCommodityClassification>
+			<cbc:ItemClassificationCode listName="cpv">72222300</cbc:ItemClassificationCode>
+		</cac:MainCommodityClassification>
+		<cac:RealizedLocation>
+			<cac:Address>
+				<cbc:CountrySubentityCode listName="nuts">CZ010</cbc:CountrySubentityCode>
+				<cac:Country>
+					<cbc:IdentificationCode listName="country">CZE</cbc:IdentificationCode>
+				</cac:Country>
+			</cac:Address>
+		</cac:RealizedLocation>
+	</cac:ProcurementProject>
+	<cac:ProcurementProjectLot>
+		<cbc:ID schemeName="Lot">LOT-0001</cbc:ID>
+		<cac:TenderingTerms>
+			<cbc:VariantConstraintCode listName="permission">not-allowed</cbc:VariantConstraintCode>
+			<cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+			<cbc:RequiredCurriculaCode listName="requirement-stage">t-requ</cbc:RequiredCurriculaCode>
+			<cac:RequiredFinancialGuarantee>
+				<cbc:GuaranteeTypeCode listName="tender-guarantee-required">false</cbc:GuaranteeTypeCode>
+			</cac:RequiredFinancialGuarantee>
+			<cac:CallForTendersDocumentReference>
+				<cbc:ID>VZ00706</cbc:ID>
+				<cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+				<cac:Attachment>
+					<cac:ExternalReference>
+						<cbc:URI>https://www.tenderarena.cz/profily/psas</cbc:URI>
+					</cac:ExternalReference>
+				</cac:Attachment>
+			</cac:CallForTendersDocumentReference>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="einvoicing">required</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="esignature-submission">true</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="fsr">false</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:AwardingTerms>
+				<cac:AwardingCriterion>
+					<cac:SubordinateAwardingCriterion>
+						<ext:UBLExtensions>
+							<ext:UBLExtension>
+								<ext:ExtensionContent>
+									<efext:EformsExtension>
+										<efac:AwardCriterionParameter>
+											<efbc:ParameterCode listName="number-weight">per-exa</efbc:ParameterCode>
+											<efbc:ParameterNumeric>100</efbc:ParameterNumeric>
+										</efac:AwardCriterionParameter>
+									</efext:EformsExtension>
+								</ext:ExtensionContent>
+							</ext:UBLExtension>
+						</ext:UBLExtensions>
+						<cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+						<cbc:Name languageID="CES">Nabídková cena v Kč bez DPH.</cbc:Name>
+						<cbc:Description languageID="CES">Nejnižší nabídková cena.</cbc:Description>
+					</cac:SubordinateAwardingCriterion>
+				</cac:AwardingCriterion>
+			</cac:AwardingTerms>
+			<cac:AdditionalInformationParty>
+				<cac:PartyIdentification>
+					<cbc:ID>ORG-0001</cbc:ID>
+				</cac:PartyIdentification>
+			</cac:AdditionalInformationParty>
+			<cac:DocumentProviderParty>
+				<cac:PartyIdentification>
+					<cbc:ID>ORG-0001</cbc:ID>
+				</cac:PartyIdentification>
+			</cac:DocumentProviderParty>
+			<cac:TenderRecipientParty>
+				<cbc:EndpointID>https://www.tenderarena.cz/profily/psas</cbc:EndpointID>
+			</cac:TenderRecipientParty>
+			<cac:TenderValidityPeriod>
+				<cbc:DurationMeasure unitCode="DAY">0</cbc:DurationMeasure>
+			</cac:TenderValidityPeriod>
+			<cac:AppealTerms>
+				<cac:PresentationPeriod>
+					<cbc:Description languageID="CES">Podmínkou pro podání návrhu k ÚOHS je podání námitek k Zadavateli, které je nutné doručit do 15 dnů ode dne, kdy se stěžovatel dozvěděl o domnělém porušení zákona Zadavatelem, nejpozději však do uzavření smlouvy nebo do chvíle, kdy se soutěž o návrh považuje po výběru návrhu za ukončenou.
+
+Námitky proti úkonům oznamovaným v dokumentech, které je Zadavatel povinen podle zákona uveřejnit či odeslat stěžovateli, musí být doručeny Zadavateli do 15 dnů od jejich uveřejnění či doručení stěžovateli.
+Pokud je v zadávacím řízení stanovena lhůta pro podání žádostí o účast, musí být námitky proti podmínkám vztahujícím se ke kvalifikaci dodavatele doručeny Zadavateli nejpozději do skončení této lhůty.
+Pokud je v zadávacím řízení stanovena lhůta pro podání nabídek, musí být námitky proti zadávacím podmínkám doručeny Zadavateli nejpozději do skončení této lhůty. Námitky proti obsahu výzvy k podání nabídek v dynamickém nákupním systému nebo při zadávání veřejné zakázky na základě rámcové dohody musí být zadavateli doručeny nejpozději do konce lhůty pro podání nabídek. V soutěži o návrh musí být námitky proti soutěžním podmínkám doručeny nejpozději do konce lhůty pro podání návrhů. Zadavatel může v zadávací dokumentaci nebo soutěžních podmínkách stanovit, že námitky podle § 242 odst. 3 nebo 4 zákona lze podat nejpozději 72 hodin před skončením lhůt podle § 242 odst. 3 nebo 4 zákona.
+
+Námitky proti dobrovolnému oznámení o záměru uzavřít smlouvu podle § 212 odst. 2 zákona musí být doručeny Zadavateli do 30 dnů od uveřejnění tohoto oznámení.
+
+Zadavatel je povinen námitky vyřídit do 15 dnů. Návrh je nutné doručit ÚOHS i Zadavateli do 10 dnů ode dne, v němž stěžovatel obdržel rozhodnutí, kterým Zadavatel námitky odmítnul nebo do 25 dnů od odeslání námitek, pokud Zadavatel o námitkách nerozhodl.
+
+Po uzavření smlouvy na veřejnou zakázku či rámcové dohody lze podat pouze návrh na uložení zákazu plnění smlouvy, a to i bez předchozího podání námitek. Návrh na uložení zákazu plnění smlouvy doručí navrhovatel ÚOHS a ve stejnopisu Zadavateli do 30 dnů ode dne, kdy Zadavatel uveřejnil oznámení o uzavření smlouvy způsobem podle § 212 odst. 2 zákona s uvedením důvodu pro zadání veřejné zakázky bez uveřejnění oznámení o zahájení zadávacího řízení, předběžného oznámení nebo výzvy k podání nabídek ve zjednodušeném podlimitním řízení, nejpozději však do 6 měsíců od uzavření této smlouvy. Návrh na uložení zákazu plnění smlouvy podle § 254 odstavce 1 písm. d) zákona doručí navrhovatel ÚOHS a ve stejnopisu Zadavateli do 30 dnů ode dne, kdy Zadavatel uveřejnil oznámení o uzavření smlouvy na základě rámcové dohody podle § 137 zákona nebo oznámení o uzavření smlouvy v dynamickém nákupním systému podle § 142 zákona, nejpozději však do 6 měsíců od uzavření této smlouvy.
+
+Ve lhůtě pro doručení návrhu je navrhovatel povinen složit na účet ÚOHS kauci ve výši 1 % z nabídkové ceny navrhovatele za celou dobu plnění veřejné zakázky nebo za dobu prvních čtyř let plnění v případě smluv na dobu neurčitou, nejméně však ve výši 50 000 Kč, nejvýše ve výši 10 000 000 Kč. V případě, že navrhovatel nemůže stanovit celkovou nabídkovou cenu, je povinen složit kauci ve výši 100 000 Kč. V případě návrhu na uložení zákazu plnění smlouvy je navrhovatel povinen složit kauci ve výši 200 000 Kč. Jde-li o řízení o přezkoumání postupu pro zadávání koncesí, je navrhovatel povinen ve lhůtě pro doručení návrhu složit na účet ÚOHS kauci ve výši 1 % z předpokládané hodnoty koncese uveřejněné ve Věstníku veřejných zakázek nebo na profilu Zadavatele, nejméně však ve výši 50 000 Kč, nejvýše ve výši 10 000 000 Kč. V případě, že Zadavatel neuveřejní ve Věstníku veřejných zakázek nebo na profilu Zadavatele předpokládanou hodnotu koncese, je navrhovatel povinen složit kauci ve výši 100 000 Kč. V případě návrhu na uložení zákazu plnění koncesní smlouvy je navrhovatel povinen složit kauci ve výši 200 000 Kč.</cbc:Description>
+				</cac:PresentationPeriod>
+				<cac:AppealInformationParty>
+					<cac:PartyIdentification>
+						<cbc:ID>ORG-0002</cbc:ID>
+					</cac:PartyIdentification>
+				</cac:AppealInformationParty>
+				<cac:AppealReceiverParty>
+					<cac:PartyIdentification>
+						<cbc:ID>ORG-0002</cbc:ID>
+					</cac:PartyIdentification>
+				</cac:AppealReceiverParty>
+			</cac:AppealTerms>
+			<cac:Language>
+				<cbc:ID>CES</cbc:ID>
+			</cac:Language>
+			<cac:PostAwardProcess>
+				<cbc:ElectronicOrderUsageIndicator>true</cbc:ElectronicOrderUsageIndicator>
+				<cbc:ElectronicPaymentUsageIndicator>true</cbc:ElectronicPaymentUsageIndicator>
+			</cac:PostAwardProcess>
+			<cac:SecurityClearanceTerm>
+				<cbc:Code listName="required">false</cbc:Code>
+			</cac:SecurityClearanceTerm>
+		</cac:TenderingTerms>
+		<cac:TenderingProcess>
+			<cbc:SubmissionMethodCode listName="esubmission">required</cbc:SubmissionMethodCode>
+			<cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+			<cac:TenderSubmissionDeadlinePeriod>
+				<cbc:EndDate>2026-09-14+02:00</cbc:EndDate>
+				<cbc:EndTime>10:00:00+02:00</cbc:EndTime>
+			</cac:TenderSubmissionDeadlinePeriod>
+			<cac:OpenTenderEvent>
+				<cbc:OccurrenceDate>2026-09-14+02:00</cbc:OccurrenceDate>
+				<cbc:OccurrenceTime>10:00:00+02:00</cbc:OccurrenceTime>
+				<cac:OccurenceLocation>
+					<cbc:Description languageID="CES">Praha</cbc:Description>
+				</cac:OccurenceLocation>
+			</cac:OpenTenderEvent>
+			<cac:AuctionTerms>
+				<cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+			</cac:AuctionTerms>
+			<cac:FrameworkAgreement>
+				<cbc:MaximumOperatorQuantity>5</cbc:MaximumOperatorQuantity>
+			</cac:FrameworkAgreement>
+			<cac:ContractingSystem>
+				<cbc:ContractingSystemTypeCode listName="framework-agreement">fa-wo-rc</cbc:ContractingSystemTypeCode>
+			</cac:ContractingSystem>
+			<cac:ContractingSystem>
+				<cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+			</cac:ContractingSystem>
+		</cac:TenderingProcess>
+		<cac:ProcurementProject>
+			<cbc:ID>VZ00706</cbc:ID>
+			<cbc:Name languageID="CES">Pronájem, správa a servis tiskáren</cbc:Name>
+			<cbc:Description languageID="CES">Předmětem veřejné zakázky je uzavření rámcové smlouvy, jejímž předmětem bude zajištění poskytování komplexních služeb v oblasti řízeného tisku, kopírování a skenování pro PS, a.s.</cbc:Description>
+			<cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+			<cbc:SMESuitableIndicator>false</cbc:SMESuitableIndicator>
+			<cac:ProcurementAdditionalType>
+				<cbc:ProcurementTypeCode listName="social-objective">other</cbc:ProcurementTypeCode>
+			</cac:ProcurementAdditionalType>
+			<cac:ProcurementAdditionalType>
+				<cbc:ProcurementTypeCode listName="strategic-procurement">soc-obj</cbc:ProcurementTypeCode>
+				<cbc:ProcurementType languageID="CES">V souvislosti s ustanovením § 6 odst. 4 zákona ZZVZ zadavatel v zadávací dokumentaci
+zohlednil povinnost dodržovat zásady odpovědného zadávání veřejných zakázek, a to do té
+míry, kterou považuje k povaze a smyslu této veřejné zakázky za přiměřenou a vhodnou, a to
+i s ohledem na ostatní zásady uvedené v § 6 zákona.</cbc:ProcurementType>
+			</cac:ProcurementAdditionalType>
+			<cac:RequestedTenderTotal>
+				<ext:UBLExtensions>
+					<ext:UBLExtension>
+						<ext:ExtensionContent>
+							<efext:EformsExtension>
+								<efbc:FrameworkMaximumAmount currencyID="CZK">22000000</efbc:FrameworkMaximumAmount>
+							</efext:EformsExtension>
+						</ext:ExtensionContent>
+					</ext:UBLExtension>
+				</ext:UBLExtensions>
+			</cac:RequestedTenderTotal>
+			<cac:MainCommodityClassification>
+				<cbc:ItemClassificationCode listName="cpv">72222300</cbc:ItemClassificationCode>
+			</cac:MainCommodityClassification>
+			<cac:RealizedLocation>
+				<cac:Address>
+					<cbc:CountrySubentityCode listName="nuts">CZ010</cbc:CountrySubentityCode>
+					<cac:Country>
+						<cbc:IdentificationCode listName="country">CZE</cbc:IdentificationCode>
+					</cac:Country>
+				</cac:Address>
+			</cac:RealizedLocation>
+			<cac:PlannedPeriod>
+				<cbc:StartDate>2026-10-01+02:00</cbc:StartDate>
+				<cbc:DurationMeasure unitCode="MONTH">48</cbc:DurationMeasure>
+			</cac:PlannedPeriod>
+		</cac:ProcurementProject>
+	</cac:ProcurementProjectLot>
+</ContractNotice>

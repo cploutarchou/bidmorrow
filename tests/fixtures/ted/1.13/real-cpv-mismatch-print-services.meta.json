@@ -1,0 +1,11 @@
+{
+  "source": "https://ted.europa.eu/en/notice/578736-2026",
+  "sourceNoticeId": "578736-2026",
+  "publicationDate": "2026-08-21",
+  "retrievalDate": "2026-08-23",
+  "sdkVersion": "1.13",
+  "sdkGitTag": null,
+  "case": "SDK 1.13 single-lot cn-standard notice (CZE, open procedure) carrying CPV 72222300 — an IT-services code — for what the Czech description says is managed printing, copying and scanning. A real example of a notice whose CPV code and whose actual subject point in different directions, which is precisely what a CPV-weighted score has to be able to explain.",
+  "origin": "Real TED-published notice fetched from the TED Search API (links.xml.MUL) by the ted-fixture-fetch workflow, run 32646377636, on 2026-08-23 with the CPV filter 72,48,79417000 — the session sandbox cannot reach ted.europa.eu (the agent proxy denies the CONNECT). Verbatim source XML apart from the documented sanitization.",
+  "sanitization": "Only values identifying a natural person were replaced (personal emails -> contact@example-buyer.example, their direct phone -> +00 0000 000000). Replacements: cbc:ElectronicMail (buyer's personal contact block): 1 occurrence(s) replaced; cbc:Telephone (direct mobile in the same block): 1 occurrence(s) replaced. The removed values are deliberately not quoted here — recording them would put back exactly what the replacement took out. Remaining emails/phones are institutional (the review body's office mailbox and switchboard) — kept. No structural changes; field paths, language codes, CPV/NUTS codes, public-body names and URLs untouched."
+}

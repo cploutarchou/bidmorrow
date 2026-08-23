@@ -11,6 +11,7 @@ import { ThemeToggle } from './ThemeToggle';
 const NAV_LINKS: { to: string; label: string }[] = [
   { to: '/pricing', label: 'Pricing' },
   { to: '/how-it-works', label: 'How it works' },
+  { to: '/sample-verdicts', label: 'Sample verdicts' },
   { to: '/methodology', label: 'Methodology' },
   { to: '/pilot', label: 'Founding pilot' },
 ];
