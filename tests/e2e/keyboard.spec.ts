@@ -126,3 +126,44 @@ test('feed card + tender detail: Save is keyboard-reachable and Enter-activatabl
     'true',
   );
 });
+
+test('feed tabs: one tab stop, arrows move and activate (WAI-ARIA tabs)', async ({ page }) => {
+  await bootstrapOnboardedUserWithMatches(page, 'Feed Tabs Keyboard');
+  await page.goto('/app');
+  await expect(page.locator('article.tender-card').first()).toBeVisible();
+
+  const tablist = page.getByRole('tablist', { name: 'Feed tabs' });
+  const active = tablist.getByRole('tab', { name: "Today's matches" });
+  const next = tablist.getByRole('tab', { name: 'Strong' });
+
+  // Roving tabindex: the active tab is the single stop; the rest are -1.
+  await expect(active).toHaveAttribute('tabindex', '0');
+  await expect(next).toHaveAttribute('tabindex', '-1');
+
+  await active.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(next).toBeFocused();
+  await expect(next).toHaveAttribute('aria-selected', 'true');
+
+  await page.keyboard.press('End');
+  await expect(tablist.getByRole('tab', { name: 'Ignored' })).toBeFocused();
+  await page.keyboard.press('Home');
+  await expect(active).toBeFocused();
+  await expect(active).toHaveAttribute('aria-selected', 'true');
+});
+
+test('route change moves focus to main and resets scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  // Scroll down, then navigate via the header nav. Without RouteFocus the
+  // old scroll position carried over and focus stayed on the clicked link.
+  await page.evaluate(() => window.scrollTo({ top: 1200, behavior: 'instant' }));
+  await page.locator('.nav-list').getByRole('link', { name: 'Methodology' }).click();
+  await expect(page.getByRole('heading', { name: 'Deterministic on purpose.' })).toBeVisible();
+
+  await expect.poll(async () => page.evaluate(() => window.scrollY), { timeout: 2000 }).toBe(0);
+  const focused = await page.evaluate(() => document.activeElement?.tagName ?? 'none');
+  expect(focused).toBe('MAIN');
+});

@@ -3974,6 +3974,35 @@ lesson recorded in the clearance test: the page chunk is lazy, so
 scrolling before the heading renders measures a page that is about to
 grow.
 
+## Route-change focus + feed-tab keyboard model (2026-08-23)
+
+Two audit a11y minors, both structural rather than cosmetic.
+
+**Route changes now manage focus and scroll** (`components/RouteFocus.tsx`).
+A client-side navigation previously did nothing: focus stayed on the
+clicked link (screen readers announced nothing, the next Tab continued from
+mid-page) and scroll carried over (clicking a nav link from the bottom of a
+long page landed mid-way down the next). RouteFocus focuses `<main>`
+(programmatically focusable on the fly) and scrolls to the top instantly on
+each pathname change. Three exceptions, each load-bearing: the initial load
+(the browser's focus and the skip link are correct), search-only changes
+(feed filters and tabs live in the query string — the page did not change),
+and the slide-over sheet in BOTH directions (`DetailSheet` traps focus on
+open and restores it to the opening card on close; stealing either breaks
+the dialog contract). `main:focus-visible` is outlined-none by exception —
+it is not an interactive target, and a page-sized ring after Enter on a nav
+link is noise; interactive elements keep the global rule.
+
+**The feed tablist follows the WAI-ARIA tabs pattern.** Six `role="tab"`
+buttons were six separate Tab stops with no arrow keys. Now the active tab
+is the single stop and Left/Right/Home/End move and activate — the same
+roving model `TenderDetailContent`'s tablist already used, applied rather
+than re-invented.
+
+Pinned by two new keyboard e2e tests (single tab stop + arrow traversal;
+focus-on-main + scroll reset after a real nav click). The critical-path
+suite re-run proves RouteFocus does not fight the sheet's focus handling.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

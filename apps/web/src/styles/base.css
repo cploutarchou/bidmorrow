@@ -657,6 +657,15 @@ a {
   outline-offset: 2px;
 }
 
+/* The one exception: `main` is focused PROGRAMMATICALLY on route changes
+   (components/RouteFocus.tsx) so screen readers announce the new page. It
+   is not an interactive target — a page-sized focus ring after pressing
+   Enter on a nav link would be pure noise. Interactive elements inside it
+   keep the rule above untouched. */
+main:focus-visible {
+  outline: none;
+}
+
 footer {
   padding-block: 1.5rem 2rem;
   border-top: 1px solid var(--color-border);
