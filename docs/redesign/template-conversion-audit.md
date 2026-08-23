@@ -109,12 +109,13 @@ localStorage ops-state) was excluded from the comparison by instruction.
   the raised budget), stale Lucide note in dependency-versions.md, stale
   pre-v2 comments.
 
-## Status — first four items implemented 2026-08-22
+## Status — first four items implemented 2026-08-22, merged 2026-08-23
 
-Landed on `claude/bidmorrow-production-impl-btj2rw` (PR #79), full local
-gates green, **blocked on CI**: GitHub Actions stopped running mid-session
-(instant failures, no steps, no logs — the signature of exhausted Actions
-minutes on a private repo), and `main` is ruleset-protected on green checks.
+Merged to `main` as `068e8d9` (PR #79) with CI green. The merge was held for
+~17 hours by an account-level GitHub Actions block: every run failed in 1–3
+seconds with zero steps executed and no logs, including a re-dispatch of an
+unchanged workflow that had succeeded earlier the same day, which ruled out
+the branch and the workflow files. The owner cleared it on the billing side.
 
 | Pending item                                                | Status                                                                                                                         |
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |

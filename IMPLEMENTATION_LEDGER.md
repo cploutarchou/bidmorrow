@@ -3646,6 +3646,37 @@ requires RESEND_API_KEY + verified domain.
   trailing comment); threat-model T21 updated.
 - ~~SEC-P9-02 / SEC-P9-03~~ closed as above.
 
+## Post-merge live verification 2026-08-23 (PR #79 → `068e8d9`)
+
+Merged with CI green after the ~17-hour account-level Actions outage
+cleared. Staging auto-deployed (run 32633228089) and the SEO artifacts were
+probed from a runner, since the sandbox proxy cannot reach the domains.
+
+Verified on staging: `sitemap.xml` serves `application/xml` with the real
+file; `og/og-default.png` serves `image/png` at 77,494 bytes. Production
+still returns the SPA fallback for both — expected, production deploy is
+owner-gated and has not run.
+
+**Defect found and fixed the same session.** `robots.txt` on both domains is
+NOT purely ours: this zone has Cloudflare's managed robots.txt turned on,
+which prepends its own `User-agent: *` / `Content-Signal` / `Allow: /` group
+to the Worker's response. Crawlers merge same-user-agent groups, and
+`Allow: /` vs `Disallow: /` is a same-length tie resolved in favour of the
+least restrictive rule — so staging's blanket Disallow did not actually keep
+staging out of an index. Production's rules are unaffected (`/app`,
+`/onboarding`, `/api` are longer paths and win outright).
+
+Fix: the staging deploy injects `X-Robots-Tag: noindex, nofollow` into the
+`/*` block of `dist/_headers` before upload — immune to robots.txt merging,
+and stronger regardless, since `Disallow` also stops a crawler reading a
+page's `noindex`. Asserted in the staging smoke tests and probed by
+site-health. Not committed to `apps/web/public/_headers`, which also ships
+to production.
+
+Note for whoever runs the first production deploy: the managed robots.txt
+also publishes AI-crawler `Disallow` rules and `ai-train=no` for the zone.
+That is an owner-level Cloudflare setting, deliberately left alone.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
