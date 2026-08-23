@@ -3943,6 +3943,37 @@ billing, keyboard, axe). The admin surface has no e2e login harness
 audit-checked class coverage, and AdminShell importing admin.css inside the
 chunk that renders it.
 
+## Auth polish + nav/current + banner clearance (2026-08-23)
+
+The audit's auth-polish minors, done as one pass. The one real bug:
+ForgotPassword had `try { await fetch } finally` with NO catch — an
+unreachable server left the form sitting silent while the rejection escaped
+unhandled, and a 5xx showed the "link has been sent" confirmation for an
+email that was never going to arrive. Failure modes are now separated: a
+200 shows the privacy-preserving confirmation (identical whether or not the
+address exists, unchanged); a network failure or non-2xx says plainly that
+NOTHING was sent. The sent state gained "Send it again" with a visible
+re-sent status; ResetPassword's success now lands on Login with a
+"Password updated" confirmation (router state) instead of a silent bounce;
+and Login/Signup/Forgot run the checks their `noValidate` attributes imply
+before fetching, with the messages in the forms' own error vocabulary.
+
+Two adjacent minors closed in the same pass: the marketing nav marks the
+current page with `aria-current="page"` (the CSS keys off the attribute, so
+semantics and styling cannot drift), and an open consent banner now adds
+`body.consent-banner-open` bottom clearance so the footer — which holds the
+privacy policy and the cookie-preferences reopener, the two links someone
+deciding about cookies most needs — stays reachable. The banner itself
+gained `env(safe-area-inset-bottom)`.
+
+Verified: three new ForgotPassword e2e tests (network failure shows the
+error and never the confirmation; invalid email is caught with no request
+made; send-again reports itself), plus footer-clearance and nav-current
+tests. Full auth/marketing/keyboard/a11y spec set green. One test-writing
+lesson recorded in the clearance test: the page chunk is lazy, so
+scrolling before the heading renders measures a page that is about to
+grow.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
