@@ -2797,6 +2797,17 @@
 }
 
 /* --- Consent banner + dialog --- */
+/* Current page in the marketing nav — set via aria-current so the state
+   and its styling cannot drift apart. */
+.nav-list a[aria-current='page'],
+.mkt-menu-panel__links a[aria-current='page'] {
+  color: var(--ink-1);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 0.45em;
+}
+
 .consent-banner {
   position: fixed;
   left: 0;
@@ -2806,6 +2817,23 @@
   background: var(--bg-overlay);
   border-top: 1px solid var(--line);
   box-shadow: var(--shadow-overlay);
+  /* Devices with a home-indicator inset otherwise put the buttons in it. */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* While the choice is pending the fixed banner covers the page's tail, so
+   the document gets clearance to scroll everything above it — sized to the
+   banner's real height at each width (single-row on desktop, wrapped copy +
+   stacked buttons on phones), slightly generous rather than measured,
+   because an inline measured style is barred by the CSP. */
+body.consent-banner-open {
+  padding-bottom: 8rem;
+}
+
+@media (max-width: 640px) {
+  body.consent-banner-open {
+    padding-bottom: 16rem;
+  }
 }
 
 .consent-banner__inner {

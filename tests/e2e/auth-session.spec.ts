@@ -201,3 +201,44 @@ test.describe.serial('auth: redirects, session expiry, verify-email', () => {
     await expect(page).toHaveURL(/\/app$/);
   });
 });
+
+test.describe('forgot password: failure modes stay separated', () => {
+  test('a network failure shows a visible error, never the sent confirmation', async ({ page }) => {
+    // The original implementation had no catch: an unreachable server left
+    // the form sitting silent while the rejection escaped unhandled. The
+    // page must now say that NOTHING was sent — showing the privacy
+    // confirmation here would leave someone waiting for an email that is
+    // not coming.
+    await page.route('**/api/auth/request-password-reset', (route) => route.abort());
+    await page.goto('/forgot-password');
+    await page.getByLabel('Email').fill('someone@example.com');
+    await page.getByRole('button', { name: 'Send reset link' }).click();
+    await expect(page.getByRole('alert')).toHaveText(/nothing was sent/i);
+    await expect(page.getByText(/reset link has been sent/)).toHaveCount(0);
+  });
+
+  test('pre-submit validation catches an invalid email without a request', async ({ page }) => {
+    let requested = false;
+    await page.route('**/api/auth/request-password-reset', (route) => {
+      requested = true;
+      return route.continue();
+    });
+    await page.goto('/forgot-password');
+    await page.getByLabel('Email').fill('not-an-email');
+    await page.getByRole('button', { name: 'Send reset link' }).click();
+    await expect(page.getByRole('alert')).toHaveText(/does not look like an email/i);
+    expect(requested).toBe(false);
+  });
+
+  test('the sent state offers send-again and reports the re-send', async ({ page }) => {
+    await page.route('**/api/auth/request-password-reset', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
+    );
+    await page.goto('/forgot-password');
+    await page.getByLabel('Email').fill('someone@example.com');
+    await page.getByRole('button', { name: 'Send reset link' }).click();
+    await expect(page.getByRole('status')).toHaveText(/reset link has been sent/);
+    await page.getByRole('button', { name: 'Send it again' }).click();
+    await expect(page.getByRole('status')).toHaveText(/Sent again/);
+  });
+});

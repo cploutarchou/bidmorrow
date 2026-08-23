@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../lib/auth-context';
 import { useRedirectIfAuthenticated } from '../../lib/use-redirect-if-authenticated';
 import { AuthLayout } from './AuthLayout';
@@ -21,6 +21,12 @@ export function Login(): ReactElement {
   // `resolvePostAuthDestination` here too (which raced it and could
   // double-fetch `/api/org/profile` / navigate twice).
   const { ready } = useRedirectIfAuthenticated();
+  // ResetPassword lands here with `state.passwordReset` — the reset-done
+  // confirmation the flow otherwise never showed (a silent bounce to the
+  // login form read as "did that work?").
+  const location = useLocation();
+  const passwordReset =
+    (location.state as { passwordReset?: boolean } | null)?.passwordReset === true;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +37,12 @@ export function Login(): ReactElement {
     event.preventDefault();
     setError(null);
     setNeedsVerification(false);
+    // The form is `noValidate` (custom messaging over browser bubbles), so
+    // the checks the attributes imply run here.
+    if (email.trim().length === 0 || password.length === 0) {
+      setError('Enter your email and password.');
+      return;
+    }
     setSubmitting(true);
     try {
       const response = await fetch('/api/auth/sign-in/email', {
@@ -88,6 +100,11 @@ export function Login(): ReactElement {
       title="Log in"
       subtitle="Email and password. Where you land is worked out after you are signed in."
     >
+      {passwordReset && (
+        <p role="status" className="auth-status">
+          Password updated. Log in with your new password.
+        </p>
+      )}
       <form onSubmit={(event) => void onSubmit(event)} noValidate>
         {error !== null && (
           <p role="alert" className="form-error">

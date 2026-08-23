@@ -189,3 +189,33 @@ test('cybersecurity category page explains the method and scores real notices', 
     page.getByRole('link', { name: 'Get verdicts matched to your company' }),
   ).toBeVisible();
 });
+
+test('open consent banner never covers the footer', async ({ page }) => {
+  // While the cookie choice is pending the banner is fixed over the page's
+  // tail. The document gets matching bottom clearance
+  // (body.consent-banner-open), because the footer holds the privacy policy
+  // and the "Cookie preferences" reopener — the two links someone deciding
+  // about cookies most needs, and exactly the ones a covering banner hides.
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/privacy');
+  // The page chunk is lazy; scrolling before it renders would measure a
+  // page that is about to grow.
+  await expect(page.getByRole('heading', { name: 'Privacy', exact: true })).toBeVisible();
+  const contact = page.locator('.mkt-footer').getByRole('link', { name: 'Contact' });
+  await contact.scrollIntoViewIfNeeded();
+  const linkBox = await contact.boundingBox();
+  const bannerBox = await page.locator('.consent-banner').boundingBox();
+  expect(linkBox).not.toBeNull();
+  expect(bannerBox).not.toBeNull();
+  expect(linkBox!.y + linkBox!.height).toBeLessThan(bannerBox!.y);
+});
+
+test('marketing nav marks the current page', async ({ page }) => {
+  await page.goto('/methodology');
+  await expect(
+    page.locator('.nav-list').getByRole('link', { name: 'Methodology' }),
+  ).toHaveAttribute('aria-current', 'page');
+  await expect(
+    page.locator('.nav-list').getByRole('link', { name: 'Pricing' }),
+  ).not.toHaveAttribute('aria-current', 'page');
+});

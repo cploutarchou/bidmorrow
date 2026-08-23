@@ -200,8 +200,18 @@ localStorage ops-state) was excluded from the comparison by instruction.
   ~~visible status flash~~ (done for admin 2026-08-23; the customer app
   surfaces still route status text through `visually-hidden-status`),
   arm→confirm strip with consequence copy.
-- Auth polish: pre-submit validation, silent-failure fix, confirmation
-  states. Marketing nav `aria-current`. Cookie-banner bottom padding.
+- ~~Auth polish: pre-submit validation, silent-failure fix, confirmation
+  states. Marketing nav `aria-current`. Cookie-banner bottom padding.~~ —
+  **DONE 2026-08-23.** ForgotPassword's network failure is now a visible
+  "nothing was sent" error instead of an unhandled rejection (a non-2xx
+  answer no longer shows the privacy confirmation either), the sent state
+  offers "Send it again" with a re-send status, ResetPassword hands Login a
+  reset-done confirmation via router state, and Login/Signup/Forgot run the
+  checks their `noValidate` attributes imply before fetching. The nav marks
+  the current page via `aria-current` (which also carries the styling), and
+  an open consent banner gives the document bottom clearance so the
+  footer's privacy link and cookie-preferences reopener stay reachable.
+  Each fix is pinned by an e2e test.
 - Feed/Settings: sort control + KPI row, "why this score" expander,
   settings validation layer, timezone control, NUTS add, Appearance pane,
   unified save bar; danger zone deletes account not organisation

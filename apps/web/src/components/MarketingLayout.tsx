@@ -46,6 +46,10 @@ export function MarketingLayout({
   fullBleed?: boolean;
 }): ReactElement {
   const [menuOpen, setMenuOpen] = useState(false);
+  // Current-page indicator in the nav (audit minor: the marketing nav had
+  // none). `aria-current` carries the styling too, so state and semantics
+  // cannot drift apart.
+  const { pathname } = useLocation();
   const panelId = useId();
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -140,7 +144,9 @@ export function MarketingLayout({
           <ul className="nav-list">
             {NAV_LINKS.map((link) => (
               <li key={link.to}>
-                <Link to={link.to}>{link.label}</Link>
+                <Link to={link.to} aria-current={pathname === link.to ? 'page' : undefined}>
+                  {link.label}
+                </Link>
               </li>
             ))}
           </ul>
@@ -173,7 +179,11 @@ export function MarketingLayout({
             <ul className="mkt-menu-panel__links">
               {NAV_LINKS.map((link) => (
                 <li key={link.to}>
-                  <Link to={link.to} onClick={closeMenu}>
+                  <Link
+                    to={link.to}
+                    onClick={closeMenu}
+                    aria-current={pathname === link.to ? 'page' : undefined}
+                  >
                     {link.label}
                   </Link>
                 </li>
