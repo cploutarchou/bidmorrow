@@ -47,3 +47,38 @@ jobs:
           probe https://staging.bidmorrow.com/api/health/live
           probe https://staging.bidmorrow.com/api/health/ready
           echo "probe complete"
+
+      - name: SEO artifacts
+        # robots.txt is Worker-served and environment-aware, so the two
+        # domains MUST return different bodies: production the documented
+        # Disallow set, every other environment a blanket `Disallow: /`.
+        # A static file would have made them identical, which is exactly the
+        # failure this probe exists to catch. Reports what it sees and always
+        # exits 0 — the log is the deliverable, same as the probes above.
+        run: |
+          show() {
+            url="$1"
+            echo "=== $url ==="
+            code=$(curl -sS -o /tmp/b -D /tmp/h -w '%{http_code}' --max-time 20 "$url" 2>/tmp/e) || {
+              echo "curl error: $(cat /tmp/e)"; return 0; }
+            echo "status: $code"
+            grep -i '^content-type:' /tmp/h || echo "(no content-type)"
+            echo "--- body (first 400 bytes) ---"
+            head -c 400 /tmp/b; echo
+          }
+          for host in bidmorrow.com staging.bidmorrow.com; do
+            show "https://$host/robots.txt"
+            show "https://$host/sitemap.xml"
+          done
+          # The share image is a static asset; only its type and size matter.
+          for host in bidmorrow.com staging.bidmorrow.com; do
+            echo "=== https://$host/og/og-default.png ==="
+            curl -sS -o /dev/null -w 'status: %{http_code}  type: %{content_type}  bytes: %{size_download}\n' \
+              --max-time 20 "https://$host/og/og-default.png" || true
+          done
+          # React hoists per-page metadata at runtime, so the served HTML is
+          # only expected to carry the page-agnostic fallback pair.
+          echo "=== homepage head tags (served HTML, pre-hydration) ==="
+          curl -sS --max-time 20 https://staging.bidmorrow.com/ \
+            | grep -oE '<(title|meta[^>]*(name|property)="[^"]*")[^>]*>' | head -20 || true
+          echo "seo probe complete"
