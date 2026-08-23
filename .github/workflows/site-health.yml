@@ -66,8 +66,15 @@ jobs:
             echo "--- body (first 400 bytes) ---"
             head -c 400 /tmp/b; echo
           }
+          # robots.txt is printed in FULL, not truncated: Cloudflare's zone-level
+          # Content Signals Policy prepends a long licensing preamble, so a
+          # head-limited view shows only that boilerplate and hides whether our
+          # own rules survived underneath it.
           for host in bidmorrow.com staging.bidmorrow.com; do
-            show "https://$host/robots.txt"
+            echo "=== https://$host/robots.txt (full) ==="
+            curl -sS -D /tmp/h --max-time 20 "https://$host/robots.txt" || true
+            echo "--- headers ---"
+            grep -iE '^(HTTP/|content-type|cf-|cache-control)' /tmp/h || true
             show "https://$host/sitemap.xml"
           done
           # The share image is a static asset; only its type and size matter.
