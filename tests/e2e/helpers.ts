@@ -112,25 +112,31 @@ export async function bootstrapOnboardedUserWithMatches(
   await login(page, email, TEST_PASSWORD);
 
   await page.goto('/onboarding');
-  await page.getByRole('button', { name: 'Get started' }).click();
+
+  // Five steps (docs/redesign/template-conversion-audit.md item 3): Company,
+  // Starting point, Scope, Fit, Digest & review. Each has one Continue that
+  // saves every resource on it, so there is no per-resource Skip any more —
+  // leaving a field blank and continuing is the skip.
+  //
+  // Step 1 — Company: naming the workspace creates the organization.
   await page.getByLabel('Organization name').fill(`${orgNamePrefix} ${String(Date.now())}`);
-  await page.getByRole('button', { name: 'Create workspace' }).click();
-  // Company basics — skip.
-  await page.getByRole('button', { name: 'Skip' }).click();
+  await page.getByRole('button', { name: 'Create workspace & continue' }).click();
+
+  // Step 2 — Starting point.
   await page.getByRole('radio', { name: /Cybersecurity consultancy/ }).check();
-  await page.getByRole('button', { name: 'Continue' }).click();
-  // CPV codes screen MUST be explicitly saved — it has no Skip button at
-  // all (docs/redesign/ux-strategy.md §3.5), and without a persisted org
-  // CPV preference the division pre-filter (`scoreLotsForOrgs`) drops every
-  // pair with no match row at all, leaving the feed empty. The preset's
-  // codes are already pre-selected; saving them as-is is enough for the
-  // seeded demo lots to produce matches.
   await page.getByRole('button', { name: 'Save & continue' }).click();
-  // Remaining optional screens (countries, value/deadline, keywords,
-  // capabilities/certs, exclusions, digest) — skip.
-  for (let i = 0; i < 6; i += 1) {
-    await page.getByRole('button', { name: 'Skip' }).click();
-  }
+
+  // Step 3 — Scope. Continue is disabled until at least one CPV code is
+  // selected: without a persisted CPV preference the division pre-filter
+  // (`scoreLotsForOrgs`) drops every pair, leaving the feed empty. The
+  // preset's codes are already selected, so saving as-is is enough for the
+  // seeded demo lots to match.
+  await page.getByRole('button', { name: 'Save & continue' }).click();
+
+  // Step 4 — Fit: all optional, continue with the defaults.
+  await page.getByRole('button', { name: 'Save & continue' }).click();
+
+  // Step 5 — Digest & review.
   await expect(page.getByRole('heading', { name: 'Review your scoring profile' })).toBeVisible();
   await page.getByRole('button', { name: 'Finish setup' }).click();
   await expect(page.getByRole('heading', { name: "You're all set" })).toBeVisible();

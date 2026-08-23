@@ -169,64 +169,35 @@ async function bootstrapOnboardedUserWithMatchesForAxe(
   await login(page, email, TEST_PASSWORD);
   // A brand-new user with no organization lands on /onboarding directly
   // (R1) — no separate page.goto needed.
-  await expect(
-    page.getByRole('heading', { name: "Let's set up your scoring profile" }),
-  ).toBeVisible();
-  await scanScreen(page, 'welcome');
-  await page.getByRole('button', { name: 'Get started' }).click();
-
-  await expect(page.getByRole('heading', { name: 'Name your workspace' })).toBeVisible();
-  await scanScreen(page, 'create workspace');
+  //
+  // The M1 §3.8 gate is "axe green on ALL screens". The screens are now
+  // grouped into five steps, so scanning each step scans every screen body
+  // it contains — the coverage is the same, and it additionally catches
+  // conflicts that only exist because several sections share a page
+  // (duplicate ids, ambiguous labels).
+  await expect(page.getByRole('heading', { name: 'Who is bidding?' })).toBeVisible();
+  await scanScreen(page, 'step 1 — company (workspace + basics)');
   await page.getByLabel('Organization name').fill(`Axe Org ${String(Date.now())}`);
-  await page.getByRole('button', { name: 'Create workspace' }).click();
+  await page.getByRole('button', { name: 'Create workspace & continue' }).click();
 
-  await expect(page.getByRole('heading', { name: 'Tell us about your company' })).toBeVisible();
-  await scanScreen(page, 'company basics');
-  await page.getByRole('button', { name: 'Skip' }).click();
-
-  await expect(page.getByRole('heading', { name: 'Start from a preset' })).toBeVisible();
-  await scanScreen(page, 'preset picker');
+  await expect(page.getByRole('heading', { name: 'What line of work are you in?' })).toBeVisible();
+  await scanScreen(page, 'step 2 — starting point');
   await page.getByRole('radio', { name: /Cybersecurity consultancy/ }).check();
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'Save & continue' }).click();
 
-  await expect(
-    page.getByRole('heading', { name: 'Which CPV codes describe your work?' }),
-  ).toBeVisible();
-  await scanScreen(page, 'CPV codes');
+  await expect(page.getByRole('heading', { name: 'What you sell, and where.' })).toBeVisible();
+  await scanScreen(page, 'step 3 — scope (CPV + countries)');
   await page.getByRole('button', { name: 'Save & continue' }).click();
 
   await expect(
-    page.getByRole('heading', { name: "Which countries' opportunities do you want to see?" }),
+    page.getByRole('heading', { name: 'What counts as a real opportunity.' }),
   ).toBeVisible();
-  await scanScreen(page, 'countries');
-  await page.getByRole('button', { name: 'Skip' }).click();
+  await scanScreen(page, 'step 4 — fit (value, keywords, capabilities, exclusions)');
+  await page.getByRole('button', { name: 'Save & continue' }).click();
 
-  await expect(
-    page.getByRole('heading', { name: 'What contract value and timing work for you?' }),
-  ).toBeVisible();
-  await scanScreen(page, 'value & deadline');
-  await page.getByRole('button', { name: 'Skip' }).click();
-
-  await expect(
-    page.getByRole('heading', { name: 'What keywords describe the work you want?' }),
-  ).toBeVisible();
-  await scanScreen(page, 'keywords');
-  await page.getByRole('button', { name: 'Skip' }).click();
-
-  await expect(page.getByRole('heading', { name: 'Capabilities & certifications' })).toBeVisible();
-  await scanScreen(page, 'capabilities & certifications');
-  await page.getByRole('button', { name: 'Skip' }).click();
-
-  await expect(page.getByRole('heading', { name: 'Anything you want to exclude?' })).toBeVisible();
-  await scanScreen(page, 'exclusions');
-  await page.getByRole('button', { name: 'Skip' }).click();
-
-  await expect(page.getByRole('heading', { name: 'Your daily digest' })).toBeVisible();
-  await scanScreen(page, 'digest');
-  await page.getByRole('button', { name: 'Skip' }).click();
-
+  await expect(page.getByRole('heading', { name: 'How you hear about it.' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Review your scoring profile' })).toBeVisible();
-  await scanScreen(page, 'review');
+  await scanScreen(page, 'step 5 — digest & review');
   await page.getByRole('button', { name: 'Finish setup' }).click();
 
   await expect(page.getByRole('heading', { name: "You're all set" })).toBeVisible();
