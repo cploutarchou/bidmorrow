@@ -48,11 +48,36 @@ if (!Number.isInteger(MAX_NOTICES) || MAX_NOTICES < 1 || MAX_NOTICES > 100) {
   process.exit(1);
 }
 
+/**
+ * Optional CPV prefix filter, comma-separated (e.g. `72,48,79417000`).
+ * Without it the fetch returns whatever the window happens to contain,
+ * which is fine for schema-diversity fixtures but useless when a specific
+ * sector is needed. Prefixes shorter than 8 digits get the `*` wildcard,
+ * exactly as `buildScopeQuery` in packages/procurement/src/scope.ts does —
+ * that form is live-validated, so this stays identical to it rather than
+ * inventing a second dialect.
+ */
+const CPV_PREFIXES = (process.env.CPV_PREFIXES ?? '')
+  .split(',')
+  .map((entry) => entry.trim())
+  .filter((entry) => entry.length > 0);
+if (CPV_PREFIXES.some((entry) => !/^[0-9]{2,8}$/.test(entry))) {
+  console.error(`CPV_PREFIXES must be 2-8 digit codes, got: ${process.env.CPV_PREFIXES}`);
+  process.exit(1);
+}
+
 const since = new Date(Date.now() - DAYS_BACK * 86_400_000);
 const ymd = since.toISOString().slice(0, 10).replaceAll('-', '');
 
+const clauses = ['form-type = competition', `publication-date >= ${ymd}`];
+if (CPV_PREFIXES.length > 0) {
+  const terms = CPV_PREFIXES.map((entry) => (entry.length >= 8 ? entry : `${entry}*`));
+  clauses.unshift(`classification-cpv IN (${terms.join(', ')})`);
+}
+console.log(`CPV filter: ${CPV_PREFIXES.length > 0 ? CPV_PREFIXES.join(', ') : '(none)'}`);
+
 const searchBody = {
-  query: `form-type = competition AND publication-date >= ${ymd} SORT BY publication-date`,
+  query: `${clauses.join(' AND ')} SORT BY publication-date`,
   fields: [
     'publication-number',
     'publication-date',
