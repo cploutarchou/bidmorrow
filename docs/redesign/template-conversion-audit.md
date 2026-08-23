@@ -132,10 +132,18 @@ localStorage ops-state) was excluded from the comparison by instruction.
    confirmation for paying customers.
 10. Route code splitting + budget compliance (admin out of customer
     bundle).
-11. M3 final slice — **SAMPLE-VERDICT DEMO DONE 2026-08-23** (merged,
-    PR #86); **`/cybersecurity-tenders` DONE 2026-08-23**;
-    `/cloud-tenders` and the comparison module still open (all
-    policy-locked IN scope).
+11. M3 final slice — **DONE 2026-08-23**: sample-verdict demo (PR #86),
+    **`/cybersecurity-tenders`** (PR #87), and the honest unnamed
+    **comparison module** on Home (`#compare`) — six attribute rows
+    (price, billing, scoring, methodology, data source, tracking), each
+    "typical" cell restating a finding from
+    `docs/redesign/competitor-findings.md` (seven services captured
+    2026-08-17), each BidMorrow cell linking to the page that keeps the
+    claim true, the evidence basis stated to the reader under the table,
+    and no competitor named (owner-gated, decision D11). Only
+    `/cloud-tenders` is deferred: the cloud-CPV fetch returned hardware
+    and licensing rather than hosting, and a category page whose sample
+    verdicts are not really about the category is worse than no page.
     - `/cybersecurity-tenders`: hand-written methodology argument (there
       is no cybersecurity CPV — six real codes with their verbatim
       CPV 2008 labels show why code-watching fails both ways) plus two
