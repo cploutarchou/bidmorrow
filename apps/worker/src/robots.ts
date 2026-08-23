@@ -28,6 +28,22 @@
  *   AI-crawler blocks — that is an owner decision, not an SEO one.
  *
  * Every non-production environment gets a blanket `Disallow: /`.
+ *
+ * IMPORTANT — this file is not the whole staging story. The zone has
+ * Cloudflare's managed robots.txt turned on, which PREPENDS its own
+ * `User-agent: *` / `Allow: /` group to whatever this Worker returns
+ * (observed live, site-health run 32633482361). Crawlers merge groups
+ * sharing a user-agent, and `Allow: /` against `Disallow: /` is a
+ * same-length tie that resolves to the least restrictive rule — so the
+ * blanket Disallow below does NOT by itself keep staging out of an index.
+ * What does is the `X-Robots-Tag: noindex, nofollow` header injected into
+ * `_headers` by the staging deploy workflow, which no robots.txt merge can
+ * weaken. The blanket rule stays because it still states the intent and is
+ * honoured by parsers that take the first matching group.
+ *
+ * The production rules are unaffected: `/app`, `/onboarding` and `/api` are
+ * longer paths than `/`, so under longest-match precedence they beat
+ * Cloudflare's `Allow: /` outright.
  */
 export function robotsTxt(appEnv: string): string {
   if (appEnv !== 'production') {

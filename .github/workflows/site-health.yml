@@ -88,4 +88,11 @@ jobs:
           echo "=== homepage head tags (served HTML, pre-hydration) ==="
           curl -sS --max-time 20 https://staging.bidmorrow.com/ \
             | grep -oE '<(title|meta[^>]*(name|property)="[^"]*")[^>]*>' | head -20 || true
+          # Staging must carry noindex and production must NOT — one probe,
+          # because the failure that matters is them being the same.
+          echo "=== X-Robots-Tag (expect: staging noindex, production absent) ==="
+          for host in bidmorrow.com staging.bidmorrow.com; do
+            printf '%s: ' "$host"
+            curl -sSI --max-time 20 "https://$host/" | grep -i '^x-robots-tag:' || echo "(absent)"
+          done
           echo "seo probe complete"

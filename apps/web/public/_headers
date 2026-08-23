@@ -42,6 +42,12 @@
 # no inline script, so the policy is unchanged. (Worth re-checking whenever
 # the bundler's HTML output changes — the header test reads this file, never
 # index.html, so it would not catch a regression here.)
+# STAGING ONLY, not in this file: the staging deploy workflow injects
+# `X-Robots-Tag: noindex, nofollow` into the `/*` block below before
+# uploading. It is not committed here because these same assets deploy to
+# production, where the marketing pages must stay indexable. See
+# .github/workflows/deploy-staging.yml ("Mark staging assets noindex") for
+# why the Worker's robots.txt is not sufficient on its own.
 /*
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
