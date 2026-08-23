@@ -199,8 +199,12 @@ localStorage ops-state) was excluded from the comparison by instruction.
 - Shared components: low-fit/excluded card states, ~~deadline urgency
   inks~~ (**DONE 2026-08-23** — thresholds read off the design's own Home
   demo-feed data, <7 days risk / <14 caution, supplementary to the deadline
-  text), ~~visible status flash~~ (done for admin 2026-08-23; the customer
-  app surfaces still route status text through `visually-hidden-status`),
+  text), ~~visible status flash~~ (**fully done** — the admin pages flash via
+  `AdminFlash`, and Feed, Settings and the tender detail each pair the
+  `visually-hidden-status` live region with the visible `.app-toast`; the
+  remaining `visually-hidden-status` uses are legitimately SR-only
+  content. The earlier "customer surfaces still hidden-only" note was
+  stale),
   arm→confirm strip with consequence copy.
 - ~~Auth polish: pre-submit validation, silent-failure fix, confirmation
   states. Marketing nav `aria-current`. Cookie-banner bottom padding.~~ —
@@ -223,16 +227,22 @@ localStorage ops-state) was excluded from the comparison by instruction.
   (product decision).
 - Admin: ops pills, state-aware pause/resume, rail counts, ingestion
   sub-views, flag JSON hint.
-- Testing/a11y: ~~feed-tab keyboard model + keyboard spec~~ and
-  ~~route-change focus management~~ — **DONE 2026-08-23.** The feed tablist
+- Testing/a11y: ~~feed-tab keyboard model + keyboard spec~~,
+  ~~route-change focus management~~ and ~~mobile Playwright project~~ —
+  **DONE 2026-08-23.** The `mobile-chromium` project runs the marketing,
+  auth and public-accessibility specs at an iPhone-12 viewport with touch
+  (Chromium engine — it tests layout at 390px, not WebKit behavior);
+  authenticated specs stay desktop-only because the ordered signup
+  journey against seeded state would double the suite's longest leg for
+  surfaces the ICP uses at a desk. The feed tablist
   now follows the WAI-ARIA tabs pattern (roving tabindex, Arrow/Home/End
   move and activate — the same model the detail sheet already used), and
   `components/RouteFocus.tsx` moves focus to `<main>` and resets scroll on
   every pathname change, with three deliberate exceptions documented in the
   file (initial load, search-only changes, and the slide-over sheet in both
   directions — `DetailSheet` owns focus there). Both are pinned by keyboard
-  e2e tests. Still open: 402/success e2e assertions, mobile Playwright
-  project, `toHaveScreenshot` baselines, zoom/reflow pass.
+  e2e tests. Still open: 402/success e2e assertions,
+  `toHaveScreenshot` baselines, zoom/reflow pass.
 - Docs hygiene: font-budget reconciliation (181 KB shipped vs 90 KB
   written; per-visit latin ~57 KB is compliant via unicode-range — record
   the raised budget), stale Lucide note in dependency-versions.md, stale

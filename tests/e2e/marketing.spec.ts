@@ -210,12 +210,22 @@ test('open consent banner never covers the footer', async ({ page }) => {
   expect(linkBox!.y + linkBox!.height).toBeLessThan(bannerBox!.y);
 });
 
-test('marketing nav marks the current page', async ({ page }) => {
+test('marketing nav marks the current page', async ({ page, isMobile }) => {
   await page.goto('/methodology');
-  await expect(
-    page.locator('.nav-list').getByRole('link', { name: 'Methodology' }),
-  ).toHaveAttribute('aria-current', 'page');
-  await expect(
-    page.locator('.nav-list').getByRole('link', { name: 'Pricing' }),
-  ).not.toHaveAttribute('aria-current', 'page');
+  // On phones the desktop list is hidden behind the hamburger; the panel
+  // carries the same aria-current, so assert whichever nav is actually
+  // rendered at this viewport.
+  let nav = page.locator('.nav-list');
+  if (isMobile) {
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    nav = page.locator('.mkt-menu-panel__links');
+  }
+  await expect(nav.getByRole('link', { name: 'Methodology' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await expect(nav.getByRole('link', { name: 'Pricing' })).not.toHaveAttribute(
+    'aria-current',
+    'page',
+  );
 });

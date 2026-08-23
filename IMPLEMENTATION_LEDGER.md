@@ -4023,6 +4023,29 @@ words, so nothing is conveyed by hue alone.
 Pinned by a new e2e test asserting the expander reveals real prose
 explanations. Full a11y + critical-path suites re-run green.
 
+## Mobile Playwright project + a stale audit line (2026-08-23)
+
+The `mobile-chromium` project runs the marketing, auth-session and
+public-accessibility specs at an iPhone-12 viewport with touch — 19 tests,
+including axe scans of every public page at 390px, the consent-banner
+clearance measured on a phone, and the mobile hamburger nav's
+`aria-current`. Two deliberate boundaries, stated in the config: it is the
+same Chromium engine (the sandbox's preinstalled browser), so it tests
+LAYOUT at 390px rather than WebKit behavior; and the authenticated specs
+stay desktop-only, because the ordered signup journey against seeded worker
+state would double the suite's longest leg for surfaces the ICP uses at a
+desk. The nav-current e2e test became viewport-aware in the process — on
+mobile it opens the hamburger and asserts `aria-current` inside the panel,
+which is richer coverage than skipping.
+
+Also corrected a stale audit line while scoping the next item: "customer
+app surfaces still route status text through visually-hidden-status" is no
+longer true — Feed, Settings and the tender detail all pair the hidden live
+region with the visible `.app-toast`, and the remaining
+`visually-hidden-status` uses are legitimately SR-only (combobox result
+counts, a table caption, onboarding state labels). Verified by grep before
+correcting the doc, not assumed.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
