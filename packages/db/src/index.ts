@@ -41,6 +41,7 @@ export * from './repositories/admin';
 // `OrganizationId | null`).
 export * from './repositories/identity';
 export * from './repositories/company';
+export * from './repositories/saved-searches';
 export * from './repositories/matching';
 export * from './repositories/engagement';
 export * from './repositories/billing';

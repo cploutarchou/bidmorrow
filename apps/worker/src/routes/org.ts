@@ -10,8 +10,11 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import {
   CapExceededError,
+  DuplicateSavedSearchError,
   createDb,
   createOrganization,
+  createSavedSearch,
+  deleteSavedSearch,
   estimateScope,
   getCompanyProfile,
   getDigestPreferences,
@@ -26,6 +29,7 @@ import {
   listCompanyExclusions,
   listCompanyGeographies,
   listCompanyKeywords,
+  listSavedSearches,
   replaceCompanyCapabilities,
   replaceCompanyCertifications,
   replaceCompanyCpvPreferences,
@@ -38,6 +42,7 @@ import {
   upsertMatchingPreferences,
   insertAuditEvent,
   type CompanyCapability,
+  type SavedSearch,
   type CompanyCertification,
   type CompanyCpvPreference,
   type CompanyExclusion,
@@ -114,6 +119,34 @@ const scopeEstimateSchema = z
   .object({
     cpvCodes: z.array(z.string().trim().min(2).max(20)).max(200),
     countryCodes: z.array(z.string().trim().length(2)).max(60).optional(),
+  })
+  .strict();
+
+/**
+ * A saved search is a named feed query. The filter keys mirror the feed's
+ * own query parameters exactly (apps/worker/src/routes/feed.ts) and are
+ * validated here rather than stored as free-form JSON — the blob is written
+ * by us, not by the client.
+ */
+const savedSearchFiltersSchema = z
+  .object({
+    minScore: z.string().trim().max(8).optional(),
+    country: z.string().trim().max(8).optional(),
+    cpvPrefix: z.string().trim().max(8).optional(),
+    buyerName: z.string().trim().max(200).optional(),
+    minValueEur: z.string().trim().max(20).optional(),
+    maxValueEur: z.string().trim().max(20).optional(),
+    deadlineBefore: z.string().trim().max(32).optional(),
+    deadlineAfter: z.string().trim().max(32).optional(),
+    publishedAfter: z.string().trim().max(32).optional(),
+  })
+  .strict();
+
+const savedSearchSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    tab: z.enum(['today', 'strong', 'worth_reviewing', 'possible', 'saved', 'ignored']),
+    filters: savedSearchFiltersSchema,
   })
   .strict();
 
@@ -228,6 +261,8 @@ orgRoutes.use('/profile', requireOrganization);
 orgRoutes.use('/keywords', requireOrganization);
 orgRoutes.use('/cpv-preferences', requireOrganization);
 orgRoutes.use('/onboarding/scope-estimate', requireOrganization);
+orgRoutes.use('/saved-searches', requireOrganization);
+orgRoutes.use('/saved-searches/:id', requireOrganization);
 orgRoutes.use('/geographies', requireOrganization);
 orgRoutes.use('/capabilities', requireOrganization);
 orgRoutes.use('/certifications', requireOrganization);
@@ -302,6 +337,31 @@ const toKeywordDto = (row: CompanyKeyword) => ({
   language: row.language,
 });
 const toCpvPreferenceDto = (row: CompanyCpvPreference) => ({ cpvCode: row.cpvCode });
+
+/**
+ * The stored filter blob is parsed here rather than shipped as a raw string:
+ * the client should never have to JSON.parse a field, and a malformed row
+ * (only reachable by direct DB edit) degrades to no filters instead of
+ * throwing on read.
+ */
+const toSavedSearchDto = (row: SavedSearch) => {
+  let filters: Record<string, string> = {};
+  try {
+    const parsed: unknown = JSON.parse(row.filtersJson);
+    if (typeof parsed === 'object' && parsed !== null) {
+      filters = parsed as Record<string, string>;
+    }
+  } catch {
+    /* see the doc comment — an unreadable blob means "no filters", not a 500 */
+  }
+  return {
+    id: row.id,
+    name: row.name,
+    tab: row.tab,
+    filters,
+    createdAt: row.createdAt,
+  };
+};
 const toGeographyDto = (row: CompanyGeography) => ({ kind: row.kind, code: row.code });
 const toCapabilityDto = (row: CompanyCapability) => ({ label: row.label });
 const toCertificationDto = (row: CompanyCertification) => ({
@@ -404,6 +464,86 @@ orgRoutes.post('/onboarding/scope-estimate', zValidator('json', scopeEstimateSch
      */
     ingestedCpvFamilies: scope.cpvFamilies,
   });
+});
+
+/**
+ * Saved searches — the feed's left rail.
+ *
+ * Workspace-wide by design: a saved search is a team's view of the market,
+ * so every member of the organization sees the same list. Authorship is
+ * recorded for the audit trail, not to scope visibility.
+ */
+orgRoutes.get('/saved-searches', async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
+  const items = await listSavedSearches(db, organizationId);
+  return c.json({ savedSearches: items.map(toSavedSearchDto) });
+});
+
+orgRoutes.post('/saved-searches', zValidator('json', savedSearchSchema), async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  const session = c.get('session');
+  if (organizationId === undefined || session === undefined) {
+    return c.json({ error: 'no_organization' }, 403);
+  }
+  const { name, tab, filters } = c.req.valid('json');
+  try {
+    const created = await createSavedSearch(db, organizationId, {
+      name,
+      tab,
+      // Drop empty strings so a saved search stores only the filters that
+      // are actually set — an empty value is not a filter.
+      filters: Object.fromEntries(
+        Object.entries(filters).filter(([, value]) => value !== undefined && value.length > 0),
+      ) as Record<string, string>,
+      createdByUserId: session.user.id,
+    });
+    await insertAuditEvent(db, {
+      actorType: 'user',
+      actorId: session.user.id,
+      organizationId,
+      action: 'saved_search.created',
+      targetType: 'saved_search',
+      targetId: created.id,
+      occurredAt: Date.now(),
+    });
+    return c.json({ savedSearch: toSavedSearchDto(created) }, 201);
+  } catch (cause) {
+    if (cause instanceof CapExceededError) {
+      return c.json({ error: 'cap_exceeded', cap: cause.cap }, 422);
+    }
+    if (cause instanceof DuplicateSavedSearchError) {
+      return c.json({ error: 'duplicate_name' }, 409);
+    }
+    throw cause;
+  }
+});
+
+orgRoutes.delete('/saved-searches/:id', async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  const session = c.get('session');
+  if (organizationId === undefined || session === undefined) {
+    return c.json({ error: 'no_organization' }, 403);
+  }
+  const id = c.req.param('id');
+  const deleted = await deleteSavedSearch(db, organizationId, id);
+  // 404 whether it never existed or belongs to another organization — the
+  // two must be indistinguishable, or this becomes an existence oracle for
+  // other tenants' ids.
+  if (!deleted) return c.json({ error: 'not_found' }, 404);
+  await insertAuditEvent(db, {
+    actorType: 'user',
+    actorId: session.user.id,
+    organizationId,
+    action: 'saved_search.deleted',
+    targetType: 'saved_search',
+    targetId: id,
+    occurredAt: Date.now(),
+  });
+  return c.body(null, 204);
 });
 
 orgRoutes.get('/cpv-preferences', async (c) => {

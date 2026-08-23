@@ -7588,3 +7588,158 @@ body.sheet-open {
   line-height: 1.5;
   color: var(--ink-3);
 }
+
+/* ============================================================
+   FEED LEFT RAIL — 2026-08-21 handoff (`BidMorrow Client Area.dc.html`).
+   Saved searches beside the results, so a filter set is a named thing the
+   workspace re-applies rather than something retyped every morning.
+   ============================================================ */
+
+.feed-layout {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  gap: clamp(1rem, 2.4vw, 2rem);
+  align-items: start;
+}
+
+/* `minmax(0, 1fr)` above matters: without it the results column takes its
+   min-content width from the widest card and the rail gets squeezed. */
+.feed-main {
+  min-width: 0;
+}
+
+.feed-rail {
+  position: sticky;
+  top: var(--s4);
+  display: grid;
+  gap: var(--s5);
+  align-content: start;
+}
+
+/* The rail is an accelerator, not the content. On a narrow screen it drops
+   below the results rather than competing with them for width. */
+@media (max-width: 60rem) {
+  .feed-layout {
+    grid-template-columns: 1fr;
+  }
+  .feed-rail {
+    position: static;
+    order: 2;
+  }
+  .feed-main {
+    order: 1;
+  }
+}
+
+.feed-rail__block {
+  display: grid;
+  gap: var(--s2);
+}
+
+.feed-rail__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.feed-rail__title {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.feed-rail__head .btn-ghost--sm {
+  margin-left: auto;
+}
+
+.feed-rail__form {
+  display: grid;
+  gap: var(--s1);
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: var(--r-l);
+  padding: var(--s3);
+}
+
+.feed-rail__form label {
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.feed-rail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.feed-rail__list li {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+}
+
+.feed-rail__item {
+  flex: 1;
+  min-width: 0;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--r-m) var(--r-m) 0;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+  text-align: left;
+  /* Long names truncate rather than reflowing the rail. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0.5rem 0.625rem;
+  min-height: 2.75rem;
+}
+
+.feed-rail__item:hover {
+  color: var(--ink-1);
+  background: var(--bg-panel);
+}
+
+.feed-rail__item[aria-current='true'] {
+  background: var(--bg-panel);
+  border-left-color: var(--accent);
+  color: var(--ink-1);
+  font-weight: 600;
+}
+
+.feed-rail__remove {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--ink-3);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  /* Small glyph, full-size target. */
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.feed-rail__remove:hover {
+  color: var(--sig-risk);
+}
+
+.feed-rail__profile {
+  margin: 0;
+  font-size: 0.78125rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
