@@ -132,9 +132,28 @@ localStorage ops-state) was excluded from the comparison by instruction.
    confirmation for paying customers.
 10. Route code splitting + budget compliance (admin out of customer
     bundle).
-11. M3 final slice — **SAMPLE-VERDICT DEMO DONE 2026-08-23**; category
-    pages and the comparison module still open (all policy-locked IN
-    scope).
+11. M3 final slice — **SAMPLE-VERDICT DEMO DONE 2026-08-23** (merged,
+    PR #86); **`/cybersecurity-tenders` DONE 2026-08-23**;
+    `/cloud-tenders` and the comparison module still open (all
+    policy-locked IN scope).
+    - `/cybersecurity-tenders`: hand-written methodology argument (there
+      is no cybersecurity CPV — six real codes with their verbatim
+      CPV 2008 labels show why code-watching fails both ways) plus two
+      real engine-scored security notices, drawn from the shared
+      sample-verdict set via a `surfaces` tag so the demo page keeps its
+      policy-capped five. Not a directory: no inputs, no app links, one
+      CTA — asserted by e2e.
+    - `/cloud-tenders` is deliberately NOT built yet: the cloud-CPV
+      fetch (run 32650923035) returned hardware and licensing, not
+      hosting or managed infrastructure, and a category page whose
+      sample verdicts are not really about the category is worse than no
+      page. Owner concurred 2026-08-23. Waiting on a genuine anchor
+      notice from a later fetch.
+    - Building the page surfaced an engine defect, fixed as
+      **ENGINE_VERSION 1 → 2** (owner-approved 2026-08-23): the buyer
+      component knew 12 of the eForms `buyer-legal-type` codelist's 20
+      codes and accepted two that do not exist. Details in
+      docs/matching-engine.md §Buyer/sector and the ledger.
     - `/sample-verdicts`: four real TED-published notices scored by the
       production engine against two representative supplier profiles,
       spanning Strong match / Worth reviewing / Low fit / Excluded, each

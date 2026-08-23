@@ -44,10 +44,14 @@ export interface SampleVerdictRiskFlag {
  */
 export type SampleVerdictSourceKind = 'ted_notice' | 'eforms_example';
 
+/** Which public pages show a verdict — see `SampleCase.surfaces` in the generator. */
+export type SampleVerdictSurface = 'demo' | 'cybersecurity';
+
 export interface SampleVerdict {
   readonly id: string;
   /** One line on why this pairing is worth showing — editorial, not engine output. */
   readonly why: string;
+  readonly surfaces: readonly SampleVerdictSurface[];
   readonly supplierLabel: string;
   readonly tenderTitle: string;
   readonly buyerName: string | null;
