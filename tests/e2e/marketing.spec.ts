@@ -143,3 +143,34 @@ test('sample verdicts page is a demo, not a free tier', async ({ page }) => {
     page.getByRole('link', { name: 'Get verdicts matched to your company' }),
   ).toBeVisible();
 });
+
+/**
+ * /cybersecurity-tenders — first manually authored category page
+ * (docs/product-scope.md "Product policy lock": methodology + sample
+ * verdicts, never an auto-generated tender directory).
+ */
+test('cybersecurity category page explains the method and scores real notices', async ({
+  page,
+}) => {
+  await page.goto('/cybersecurity-tenders');
+  await expect(page).toHaveTitle(/Cybersecurity Tenders/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  // The CPV table shows official codelist labels, not invented ones.
+  await expect(
+    page.getByRole('cell', { name: 'Computer audit and testing services' }),
+  ).toBeVisible();
+
+  // Its sample verdicts are the cybersecurity-surface subset — real cards,
+  // same component vocabulary as everywhere else.
+  const verdicts = page.locator('article.sample-verdict');
+  await expect(verdicts).toHaveCount(2);
+  await expect(verdicts.first().getByRole('rowheader', { name: 'CPV fit' })).toBeVisible();
+
+  // Not a directory and not a free tier: no inputs, no path into the app.
+  await expect(page.locator('main input, main textarea, main select')).toHaveCount(0);
+  await expect(page.locator('main a[href^="/app"]')).toHaveCount(0);
+  await expect(
+    page.getByRole('link', { name: 'Get verdicts matched to your company' }),
+  ).toBeVisible();
+});

@@ -7910,3 +7910,17 @@ body.sheet-open {
 .sample-notes p:last-child {
   margin-bottom: 0;
 }
+
+/* /cybersecurity-tenders CPV table: `.mkt-table-card` sets its SECOND column
+   mono because the breakdown tables carry points there — here the code is
+   the first column and the second is prose, so the roles swap. */
+.cpv-label-table td:nth-child(2) {
+  font-family: inherit;
+  font-variant-numeric: normal;
+}
+
+.cpv-label-table td:nth-child(1) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

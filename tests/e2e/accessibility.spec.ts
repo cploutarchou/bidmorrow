@@ -66,6 +66,11 @@ test.describe('unauthenticated pages', () => {
     expectNoSeriousViolations(await seriousOrCriticalViolations(page), '/sample-verdicts');
   });
 
+  test('cybersecurity tenders', async ({ page }) => {
+    await page.goto('/cybersecurity-tenders');
+    expectNoSeriousViolations(await seriousOrCriticalViolations(page), '/cybersecurity-tenders');
+  });
+
   test('pricing', async ({ page }) => {
     await page.goto('/pricing');
     expectNoSeriousViolations(await seriousOrCriticalViolations(page), '/pricing');

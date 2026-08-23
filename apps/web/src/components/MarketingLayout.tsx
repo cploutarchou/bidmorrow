@@ -206,6 +206,9 @@ export function MarketingLayout({
           <nav aria-label="Footer">
             <ul className="nav-list">
               <li>
+                <Link to="/cybersecurity-tenders">Cybersecurity tenders</Link>
+              </li>
+              <li>
                 <Link to="/privacy">Privacy</Link>
               </li>
               <li>

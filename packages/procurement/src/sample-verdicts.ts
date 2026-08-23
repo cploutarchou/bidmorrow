@@ -191,6 +191,14 @@ const PROFILES: Record<string, { readonly label: string; readonly profile: OrgPr
  * tests/fixtures/ted, but none of them is a tender anyone could have bid
  * for — which on a public page is a difference that matters.
  */
+/**
+ * Where a verdict is shown. `demo` is /sample-verdicts, which the policy
+ * caps at a curated 3–5; `cybersecurity` is the /cybersecurity-tenders
+ * category page. One verdict can serve both — the data is identical either
+ * way, only the page framing differs.
+ */
+type SampleSurface = 'demo' | 'cybersecurity';
+
 interface SampleCase {
   readonly id: string;
   /** Path under `tests/fixtures/ted`. */
@@ -198,6 +206,7 @@ interface SampleCase {
   readonly lotIndex: number;
   readonly profile: keyof typeof PROFILES;
   readonly why: string;
+  readonly surfaces: readonly SampleSurface[];
 }
 
 const CASES: readonly SampleCase[] = [
@@ -209,6 +218,7 @@ const CASES: readonly SampleCase[] = [
     lotIndex: 0,
     profile: 'cyber',
     why: 'Penetration testing, in this consultancy’s own city — its core service.',
+    surfaces: ['demo', 'cybersecurity'],
   },
   // Software packaging and QA for a regional authority — the consultancy's
   // subject exactly, at a contract size that tests the value component.
@@ -218,6 +228,7 @@ const CASES: readonly SampleCase[] = [
     lotIndex: 0,
     profile: 'software',
     why: 'Software packaging for a state IT authority — this consultancy’s subject, at scale.',
+    surfaces: ['demo'],
   },
   // Gigabit broadband: CPV division 72, so it is scored rather than
   // pre-filtered, but it is telecoms infrastructure, not IT consulting.
@@ -227,6 +238,19 @@ const CASES: readonly SampleCase[] = [
     lotIndex: 0,
     profile: 'software',
     why: 'Broadband infrastructure — close enough in CPV to reach scoring, far from the work.',
+    surfaces: ['demo'],
+  },
+  // Managed security services and a Security Operations Centre — the
+  // clearest cybersecurity procurement in the set, and the one whose MAIN
+  // CPV (72514100, computer operation) says nothing about security at all.
+  // The additional codes carry it, which is the point.
+  {
+    id: 'cyber-managed-soc',
+    fixture: '1.13/real-managed-security-soc.xml',
+    lotIndex: 0,
+    profile: 'cyber',
+    why: 'Managed security services and a Security Operations Centre, at a €5.5m ceiling.',
+    surfaces: ['cybersecurity'],
   },
   // The only English-language notice in the set, and the only one that
   // raises a risk flag. That is not a coincidence worth hiding: risk-flag
@@ -241,6 +265,7 @@ const CASES: readonly SampleCase[] = [
     lotIndex: 0,
     profile: 'irishSoftware',
     why: 'A framework agreement in this supplier’s own market — and the one notice here the engine flags.',
+    surfaces: ['demo'],
   },
   // Construction works against a supplier that excludes works outright: a
   // hard exclusion, not a low score — even though the notice carries an IT
@@ -251,6 +276,7 @@ const CASES: readonly SampleCase[] = [
     lotIndex: 0,
     profile: 'software',
     why: 'A construction contract that happens to carry an IT code, ruled out before scoring.',
+    surfaces: ['demo'],
   },
 ];
 
@@ -337,6 +363,7 @@ export function buildSampleVerdicts(readFixture: FixtureReader): SampleVerdictBu
     verdicts.push({
       id: testCase.id,
       why: testCase.why,
+      surfaces: testCase.surfaces,
       supplierLabel: label,
       // The title ingestion would store, not a hand-picked translation.
       tenderTitle: mapped.title,
@@ -385,7 +412,13 @@ export function buildSampleVerdicts(readFixture: FixtureReader): SampleVerdictBu
   // fixture or the engine changes such that the cases collapse into one
   // bucket, the demo stops demonstrating anything — fail loudly instead of
   // publishing it.
-  const distinctClasses = new Set(verdicts.map((v) => v.classification));
+  const demoVerdicts = verdicts.filter((v) => (v.surfaces as readonly string[]).includes('demo'));
+  if (demoVerdicts.length < 3 || demoVerdicts.length > 5) {
+    throw new Error(
+      `the /sample-verdicts demo is policy-capped at a curated 3-5 verdicts; got ${String(demoVerdicts.length)}`,
+    );
+  }
+  const distinctClasses = new Set(demoVerdicts.map((v) => v.classification));
   if (distinctClasses.size < 3) {
     throw new Error(
       `sample verdicts must span at least three outcome classes; got only ` +

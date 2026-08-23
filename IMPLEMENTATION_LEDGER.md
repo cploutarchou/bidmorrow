@@ -3819,6 +3819,55 @@ were acted on; two more were hardening.
 `/cybersecurity-tenders` and `/cloud-tenders` category pages, and the
 comparison module.
 
+## Engine v2 + /cybersecurity-tenders — 2026-08-23 (audit item 11, second slice)
+
+### ENGINE_VERSION 1 → 2: the buyer codelist was incomplete
+
+Found while scoring the Universität Hamburg SOC notice for the category page:
+its buyer code `body-pl-ra` scored UNKNOWN 2.5/5. The component's comment
+claimed its sets were "verified per docs/dependency-versions.md" against SDK
+1.15.1 — no such record existed in that file, and the sets held 12 codes
+where the official codelist (OP-TED eForms-SDK 1.13.2
+`codelists/buyer-legal-type.gc`, fetched 2026-08-23) has 20, including two
+strings (`eu-int-org`, `not-pub-fond`) the codelist does not define at all.
+Across the repo's 25 real TED fixtures, 7 carry a code the old sets did not
+know; four of those are universities/hospitals under `body-pl-cga`/
+`body-pl-ra` — squarely strong-fit — each losing 2.5 buyer points.
+
+Fix (owner-approved with the version bump, 2026-08-23): complete both sets
+from the codelist, drop the two phantom codes, bump ENGINE_VERSION to '2'
+per invariant 1. Production holds no customer scores yet (subscriptions open
+at launch), so nothing needed recomputation — the cheapest moment this fix
+will ever have. The codelist is now recorded in docs/dependency-versions.md,
+buyer.test.ts asserts the 20-code count as the tripwire for future SDK
+growth, and docs/matching-engine.md documents the actual sets and history.
+Demo verdicts regenerated under v2: only `cyber-managed-soc` moved
+(63.5 POSSIBLE → 66 WORTH_REVIEWING); the other five were unchanged because
+their buyer codes were already recognized.
+
+### /cybersecurity-tenders (policy: manually authored category page)
+
+Hand-written qualification-methodology argument — the CPV vocabulary has no
+cybersecurity division, shown with six real codes and their verbatim CPV 2008
+labels (each re-extracted from the SDK `cpv.gc` on 2026-08-23, incl. the
+correction that 72514100 is "Facilities management **services** involving
+computer operation") — plus two real engine-scored security notices: the
+pentest framework (86.5 STRONG_MATCH) and the Hamburg SOC (66,
+WORTH_REVIEWING, whose card also demonstrates the v2 buyer fix and the
+main-CPV-says-nothing case: 72514100 main, security carried by the
+additional codes). Verdicts are drawn from the shared generated set via a
+new `surfaces` tag (`demo` / `cybersecurity`), so /sample-verdicts keeps its
+policy-capped curated five and the generator throws if the demo surface
+leaves the 3–5 band. `SampleVerdictCard` extracted to a shared component so
+the surfaces cannot drift. Footer link + cross-link from /sample-verdicts,
+sitemap + metadata entries, e2e (structure, honesty boundaries) and an axe
+scan.
+
+`/cloud-tenders` deliberately deferred — the cloud-CPV fetch returned
+hardware/licensing, not hosting — owner concurred; needs a genuine anchor
+notice first. New fixture: `1.13/real-managed-security-soc` (580618-2026,
+no personal data — departmental contacts only).
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
