@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router';
 import { AppShell } from './components/AppShell';
 import { MarketingLayout } from './components/MarketingLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -34,6 +34,7 @@ const ResetPassword = lazyPage(() => import('./pages/auth/ResetPassword'), 'Rese
 
 const Feed = lazyPage(() => import('./pages/app/Feed'), 'Feed');
 const TenderDetail = lazyPage(() => import('./pages/app/TenderDetail'), 'TenderDetail');
+const TenderSheet = lazyPage(() => import('./pages/app/TenderSheet'), 'TenderSheet');
 const Settings = lazyPage(() => import('./pages/app/Settings'), 'Settings');
 const Onboarding = lazyPage(() => import('./pages/app/Onboarding'), 'Onboarding');
 const BillingSuccess = lazyPage(() => import('./pages/app/BillingSuccess'), 'BillingSuccess');
@@ -57,192 +58,213 @@ const AdminSupport = lazyPage(() => import('./pages/admin/Support'), 'Support');
 const AdminAudit = lazyPage(() => import('./pages/admin/Audit'), 'Audit');
 const AdminFlags = lazyPage(() => import('./pages/admin/Flags'), 'Flags');
 
-export function App(): ReactElement {
+/**
+ * A tender opened FROM the feed shows as a slide-over over the feed; the same
+ * URL visited directly shows the full page.
+ *
+ * The mechanism is the location's `backgroundLocation` state, set by the feed
+ * card's link. When it is present, the main `<Routes>` is rendered against
+ * that background — so the feed stays mounted and keeps its scroll, loaded
+ * pages and filters — and a second `<Routes>` renders the sheet on top.
+ * Without it (shared link, bookmark, refresh, or a hard reload of the sheet
+ * URL) there is no feed to render behind, so the full page is the right
+ * answer and is what appears.
+ *
+ * The tender therefore keeps one real, linkable URL either way, which a
+ * state-only sheet would have thrown away.
+ */
+interface BackgroundLocationState {
+  readonly backgroundLocation?: { readonly pathname: string; readonly search: string };
+}
+
+function AppRoutes(): ReactElement {
+  const location = useLocation();
+  const state = location.state as BackgroundLocationState | null;
+  const background = state?.backgroundLocation;
+
   return (
-    <AuthProvider>
-      <RouteChunkBoundary>
-        <BrowserRouter>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <MarketingLayout fullBleed>
-                  <Home />
-                </MarketingLayout>
-              }
-            />
-            <Route
-              path="/pricing"
-              element={
-                <MarketingLayout>
-                  <Lazy>
-                    <Pricing />
-                  </Lazy>
-                </MarketingLayout>
-              }
-            />
-            <Route
-              path="/how-it-works"
-              element={
-                <MarketingLayout>
-                  <Lazy>
-                    <HowItWorks />
-                  </Lazy>
-                </MarketingLayout>
-              }
-            />
-            <Route
-              path="/methodology"
-              element={
-                <MarketingLayout>
-                  <Lazy>
-                    <Methodology />
-                  </Lazy>
-                </MarketingLayout>
-              }
-            />
-            <Route
-              path="/pilot"
-              element={
-                <MarketingLayout>
-                  <Lazy>
-                    <Pilot />
-                  </Lazy>
-                </MarketingLayout>
-              }
-            />
-            <Route
-              path="/privacy"
-              element={
-                <MarketingLayout>
-                  <Lazy>
-                    <Privacy />
-                  </Lazy>
-                </MarketingLayout>
-              }
-            />
-            <Route
-              path="/terms"
-              element={
-                <MarketingLayout>
-                  <Lazy>
-                    <Terms />
-                  </Lazy>
-                </MarketingLayout>
-              }
-            />
-            <Route
-              path="/contact"
-              element={
-                <MarketingLayout>
-                  <Lazy>
-                    <Contact />
-                  </Lazy>
-                </MarketingLayout>
-              }
-            />
+    <>
+      <Routes location={background ?? location}>
+        <Route
+          path="/"
+          element={
+            <MarketingLayout fullBleed>
+              <Home />
+            </MarketingLayout>
+          }
+        />
+        <Route
+          path="/pricing"
+          element={
+            <MarketingLayout>
+              <Lazy>
+                <Pricing />
+              </Lazy>
+            </MarketingLayout>
+          }
+        />
+        <Route
+          path="/how-it-works"
+          element={
+            <MarketingLayout>
+              <Lazy>
+                <HowItWorks />
+              </Lazy>
+            </MarketingLayout>
+          }
+        />
+        <Route
+          path="/methodology"
+          element={
+            <MarketingLayout>
+              <Lazy>
+                <Methodology />
+              </Lazy>
+            </MarketingLayout>
+          }
+        />
+        <Route
+          path="/pilot"
+          element={
+            <MarketingLayout>
+              <Lazy>
+                <Pilot />
+              </Lazy>
+            </MarketingLayout>
+          }
+        />
+        <Route
+          path="/privacy"
+          element={
+            <MarketingLayout>
+              <Lazy>
+                <Privacy />
+              </Lazy>
+            </MarketingLayout>
+          }
+        />
+        <Route
+          path="/terms"
+          element={
+            <MarketingLayout>
+              <Lazy>
+                <Terms />
+              </Lazy>
+            </MarketingLayout>
+          }
+        />
+        <Route
+          path="/contact"
+          element={
+            <MarketingLayout>
+              <Lazy>
+                <Contact />
+              </Lazy>
+            </MarketingLayout>
+          }
+        />
 
-            <Route
-              path="/signup"
-              element={
-                <Lazy>
-                  <Signup />
-                </Lazy>
-              }
-            />
-            <Route
-              path="/login"
-              element={
-                <Lazy>
-                  <Login />
-                </Lazy>
-              }
-            />
-            <Route
-              path="/verify-email"
-              element={
-                <Lazy>
-                  <VerifyEmail />
-                </Lazy>
-              }
-            />
-            <Route
-              path="/forgot-password"
-              element={
-                <Lazy>
-                  <ForgotPassword />
-                </Lazy>
-              }
-            />
-            <Route
-              path="/reset-password"
-              element={
-                <Lazy>
-                  <ResetPassword />
-                </Lazy>
-              }
-            />
+        <Route
+          path="/signup"
+          element={
+            <Lazy>
+              <Signup />
+            </Lazy>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <Lazy>
+              <Login />
+            </Lazy>
+          }
+        />
+        <Route
+          path="/verify-email"
+          element={
+            <Lazy>
+              <VerifyEmail />
+            </Lazy>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <Lazy>
+              <ForgotPassword />
+            </Lazy>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <Lazy>
+              <ResetPassword />
+            </Lazy>
+          }
+        />
 
-            <Route
-              path="/onboarding"
-              element={
-                <ProtectedRoute>
-                  <Lazy>
-                    <Onboarding />
-                  </Lazy>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/app"
-              element={
-                <ProtectedRoute>
-                  <AppShell>
-                    <Lazy>
-                      <Feed />
-                    </Lazy>
-                  </AppShell>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/app/tenders/:matchId"
-              element={
-                <ProtectedRoute>
-                  <AppShell>
-                    <Lazy>
-                      <TenderDetail />
-                    </Lazy>
-                  </AppShell>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/app/billing/success"
-              element={
-                <ProtectedRoute>
-                  <AppShell>
-                    <Lazy>
-                      <BillingSuccess />
-                    </Lazy>
-                  </AppShell>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/app/settings"
-              element={
-                <ProtectedRoute>
-                  <AppShell>
-                    <Lazy>
-                      <Settings />
-                    </Lazy>
-                  </AppShell>
-                </ProtectedRoute>
-              }
-            />
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <Lazy>
+                <Onboarding />
+              </Lazy>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <Lazy>
+                  <Feed />
+                </Lazy>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/tenders/:matchId"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <Lazy>
+                  <TenderDetail />
+                </Lazy>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/billing/success"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <Lazy>
+                  <BillingSuccess />
+                </Lazy>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/settings"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <Lazy>
+                  <Settings />
+                </Lazy>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
 
-            {/*
+        {/*
             Internal admin surface (Phase 10 stage B). `AdminGate` probes
             `/api/admin/health-details` on mount and renders the SAME
             `NotFound` page as the catch-all route below for any non-admin
@@ -250,106 +272,131 @@ export function App(): ReactElement {
             client-side, mirroring the server's 404-for-everyone-but-admins
             cloaking (apps/worker/src/middleware/admin.ts).
           */}
-            <Route
-              path="/admin"
-              element={
-                <Lazy>
-                  <AdminGate />
-                </Lazy>
-              }
-            >
-              <Route
-                index
-                element={
-                  <Lazy>
-                    <AdminDashboard />
-                  </Lazy>
-                }
-              />
-              <Route
-                path="orgs"
-                element={
-                  <Lazy>
-                    <AdminOrganizations />
-                  </Lazy>
-                }
-              />
-              <Route
-                path="orgs/:id"
-                element={
-                  <Lazy>
-                    <AdminOrganizationDetail />
-                  </Lazy>
-                }
-              />
-              <Route
-                path="users"
-                element={
-                  <Lazy>
-                    <AdminUsers />
-                  </Lazy>
-                }
-              />
-              <Route
-                path="subscriptions"
-                element={
-                  <Lazy>
-                    <AdminSubscriptions />
-                  </Lazy>
-                }
-              />
-              <Route
-                path="ingestion"
-                element={
-                  <Lazy>
-                    <AdminIngestion />
-                  </Lazy>
-                }
-              />
-              <Route
-                path="matching"
-                element={
-                  <Lazy>
-                    <AdminMatching />
-                  </Lazy>
-                }
-              />
-              <Route
-                path="digest"
-                element={
-                  <Lazy>
-                    <AdminDigest />
-                  </Lazy>
-                }
-              />
-              <Route
-                path="support"
-                element={
-                  <Lazy>
-                    <AdminSupport />
-                  </Lazy>
-                }
-              />
-              <Route
-                path="audit"
-                element={
-                  <Lazy>
-                    <AdminAudit />
-                  </Lazy>
-                }
-              />
-              <Route
-                path="flags"
-                element={
-                  <Lazy>
-                    <AdminFlags />
-                  </Lazy>
-                }
-              />
-            </Route>
+        <Route
+          path="/admin"
+          element={
+            <Lazy>
+              <AdminGate />
+            </Lazy>
+          }
+        >
+          <Route
+            index
+            element={
+              <Lazy>
+                <AdminDashboard />
+              </Lazy>
+            }
+          />
+          <Route
+            path="orgs"
+            element={
+              <Lazy>
+                <AdminOrganizations />
+              </Lazy>
+            }
+          />
+          <Route
+            path="orgs/:id"
+            element={
+              <Lazy>
+                <AdminOrganizationDetail />
+              </Lazy>
+            }
+          />
+          <Route
+            path="users"
+            element={
+              <Lazy>
+                <AdminUsers />
+              </Lazy>
+            }
+          />
+          <Route
+            path="subscriptions"
+            element={
+              <Lazy>
+                <AdminSubscriptions />
+              </Lazy>
+            }
+          />
+          <Route
+            path="ingestion"
+            element={
+              <Lazy>
+                <AdminIngestion />
+              </Lazy>
+            }
+          />
+          <Route
+            path="matching"
+            element={
+              <Lazy>
+                <AdminMatching />
+              </Lazy>
+            }
+          />
+          <Route
+            path="digest"
+            element={
+              <Lazy>
+                <AdminDigest />
+              </Lazy>
+            }
+          />
+          <Route
+            path="support"
+            element={
+              <Lazy>
+                <AdminSupport />
+              </Lazy>
+            }
+          />
+          <Route
+            path="audit"
+            element={
+              <Lazy>
+                <AdminAudit />
+              </Lazy>
+            }
+          />
+          <Route
+            path="flags"
+            element={
+              <Lazy>
+                <AdminFlags />
+              </Lazy>
+            }
+          />
+        </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+
+      {background !== undefined && (
+        <Routes>
+          <Route
+            path="/app/tenders/:matchId"
+            element={
+              <ProtectedRoute>
+                <Lazy>
+                  <TenderSheet />
+                </Lazy>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      )}
+    </>
+  );
+}
+
+export function App(): ReactElement {
+  return (
+    <AuthProvider>
+      <RouteChunkBoundary>
+        <BrowserRouter>
+          <AppRoutes />
         </BrowserRouter>
       </RouteChunkBoundary>
     </AuthProvider>

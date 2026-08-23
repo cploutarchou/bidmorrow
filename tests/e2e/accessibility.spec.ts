@@ -93,11 +93,37 @@ test.describe('authenticated pages', () => {
     expectNoSeriousViolations(await seriousOrCriticalViolations(page), '/app (feed)');
   });
 
-  test('tender detail', async ({ page }) => {
+  // Opening a tender FROM the feed now renders the slide-over sheet over the
+  // feed; the same URL visited directly renders the full page. They are two
+  // different renderings of the same content, so both are scanned.
+  test('tender detail (slide-over sheet, opened from the feed)', async ({ page }) => {
     await login(page, email, TEST_PASSWORD);
     await page.locator('article.tender-card h3 a').first().click();
+    const sheet = page.getByRole('dialog');
+    await expect(sheet).toBeVisible();
+    // Summary is the landing tab; the score table lives behind the second one.
+    await sheet.getByRole('tab', { name: 'Score' }).click();
+    await expect(sheet.getByRole('heading', { name: 'Score breakdown' })).toBeVisible();
+    expectNoSeriousViolations(
+      await seriousOrCriticalViolations(page),
+      '/app/tenders/:matchId (sheet)',
+    );
+  });
+
+  test('tender detail (full page, opened directly)', async ({ page }) => {
+    await login(page, email, TEST_PASSWORD);
+    const href = await page.locator('article.tender-card h3 a').first().getAttribute('href');
+    expect(href).not.toBeNull();
+    // A direct visit carries no `backgroundLocation`, so there is no feed
+    // behind it and the full page renders instead of the sheet.
+    await page.goto(href as string);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.getByRole('tab', { name: 'Score' }).click();
     await expect(page.getByRole('heading', { name: 'Score breakdown' })).toBeVisible();
-    expectNoSeriousViolations(await seriousOrCriticalViolations(page), '/app/tenders/:matchId');
+    expectNoSeriousViolations(
+      await seriousOrCriticalViolations(page),
+      '/app/tenders/:matchId (page)',
+    );
   });
 
   test('settings', async ({ page }) => {

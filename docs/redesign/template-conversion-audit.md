@@ -73,8 +73,15 @@ localStorage ops-state) was excluded from the comparison by instruction.
    strip is styled in flow. The remaining admin minors below (ops pills
    wired to state, state-aware pause/resume, rail counts, ingestion
    sub-views, flag JSON hint) are unchanged.
-2. Client Area detail slide-over sheet (replace full-page navigation;
-   frontend-only for the existing Analysis content).
+2. ~~Client Area detail slide-over sheet~~ — **DONE 2026-08-23.** Opened
+   from the feed, a tender now slides over it instead of navigating away.
+   Deliberately NOT the prototype's state-only overlay: it is driven by the
+   same `/app/tenders/:matchId` route via react-router's
+   `backgroundLocation`, so the tender keeps one real linkable URL, Back
+   closes the sheet, and a shared link or refresh still renders the full
+   page. Both surfaces render one `TenderDetailContent`, so they cannot
+   drift. Only the Summary and Score tabs exist — Requirements, Buyer and
+   Activity are item 7 below and were not stubbed.
 3. Onboarding redesign: 5-step flow restructure → 12-sector CPV picker
    (new sector reference data) → scope-estimate panel (new 30-day
    estimate API).
@@ -138,6 +145,7 @@ the branch and the workflow files. The owner cleared it on the billing side.
 | Type-scale call-site migration                              | **Deferred** — only 2 of 215 declarations matched exactly, and the `font` shorthand resets weight                              |
 | `--accent-hover/press`, `--field-inner-lit`, `--bg-overlay` | **Still unwired** — each moves pixels; belongs in a reviewed restyling PR                                                      |
 | Admin page bodies (ten sections + org detail)               | **DONE 2026-08-23** — see the note under "Majors" below                                                                        |
+| Detail slide-over sheet                                     | **DONE 2026-08-23** — route-driven, so the URL survives; Summary + Score tabs only                                             |
 | CSS budget after the admin work                             | **91 kB → 97 kB** against the same 25 kB budget — the new vocabulary added ~6 kB; the per-surface split is still the fix       |
 
 Everything else in the pending list below is untouched and still stands.
