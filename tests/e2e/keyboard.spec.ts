@@ -167,3 +167,23 @@ test('route change moves focus to main and resets scroll', async ({ page }) => {
   const focused = await page.evaluate(() => document.activeElement?.tagName ?? 'none');
   expect(focused).toBe('MAIN');
 });
+
+test('feed card: "why this score" expander reveals the engine explanations', async ({ page }) => {
+  await bootstrapOnboardedUserWithMatches(page, 'Why Score');
+  await page.goto('/app');
+  const firstCard = page.locator('article.tender-card').first();
+  await expect(firstCard).toBeVisible();
+
+  const why = firstCard.locator('details.tender-card__why');
+  await expect(why).toBeVisible();
+  const items = why.locator('li');
+  await why.locator('summary').click();
+  // Real engine explanation strings, not labels: every entry carries the
+  // component's own prose (they all follow the "<Component>: ..." shape).
+  await expect(items.first()).toBeVisible();
+  const texts = await items.allTextContents();
+  expect(texts.length).toBeGreaterThan(0);
+  for (const text of texts) {
+    expect(text.length).toBeGreaterThan(10);
+  }
+});

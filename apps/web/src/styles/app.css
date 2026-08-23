@@ -2277,3 +2277,43 @@ body.sheet-open {
   line-height: 1.55;
   color: var(--ink-2);
 }
+
+/* --- Feed card: deadline urgency inks + "why this score" expander -------
+   (audit minors, 2026-08-23). Urgency thresholds mirror the design's demo
+   feed on Home: under 7 days risk, under 14 caution, otherwise quiet. The
+   ink is supplementary to the deadline text beside it. */
+
+.tender-card__deadline--risk {
+  color: var(--sig-risk);
+}
+
+.tender-card__deadline--caution {
+  color: var(--sig-caution);
+}
+
+.tender-card__deadline--quiet {
+  color: var(--ink-2);
+}
+
+.tender-card__why {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+}
+
+.tender-card__why summary {
+  cursor: pointer;
+  color: var(--ink-2);
+  width: fit-content;
+}
+
+.tender-card__why summary:hover {
+  color: var(--ink-1);
+}
+
+.tender-card__why ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.375rem;
+  color: var(--ink-2);
+}
