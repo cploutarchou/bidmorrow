@@ -18,6 +18,21 @@ test('home page renders headline and CTA', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Join the founding pilot' }).first()).toBeVisible();
 });
 
+test('home comparison module stays unnamed and states its evidence basis', async ({ page }) => {
+  // The honest comparison module (docs/website-redesign-plan.md §7): a
+  // "typical tender-alert services" column, never a named competitor —
+  // named tables are owner-gated (decision D11) — and the note stating what
+  // the right-hand column is based on must stay attached to the table.
+  await page.goto('/');
+  const section = page.locator('#compare');
+  await expect(section.getByRole('table')).toBeVisible();
+  await expect(
+    section.getByRole('columnheader', { name: 'Typical tender-alert services' }),
+  ).toBeVisible();
+  await expect(section.getByRole('rowheader')).toHaveCount(6);
+  await expect(section.getByText(/our own review of the public marketing pages/)).toBeVisible();
+});
+
 test('methodology page discloses the unknown-value scoring policy', async ({ page }) => {
   await page.goto('/methodology');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();

@@ -7924,3 +7924,34 @@ body.sheet-open {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* --- Home: honest unnamed comparison module (#compare) ----------------- */
+
+/* The BidMorrow column is the argument; give it the reading emphasis the
+   row order already implies, without color-only signalling. The shared
+   `.mkt-table-card td:nth-child(2)` mono rule is for score tables whose
+   second column is points — here it is prose, so restore the text face. */
+.hp-compare table {
+  min-width: 44rem;
+  table-layout: fixed;
+}
+
+.hp-compare th:first-child {
+  width: 8.5rem;
+}
+
+.hp-compare td:nth-child(2) {
+  font-family: inherit;
+  font-variant-numeric: normal;
+  font-weight: 500;
+}
+
+.hp-compare td:nth-child(3) {
+  color: var(--ink-2);
+}
+
+.hp-compare__note {
+  max-width: 65ch;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}

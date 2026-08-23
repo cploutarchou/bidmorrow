@@ -3868,6 +3868,36 @@ hardware/licensing, not hosting — owner concurred; needs a genuine anchor
 notice first. New fixture: `1.13/real-managed-security-soc` (580618-2026,
 no personal data — departmental contacts only).
 
+## Item 11 closed — comparison module (2026-08-23)
+
+The last slice of the M3 final slice: the honest UNNAMED comparison module
+on Home (`#compare`, between coverage and pricing), "BidMorrow vs typical
+tender-alert services", per docs/website-redesign-plan.md §7.
+Named-competitor tables stay owner-gated (decision D11) and were not built.
+
+Six attribute rows. The rule that made this buildable without new research:
+every "typical" cell restates a documented finding from
+docs/redesign/competitor-findings.md (rendered-page captures of seven EU
+tender-alert services, 2026-08-17) — pricing behind demo calls/"from"
+anchors, annual-billing steering, "AI-powered" with no scoring account, no
+published methodology, data source unstated, consent-gated tracker sets.
+Every BidMorrow cell links to the page that keeps the claim true (Pricing,
+Methodology, Privacy). The evidence basis is stated to the READER under the
+table — "our own review of the public marketing pages of seven EU
+tender-alert services, captured in August 2026… any individual service may
+differ" — not just to reviewers in a comment.
+
+One deliberate CSS override: `.mkt-table-card td:nth-child(2)` sets the
+mono font for score tables' points columns; here column 2 is prose, so
+`.hp-compare` restores the text face. Table scrolls inside the card on
+mobile per the repo's wide-table convention. Axe green on Home; a marketing
+e2e test pins the unnamed column header, the six row headers, and the
+evidence note.
+
+With this, audit item 11 is closed: demo (PR #86), category page + engine
+v2 (PR #87), comparison module (this change). `/cloud-tenders` remains
+deferred for want of genuinely-cloud notices, recorded in the audit doc.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
