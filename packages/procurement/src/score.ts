@@ -51,8 +51,16 @@ const CLASSIFICATIONS_WITH_COMPONENTS: readonly MatchClassification[] = [
   'POSSIBLE_MATCH',
 ];
 
-/** Engine component keys that don't spell the same as the DB's `match_components.component_key` CHECK vocabulary. */
-const COMPONENT_KEY_TO_DB: Record<MatchComponentId, MatchComponentKey> = {
+/**
+ * Engine component keys that don't spell the same as the DB's
+ * `match_components.component_key` CHECK vocabulary.
+ *
+ * Exported because the sample-verdict demo generator
+ * (packages/procurement/scripts/generate-sample-verdicts.ts) must label its
+ * components with the same vocabulary the customer UI reads, and a second
+ * copy of this map would silently drift from this one.
+ */
+export const COMPONENT_KEY_TO_DB: Record<MatchComponentId, MatchComponentKey> = {
   cpv: 'cpv',
   capability: 'capability',
   geography: 'geography',

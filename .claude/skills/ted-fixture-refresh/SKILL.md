@@ -23,6 +23,10 @@ XML, never live TED in CI.
 4. Store under `tests/fixtures/ted/<sdk-version>/<case-name>.xml` with a
    sibling `<case-name>.meta.json`: source notice ID, publication date,
    retrieval date, sdk version, case description, sanitization applied.
+   **The `sanitization` field records field path + occurrence count, NEVER
+   the removed value.** Quoting the personal email or number that was taken
+   out puts it straight back into the repository and defeats step 3 —
+   see the existing entries for the wording to follow.
 5. Malformed-fixture cases are the exception to "real only": derive them by
    minimally corrupting a real fixture and document the corruption in meta.
 6. Add/extend the contract test asserting the normalized output for the new

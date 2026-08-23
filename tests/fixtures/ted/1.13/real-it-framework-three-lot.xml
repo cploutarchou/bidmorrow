@@ -1,0 +1,976 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><ContractNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+   <ext:UBLExtensions>
+      <ext:UBLExtension>
+         <ext:ExtensionContent>
+            <efext:EformsExtension>
+               <efac:Changes>
+                  <efbc:ChangedNoticeIdentifier>4591aa20-0cff-44ea-86a9-e5c35febb436-01</efbc:ChangedNoticeIdentifier>
+                  <efac:Change>
+                     <efac:ChangedSection>
+                        <efbc:ChangedSectionIdentifier>LOT-0001</efbc:ChangedSectionIdentifier>
+                     </efac:ChangedSection>
+                  </efac:Change>
+                  <efac:Change>
+                     <efac:ChangedSection>
+                        <efbc:ChangedSectionIdentifier>LOT-0002</efbc:ChangedSectionIdentifier>
+                     </efac:ChangedSection>
+                  </efac:Change>
+                  <efac:Change>
+                     <efac:ChangedSection>
+                        <efbc:ChangedSectionIdentifier>LOT-0003</efbc:ChangedSectionIdentifier>
+                     </efac:ChangedSection>
+                  </efac:Change>
+                  <efac:ChangeReason>
+                     <cbc:ReasonCode listName="change-corrig-justification">cor-pub</cbc:ReasonCode>
+                     <efbc:ReasonDescription languageID="DEU">Verlängerung der Angebotsfrist um eine Woche.</efbc:ReasonDescription>
+                  </efac:ChangeReason>
+               </efac:Changes>
+               <efac:NoticeSubType>
+                  <cbc:SubTypeCode listName="notice-subtype">16</cbc:SubTypeCode>
+               </efac:NoticeSubType>
+               <efac:Organizations>
+                  <efac:Organization>
+                     <efbc:AcquiringCPBIndicator>false</efbc:AcquiringCPBIndicator>
+                     <efbc:AwardingCPBIndicator>true</efbc:AwardingCPBIndicator>
+                     <efac:Company>
+                        <cbc:WebsiteURI>https://vergabe.hessen.de</cbc:WebsiteURI>
+                        <cac:PartyIdentification>
+                           <cbc:ID schemeName="organization">ORG-7001</cbc:ID>
+                        </cac:PartyIdentification>
+                        <cac:PartyName>
+                           <cbc:Name languageID="DEU">Land Hessen, vertreten durch die Hessische Zentrale für Datenverarbeitung</cbc:Name>
+                        </cac:PartyName>
+                        <cac:PostalAddress>
+                           <cbc:StreetName>Mainzer Straße 29</cbc:StreetName>
+                           <cbc:CityName>Wiesbaden</cbc:CityName>
+                           <cbc:PostalZone>65185</cbc:PostalZone>
+                           <cbc:CountrySubentityCode listName="nuts">DE714</cbc:CountrySubentityCode>
+                           <cac:Country>
+                              <cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+                           </cac:Country>
+                        </cac:PostalAddress>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>06-25153000-14</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:Contact>
+                           <cbc:Name>Z6-Vergabestelle</cbc:Name>
+                           <cbc:Telephone>+49 611340 0</cbc:Telephone>
+                           <cbc:Telefax>+49 611340 1150</cbc:Telefax>
+                           <cbc:ElectronicMail>vergabestelle@hzd.hessen.de</cbc:ElectronicMail>
+                        </cac:Contact>
+                     </efac:Company>
+                  </efac:Organization>
+                  <efac:Organization>
+                     <efac:Company>
+                        <cbc:WebsiteURI>https://www.rp-darmstadt.hessen.de</cbc:WebsiteURI>
+                        <cac:PartyIdentification>
+                           <cbc:ID schemeName="organization">ORG-7004</cbc:ID>
+                        </cac:PartyIdentification>
+                        <cac:PartyName>
+                           <cbc:Name languageID="DEU">Vergabekammer des Landes Hessen beim Regierungspräsidium Darmstadt</cbc:Name>
+                        </cac:PartyName>
+                        <cac:PostalAddress>
+                           <cbc:StreetName>Wilhelminenstraße 1 - 3</cbc:StreetName>
+                           <cbc:CityName>Darmstadt</cbc:CityName>
+                           <cbc:PostalZone>64283</cbc:PostalZone>
+                           <cbc:CountrySubentityCode listName="nuts">DE711</cbc:CountrySubentityCode>
+                           <cac:Country>
+                              <cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+                           </cac:Country>
+                        </cac:PostalAddress>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>DE 812 056 745</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:Contact>
+                           <cbc:Telephone>+49 6151 126603</cbc:Telephone>
+                           <cbc:Telefax>+49 611 327648534</cbc:Telefax>
+                           <cbc:ElectronicMail>vergabekammer@rpda.hessen.de</cbc:ElectronicMail>
+                        </cac:Contact>
+                     </efac:Company>
+                  </efac:Organization>
+               <efac:Organization><efac:Company><cac:PartyIdentification><cbc:ID schemeName="organization">ORG-7005</cbc:ID></cac:PartyIdentification><cac:PartyName><cbc:Name languageID="DEU">Datenservice Öffentlicher Einkauf (in Verantwortung des Beschaffungsamts des BMI)</cbc:Name></cac:PartyName><cac:PostalAddress><cbc:CityName>Bonn</cbc:CityName><cbc:PostalZone>53119</cbc:PostalZone><cbc:CountrySubentityCode listName="nuts">DEA22</cbc:CountrySubentityCode><cac:Country><cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode></cac:Country></cac:PostalAddress><cac:PartyLegalEntity><cbc:CompanyID schemeID="002">0204:994-DOEVD-83</cbc:CompanyID></cac:PartyLegalEntity><cac:Contact><cbc:Telephone>+49228996100</cbc:Telephone><cbc:ElectronicMail>noreply.esender_hub@bescha.bund.de</cbc:ElectronicMail></cac:Contact></efac:Company></efac:Organization></efac:Organizations>
+            <efac:Publication><efbc:NoticePublicationID schemeName="ojs-notice-id">00580079-2026</efbc:NoticePublicationID><efbc:GazetteID schemeName="ojs-id">161/2026</efbc:GazetteID><efbc:PublicationDate>2026-08-21+02:00</efbc:PublicationDate></efac:Publication></efext:EformsExtension>
+         </ext:ExtensionContent>
+      </ext:UBLExtension>
+   </ext:UBLExtensions>
+   <cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+   <cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+   <cbc:ProfileID>eforms-sdk-1.13</cbc:ProfileID>
+   <cbc:ID schemeName="notice-id">445e231f-ca5e-41d1-893d-63f261048263</cbc:ID>
+   <cbc:ContractFolderID>ab192113-ae0e-4cce-a930-5f2d1f8a78eb</cbc:ContractFolderID>
+   <cbc:IssueDate>2026-08-20+02:00</cbc:IssueDate>
+   <cbc:IssueTime>09:00:34+02:00</cbc:IssueTime>
+   <cbc:VersionID>01</cbc:VersionID>
+   <cbc:RequestedPublicationDate>2026-08-20+02:00</cbc:RequestedPublicationDate>
+   <cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+   <cbc:NoticeTypeCode listName="competition">cn-standard</cbc:NoticeTypeCode>
+   <cbc:NoticeLanguageCode listName="language">DEU</cbc:NoticeLanguageCode>
+   <cac:ContractingParty>
+      <cac:ContractingPartyType>
+         <cbc:PartyTypeCode listName="buyer-legal-type">ra</cbc:PartyTypeCode>
+      </cac:ContractingPartyType>
+      <cac:ContractingActivity>
+         <cbc:ActivityTypeCode listName="authority-activity">gen-pub</cbc:ActivityTypeCode>
+      </cac:ContractingActivity>
+      <cac:Party>
+         <cac:PartyIdentification>
+            <cbc:ID schemeName="organization">ORG-7001</cbc:ID>
+         </cac:PartyIdentification>
+      <cac:ServiceProviderParty><cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode><cac:Party><cac:PartyIdentification><cbc:ID schemeName="organization">ORG-7005</cbc:ID></cac:PartyIdentification></cac:Party></cac:ServiceProviderParty></cac:Party>
+   </cac:ContractingParty>
+   <cac:TenderingTerms>
+      <cac:ProcurementLegislationDocumentReference>
+         <cbc:ID>vgv</cbc:ID>
+      </cac:ProcurementLegislationDocumentReference>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-grounds-source">epo-notice</cbc:TendererRequirementTypeCode>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-other</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-corrpt</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-part</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-distortion</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-bre-env-law</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-laund</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-fraud</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-traffick</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-insolvency</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-bre-lab-law</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-liq-admin</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-misrepresent</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-partic-confl</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-prep-confl</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-misconduct</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-sanction</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis-bre-soc-law</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-pmt-bre-ssc</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn-as-susp</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-pmt-bre-tax</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim-terror</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-natl-bre-nat-law</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="DEU">Bestätigung des Nichtvorliegens von Ausschlussgründen nach §§ 123, 124 GWB durch Abgabe einer entsprechenden Eigenerklärung (Dateien "A 05 Eigenerklaerung_Par_123_GWB", "A 06 Eigenerklaerung_Par_124_GWB")</cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:LotDistribution>
+         <cbc:MaximumLotsAwardedNumeric>3</cbc:MaximumLotsAwardedNumeric>
+         <cbc:MaximumLotsSubmittedNumeric>3</cbc:MaximumLotsSubmittedNumeric>
+      </cac:LotDistribution>
+   </cac:TenderingTerms>
+   <cac:TenderingProcess>
+      <cbc:ProcedureCode listName="procurement-procedure-type">open</cbc:ProcedureCode>
+      <cac:ProcessJustification>
+         <cbc:ProcessReasonCode listName="accelerated-procedure">false</cbc:ProcessReasonCode>
+      </cac:ProcessJustification>
+   </cac:TenderingProcess>
+   <cac:ProcurementProject>
+      <cbc:ID>VG-3000-2026-0052</cbc:ID>
+      <cbc:Name languageID="DEU">Microsoft Plattform bezogene Softwarebereitstellungs-Services - Paketierung und Qualitätssicherung</cbc:Name>
+      <cbc:Description languageID="DEU">Unterstützungsleistungen für Microsoft Plattform bezogene Softwarebereitstellungs-Services - Paketierung und Qualitätssicherung (Technologien: MS Con-figMgr, MS Windows, MS Bitlocker, MS Office) in 3 Losen
+</cbc:Description>
+      <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+      <cbc:Note languageID="DEU">Eine Beschreibung der zu vergebenden Leistung steht auf der Vergabeplattform des Landes Hessen (https://vergabe.hessen.de) zur Verfügung und muss dort heruntergeladen werden.
+Ein Bewerber kann den Nachweis seiner Eignung und des Nichtvorliegens von Ausschlussgründen ganz oder teilweise durch die Teilnahme an Präqualifikationssystemen erbringen.
+
+Neben den in den Ziffern 5.1.9, 5.1.12 und 2.1.6 dieser EU-Bekanntmachung geforderten Unterlagen haben die Bieter zusätzlich die nachfolgenden Erklärungen und Nachweise mit dem Angebot einzureichen:
+(1) Eigenerklärung Artikel 5k EU-Verordnung 833/2014: Der Bieter hat die Eigenerklärung zum Artikel 5k der EU-Verordnung 833/2014 (Datei "A 09 Eigenerklaerung Artikel 5k EU-Verordnung 833-2014") ausgefüllt mit seinem Angebot einzureichen. Bei Bietergemeinschaften hat jedes Mitglied der Bietergemeinschaft die Erklärung in der entsprechenden Form einzureichen.
+(2) Erklärung Unternehmensdaten (Datei "A 04 Erklaerung_Unternehmensdaten"). Diese Erklärung dient lediglich statistischen Zwecken. Sie stellt kein Eignungskriterium dar.
+(3) Der Auftragnehmer wird personenbezogene Daten im Auftrag verarbeiten. Hierzu wird eine Vereinbarung über die Auftragsverarbeitung geschlossen (Datei "B 05 Vereinbarung Auftragsverarbeitung Lose 1 bis 3"). 
+Der Bieter füllt die mit den Vergabeunterlagen veröffentlichte Vereinbarung über die Auftragsverarbeitung an den vorgesehenen Stellen (gelb markiert) - soweit zutreffend - aus. Die Bieter sind aufgefordert die technisch-organisatorischen Maßnahmen (TOM) entweder in die Anlage 1 der Vereinbarung einzutragen oder als gesonderte Unterlage ihrem Angebot beizufügen. Für diese die Lose 1 bis 3 werden keine besonderen technisch-organisatorischen Maßnahmen gefordert.
+
+Hinweis der Vergabestelle zu den Kompetenzprofilen:
+Mit dem Angebot sind noch keine konkreten Personen zu benennen und für diese die Kompetenzprofile ausgefüllt einzureichen. Die Kompetenzprofile dienen der Überprüfung der in der Leistungsbeschreibung festgelegten Mindestqualifikationen an das einzusetzende Personal. Sie werden nach Abschluss der Rahmenvereinbarung und vor Abschluss eines Einzelabrufs von dem Auftragnehmer zum Nachweis angefordert, dass das angebotenen Personal die Mindestqualifikationen erfüllt.
+
+Für die ausgeschriebene Leistung soll je Los eine Rahmenvereinbarung (in den Vergabeunterlagen teilweise auch als Rahmenvertrag bezeichnet) mit bis zu drei Wirtschaftsteilnehmern abgeschlossen werden (§ 21 Abs. 4 Nr. 1 VgV). Die Auftragserteilung erfolgt bei jeder Rahmenvereinbarung nach dem sogenannten Kaskadenprinzip, so dass der Auftraggeber zur Bedarfsdeckung grundsätzlich bei dem Auftragnehmer mit dem wirtschaftlichsten Angebot anfragen wird. Bei dem Auftragnehmer mit dem nach der Ausschreibung zweitwirtschaftlichsten Angebot fragt der Auftraggeber erst dann an, wenn der erstplatzierte Auftragnehmer entsprechend der Bedarfsanfrage nicht fristgerecht anbietet bzw. nicht anbieten kann usw. Die Kaskade ist in Ziff. 3.2.1 der Muster-Rahmenvereinbarung für die Lose 1 bis 3 beschrieben.</cbc:Note>
+      <cac:RequestedTenderTotal>
+         <ext:UBLExtensions>
+            <ext:UBLExtension>
+               <ext:ExtensionContent>
+                  <efext:EformsExtension>
+                     <efbc:FrameworkMaximumAmount currencyID="EUR">24189360.00</efbc:FrameworkMaximumAmount>
+                  </efext:EformsExtension>
+               </ext:ExtensionContent>
+            </ext:UBLExtension>
+         </ext:UBLExtensions>
+         <cbc:EstimatedOverallContractAmount currencyID="EUR">20157800.00</cbc:EstimatedOverallContractAmount>
+      </cac:RequestedTenderTotal>
+      <cac:MainCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">72000000</cbc:ItemClassificationCode>
+      </cac:MainCommodityClassification>
+      <cac:RealizedLocation>
+         <cac:Address>
+            <cbc:StreetName>Mainzer Straße 29</cbc:StreetName>
+            <cbc:CityName>Wiesbaden</cbc:CityName>
+            <cbc:PostalZone>65185</cbc:PostalZone>
+            <cbc:CountrySubentityCode listName="nuts">DE714</cbc:CountrySubentityCode>
+            <cac:Country>
+               <cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+            </cac:Country>
+         </cac:Address>
+      </cac:RealizedLocation>
+   </cac:ProcurementProject>
+   <cac:ProcurementProjectLot>
+      <cbc:ID schemeName="Lot">LOT-0001</cbc:ID>
+      <cac:TenderingTerms>
+         <ext:UBLExtensions>
+            <ext:UBLExtension>
+               <ext:ExtensionContent>
+                  <efext:EformsExtension>
+                     <efac:SelectionCriteria>
+                        <cbc:TendererRequirementTypeCode listName="selection-criterion">slc-abil-ref-services</cbc:TendererRequirementTypeCode>
+                        <cbc:Description languageID="DEU">Das Eignungskriterium der technischen und beruflichen Leistungsfähigkeit und die hierfür vorzulegenden Nachweise für die Lose 1 bis 3 ergeben sich im Einzelnen aus Ziffer 2.3 der Ausschreibungsbestimmungen (Datei "A 00 Ausschreibungsbestimmungen") des vorliegenden Verfahrens.
+
+Los 1 Mindestanforderungen "Software-Paketierung-ConfigMgr":  Zwei (2) verschiedene, geeignete Referenzprojekte aus den letzten drei Jahren (Stichtag: "Ablauf der Angebotsfrist"). Ein und dasselbe Referenzprojekt kann nicht für beide Nachweise gleichzeitig herangezogen werden (Datei "A 08 Referenzen Los 1").  
+Referenzprojekt 1 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der Lfd. Nr. 9 bis Lfd. Nr. 20 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Einsatz Flexera Admin Studio oder vergleichbar, MSI-Paketierung gemäß definierter MSI-Standards und mind. 220 PT/Jahr, mind. 6 MSI-Softwarepakete/Monat, Verwaltung einer Enterprise-Umgebung mit mind. 10.000 aktiv verwalteten Windows-Clients,  mind. 10 ConfigMgr-Kundenstandorte) kumulativ erfüllt.
+Referenzprojekt 2 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der  Lfd. Nr. 9 bis  Lfd. Nr. 21 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Einsatz Flexera Admin Studio oder vergleichbar, MSI-Paketierung gemäß definierter MSI-Standards und mind. 440 PT/Jahr, mind. 12 MSI-Softwarepakete/Monat, Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Verwaltung einer Enterprise-Umgebung mit mind. 20.000 aktiv verwalteten Windows-Clients, mind. 50 ConfigMgr-Kundenstandorte) kumulativ erfüllt. 
+
+Los 2 Mindestanforderungen "Qualitätssicherung-ConfigMgr:  Zwei (2) verschiedene, geeignete Referenzprojekte aus den letzten drei Jahren (Stichtag: "Ablauf der Angebotsfrist"). Ein und dasselbe Referenzprojekt kann nicht für beide Nachweise gleichzeitig herangezogen werden (Datei "A 08 Referenzen Los 2"). 
+Referenzprojekt 1 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der Lfd. Nr. 9 bis Lfd. Nr. 20 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Prüfung von MSI-Softwarepaketen, QS im Clientmanagement einer ConfigMgr-Umgebung und mind.  220 PT/Jahr, QS mind 6 MSI-Softwarepaketen/Monat, Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Verwaltung einer Enterprise-Umgebung mit mindestens 10.000 aktiv verwalteten Windows-Clients, mind. 10 ConfigMgr-Kundenstandorte) kumulativ erfüllt. 
+Referenzprojekt 2 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der  Lfd. Nr. 9 bis  Lfd. Nr. 21 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B.  reguliertes Projektumfeld, QS im Clientmanagement einer ConfigMgr-Umgebung und mind. 440 PT/Jahr, Qs von mind. 12 MSI-Softwarepaketen/Monat, Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Verwaltung einer Enterprise-Umgebung mit mind. 20.000 aktiv verwalteten Windows-Clients, QS für mind. 5 voneinander unabhängigen Organisationseinheiten, mind. 50 ConfigMgr-Kundenstandorte) kumulativ erfüllt.
+
+Los 3 Mindestanforderungen "Senior Software-Paketierung/Qualitätssicherung-ConfigMgr": Zwei (2) verschiedene, geeignete Referenzprojekte aus den letzten drei Jahren (Stichtag: "Ablauf der Angebotsfrist"). Ein und dasselbe Referenzprojekt kann nicht für beide Nachweise gleichzeitig herangezogen werden (Datei "A 08 Referenzen Los 3"). 
+Referenzprojekt 1 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der Lfd. Nr. 9 bis Lfd. Nr. 21 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Einsatz Flexera Admin Studio oder vergleichbar, Koordination von MSI-Paketierungen gemäß der definierten MSI-Standards, komplexe Tätigkeiten in einem Umfang von mind. 220 PT/Jahr , Erstellung und QS von mind. 6 MSI-Softwarepaketen/Monat,, Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Verwaltung einer Enterprise-Umgebung mit mind. 10.000 aktiv verwalteten Windows-Clients, Paketierung und QS für mind. 2 voneinander unabhängigen Organisationseinheiten, mind. 10 ConfigMgr-Kundenstandorte) kumulativ erfüllt.
+Referenzprojekt 2 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der  Lfd. Nr. 9 bis  Lfd. Nr. 22 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Paketierung und QS und das Clientmanagement für moderne Windows-Infrastrukturen, komplexe Tätigkeiten in einem Umfang von mindestens 220/ Jahr, Koordination von MSI-Paketierungen gem. definierter MSI-Standards , Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Enterprise-Umgebung mit mind.  20.000 aktiv verwalteten Windows-Clients, Paketierung und QS für mind. 5 voneinander unabhängigen Organisationseinheiten, mind. 50 ConfigMgr-Kundenstandorte) kumulativ erfüllt.
+
+Die in den Losen 1 bis 3 geforderten Kriterien zum Nachweis der technischen und beruflichen Leistungsfähigkeit stellen Mindestanforderungen an die Eignung dar. Diese Mindestanforderungen stehen mit dem Auftragsgegenstand im sachlichen Zusammenhang und sind durch ihn gerechtfertigt. Die Nichterfüllung dieser Anforderungen führt zwingend zu einem Ausschluss vom weiteren Verfahren.</cbc:Description>
+                     </efac:SelectionCriteria>
+                     <efac:SelectionCriteria>
+                        <cbc:TendererRequirementTypeCode listName="selection-criterion">slc-stand-to-gen</cbc:TendererRequirementTypeCode>
+                        <cbc:Description languageID="DEU">Das Eignungskriterium der wirtschaftlichen und finanziellen Leistungsfähigkeit und der hierfür vorzulegende Nachweis ergibt sich im Einzelnen aus Ziffer 2.2 der Ausschreibungsbestimmungen (Datei "A 00 Ausschreibungsbestimmungen") des vorliegenden Verfahrens.
+Für die Lose 1 bis 3 ist hierzu der Gesamtumsatz des Unternehmens in den letzten drei abgeschlossenen Geschäftsjahren entsprechend dem Gründungsdatum oder dem Datum der Tätigkeitsaufnahme in der Datei "A 07 Umsatzzahlen Lose 1-3" anzugeben.</cbc:Description>
+                     </efac:SelectionCriteria>
+                     <efac:StrategicProcurement>
+                        <efbc:ApplicableLegalBasis listName="cvd-scope">false</efbc:ApplicableLegalBasis>
+                     </efac:StrategicProcurement>
+                     <efac:StrategicProcurement>
+                        <efbc:ApplicableLegalBasis listName="eed-scope">false</efbc:ApplicableLegalBasis>
+                     </efac:StrategicProcurement>
+                  </efext:EformsExtension>
+               </ext:ExtensionContent>
+            </ext:UBLExtension>
+         </ext:UBLExtensions>
+         <cbc:VariantConstraintCode listName="permission">not-allowed</cbc:VariantConstraintCode>
+         <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+         <cbc:RequiredCurriculaCode listName="requirement-stage">not-requ</cbc:RequiredCurriculaCode>
+         <cbc:RecurringProcurementIndicator>false</cbc:RecurringProcurementIndicator>
+         <cbc:MultipleTendersCode listName="permission">not-allowed</cbc:MultipleTendersCode>
+         <cac:CallForTendersDocumentReference>
+            <ext:UBLExtensions>
+               <ext:UBLExtension>
+                  <ext:ExtensionContent>
+                     <efext:EformsExtension>
+                        <efac:OfficialLanguages>
+                           <cac:Language>
+                              <cbc:ID>DEU</cbc:ID>
+                           </cac:Language>
+                        </efac:OfficialLanguages>
+                     </efext:EformsExtension>
+                  </ext:ExtensionContent>
+               </ext:UBLExtension>
+            </ext:UBLExtensions>
+            <cbc:ID>TenderDoc</cbc:ID>
+            <cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+            <cac:Attachment>
+               <cac:ExternalReference>
+                  <cbc:URI>https://vergabe.hessen.de/NetServer/TenderingProcedureDetails?function=_Details&amp;TenderOID=54321-Tender-19f6a427687-3b73af3b7ba8cd08</cbc:URI>
+               </cac:ExternalReference>
+            </cac:Attachment>
+         </cac:CallForTendersDocumentReference>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-notice</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="missing-info-submission">late-all</cbc:TendererRequirementTypeCode>
+               <cbc:Description languageID="DEU">-</cbc:Description>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="conditions">performance</cbc:ExecutionRequirementCode>
+            <cbc:Description languageID="DEU">Nach § 10 Abs. 1 S. 1 Nr. 2 HVTG haben die Bieter die Erfüllung der Verpflichtungen nach §§ 4, 5 HVTG gegenüber dem Auftraggeber in Textform zu erklären. Die Bieter, die Mitglieder von Bietergemeinschaften sowie deren Nachunternehmen (Unterauftragnehmer) und Verleihunternehmen sind aufgefordert, die erforderliche Eigenerklärung (Datei "A 02 Verpflichtungserklaerung_Tariftreue_Mindestlohn") mit dem digitalen Angebot abzugeben.</cbc:Description>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="einvoicing">allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:AwardingTerms>
+            <cac:AwardingCriterion>
+               <cac:SubordinateAwardingCriterion>
+                  <ext:UBLExtensions>
+                     <ext:UBLExtension>
+                        <ext:ExtensionContent>
+                           <efext:EformsExtension>
+                              <efac:AwardCriterionParameter>
+                                 <efbc:ParameterCode listName="number-weight">per-exa</efbc:ParameterCode>
+                                 <efbc:ParameterNumeric>100.00</efbc:ParameterNumeric>
+                              </efac:AwardCriterionParameter>
+                           </efext:EformsExtension>
+                        </ext:ExtensionContent>
+                     </ext:UBLExtension>
+                  </ext:UBLExtensions>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                  <cbc:Name languageID="DEU">Preis</cbc:Name>
+                  <cbc:Description languageID="DEU">Der Zuschlag wird auf die drei wirtschaftlichsten Angebote erteilt (§ 127 GWB, § 58 VgV). Einziges Zuschlagskriterium in Los 1 ist der "Preis" (Gewichtung 100 %)
+Die Bieter sind aufgefordert, sämtliche geforderten Angaben in den blau markierten Feldern vollständig und zutreffend vorzunehmen. Die wertungsrelevante Gesamtangebotssumme (brutto) ergibt sich aus Feld G8 der Datei "A 03 Preisblatt Los 1".</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+            </cac:AwardingCriterion>
+         </cac:AwardingTerms>
+         <cac:AdditionalInformationParty>
+            <cac:PartyIdentification>
+               <cbc:ID schemeName="organization">ORG-7001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:AdditionalInformationParty>
+         <cac:TenderRecipientParty>
+            <cbc:EndpointID>https://vergabe.hessen.de</cbc:EndpointID>
+         </cac:TenderRecipientParty>
+         <cac:TenderValidityPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">4</cbc:DurationMeasure>
+         </cac:TenderValidityPeriod>
+         <cac:AppealTerms>
+            <cac:PresentationPeriod>
+               <cbc:Description languageID="DEU">§ 160 GWB 
+Einleitung, Antrag
+(1) Die Vergabekammer leitet ein Nachprüfungsverfahren nur auf Antrag ein.
+(2) Antragsbefugt ist jedes Unternehmen, das ein Interesse an dem öffentlichen Auftrag oder der Konzession hat und eine Verletzung in seinen Rechten nach § 97 Absatz 6 durch Nichtbeachtung von Vergabevorschriften geltend macht. Ein Unternehmen ist nicht antragsbefugt, soweit es sich auf die Unwirksamkeit einer Rechtsverordnung nach § 5 des Bundestariftreuegesetzes beruft, wenn die Unwirksamkeit dieser Rechtsverordnung nicht durch rechtskräftigen Beschluss nach § 98 Absatz 4 Satz 1 des Arbeitsgerichtsgesetzes festgestellt ist. Das Unternehmen hat darzulegen, dass ihm durch die behauptete Verletzung der Vergabevorschriften ein Schaden entstanden ist oder zu entstehen droht.
+(3) Der Antrag ist unzulässig, soweit
+1. der Antragsteller den geltend gemachten Verstoß gegen Vergabevorschriften vor Einreichen des Nachprüfungsantrags erkannt und gegenüber dem Auftraggeber nicht innerhalb einer Frist von zehn Kalendertagen gerügt hat; der Ablauf der Frist nach § 134 Absatz 2 bleibt unberührt,
+2. Verstöße gegen Vergabevorschriften, die aufgrund der Bekanntmachung erkennbar sind, nicht spätestens bis zum Ablauf der in der Bekanntmachung benannten Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber gerügt werden,
+3. Verstöße gegen Vergabevorschriften, die erst in den Vergabeunterlagen erkennbar sind, nicht spätestens bis zum Ablauf der Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber gerügt werden,
+4. mehr als 15 Kalendertage nach Eingang der Mitteilung des Auftraggebers, einer Rüge nicht abhelfen zu wollen, vergangen sind,
+5. ein offensichtlicher Missbrauch des Antrags- oder Beschwerderechts gemäß § 180 Absatz 2 vorliegt.
+Satz 1 gilt nicht bei einem Antrag auf Feststellung der Unwirksamkeit des Vertrags nach § 135 Absatz 1 Nummer 2. § 134 Absatz 1 Satz 2 bleibt unberührt.</cbc:Description>
+            </cac:PresentationPeriod>
+            <cac:AppealReceiverParty>
+               <cac:PartyIdentification>
+                  <cbc:ID schemeName="organization">ORG-7004</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealReceiverParty>
+         </cac:AppealTerms>
+         <cac:Language>
+            <cbc:ID>DEU</cbc:ID>
+         </cac:Language>
+         <cac:PostAwardProcess>
+            <cbc:ElectronicOrderUsageIndicator>false</cbc:ElectronicOrderUsageIndicator>
+            <cbc:ElectronicPaymentUsageIndicator>true</cbc:ElectronicPaymentUsageIndicator>
+         </cac:PostAwardProcess>
+      </cac:TenderingTerms>
+      <cac:TenderingProcess>
+         <cbc:SubmissionMethodCode listName="esubmission">allowed</cbc:SubmissionMethodCode>
+         <cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+         <cac:TenderSubmissionDeadlinePeriod>
+            <cbc:EndDate>2026-09-01+02:00</cbc:EndDate>
+            <cbc:EndTime>10:00:00+02:00</cbc:EndTime>
+         </cac:TenderSubmissionDeadlinePeriod>
+         <cac:OpenTenderEvent>
+            <cbc:OccurrenceDate>2026-09-01+02:00</cbc:OccurrenceDate>
+            <cbc:OccurrenceTime>10:00:00+02:00</cbc:OccurrenceTime>
+         </cac:OpenTenderEvent>
+         <cac:AuctionTerms>
+            <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+         </cac:AuctionTerms>
+         <cac:FrameworkAgreement>
+            <cbc:MaximumOperatorQuantity>3</cbc:MaximumOperatorQuantity>
+         </cac:FrameworkAgreement>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="framework-agreement">fa-wo-rc</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+      </cac:TenderingProcess>
+      <cac:ProcurementProject>
+         <cbc:ID>LOT-0001</cbc:ID>
+         <cbc:Name languageID="DEU">Software-Paketierung - ConfigMgr</cbc:Name>
+         <cbc:Description languageID="DEU">Im Rahmen dieser Rolle ist die technische Unterstützung bei der Erstellung von Software Paketen vorgesehen (insbesondere hinsichtlich der Verteilung dieser Pakete über MS ConfigMgr).
+Verantwortungsbereich der Rolle "Software-Paketierung - ConfigMgr" umfasst u.a. folgende Aufgaben: Analyse, Bewertung und Bearbeitung von Paketierungsanforderungen sowohl hinsichtlich der technischen Umsetzung als auch bezüglich der Klärung eventuell fehlender Angaben mit dem entsprechenden Anfordererungen (z.B. interne Fachgruppen, externe Fachgruppen, Kunden), Erstellung von Software-Paketen mittels Flexera Admin Studio 2021 ff. gemäß den Vorgaben des HessenPC für die Verteilung über ConfigMgr CB sowie Durchführung von Maßnahmen zur grundlegenden Qualitätssicherung der erstellten Pakete, Durchführung der MSI-Paketierung gemäß "Best Practice" mittels Flexera Admin Studio 2021ff. (u.a. Nutzung des standardisierten Installationsablaufs, Repaketierung von nicht "Best Practice"-konformen MSI-Dateien, Installations-Informationsfenster z.B. AppDeploymentToolkit, ggf. Verwendung von PowerShell-Scripten, Abschaltung von Telemetriedaten), Durchführung der Paketierung von Treiberpaketen für Clients, Server und Peripheriegeräte für  die automatisierte Verteilung über eine ConfigMgr-Umgebung durch geeignete Methoden., Berücksichtigung der vorgegebenen Prozesse im Bereich der Paketierung bei den erforderlichen Unterstützungsleistungen (u.a. Paketierungsrichtlinie, Paketierungsleitfaden, Monitoring der im Patchmanagement befindlichen Softwareprodukte, Unterstützung Release-Management, Dokumentation zur Übergabe der Pakete in den Betrieb, GPO/GPP-Konfiguration, WMI-Abläufe), Durchführung von Anwendungsvirtualisierungen (u.a. mittels MS App-V, MSIX), Konfiguration von virtuellen Clients auf einer bereitgestellten virtuellen Plattform zur Durchführung der Software-Paketierung, Durchführung der Paketierung von Sonder-Anforderungen (z.B. für Virtual Desktop Infrastructure (VDI)-Umgebungen). 
+In der Rolle "Software-Paketierung - ConfigMgr" müssen die zur Leistungserbringung vorgesehenen Personen über die in Ziffer 4.1.1 der Leistungsbeschreibung (Datei "B 04 Leistungsbeschreibung Lose 1-3") festgelegten Mindestqualifikation und -erfahrung verfügen, die mittels Kompetenzprofil vor Abschluss eines Einzelauftrags nachzuweisen ist.</cbc:Description>
+         <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+         <cbc:Note languageID="DEU">#Besonders auch geeignet für:other-sme#</cbc:Note>
+         <cbc:SMESuitableIndicator>true</cbc:SMESuitableIndicator>
+         <cac:ProcurementAdditionalType>
+            <cbc:ProcurementTypeCode listName="strategic-procurement">none</cbc:ProcurementTypeCode>
+         </cac:ProcurementAdditionalType>
+         <cac:RequestedTenderTotal>
+            <ext:UBLExtensions>
+               <ext:UBLExtension>
+                  <ext:ExtensionContent>
+                     <efext:EformsExtension>
+                        <efbc:FrameworkMaximumAmount currencyID="EUR">8310960.00</efbc:FrameworkMaximumAmount>
+                     </efext:EformsExtension>
+                  </ext:ExtensionContent>
+               </ext:UBLExtension>
+            </ext:UBLExtensions>
+            <cbc:EstimatedOverallContractAmount currencyID="EUR">6925800.00</cbc:EstimatedOverallContractAmount>
+         </cac:RequestedTenderTotal>
+         <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72000000</cbc:ItemClassificationCode>
+         </cac:MainCommodityClassification>
+         <cac:RealizedLocation>
+            <cbc:Description languageID="DEU">Der Auftragnehmer ist bei der Erbringung der Leistungen grundsätzlich in der Wahl des Leistungsorts frei. Im Falle des Vorliegens eines Präsenzerfordernisses gemäß Ziffer 3.2.1 dieser Leistungsbeschreibung sind die Orte der Leistungserbringung die derzeitigen und zukünftigen Standorte der HZD in Wiesbaden, Mainz und Hünfeld oder Standorte anderer Dienststellen des Landes Hessen innerhalb des Stadtgebiets von Wiesbaden, Standorte anderer Dienststellen des Landes Hessen außerhalb der Städte Wiesbaden, Mainz und Hünfeld
+Der Ort der Leistungserbringung wird je Einzelauftrag nach Maßgabe der Anforderungen des Projektes, der IT-Sicherheit und des Datenschutzes geregelt (siehe Ziffer 5 der Datei "B 04 Leistungsbeschreibung Lose 1-3" und Ziff. 4  der Datei "B 01 Rahmenvereinbarung Lose 1-3").</cbc:Description>
+            <cac:Address>
+               <cbc:StreetName>Mainzer Straße 29</cbc:StreetName>
+               <cbc:CityName>Wiesbaden</cbc:CityName>
+               <cbc:PostalZone>65185</cbc:PostalZone>
+               <cbc:CountrySubentityCode listName="nuts">DE714</cbc:CountrySubentityCode>
+               <cac:Country>
+                  <cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+               </cac:Country>
+            </cac:Address>
+         </cac:RealizedLocation>
+         <cac:PlannedPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">24</cbc:DurationMeasure>
+         </cac:PlannedPeriod>
+         <cac:ContractExtension>
+            <cbc:OptionsDescription languageID="DEU">Nach Ablauf dieser Mindestlaufzeit von 24 Monaten verlängert sich die Rahmenvereinbarung um jeweils ein weiteres Jahr, wenn nicht der Auftraggeber spätestens drei Monate vor Ablauf der jeweiligen Vertragslaufzeit kündigt (siehe Ziff. 21 der Datei "B 01 Rahmenvereinbarung Lose 1-3").</cbc:OptionsDescription>
+            <cbc:MaximumNumberNumeric>2</cbc:MaximumNumberNumeric>
+         </cac:ContractExtension>
+      </cac:ProcurementProject>
+   </cac:ProcurementProjectLot>
+   <cac:ProcurementProjectLot>
+      <cbc:ID schemeName="Lot">LOT-0002</cbc:ID>
+      <cac:TenderingTerms>
+         <ext:UBLExtensions>
+            <ext:UBLExtension>
+               <ext:ExtensionContent>
+                  <efext:EformsExtension>
+                     <efac:SelectionCriteria>
+                        <cbc:TendererRequirementTypeCode listName="selection-criterion">slc-abil-ref-services</cbc:TendererRequirementTypeCode>
+                        <cbc:Description languageID="DEU">Das Eignungskriterium der technischen und beruflichen Leistungsfähigkeit und die hierfür vorzulegenden Nachweise für die Lose 1 bis 3 ergeben sich im Einzelnen aus Ziffer 2.3 der Ausschreibungsbestimmungen (Datei "A 00 Ausschreibungsbestimmungen") des vorliegenden Verfahrens.
+
+Los 1 Mindestanforderungen "Software-Paketierung-ConfigMgr":  Zwei (2) verschiedene, geeignete Referenzprojekte aus den letzten drei Jahren (Stichtag: "Ablauf der Angebotsfrist"). Ein und dasselbe Referenzprojekt kann nicht für beide Nachweise gleichzeitig herangezogen werden (Datei "A 08 Referenzen Los 1").  
+Referenzprojekt 1 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der Lfd. Nr. 9 bis Lfd. Nr. 20 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Einsatz Flexera Admin Studio oder vergleichbar, MSI-Paketierung gemäß definierter MSI-Standards und mind. 220 PT/Jahr, mind. 6 MSI-Softwarepakete/Monat, Verwaltung einer Enterprise-Umgebung mit mind. 10.000 aktiv verwalteten Windows-Clients,  mind. 10 ConfigMgr-Kundenstandorte) kumulativ erfüllt.
+Referenzprojekt 2 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der  Lfd. Nr. 9 bis  Lfd. Nr. 21 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Einsatz Flexera Admin Studio oder vergleichbar, MSI-Paketierung gemäß definierter MSI-Standards und mind. 440 PT/Jahr, mind. 12 MSI-Softwarepakete/Monat, Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Verwaltung einer Enterprise-Umgebung mit mind. 20.000 aktiv verwalteten Windows-Clients, mind. 50 ConfigMgr-Kundenstandorte) kumulativ erfüllt. 
+
+Los 2 Mindestanforderungen "Qualitätssicherung-ConfigMgr:  Zwei (2) verschiedene, geeignete Referenzprojekte aus den letzten drei Jahren (Stichtag: "Ablauf der Angebotsfrist"). Ein und dasselbe Referenzprojekt kann nicht für beide Nachweise gleichzeitig herangezogen werden (Datei "A 08 Referenzen Los 2"). 
+Referenzprojekt 1 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der Lfd. Nr. 9 bis Lfd. Nr. 20 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Prüfung von MSI-Softwarepaketen, QS im Clientmanagement einer ConfigMgr-Umgebung und mind.  220 PT/Jahr, QS mind 6 MSI-Softwarepaketen/Monat, Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Verwaltung einer Enterprise-Umgebung mit mindestens 10.000 aktiv verwalteten Windows-Clients, mind. 10 ConfigMgr-Kundenstandorte) kumulativ erfüllt. 
+Referenzprojekt 2 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der  Lfd. Nr. 9 bis  Lfd. Nr. 21 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B.  reguliertes Projektumfeld, QS im Clientmanagement einer ConfigMgr-Umgebung und mind. 440 PT/Jahr, Qs von mind. 12 MSI-Softwarepaketen/Monat, Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Verwaltung einer Enterprise-Umgebung mit mind. 20.000 aktiv verwalteten Windows-Clients, QS für mind. 5 voneinander unabhängigen Organisationseinheiten, mind. 50 ConfigMgr-Kundenstandorte) kumulativ erfüllt.
+
+Los 3 Mindestanforderungen "Senior Software-Paketierung/Qualitätssicherung-ConfigMgr": Zwei (2) verschiedene, geeignete Referenzprojekte aus den letzten drei Jahren (Stichtag: "Ablauf der Angebotsfrist"). Ein und dasselbe Referenzprojekt kann nicht für beide Nachweise gleichzeitig herangezogen werden (Datei "A 08 Referenzen Los 3"). 
+Referenzprojekt 1 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der Lfd. Nr. 9 bis Lfd. Nr. 21 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Einsatz Flexera Admin Studio oder vergleichbar, Koordination von MSI-Paketierungen gemäß der definierten MSI-Standards, komplexe Tätigkeiten in einem Umfang von mind. 220 PT/Jahr , Erstellung und QS von mind. 6 MSI-Softwarepaketen/Monat,, Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Verwaltung einer Enterprise-Umgebung mit mind. 10.000 aktiv verwalteten Windows-Clients, Paketierung und QS für mind. 2 voneinander unabhängigen Organisationseinheiten, mind. 10 ConfigMgr-Kundenstandorte) kumulativ erfüllt.
+Referenzprojekt 2 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der  Lfd. Nr. 9 bis  Lfd. Nr. 22 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Paketierung und QS und das Clientmanagement für moderne Windows-Infrastrukturen, komplexe Tätigkeiten in einem Umfang von mindestens 220/ Jahr, Koordination von MSI-Paketierungen gem. definierter MSI-Standards , Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Enterprise-Umgebung mit mind.  20.000 aktiv verwalteten Windows-Clients, Paketierung und QS für mind. 5 voneinander unabhängigen Organisationseinheiten, mind. 50 ConfigMgr-Kundenstandorte) kumulativ erfüllt.
+
+Die in den Losen 1 bis 3 geforderten Kriterien zum Nachweis der technischen und beruflichen Leistungsfähigkeit stellen Mindestanforderungen an die Eignung dar. Diese Mindestanforderungen stehen mit dem Auftragsgegenstand im sachlichen Zusammenhang und sind durch ihn gerechtfertigt. Die Nichterfüllung dieser Anforderungen führt zwingend zu einem Ausschluss vom weiteren Verfahren.</cbc:Description>
+                     </efac:SelectionCriteria>
+                     <efac:SelectionCriteria>
+                        <cbc:TendererRequirementTypeCode listName="selection-criterion">slc-stand-to-gen</cbc:TendererRequirementTypeCode>
+                        <cbc:Description languageID="DEU">Das Eignungskriterium der wirtschaftlichen und finanziellen Leistungsfähigkeit und der hierfür vorzulegende Nachweis ergibt sich im Einzelnen aus Ziffer 2.2 der Ausschreibungsbestimmungen (Datei "A 00 Ausschreibungsbestimmungen") des vorliegenden Verfahrens.
+Für die Lose 1 bis 3 ist hierzu der Gesamtumsatz des Unternehmens in den letzten drei abgeschlossenen Geschäftsjahren entsprechend dem Gründungsdatum oder dem Datum der Tätigkeitsaufnahme in der Datei "A 07 Umsatzzahlen Lose 1-3" anzugeben.</cbc:Description>
+                     </efac:SelectionCriteria>
+                     <efac:StrategicProcurement>
+                        <efbc:ApplicableLegalBasis listName="cvd-scope">false</efbc:ApplicableLegalBasis>
+                     </efac:StrategicProcurement>
+                     <efac:StrategicProcurement>
+                        <efbc:ApplicableLegalBasis listName="eed-scope">false</efbc:ApplicableLegalBasis>
+                     </efac:StrategicProcurement>
+                  </efext:EformsExtension>
+               </ext:ExtensionContent>
+            </ext:UBLExtension>
+         </ext:UBLExtensions>
+         <cbc:VariantConstraintCode listName="permission">not-allowed</cbc:VariantConstraintCode>
+         <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+         <cbc:RequiredCurriculaCode listName="requirement-stage">not-requ</cbc:RequiredCurriculaCode>
+         <cbc:RecurringProcurementIndicator>false</cbc:RecurringProcurementIndicator>
+         <cbc:MultipleTendersCode listName="permission">not-allowed</cbc:MultipleTendersCode>
+         <cac:CallForTendersDocumentReference>
+            <ext:UBLExtensions>
+               <ext:UBLExtension>
+                  <ext:ExtensionContent>
+                     <efext:EformsExtension>
+                        <efac:OfficialLanguages>
+                           <cac:Language>
+                              <cbc:ID>DEU</cbc:ID>
+                           </cac:Language>
+                        </efac:OfficialLanguages>
+                     </efext:EformsExtension>
+                  </ext:ExtensionContent>
+               </ext:UBLExtension>
+            </ext:UBLExtensions>
+            <cbc:ID>TenderDoc</cbc:ID>
+            <cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+            <cac:Attachment>
+               <cac:ExternalReference>
+                  <cbc:URI>https://vergabe.hessen.de/NetServer/TenderingProcedureDetails?function=_Details&amp;TenderOID=54321-Tender-19f6a427687-3b73af3b7ba8cd08</cbc:URI>
+               </cac:ExternalReference>
+            </cac:Attachment>
+         </cac:CallForTendersDocumentReference>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-notice</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="missing-info-submission">late-all</cbc:TendererRequirementTypeCode>
+               <cbc:Description languageID="DEU">-</cbc:Description>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="conditions">performance</cbc:ExecutionRequirementCode>
+            <cbc:Description languageID="DEU">Nach § 10 Abs. 1 S. 1 Nr. 2 HVTG haben die Bieter die Erfüllung der Verpflichtungen nach §§ 4, 5 HVTG gegenüber dem Auftraggeber in Textform zu erklären. Die Bieter, die Mitglieder von Bietergemeinschaften sowie deren Nachunternehmen (Unterauftragnehmer) und Verleihunternehmen sind aufgefordert, die erforderliche Eigenerklärung (Datei "A 02 Verpflichtungserklaerung_Tariftreue_Mindestlohn") mit dem digitalen Angebot abzugeben.</cbc:Description>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="einvoicing">allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:AwardingTerms>
+            <cac:AwardingCriterion>
+               <cac:SubordinateAwardingCriterion>
+                  <ext:UBLExtensions>
+                     <ext:UBLExtension>
+                        <ext:ExtensionContent>
+                           <efext:EformsExtension>
+                              <efac:AwardCriterionParameter>
+                                 <efbc:ParameterCode listName="number-weight">per-exa</efbc:ParameterCode>
+                                 <efbc:ParameterNumeric>100.00</efbc:ParameterNumeric>
+                              </efac:AwardCriterionParameter>
+                           </efext:EformsExtension>
+                        </ext:ExtensionContent>
+                     </ext:UBLExtension>
+                  </ext:UBLExtensions>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                  <cbc:Name languageID="DEU">Preis</cbc:Name>
+                  <cbc:Description languageID="DEU">Der Zuschlag wird auf die drei wirtschaftlichsten Angebote erteilt (§ 127 GWB, § 58 VgV). Einziges Zuschlagskriterium in Los 2 ist der "Preis" (Gewichtung 100 %)
+Die Bieter sind aufgefordert, sämtliche geforderten Angaben in den blau markierten Feldern vollständig und zutreffend vorzunehmen. Die wertungsrelevante Gesamtangebotssumme (brutto) ergibt sich aus Feld G8 der Datei "A 03 Preisblatt Los 2".</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+            </cac:AwardingCriterion>
+         </cac:AwardingTerms>
+         <cac:AdditionalInformationParty>
+            <cac:PartyIdentification>
+               <cbc:ID schemeName="organization">ORG-7001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:AdditionalInformationParty>
+         <cac:TenderRecipientParty>
+            <cbc:EndpointID>https://vergabe.hessen.de</cbc:EndpointID>
+         </cac:TenderRecipientParty>
+         <cac:TenderValidityPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">4</cbc:DurationMeasure>
+         </cac:TenderValidityPeriod>
+         <cac:AppealTerms>
+            <cac:PresentationPeriod>
+               <cbc:Description languageID="DEU">§ 160 GWB 
+Einleitung, Antrag
+(1) Die Vergabekammer leitet ein Nachprüfungsverfahren nur auf Antrag ein.
+(2) Antragsbefugt ist jedes Unternehmen, das ein Interesse an dem öffentlichen Auftrag oder der Konzession hat und eine Verletzung in seinen Rechten nach § 97 Absatz 6 durch Nichtbeachtung von Vergabevorschriften geltend macht. Ein Unternehmen ist nicht antragsbefugt, soweit es sich auf die Unwirksamkeit einer Rechtsverordnung nach § 5 des Bundestariftreuegesetzes beruft, wenn die Unwirksamkeit dieser Rechtsverordnung nicht durch rechtskräftigen Beschluss nach § 98 Absatz 4 Satz 1 des Arbeitsgerichtsgesetzes festgestellt ist. Das Unternehmen hat darzulegen, dass ihm durch die behauptete Verletzung der Vergabevorschriften ein Schaden entstanden ist oder zu entstehen droht.
+(3) Der Antrag ist unzulässig, soweit
+1. der Antragsteller den geltend gemachten Verstoß gegen Vergabevorschriften vor Einreichen des Nachprüfungsantrags erkannt und gegenüber dem Auftraggeber nicht innerhalb einer Frist von zehn Kalendertagen gerügt hat; der Ablauf der Frist nach § 134 Absatz 2 bleibt unberührt,
+2. Verstöße gegen Vergabevorschriften, die aufgrund der Bekanntmachung erkennbar sind, nicht spätestens bis zum Ablauf der in der Bekanntmachung benannten Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber gerügt werden,
+3. Verstöße gegen Vergabevorschriften, die erst in den Vergabeunterlagen erkennbar sind, nicht spätestens bis zum Ablauf der Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber gerügt werden,
+4. mehr als 15 Kalendertage nach Eingang der Mitteilung des Auftraggebers, einer Rüge nicht abhelfen zu wollen, vergangen sind,
+5. ein offensichtlicher Missbrauch des Antrags- oder Beschwerderechts gemäß § 180 Absatz 2 vorliegt.
+Satz 1 gilt nicht bei einem Antrag auf Feststellung der Unwirksamkeit des Vertrags nach § 135 Absatz 1 Nummer 2. § 134 Absatz 1 Satz 2 bleibt unberührt.</cbc:Description>
+            </cac:PresentationPeriod>
+            <cac:AppealReceiverParty>
+               <cac:PartyIdentification>
+                  <cbc:ID schemeName="organization">ORG-7004</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealReceiverParty>
+         </cac:AppealTerms>
+         <cac:Language>
+            <cbc:ID>DEU</cbc:ID>
+         </cac:Language>
+         <cac:PostAwardProcess>
+            <cbc:ElectronicOrderUsageIndicator>false</cbc:ElectronicOrderUsageIndicator>
+            <cbc:ElectronicPaymentUsageIndicator>true</cbc:ElectronicPaymentUsageIndicator>
+         </cac:PostAwardProcess>
+      </cac:TenderingTerms>
+      <cac:TenderingProcess>
+         <cbc:SubmissionMethodCode listName="esubmission">allowed</cbc:SubmissionMethodCode>
+         <cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+         <cac:TenderSubmissionDeadlinePeriod>
+            <cbc:EndDate>2026-09-01+02:00</cbc:EndDate>
+            <cbc:EndTime>10:00:00+02:00</cbc:EndTime>
+         </cac:TenderSubmissionDeadlinePeriod>
+         <cac:OpenTenderEvent>
+            <cbc:OccurrenceDate>2026-09-01+02:00</cbc:OccurrenceDate>
+            <cbc:OccurrenceTime>10:00:00+02:00</cbc:OccurrenceTime>
+         </cac:OpenTenderEvent>
+         <cac:AuctionTerms>
+            <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+         </cac:AuctionTerms>
+         <cac:FrameworkAgreement>
+            <cbc:MaximumOperatorQuantity>3</cbc:MaximumOperatorQuantity>
+         </cac:FrameworkAgreement>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="framework-agreement">fa-wo-rc</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+      </cac:TenderingProcess>
+      <cac:ProcurementProject>
+         <cbc:ID>LOT-0002</cbc:ID>
+         <cbc:Name languageID="DEU">Qualitätssicherung - ConfigMgr</cbc:Name>
+         <cbc:Description languageID="DEU">Im Rahmen dieser Rolle ist die Unterstützung der technischen Durchführung und konzeptionellen Weiterentwicklung der Qualitätssicherung vorgesehen (insbesondere im Umfeld der Software-Paketierung, des Clientmanagements und des Hardware-Supports einer Softwareverteilung mittels MS ConfigMgr).
+Verantwortungsbereichder Rolle "Qualitätssicherung - ConfigMgr" umfasst u.a. folgende Aufgaben: Analyse, Bewertung und Bearbeitung von Qualitätssicherungs-Anforderungen sowohl hinsichtlich der initialen Prüfung der Vollständigkeit der erforderlichen Informationen (in Abstimmung mit der anfordernden Stelle), der technischen Durchführung und der Dokumentation und Kommunikation der Prüf-Ergebnisse (inkl. einer Empfehlung des Umgang mit eventl. Abweichungen), Durchführung der Qualitätssicherung für alle HessenPC-Releases (u.a. Software-Pakete, Hardware, MS Funktionsupdates) gemäß definierten Testfalllisten für die jeweiligen Quality Gates, Durchführung der Qualitätssicherung von Software-Paketen mit im Rahmen von Quality Gates definierten Testfalllisten (u.a. Prüfung der MSI-Dateien hinsichtlich "Best Practice", Prüfung von Installations-Informationfenstern, Prüfung von vorhanden Scripten, Kontrolle Abschaltung Telemetriedaten) sowie die Weiterentwicklung der entsprechenden Testfälle, Durchführung der hardwarenahen Qualitätssicherung bezüglich der Funktionalität von Clients, Servern und Peripheriegeräten gemäß der im Rahmen von Quality Gates definierten Testfalllisten sowie Weiterentwicklung der entsprechenden Testfälle sowohl hinsichtlich der korrekten Treiberfunktionalität (u.a. Treiberpakete) als auch bezüglich konkreter HessenPC-Releases (u.a. ausgewählte Softwarepakete, Feature-Updates von Microsoft), Berücksichtigung der vorgegebenen Prozesse im Bereich der Qualitätssicherung bei den erforderlichen Unterstützungsleistungen (u.a. Testfallliste, Unterstützung Release Management, Prüfung der Informationen zur Betriebsübergabe), Durchführung der Qualitätssicherung von virtualisierten Anwendungen (u.a. AppV, MSIX), Konfiguration von virtuellen Clients auf einer bereitgestellten virtuellen Plattform zur Durchführung der Qualitätssicherung für den entsprechenden Prüf-Gegenstand (u.a. Software-Pakete, MS Feature Update), Durchführung der Qualitätssicherung von Sonder-Anforderungen (z.B. für Virtual Desktop Infrastructure (VDI)-Umgebungen).
+In der Rolle "Qualitätssicherung - ConfigMgr" müssen die zur Leistungserbringung vorgesehenen Personen über die in Ziffer 4.2.1 der Leistungsbeschreibung (Datei "B 04 Leistungsbeschreibung Lose 1-3") festgelegten Mindestqualifikation und -erfahrung verfügen, die mittels Kompetenzprofil vor Abschluss eines Einzelauftrags nachzuweisen ist.</cbc:Description>
+         <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+         <cbc:Note languageID="DEU">#Besonders auch geeignet für:other-sme#</cbc:Note>
+         <cbc:SMESuitableIndicator>true</cbc:SMESuitableIndicator>
+         <cac:ProcurementAdditionalType>
+            <cbc:ProcurementTypeCode listName="strategic-procurement">none</cbc:ProcurementTypeCode>
+         </cac:ProcurementAdditionalType>
+         <cac:RequestedTenderTotal>
+            <ext:UBLExtensions>
+               <ext:UBLExtension>
+                  <ext:ExtensionContent>
+                     <efext:EformsExtension>
+                        <efbc:FrameworkMaximumAmount currencyID="EUR">7968240.00</efbc:FrameworkMaximumAmount>
+                     </efext:EformsExtension>
+                  </ext:ExtensionContent>
+               </ext:UBLExtension>
+            </ext:UBLExtensions>
+            <cbc:EstimatedOverallContractAmount currencyID="EUR">6640200.00</cbc:EstimatedOverallContractAmount>
+         </cac:RequestedTenderTotal>
+         <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72000000</cbc:ItemClassificationCode>
+         </cac:MainCommodityClassification>
+         <cac:RealizedLocation>
+            <cbc:Description languageID="DEU">Der Auftragnehmer ist bei der Erbringung der Leistungen grundsätzlich in der Wahl des Leistungsorts frei. Im Falle des Vorliegens eines Präsenzerfordernisses gemäß Ziffer 3.2.1 dieser Leistungsbeschreibung sind die Orte der Leistungserbringung die derzeitigen und zukünftigen Standorte der HZD in Wiesbaden, Mainz und Hünfeld oder Standorte anderer Dienststellen des Landes Hessen innerhalb des Stadtgebiets von Wiesbaden, Standorte anderer Dienststellen des Landes Hessen außerhalb der Städte Wiesbaden, Mainz und Hünfeld
+Der Ort der Leistungserbringung wird je Einzelauftrag nach Maßgabe der Anforderungen des Projektes, der IT-Sicherheit und des Datenschutzes geregelt (siehe Ziffer 5 der Datei "B 04 Leistungsbeschreibung Lose 1-3" und Ziff. 4  der Datei "B 01 Rahmenvereinbarung Lose 1-3").</cbc:Description>
+            <cac:Address>
+               <cbc:StreetName>Mainzer Straße 29</cbc:StreetName>
+               <cbc:CityName>Wiesbaden</cbc:CityName>
+               <cbc:PostalZone>65185</cbc:PostalZone>
+               <cbc:CountrySubentityCode listName="nuts">DE714</cbc:CountrySubentityCode>
+               <cac:Country>
+                  <cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+               </cac:Country>
+            </cac:Address>
+         </cac:RealizedLocation>
+         <cac:PlannedPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">24</cbc:DurationMeasure>
+         </cac:PlannedPeriod>
+         <cac:ContractExtension>
+            <cbc:OptionsDescription languageID="DEU">Nach Ablauf dieser Mindestlaufzeit von 24 Monaten verlängert sich die Rahmenvereinbarung um jeweils ein weiteres Jahr, wenn nicht der Auftraggeber spätestens drei Monate vor Ablauf der jeweiligen Vertragslaufzeit kündigt (siehe Ziff. 21 der Datei "B 01 Rahmenvereinbarung Lose 1-3").</cbc:OptionsDescription>
+            <cbc:MaximumNumberNumeric>2</cbc:MaximumNumberNumeric>
+         </cac:ContractExtension>
+      </cac:ProcurementProject>
+   </cac:ProcurementProjectLot>
+   <cac:ProcurementProjectLot>
+      <cbc:ID schemeName="Lot">LOT-0003</cbc:ID>
+      <cac:TenderingTerms>
+         <ext:UBLExtensions>
+            <ext:UBLExtension>
+               <ext:ExtensionContent>
+                  <efext:EformsExtension>
+                     <efac:SelectionCriteria>
+                        <cbc:TendererRequirementTypeCode listName="selection-criterion">slc-abil-ref-services</cbc:TendererRequirementTypeCode>
+                        <cbc:Description languageID="DEU">Das Eignungskriterium der technischen und beruflichen Leistungsfähigkeit und die hierfür vorzulegenden Nachweise für die Lose 1 bis 3 ergeben sich im Einzelnen aus Ziffer 2.3 der Ausschreibungsbestimmungen (Datei "A 00 Ausschreibungsbestimmungen") des vorliegenden Verfahrens.
+
+Los 1 Mindestanforderungen "Software-Paketierung-ConfigMgr":  Zwei (2) verschiedene, geeignete Referenzprojekte aus den letzten drei Jahren (Stichtag: "Ablauf der Angebotsfrist"). Ein und dasselbe Referenzprojekt kann nicht für beide Nachweise gleichzeitig herangezogen werden (Datei "A 08 Referenzen Los 1").  
+Referenzprojekt 1 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der Lfd. Nr. 9 bis Lfd. Nr. 20 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Einsatz Flexera Admin Studio oder vergleichbar, MSI-Paketierung gemäß definierter MSI-Standards und mind. 220 PT/Jahr, mind. 6 MSI-Softwarepakete/Monat, Verwaltung einer Enterprise-Umgebung mit mind. 10.000 aktiv verwalteten Windows-Clients,  mind. 10 ConfigMgr-Kundenstandorte) kumulativ erfüllt.
+Referenzprojekt 2 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der  Lfd. Nr. 9 bis  Lfd. Nr. 21 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Einsatz Flexera Admin Studio oder vergleichbar, MSI-Paketierung gemäß definierter MSI-Standards und mind. 440 PT/Jahr, mind. 12 MSI-Softwarepakete/Monat, Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Verwaltung einer Enterprise-Umgebung mit mind. 20.000 aktiv verwalteten Windows-Clients, mind. 50 ConfigMgr-Kundenstandorte) kumulativ erfüllt. 
+
+Los 2 Mindestanforderungen "Qualitätssicherung-ConfigMgr:  Zwei (2) verschiedene, geeignete Referenzprojekte aus den letzten drei Jahren (Stichtag: "Ablauf der Angebotsfrist"). Ein und dasselbe Referenzprojekt kann nicht für beide Nachweise gleichzeitig herangezogen werden (Datei "A 08 Referenzen Los 2"). 
+Referenzprojekt 1 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der Lfd. Nr. 9 bis Lfd. Nr. 20 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Prüfung von MSI-Softwarepaketen, QS im Clientmanagement einer ConfigMgr-Umgebung und mind.  220 PT/Jahr, QS mind 6 MSI-Softwarepaketen/Monat, Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Verwaltung einer Enterprise-Umgebung mit mindestens 10.000 aktiv verwalteten Windows-Clients, mind. 10 ConfigMgr-Kundenstandorte) kumulativ erfüllt. 
+Referenzprojekt 2 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der  Lfd. Nr. 9 bis  Lfd. Nr. 21 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B.  reguliertes Projektumfeld, QS im Clientmanagement einer ConfigMgr-Umgebung und mind. 440 PT/Jahr, Qs von mind. 12 MSI-Softwarepaketen/Monat, Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Verwaltung einer Enterprise-Umgebung mit mind. 20.000 aktiv verwalteten Windows-Clients, QS für mind. 5 voneinander unabhängigen Organisationseinheiten, mind. 50 ConfigMgr-Kundenstandorte) kumulativ erfüllt.
+
+Los 3 Mindestanforderungen "Senior Software-Paketierung/Qualitätssicherung-ConfigMgr": Zwei (2) verschiedene, geeignete Referenzprojekte aus den letzten drei Jahren (Stichtag: "Ablauf der Angebotsfrist"). Ein und dasselbe Referenzprojekt kann nicht für beide Nachweise gleichzeitig herangezogen werden (Datei "A 08 Referenzen Los 3"). 
+Referenzprojekt 1 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der Lfd. Nr. 9 bis Lfd. Nr. 21 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Einsatz Flexera Admin Studio oder vergleichbar, Koordination von MSI-Paketierungen gemäß der definierten MSI-Standards, komplexe Tätigkeiten in einem Umfang von mind. 220 PT/Jahr , Erstellung und QS von mind. 6 MSI-Softwarepaketen/Monat,, Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Verwaltung einer Enterprise-Umgebung mit mind. 10.000 aktiv verwalteten Windows-Clients, Paketierung und QS für mind. 2 voneinander unabhängigen Organisationseinheiten, mind. 10 ConfigMgr-Kundenstandorte) kumulativ erfüllt.
+Referenzprojekt 2 ist "geeignet", wenn es die im Referenzformular aufgeführten Kriterien der  Lfd. Nr. 9 bis  Lfd. Nr. 22 (Einzelkriterien zur Vergleichbarkeit der Referenzen, z. B. reguliertes Projektumfeld, Paketierung und QS und das Clientmanagement für moderne Windows-Infrastrukturen, komplexe Tätigkeiten in einem Umfang von mindestens 220/ Jahr, Koordination von MSI-Paketierungen gem. definierter MSI-Standards , Maßnahmen zur Prüfung und ggf. Vermeidung von Datenabflüssenabflüssen, Enterprise-Umgebung mit mind.  20.000 aktiv verwalteten Windows-Clients, Paketierung und QS für mind. 5 voneinander unabhängigen Organisationseinheiten, mind. 50 ConfigMgr-Kundenstandorte) kumulativ erfüllt.
+
+Die in den Losen 1 bis 3 geforderten Kriterien zum Nachweis der technischen und beruflichen Leistungsfähigkeit stellen Mindestanforderungen an die Eignung dar. Diese Mindestanforderungen stehen mit dem Auftragsgegenstand im sachlichen Zusammenhang und sind durch ihn gerechtfertigt. Die Nichterfüllung dieser Anforderungen führt zwingend zu einem Ausschluss vom weiteren Verfahren.</cbc:Description>
+                     </efac:SelectionCriteria>
+                     <efac:SelectionCriteria>
+                        <cbc:TendererRequirementTypeCode listName="selection-criterion">slc-stand-to-gen</cbc:TendererRequirementTypeCode>
+                        <cbc:Description languageID="DEU">Das Eignungskriterium der wirtschaftlichen und finanziellen Leistungsfähigkeit und der hierfür vorzulegende Nachweis ergibt sich im Einzelnen aus Ziffer 2.2 der Ausschreibungsbestimmungen (Datei "A 00 Ausschreibungsbestimmungen") des vorliegenden Verfahrens.
+Für die Lose 1 bis 3 ist hierzu der Gesamtumsatz des Unternehmens in den letzten drei abgeschlossenen Geschäftsjahren entsprechend dem Gründungsdatum oder dem Datum der Tätigkeitsaufnahme in der Datei "A 07 Umsatzzahlen Lose 1-3" anzugeben.</cbc:Description>
+                     </efac:SelectionCriteria>
+                     <efac:StrategicProcurement>
+                        <efbc:ApplicableLegalBasis listName="cvd-scope">false</efbc:ApplicableLegalBasis>
+                     </efac:StrategicProcurement>
+                     <efac:StrategicProcurement>
+                        <efbc:ApplicableLegalBasis listName="eed-scope">false</efbc:ApplicableLegalBasis>
+                     </efac:StrategicProcurement>
+                  </efext:EformsExtension>
+               </ext:ExtensionContent>
+            </ext:UBLExtension>
+         </ext:UBLExtensions>
+         <cbc:VariantConstraintCode listName="permission">not-allowed</cbc:VariantConstraintCode>
+         <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+         <cbc:RequiredCurriculaCode listName="requirement-stage">not-requ</cbc:RequiredCurriculaCode>
+         <cbc:RecurringProcurementIndicator>false</cbc:RecurringProcurementIndicator>
+         <cbc:MultipleTendersCode listName="permission">not-allowed</cbc:MultipleTendersCode>
+         <cac:CallForTendersDocumentReference>
+            <ext:UBLExtensions>
+               <ext:UBLExtension>
+                  <ext:ExtensionContent>
+                     <efext:EformsExtension>
+                        <efac:OfficialLanguages>
+                           <cac:Language>
+                              <cbc:ID>DEU</cbc:ID>
+                           </cac:Language>
+                        </efac:OfficialLanguages>
+                     </efext:EformsExtension>
+                  </ext:ExtensionContent>
+               </ext:UBLExtension>
+            </ext:UBLExtensions>
+            <cbc:ID>TenderDoc</cbc:ID>
+            <cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+            <cac:Attachment>
+               <cac:ExternalReference>
+                  <cbc:URI>https://vergabe.hessen.de/NetServer/TenderingProcedureDetails?function=_Details&amp;TenderOID=54321-Tender-19f6a427687-3b73af3b7ba8cd08</cbc:URI>
+               </cac:ExternalReference>
+            </cac:Attachment>
+         </cac:CallForTendersDocumentReference>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-notice</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="missing-info-submission">late-all</cbc:TendererRequirementTypeCode>
+               <cbc:Description languageID="DEU">-</cbc:Description>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="conditions">performance</cbc:ExecutionRequirementCode>
+            <cbc:Description languageID="DEU">Nach § 10 Abs. 1 S. 1 Nr. 2 HVTG haben die Bieter die Erfüllung der Verpflichtungen nach §§ 4, 5 HVTG gegenüber dem Auftraggeber in Textform zu erklären. Die Bieter, die Mitglieder von Bietergemeinschaften sowie deren Nachunternehmen (Unterauftragnehmer) und Verleihunternehmen sind aufgefordert, die erforderliche Eigenerklärung (Datei "A 02 Verpflichtungserklaerung_Tariftreue_Mindestlohn") mit dem digitalen Angebot abzugeben.</cbc:Description>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="einvoicing">allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:AwardingTerms>
+            <cac:AwardingCriterion>
+               <cac:SubordinateAwardingCriterion>
+                  <ext:UBLExtensions>
+                     <ext:UBLExtension>
+                        <ext:ExtensionContent>
+                           <efext:EformsExtension>
+                              <efac:AwardCriterionParameter>
+                                 <efbc:ParameterCode listName="number-weight">per-exa</efbc:ParameterCode>
+                                 <efbc:ParameterNumeric>100.00</efbc:ParameterNumeric>
+                              </efac:AwardCriterionParameter>
+                           </efext:EformsExtension>
+                        </ext:ExtensionContent>
+                     </ext:UBLExtension>
+                  </ext:UBLExtensions>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                  <cbc:Name languageID="DEU">Preis</cbc:Name>
+                  <cbc:Description languageID="DEU">Der Zuschlag wird auf die drei wirtschaftlichsten Angebote erteilt (§ 127 GWB, § 58 VgV). Einziges Zuschlagskriterium in Los 3 ist der "Preis" (Gewichtung 100 %)
+Die Bieter sind aufgefordert, sämtliche geforderten Angaben in den blau markierten Feldern vollständig und zutreffend vorzunehmen. Die wertungsrelevante Gesamtangebotssumme (brutto) ergibt sich aus Feld G8 der Datei "A 03 Preisblatt Los 3".</cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+            </cac:AwardingCriterion>
+         </cac:AwardingTerms>
+         <cac:AdditionalInformationParty>
+            <cac:PartyIdentification>
+               <cbc:ID schemeName="organization">ORG-7001</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:AdditionalInformationParty>
+         <cac:TenderRecipientParty>
+            <cbc:EndpointID>https://vergabe.hessen.de</cbc:EndpointID>
+         </cac:TenderRecipientParty>
+         <cac:TenderValidityPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">4</cbc:DurationMeasure>
+         </cac:TenderValidityPeriod>
+         <cac:AppealTerms>
+            <cac:PresentationPeriod>
+               <cbc:Description languageID="DEU">§ 160 GWB 
+Einleitung, Antrag
+(1) Die Vergabekammer leitet ein Nachprüfungsverfahren nur auf Antrag ein.
+(2) Antragsbefugt ist jedes Unternehmen, das ein Interesse an dem öffentlichen Auftrag oder der Konzession hat und eine Verletzung in seinen Rechten nach § 97 Absatz 6 durch Nichtbeachtung von Vergabevorschriften geltend macht. Ein Unternehmen ist nicht antragsbefugt, soweit es sich auf die Unwirksamkeit einer Rechtsverordnung nach § 5 des Bundestariftreuegesetzes beruft, wenn die Unwirksamkeit dieser Rechtsverordnung nicht durch rechtskräftigen Beschluss nach § 98 Absatz 4 Satz 1 des Arbeitsgerichtsgesetzes festgestellt ist. Das Unternehmen hat darzulegen, dass ihm durch die behauptete Verletzung der Vergabevorschriften ein Schaden entstanden ist oder zu entstehen droht.
+(3) Der Antrag ist unzulässig, soweit
+1. der Antragsteller den geltend gemachten Verstoß gegen Vergabevorschriften vor Einreichen des Nachprüfungsantrags erkannt und gegenüber dem Auftraggeber nicht innerhalb einer Frist von zehn Kalendertagen gerügt hat; der Ablauf der Frist nach § 134 Absatz 2 bleibt unberührt,
+2. Verstöße gegen Vergabevorschriften, die aufgrund der Bekanntmachung erkennbar sind, nicht spätestens bis zum Ablauf der in der Bekanntmachung benannten Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber gerügt werden,
+3. Verstöße gegen Vergabevorschriften, die erst in den Vergabeunterlagen erkennbar sind, nicht spätestens bis zum Ablauf der Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber gerügt werden,
+4. mehr als 15 Kalendertage nach Eingang der Mitteilung des Auftraggebers, einer Rüge nicht abhelfen zu wollen, vergangen sind,
+5. ein offensichtlicher Missbrauch des Antrags- oder Beschwerderechts gemäß § 180 Absatz 2 vorliegt.
+Satz 1 gilt nicht bei einem Antrag auf Feststellung der Unwirksamkeit des Vertrags nach § 135 Absatz 1 Nummer 2. § 134 Absatz 1 Satz 2 bleibt unberührt.</cbc:Description>
+            </cac:PresentationPeriod>
+            <cac:AppealReceiverParty>
+               <cac:PartyIdentification>
+                  <cbc:ID schemeName="organization">ORG-7004</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealReceiverParty>
+         </cac:AppealTerms>
+         <cac:Language>
+            <cbc:ID>DEU</cbc:ID>
+         </cac:Language>
+         <cac:PostAwardProcess>
+            <cbc:ElectronicOrderUsageIndicator>false</cbc:ElectronicOrderUsageIndicator>
+            <cbc:ElectronicPaymentUsageIndicator>true</cbc:ElectronicPaymentUsageIndicator>
+         </cac:PostAwardProcess>
+      </cac:TenderingTerms>
+      <cac:TenderingProcess>
+         <cbc:SubmissionMethodCode listName="esubmission">allowed</cbc:SubmissionMethodCode>
+         <cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+         <cac:TenderSubmissionDeadlinePeriod>
+            <cbc:EndDate>2026-09-01+02:00</cbc:EndDate>
+            <cbc:EndTime>10:00:00+02:00</cbc:EndTime>
+         </cac:TenderSubmissionDeadlinePeriod>
+         <cac:OpenTenderEvent>
+            <cbc:OccurrenceDate>2026-09-01+02:00</cbc:OccurrenceDate>
+            <cbc:OccurrenceTime>10:00:00+02:00</cbc:OccurrenceTime>
+         </cac:OpenTenderEvent>
+         <cac:AuctionTerms>
+            <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+         </cac:AuctionTerms>
+         <cac:FrameworkAgreement>
+            <cbc:MaximumOperatorQuantity>3</cbc:MaximumOperatorQuantity>
+         </cac:FrameworkAgreement>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="framework-agreement">fa-wo-rc</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+      </cac:TenderingProcess>
+      <cac:ProcurementProject>
+         <cbc:ID>LOT-0003</cbc:ID>
+         <cbc:Name languageID="DEU">Senior Software-Paketierung/Qualitätssicherung - ConfigMgr</cbc:Name>
+         <cbc:Description languageID="DEU">Im Rahmen dieser Rolle ist die Unterstützung bezüglich der Koordination von Paketierungs- und Qualitätssicherungsprozessen sowie die technische Durchführung komplexer Paketierungs- und Qualitätssicherungsanforderungen vorgesehen.
+ Verantwortungsbereich der Rolle "Senior Software-Paketierung/Qualitätssicherung - ConfigMgr" umfasst u.a. folgende Aufgaben: Zentrale Ansprechperson für alle Themen bezüglich Paketierung und Qualitätssicherung (u.a. Eskalationen, aktueller Stand aller Vorgänge, Entscheidung, unklare Anforderungen, Diskrepanzen zu HessenPC-Vorgaben), Koordination aller erforderlichen Maßnahmen im Bereich der Paketierung und Qualitätssicherung sowie Gewährleistung der fristgerechten Zulieferung der Ergebnisse aus Paketierung und Qualitätssicherung, Durchführung komplexer MSI-Paketierungen gemäß "Best Practice" mittels Flexera Admin Studio 2021ff. (z.B. Repaketierung komplexer Fachverfahren in ein Standard-konformes MSI-Format) bzw. komplexer Qualitätssicherung von Software-Paketen (z.B. bei gleichzeitiger initialer Entwicklung der Testfalllisten, Dokumentation und Abstimmung des Vorgehens bezüglich nicht vermeidbarer Telemetriedaten), Durchführung komplexer Paketierungs- und Qualitätssicherung-Tätigkeiten von Treibern für Clients, Server und Peripheriegeräte sowie Weiterentwicklung des Prozesses für die Erstellung, Qualitätssicherung und Implementierung der Treiber in ConfigMgr, Umsetzung, Optimierung und Weiterentwicklung der Prozesse im Bereich der Paketierung und Qualitätssicherung (u.a. durch die Erstellung und das Review entsprechender Qualitätsmanagement- bzw. Betriebs-Dokumente sowie der Paketierungs- und Qualitätssicherungsrichtlinien) sowie beim Release Management-Prozess und Sicherstellung einer sauberen Betriebsübergabe, Beratung und Konzepterstellung bezüglich des Einsatzes von virtuellen Anwendungen sowie Durchführung komplexer Anwendungsvirtualisierungen (u.a. AppV, MSIX), Konzeptionierung der virtuellen Platform zur Bereitstellung der für die Paketierung und Qualitätssicherung benötigten virtuellen Clients sowie Ansprechpartner für die Konfiguration der virtuellen Systeme, Koordination und Unterstützung bei der Paketierung und Qualitätssicherung von Sonder-Anforderungen (z.B. für Virtual Desktop Infrastructure (VDI)-Umgebungen), Steuerung und Koordination des Paketierung- und Qualitätssicherungsteams der eigenen externen Dienstleister des Auftragnehmers.
+In der Rolle "Senior Software-Paketierung/Qualitätssicherung - ConfigMgr" müssen die zur Leistungserbringung vorgesehenen Personen über die in Ziffer 4.3.1 der Leistungsbeschreibung (Datei "B 04 Leistungsbeschreibung Lose 1-3") festgelegten Mindestqualifikation und -erfahrung verfügen, die mittels Kompetenzprofil vor Abschluss eines Einzelauftrags nachzuweisen ist.</cbc:Description>
+         <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+         <cbc:Note languageID="DEU">#Besonders auch geeignet für:other-sme#</cbc:Note>
+         <cbc:SMESuitableIndicator>true</cbc:SMESuitableIndicator>
+         <cac:ProcurementAdditionalType>
+            <cbc:ProcurementTypeCode listName="strategic-procurement">none</cbc:ProcurementTypeCode>
+         </cac:ProcurementAdditionalType>
+         <cac:RequestedTenderTotal>
+            <ext:UBLExtensions>
+               <ext:UBLExtension>
+                  <ext:ExtensionContent>
+                     <efext:EformsExtension>
+                        <efbc:FrameworkMaximumAmount currencyID="EUR">7910160.00</efbc:FrameworkMaximumAmount>
+                     </efext:EformsExtension>
+                  </ext:ExtensionContent>
+               </ext:UBLExtension>
+            </ext:UBLExtensions>
+            <cbc:EstimatedOverallContractAmount currencyID="EUR">6591800.00</cbc:EstimatedOverallContractAmount>
+         </cac:RequestedTenderTotal>
+         <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72000000</cbc:ItemClassificationCode>
+         </cac:MainCommodityClassification>
+         <cac:RealizedLocation>
+            <cbc:Description languageID="DEU">Der Auftragnehmer ist bei der Erbringung der Leistungen grundsätzlich in der Wahl des Leistungsorts frei. Im Falle des Vorliegens eines Präsenzerfordernisses gemäß Ziffer 3.2.1 dieser Leistungsbeschreibung sind die Orte der Leistungserbringung die derzeitigen und zukünftigen Standorte der HZD in Wiesbaden, Mainz und Hünfeld oder Standorte anderer Dienststellen des Landes Hessen innerhalb des Stadtgebiets von Wiesbaden, Standorte anderer Dienststellen des Landes Hessen außerhalb der Städte Wiesbaden, Mainz und Hünfeld
+Der Ort der Leistungserbringung wird je Einzelauftrag nach Maßgabe der Anforderungen des Projektes, der IT-Sicherheit und des Datenschutzes geregelt (siehe Ziffer 5 der Datei "B 04 Leistungsbeschreibung Lose 1-3" und Ziff. 4  der Datei "B 01 Rahmenvereinbarung Lose 1-3").</cbc:Description>
+            <cac:Address>
+               <cbc:StreetName>Mainzer Straße 29</cbc:StreetName>
+               <cbc:CityName>Wiesbaden</cbc:CityName>
+               <cbc:PostalZone>65185</cbc:PostalZone>
+               <cbc:CountrySubentityCode listName="nuts">DE714</cbc:CountrySubentityCode>
+               <cac:Country>
+                  <cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+               </cac:Country>
+            </cac:Address>
+         </cac:RealizedLocation>
+         <cac:PlannedPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">24</cbc:DurationMeasure>
+         </cac:PlannedPeriod>
+         <cac:ContractExtension>
+            <cbc:OptionsDescription languageID="DEU">Nach Ablauf dieser Mindestlaufzeit von 24 Monaten verlängert sich die Rahmenvereinbarung um jeweils ein weiteres Jahr, wenn nicht der Auftraggeber spätestens drei Monate vor Ablauf der jeweiligen Vertragslaufzeit kündigt (siehe Ziff. 21 der Datei "B 01 Rahmenvereinbarung Lose 1-3").</cbc:OptionsDescription>
+            <cbc:MaximumNumberNumeric>2</cbc:MaximumNumberNumeric>
+         </cac:ContractExtension>
+      </cac:ProcurementProject>
+   </cac:ProcurementProjectLot>
+</ContractNotice>

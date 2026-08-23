@@ -61,6 +61,11 @@ test.describe('unauthenticated pages', () => {
     expectNoSeriousViolations(await seriousOrCriticalViolations(page), '/methodology');
   });
 
+  test('sample verdicts', async ({ page }) => {
+    await page.goto('/sample-verdicts');
+    expectNoSeriousViolations(await seriousOrCriticalViolations(page), '/sample-verdicts');
+  });
+
   test('pricing', async ({ page }) => {
     await page.goto('/pricing');
     expectNoSeriousViolations(await seriousOrCriticalViolations(page), '/pricing');

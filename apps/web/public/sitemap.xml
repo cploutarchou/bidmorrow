@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  The eight public marketing URLs (docs/redesign/seo-content-strategy.md §5).
+  The public marketing URLs (docs/redesign/seo-content-strategy.md §5).
   App, onboarding, admin and auth routes are deliberately absent: they are
   noindex, and three of the four are also disallowed in robots.txt.
 
@@ -16,6 +16,7 @@
   <url><loc>https://bidmorrow.com/</loc></url>
   <url><loc>https://bidmorrow.com/how-it-works</loc></url>
   <url><loc>https://bidmorrow.com/methodology</loc></url>
+  <url><loc>https://bidmorrow.com/sample-verdicts</loc></url>
   <url><loc>https://bidmorrow.com/pricing</loc></url>
   <url><loc>https://bidmorrow.com/pilot</loc></url>
   <url><loc>https://bidmorrow.com/contact</loc></url>

@@ -19,6 +19,7 @@ import { NotFound } from './pages/NotFound';
  * doubles as the admin cloak (it must render without fetching anything).
  */
 const HowItWorks = lazyPage(() => import('./pages/marketing/HowItWorks'), 'HowItWorks');
+const SampleVerdicts = lazyPage(() => import('./pages/marketing/SampleVerdicts'), 'SampleVerdicts');
 const Methodology = lazyPage(() => import('./pages/marketing/Methodology'), 'Methodology');
 const Pricing = lazyPage(() => import('./pages/marketing/Pricing'), 'Pricing');
 const Pilot = lazyPage(() => import('./pages/marketing/Pilot'), 'Pilot');
@@ -109,6 +110,16 @@ function AppRoutes(): ReactElement {
             <MarketingLayout>
               <Lazy>
                 <HowItWorks />
+              </Lazy>
+            </MarketingLayout>
+          }
+        />
+        <Route
+          path="/sample-verdicts"
+          element={
+            <MarketingLayout>
+              <Lazy>
+                <SampleVerdicts />
               </Lazy>
             </MarketingLayout>
           }

@@ -372,6 +372,27 @@ remains for this item.
 
 ---
 
+## OPEN — delete the `ted-fixture-raw` scratch branch (owner, 1 minute)
+
+`.github/workflows/ted-fixture-fetch.yml` force-pushes the raw TED
+download to a transient branch `ted-fixture-raw`, and its own header says
+the branch is "transient raw material… deleted afterwards". The fixture
+refresh of 2026-08-23 (run 32646377636) is finished — the seven notices
+that were wanted are sanitized and committed under
+`tests/fixtures/ted/1.13/` — so the branch has served its purpose and now
+holds 40 UNSANITIZED real notices, including the contact details of named
+natural persons in their original form.
+
+The session cannot delete it: pushes from here are scoped to the working
+branch, and `git push origin :ted-fixture-raw` returns HTTP 403 (the same
+limit already recorded for tag pushes in the ledger's Notes).
+
+Owner action: delete the branch (GitHub UI → Branches → delete, or
+`git push origin --delete ted-fixture-raw`). Re-dispatching the workflow
+recreates it at any time, so nothing is lost.
+
+---
+
 ## Not blockers (deliberately)
 
 - **TED API: public, no credential required** — reinstated 2026-08-18

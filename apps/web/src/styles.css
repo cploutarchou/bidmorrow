@@ -7743,3 +7743,170 @@ body.sheet-open {
   line-height: 1.55;
   color: var(--ink-2);
 }
+
+/* --- Public sample-verdict demo (/sample-verdicts) ---------------------
+   Deliberately built from the marketing vocabulary (`.mkt-section`,
+   `.mkt-truth-card`, `.mkt-table-card`) plus the app's own `.score-badge`,
+   because the page's claim is that these are the product's real verdicts —
+   showing them in a bespoke visual language would undercut that. What is
+   added here is only the per-verdict layout the marketing pages have no
+   equivalent of. */
+
+/* Three cards, so the shared two-column `.mkt-truth-grid` would leave an
+   orphan on its own row. Same cards, right column count. */
+.sample-frame {
+  margin-top: var(--s6);
+}
+
+@media (min-width: 60rem) {
+  .sample-frame {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.sample-verdicts {
+  display: grid;
+  gap: var(--s6);
+}
+
+.sample-verdict {
+  background: var(--surface-1);
+  border: 1px solid var(--line-hair);
+  border-radius: var(--r-m);
+  padding: var(--s5);
+}
+
+.sample-verdict__head {
+  display: grid;
+  gap: var(--s2);
+  padding-bottom: var(--s4);
+  border-bottom: 1px solid var(--line-hair);
+}
+
+.sample-verdict__supplier {
+  margin: 0;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.sample-verdict__title {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.sample-verdict__buyer,
+.sample-verdict__badge,
+.sample-verdict__recommendation {
+  margin: 0;
+}
+
+.sample-verdict__buyer {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+.sample-verdict__recommendation {
+  font-weight: 600;
+}
+
+/* Facts strip: outlines rather than a 1px-gap hairline grid, so a short
+   final row cannot render the container colour as a broken empty cell. */
+.sample-verdict__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0;
+  margin: var(--s4) 0;
+}
+
+.sample-verdict__facts > div {
+  outline: 1px solid var(--line-hair);
+  padding: var(--s3) var(--s4);
+}
+
+.sample-verdict__facts dt {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.sample-verdict__facts dd {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.sample-verdict__breakdown h3,
+.sample-verdict__exclusion h3,
+.sample-verdict__flags h3 {
+  font-size: 1rem;
+  margin: var(--s5) 0 var(--s3);
+}
+
+/* The breakdown table is the page's whole argument, so it gets more room
+   than `.mkt-table-card`'s default and its explanation column is allowed to
+   be the wide one. */
+.sample-verdict .mkt-table-card {
+  padding: 0;
+  margin: 0;
+}
+
+.sample-verdict .mkt-table-card table {
+  min-width: 44rem;
+}
+
+.sample-verdict .mkt-table-card td:last-child {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+/* "35 / 35" is one value; letting it wrap onto two lines reads as two. */
+.sample-verdict .mkt-table-card td:nth-child(2) {
+  white-space: nowrap;
+}
+
+.sample-verdict__exclusion p {
+  margin: 0 0 var(--s3);
+}
+
+.sample-verdict__flags ul {
+  margin: 0;
+  padding-left: var(--s4);
+  display: grid;
+  gap: var(--s2);
+}
+
+.sample-verdict__foot {
+  margin-top: var(--s5);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line-hair);
+  display: grid;
+  gap: var(--s2);
+}
+
+.sample-verdict__foot p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.sample-verdict__why {
+  color: var(--ink-2);
+}
+
+.sample-notes {
+  margin-top: var(--s6);
+}
+
+.sample-notes p {
+  margin: 0 0 var(--s3);
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.sample-notes p:last-child {
+  margin-bottom: 0;
+}

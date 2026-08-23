@@ -1,0 +1,11 @@
+{
+  "source": "https://ted.europa.eu/en/notice/579968-2026",
+  "sourceNoticeId": "579968-2026",
+  "publicationDate": "2026-08-21",
+  "retrievalDate": "2026-08-23",
+  "sdkVersion": "1.13",
+  "sdkGitTag": null,
+  "case": "SDK 1.13 two-lot cn-standard notice (DEU, open procedure): a framework contract for strategic IT consulting, both lots CPV 72000000 with additional 72220000/72224000/72227000, NUTS DE300, no lot values published. Two lots that share a CPV set but differ in subject, which is the case a per-lot score has to distinguish.",
+  "origin": "Real TED-published notice fetched from the TED Search API (links.xml.MUL) by the ted-fixture-fetch workflow, run 32646377636, on 2026-08-23 with the CPV filter 72,48,79417000 — the session sandbox cannot reach ted.europa.eu (the agent proxy denies the CONNECT). Verbatim source XML apart from the documented sanitization.",
+  "sanitization": "None required. Contacts are the buyer's central procurement mailbox (zentrale-vergabestelle-vol@charite.de, named \"Zentrale Vergabestelle\"), the review-body mailbox and the eSender noreply address; the published telephone is already the placeholder \"+49 00000000\" in the source. No natural person is identified. No structural changes."
+}

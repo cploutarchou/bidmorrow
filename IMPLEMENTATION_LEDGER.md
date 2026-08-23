@@ -3677,6 +3677,148 @@ Note for whoever runs the first production deploy: the managed robots.txt
 also publishes AI-crawler `Disallow` rules and `ai-train=no` for the zone.
 That is an owner-level Cloudflare setting, deliberately left alone.
 
+## Public sample-verdict demo — 2026-08-23 (audit item 11, first slice)
+
+`/sample-verdicts` ships: five real TED-published notices scored by the
+production engine against three representative supplier profiles, spanning
+Strong match (86.5) · Worth reviewing (68.5, 78.5) · Low fit (43) · Excluded,
+each with its full eight-component breakdown and a link to the notice on TED.
+Policy of record: `docs/product-scope.md` "Product policy lock", owner
+decision 2026-08-17 — a controlled demonstration of EXPLAINABILITY, not a
+free tier.
+
+The policy's hard boundaries are structural, not merely unbuilt: the page has
+no input, no profile to create, no link into `/app`, and one CTA. An e2e test
+asserts all of that rather than trusting the markup to stay that way.
+
+### The data is generated, and checked for staleness
+
+`packages/procurement/src/sample-verdicts.ts` (which notices, which profiles,
+and the engine run) + `scripts/generate-sample-verdicts.ts` (writes the file)
+→ `apps/web/src/lib/sample-verdicts.generated.ts`, committed.
+
+`tests/integration/sample-verdicts-committed.test.ts` regenerates and
+compares. It lives in `tests/` because it is exactly a cross-boundary check —
+`packages/procurement` builds the data, `apps/web` consumes it, and neither
+may import the other. The failure it prevents is the quiet one: change a
+component weight or an exclusion rule, and a public page keeps showing
+yesterday's numbers while telling visitors they are today's. It also asserts
+that every notice is TED-published, that an excluded lot carries no score and
+no breakdown, and that each breakdown sums to the score it explains.
+
+The generator refuses to write a set that collapses to fewer than three
+outcome classes, or one with no EXCLUDED case.
+
+### A real bug this surfaced
+
+The first version of the generator had its own notice → `LotInput` mapper. It
+read the deadline as `lot.submissionDeadline` (the field is `lot.deadline`)
+and the country from `lot.country`, which `NormalizedLot` has never had. Both
+resolved to `undefined` and the engine scored the wrong input without
+complaining — every sample verdict lost all 15 geography points and reported
+"no submission deadline published".
+
+Fixed by deleting the lookalike: the mapping is now
+`packages/procurement/src/notice-lot-input.ts`, shared with the ingestion
+path, mirroring `run-window.ts` + `scoring-input.ts` field by field and
+covered by `notice-lot-input.test.ts` (6 tests pinned against real fixtures).
+`firstLanguageValue` / `nutsToCountry` moved out of `run-window.ts` into
+`lot-normalization.ts` so both callers use one copy. `COMPONENT_KEY_TO_DB` is
+now exported from `score.ts` so the demo labels components with the same
+vocabulary the customer UI reads.
+
+It also declines rather than guesses: a lot whose value is non-EUR is
+reported as `value_needs_fx_rate` instead of being scored with the value
+dropped, because production converts through an ECB rate at score time and
+"not published" would understate the lot. That is why the Czech
+CPV/subject-mismatch fixture is committed but not used on the page.
+
+### Fixtures
+
+Seven new real notices under `tests/fixtures/ted/1.13/`, sanitized per the
+`ted-fixture-refresh` skill (two required replacing a personal mailbox and a
+mobile number; four contained no natural-person data):
+
+| fixture                            | notice      | why it is worth keeping                                    |
+| ---------------------------------- | ----------- | ---------------------------------------------------------- |
+| `real-cyber-pentest`               | 578580-2026 | DE, CPV 72800000 penetration testing, 32-day runway        |
+| `real-it-framework-three-lot`      | 580079-2026 | DE, three lots, per-lot EUR values above a small ceiling   |
+| `real-it-consulting-two-lot`       | 579968-2026 | DE, two lots sharing a CPV set but differing in subject    |
+| `real-broadband-no-deadline`       | 579541-2026 | DE, CPV 72400000 with NO value and NO deadline published   |
+| `real-cpv-mismatch-print-services` | 578736-2026 | CZ, an IT-services CPV on a managed-printing contract, CZK |
+| `real-works-multi-cpv`             | 580930-2026 | SK, works notice carrying one 72\* code among nineteen     |
+
+The sandbox cannot reach ted.europa.eu — the agent proxy denies the CONNECT
+with 403 — so the fetch ran in CI. `.github/workflows/ted-fixture-fetch.yml`
+and `scripts/fetch-raw-ted-notices.mjs` gained an optional `cpv_prefixes`
+input for it (prefix expansion copied from `buildScopeQuery`, which is
+live-validated, rather than reinvented). Run 32646377636, filter
+`72,48,79417000`.
+
+### Review findings, and what they changed
+
+Reviewed by the `product` and `security` agents before merge. Three findings
+were acted on; two more were hardening.
+
+- **Personal data reproduced in fixture metadata (HIGH, security).** The
+  `sanitization` field of two new `.meta.json` files quoted the exact personal
+  mailbox and mobile number that had just been replaced in the XML — which
+  puts back precisely what the replacement took out, and departs from the
+  convention the existing fixtures follow (field path + occurrence count, never
+  the value). Rewritten to that convention, and the branch's history rewritten
+  so the values never reach the default branch. The `ted-fixture-refresh`
+  skill now states the rule explicitly at step 4; it was convention, not
+  written down, which is why it was got wrong.
+- **"Written before the notices were picked, not fitted to them afterwards"
+  (HIGH, product).** The page asserted that as fact about process. It was not
+  true: the cyber profile's keyword list was broadened after seeing that
+  German notices use `IT-Sicherheit` and `Sicherheitsanalysen`. Whether those
+  are fair as standard trade vocabulary is a real argument, but it answers a
+  different question than the sentence asked. Replaced with the claim that is
+  actually defensible — the profiles use the ordinary trade vocabulary such a
+  firm lists on its own site, not words lifted from any one notice.
+- **The demo never showed a risk flag (MEDIUM, product).** The four original
+  notices are German and Slovak, and flag detection is an English pattern set,
+  so zero flags was correct behaviour rather than a casting accident — but the
+  flagship demo then never once shows the feature it exists to sell. Added a
+  fifth verdict on the one English IT notice in the fetch (IE, 579868-2026),
+  which raises a genuine POSSIBLE `framework_membership` flag off the lot
+  title. The page now states the language limit rather than leaving the
+  absence unexplained.
+- **`sourceKind` was computed but never rendered (MEDIUM, product).** Every
+  committed verdict is TED-published and a test enforces it, but the page had
+  no code path for the `eforms_example` case the generator can legitimately
+  produce. It now renders the distinction instead of depending on case
+  selection to make it moot.
+- **Hardening (LOW, security).** `buildSampleVerdicts` throws on a
+  `meta.source` that is neither a TED notice nor an OP-TED example URL, rather
+  than letting a meta field become an `href` on a public page.
+  `scripts/fetch-raw-ted-notices.mjs` validates the publication-number shape
+  before using it as a filename and allowlists the XML link's origin.
+
+### Deliberate omissions
+
+- No profile was tuned per case. Each was written once, in the ordinary trade
+  vocabulary for its trade and market, and the five numbers are whatever the
+  engine returned. One judgement call is on the record: the cyber profile's
+  keywords were broadened to include `it-sicherheit` and `sicherheitsanalysen`
+  after the first run, which moved that verdict from 78.5 to 86.5 and across
+  the Strong-match threshold. They are standard German terms for the trade,
+  but they were added after seeing the notice, so the page no longer claims
+  the profiles predate the case selection.
+- The facts strip shows the deadline DATE, not a countdown: a relative figure
+  computed by `formatRelativeDeadline` sat one day off the engine's own "32
+  days" in the breakdown beside it. Two numbers for one fact, on a page whose
+  argument is that the numbers are checkable.
+- Scores are pinned to 2026-08-21T09:00Z (the morning the notices published)
+  and the page says so. Deadline runway is a scored component, so a "live"
+  demo would drift daily away from the numbers shown.
+
+### Still open on audit item 11
+
+`/cybersecurity-tenders` and `/cloud-tenders` category pages, and the
+comparison module.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
