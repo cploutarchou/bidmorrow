@@ -1,3 +1,4 @@
+import '../../styles/auth.css';
 import type { ReactElement, ReactNode } from 'react';
 import { Link } from 'react-router';
 import { PRODUCT_NAME } from '../../copy';

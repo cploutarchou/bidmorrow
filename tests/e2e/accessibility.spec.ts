@@ -22,7 +22,7 @@ interface SeriousViolation {
  * but axe-core has no concept of "wait for animations to finish". The
  * suite-level `reducedMotion: 'reduce'` context option (playwright.config.ts)
  * is meant to keep every animation/transition dead everywhere (the app's own
- * `prefers-reduced-motion: reduce` kill-switch, styles.css), but wasn't
+ * `prefers-reduced-motion: reduce` kill-switch, styles/base.css), but wasn't
  * reliably re-applied across every client-side SPA navigation in this
  * sandboxed/software-rendered browser — producing an intermittent
  * false-positive `color-contrast` finding on `.cta` buttons caught mid-way

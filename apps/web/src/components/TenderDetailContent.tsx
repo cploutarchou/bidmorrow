@@ -380,7 +380,7 @@ export function TenderDetailContent({
                         {/* Native <progress>, never an inline `style` width — CSP is
                             `style-src 'self'` with no unsafe-inline; the fill is
                             styled entirely via ::-webkit-progress-value/
-                            ::-moz-progress-bar in styles.css. */}
+                            ::-moz-progress-bar in styles/base.css. */}
                         <progress
                           className="score-bar score-bar--inline"
                           value={component.points}

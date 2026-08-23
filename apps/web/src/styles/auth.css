@@ -1,0 +1,261 @@
+/* ============================================================
+   AUTH — the five auth screens' two-column split (AuthLayout).
+
+   Imported by AuthLayout.tsx inside the lazy auth chunks. The shared
+   .site-header/.cta/.mkt-cell rules these screens also render live in
+   base.css. Split from styles.css 2026-08-23; original order
+   preserved.
+   ============================================================ */
+
+/* ============================================================
+   AUTH — 2026-08-21 handoff redesign (`BidMorrow Auth.dc.html`):
+   two-column split (routing-rules aside + form card) shared by all
+   five auth screens. Same porting rules as the marketing section
+   above: `--bm-*` palette mapped onto Control Room tokens, system
+   fonts, dark only, no inline styles. The prototype's screen tabs
+   and account simulator are prototype-only affordances and are NOT
+   ported — screens stay separate routes. The aside disappears under
+   the design's 980px breakpoint, leaving the card full-width.
+   Reuses the marketing `.mkt-cellgrid`/`.mkt-cell` for the aside's
+   routing-rule cells.
+   ============================================================ */
+
+.auth-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.875rem;
+}
+
+#main-content.auth-main {
+  max-width: 77.5rem;
+  padding: clamp(1.75rem, 5vw, 4rem) clamp(1rem, 4vw, 2rem) 4.5rem;
+}
+
+.auth-split {
+  display: grid;
+  grid-template-columns: 1fr 468px;
+  gap: clamp(2rem, 6vw, 5.5rem);
+  align-items: start;
+}
+
+.auth-aside {
+  display: grid;
+  gap: 1.875rem;
+  padding-top: 0.75rem;
+}
+
+.auth-aside__head {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-aside__eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+/* Visual headline only — the page's real <h1> is the card title, which
+   stays visible at every width (this aside is hidden under 980px). */
+.auth-aside__headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.4vw, 3.125rem);
+  line-height: 1.06;
+  font-weight: 600;
+  letter-spacing: -0.028em;
+  max-width: 22ch;
+  text-wrap: pretty;
+}
+
+.auth-aside__lede {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 1.06rem;
+  line-height: 1.6;
+  color: var(--text-2);
+  text-wrap: pretty;
+}
+
+.auth-aside .mkt-cellgrid {
+  max-width: 560px;
+}
+
+.auth-card {
+  background: var(--glass-solid);
+  border: 1px solid var(--stroke-faint);
+  border-radius: 24px;
+  padding: clamp(1.375rem, 3vw, 2rem);
+  box-shadow: var(--shadow-l);
+  display: grid;
+  gap: 1.25rem;
+}
+
+.auth-card__head {
+  display: grid;
+  gap: 0.4375rem;
+}
+
+.auth-card__head h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.auth-card__sub {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.auth-card form {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-card .form-field {
+  margin-bottom: 0;
+  max-width: none;
+  gap: 0.4375rem;
+}
+
+.auth-card .form-field label {
+  font-weight: 400;
+  font-size: 0.78rem;
+  color: var(--text-2);
+}
+
+.auth-card .form-field input {
+  border-radius: var(--r-l);
+  padding: 0.8125rem 0.875rem;
+}
+
+.auth-card .cta {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Banner voice inside the card (design: tinted rounded panels, regular
+   weight). Scoped so the app/admin `.form-error`/`.form-warning` looks
+   stay untouched. */
+.auth-card .form-error {
+  margin: 0;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid var(--status-danger-text);
+  border-radius: 14px;
+  padding: 0.75rem 0.875rem;
+  font-size: 0.84rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text-1);
+}
+
+.auth-card .form-warning {
+  margin: 0;
+  border-width: 1px;
+  border-radius: 14px;
+  font-size: 0.84rem;
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+/* Neutral/positive status banner (reset-link sent, resent confirmation). */
+.auth-status {
+  margin: 0;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-edge);
+  border-radius: 14px;
+  padding: 0.8125rem 0.875rem;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--text-1);
+}
+
+/* Quiet explanatory footnote ("verification is required before…"). */
+.auth-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.84rem;
+}
+
+.auth-links a,
+.auth-links .link-button {
+  font-size: 0.84rem;
+}
+
+.auth-links .link-button--muted,
+.auth-links a.auth-link--muted {
+  color: var(--text-2);
+  text-decoration: none;
+}
+
+.auth-links .link-button--muted:hover,
+.auth-links a.auth-link--muted:hover {
+  color: var(--text-1);
+  text-decoration: underline;
+}
+
+/* "Sent to <address>" panel on the verify screen. */
+.auth-sentbox {
+  background: var(--field-bg);
+  border: 1px solid var(--stroke-faint);
+  border-radius: 16px;
+  padding: 1rem 1.125rem;
+  display: grid;
+  gap: 0.375rem;
+}
+
+.auth-sentbox__cap {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.auth-sentbox__addr {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--text-1);
+  word-break: break-all;
+}
+
+/* Live password-length hint under the new-password fields. */
+.pw-hint {
+  font-size: 0.75rem;
+  color: var(--text-3);
+}
+
+.pw-hint--ok {
+  color: var(--accent-text);
+}
+
+.pw-hint--warn {
+  color: var(--status-caution-text);
+}
+
+@media (max-width: 61.25rem) {
+  .auth-split {
+    grid-template-columns: 1fr;
+  }
+  .auth-aside {
+    display: none;
+  }
+}

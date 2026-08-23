@@ -5,7 +5,7 @@
  * simply invisible") and (b) Enter-key activation of the Save action.
  * Findings feed docs/accessibility-review.md.
  *
- * The app styles focus via `:focus-visible` (styles.css), which Chromium
+ * The app styles focus via `:focus-visible` (styles/base.css), which Chromium
  * only applies to keyboard-driven focus — so every focus in this spec is
  * driven by real Tab keypresses, never bare `locator.focus()` (programmatic
  * focus would not match `:focus-visible` and would false-fail the checks).

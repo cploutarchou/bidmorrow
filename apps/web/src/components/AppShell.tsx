@@ -1,3 +1,4 @@
+import '../styles/app.css';
 import { useState, type ReactElement, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { PRODUCT_NAME } from '../copy';

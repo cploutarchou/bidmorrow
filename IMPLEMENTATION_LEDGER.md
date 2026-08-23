@@ -3898,6 +3898,51 @@ With this, audit item 11 is closed: demo (PR #86), category page + engine
 v2 (PR #87), comparison module (this change). `/cloud-tenders` remains
 deferred for want of genuinely-cloud notices, recorded in the audit doc.
 
+## CSS budget split — per-surface stylesheets (2026-08-23)
+
+The single 7,957-line `styles.css` is now five files under
+`apps/web/src/styles/`: `base` (tokens, themes, element defaults, and every
+genuinely shared rule), `marketing`, `app`, `admin`, `auth`. Split at the
+file's own section banners with a coverage-asserted script, so within each
+file the original cascade order is byte-for-byte preserved — the only new
+thing is the file boundaries.
+
+Import sites decide what ships where: `main.tsx` loads base;
+`MarketingLayout` (eager) loads marketing, so base+marketing ARE the entry;
+`AuthLayout`, `AdminShell`, `AppShell`, `Onboarding` and `TenderSheet` load
+their surface's file inside their lazy chunks. `AppShell` had to become lazy
+for its STYLESHEET, not its size — eager, it would have pulled app.css back
+into the entry. Each /app route now nests two Suspense boundaries
+(`<Lazy><AppShell><Lazy><Page/>`), so the first app visit suspends once for
+the shell and later page-to-page navigations never unmount the chrome.
+`lazyPage` gained a props generic for it.
+
+The re-homing was audited, not eyeballed: a script extracted every class
+each region defines and every class each surface's TSX uses, and reported
+the cross-surface pairs. Ten rules moved to base as a result — the score
+badge ramp and pill (marketing's demo pages render ScoreBadge), the
+score-bar progress element (Home's demo feed), `.filter-bar` (admin pages),
+`.visually-hidden-status` (every surface), the unscoped
+`.admin-table-scroll`/`.admin-confirm` helpers (Settings reuses them), the
+shared 1px-gap cell grids (auth + billing), and the theme toggle. The
+audit's known blind spot — object-mapped class strings like ScoreBadge's
+variant map — was grep-checked separately: only `score-badge--*` (base) and
+`auth-link--muted` (auth) exist off-app.
+
+**Measured** (`pnpm --filter @bidmorrow/web build`): entry CSS 102.13 kB →
+64.65 kB raw (12.68 kB gzip); `app.css` 30.53 kB, `admin.css` 6.86 kB,
+`auth.css` 3.18 kB now load only with their chunks. The 25 kB raw budget is
+still missed and the audit doc says so: what remains in the entry is
+genuinely marketing CSS plus tokens, and shrinking that is dead-rule/content
+work, not splitting.
+
+**Verified**: full Playwright suite 54 passed / 3 skipped against the real
+built chunks (marketing, auth, onboarding, feed, detail sheet, settings,
+billing, keyboard, axe). The admin surface has no e2e login harness
+(pre-existing gap), so its case is analytical: byte-identical rules,
+audit-checked class coverage, and AdminShell importing admin.css inside the
+chunk that renders it.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

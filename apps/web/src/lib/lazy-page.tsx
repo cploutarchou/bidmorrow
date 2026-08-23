@@ -16,13 +16,13 @@ import { RouteFallback } from '../components/RouteChunkBoundary';
  * declarative `<Routes>` API rather than a data router, so its own route-level
  * `lazy` property is unavailable — `React.lazy` + `Suspense` is the mechanism.
  */
-export function lazyPage<K extends string>(
-  load: () => Promise<Record<K, ComponentType>>,
+export function lazyPage<K extends string, P extends object = Record<never, never>>(
+  load: () => Promise<Record<K, ComponentType<P>>>,
   name: K,
-): LazyExoticComponent<ComponentType> {
+): LazyExoticComponent<ComponentType<P>> {
   return lazy(async () => {
     const module = await load();
-    return { default: module[name] as ComponentType };
+    return { default: module[name] as ComponentType<P> };
   });
 }
 
