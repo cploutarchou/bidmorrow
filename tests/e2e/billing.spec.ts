@@ -96,7 +96,7 @@ test.describe('billing: Settings', () => {
     await expect(page.locator('#billing-print-area')).toBeVisible();
     await expect(page.locator('#billing-print-area')).toContainText('No active subscription.');
     // `visibility: hidden` (not `display: none`) is how the print
-    // stylesheet hides everything else (styles.css `@media print`) — every
+    // stylesheet hides everything else (styles/app.css `@media print`) — every
     // element outside `#billing-print-area`, including chrome that would
     // otherwise always render, must report as not-visible.
     await expect(page.locator('.app-header')).toBeHidden();

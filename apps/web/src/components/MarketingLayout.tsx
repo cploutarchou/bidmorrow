@@ -1,3 +1,4 @@
+import '../styles/marketing.css';
 import { Menu, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
@@ -21,13 +22,13 @@ const NAV_LINKS: { to: string; label: string }[] = [
  * docs/redesign/mockups/direction-b-control-room.html `header.site`/
  * `footer.site`). `.cta` and `.site-header` are also rendered by the auth
  * pages (`pages/auth/AuthLayout.tsx`) and, for `.cta`, by the app screens —
- * their styling lives in styles.css as a shared upgrade, not a
+ * their styling lives in styles/base.css as a shared upgrade, not a
  * `.mkt-*`-namespaced one, so it stays visually coherent everywhere it's
  * used. `fullBleed` opts a page's `<main>` out of the shared centered
  * text-column container so it can run its own full-width sections (Home
  * only, today) without affecting any other marketing page.
  *
- * Below ~56rem (900px, styles.css `MARKETING SITE` section) the inline
+ * Below ~56rem (900px, styles/marketing.css `MARKETING SITE` section) the inline
  * `.nav-list`/`.nav-actions` are hidden and replaced with a hamburger
  * toggle that opens `.mkt-menu-panel` — a dropdown holding the same links
  * plus Log in / Sign up. The mockup only hides the nav links under its
@@ -45,6 +46,10 @@ export function MarketingLayout({
   fullBleed?: boolean;
 }): ReactElement {
   const [menuOpen, setMenuOpen] = useState(false);
+  // Current-page indicator in the nav (audit minor: the marketing nav had
+  // none). `aria-current` carries the styling too, so state and semantics
+  // cannot drift apart.
+  const { pathname } = useLocation();
   const panelId = useId();
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -139,7 +144,9 @@ export function MarketingLayout({
           <ul className="nav-list">
             {NAV_LINKS.map((link) => (
               <li key={link.to}>
-                <Link to={link.to}>{link.label}</Link>
+                <Link to={link.to} aria-current={pathname === link.to ? 'page' : undefined}>
+                  {link.label}
+                </Link>
               </li>
             ))}
           </ul>
@@ -172,7 +179,11 @@ export function MarketingLayout({
             <ul className="mkt-menu-panel__links">
               {NAV_LINKS.map((link) => (
                 <li key={link.to}>
-                  <Link to={link.to} onClick={closeMenu}>
+                  <Link
+                    to={link.to}
+                    onClick={closeMenu}
+                    aria-current={pathname === link.to ? 'page' : undefined}
+                  >
                     {link.label}
                   </Link>
                 </li>
@@ -205,6 +216,9 @@ export function MarketingLayout({
           </div>
           <nav aria-label="Footer">
             <ul className="nav-list">
+              <li>
+                <Link to="/cybersecurity-tenders">Cybersecurity tenders</Link>
+              </li>
               <li>
                 <Link to="/privacy">Privacy</Link>
               </li>

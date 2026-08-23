@@ -18,6 +18,21 @@ test('home page renders headline and CTA', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Join the founding pilot' }).first()).toBeVisible();
 });
 
+test('home comparison module stays unnamed and states its evidence basis', async ({ page }) => {
+  // The honest comparison module (docs/website-redesign-plan.md §7): a
+  // "typical tender-alert services" column, never a named competitor —
+  // named tables are owner-gated (decision D11) — and the note stating what
+  // the right-hand column is based on must stay attached to the table.
+  await page.goto('/');
+  const section = page.locator('#compare');
+  await expect(section.getByRole('table')).toBeVisible();
+  await expect(
+    section.getByRole('columnheader', { name: 'Typical tender-alert services' }),
+  ).toBeVisible();
+  await expect(section.getByRole('rowheader')).toHaveCount(6);
+  await expect(section.getByText(/our own review of the public marketing pages/)).toBeVisible();
+});
+
 test('methodology page discloses the unknown-value scoring policy', async ({ page }) => {
   await page.goto('/methodology');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -38,7 +53,7 @@ test('pricing page renders both plans', async ({ page }) => {
 });
 
 // Mobile header: the nav collapses into a hamburger menu below ~56rem
-// (styles.css `MARKETING SITE` section) instead of wrapping the desktop
+// (styles/marketing.css `MARKETING SITE` section) instead of wrapping the desktop
 // `.nav-list`/`.nav-actions` into stacked rows.
 test.describe('mobile nav menu', () => {
   test.use({ viewport: { width: 390, height: 844 } });
@@ -142,4 +157,75 @@ test('sample verdicts page is a demo, not a free tier', async ({ page }) => {
   await expect(
     page.getByRole('link', { name: 'Get verdicts matched to your company' }),
   ).toBeVisible();
+});
+
+/**
+ * /cybersecurity-tenders — first manually authored category page
+ * (docs/product-scope.md "Product policy lock": methodology + sample
+ * verdicts, never an auto-generated tender directory).
+ */
+test('cybersecurity category page explains the method and scores real notices', async ({
+  page,
+}) => {
+  await page.goto('/cybersecurity-tenders');
+  await expect(page).toHaveTitle(/Cybersecurity Tenders/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  // The CPV table shows official codelist labels, not invented ones.
+  await expect(
+    page.getByRole('cell', { name: 'Computer audit and testing services' }),
+  ).toBeVisible();
+
+  // Its sample verdicts are the cybersecurity-surface subset — real cards,
+  // same component vocabulary as everywhere else.
+  const verdicts = page.locator('article.sample-verdict');
+  await expect(verdicts).toHaveCount(2);
+  await expect(verdicts.first().getByRole('rowheader', { name: 'CPV fit' })).toBeVisible();
+
+  // Not a directory and not a free tier: no inputs, no path into the app.
+  await expect(page.locator('main input, main textarea, main select')).toHaveCount(0);
+  await expect(page.locator('main a[href^="/app"]')).toHaveCount(0);
+  await expect(
+    page.getByRole('link', { name: 'Get verdicts matched to your company' }),
+  ).toBeVisible();
+});
+
+test('open consent banner never covers the footer', async ({ page }) => {
+  // While the cookie choice is pending the banner is fixed over the page's
+  // tail. The document gets matching bottom clearance
+  // (body.consent-banner-open), because the footer holds the privacy policy
+  // and the "Cookie preferences" reopener — the two links someone deciding
+  // about cookies most needs, and exactly the ones a covering banner hides.
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/privacy');
+  // The page chunk is lazy; scrolling before it renders would measure a
+  // page that is about to grow.
+  await expect(page.getByRole('heading', { name: 'Privacy', exact: true })).toBeVisible();
+  const contact = page.locator('.mkt-footer').getByRole('link', { name: 'Contact' });
+  await contact.scrollIntoViewIfNeeded();
+  const linkBox = await contact.boundingBox();
+  const bannerBox = await page.locator('.consent-banner').boundingBox();
+  expect(linkBox).not.toBeNull();
+  expect(bannerBox).not.toBeNull();
+  expect(linkBox!.y + linkBox!.height).toBeLessThan(bannerBox!.y);
+});
+
+test('marketing nav marks the current page', async ({ page, isMobile }) => {
+  await page.goto('/methodology');
+  // On phones the desktop list is hidden behind the hamburger; the panel
+  // carries the same aria-current, so assert whichever nav is actually
+  // rendered at this viewport.
+  let nav = page.locator('.nav-list');
+  if (isMobile) {
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    nav = page.locator('.mkt-menu-panel__links');
+  }
+  await expect(nav.getByRole('link', { name: 'Methodology' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await expect(nav.getByRole('link', { name: 'Pricing' })).not.toHaveAttribute(
+    'aria-current',
+    'page',
+  );
 });

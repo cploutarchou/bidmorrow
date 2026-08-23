@@ -252,3 +252,18 @@ Control Room design ships zero custom fonts.
 - ~~Key ACTIVATION pending~~ — the eNotices2 pairing (one UI login with the
   key's EU Login account) did resolve the 403-to-404 transition and is
   recorded for the archive, but it has no effect on ingestion.
+
+## eForms buyer-legal-type codelist — verified 2026-08-23
+
+- Source: OP-TED eForms-SDK **1.13.2**, `codelists/buyer-legal-type.gc`
+  (fetched from the SDK repository on 2026-08-23).
+- 20 codes: `body-pl`, `body-pl-cga`, `body-pl-la`, `body-pl-ra`, `cga`,
+  `def-cont`, `eu-ins-bod-ag`, `grp-p-aut`, `int-org`, `la`, `org-sub`,
+  `org-sub-cga`, `org-sub-la`, `org-sub-ra`, `pub-undert`, `pub-undert-cga`,
+  `pub-undert-la`, `pub-undert-ra`, `ra`, `spec-rights-entity`.
+- Consumed by `packages/matching/src/components/buyer.ts`, whose tests assert
+  the 20-code count as the tripwire for a future SDK growing the list.
+- Note: the buyer component's earlier comment claimed verification against
+  "SDK 1.15.1 buyer-legal-type.json … per docs/dependency-versions.md", but
+  no such record existed in this file and the sets were partial — that claim
+  was wrong, which is exactly what this file exists to prevent.

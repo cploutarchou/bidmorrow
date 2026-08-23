@@ -12,8 +12,16 @@ export const PACKAGE = '@bidmorrow/matching';
 /**
  * Monotonically increasing engine version string, stored with every match so
  * old and new scores stay comparable across recomputation.
+ *
+ * 1 → 2 (2026-08-23): the buyer component's `buyer-legal-type` code sets were
+ * completed against OP-TED eForms-SDK 1.13.2. Eight codes the codelist
+ * defines were missing and scored UNKNOWN; two codes that are not in the
+ * codelist were being accepted. That changes the score of any lot whose buyer
+ * carries one of them — 7 of the 25 TED fixtures in this repo — so it is a
+ * version bump, not a silent fix: invariant 1 (same inputs + same engine
+ * version ⇒ identical score) would otherwise be false across the change.
  */
-export const ENGINE_VERSION = '1';
+export const ENGINE_VERSION = '2';
 
 /** Maximum points per score component; values sum to exactly 100. */
 export const COMPONENT_MAX = {

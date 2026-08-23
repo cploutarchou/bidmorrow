@@ -1,11 +1,12 @@
 import type { ReactElement } from 'react';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router';
-import { AppShell } from './components/AppShell';
+
 import { MarketingLayout } from './components/MarketingLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { RouteChunkBoundary } from './components/RouteChunkBoundary';
 import { AuthProvider } from './lib/auth-context';
 import { Lazy, lazyPage } from './lib/lazy-page';
+import { RouteFocus } from './components/RouteFocus';
 import { Home } from './pages/marketing/Home';
 import { NotFound } from './pages/NotFound';
 
@@ -19,6 +20,10 @@ import { NotFound } from './pages/NotFound';
  * doubles as the admin cloak (it must render without fetching anything).
  */
 const HowItWorks = lazyPage(() => import('./pages/marketing/HowItWorks'), 'HowItWorks');
+const CybersecurityTenders = lazyPage(
+  () => import('./pages/marketing/CybersecurityTenders'),
+  'CybersecurityTenders',
+);
 const SampleVerdicts = lazyPage(() => import('./pages/marketing/SampleVerdicts'), 'SampleVerdicts');
 const Methodology = lazyPage(() => import('./pages/marketing/Methodology'), 'Methodology');
 const Pricing = lazyPage(() => import('./pages/marketing/Pricing'), 'Pricing');
@@ -39,6 +44,14 @@ const TenderSheet = lazyPage(() => import('./pages/app/TenderSheet'), 'TenderShe
 const Settings = lazyPage(() => import('./pages/app/Settings'), 'Settings');
 const Onboarding = lazyPage(() => import('./pages/app/Onboarding'), 'Onboarding');
 const BillingSuccess = lazyPage(() => import('./pages/app/BillingSuccess'), 'BillingSuccess');
+
+/* AppShell is lazy for its STYLESHEET, not its size: it imports
+   styles/app.css, and an eager AppShell would pull the whole app surface's
+   CSS back into the marketing entry. Each /app route nests two boundaries —
+   `<Lazy><AppShell><Lazy><Page/>` — so the first app visit suspends once for
+   the shell chunk, while later page-to-page navigations suspend only the
+   inner boundary and the shell chrome never flashes. */
+const AppShell = lazyPage(() => import('./components/AppShell'), 'AppShell');
 
 /* The admin surface — gate, shell, 11 pages and their lib/admin-* modules —
    leaves the customer bundle entirely. Nothing outside pages/admin and
@@ -85,6 +98,7 @@ function AppRoutes(): ReactElement {
 
   return (
     <>
+      <RouteFocus />
       <Routes location={background ?? location}>
         <Route
           path="/"
@@ -120,6 +134,16 @@ function AppRoutes(): ReactElement {
             <MarketingLayout>
               <Lazy>
                 <SampleVerdicts />
+              </Lazy>
+            </MarketingLayout>
+          }
+        />
+        <Route
+          path="/cybersecurity-tenders"
+          element={
+            <MarketingLayout>
+              <Lazy>
+                <CybersecurityTenders />
               </Lazy>
             </MarketingLayout>
           }
@@ -230,11 +254,13 @@ function AppRoutes(): ReactElement {
           path="/app"
           element={
             <ProtectedRoute>
-              <AppShell>
-                <Lazy>
-                  <Feed />
-                </Lazy>
-              </AppShell>
+              <Lazy>
+                <AppShell>
+                  <Lazy>
+                    <Feed />
+                  </Lazy>
+                </AppShell>
+              </Lazy>
             </ProtectedRoute>
           }
         />
@@ -242,11 +268,13 @@ function AppRoutes(): ReactElement {
           path="/app/tenders/:matchId"
           element={
             <ProtectedRoute>
-              <AppShell>
-                <Lazy>
-                  <TenderDetail />
-                </Lazy>
-              </AppShell>
+              <Lazy>
+                <AppShell>
+                  <Lazy>
+                    <TenderDetail />
+                  </Lazy>
+                </AppShell>
+              </Lazy>
             </ProtectedRoute>
           }
         />
@@ -254,11 +282,13 @@ function AppRoutes(): ReactElement {
           path="/app/billing/success"
           element={
             <ProtectedRoute>
-              <AppShell>
-                <Lazy>
-                  <BillingSuccess />
-                </Lazy>
-              </AppShell>
+              <Lazy>
+                <AppShell>
+                  <Lazy>
+                    <BillingSuccess />
+                  </Lazy>
+                </AppShell>
+              </Lazy>
             </ProtectedRoute>
           }
         />
@@ -266,11 +296,13 @@ function AppRoutes(): ReactElement {
           path="/app/settings"
           element={
             <ProtectedRoute>
-              <AppShell>
-                <Lazy>
-                  <Settings />
-                </Lazy>
-              </AppShell>
+              <Lazy>
+                <AppShell>
+                  <Lazy>
+                    <Settings />
+                  </Lazy>
+                </AppShell>
+              </Lazy>
             </ProtectedRoute>
           }
         />

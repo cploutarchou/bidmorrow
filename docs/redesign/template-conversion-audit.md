@@ -132,9 +132,36 @@ localStorage ops-state) was excluded from the comparison by instruction.
    confirmation for paying customers.
 10. Route code splitting + budget compliance (admin out of customer
     bundle).
-11. M3 final slice — **SAMPLE-VERDICT DEMO DONE 2026-08-23**; category
-    pages and the comparison module still open (all policy-locked IN
-    scope).
+11. M3 final slice — **DONE 2026-08-23**: sample-verdict demo (PR #86),
+    **`/cybersecurity-tenders`** (PR #87), and the honest unnamed
+    **comparison module** on Home (`#compare`) — six attribute rows
+    (price, billing, scoring, methodology, data source, tracking), each
+    "typical" cell restating a finding from
+    `docs/redesign/competitor-findings.md` (seven services captured
+    2026-08-17), each BidMorrow cell linking to the page that keeps the
+    claim true, the evidence basis stated to the reader under the table,
+    and no competitor named (owner-gated, decision D11). Only
+    `/cloud-tenders` is deferred: the cloud-CPV fetch returned hardware
+    and licensing rather than hosting, and a category page whose sample
+    verdicts are not really about the category is worse than no page.
+    - `/cybersecurity-tenders`: hand-written methodology argument (there
+      is no cybersecurity CPV — six real codes with their verbatim
+      CPV 2008 labels show why code-watching fails both ways) plus two
+      real engine-scored security notices, drawn from the shared
+      sample-verdict set via a `surfaces` tag so the demo page keeps its
+      policy-capped five. Not a directory: no inputs, no app links, one
+      CTA — asserted by e2e.
+    - `/cloud-tenders` is deliberately NOT built yet: the cloud-CPV
+      fetch (run 32650923035) returned hardware and licensing, not
+      hosting or managed infrastructure, and a category page whose
+      sample verdicts are not really about the category is worse than no
+      page. Owner concurred 2026-08-23. Waiting on a genuine anchor
+      notice from a later fetch.
+    - Building the page surfaced an engine defect, fixed as
+      **ENGINE_VERSION 1 → 2** (owner-approved 2026-08-23): the buyer
+      component knew 12 of the eForms `buyer-legal-type` codelist's 20
+      codes and accepted two that do not exist. Details in
+      docs/matching-engine.md §Buyer/sector and the ledger.
     - `/sample-verdicts`: four real TED-published notices scored by the
       production engine against two representative supplier profiles,
       spanning Strong match / Worth reviewing / Low fit / Excluded, each
@@ -169,21 +196,53 @@ localStorage ops-state) was excluded from the comparison by instruction.
 - Theme foundation: `--t-*` type-scale tokens, `prefers-contrast` line
   tokens, three-rank buttons, `--accent-hover/press`, `--field-inner-lit`,
   `--bg-overlay`.
-- Shared components: low-fit/excluded card states, deadline urgency inks,
-  ~~visible status flash~~ (done for admin 2026-08-23; the customer app
-  surfaces still route status text through `visually-hidden-status`),
+- Shared components: low-fit/excluded card states, ~~deadline urgency
+  inks~~ (**DONE 2026-08-23** — thresholds read off the design's own Home
+  demo-feed data, <7 days risk / <14 caution, supplementary to the deadline
+  text), ~~visible status flash~~ (**fully done** — the admin pages flash via
+  `AdminFlash`, and Feed, Settings and the tender detail each pair the
+  `visually-hidden-status` live region with the visible `.app-toast`; the
+  remaining `visually-hidden-status` uses are legitimately SR-only
+  content. The earlier "customer surfaces still hidden-only" note was
+  stale),
   arm→confirm strip with consequence copy.
-- Auth polish: pre-submit validation, silent-failure fix, confirmation
-  states. Marketing nav `aria-current`. Cookie-banner bottom padding.
-- Feed/Settings: sort control + KPI row, "why this score" expander,
+- ~~Auth polish: pre-submit validation, silent-failure fix, confirmation
+  states. Marketing nav `aria-current`. Cookie-banner bottom padding.~~ —
+  **DONE 2026-08-23.** ForgotPassword's network failure is now a visible
+  "nothing was sent" error instead of an unhandled rejection (a non-2xx
+  answer no longer shows the privacy confirmation either), the sent state
+  offers "Send it again" with a re-send status, ResetPassword hands Login a
+  reset-done confirmation via router state, and Login/Signup/Forgot run the
+  checks their `noValidate` attributes imply before fetching. The nav marks
+  the current page via `aria-current` (which also carries the styling), and
+  an open consent banner gives the document bottom clearance so the
+  footer's privacy link and cookie-preferences reopener stay reachable.
+  Each fix is pinned by an e2e test.
+- Feed/Settings: sort control + KPI row, ~~"why this score" expander~~
+  (**DONE 2026-08-23** — a native `<details>` on the card revealing the
+  engine's component explanation strings, which the feed payload already
+  carried and the card never rendered),
   settings validation layer, timezone control, NUTS add, Appearance pane,
   unified save bar; danger zone deletes account not organisation
   (product decision).
 - Admin: ops pills, state-aware pause/resume, rail counts, ingestion
   sub-views, flag JSON hint.
-- Testing/a11y: feed-tab keyboard model + keyboard spec, 402/success e2e
-  assertions, mobile Playwright project, `toHaveScreenshot` baselines,
-  zoom/reflow pass, route-change focus management.
+- Testing/a11y: ~~feed-tab keyboard model + keyboard spec~~,
+  ~~route-change focus management~~ and ~~mobile Playwright project~~ —
+  **DONE 2026-08-23.** The `mobile-chromium` project runs the marketing,
+  auth and public-accessibility specs at an iPhone-12 viewport with touch
+  (Chromium engine — it tests layout at 390px, not WebKit behavior);
+  authenticated specs stay desktop-only because the ordered signup
+  journey against seeded state would double the suite's longest leg for
+  surfaces the ICP uses at a desk. The feed tablist
+  now follows the WAI-ARIA tabs pattern (roving tabindex, Arrow/Home/End
+  move and activate — the same model the detail sheet already used), and
+  `components/RouteFocus.tsx` moves focus to `<main>` and resets scroll on
+  every pathname change, with three deliberate exceptions documented in the
+  file (initial load, search-only changes, and the slide-over sheet in both
+  directions — `DetailSheet` owns focus there). Both are pinned by keyboard
+  e2e tests. Still open: 402/success e2e assertions,
+  `toHaveScreenshot` baselines, zoom/reflow pass.
 - Docs hygiene: font-budget reconciliation (181 KB shipped vs 90 KB
   written; per-visit latin ~57 KB is compliant via unicode-range — record
   the raised budget), stale Lucide note in dependency-versions.md, stale
@@ -197,18 +256,18 @@ seconds with zero steps executed and no logs, including a re-dispatch of an
 unchanged workflow that had succeeded earlier the same day, which ruled out
 the branch and the workflow files. The owner cleared it on the billing side.
 
-| Pending item                                                | Status                                                                                                                         |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| M0.2 SEO artifact set                                       | **DONE** — metadata + OG block, noindex, env-aware robots.txt, sitemap, generated share image                                  |
-| `/app/billing/success`                                      | **DONE** — polls billing status, three honest states, 7 tests on the retry logic                                               |
-| Route code splitting                                        | **DONE** — marketing entry 478.00 kB → 58.28 kB first-party + 230.57 kB vendor; admin verified absent from the customer bundle |
-| Theme foundation tokens                                     | **DONE (additive)** — `--t-*` scale, ghost button rank, `prefers-contrast` bug fixed                                           |
-| CSS budget (91 kB vs 25 kB)                                 | **NOT fixed** — one global stylesheet, so chunking cannot split it; needs a per-surface split                                  |
-| Type-scale call-site migration                              | **Deferred** — only 2 of 215 declarations matched exactly, and the `font` shorthand resets weight                              |
-| `--accent-hover/press`, `--field-inner-lit`, `--bg-overlay` | **Still unwired** — each moves pixels; belongs in a reviewed restyling PR                                                      |
-| Admin page bodies (ten sections + org detail)               | **DONE 2026-08-23** — see the note under "Majors" below                                                                        |
-| Detail slide-over sheet                                     | **DONE 2026-08-23** — route-driven, so the URL survives; Summary + Score tabs only                                             |
-| CSS budget after the admin work                             | **91 kB → 97 kB** against the same 25 kB budget — the new vocabulary added ~6 kB; the per-surface split is still the fix       |
+| Pending item                                                | Status                                                                                                                                                                                                                                                                                    |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M0.2 SEO artifact set                                       | **DONE** — metadata + OG block, noindex, env-aware robots.txt, sitemap, generated share image                                                                                                                                                                                             |
+| `/app/billing/success`                                      | **DONE** — polls billing status, three honest states, 7 tests on the retry logic                                                                                                                                                                                                          |
+| Route code splitting                                        | **DONE** — marketing entry 478.00 kB → 58.28 kB first-party + 230.57 kB vendor; admin verified absent from the customer bundle                                                                                                                                                            |
+| Theme foundation tokens                                     | **DONE (additive)** — `--t-*` scale, ghost button rank, `prefers-contrast` bug fixed                                                                                                                                                                                                      |
+| CSS budget (91 kB vs 25 kB)                                 | **Split DONE 2026-08-23** — per-surface stylesheets; entry (base+marketing) 64.65 kB raw / 12.68 kB gzip; app 30.5, admin 6.9, auth 3.2 kB load only with their chunks. 25 kB raw still missed — the remainder is genuinely marketing CSS, and trimming it is content work, not splitting |
+| Type-scale call-site migration                              | **Deferred** — only 2 of 215 declarations matched exactly, and the `font` shorthand resets weight                                                                                                                                                                                         |
+| `--accent-hover/press`, `--field-inner-lit`, `--bg-overlay` | **Still unwired** — each moves pixels; belongs in a reviewed restyling PR                                                                                                                                                                                                                 |
+| Admin page bodies (ten sections + org detail)               | **DONE 2026-08-23** — see the note under "Majors" below                                                                                                                                                                                                                                   |
+| Detail slide-over sheet                                     | **DONE 2026-08-23** — route-driven, so the URL survives; Summary + Score tabs only                                                                                                                                                                                                        |
+| CSS budget after the admin work                             | superseded by the split row above — the admin vocabulary now ships only in the admin chunk                                                                                                                                                                                                |
 
 Everything else in the pending list below is untouched and still stands.
 

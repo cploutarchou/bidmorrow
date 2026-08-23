@@ -20,6 +20,10 @@ export function ResetPassword(): ReactElement {
       setError('This reset link is missing its token — request a new one.');
       return;
     }
+    if (password.length < 8) {
+      setError('Passwords need at least 8 characters.');
+      return;
+    }
     setError(null);
     setSubmitting(true);
     try {
@@ -34,7 +38,9 @@ export function ResetPassword(): ReactElement {
         setError(body.message ?? 'Could not reset your password — the link may have expired.');
         return;
       }
-      void navigate('/login');
+      // Login shows the reset-done confirmation off this state — without
+      // it the flow silently bounced to the form with no sign it worked.
+      void navigate('/login', { state: { passwordReset: true } });
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {

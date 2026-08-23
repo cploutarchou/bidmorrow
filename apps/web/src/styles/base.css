@@ -1,0 +1,1495 @@
+/* ============================================================
+   BASE — tokens, themes, element defaults, and every rule shared by
+   more than one surface (score badge/bar, cell grids, filter bar,
+   theme toggle, motion layer, visually-hidden-status, the
+   admin-named-but-shared table/confirm helpers).
+
+   Loaded by main.tsx, so it is in the entry chunk for every route.
+   A rule belongs here ONLY if two surfaces genuinely render it —
+   anything single-surface goes in that surface's file, or the entry
+   CSS budget quietly regrows.
+
+   Split from the former single styles.css (2026-08-23); within each
+   file the original cascade order is preserved, so equal-specificity
+   overrides keep resolving exactly as before.
+   ============================================================ */
+
+/* ============================================================
+   BidMorrow — Theme layer v2 (2026-08-21 handoff redesign)
+   ============================================================
+   Source: the design bundle's `BidMorrow Theme Spec.dc.html`
+   (paste-ready tokens + migration table) and the screen prototypes.
+   Owner decisions recorded 2026-08-21, superseding the 2026-08-18
+   "Control Room" directives where they conflict:
+
+   - DARK + LIGHT: dark stays the default at bare `:root`; light lives
+     under `[data-theme='light']` on <html> and is mirrored for
+     `prefers-color-scheme: light` when no explicit choice is stored
+     (lib/theme.ts owns the attribute + localStorage).
+   - SELF-HOSTED TYPE: Archivo (variable, wght 400–700) carries
+     headings, UI and figures; Source Code Pro (variable, wght 400–500)
+     carries mono captions, codes and figures-in-mono. Both are
+     open-licence (SIL OFL), served from /fonts (apps/web/public/fonts)
+     — CSP `font-src 'self'` already allows it. The Theme Spec's older
+     Newsreader + IBM Plex trio was superseded by the screen prototypes;
+     owner confirmed Archivo + Source Code Pro.
+   - OPAQUE SURFACES: five steps (sunken/canvas/panel/raised/overlay),
+     one hairline each; `backdrop-filter` and the glass tints are gone
+     (`.glass` now resolves to an opaque panel). Shadow is reserved for
+     things that float (menus, dialogs, toasts) — plus the few places
+     the screen prototypes explicitly carry their large soft shadow
+     (auth card, hero panel), kept via the `--shadow-l` alias.
+
+   Every pre-v2 token name below the alias block keeps resolving —
+   selectors migrate to the new names opportunistically, never in bulk.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Self-hosted fonts (variable, woff2, unicode-range split as served
+   by the upstream foundry build; font-display: swap throughout).
+   ------------------------------------------------------------ */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400 700;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url('/fonts/archivo-vietnamese.woff2') format('woff2');
+  unicode-range:
+    U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301,
+    U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400 700;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url('/fonts/archivo-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400 700;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url('/fonts/archivo-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/source-code-pro-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/source-code-pro-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/source-code-pro-greek-ext.woff2') format('woff2');
+  unicode-range: U+1F00-1FFF;
+}
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/source-code-pro-greek.woff2') format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/source-code-pro-vietnamese.woff2') format('woff2');
+  unicode-range:
+    U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301,
+    U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/source-code-pro-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/source-code-pro-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ============================================================
+   TOKENS — bare :root = dark (default). Theme Spec v2 §09.
+   ============================================================ */
+:root {
+  color-scheme: dark;
+
+  /* surfaces — one step apart, opaque, no backdrop-filter */
+  --bg-sunken: #0a0c10;
+  --bg-canvas: #0d1014;
+  --bg-panel: #14181e;
+  --bg-raised: #1b2027;
+  --bg-overlay: #1f252d;
+
+  /* lines */
+  --line-hair: #22282f;
+  --line: #2e353f;
+  --line-strong: #414a57;
+
+  /* ink */
+  --ink-1: #eef1f5;
+  --ink-2: #a3adbb;
+  --ink-3: #7a8593;
+
+  /* action */
+  --accent: #2ec4b0;
+  --accent-hover: #3ad3bd;
+  --accent-press: #249e8e;
+  --accent-ink: #04211d;
+  --accent-text: #6fe0d0;
+  --accent-tint: rgba(46, 196, 176, 0.12);
+  --accent-line: rgba(46, 196, 176, 0.34);
+  --brand-deep: #1fa899; /* brand mark / favicon only */
+
+  /* fit ramp — classification, accent hue only (Theme Spec §04) */
+  --fit-strong-fill: var(--accent);
+  --fit-strong-ink: var(--accent-ink);
+  --fit-review-tint: var(--accent-tint);
+  --fit-review-ink: var(--accent-text);
+  --fit-neutral-line: var(--line-strong);
+  --fit-muted-ink: var(--ink-3);
+
+  /* signal — risk, billing, system only */
+  --sig-caution: #e8a33d;
+  --sig-caution-tint: rgba(232, 163, 61, 0.12);
+  --sig-risk: #ef6461;
+  --sig-risk-tint: rgba(239, 100, 97, 0.12);
+  --sig-info: #7fb3ea;
+  --sig-ok: var(--accent);
+
+  /* type scale — Theme Spec §09's seven steps, verbatim. Written in the
+     `font` shorthand's `size/line-height` form, which is how the spec
+     defines them: `font: var(--t-body) var(--font-ui)`.
+
+     Introduced additively; no existing call site is migrated here. The file
+     carries 215 `font-size` declarations across 52 distinct values, and a
+     scan found only TWO whose size AND line-height already match a step
+     exactly (.mkt-hold__lede, .hp-plan__desc, both --t-body). Even those are
+     left alone: the `font` shorthand also resets weight, style, variant and
+     stretch, so adopting it is not the no-op it looks like. Migrating the
+     other 26 size-only near-matches would move type on a live, signed-off
+     design, so consolidation is a deliberate follow-up PR.
+
+     First consumers are therefore new CSS only (.btn-ghost--sm and the
+     not-yet-shipped .billing-success copy).
+
+     No light/dark variants: type sizes do not change with theme, so unlike
+     the color tokens these are defined once and are not repeated in the
+     [data-theme='light'] and prefers-color-scheme blocks below. */
+  --t-display: 3.25rem/1.05;
+  --t-h1: 2.125rem/1.15;
+  --t-h2: 1.5rem/1.25;
+  --t-h3: 1.0625rem/1.35;
+  --t-body: 0.9375rem/1.6;
+  --t-small: 0.8125rem/1.5;
+  --t-micro: 0.6875rem/1.45;
+
+  /* type — self-hosted (see @font-face above) */
+  --font-head: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-ui: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-num: 'Source Code Pro', ui-monospace, 'SF Mono', 'Cascadia Mono', Consolas, monospace;
+
+  /* geometry (Theme Spec: radii come down; 16px tier retires) */
+  --r-xs: 3px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+
+  /* focus + float */
+  --focus: var(--accent-text);
+  --shadow-overlay: 0 24px 60px -12px rgba(0, 0, 0, 0.65);
+  /* the screen prototypes' large soft panel shadow (auth card, hero) */
+  --shadow-panel: 0 40px 100px -24px rgba(0, 0, 0, 0.7);
+  /* inner-lit field edge — inputs only, 3% white */
+  --field-inner-lit: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+  /* ------------------------------------------------------------
+     Pre-v2 aliases (Theme Spec §10 migration table) — every old
+     name resolves to its v2 meaning so no selector breaks. Values
+     re-resolve automatically in light mode because the alias chain
+     bottoms out in the tokens redefined above.
+     ------------------------------------------------------------ */
+  --ground-deep: var(--bg-sunken);
+  --ground: var(--bg-canvas);
+  --ground-high: var(--bg-raised);
+  --surface-1: var(--bg-panel);
+  --surface-2: var(--bg-raised);
+  --glass: var(--bg-panel);
+  --glass-strong: var(--bg-panel);
+  --glass-solid: var(--bg-panel);
+  --pane-tint: transparent; /* the teal wash goes */
+  --stroke: var(--line);
+  --stroke-strong: var(--line-strong);
+  --stroke-faint: var(--line-hair);
+  --text-1: var(--ink-1);
+  --text-2: var(--ink-2);
+  --text-3: var(--ink-3);
+  --sol-1: var(--accent);
+  --sol-2: var(--brand-deep);
+  --accent-grad: var(--accent);
+  --accent-soft: var(--accent-tint);
+  --accent-edge: var(--accent-line);
+  --shadow-l: var(--shadow-panel);
+  --shadow-m: var(--shadow-overlay);
+  --shadow-s: 0 8px 22px -8px rgba(0, 0, 0, 0.5);
+  --edge-lit: var(--field-inner-lit);
+  --wash-hero: none; /* no radial washes */
+  --wash-deep: var(--bg-canvas); /* no gradient grounds */
+  --status-strong-text: var(--accent);
+  --status-info-text: var(--sig-info);
+  --status-caution-text: var(--sig-caution);
+  --status-caution-wash: var(--sig-caution-tint);
+  --status-low-text: var(--ink-2); /* AA on raised surfaces (QA 2026-08-18) */
+  --status-danger-text: var(--sig-risk);
+  --color-bg: var(--bg-canvas);
+  --color-text: var(--ink-1);
+  --color-muted: var(--ink-2);
+  --color-border: var(--line);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--accent-ink);
+  --color-link: var(--accent-text);
+  --color-focus: var(--focus);
+  --font-display: var(--font-head);
+  --font-body: var(--font-ui);
+  --font-mono: var(--font-num);
+  --field-bg: var(--bg-sunken);
+  --danger-edge: rgba(239, 100, 97, 0.35);
+
+  /* scale (unchanged) */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2.25rem;
+  --s7: 3.5rem;
+  --s8: 5.5rem;
+  --s9: 8.5rem;
+  --r-s: var(--r-sm);
+  --r-m: var(--r-md);
+  --r-l: var(--r-lg);
+  --r-xl: var(--r-lg);
+  --ease: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --dur: 480ms;
+
+  /* app-shell layout metric: header height, drives sticky offsets and
+     scroll-margins. Overridden to 6.25rem inside the ≤40rem media query. */
+  --app-header-h: 3.5rem;
+}
+
+/* ============================================================
+   LIGHT — explicit choice via html[data-theme='light'] (Theme Spec
+   §09; lib/theme.ts sets the attribute). The alias chain above
+   re-resolves through these, so only the base tokens repeat here.
+   ============================================================ */
+[data-theme='light'] {
+  color-scheme: light;
+
+  --bg-sunken: #eceff1;
+  --bg-canvas: #f7f8f9;
+  --bg-panel: #ffffff;
+  --bg-raised: #ffffff;
+  --bg-overlay: #ffffff;
+
+  --line-hair: #e6e9ec;
+  --line: #d5dae0;
+  --line-strong: #b3bcc6;
+
+  --ink-1: #14181d;
+  --ink-2: #4d5661;
+  --ink-3: #5f6875; /* was #6b7480 — axe: 4.09:1 on --bg-sunken (footer); now ≥4.88 on every light surface */
+
+  --accent: #0f7d6f;
+  --accent-hover: #0c6b5f;
+  --accent-press: #095a50;
+  --accent-ink: #ffffff;
+  --accent-text: #0b6a5e;
+  --accent-tint: rgba(15, 125, 111, 0.1);
+  --accent-line: rgba(15, 125, 111, 0.28);
+
+  --sig-caution: #935906; /* was #a16207 — axe: 4.31:1 on the caution tint at 11px; now ≥5.0 */
+  --sig-caution-tint: rgba(161, 98, 7, 0.1);
+  --sig-risk: #c0392f;
+  --sig-risk-tint: rgba(192, 57, 47, 0.1);
+  --sig-info: #1e6bb8;
+
+  --focus: var(--accent);
+  --shadow-overlay: 0 18px 44px -14px rgba(20, 24, 29, 0.22);
+  --shadow-panel: 0 34px 80px -26px rgba(20, 24, 29, 0.24);
+  --shadow-s: 0 8px 22px -8px rgba(20, 24, 29, 0.14);
+  --field-inner-lit: none;
+  --danger-edge: rgba(192, 57, 47, 0.35);
+}
+
+/* OS preference honoured only when no explicit choice is stored
+   (lib/theme.ts stamps data-theme for stored choices; unstamped =
+   "system"). Mirror of the [data-theme='light'] block above. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']):not([data-theme='light']) {
+    color-scheme: light;
+
+    --bg-sunken: #eceff1;
+    --bg-canvas: #f7f8f9;
+    --bg-panel: #ffffff;
+    --bg-raised: #ffffff;
+    --bg-overlay: #ffffff;
+
+    --line-hair: #e6e9ec;
+    --line: #d5dae0;
+    --line-strong: #b3bcc6;
+
+    --ink-1: #14181d;
+    --ink-2: #4d5661;
+    --ink-3: #5f6875; /* was #6b7480 — axe: 4.09:1 on --bg-sunken (footer); now ≥4.88 on every light surface */
+
+    --accent: #0f7d6f;
+    --accent-hover: #0c6b5f;
+    --accent-press: #095a50;
+    --accent-ink: #ffffff;
+    --accent-text: #0b6a5e;
+    --accent-tint: rgba(15, 125, 111, 0.1);
+    --accent-line: rgba(15, 125, 111, 0.28);
+
+    --sig-caution: #935906; /* was #a16207 — axe: 4.31:1 on the caution tint at 11px; now ≥5.0 */
+    --sig-caution-tint: rgba(161, 98, 7, 0.1);
+    --sig-risk: #c0392f;
+    --sig-risk-tint: rgba(192, 57, 47, 0.1);
+    --sig-info: #1e6bb8;
+
+    --focus: var(--accent);
+    --shadow-overlay: 0 18px 44px -14px rgba(20, 24, 29, 0.22);
+    --shadow-panel: 0 34px 80px -26px rgba(20, 24, 29, 0.24);
+    --shadow-s: 0 8px 22px -8px rgba(20, 24, 29, 0.14);
+    --field-inner-lit: none;
+    --danger-edge: rgba(192, 57, 47, 0.35);
+  }
+}
+
+/* ============================================================
+   PREFERENCE GUARDS
+   ============================================================ */
+
+/* Reduced motion: global kill-switch. Nothing in this stylesheet uses
+   motion yet (M0.1 is tokens-only) — this establishes the contract for
+   M1+ so every future transition/animation is safe by construction. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Theme v2: `.glass` is opaque now (Theme Spec §02 — surfaces are
+   stepped and opaque; backdrop-filter is gone). The class name stays —
+   header, onboarding assistant card, mobile menu panel and friends all
+   keep their selector; only the material changed. */
+.glass {
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+}
+
+/* Increased contrast: strengthen strokes and widen the focus ring. */
+@media (prefers-contrast: more) {
+  :root {
+    /* v2 names. These were missing: the block below only re-pointed the
+       pre-v2 aliases, which are themselves defined AS var(--line) /
+       var(--line-hair) — so every selector written against the v2 names
+       (~34 call sites, including .tender-card's border and fit gutter) got
+       no contrast boost at all for users who ask for one. */
+    --line: var(--line-strong);
+    --line-hair: var(--line-strong);
+    /* pre-v2 aliases, kept for selectors not yet migrated */
+    --stroke: var(--stroke-strong);
+    --stroke-faint: var(--stroke-strong);
+  }
+  :focus-visible {
+    outline-width: 3px;
+  }
+}
+
+/* ============================================================
+   MOTION PRIMITIVES — shared keyframes (docs/redesign/app-interface-spec.md
+   §8). Defining a `@keyframes` rule is inert on its own; every actual USE
+   of it below is an `animation` declaration nested inside its own
+   `@media (prefers-reduced-motion: no-preference)` block, so the global
+   `prefers-reduced-motion: reduce` kill-switch above always wins. Shared
+   across both surfaces (app rise-in for filters/tab loads/onboarding
+   screens; marketing scroll reveals use their own transition, not this). */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Faint 64px grid-line texture over the ground plane — Control Room's
+   signature "technical" background, visible through every element that
+   doesn't paint its own opaque background (panels, cards, the hero wash). */
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(139, 148, 167, 0.045) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(90deg, rgba(139, 148, 167, 0.045) 0 1px, transparent 1px 64px);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+/* Tabular figures for score readouts and other data blocks. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header,
+main,
+footer {
+  width: 100%;
+  max-width: 44rem;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+header {
+  padding-block: 1.25rem;
+}
+
+.product-name {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  color: var(--text-1);
+  text-decoration: none;
+}
+
+/* Terminal cursor — every rendering of the wordmark (marketing header,
+   marketing footer, auth header, onboarding header, app header) ends in a
+   teal `_`, per the Control Room mockup's `.wordmark::after`. `.product-name`
+   is the class shared by every plain-text rendering; `.app-wordmark` (the
+   Feed/Settings header) is styled the same way separately below. */
+.product-name::after {
+  content: '_';
+  color: var(--accent-text);
+}
+
+/* Terminal cursor blink — 3 blinks on load, then holds solid (a cursor that
+   never stops blinking is an attention leak, docs/redesign/
+   app-interface-spec.md §8.3 device 1). `.app-wordmark::after` (defined in
+   the APP INTERFACE section below) shares the same treatment. */
+@media (prefers-reduced-motion: no-preference) {
+  .product-name::after,
+  .app-wordmark::after {
+    animation: cursor-blink 1.1s steps(2, jump-none) 3;
+  }
+  @keyframes cursor-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+}
+
+/* --- Brand mark (Logo.tsx) ---
+   `.wordmark` wraps the mark + `.product-name` text: MarketingLayout's
+   header/footer `<Link>`s and AuthLayout's header `<Link>` all use it.
+   `.app-wordmark` (Feed/Settings header, below) and the onboarding
+   assistant header render the same mark inline instead, sized by the same
+   `.brand-mark` class, so the mark appears everywhere the wordmark does —
+   not just marketing (2026-08-18 fix: it had been marketing-only).
+   `.brand-mark` sizes the inline SVG purely via CSS (never an inline
+   `style`); its `currentColor` bars inherit the surrounding text color, so
+   no separate color rule is needed per call site. */
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-1);
+  text-decoration: none;
+}
+
+.brand-mark {
+  width: 26px;
+  height: 26px;
+  flex: none;
+}
+
+main {
+  flex: 1;
+  padding-block: 3rem 4rem;
+}
+
+h1 {
+  margin: 0 0 1rem;
+  font-size: 2.25rem;
+  line-height: 1.2;
+}
+
+.subheadline {
+  margin: 0 0 var(--s5);
+  font-size: 1.1rem;
+  color: var(--text-2);
+  max-width: 42rem;
+}
+
+a {
+  color: var(--color-link);
+}
+
+/* `.cta` is rendered by marketing, auth (submit buttons), the internal
+   admin surface, and several app screens that haven't been migrated to the
+   app-only `.btn-solar` utility yet (styles.css ~L1219 boundary comment) —
+   so it's deliberately upgraded to the SAME solid-fill treatment as
+   `.btn-solar` in place, rather than renamed into the `.mkt-*` namespace,
+   to stay visually coherent everywhere it's used. Control Room's primary
+   button: solid teal fill, `--on-accent` text, 8px radius, 1px accent
+   border (docs/redesign/mockups/direction-b-control-room.html `.btn-primary`) —
+   no pill shape, no gradient. */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: var(--r-s);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.65rem 1.3rem;
+  border: 1px solid var(--sol-1);
+  background: var(--accent-grad);
+  color: var(--accent-ink);
+  transition:
+    filter 200ms var(--ease),
+    border-color 200ms var(--ease),
+    transform 120ms var(--ease);
+}
+
+.cta:hover {
+  text-decoration: none;
+  filter: brightness(1.1);
+}
+
+.cta:active {
+  filter: brightness(0.95);
+}
+
+.cta[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: none;
+}
+
+/* Keep keyboard focus clearly visible everywhere — never suppress outlines. */
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* The one exception: `main` is focused PROGRAMMATICALLY on route changes
+   (components/RouteFocus.tsx) so screen readers announce the new page. It
+   is not an interactive target — a page-sized focus ring after pressing
+   Enter on a nav link would be pure noise. Interactive elements inside it
+   keep the rule above untouched. */
+main:focus-visible {
+  outline: none;
+}
+
+footer {
+  padding-block: 1.5rem 2rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+footer p {
+  margin: 0.25rem 0;
+}
+
+/* --- Skip link (a11y) --- */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  padding: 0.5rem 1rem;
+  z-index: 10;
+}
+
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+}
+
+/* --- Header nav ---
+   `.site-header` escapes the generic `header { max-width: 44rem; ... }`
+   box above (its own class selector outranks that bare-element one) so it
+   can run edge to edge and sticky, Strata's `.nav.glass` treatment.
+   `.mkt-wrap` (defined below, in the marketing-site section) then
+   re-centers its actual content at the Strata content width — applied to
+   MarketingLayout's `<nav class="mkt-wrap">` (Pricing/How it works/…
+   links + actions) AND AuthLayout's plain `<div class="mkt-wrap">`
+   (wordmark only), so both shells get the same header chrome from one
+   rule. Only `.site-header` — never `.admin-header`/`.app-header`, which
+   stay on their own existing rules. */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: 0;
+  padding-block: var(--s3);
+  /* Overrides ALL sides of `.glass`'s border shorthand (combined on the
+     same element, `class="site-header glass"`) — a hairline on the bottom
+     edge only, never a full box (same pattern as `.app-header` below). */
+  border: none;
+  border-bottom: 1px solid var(--stroke-faint);
+}
+
+.site-header > .mkt-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+  flex-wrap: wrap;
+  min-height: 2.5rem;
+  /* Anchor for `.mkt-menu-panel`'s `position: absolute` below ~56rem
+     (MarketingLayout's nav only — AuthLayout's plain `.mkt-wrap` div never
+     has a panel child, so this is a no-op there). */
+  position: relative;
+}
+
+.nav-list {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.nav-list a {
+  text-decoration: none;
+  color: var(--text-2);
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 0.4rem 0.2rem;
+  transition: color 180ms var(--ease);
+}
+
+.nav-list a:hover {
+  color: var(--text-1);
+}
+
+.nav-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.nav-actions > a:not(.cta) {
+  text-decoration: none;
+  color: var(--text-2);
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: color 180ms var(--ease);
+}
+
+.nav-actions > a:not(.cta):hover {
+  color: var(--text-1);
+}
+
+.cta-small {
+  font-size: 0.85rem;
+  padding: 0.45rem 0.95rem;
+}
+
+/* --- Layout containers --- */
+#main-content,
+.auth-main,
+.onboarding-main {
+  width: 100%;
+  max-width: 64rem;
+  margin-inline: auto;
+  padding: 1.5rem;
+}
+
+/* QA fix (2026-08-18): every shell's `<main>` also carries `id="main-
+   content"` (the skip-link target) — AppShell's `.app-main`, Onboarding's
+   `.assistant-main`, and AuthLayout's own `.auth-main` (immediately below)
+   all previously lost their max-width/padding to the `#main-content` ID
+   rule above (ID specificity 1-0-0 always beats a class's 0-1-0,
+   regardless of source order), so the app content column rendered at
+   64rem/1.5rem instead of the intended 72rem/2rem 1.5rem 4rem, the
+   onboarding column at 64rem instead of 40rem, and this auth override
+   below never actually took effect. Same specificity-escape already used
+   for `#main-content.mkt-main--full` further down this file — an ID+class
+   compound selector (1-1-0) outranks the bare ID rule above it. */
+#main-content.app-main {
+  max-width: 72rem;
+  padding: 2rem 1.5rem 4rem;
+}
+#main-content.assistant-main {
+  max-width: 40rem;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.auth-main {
+  max-width: 30rem;
+}
+#main-content.auth-main {
+  max-width: 30rem;
+}
+.auth-main h1 {
+  font-size: 1.6rem;
+}
+
+/* A flow-level CTA rendered directly in the shared marketing text column
+   (Pilot's "Start the founding pilot") needs its own breathing room:
+   `.cta` itself is deliberately margin-free because it also serves auth
+   submit rows, plan-card grids, and app toolbars where the CONTAINER owns
+   spacing — but as a direct flow child nothing else separates it from the
+   content above, so it renders flush against the preceding card/list
+   (owner-reported, responsive-qa 2026-08-18). */
+#main-content > .cta {
+  margin-block-start: var(--s6);
+}
+
+/* --- Forms --- */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  max-width: 32rem;
+}
+
+.form-field.inline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center; /* was flex-end */
+  gap: 0.5rem;
+  max-width: 32rem; /* was none */
+}
+.form-field.inline label {
+  flex: 1 0 100%;
+} /* label on its own line */
+.form-field.inline input,
+.form-field.inline select {
+  flex: 1 1 10rem;
+  width: auto;
+  min-width: 0;
+}
+
+.form-field label {
+  font-weight: 600;
+}
+
+/* Recessed input surface (Control Room depth logic: ground < field < panel
+   < raised — docs/redesign/app-interface-spec.md §6.4). Bare-element rule,
+   upgraded in place: safe for admin/marketing/auth too. */
+input,
+textarea,
+select {
+  padding: 0.5rem 0.75rem; /* was 0.5rem */
+  border: 1px solid var(--color-border); /* --color-border === --stroke */
+  border-radius: var(--r-s); /* was 0.25rem */
+  background: var(--field-bg); /* was --color-bg — recessed field */
+  color: var(--color-text);
+  font: inherit;
+  min-height: 2.5rem;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  border-color: var(--accent-edge); /* the global :focus-visible outline below still applies */
+}
+textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+input[type='checkbox'] {
+  min-height: 0;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  flex: none;
+  accent-color: var(--sol-1);
+}
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+button {
+  font: inherit;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+/* No `button.cta` override: `.cta` alone (specificity 0,1,0) already beats
+   the bare `button` element rule above (0,0,1) for every property it sets,
+   for both `<a class="cta">` and `<button class="cta">` — an extra
+   `button.cta` rule would only re-specialize and diverge from it. */
+
+/* Outline danger button — keeps the page's single-accent discipline (the
+   confirm-input, not a filled red button, is the real guard). Shared by
+   Settings' delete-account action and any future destructive control. */
+button.danger {
+  border: 1px solid var(--status-danger-text);
+  border-color: var(--status-danger-text);
+  color: var(--status-danger-text);
+  background: transparent;
+  border-radius: var(--r-s);
+  font-weight: 600;
+  padding: 0.6rem 1.2rem;
+  min-height: 2.5rem;
+  transition:
+    background-color 180ms var(--ease),
+    transform 120ms var(--ease);
+}
+button.danger:hover:not([disabled]) {
+  background: rgba(248, 113, 113, 0.1);
+}
+button.danger[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-link);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.form-error {
+  color: var(--status-danger-text);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Visible border on an invalid field — never the only signal (the adjacent
+   `role="alert"` `.form-error` paragraph is the primary one). */
+input[aria-invalid='true'],
+textarea[aria-invalid='true'] {
+  border-color: var(--status-danger-text);
+}
+
+/* Add-row button (Settings/Onboarding "Add CPV code" etc.) — the button
+   half of a `.form-field.inline` row. */
+.btn-add {
+  flex: none;
+  min-height: 2.5rem;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-s);
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 180ms var(--ease),
+    transform 120ms var(--ease);
+}
+.btn-add:hover {
+  border-color: var(--stroke-strong);
+}
+
+/* Save-button row (per-section Settings/TenderDetail feedback saves —
+   behavior stays per-section, only the anchored placement is shared). */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--stroke-faint);
+}
+
+/* Unclassed native `<fieldset>` chrome removal (Settings contract-natures,
+   TenderDetail feedback). */
+.field-group {
+  border: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.field-group legend {
+  padding: 0;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.form-warning {
+  border: 2px solid var(--status-caution-text);
+  background: var(--status-caution-wash);
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2rem;
+  font-weight: 400;
+  margin-bottom: 0.25rem;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.hint {
+  color: var(--color-muted, #666);
+  font-size: 0.9rem;
+}
+
+.chip-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+
+.chip-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--stroke);
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 0.3rem 0.35rem 0.3rem 0.8rem;
+  font-size: 0.88rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.chip-list li button {
+  width: 1.5rem; /* 24px — WCAG 2.5.8 minimum met */
+  height: 1.5rem;
+  min-height: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 1rem;
+  line-height: 1;
+  flex: none;
+}
+.chip-list li button:hover {
+  color: var(--status-danger-text);
+  background: rgba(139, 148, 167, 0.15);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .chip-list li {
+    animation: chip-in 160ms var(--ease);
+  }
+  @keyframes chip-in {
+    from {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+  }
+}
+
+.step-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--stroke-faint);
+  align-items: center;
+}
+.step-actions .cta {
+  margin-left: auto;
+} /* Back/Skip left, primary right */
+@media (max-width: 30rem) {
+  .step-actions {
+    flex-wrap: wrap;
+  }
+  .step-actions .cta {
+    flex: 1 1 100%;
+    margin-left: 0;
+    order: -1;
+  } /* primary first, full width */
+}
+
+.scope-warning {
+  margin-bottom: 1.5rem;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+/* --- Score badge: text-first, never color-only. Theme v2 fit ramp
+   (Theme Spec §04): fit is ONE hue — strength expressed by fill weight
+   (solid → tint → outline → label-only), never by hue change; amber/red
+   stay reserved for risk and billing. --- */
+.score-badge {
+  display: inline-block;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--r-xs);
+  border: 1px solid transparent;
+}
+
+.score-badge--strong {
+  background: var(--fit-strong-fill);
+  color: var(--fit-strong-ink);
+}
+
+.score-badge--worth-reviewing {
+  background: var(--fit-review-tint);
+  border-color: var(--accent-line);
+  color: var(--fit-review-ink);
+}
+
+.score-badge--possible {
+  border-color: var(--fit-neutral-line);
+  color: var(--ink-2);
+}
+
+.score-badge--low {
+  color: var(--status-low-text);
+  padding-inline: 0;
+  letter-spacing: 0.04em;
+}
+
+.score-badge--excluded {
+  color: var(--ink-3);
+  background: var(--bg-sunken);
+  border-radius: 0;
+  border-left: 2px solid var(--sig-risk);
+}
+
+.visually-hidden-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.admin-table-scroll {
+  overflow-x: auto;
+}
+
+.admin-table-scroll table {
+  font-size: 0.85rem;
+}
+
+.admin-confirm {
+  margin: 0.5rem 0;
+}
+
+.admin-confirm code {
+  background: var(--color-border);
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.2rem;
+}
+
+.admin-confirm__row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* --- Shared: 1px-gap cell grids (verdicts, pre-filter, rules, billing
+   facts) — cells over a hairline background reads as a ruled table. --- */
+.mkt-cellgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1px;
+  border: 1px solid var(--stroke-faint);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+/* Verdicts: exactly four cells — pin to 2×2 so a dangling fourth cell
+   never leaves an empty slot in the ruled grid at any width. */
+.mkt-cellgrid--verdicts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 47.5rem) {
+  .mkt-cellgrid--verdicts {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mkt-cellgrid--rows {
+  grid-template-columns: 1fr;
+  max-width: 820px;
+}
+
+.mkt-cell {
+  background: var(--glass-solid);
+  /* fills the 1px grid gap on every side — the internal hairline rules
+     (the container's own border covers the outer edge). */
+  box-shadow: 0 0 0 1px var(--stroke-faint);
+  padding: 1rem 1.125rem;
+  display: grid;
+  gap: 0.3125rem;
+  align-content: start;
+}
+
+.mkt-cell__cap {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.mkt-cell__cap--accent {
+  color: var(--accent-text);
+}
+
+.mkt-cell__cap--caution {
+  color: var(--status-caution-text);
+}
+
+.mkt-cell__cap--risk {
+  color: var(--status-danger-text);
+}
+
+.mkt-cell p:not(.mkt-cell__cap) {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+/* ============================================================
+   THEME TOGGLE — the Light/Dark pill every handoff screen's header
+   carries (components/ThemeToggle.tsx).
+   ============================================================ */
+.theme-toggle {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line-hair);
+  border-radius: 999px;
+  height: 2.125rem;
+  padding: 0 0.8125rem;
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    color 180ms var(--ease),
+    border-color 180ms var(--ease);
+}
+
+.theme-toggle:hover {
+  color: var(--ink-1);
+  border-color: var(--line-strong);
+}
+
+/* --- Score badge: text-first pill, mono readout (extends the base
+   rule above; classification is still always rendered as text, never
+   color alone) --- */
+.score-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.78rem;
+}
+.score-badge__label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+/* Theme v2: the glow text-shadow is gone (Theme Spec §01 — no glow
+   shadows); the readout keeps its power-on fade only. */
+.score-badge__num {
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .score-badge__num {
+    animation: readout-in 500ms var(--ease);
+  }
+  @keyframes readout-in {
+    from {
+      opacity: 0.2;
+    }
+  }
+}
+
+/* --- Shared score-component bar: a native <progress>, never an inline
+   `style` width — CSP is `style-src 'self'` with no unsafe-inline, so the
+   fill can only ever come from a stylesheet rule, never a per-instance
+   inline style. Styled per-engine via the pseudo-elements every current
+   browser actually implements (WebKit/Blink `::-webkit-progress-*`,
+   Firefox `::-moz-progress-bar`); the plain `background` on the element
+   itself is Firefox's post-`appearance:none` track color. --- */
+.score-bar {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  display: block;
+  width: 100%;
+  height: 5px;
+  border: none;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-2);
+  vertical-align: middle;
+}
+.score-bar::-webkit-progress-bar {
+  background: var(--surface-2);
+  border-radius: 999px;
+}
+.score-bar::-webkit-progress-value {
+  background: var(--accent-grad);
+  border-radius: 999px;
+}
+.score-bar::-moz-progress-bar {
+  background: var(--accent-grad);
+  border-radius: 999px;
+}
+.score-bar--sm {
+  flex: 1;
+  height: 4px;
+  min-width: 2rem;
+}
+.score-bar--inline {
+  display: inline-block;
+  width: 4rem;
+  margin-right: 0.5rem;
+}
+
+/* ============================================================
+   INTERACTION & MOTION LAYER — both surfaces
+   (docs/redesign/app-interface-spec.md §8). Contract: transform/opacity/
+   color/border-color/box-shadow/filter only (60fps-safe, no layout
+   properties animated); CSS-first (the only JS is React classList
+   toggling, never `style` — CSP `style-src 'self'`); everything is
+   neutralized by the global reduced-motion kill-switch near the top of
+   this file, and every NEW keyframe below additionally self-gates under
+   `prefers-reduced-motion: no-preference` for clarity. All end-states are
+   identical with motion off.
+   ============================================================ */
+
+/* --- 8.1 Micro-interactions: one press treatment, one hover treatment
+   per element class, shared across both surfaces. --- */
+.cta:active,
+.btn-quiet:active,
+.btn-solar:active,
+.btn-add:active,
+.tab:active,
+button.danger:active,
+.mkt-btn-quiet:active,
+.mkt-menu-toggle:active {
+  transform: translateY(1px);
+}
+/* Hover-capable pointers only — never sticky-hover on touch. */
+@media (hover: hover) {
+  .tender-card:hover,
+  .mkt-step:hover,
+  .mkt-truth-card:hover,
+  .feature-list li:hover,
+  .mkt-plan:hover,
+  .mkt-plan-chip:hover {
+    transform: translateY(-2px);
+    border-color: var(--stroke-strong);
+    box-shadow: var(--shadow-m);
+  }
+}
+.mkt-step,
+.mkt-truth-card,
+.feature-list li,
+.mkt-plan,
+.mkt-plan-chip {
+  transition:
+    transform 200ms var(--ease),
+    border-color 200ms var(--ease),
+    box-shadow 200ms var(--ease);
+}
+
+/* --- 8.2 Save success feedback: `statusMessage`'s visible `aria-hidden`
+   twin (Feed/Settings/TenderDetail) — the accessible live region stays
+   exactly as-is (visually hidden, `role="status"`), so AT behavior is
+   unchanged. --- */
+.app-toast {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 60;
+  max-width: min(22rem, calc(100vw - 3rem));
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--accent-edge);
+  border-radius: var(--r-s);
+  background: var(--glass-solid);
+  color: var(--text-1);
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-m);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .app-toast {
+    animation: toast-in 200ms var(--ease);
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+}
+
+/* --- 8.4 Scroll-triggered reveals — marketing pages ONLY. Progressive
+   enhancement: content is fully visible if JS never runs, because the
+   hidden state only exists under a JS-added root class
+   (MarketingLayout.tsx adds `js-reveal` to <html> on mount and an
+   IntersectionObserver adds `is-in` per element; never on the hero, never
+   on legal prose). --- */
+@media (prefers-reduced-motion: no-preference) {
+  .js-reveal .mkt-reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition:
+      opacity 480ms var(--ease),
+      transform 480ms var(--ease);
+  }
+  .js-reveal .mkt-reveal.is-in {
+    opacity: 1;
+    transform: none;
+  }
+  .mkt-reveal--d1 {
+    transition-delay: 60ms;
+  }
+  .mkt-reveal--d2 {
+    transition-delay: 120ms;
+  }
+  .mkt-reveal--d3 {
+    transition-delay: 180ms;
+  }
+}
+
+/* --- 8.3 Hero panel scan sweep (marketing) — the app empty-state panel's
+   twin device is defined alongside `.feed-empty` above. One diagonal teal
+   sheen pass on mount, then static. --- */
+@media (prefers-reduced-motion: no-preference) {
+  .mkt-hero-panel {
+    position: relative;
+    overflow: hidden;
+  }
+  .mkt-hero-panel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-110%);
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(53, 211, 192, 0.08) 50%,
+      transparent 60%
+    );
+    animation: panel-scan 1.4s var(--ease) 400ms 1 forwards;
+    pointer-events: none;
+  }
+}

@@ -372,7 +372,7 @@ remains for this item.
 
 ---
 
-## OPEN — delete the `ted-fixture-raw` scratch branch (owner, 1 minute)
+## ~~OPEN~~ CLOSED 2026-08-23 19:26 UTC — delete the `ted-fixture-raw` scratch branch
 
 `.github/workflows/ted-fixture-fetch.yml` force-pushes the raw TED
 download to a transient branch `ted-fixture-raw`, and its own header says
@@ -390,6 +390,14 @@ limit already recorded for tag pushes in the ledger's Notes).
 Owner action: delete the branch (GitHub UI → Branches → delete, or
 `git push origin --delete ted-fixture-raw`). Re-dispatching the workflow
 recreates it at any time, so nothing is lost.
+
+**CLOSED without owner action needed after all** (owner asked the session
+to handle it, 2026-08-23): the fixture-fetch workflow gained a
+`delete_raw_branch` cleanup mode whose CI token — the same one that
+force-pushes the branch — deletes it. Dispatch run 32661239581 succeeded
+and `git ls-remote` confirms the ref is gone. Future refreshes end by
+re-dispatching the workflow with `delete_raw_branch: true`, so this never
+needs to be a manual step again.
 
 ---
 

@@ -42,6 +42,29 @@ export default defineConfig({
           : {}),
       },
     },
+    {
+      // Mobile pass (audit testing minor): the same Chromium at a phone
+      // viewport with touch, scoped to the public pages and the auth
+      // screens — the surfaces an anonymous visitor or brand-new customer
+      // actually hits from a phone. The authenticated specs stay
+      // desktop-only on purpose: they are a single ordered journey against
+      // seeded worker state, and running that flow twice per run would
+      // double the suite's longest leg for surfaces the ICP uses at a desk.
+      // `devices['iPhone 12']` normally implies mobile Safari; branded
+      // `defaultBrowserType: 'chromium'` keeps the preinstalled-Chromium
+      // override usable in the sandbox, at the cost of engine fidelity —
+      // this project tests LAYOUT at 390px, not WebKit behavior.
+      name: 'mobile-chromium',
+      testMatch: /(marketing|auth-session|accessibility)\.spec\.ts/,
+      grepInvert: /authenticated pages/,
+      use: {
+        ...devices['iPhone 12'],
+        defaultBrowserType: 'chromium',
+        ...(process.env.PLAYWRIGHT_CHROMIUM_PATH !== undefined
+          ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } }
+          : {}),
+      },
+    },
   ],
   webServer: {
     // scripts/e2e-webserver.sh: builds the web SPA, writes a fresh
