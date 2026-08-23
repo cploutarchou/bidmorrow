@@ -7474,3 +7474,117 @@ body.sheet-open {
   display: block;
   overflow-x: auto;
 }
+
+/* ============================================================
+   ONBOARDING — sector picker + scope estimate (2026-08-21 handoff,
+   `BidMorrow Onboarding.dc.html`). The sector grid lets a non-IT company
+   start from its own line of work; the estimate panel is what stops that
+   becoming a promise of coverage the product does not have.
+   ============================================================ */
+
+.ob-sector-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--s5);
+  display: grid;
+  gap: var(--s2);
+}
+
+.ob-sector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--s2);
+}
+
+.ob-sector-card {
+  display: grid;
+  gap: 0.25rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+  padding: 0.75rem 0.875rem;
+  cursor: pointer;
+  /* Comfortably past the 44px touch target the rest of the app meets. */
+  min-height: 3.25rem;
+}
+
+.ob-sector-card:hover {
+  border-color: var(--line-strong);
+}
+
+.ob-sector-card--selected {
+  border-color: var(--accent-line);
+  background: var(--accent-tint);
+}
+
+.ob-sector-card__label {
+  font-size: 0.875rem;
+  color: var(--ink-1);
+}
+
+.ob-sector-card__divisions {
+  font-size: 0.71875rem;
+  color: var(--ink-3);
+}
+
+/* Marks a selected code that is saved but returns nothing today. Deliberately
+   a caution, not a risk: the code is kept and starts scoring if ingestion is
+   widened — it is not an error the user has to fix. */
+.ob-chip-toggle__oos {
+  font-family: var(--font-num);
+  font-size: 0.65625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sig-caution);
+  border: 1px solid var(--sig-caution);
+  border-radius: 999px;
+  padding: 0.0625rem 0.375rem;
+  margin-left: 0.375rem;
+}
+
+.ob-estimate {
+  background: var(--bg-panel);
+  border: 1px solid var(--accent-line);
+  border-radius: 0.875rem;
+  padding: 0.9375rem 1rem;
+  margin: 0 0 var(--s4);
+  display: grid;
+  gap: 0.375rem;
+}
+
+/* Every chosen code is outside the ingested scope, so this selection returns
+   nothing at all — the one state the panel exists to make impossible to miss. */
+.ob-estimate--none {
+  border-color: var(--sig-caution);
+  background: var(--sig-caution-tint);
+}
+
+.ob-estimate__value {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+}
+
+.ob-estimate__note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.ob-estimate__scope {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-1);
+}
+
+.ob-estimate__caveat {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
