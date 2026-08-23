@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { initTheme } from './lib/theme';
-import './styles.css';
+import './styles/base.css';
 
 // Stamp the stored theme preference on <html> before the first render —
 // dark is the stylesheet default, so only an explicit stored choice

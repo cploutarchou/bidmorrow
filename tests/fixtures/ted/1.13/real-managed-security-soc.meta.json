@@ -1,0 +1,11 @@
+{
+  "source": "https://ted.europa.eu/en/notice/580618-2026",
+  "sourceNoticeId": "580618-2026",
+  "publicationDate": "2026-08-21",
+  "retrievalDate": "2026-08-23",
+  "sdkVersion": "1.13",
+  "sdkGitTag": null,
+  "case": "SDK 1.13 single-lot cn-standard notice (DEU, negotiated-with-call procedure) from a university: managed security services and the build-out of a Security Operations Centre, CPV 72514100 (facilities management involving computer operation) with 72800000 and 72220000 additional, NUTS DE600, EUR 5,500,000, no submission deadline published. A security procurement whose MAIN CPV is an operations code rather than a security one — the case that shows why the additional-code list has to be scored and not ignored, and a restricted-access procedure type on a lot a supplier would otherwise want.",
+  "origin": "Real TED-published notice fetched from the TED Search API (links.xml.MUL) by the ted-fixture-fetch workflow, run 32650923035, on 2026-08-23 with the CPV filter 72415000,72317000,72300000,48800000,72222300,72510000 — the session sandbox cannot reach ted.europa.eu (the agent proxy denies the CONNECT). Verbatim source XML apart from the documented sanitization.",
+  "sanitization": "None required. Contacts are departmental mailboxes with unit names as the contact name (\"Strategischer Einkauf\", \"Rechts- und Abgabenabteilung\"), the review-body mailbox and the eSender noreply address, each with a switchboard number. No natural person is identified. No structural changes."
+}

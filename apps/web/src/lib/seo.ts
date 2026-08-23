@@ -72,6 +72,12 @@ export const MARKETING_META = {
       'Four real TED tenders scored by BidMorrow, each broken down component by component — including one the engine excluded before scoring. No signup.',
     canonical: `${SITE_ORIGIN}/sample-verdicts`,
   },
+  cybersecurityTenders: {
+    title: 'Cybersecurity Tenders in the EU — BidMorrow',
+    description:
+      'How to qualify EU cybersecurity tenders: why CPV codes alone miss security work, and two real TED notices scored by BidMorrow, component by component.',
+    canonical: `${SITE_ORIGIN}/cybersecurity-tenders`,
+  },
   pricing: {
     title: 'Pricing — €29 or €49/Month Flat — BidMorrow',
     description:
@@ -110,6 +116,7 @@ export const SITEMAP_PATHS = [
   '/how-it-works',
   '/methodology',
   '/sample-verdicts',
+  '/cybersecurity-tenders',
   '/pricing',
   '/pilot',
   '/contact',

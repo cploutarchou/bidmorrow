@@ -6,7 +6,7 @@ import type { MatchClassification } from './index';
 describe('@bidmorrow/matching foundations', () => {
   it('pins the engine contract constants', () => {
     expect(PACKAGE).toBe('@bidmorrow/matching');
-    expect(ENGINE_VERSION).toBe('1');
+    expect(ENGINE_VERSION).toBe('2');
     expect(UNKNOWN_NEUTRAL).toBe(0.5);
   });
 

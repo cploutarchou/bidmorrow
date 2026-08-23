@@ -3819,6 +3819,233 @@ were acted on; two more were hardening.
 `/cybersecurity-tenders` and `/cloud-tenders` category pages, and the
 comparison module.
 
+## Engine v2 + /cybersecurity-tenders — 2026-08-23 (audit item 11, second slice)
+
+### ENGINE_VERSION 1 → 2: the buyer codelist was incomplete
+
+Found while scoring the Universität Hamburg SOC notice for the category page:
+its buyer code `body-pl-ra` scored UNKNOWN 2.5/5. The component's comment
+claimed its sets were "verified per docs/dependency-versions.md" against SDK
+1.15.1 — no such record existed in that file, and the sets held 12 codes
+where the official codelist (OP-TED eForms-SDK 1.13.2
+`codelists/buyer-legal-type.gc`, fetched 2026-08-23) has 20, including two
+strings (`eu-int-org`, `not-pub-fond`) the codelist does not define at all.
+Across the repo's 25 real TED fixtures, 7 carry a code the old sets did not
+know; four of those are universities/hospitals under `body-pl-cga`/
+`body-pl-ra` — squarely strong-fit — each losing 2.5 buyer points.
+
+Fix (owner-approved with the version bump, 2026-08-23): complete both sets
+from the codelist, drop the two phantom codes, bump ENGINE_VERSION to '2'
+per invariant 1. Production holds no customer scores yet (subscriptions open
+at launch), so nothing needed recomputation — the cheapest moment this fix
+will ever have. The codelist is now recorded in docs/dependency-versions.md,
+buyer.test.ts asserts the 20-code count as the tripwire for future SDK
+growth, and docs/matching-engine.md documents the actual sets and history.
+Demo verdicts regenerated under v2: only `cyber-managed-soc` moved
+(63.5 POSSIBLE → 66 WORTH_REVIEWING); the other five were unchanged because
+their buyer codes were already recognized.
+
+### /cybersecurity-tenders (policy: manually authored category page)
+
+Hand-written qualification-methodology argument — the CPV vocabulary has no
+cybersecurity division, shown with six real codes and their verbatim CPV 2008
+labels (each re-extracted from the SDK `cpv.gc` on 2026-08-23, incl. the
+correction that 72514100 is "Facilities management **services** involving
+computer operation") — plus two real engine-scored security notices: the
+pentest framework (86.5 STRONG_MATCH) and the Hamburg SOC (66,
+WORTH_REVIEWING, whose card also demonstrates the v2 buyer fix and the
+main-CPV-says-nothing case: 72514100 main, security carried by the
+additional codes). Verdicts are drawn from the shared generated set via a
+new `surfaces` tag (`demo` / `cybersecurity`), so /sample-verdicts keeps its
+policy-capped curated five and the generator throws if the demo surface
+leaves the 3–5 band. `SampleVerdictCard` extracted to a shared component so
+the surfaces cannot drift. Footer link + cross-link from /sample-verdicts,
+sitemap + metadata entries, e2e (structure, honesty boundaries) and an axe
+scan.
+
+`/cloud-tenders` deliberately deferred — the cloud-CPV fetch returned
+hardware/licensing, not hosting — owner concurred; needs a genuine anchor
+notice first. New fixture: `1.13/real-managed-security-soc` (580618-2026,
+no personal data — departmental contacts only).
+
+## Item 11 closed — comparison module (2026-08-23)
+
+The last slice of the M3 final slice: the honest UNNAMED comparison module
+on Home (`#compare`, between coverage and pricing), "BidMorrow vs typical
+tender-alert services", per docs/website-redesign-plan.md §7.
+Named-competitor tables stay owner-gated (decision D11) and were not built.
+
+Six attribute rows. The rule that made this buildable without new research:
+every "typical" cell restates a documented finding from
+docs/redesign/competitor-findings.md (rendered-page captures of seven EU
+tender-alert services, 2026-08-17) — pricing behind demo calls/"from"
+anchors, annual-billing steering, "AI-powered" with no scoring account, no
+published methodology, data source unstated, consent-gated tracker sets.
+Every BidMorrow cell links to the page that keeps the claim true (Pricing,
+Methodology, Privacy). The evidence basis is stated to the READER under the
+table — "our own review of the public marketing pages of seven EU
+tender-alert services, captured in August 2026… any individual service may
+differ" — not just to reviewers in a comment.
+
+One deliberate CSS override: `.mkt-table-card td:nth-child(2)` sets the
+mono font for score tables' points columns; here column 2 is prose, so
+`.hp-compare` restores the text face. Table scrolls inside the card on
+mobile per the repo's wide-table convention. Axe green on Home; a marketing
+e2e test pins the unnamed column header, the six row headers, and the
+evidence note.
+
+With this, audit item 11 is closed: demo (PR #86), category page + engine
+v2 (PR #87), comparison module (this change). `/cloud-tenders` remains
+deferred for want of genuinely-cloud notices, recorded in the audit doc.
+
+## CSS budget split — per-surface stylesheets (2026-08-23)
+
+The single 7,957-line `styles.css` is now five files under
+`apps/web/src/styles/`: `base` (tokens, themes, element defaults, and every
+genuinely shared rule), `marketing`, `app`, `admin`, `auth`. Split at the
+file's own section banners with a coverage-asserted script, so within each
+file the original cascade order is byte-for-byte preserved — the only new
+thing is the file boundaries.
+
+Import sites decide what ships where: `main.tsx` loads base;
+`MarketingLayout` (eager) loads marketing, so base+marketing ARE the entry;
+`AuthLayout`, `AdminShell`, `AppShell`, `Onboarding` and `TenderSheet` load
+their surface's file inside their lazy chunks. `AppShell` had to become lazy
+for its STYLESHEET, not its size — eager, it would have pulled app.css back
+into the entry. Each /app route now nests two Suspense boundaries
+(`<Lazy><AppShell><Lazy><Page/>`), so the first app visit suspends once for
+the shell and later page-to-page navigations never unmount the chrome.
+`lazyPage` gained a props generic for it.
+
+The re-homing was audited, not eyeballed: a script extracted every class
+each region defines and every class each surface's TSX uses, and reported
+the cross-surface pairs. Ten rules moved to base as a result — the score
+badge ramp and pill (marketing's demo pages render ScoreBadge), the
+score-bar progress element (Home's demo feed), `.filter-bar` (admin pages),
+`.visually-hidden-status` (every surface), the unscoped
+`.admin-table-scroll`/`.admin-confirm` helpers (Settings reuses them), the
+shared 1px-gap cell grids (auth + billing), and the theme toggle. The
+audit's known blind spot — object-mapped class strings like ScoreBadge's
+variant map — was grep-checked separately: only `score-badge--*` (base) and
+`auth-link--muted` (auth) exist off-app.
+
+**Measured** (`pnpm --filter @bidmorrow/web build`): entry CSS 102.13 kB →
+64.65 kB raw (12.68 kB gzip); `app.css` 30.53 kB, `admin.css` 6.86 kB,
+`auth.css` 3.18 kB now load only with their chunks. The 25 kB raw budget is
+still missed and the audit doc says so: what remains in the entry is
+genuinely marketing CSS plus tokens, and shrinking that is dead-rule/content
+work, not splitting.
+
+**Verified**: full Playwright suite 54 passed / 3 skipped against the real
+built chunks (marketing, auth, onboarding, feed, detail sheet, settings,
+billing, keyboard, axe). The admin surface has no e2e login harness
+(pre-existing gap), so its case is analytical: byte-identical rules,
+audit-checked class coverage, and AdminShell importing admin.css inside the
+chunk that renders it.
+
+## Auth polish + nav/current + banner clearance (2026-08-23)
+
+The audit's auth-polish minors, done as one pass. The one real bug:
+ForgotPassword had `try { await fetch } finally` with NO catch — an
+unreachable server left the form sitting silent while the rejection escaped
+unhandled, and a 5xx showed the "link has been sent" confirmation for an
+email that was never going to arrive. Failure modes are now separated: a
+200 shows the privacy-preserving confirmation (identical whether or not the
+address exists, unchanged); a network failure or non-2xx says plainly that
+NOTHING was sent. The sent state gained "Send it again" with a visible
+re-sent status; ResetPassword's success now lands on Login with a
+"Password updated" confirmation (router state) instead of a silent bounce;
+and Login/Signup/Forgot run the checks their `noValidate` attributes imply
+before fetching, with the messages in the forms' own error vocabulary.
+
+Two adjacent minors closed in the same pass: the marketing nav marks the
+current page with `aria-current="page"` (the CSS keys off the attribute, so
+semantics and styling cannot drift), and an open consent banner now adds
+`body.consent-banner-open` bottom clearance so the footer — which holds the
+privacy policy and the cookie-preferences reopener, the two links someone
+deciding about cookies most needs — stays reachable. The banner itself
+gained `env(safe-area-inset-bottom)`.
+
+Verified: three new ForgotPassword e2e tests (network failure shows the
+error and never the confirmation; invalid email is caught with no request
+made; send-again reports itself), plus footer-clearance and nav-current
+tests. Full auth/marketing/keyboard/a11y spec set green. One test-writing
+lesson recorded in the clearance test: the page chunk is lazy, so
+scrolling before the heading renders measures a page that is about to
+grow.
+
+## Route-change focus + feed-tab keyboard model (2026-08-23)
+
+Two audit a11y minors, both structural rather than cosmetic.
+
+**Route changes now manage focus and scroll** (`components/RouteFocus.tsx`).
+A client-side navigation previously did nothing: focus stayed on the
+clicked link (screen readers announced nothing, the next Tab continued from
+mid-page) and scroll carried over (clicking a nav link from the bottom of a
+long page landed mid-way down the next). RouteFocus focuses `<main>`
+(programmatically focusable on the fly) and scrolls to the top instantly on
+each pathname change. Three exceptions, each load-bearing: the initial load
+(the browser's focus and the skip link are correct), search-only changes
+(feed filters and tabs live in the query string — the page did not change),
+and the slide-over sheet in BOTH directions (`DetailSheet` traps focus on
+open and restores it to the opening card on close; stealing either breaks
+the dialog contract). `main:focus-visible` is outlined-none by exception —
+it is not an interactive target, and a page-sized ring after Enter on a nav
+link is noise; interactive elements keep the global rule.
+
+**The feed tablist follows the WAI-ARIA tabs pattern.** Six `role="tab"`
+buttons were six separate Tab stops with no arrow keys. Now the active tab
+is the single stop and Left/Right/Home/End move and activate — the same
+roving model `TenderDetailContent`'s tablist already used, applied rather
+than re-invented.
+
+Pinned by two new keyboard e2e tests (single tab stop + arrow traversal;
+focus-on-main + scroll reset after a real nav click). The critical-path
+suite re-run proves RouteFocus does not fight the sheet's focus handling.
+
+## Feed card: "why this score" expander + deadline urgency inks (2026-08-23)
+
+Two audit minors on the tender card, both closed without an API change.
+
+The expander is the product's thesis surfaced where the decision happens: a
+native `<details>` ("Why this score") revealing the engine's own
+explanation strings for the card's top components. The data was already in
+the feed payload (`FeedComponentSummary.explanation`) — fetched on every
+feed load and never rendered. Zero JS, keyboard-accessible by nature, and
+the full eight-component breakdown stays one click away in the sheet.
+
+The deadline inks follow thresholds read off the design's own demo-feed
+data on Home rather than invented: its cards render 6 days as risk, 9 and
+11 as caution, 14 and 21 as quiet — so <7 risk, <14 caution, else quiet.
+The ink is supplementary; the text beside it already states the deadline in
+words, so nothing is conveyed by hue alone.
+
+Pinned by a new e2e test asserting the expander reveals real prose
+explanations. Full a11y + critical-path suites re-run green.
+
+## Mobile Playwright project + a stale audit line (2026-08-23)
+
+The `mobile-chromium` project runs the marketing, auth-session and
+public-accessibility specs at an iPhone-12 viewport with touch — 19 tests,
+including axe scans of every public page at 390px, the consent-banner
+clearance measured on a phone, and the mobile hamburger nav's
+`aria-current`. Two deliberate boundaries, stated in the config: it is the
+same Chromium engine (the sandbox's preinstalled browser), so it tests
+LAYOUT at 390px rather than WebKit behavior; and the authenticated specs
+stay desktop-only, because the ordered signup journey against seeded worker
+state would double the suite's longest leg for surfaces the ICP uses at a
+desk. The nav-current e2e test became viewport-aware in the process — on
+mobile it opens the hamburger and asserts `aria-current` inside the panel,
+which is richer coverage than skipping.
+
+Also corrected a stale audit line while scoping the next item: "customer
+app surfaces still route status text through visually-hidden-status" is no
+longer true — Feed, Settings and the tender detail all pair the hidden live
+region with the visible `.app-toast`, and the remaining
+`visually-hidden-status` uses are legitimately SR-only (combobox result
+counts, a table caption, onboarding state labels). Verified by grep before
+correcting the doc, not assumed.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

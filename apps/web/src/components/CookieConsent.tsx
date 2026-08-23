@@ -90,6 +90,20 @@ export function CookieConsent(): ReactElement | null {
 
   const bannerOpen = decision === null && !prefsOpen;
 
+  // The banner is position:fixed over the page's tail, so while it is open
+  // the document gets matching bottom clearance (styles/marketing.css
+  // `body.consent-banner-open`) — otherwise the footer's links, including
+  // the legally-relevant privacy policy, sit underneath it unreachable.
+  // A class + stylesheet rule rather than a measured inline style: the CSP
+  // is `style-src 'self'` with no inline styles, by design.
+  useEffect(() => {
+    if (!bannerOpen) return;
+    document.body.classList.add('consent-banner-open');
+    return () => {
+      document.body.classList.remove('consent-banner-open');
+    };
+  }, [bannerOpen]);
+
   if (!bannerOpen && !prefsOpen) return null;
 
   return (

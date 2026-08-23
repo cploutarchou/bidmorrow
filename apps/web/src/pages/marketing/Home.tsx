@@ -927,6 +927,88 @@ export function Home(): ReactElement {
       </section>
 
       <section
+        id="compare"
+        className="mkt-wrap hp-section hp-section--major"
+        aria-labelledby="compare-h"
+      >
+        <p className="mkt-eyebrow">How this compares</p>
+        <h2 id="compare-h" className="hp-h2">
+          The same category, without the usual habits.
+        </h2>
+        {/* The honest UNNAMED comparison module (docs/website-redesign-plan.md
+            §7; named-competitor tables are owner-gated, decision D11). Every
+            "typical" cell restates a finding documented in
+            docs/redesign/competitor-findings.md (rendered-page captures of
+            seven EU tender-alert services, 2026-08-17) — nothing here is
+            asserted from memory, and the basis is stated to the reader below
+            rather than left as an implied survey of the whole market. Every
+            BidMorrow cell links to the page where that claim is kept true. */}
+        <div className="mkt-table-card hp-compare">
+          <table aria-labelledby="compare-h">
+            <thead>
+              <tr>
+                <th scope="col">Compared on</th>
+                <th scope="col">BidMorrow</th>
+                <th scope="col">Typical tender-alert services</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Price</th>
+                <td>
+                  €29 or €49 a month, published <a href="#pricing">on this page</a>.
+                </td>
+                <td>Often behind a demo call, a quote form, or a &ldquo;from&rdquo; anchor.</td>
+              </tr>
+              <tr>
+                <th scope="row">Billing</th>
+                <td>Monthly. Cancel from settings; no annual lock-in.</td>
+                <td>Discounts commonly steer toward paying a year upfront.</td>
+              </tr>
+              <tr>
+                <th scope="row">Scoring</th>
+                <td>
+                  Deterministic 0&ndash;100 — the same inputs always produce the same score, and
+                  every score decomposes into eight readable components.
+                </td>
+                <td>
+                  &ldquo;AI-powered&rdquo; matching, with no published account of how a score or
+                  ranking is produced.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Methodology</th>
+                <td>
+                  <Link to="/methodology">Published in full</Link>, including how missing data is
+                  scored.
+                </td>
+                <td>We found none published among the services we reviewed.</td>
+              </tr>
+              <tr>
+                <th scope="row">Data source</th>
+                <td>Named on every page: TED, the EU&rsquo;s official notice source.</td>
+                <td>Rarely stated on the marketing pages we reviewed.</td>
+              </tr>
+              <tr>
+                <th scope="row">Tracking</th>
+                <td>
+                  <Link to="/privacy">No third-party analytics, no session replay</Link>. Optional
+                  cookies stay off until you opt in.
+                </td>
+                <td>Consent-gated tracker sets, sometimes covering the first screen you see.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="hp-compare__note">
+          The right-hand column summarises our own review of the public marketing pages of seven EU
+          tender-alert services, captured in August 2026. No service is named, and any individual
+          service may differ — check the one you are considering. The left-hand column links to
+          where each claim is kept true.
+        </p>
+      </section>
+
+      <section
         id="pricing"
         className="mkt-wrap hp-section hp-section--major"
         aria-labelledby="pricing-h"

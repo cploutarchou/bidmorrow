@@ -135,11 +135,21 @@ only when per-lot value is absent, and mark the component PARTIAL.
 
 ### Buyer/sector (5)
 
-V1 heuristic on eForms buyer legal type / activity: buyer types with strong
-fit for IT/consulting suppliers (central/regional/local authority, body
-governed by public law with activity in general services, defence-adjacent for
-cyber where org has matching capability keyword) = 5; recognized but neutral =
-3; UNKNOWN = 2.5.
+Heuristic on the eForms `buyer-legal-type` codelist, covering the COMPLETE
+OP-TED eForms-SDK 1.13.2 list of 20 codes (docs/dependency-versions.md):
+
+- **Strong fit = 5**: `cga`, `la`, `ra`, `body-pl` and its three controlled
+  sub-types `body-pl-cga`/`body-pl-la`/`body-pl-ra`, and `eu-ins-bod-ag`.
+- **Recognized but neutral = 3**: every other code in the codelist
+  (`pub-undert` + sub-types, `org-sub` + sub-types, `grp-p-aut`, `int-org`,
+  `def-cont`, `spec-rights-entity`).
+- **UNKNOWN = 2.5**: a code outside the codelist, or none published.
+
+History: engine v1 shipped with 12 of the 20 codes (and two strings that are
+not in the codelist at all), so notices from bodies like universities and
+hospitals — `body-pl-cga`/`body-pl-ra` — scored UNKNOWN instead of strong
+fit. Completing the sets changed scores for any lot carrying one of the
+missing codes, hence ENGINE_VERSION 1 → 2 on 2026-08-23 (invariant 1).
 
 ### Procedure / contract nature (5)
 

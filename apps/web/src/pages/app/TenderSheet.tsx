@@ -1,3 +1,4 @@
+import '../../styles/app.css';
 import { useCallback, useId, type ReactElement } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { DetailSheet } from '../../components/DetailSheet';

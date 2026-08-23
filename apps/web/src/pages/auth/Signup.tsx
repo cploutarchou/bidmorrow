@@ -27,6 +27,20 @@ export function Signup(): ReactElement {
   async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setError(null);
+    // The form is `noValidate` (custom messaging over browser bubbles), so
+    // the checks the attributes imply run here.
+    if (name.trim().length === 0) {
+      setError('Enter your name.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('That does not look like an email address — check it and try again.');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Passwords need at least 8 characters.');
+      return;
+    }
     setSubmitting(true);
     try {
       // callbackURL carries `?email=` through Better Auth's redirect after
