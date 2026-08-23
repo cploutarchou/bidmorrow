@@ -62,8 +62,17 @@ localStorage ops-state) was excluded from the comparison by instruction.
 
 ### Majors (template surfaces)
 
-1. Admin theme-v2 page bodies, all ten sections — styling only, cheapest
-   major, internal audience.
+1. ~~Admin theme-v2 page bodies, all ten sections~~ — **DONE 2026-08-23.**
+   Card grid, fact strips, panel vocabulary, mono ops tables, filter pills
+   and a visible mutation flash across all 11 admin pages. Two deliberate
+   departures from the export: its `div`-grid tables carry a per-section
+   `grid-template-columns` as an inline `style` attribute, which this app's
+   `style-src 'self'` CSP forbids, so real `<table>` elements are kept and
+   restyled instead; and its arm→confirm strip is `position: sticky` off a
+   single page-level `pending` state machine the app does not have, so the
+   strip is styled in flow. The remaining admin minors below (ops pills
+   wired to state, state-aware pause/resume, rail counts, ingestion
+   sub-views, flag JSON hint) are unchanged.
 2. Client Area detail slide-over sheet (replace full-page navigation;
    frontend-only for the existing Analysis content).
 3. Onboarding redesign: 5-step flow restructure → 12-sector CPV picker
@@ -92,7 +101,9 @@ localStorage ops-state) was excluded from the comparison by instruction.
   tokens, three-rank buttons, `--accent-hover/press`, `--field-inner-lit`,
   `--bg-overlay`.
 - Shared components: low-fit/excluded card states, deadline urgency inks,
-  visible status flash, arm→confirm strip with consequence copy.
+  ~~visible status flash~~ (done for admin 2026-08-23; the customer app
+  surfaces still route status text through `visually-hidden-status`),
+  arm→confirm strip with consequence copy.
 - Auth polish: pre-submit validation, silent-failure fix, confirmation
   states. Marketing nav `aria-current`. Cookie-banner bottom padding.
 - Feed/Settings: sort control + KPI row, "why this score" expander,
@@ -126,6 +137,8 @@ the branch and the workflow files. The owner cleared it on the billing side.
 | CSS budget (91 kB vs 25 kB)                                 | **NOT fixed** — one global stylesheet, so chunking cannot split it; needs a per-surface split                                  |
 | Type-scale call-site migration                              | **Deferred** — only 2 of 215 declarations matched exactly, and the `font` shorthand resets weight                              |
 | `--accent-hover/press`, `--field-inner-lit`, `--bg-overlay` | **Still unwired** — each moves pixels; belongs in a reviewed restyling PR                                                      |
+| Admin page bodies (ten sections + org detail)               | **DONE 2026-08-23** — see the note under "Majors" below                                                                        |
+| CSS budget after the admin work                             | **91 kB → 97 kB** against the same 25 kB budget — the new vocabulary added ~6 kB; the per-surface split is still the fix       |
 
 Everything else in the pending list below is untouched and still stands.
 

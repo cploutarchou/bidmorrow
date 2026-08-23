@@ -4,6 +4,8 @@ import { adminApi } from '../../lib/admin-api';
 import { appendCursor, startCursor, type CursorState } from '../../lib/cursor';
 import { formatIsoUtc } from '../../lib/format';
 import { Pager } from '../../components/admin/Pager';
+import { AdminPage } from '../../components/admin/AdminPage';
+import { AdminFlash } from '../../components/admin/AdminFlash';
 import type { AdminSupportNote } from '../../lib/admin-types';
 
 export function Support(): ReactElement {
@@ -14,6 +16,7 @@ export function Support(): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [newNote, setNewNote] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [flashTone, setFlashTone] = useState<'ok' | 'risk'>('ok');
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async (orgId: string) => {
@@ -61,9 +64,11 @@ export function Support(): ReactElement {
         body: newNote.trim(),
       });
       setNewNote('');
+      setFlashTone('ok');
       setStatusMessage('Note added.');
       await load(organizationId);
     } catch {
+      setFlashTone('risk');
       setStatusMessage('Could not add note.');
     } finally {
       setSaving(false);
@@ -71,11 +76,13 @@ export function Support(): ReactElement {
   }
 
   return (
-    <>
-      <title>Support notes — Admin</title>
-      <h1>Support notes</h1>
+    <AdminPage
+      documentTitle="Support notes — Admin"
+      heading="Support notes"
+      note="Internal notes attached to one organization. Customers never see these, and they are scoped to the organization ID you load — nothing is listed globally."
+    >
       <form
-        className="form-field inline"
+        className="form-field inline admin-filters"
         onSubmit={(event) => {
           event.preventDefault();
           void load(organizationId);
@@ -90,23 +97,23 @@ export function Support(): ReactElement {
         <button type="submit">Load notes</button>
       </form>
 
-      <p role="status" aria-live="polite" className="visually-hidden-status">
-        {statusMessage}
-      </p>
+      <AdminFlash message={statusMessage} tone={flashTone} />
       {loading && <p>Loading…</p>}
       {error !== null && (
         <p role="alert" className="form-error">
           {error}
         </p>
       )}
-      {notes !== null && notes.items.length === 0 && <p>No support notes for this organization.</p>}
+      {notes !== null && notes.items.length === 0 && (
+        <p className="admin-empty">No support notes for this organization.</p>
+      )}
       {notes !== null && notes.items.length > 0 && (
         <>
-          <ul>
+          <ul className="admin-notes">
             {notes.items.map((note) => (
-              <li key={note.id}>
-                <p>{note.body}</p>
-                <p className="hint">
+              <li key={note.id} className="admin-note">
+                <p className="admin-note__body">{note.body}</p>
+                <p className="admin-note__meta">
                   {formatIsoUtc(note.createdAt)} — author {note.authorUserId}
                 </p>
               </li>
@@ -116,8 +123,8 @@ export function Support(): ReactElement {
         </>
       )}
 
-      <section>
-        <h2>Add a note</h2>
+      <section className="admin-panel">
+        <h2 className="admin-panel__label">Add a note</h2>
         <div className="form-field">
           <label htmlFor="new-note">Note</label>
           <textarea
@@ -135,6 +142,6 @@ export function Support(): ReactElement {
           {saving ? 'Saving…' : 'Add note'}
         </button>
       </section>
-    </>
+    </AdminPage>
   );
 }

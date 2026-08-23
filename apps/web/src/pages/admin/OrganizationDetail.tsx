@@ -4,6 +4,8 @@ import { adminApi } from '../../lib/admin-api';
 import { ApiError } from '../../lib/api';
 import { formatIsoUtc } from '../../lib/format';
 import { ConfirmAction } from '../../components/admin/ConfirmAction';
+import { AdminPage } from '../../components/admin/AdminPage';
+import { AdminFlash } from '../../components/admin/AdminFlash';
 import type { AdminOrgDetail } from '../../lib/admin-types';
 
 export function OrganizationDetail(): ReactElement {
@@ -13,6 +15,7 @@ export function OrganizationDetail(): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [flashTone, setFlashTone] = useState<'ok' | 'risk'>('ok');
 
   const load = useCallback(async () => {
     if (id === undefined) return;
@@ -42,9 +45,11 @@ export function OrganizationDetail(): ReactElement {
     setStatusMessage(null);
     try {
       await adminApi.suspendOrg(id);
+      setFlashTone('ok');
       setStatusMessage('Organization suspended.');
       await load();
     } catch {
+      setFlashTone('risk');
       setStatusMessage('Could not suspend organization — please try again.');
     } finally {
       setBusy(false);
@@ -57,9 +62,11 @@ export function OrganizationDetail(): ReactElement {
     setStatusMessage(null);
     try {
       await adminApi.unsuspendOrg(id);
+      setFlashTone('ok');
       setStatusMessage('Organization unsuspended.');
       await load();
     } catch {
+      setFlashTone('risk');
       setStatusMessage('Could not unsuspend organization — please try again.');
     } finally {
       setBusy(false);
@@ -79,87 +86,102 @@ export function OrganizationDetail(): ReactElement {
   const suspended = detail.organization.suspendedAt !== null;
 
   return (
-    <>
-      <title>{`${detail.organization.name} — Admin`}</title>
+    <AdminPage
+      documentTitle={`${detail.organization.name} — Admin`}
+      heading={detail.organization.name}
+      note="Everything the admin surface knows about one organization. Suspension is the only mutation available here, and it is reversible."
+    >
       <p>
         <Link to="/admin/orgs">&larr; Back to organizations</Link>
       </p>
-      <h1>{detail.organization.name}</h1>
-      <p role="status" aria-live="polite" className="visually-hidden-status">
-        {statusMessage}
-      </p>
 
-      <dl className="detail-facts">
-        <div>
-          <dt>Organization ID</dt>
-          <dd>{detail.organization.id}</dd>
+      <AdminFlash message={statusMessage} tone={flashTone} />
+
+      <dl className="admin-facts">
+        <div className="admin-fact">
+          <dt className="admin-fact__label">Organization ID</dt>
+          <dd className="admin-fact__value admin-fact__value--sm">{detail.organization.id}</dd>
         </div>
-        <div>
-          <dt>Lifecycle status</dt>
-          <dd>{detail.organization.status}</dd>
+        <div className="admin-fact">
+          <dt className="admin-fact__label">Lifecycle status</dt>
+          <dd className="admin-fact__value admin-fact__value--sm">{detail.organization.status}</dd>
         </div>
-        <div>
-          <dt>Suspension</dt>
-          <dd>
+        <div className="admin-fact">
+          <dt className="admin-fact__label">Suspension</dt>
+          <dd
+            className={
+              suspended
+                ? 'admin-fact__value admin-fact__value--sm admin-tone-risk'
+                : 'admin-fact__value admin-fact__value--sm'
+            }
+          >
             {suspended
               ? `SUSPENDED since ${formatIsoUtc(detail.organization.suspendedAt)}`
               : 'Not suspended'}
           </dd>
         </div>
-        <div>
-          <dt>Created</dt>
-          <dd>{formatIsoUtc(detail.organization.createdAt)}</dd>
+        <div className="admin-fact">
+          <dt className="admin-fact__label">Created</dt>
+          <dd className="admin-fact__value admin-fact__value--sm">
+            {formatIsoUtc(detail.organization.createdAt)}
+          </dd>
         </div>
-        <div>
-          <dt>Matches / Saved / Feedback</dt>
-          <dd>
+        <div className="admin-fact">
+          <dt className="admin-fact__label">Matches / Saved / Feedback</dt>
+          <dd className="admin-fact__value admin-fact__value--sm">
             {detail.counts.matches} / {detail.counts.saved} / {detail.counts.feedback}
           </dd>
         </div>
       </dl>
 
-      <section>
-        <h2>Members</h2>
-        {detail.memberEmails.length === 0 ? (
-          <p>No members.</p>
-        ) : (
-          <ul>
-            {detail.memberEmails.map((email) => (
-              <li key={email}>{email}</li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <div className="admin-panels">
+        <section className="admin-panel">
+          <h2 className="admin-panel__label">Members</h2>
+          {detail.memberEmails.length === 0 ? (
+            <p className="admin-empty">No members.</p>
+          ) : (
+            <ul className="admin-notes">
+              {detail.memberEmails.map((email) => (
+                <li key={email} className="admin-note__meta">
+                  {email}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-      <section>
-        <h2>Subscription</h2>
-        {detail.subscription === null ? (
-          <p>No subscription on file.</p>
-        ) : (
-          <pre>{JSON.stringify(detail.subscription, null, 2)}</pre>
-        )}
-      </section>
+        <section className="admin-panel">
+          <h2 className="admin-panel__label">Subscription</h2>
+          {detail.subscription === null ? (
+            <p className="admin-empty">No subscription on file.</p>
+          ) : (
+            <pre className="admin-code-block">{JSON.stringify(detail.subscription, null, 2)}</pre>
+          )}
+        </section>
 
-      <section>
-        <h2>Digest preferences</h2>
-        {detail.digestPreferences === null ? (
-          <p>No digest preferences on file.</p>
-        ) : (
-          <pre>{JSON.stringify(detail.digestPreferences, null, 2)}</pre>
-        )}
-      </section>
+        <section className="admin-panel">
+          <h2 className="admin-panel__label">Digest preferences</h2>
+          {detail.digestPreferences === null ? (
+            <p className="admin-empty">No digest preferences on file.</p>
+          ) : (
+            <pre className="admin-code-block">
+              {JSON.stringify(detail.digestPreferences, null, 2)}
+            </pre>
+          )}
+        </section>
 
-      <section>
-        <h2>Company profile</h2>
-        {detail.profile === null ? (
-          <p>No profile on file.</p>
-        ) : (
-          <pre>{JSON.stringify(detail.profile, null, 2)}</pre>
-        )}
-      </section>
+        <section className="admin-panel">
+          <h2 className="admin-panel__label">Company profile</h2>
+          {detail.profile === null ? (
+            <p className="admin-empty">No profile on file.</p>
+          ) : (
+            <pre className="admin-code-block">{JSON.stringify(detail.profile, null, 2)}</pre>
+          )}
+        </section>
+      </div>
 
-      <section>
-        <h2>Suspension control</h2>
+      <section className="admin-panel">
+        <h2 className="admin-panel__label">Suspension control</h2>
         {suspended ? (
           <ConfirmAction
             label="Unsuspend organization"
@@ -183,6 +205,6 @@ export function OrganizationDetail(): ReactElement {
           View support notes for this organization
         </Link>
       </p>
-    </>
+    </AdminPage>
   );
 }

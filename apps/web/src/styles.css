@@ -1771,7 +1771,10 @@ td {
   }
 }
 
-.admin-main section {
+/* Pre-design fallback: only unclassed `<section>` elements still get the old
+   rule-and-margin treatment. Converted admin bodies lay themselves out with
+   `.admin-page`'s grid gap instead, and must not also draw this line. */
+.admin-main section:not([class]) {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--color-border);
@@ -1806,6 +1809,405 @@ td {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.25rem;
+}
+/* ============================================================
+   ADMIN PAGE BODIES — 2026-08-21 handoff redesign
+   (`BidMorrow Admin.dc.html`). PR #67 converted only the shell; every page
+   body under it was still pre-design markup (plain h1/section/table), which
+   is what this vocabulary replaces.
+
+   Two deliberate departures from the export, both forced by constraints the
+   prototype does not have:
+
+   1. The export draws its tables as `div` grids with a per-section
+      `grid-template-columns` written as an inline `style` attribute. This
+      app ships `style-src 'self'` with no `'unsafe-inline'`
+      (apps/web/public/_headers), so an inline style attribute is BLOCKED in
+      production — and the repo contains none anywhere, by design. Real
+      `<table>` elements are kept and restyled to the same visual result:
+      mono cells, uppercase micro headings on a raised strip, hairline row
+      rules, rounded container. Table semantics are preserved rather than
+      traded away for a column ratio.
+   2. The export's arm->confirm strip is `position: sticky` at the viewport
+      bottom, driven by one page-level `pending` state machine. This app has
+      no such machine — each mutation owns its own `ConfirmAction` — so the
+      strip is styled in flow. Making it sticky would require moving
+      confirmation state up out of the component, which is behaviour, not
+      styling, and is not in this change.
+   ============================================================ */
+
+/* Page frame: title, one-line note, then the body blocks, evenly spaced.
+   Replaces the per-`section` bottom rule the pre-design pages relied on. */
+.admin-page {
+  display: grid;
+  gap: var(--s5);
+  align-content: start;
+}
+
+.admin-page__head {
+  display: grid;
+  gap: var(--s1);
+}
+
+/* A titled block inside a page: eyebrow heading, then its content. Carries a
+   class specifically so the legacy `.admin-main section:not([class])` rule
+   does not also draw a bottom rule under it. */
+.admin-section {
+  display: grid;
+  gap: var(--s3);
+  align-content: start;
+}
+
+.admin-page__title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 1.625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.admin-page__note {
+  margin: 0;
+  max-width: 86ch;
+  font-size: 0.84375rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* Visible confirmation of a mutation. The pre-design pages put this text in
+   `.visually-hidden-status`, so an operator who suspended an organization or
+   rewrote a feature flag saw nothing at all — only a screen-reader user got
+   the confirmation. It stays a live region; it is simply no longer hidden. */
+.admin-flash {
+  margin: 0;
+  background: var(--accent-tint);
+  border: 1px solid var(--accent-line);
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.8125rem;
+  font-family: var(--font-num);
+  font-size: 0.78125rem;
+  line-height: 1.5;
+  color: var(--ink-1);
+}
+
+.admin-flash:empty {
+  display: none;
+}
+
+.admin-flash--risk {
+  background: var(--sig-risk-tint);
+  border-color: var(--sig-risk);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .admin-flash {
+    animation: rise-in 260ms ease-out both;
+  }
+}
+
+/* Health cards — one fact each, with the border carrying the tone. */
+.admin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr));
+  gap: var(--s3);
+}
+
+.admin-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+  padding: 0.875rem 1rem;
+  display: grid;
+  gap: var(--s1);
+  align-content: start;
+}
+
+.admin-card--ok {
+  border-color: var(--accent-line);
+}
+
+.admin-card--caution {
+  border-color: var(--sig-caution);
+}
+
+.admin-card--risk {
+  border-color: var(--sig-risk);
+}
+
+.admin-card__label,
+.admin-fact__label,
+.admin-panel__label {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.65625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.admin-card__value {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 1.3125rem;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+
+.admin-card--caution .admin-card__value {
+  color: var(--sig-caution);
+}
+
+.admin-card--risk .admin-card__value {
+  color: var(--sig-risk);
+}
+
+.admin-card__note {
+  margin: 0;
+  font-size: 0.78125rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* Fact strip — denser than the cards; hairline gaps rather than borders, so
+   a row of counts reads as one object. */
+.admin-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11.25rem, 1fr));
+  /* Separators are drawn as outlines on the cells, not as a 1px grid gap over
+     a hairline-coloured container. With the gap technique, a last row that
+     does not fill its columns leaves the container colour showing through,
+     which reads as a broken empty cell — the count of facts per page is not
+     always a multiple of the column count. */
+  gap: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+  overflow: hidden;
+}
+
+.admin-fact {
+  background: var(--bg-panel);
+  /* Outlines overlap on shared edges, so neighbours still read as one
+     hairline; unlike borders they take no layout space. */
+  outline: 1px solid var(--line-hair);
+  padding: 0.8125rem 0.9375rem;
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+.admin-fact__value {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 1.1875rem;
+  font-weight: 600;
+  color: var(--ink-1);
+  overflow-wrap: anywhere;
+}
+
+.admin-fact__value--sm {
+  font-size: 0.90625rem;
+  font-weight: 500;
+}
+
+/* Panel — the container for anything that is not a table: forms, previews,
+   grouped readouts. */
+.admin-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+  padding: 0.9375rem 1rem;
+  display: grid;
+  gap: 0.6875rem;
+  align-content: start;
+}
+
+.admin-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18.75rem, 1fr));
+  gap: var(--s3);
+}
+
+/* Filter pills — replace the pre-design `<select>` where the option set is
+   short and worth seeing at a glance. */
+.admin-pills {
+  display: flex;
+  gap: 0.4375rem;
+  flex-wrap: wrap;
+}
+
+.admin-pill {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  border-radius: 999px;
+  padding: 0.375rem 0.75rem;
+  font-family: var(--font-num);
+  font-size: 0.71875rem;
+  cursor: pointer;
+  min-height: 2rem;
+}
+
+.admin-pill:hover {
+  color: var(--ink-1);
+  border-color: var(--line-strong);
+}
+
+.admin-pill[aria-pressed='true'] {
+  background: var(--accent-tint);
+  border-color: var(--accent-line);
+  color: var(--ink-1);
+}
+
+/* Ops table. The scroll container is also the card: `overflow-x: auto`
+   already clips, so a rounded border on the same element gives the design's
+   card treatment without a second wrapper at every call site.
+
+   Scoped to `.admin-main` on purpose. `.admin-table-scroll` is NOT
+   admin-only despite the name — pages/app/Settings.tsx reuses it for the
+   customer invoice history, where it must keep meaning nothing more than
+   "this table may scroll sideways". Unscoped, these rules would restyle a
+   customer surface in internal-ops clothing. */
+.admin-main .admin-table-scroll {
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+}
+
+.admin-main .admin-table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  /* The global `table` rule sets `margin: 1rem 0`, which inside this bordered
+     container renders as empty bands above and below the rows. */
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.78125rem;
+}
+
+.admin-main .admin-table-scroll th {
+  background: var(--bg-raised);
+  border: 0;
+  border-bottom: 1px solid var(--line-hair);
+  padding: 0.625rem 1rem;
+  text-align: left;
+  font-family: var(--font-num);
+  font-size: 0.65625rem;
+  font-weight: 400;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.admin-main .admin-table-scroll td {
+  background: var(--bg-panel);
+  border: 0;
+  border-bottom: 1px solid var(--line-hair);
+  padding: 0.6875rem 1rem;
+  line-height: 1.45;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.admin-main .admin-table-scroll tr:last-child td {
+  border-bottom: 0;
+}
+
+/* First column names the row's subject, so it carries the strong ink. */
+.admin-main .admin-table-scroll td:first-child {
+  color: var(--ink-1);
+}
+
+.admin-tone-ok {
+  color: var(--accent-text);
+}
+
+.admin-tone-caution {
+  color: var(--sig-caution);
+}
+
+.admin-tone-risk {
+  color: var(--sig-risk);
+}
+
+/* Free-text records (support notes, ingestion errors). */
+.admin-notes {
+  display: grid;
+  gap: 0.5625rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-note {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  display: grid;
+  gap: 0.3125rem;
+}
+
+.admin-note__body {
+  margin: 0;
+  font-size: 0.84375rem;
+  line-height: 1.55;
+  color: var(--ink-1);
+}
+
+.admin-note__meta {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+}
+
+/* Untrusted or verbatim payloads — rendered as text, never as markup. */
+.admin-code-block {
+  margin: 0;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line-hair);
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  font-family: var(--font-num);
+  font-size: 0.71875rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.admin-empty {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.78125rem;
+  color: var(--ink-3);
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Filter row: inputs sit on the baseline with their result count. */
+.admin-filters {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.admin-filters .form-field {
+  margin: 0;
+}
+
+.admin-count {
+  font-family: var(--font-num);
+  font-size: 0.71875rem;
+  color: var(--ink-3);
+  padding-bottom: 0.625rem;
 }
 
 @media (max-width: 40rem) {
