@@ -108,7 +108,17 @@ localStorage ops-state) was excluded from the comparison by instruction.
      `79417000` to the division `79`, so it reported the whole of division
      79 as covered. Harmless while onboarding was IT-only; a false promise
      to exactly the business-services companies the sector picker is for.
-4. Feed left rail (needs saved-searches API) · global search/⌘K palette.
+4. Feed left rail · global search/⌘K palette — **RAIL DONE 2026-08-23.**
+   New `saved_searches` table (migration 0010), org-scoped repository and
+   `/api/org/saved-searches` CRUD, plus the rail itself: name the current
+   filter set, re-apply it, delete it. Workspace-wide by design — a saved
+   search is a team's view of the market, not a personal bookmark.
+   Two blocks of the design were deliberately NOT built, because both would
+   have meant inventing numbers: the per-search and per-shelf hit counts
+   (nothing counts those today), and the "78% complete" profile meter (there
+   is no completeness model). The rail's profile line states what the
+   profile actually holds instead. **The ⌘K palette is still open** — see
+   the note below on why most of its designed commands cannot be honest yet.
 5. Pipeline (kanban) view — new backend domain.
 6. Insights view — new analytics endpoints.
 7. Detail tabs Requirements / Buyer intelligence / Activity+notes —

@@ -21,7 +21,7 @@ import {
   text,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
-import { organizations } from './identity';
+import { organizations, users } from './identity';
 
 /** 1:1 with organization; descriptive profile + onboarding state. */
 export const companyProfiles = sqliteTable(
@@ -258,5 +258,43 @@ export const digestPreferences = sqliteTable(
       'ck_digest_preferences__min_classification',
       sql`${t.minClassification} IN ('STRONG_MATCH', 'WORTH_REVIEWING', 'POSSIBLE_MATCH', 'LOW_FIT')`,
     ),
+  ],
+);
+
+/**
+ * A named, reusable feed filter set (migration 0010).
+ *
+ * Organization-owned and shared across the whole workspace: a saved search
+ * is a team's view of the market, not a personal bookmark, so
+ * `createdByUserId` records authorship for the audit trail without scoping
+ * visibility. Every repository function over this table requires an
+ * organizationId (docs/security.md C6).
+ */
+export const savedSearches = sqliteTable(
+  'saved_searches',
+  {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    /** Null once the author's account is deleted — the search survives them. */
+    createdByUserId: text('created_by_user_id').references(() => users.id),
+    name: text('name').notNull(),
+    /** Feed tab the search applies to. */
+    tab: text('tab').notNull(),
+    /**
+     * JSON object matching the feed's filter shape. Stored as a blob because
+     * the server never queries BY these fields — it reads them back out for
+     * the client — and columns would mean a migration per new filter. The
+     * API validates the shape on write, so this is never free-form input.
+     */
+    filtersJson: text('filters_json').notNull(),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+  },
+  (t) => [
+    // Two identically-named searches are indistinguishable in the rail.
+    uniqueIndex('uq_saved_searches__organization_id_name').on(t.organizationId, t.name),
+    index('idx_saved_searches__organization_id').on(t.organizationId),
   ],
 );
