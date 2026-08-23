@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { RouteChunkBoundary } from './components/RouteChunkBoundary';
 import { AuthProvider } from './lib/auth-context';
 import { Lazy, lazyPage } from './lib/lazy-page';
+import { RouteFocus } from './components/RouteFocus';
 import { Home } from './pages/marketing/Home';
 import { NotFound } from './pages/NotFound';
 
@@ -97,6 +98,7 @@ function AppRoutes(): ReactElement {
 
   return (
     <>
+      <RouteFocus />
       <Routes location={background ?? location}>
         <Route
           path="/"

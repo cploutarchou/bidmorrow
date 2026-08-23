@@ -85,6 +85,26 @@ interface FoundingAvailability {
 export function Feed(): ReactElement {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('today');
+  const tablistRef = useRef<HTMLDivElement>(null);
+
+  /** Roving tabs (same model as the detail sheet's tablist): the active tab
+     is the single tab stop; Left/Right move and activate, Home/End jump to
+     the ends. Without this, six tabs were six Tab presses between the rail
+     and the filters. */
+  function onTabKeyDown(event: React.KeyboardEvent<HTMLDivElement>): void {
+    const index = TABS.findIndex((t) => t.id === tab);
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight') nextIndex = (index + 1) % TABS.length;
+    else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + TABS.length) % TABS.length;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = TABS.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const next = TABS[nextIndex];
+    if (next === undefined) return;
+    setTab(next.id);
+    tablistRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex]?.focus();
+  }
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [useCustomCountry, setUseCustomCountry] = useState(false);
   const [countryOptions, setCountryOptions] = useState<string[]>([]);
@@ -372,13 +392,20 @@ export function Feed(): ReactElement {
           />
           <div className="feed-main">
             <div className="feed-view-switcher">
-              <div role="tablist" aria-label="Feed tabs" className="feed-tabs">
+              <div
+                role="tablist"
+                aria-label="Feed tabs"
+                className="feed-tabs"
+                ref={tablistRef}
+                onKeyDown={onTabKeyDown}
+              >
                 {TABS.map((t) => (
                   <button
                     key={t.id}
                     type="button"
                     role="tab"
                     aria-selected={tab === t.id}
+                    tabIndex={tab === t.id ? 0 : -1}
                     data-group={t.group}
                     className={tab === t.id ? 'tab tab--active' : 'tab'}
                     onClick={() => setTab(t.id)}

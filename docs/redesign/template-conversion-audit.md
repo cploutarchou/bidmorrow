@@ -218,9 +218,16 @@ localStorage ops-state) was excluded from the comparison by instruction.
   (product decision).
 - Admin: ops pills, state-aware pause/resume, rail counts, ingestion
   sub-views, flag JSON hint.
-- Testing/a11y: feed-tab keyboard model + keyboard spec, 402/success e2e
-  assertions, mobile Playwright project, `toHaveScreenshot` baselines,
-  zoom/reflow pass, route-change focus management.
+- Testing/a11y: ~~feed-tab keyboard model + keyboard spec~~ and
+  ~~route-change focus management~~ — **DONE 2026-08-23.** The feed tablist
+  now follows the WAI-ARIA tabs pattern (roving tabindex, Arrow/Home/End
+  move and activate — the same model the detail sheet already used), and
+  `components/RouteFocus.tsx` moves focus to `<main>` and resets scroll on
+  every pathname change, with three deliberate exceptions documented in the
+  file (initial load, search-only changes, and the slide-over sheet in both
+  directions — `DetailSheet` owns focus there). Both are pinned by keyboard
+  e2e tests. Still open: 402/success e2e assertions, mobile Playwright
+  project, `toHaveScreenshot` baselines, zoom/reflow pass.
 - Docs hygiene: font-budget reconciliation (181 KB shipped vs 90 KB
   written; per-visit latin ~57 KB is compliant via unicode-range — record
   the raised budget), stale Lucide note in dependency-versions.md, stale
