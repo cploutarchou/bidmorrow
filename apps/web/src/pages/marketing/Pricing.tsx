@@ -1,5 +1,7 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
+import { PageMeta } from '../../components/PageMeta';
+import { MARKETING_META } from '../../lib/seo';
 
 /**
  * Pricing — 2026-08-21 handoff redesign (`BidMorrow Marketing.dc.html`,
@@ -42,12 +44,7 @@ const MONTHS = Array.from({ length: 12 }, (_, index) => index);
 export function Pricing(): ReactElement {
   return (
     <>
-      <title>Pricing — BidMorrow</title>
-      <meta
-        name="description"
-        content="BidMorrow pricing: a founding plan for the first 50 customers, then a standard monthly plan. No annual contracts, no usage fees."
-      />
-      <link rel="canonical" href="https://bidmorrow.com/pricing" />
+      <PageMeta {...MARKETING_META.pricing} />
 
       <p className="mkt-eyebrow">Pricing</p>
       <h1>Two plans. One product.</h1>

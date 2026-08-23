@@ -1,11 +1,11 @@
 import type { ReactElement } from 'react';
+import { PageMeta } from '../../components/PageMeta';
+import { MARKETING_META } from '../../lib/seo';
 
 export function Privacy(): ReactElement {
   return (
     <>
-      <title>Privacy — BidMorrow</title>
-      <meta name="description" content="BidMorrow privacy summary — final legal text pending." />
-      <link rel="canonical" href="https://bidmorrow.com/privacy" />
+      <PageMeta {...MARKETING_META.privacy} />
 
       <p className="mkt-eyebrow">Privacy</p>
       <h1>Privacy</h1>

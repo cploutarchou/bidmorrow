@@ -109,6 +109,25 @@ localStorage ops-state) was excluded from the comparison by instruction.
   the raised budget), stale Lucide note in dependency-versions.md, stale
   pre-v2 comments.
 
+## Status — first four items implemented 2026-08-22
+
+Landed on `claude/bidmorrow-production-impl-btj2rw` (PR #79), full local
+gates green, **blocked on CI**: GitHub Actions stopped running mid-session
+(instant failures, no steps, no logs — the signature of exhausted Actions
+minutes on a private repo), and `main` is ruleset-protected on green checks.
+
+| Pending item                                                | Status                                                                                                                         |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| M0.2 SEO artifact set                                       | **DONE** — metadata + OG block, noindex, env-aware robots.txt, sitemap, generated share image                                  |
+| `/app/billing/success`                                      | **DONE** — polls billing status, three honest states, 7 tests on the retry logic                                               |
+| Route code splitting                                        | **DONE** — marketing entry 478.00 kB → 58.28 kB first-party + 230.57 kB vendor; admin verified absent from the customer bundle |
+| Theme foundation tokens                                     | **DONE (additive)** — `--t-*` scale, ghost button rank, `prefers-contrast` bug fixed                                           |
+| CSS budget (91 kB vs 25 kB)                                 | **NOT fixed** — one global stylesheet, so chunking cannot split it; needs a per-surface split                                  |
+| Type-scale call-site migration                              | **Deferred** — only 2 of 215 declarations matched exactly, and the `font` shorthand resets weight                              |
+| `--accent-hover/press`, `--field-inner-lit`, `--bg-overlay` | **Still unwired** — each moves pixels; belongs in a reviewed restyling PR                                                      |
+
+Everything else in the pending list below is untouched and still stands.
+
 ## Recommended implementation order
 
 1. Theme foundation tokens (blocks all downstream restyling).

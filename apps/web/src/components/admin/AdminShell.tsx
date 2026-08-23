@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
 import { ThemeToggle } from '../ThemeToggle';
+import { NoIndex } from '../NoIndex';
 
 const ADMIN_NAV: { to: string; label: string }[] = [
   { to: '/admin', label: 'Dashboard' },
@@ -35,6 +36,7 @@ export function AdminShell({ children }: { children: ReactNode }): ReactElement 
 
   return (
     <div className="admin-shell">
+      <NoIndex />
       <a className="skip-link" href="#admin-main">
         Skip to main content
       </a>

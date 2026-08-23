@@ -15,6 +15,7 @@ import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
 import { createDb } from '@bidmorrow/db';
+import { robotsTxt } from './robots';
 import { readPrelaunchState } from './prelaunch';
 import { createLogger } from '@bidmorrow/observability';
 import {
@@ -130,6 +131,16 @@ app.get('/api/health/ready', async (c) => {
   }
   return c.json({ status: 'ok', db: 'ok', lastSuccessfulIngestionAt, stale });
 });
+
+// robots.txt — Worker-served so it can differ per environment; the body and
+// the reasoning live in robots.ts. This is the one non-/api path listed in
+// `run_worker_first` (apps/worker/wrangler.jsonc).
+app.get('/robots.txt', (c) =>
+  c.body(robotsTxt(c.env.APP_ENV), 200, {
+    'content-type': 'text/plain; charset=utf-8',
+    'cache-control': 'public, max-age=3600',
+  }),
+);
 
 // Public runtime config for the SPA — unauthenticated by design and
 // secret-free: only the pre-launch gate state and the countdown target
