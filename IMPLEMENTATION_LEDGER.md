@@ -4003,6 +4003,26 @@ Pinned by two new keyboard e2e tests (single tab stop + arrow traversal;
 focus-on-main + scroll reset after a real nav click). The critical-path
 suite re-run proves RouteFocus does not fight the sheet's focus handling.
 
+## Feed card: "why this score" expander + deadline urgency inks (2026-08-23)
+
+Two audit minors on the tender card, both closed without an API change.
+
+The expander is the product's thesis surfaced where the decision happens: a
+native `<details>` ("Why this score") revealing the engine's own
+explanation strings for the card's top components. The data was already in
+the feed payload (`FeedComponentSummary.explanation`) — fetched on every
+feed load and never rendered. Zero JS, keyboard-accessible by nature, and
+the full eight-component breakdown stays one click away in the sheet.
+
+The deadline inks follow thresholds read off the design's own demo-feed
+data on Home rather than invented: its cards render 6 days as risk, 9 and
+11 as caution, 14 and 21 as quiet — so <7 risk, <14 caution, else quiet.
+The ink is supplementary; the text beside it already states the deadline in
+words, so nothing is conveyed by hue alone.
+
+Pinned by a new e2e test asserting the expander reveals real prose
+explanations. Full a11y + critical-path suites re-run green.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

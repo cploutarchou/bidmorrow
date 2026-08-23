@@ -18,6 +18,21 @@ const CLASS_TO_CARD_MODIFIER: Record<FeedRow['classification'], string> = {
   EXCLUDED: '',
 };
 
+/**
+ * Deadline urgency ink (audit minor; thresholds read off the design's own
+ * demo-feed data in pages/marketing/Home.tsx rather than invented: 6 days
+ * renders risk, 9 and 11 caution, 14 and 21 quiet). Color is supplementary —
+ * the text next to it already states the deadline in words, so nothing is
+ * conveyed by hue alone.
+ */
+function deadlineTone(deadlineAt: number | null, now: number): 'risk' | 'caution' | 'quiet' {
+  if (deadlineAt === null) return 'quiet';
+  const days = Math.floor((deadlineAt - now) / (24 * 60 * 60 * 1000));
+  if (days < 7) return 'risk';
+  if (days < 14) return 'caution';
+  return 'quiet';
+}
+
 /** r=16 circle circumference ≈ 100.5 — SVG attributes only (CSP-safe). */
 function ringDash(score: number): string {
   return `${((score / 100) * 100.5).toFixed(1)} 100.5`;
@@ -71,7 +86,11 @@ export function TenderCard({
           {item.score !== null && <ScoreRing score={item.score} />}
           <ScoreBadge score={item.score} classification={item.classification} />
         </span>
-        <p className="tender-card__deadline num">{formatRelativeDeadline(item.deadlineAt, now)}</p>
+        <p
+          className={`tender-card__deadline num tender-card__deadline--${deadlineTone(item.deadlineAt, now)}`}
+        >
+          {formatRelativeDeadline(item.deadlineAt, now)}
+        </p>
       </div>
       <h3 className="tender-card__title">
         <Link to={`/app/tenders/${item.matchId}`} state={{ backgroundLocation: location }}>
@@ -109,6 +128,20 @@ export function TenderCard({
             );
           })}
         </ul>
+      )}
+      {item.topComponents.length > 0 && (
+        <details className="tender-card__why">
+          <summary>Why this score</summary>
+          {/* The engine's own explanation strings for the card's top
+              components — already in the feed payload, previously fetched
+              and never shown. The full eight-component breakdown stays one
+              click away in the tender sheet. */}
+          <ul>
+            {item.topComponents.map((component) => (
+              <li key={component.componentKey}>{component.explanation}</li>
+            ))}
+          </ul>
+        </details>
       )}
       {item.topRiskFlag !== null && (
         <p className="tender-card__risk">

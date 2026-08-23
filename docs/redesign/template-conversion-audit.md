@@ -196,9 +196,11 @@ localStorage ops-state) was excluded from the comparison by instruction.
 - Theme foundation: `--t-*` type-scale tokens, `prefers-contrast` line
   tokens, three-rank buttons, `--accent-hover/press`, `--field-inner-lit`,
   `--bg-overlay`.
-- Shared components: low-fit/excluded card states, deadline urgency inks,
-  ~~visible status flash~~ (done for admin 2026-08-23; the customer app
-  surfaces still route status text through `visually-hidden-status`),
+- Shared components: low-fit/excluded card states, ~~deadline urgency
+  inks~~ (**DONE 2026-08-23** — thresholds read off the design's own Home
+  demo-feed data, <7 days risk / <14 caution, supplementary to the deadline
+  text), ~~visible status flash~~ (done for admin 2026-08-23; the customer
+  app surfaces still route status text through `visually-hidden-status`),
   arm→confirm strip with consequence copy.
 - ~~Auth polish: pre-submit validation, silent-failure fix, confirmation
   states. Marketing nav `aria-current`. Cookie-banner bottom padding.~~ —
@@ -212,7 +214,10 @@ localStorage ops-state) was excluded from the comparison by instruction.
   an open consent banner gives the document bottom clearance so the
   footer's privacy link and cookie-preferences reopener stay reachable.
   Each fix is pinned by an e2e test.
-- Feed/Settings: sort control + KPI row, "why this score" expander,
+- Feed/Settings: sort control + KPI row, ~~"why this score" expander~~
+  (**DONE 2026-08-23** — a native `<details>` on the card revealing the
+  engine's component explanation strings, which the feed payload already
+  carried and the card never rendered),
   settings validation layer, timezone control, NUTS add, Appearance pane,
   unified save bar; danger zone deletes account not organisation
   (product decision).
