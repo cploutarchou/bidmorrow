@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router';
 import { api, ApiError } from '../../lib/api';
 import { appendCursor, startCursor, type CursorState } from '../../lib/cursor';
 import type { FeedResponse, FeedRow } from '../../lib/types';
+import { subscribeToMatchUpdates } from '../../lib/match-events';
+import { FeedRail } from '../../components/FeedRail';
+import type { SavedSearch } from '../../lib/saved-searches';
+import type { OrgProfileResponse } from '../../lib/onboarding-types';
 import { TenderCard } from '../../components/TenderCard';
 import { SubscriptionRequiredNotice } from '../../components/SubscriptionRequiredNotice';
 
@@ -91,7 +95,53 @@ export function Feed(): ReactElement {
   const [subscriptionRequired, setSubscriptionRequired] = useState<{ reason: string } | null>(null);
   const [foundingAvailable, setFoundingAvailable] = useState<boolean | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [profileSummary, setProfileSummary] = useState<string | null>(null);
   const now = Date.now();
+
+  // The rail's profile line. Built from what the profile actually holds —
+  // no completeness percentage, because the product has no such model and a
+  // made-up one would be read as guidance.
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      api.get<OrgProfileResponse>('/api/org/profile'),
+      api.get<{ cpvPreferences: { cpvCode: string }[] }>('/api/org/cpv-preferences'),
+    ])
+      .then(([profile, cpv]) => {
+        if (cancelled) return;
+        const parts: string[] = [];
+        if (cpv.cpvPreferences.length > 0) {
+          parts.push(
+            `${String(cpv.cpvPreferences.length)} CPV code${cpv.cpvPreferences.length === 1 ? '' : 's'}`,
+          );
+        }
+        const min = profile.matching?.minValueEur ?? null;
+        const max = profile.matching?.maxValueEur ?? null;
+        if (min !== null || max !== null) {
+          parts.push(
+            `€${min === null ? '0' : min.toLocaleString()}–€${max === null ? '∞' : max.toLocaleString()}`,
+          );
+        }
+        const days = profile.matching?.minimumDaysRemaining ?? null;
+        if (days !== null) parts.push(`min ${String(days)} days runway`);
+        setProfileSummary(parts.length > 0 ? parts.join(' · ') : null);
+      })
+      .catch(() => {
+        // The rail is an accelerator; a failure here must not disturb the feed.
+        if (!cancelled) setProfileSummary(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function applySavedSearch(search: SavedSearch): void {
+    const next: Filters = { ...EMPTY_FILTERS, ...search.filters };
+    setFilters(next);
+    setTab(search.tab as Tab);
+    setUseCustomCountry(next.country.length > 0 && !countryOptions.includes(next.country));
+    void load(search.tab as Tab, next);
+  }
 
   // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) —
   // purely visual; the accessible `role="status"` live region below reads
@@ -229,6 +279,37 @@ export function Feed(): ReactElement {
     void load(tab, EMPTY_FILTERS);
   }
 
+  // The detail sheet stays open OVER this feed, so a save or ignore made in
+  // it must be reflected on the card underneath. Patching the one row beats
+  // refetching on close, which would cost a request and could reorder or drop
+  // the row the user was just reading (lib/match-events.ts).
+  useEffect(
+    () =>
+      subscribeToMatchUpdates((update) => {
+        setState((prev) =>
+          prev === null
+            ? prev
+            : {
+                ...prev,
+                items: prev.items.map((item) =>
+                  item.matchId === update.matchId
+                    ? {
+                        ...item,
+                        ...(update.savedByYou !== undefined
+                          ? { savedByYou: update.savedByYou }
+                          : {}),
+                        ...(update.ignoredByYou !== undefined
+                          ? { ignoredByYou: update.ignoredByYou }
+                          : {}),
+                      }
+                    : item,
+                ),
+              },
+        );
+      }),
+    [],
+  );
+
   async function handleSave(matchId: string, nextSaved: boolean): Promise<void> {
     if (state === null) return;
     const previous = state;
@@ -279,274 +360,287 @@ export function Feed(): ReactElement {
           foundingAvailable={foundingAvailable}
         />
       ) : (
-        <>
-          <div className="feed-view-switcher">
-            <div role="tablist" aria-label="Feed tabs" className="feed-tabs">
-              {TABS.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === t.id}
-                  data-group={t.group}
-                  className={tab === t.id ? 'tab tab--active' : 'tab'}
-                  onClick={() => setTab(t.id)}
-                >
-                  {t.label}
-                </button>
-              ))}
+        <div className="feed-layout">
+          <FeedRail
+            activeTab={tab}
+            activeFilters={Object.fromEntries(
+              Object.entries(filters).filter(([, value]) => value.length > 0),
+            )}
+            hasActiveFilters={activeFilterCount > 0}
+            onApply={applySavedSearch}
+            profileSummary={profileSummary}
+          />
+          <div className="feed-main">
+            <div className="feed-view-switcher">
+              <div role="tablist" aria-label="Feed tabs" className="feed-tabs">
+                {TABS.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === t.id}
+                    data-group={t.group}
+                    className={tab === t.id ? 'tab tab--active' : 'tab'}
+                    onClick={() => setTab(t.id)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <details className="feed-filters">
-            <summary>
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="filters-badge">· {activeFilterCount}</span>
-              )}
-            </summary>
-            <form
-              className="feed-filter-body"
-              onSubmit={(event) => {
-                event.preventDefault();
-                onFilterSubmit();
-              }}
-            >
-              <fieldset className="feed-filter-group">
-                <legend>Score &amp; value</legend>
-                <div className="feed-filter-fields">
-                  <div className="form-field">
-                    <label htmlFor="filter-min-score">Minimum score</label>
-                    <input
-                      id="filter-min-score"
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={filters.minScore}
-                      onChange={(event) => setFilters({ ...filters, minScore: event.target.value })}
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label htmlFor="filter-min-value">Min value (EUR)</label>
-                    <input
-                      id="filter-min-value"
-                      type="number"
-                      min={0}
-                      value={filters.minValueEur}
-                      onChange={(event) =>
-                        setFilters({ ...filters, minValueEur: event.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label htmlFor="filter-max-value">Max value (EUR)</label>
-                    <input
-                      id="filter-max-value"
-                      type="number"
-                      min={0}
-                      value={filters.maxValueEur}
-                      onChange={(event) =>
-                        setFilters({ ...filters, maxValueEur: event.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-              </fieldset>
-
-              <fieldset className="feed-filter-group">
-                <legend>Where &amp; who</legend>
-                <div className="feed-filter-fields">
-                  <div className="form-field">
-                    <label htmlFor="filter-country">Country</label>
-                    <select
-                      id="filter-country"
-                      value={useCustomCountry ? '__other__' : filters.country}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        if (value === '__other__') {
-                          setUseCustomCountry(true);
-                          return;
-                        }
-                        setUseCustomCountry(false);
-                        setFilters({ ...filters, country: value });
-                      }}
-                    >
-                      <option value="">Any</option>
-                      {countryOptions.map((code) => (
-                        <option key={code} value={code}>
-                          {code}
-                        </option>
-                      ))}
-                      <option value="__other__">Other (enter code)…</option>
-                    </select>
-                  </div>
-                  {useCustomCountry && (
+            <details className="feed-filters">
+              <summary>
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="filters-badge">· {activeFilterCount}</span>
+                )}
+              </summary>
+              <form
+                className="feed-filter-body"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  onFilterSubmit();
+                }}
+              >
+                <fieldset className="feed-filter-group">
+                  <legend>Score &amp; value</legend>
+                  <div className="feed-filter-fields">
                     <div className="form-field">
-                      <label htmlFor="filter-country-custom">2-letter country code</label>
+                      <label htmlFor="filter-min-score">Minimum score</label>
                       <input
-                        id="filter-country-custom"
-                        maxLength={2}
-                        value={filters.country}
+                        id="filter-min-score"
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={filters.minScore}
                         onChange={(event) =>
-                          setFilters({ ...filters, country: event.target.value.toUpperCase() })
+                          setFilters({ ...filters, minScore: event.target.value })
                         }
                       />
                     </div>
-                  )}
-                  <div className="form-field">
-                    <label htmlFor="filter-cpv">CPV prefix</label>
-                    <input
-                      id="filter-cpv"
-                      value={filters.cpvPrefix}
-                      onChange={(event) =>
-                        setFilters({ ...filters, cpvPrefix: event.target.value })
-                      }
-                    />
+                    <div className="form-field">
+                      <label htmlFor="filter-min-value">Min value (EUR)</label>
+                      <input
+                        id="filter-min-value"
+                        type="number"
+                        min={0}
+                        value={filters.minValueEur}
+                        onChange={(event) =>
+                          setFilters({ ...filters, minValueEur: event.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="filter-max-value">Max value (EUR)</label>
+                      <input
+                        id="filter-max-value"
+                        type="number"
+                        min={0}
+                        value={filters.maxValueEur}
+                        onChange={(event) =>
+                          setFilters({ ...filters, maxValueEur: event.target.value })
+                        }
+                      />
+                    </div>
                   </div>
-                  <div className="form-field">
-                    <label htmlFor="filter-buyer">Buyer</label>
-                    <input
-                      id="filter-buyer"
-                      value={filters.buyerName}
-                      onChange={(event) =>
-                        setFilters({ ...filters, buyerName: event.target.value })
-                      }
-                    />
+                </fieldset>
+
+                <fieldset className="feed-filter-group">
+                  <legend>Where &amp; who</legend>
+                  <div className="feed-filter-fields">
+                    <div className="form-field">
+                      <label htmlFor="filter-country">Country</label>
+                      <select
+                        id="filter-country"
+                        value={useCustomCountry ? '__other__' : filters.country}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          if (value === '__other__') {
+                            setUseCustomCountry(true);
+                            return;
+                          }
+                          setUseCustomCountry(false);
+                          setFilters({ ...filters, country: value });
+                        }}
+                      >
+                        <option value="">Any</option>
+                        {countryOptions.map((code) => (
+                          <option key={code} value={code}>
+                            {code}
+                          </option>
+                        ))}
+                        <option value="__other__">Other (enter code)…</option>
+                      </select>
+                    </div>
+                    {useCustomCountry && (
+                      <div className="form-field">
+                        <label htmlFor="filter-country-custom">2-letter country code</label>
+                        <input
+                          id="filter-country-custom"
+                          maxLength={2}
+                          value={filters.country}
+                          onChange={(event) =>
+                            setFilters({ ...filters, country: event.target.value.toUpperCase() })
+                          }
+                        />
+                      </div>
+                    )}
+                    <div className="form-field">
+                      <label htmlFor="filter-cpv">CPV prefix</label>
+                      <input
+                        id="filter-cpv"
+                        value={filters.cpvPrefix}
+                        onChange={(event) =>
+                          setFilters({ ...filters, cpvPrefix: event.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="filter-buyer">Buyer</label>
+                      <input
+                        id="filter-buyer"
+                        value={filters.buyerName}
+                        onChange={(event) =>
+                          setFilters({ ...filters, buyerName: event.target.value })
+                        }
+                      />
+                    </div>
                   </div>
+                </fieldset>
+
+                <fieldset className="feed-filter-group">
+                  <legend>Dates</legend>
+                  <div className="feed-filter-fields">
+                    <div className="form-field">
+                      <label htmlFor="filter-deadline">Deadline before</label>
+                      <input
+                        id="filter-deadline"
+                        type="date"
+                        value={filters.deadlineBefore}
+                        onChange={(event) =>
+                          setFilters({ ...filters, deadlineBefore: event.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="filter-deadline-after">Deadline after</label>
+                      <input
+                        id="filter-deadline-after"
+                        type="date"
+                        value={filters.deadlineAfter}
+                        onChange={(event) =>
+                          setFilters({ ...filters, deadlineAfter: event.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="filter-published-after">Published after</label>
+                      <input
+                        id="filter-published-after"
+                        type="date"
+                        value={filters.publishedAfter}
+                        onChange={(event) =>
+                          setFilters({ ...filters, publishedAfter: event.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                </fieldset>
+
+                <div className="feed-filter-actions">
+                  <button className="cta" type="submit">
+                    Apply filters
+                  </button>
+                  <button type="button" className="btn-quiet btn-sm" onClick={clearFilters}>
+                    Clear all
+                  </button>
                 </div>
-              </fieldset>
+              </form>
+            </details>
 
-              <fieldset className="feed-filter-group">
-                <legend>Dates</legend>
-                <div className="feed-filter-fields">
-                  <div className="form-field">
-                    <label htmlFor="filter-deadline">Deadline before</label>
-                    <input
-                      id="filter-deadline"
-                      type="date"
-                      value={filters.deadlineBefore}
-                      onChange={(event) =>
-                        setFilters({ ...filters, deadlineBefore: event.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label htmlFor="filter-deadline-after">Deadline after</label>
-                    <input
-                      id="filter-deadline-after"
-                      type="date"
-                      value={filters.deadlineAfter}
-                      onChange={(event) =>
-                        setFilters({ ...filters, deadlineAfter: event.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label htmlFor="filter-published-after">Published after</label>
-                    <input
-                      id="filter-published-after"
-                      type="date"
-                      value={filters.publishedAfter}
-                      onChange={(event) =>
-                        setFilters({ ...filters, publishedAfter: event.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-              </fieldset>
-
-              <div className="feed-filter-actions">
-                <button className="cta" type="submit">
-                  Apply filters
-                </button>
-                <button type="button" className="btn-quiet btn-sm" onClick={clearFilters}>
-                  Clear all
-                </button>
-              </div>
-            </form>
-          </details>
-
-          <p role="status" aria-live="polite" className="visually-hidden-status">
-            {statusMessage}
-          </p>
-          {statusMessage !== null && (
-            <div className="app-toast" aria-hidden="true">
+            <p role="status" aria-live="polite" className="visually-hidden-status">
               {statusMessage}
-            </div>
-          )}
-
-          {loading && (
-            <ul className="feed-skeleton-list" aria-hidden="true">
-              <li className="feed-skeleton-card" />
-              <li className="feed-skeleton-card" />
-              <li className="feed-skeleton-card" />
-            </ul>
-          )}
-          {error !== null && (
-            <p role="alert" className="form-error">
-              {error}
             </p>
-          )}
-          {!loading && error === null && state !== null && state.items.length === 0 && (
-            <div className="feed-empty">
-              <span className="feed-empty__glyph" aria-hidden="true" />
-              {isShelfTab ? (
-                <p className="feed-empty__title">
-                  {tab === 'saved'
-                    ? 'Nothing saved yet — use Save on a tender you want to come back to.'
-                    : 'Nothing ignored yet — use Ignore to keep a tender out of your review queue.'}
-                </p>
-              ) : activeFilterCount > 0 ? (
-                <>
-                  <p className="feed-empty__title">No matches with these filters.</p>
-                  <div className="feed-empty__actions">
-                    <button type="button" className="btn-quiet" onClick={clearFilters}>
-                      Clear filters
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="feed-empty__title">
-                    No matches yet — ingestion and matching run daily.
-                  </p>
-                  <p className="feed-empty__body">Your next chance: tomorrow.</p>
-                  <div className="feed-empty__actions">
-                    <a className="btn-quiet" href="/app/settings#matching-profile">
-                      Widen CPV preferences in Settings
-                    </a>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-          {!loading && state !== null && state.items.length > 0 && (
-            <>
-              <ul className="tender-list">
-                {state.items.map((item) => (
-                  <li key={item.matchId}>
-                    <TenderCard
-                      item={item}
-                      now={now}
-                      onSave={(id, s) => void handleSave(id, s)}
-                      onIgnore={(id, i) => void handleIgnore(id, i)}
-                    />
-                  </li>
-                ))}
+            {statusMessage !== null && (
+              <div className="app-toast" aria-hidden="true">
+                {statusMessage}
+              </div>
+            )}
+
+            {loading && (
+              <ul className="feed-skeleton-list" aria-hidden="true">
+                <li className="feed-skeleton-card" />
+                <li className="feed-skeleton-card" />
+                <li className="feed-skeleton-card" />
               </ul>
-              {state.nextCursor !== null && (
-                <button
-                  type="button"
-                  className="btn-quiet"
-                  onClick={() => void loadMore()}
-                  disabled={loadingMore}
-                >
-                  {loadingMore ? 'Loading…' : 'Load more'}
-                </button>
-              )}
-            </>
-          )}
-        </>
+            )}
+            {error !== null && (
+              <p role="alert" className="form-error">
+                {error}
+              </p>
+            )}
+            {!loading && error === null && state !== null && state.items.length === 0 && (
+              <div className="feed-empty">
+                <span className="feed-empty__glyph" aria-hidden="true" />
+                {isShelfTab ? (
+                  <p className="feed-empty__title">
+                    {tab === 'saved'
+                      ? 'Nothing saved yet — use Save on a tender you want to come back to.'
+                      : 'Nothing ignored yet — use Ignore to keep a tender out of your review queue.'}
+                  </p>
+                ) : activeFilterCount > 0 ? (
+                  <>
+                    <p className="feed-empty__title">No matches with these filters.</p>
+                    <div className="feed-empty__actions">
+                      <button type="button" className="btn-quiet" onClick={clearFilters}>
+                        Clear filters
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="feed-empty__title">
+                      No matches yet — ingestion and matching run daily.
+                    </p>
+                    <p className="feed-empty__body">Your next chance: tomorrow.</p>
+                    <div className="feed-empty__actions">
+                      <a className="btn-quiet" href="/app/settings#matching-profile">
+                        Widen CPV preferences in Settings
+                      </a>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            {!loading && state !== null && state.items.length > 0 && (
+              <>
+                <ul className="tender-list">
+                  {state.items.map((item) => (
+                    <li key={item.matchId}>
+                      <TenderCard
+                        item={item}
+                        now={now}
+                        onSave={(id, s) => void handleSave(id, s)}
+                        onIgnore={(id, i) => void handleIgnore(id, i)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+                {state.nextCursor !== null && (
+                  <button
+                    type="button"
+                    className="btn-quiet"
+                    onClick={() => void loadMore()}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? 'Loading…' : 'Load more'}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       )}
     </>
   );

@@ -222,7 +222,12 @@ export async function createCheckoutSession(
     line_items: [{ price: priceId, quantity: 1 }],
     metadata,
     subscription_data: { metadata },
-    success_url: `${deps.appBaseUrl}/app/settings?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+    // Dedicated confirmation route: it polls /api/billing/status until the
+    // webhook below has written the subscription row, so a customer never
+    // lands on a page telling them they have no subscription seconds after
+    // paying. `session_id` is kept for support traceability; nothing
+    // resolves it today.
+    success_url: `${deps.appBaseUrl}/app/billing/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${deps.appBaseUrl}/app/settings?checkout=cancelled`,
     ...(stripeTaxEnabled
       ? {

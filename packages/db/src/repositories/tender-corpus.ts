@@ -11,7 +11,7 @@
  * uniqueness assumption is additionally backed by a DB unique index so a
  * duplicate write fails loudly instead of corrupting the corpus.
  */
-import { and, asc, desc, eq, gt, gte, inArray, isNull, lte } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 
 import type { Db } from '../client';
 import { newId } from '../id';
@@ -533,6 +533,109 @@ export async function listLotsForScoring(
     .limit(limit + 1);
 
   return toPage(rows, limit, (row) => row.lot.id);
+}
+
+// ---------------------------------------------------------------------------
+// Onboarding scope estimate
+// ---------------------------------------------------------------------------
+
+export interface ScopeEstimateArgs {
+  /** 8-digit CPV codes the org is considering. */
+  readonly cpvCodes: readonly string[];
+  /** ISO-3166-1 alpha-2 codes the org is considering. May be empty. */
+  readonly countryCodes: readonly string[];
+  readonly windowFrom: string;
+  readonly windowTo: string;
+}
+
+export interface ScopeEstimate {
+  /**
+   * Lots that WOULD have been scored for this CPV selection — i.e. that pass
+   * the same CPV-division pre-filter `scoreLotsForOrgs` applies
+   * (packages/procurement/src/score.ts). Not "lots that would rank well":
+   * passing the filter only means a match row gets written at all.
+   */
+  readonly scorableLots: number;
+  /**
+   * Of those, how many are in the chosen countries. Null when no country was
+   * chosen, because "0 of N" would misread as a warning when it is simply
+   * not a question the user has asked yet.
+   *
+   * Country is deliberately NOT part of `scorableLots`: geography is a scored
+   * component, not a gate, so a lot outside the chosen countries is still
+   * scored and can still surface. Reporting it as excluded would be wrong.
+   */
+  readonly inChosenCountries: number | null;
+}
+
+/**
+ * How much the corpus actually held for a given scope over a window — the
+ * number behind onboarding's estimate panel.
+ *
+ * Counts real rows over a real window. It is a description of the recent
+ * past, never a forecast, and the UI must not present it as one.
+ */
+export async function estimateScope(db: Db, args: ScopeEstimateArgs): Promise<ScopeEstimate> {
+  assertIsoDate(args.windowFrom, 'windowFrom');
+  assertIsoDate(args.windowTo, 'windowTo');
+
+  // The pre-filter compares CPV DIVISIONS (first two digits), so the estimate
+  // has to as well — matching on full codes would report far fewer lots than
+  // the engine would really score.
+  const divisions = [
+    ...new Set(
+      args.cpvCodes.map((code) => code.slice(0, 2)).filter((division) => division.length === 2),
+    ),
+  ];
+  if (divisions.length === 0) return { scorableLots: 0, inChosenCountries: null };
+
+  const inWindow = and(
+    gte(tenderNotices.publicationDate, args.windowFrom),
+    lte(tenderNotices.publicationDate, args.windowTo),
+    isNull(tenderNotices.archivedAt),
+  );
+
+  const countScorable = await db
+    .select({ total: sql<number>`count(distinct ${tenderLots.id})` })
+    .from(tenderLots)
+    .innerJoin(tenderCpvCodes, eq(tenderCpvCodes.lotId, tenderLots.id))
+    .innerJoin(tenderNoticeVersions, eq(tenderLots.noticeVersionId, tenderNoticeVersions.id))
+    .innerJoin(
+      tenderNotices,
+      and(
+        eq(tenderNoticeVersions.noticeId, tenderNotices.id),
+        eq(tenderNotices.currentVersionId, tenderNoticeVersions.id),
+      ),
+    )
+    .where(and(inWindow, inArray(sql`substr(${tenderCpvCodes.cpvCode}, 1, 2)`, divisions)));
+
+  const scorableLots = Number(countScorable[0]?.total ?? 0);
+
+  const countries = [...new Set(args.countryCodes.map((code) => code.toUpperCase()))];
+  if (countries.length === 0) return { scorableLots, inChosenCountries: null };
+
+  const countInCountries = await db
+    .select({ total: sql<number>`count(distinct ${tenderLots.id})` })
+    .from(tenderLots)
+    .innerJoin(tenderCpvCodes, eq(tenderCpvCodes.lotId, tenderLots.id))
+    .innerJoin(tenderGeographies, eq(tenderGeographies.lotId, tenderLots.id))
+    .innerJoin(tenderNoticeVersions, eq(tenderLots.noticeVersionId, tenderNoticeVersions.id))
+    .innerJoin(
+      tenderNotices,
+      and(
+        eq(tenderNoticeVersions.noticeId, tenderNotices.id),
+        eq(tenderNotices.currentVersionId, tenderNoticeVersions.id),
+      ),
+    )
+    .where(
+      and(
+        inWindow,
+        inArray(sql`substr(${tenderCpvCodes.cpvCode}, 1, 2)`, divisions),
+        inArray(tenderGeographies.countryCode, countries),
+      ),
+    );
+
+  return { scorableLots, inChosenCountries: Number(countInCountries[0]?.total ?? 0) };
 }
 
 // ---------------------------------------------------------------------------

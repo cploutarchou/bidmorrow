@@ -1,0 +1,11 @@
+{
+  "source": "https://ted.europa.eu/en/notice/579541-2026",
+  "sourceNoticeId": "579541-2026",
+  "publicationDate": "2026-08-21",
+  "retrievalDate": "2026-08-23",
+  "sdkVersion": "1.13",
+  "sdkGitTag": null,
+  "case": "SDK 1.13 two-lot cn-standard notice (DEU, negotiated-with-call procedure) from a municipality: gigabit broadband rollout, CPV 72400000, NUTS DE25B, with NO lot value and NO submission deadline published — both legitimate for this procedure type. Shares CPV division 72 with IT services while being telecoms infrastructure, so it reaches scoring rather than being pre-filtered, which is exactly the lot a division-level pre-filter cannot settle on its own.",
+  "origin": "Real TED-published notice fetched from the TED Search API (links.xml.MUL) by the ted-fixture-fetch workflow, run 32646377636, on 2026-08-23 with the CPV filter 72,48,79417000 — the session sandbox cannot reach ted.europa.eu (the agent proxy denies the CONNECT). Verbatim source XML apart from the documented sanitization.",
+  "sanitization": "None required. Contacts are the advising firm's procurement department mailbox (NUREMBERG.VERGABE.PS@roedl.com) with its office number, and the eSender noreply address. No natural person is identified. No structural changes."
+}

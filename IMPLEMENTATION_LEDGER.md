@@ -2971,6 +2971,64 @@ deploy --dry-run` for the top-level env AND `--env staging` both list
 
 ## In progress
 
+- **Template-conversion pending list — first four items implemented
+  (2026-08-22, branch `work/bidmorrow-production-impl`).** Owner
+  approved shipping all four with the theme work made value-preserving.
+  Plan of record: the approved session plan; audit of record:
+  `docs/redesign/template-conversion-audit.md`.
+
+  1. **M0.2 SEO artifacts** (`d0bfd81` + review fixes `72745f9`, PR #79).
+     `PageMeta` + `lib/seo.ts` (length limits enforced by `seo.test.ts`),
+     `NoIndex` on auth/app/onboarding/admin/NotFound, **Worker-served
+     env-aware robots.txt** (a static file would have published production
+     rules and the production sitemap on staging), `sitemap.xml` with
+     `lastmod` omitted rather than faked, and a generated 1200x630 OG image
+     (77 KB) built by `scripts/generate-og-image.mjs` from a reviewable HTML
+     source using the canonical 84.5/100 worked example.
+  2. **Post-checkout confirmation** (`c5ca3b4`). `/app/billing/success`
+     polls `GET /api/billing/status` with three honest states; the retry
+     logic is a pure injectable `pollForSubscription` with 7 tests, because
+     the web app has no component-test infrastructure and burying it in an
+     effect would have shipped it untested. `BillingStatus` lifted to
+     `lib/billing.ts`, shared with Settings.
+  3. **Route-level code splitting** (`10beccc`). Marketing entry **478.00 kB
+     -> 58.28 kB first-party** plus a 230.57 kB vendor chunk (React/DOM/router
+     — irreducible without changing frameworks, and now cached across
+     deploys). Admin's absence from the customer bundle is **verified**: the
+     typed-confirmation literals appear in zero entry/vendor chunks.
+     `RouteChunkBoundary` handles the stale-deploy case, where SPA fallback
+     returns index.html 200 for a missing chunk so the import fails on MIME.
+  4. **Theme foundation** (`b7c85fe`). `--t-*` seven-step scale (`:root`
+     only — sizes are theme-independent, so they must not be triplicated into
+     the light blocks); **`prefers-contrast: more` bug fixed** — it re-pointed
+     only pre-v2 aliases, so ~34 v2-named call sites including `.tender-card`
+     got no boost at all; ghost/tertiary button rank added as NEW classes.
+
+  **Reviews.** `security` PASS (2 Low + 4 Info, all addressed — notably
+  robots.txt no longer names `/admin`, which had partially undone the C11
+  404-cloaking design). `product` FAIL -> addressed: the share image claimed
+  "Every TED notice" (exhaustive-coverage overclaim) and showed 5 of 8 score
+  components against the full 84.5 badge; both fixed, plus contact/how-it-works
+  copy corrections. A GA4 tripwire (`tests/security/analytics-claim.test.ts`)
+  now fails if an analytics loader is added while the "no third-party
+  analytics" promise ships.
+
+  **BLOCKED ON CI — owner action.** GitHub Actions stopped running at
+  ~16:41 UTC: runs 205/206 and a manual re-run all fail in 2-3 s with zero
+  steps executed, no logs (404) and empty check-run output, on two commits,
+  while `ci.yml` is unchanged since 2026-08-16. That signature is exhausted
+  Actions minutes / a spending limit on a private repo. `main` is
+  ruleset-protected on green checks, so **nothing here can merge until
+  Actions runs again**. All four commits are on the branch with full local
+  gates green (format, lint, typecheck, **851 tests**, build).
+
+  **Follow-ups recorded, not silently dropped:** CSS is still 91 kB against
+  a 25 kB budget (one global stylesheet — splitting it per surface is the
+  fix, and code splitting cannot do it); the 26 size-only type-scale
+  near-matches await a deliberate migration PR; `--accent-hover`/`--press`,
+  `--field-inner-lit` and `--bg-overlay` remain unwired pending a reviewed
+  restyling PR.
+
 - **Template-conversion audit + site-availability check (2026-08-22).**
   Owner reported bidmorrow.com/staging unreachable and asked what remains
   of the template conversion; owner also pushed the design project
@@ -3587,6 +3645,179 @@ requires RESEND_API_KEY + verified domain.
   `.github/workflows/*.yml` now carries a full commit SHA (tag as
   trailing comment); threat-model T21 updated.
 - ~~SEC-P9-02 / SEC-P9-03~~ closed as above.
+
+## Post-merge live verification 2026-08-23 (PR #79 → `068e8d9`)
+
+Merged with CI green after the ~17-hour account-level Actions outage
+cleared. Staging auto-deployed (run 32633228089) and the SEO artifacts were
+probed from a runner, since the sandbox proxy cannot reach the domains.
+
+Verified on staging: `sitemap.xml` serves `application/xml` with the real
+file; `og/og-default.png` serves `image/png` at 77,494 bytes. Production
+still returns the SPA fallback for both — expected, production deploy is
+owner-gated and has not run.
+
+**Defect found and fixed the same session.** `robots.txt` on both domains is
+NOT purely ours: this zone has Cloudflare's managed robots.txt turned on,
+which prepends its own `User-agent: *` / `Content-Signal` / `Allow: /` group
+to the Worker's response. Crawlers merge same-user-agent groups, and
+`Allow: /` vs `Disallow: /` is a same-length tie resolved in favour of the
+least restrictive rule — so staging's blanket Disallow did not actually keep
+staging out of an index. Production's rules are unaffected (`/app`,
+`/onboarding`, `/api` are longer paths and win outright).
+
+Fix: the staging deploy injects `X-Robots-Tag: noindex, nofollow` into the
+`/*` block of `dist/_headers` before upload — immune to robots.txt merging,
+and stronger regardless, since `Disallow` also stops a crawler reading a
+page's `noindex`. Asserted in the staging smoke tests and probed by
+site-health. Not committed to `apps/web/public/_headers`, which also ships
+to production.
+
+Note for whoever runs the first production deploy: the managed robots.txt
+also publishes AI-crawler `Disallow` rules and `ai-train=no` for the zone.
+That is an owner-level Cloudflare setting, deliberately left alone.
+
+## Public sample-verdict demo — 2026-08-23 (audit item 11, first slice)
+
+`/sample-verdicts` ships: five real TED-published notices scored by the
+production engine against three representative supplier profiles, spanning
+Strong match (86.5) · Worth reviewing (68.5, 78.5) · Low fit (43) · Excluded,
+each with its full eight-component breakdown and a link to the notice on TED.
+Policy of record: `docs/product-scope.md` "Product policy lock", owner
+decision 2026-08-17 — a controlled demonstration of EXPLAINABILITY, not a
+free tier.
+
+The policy's hard boundaries are structural, not merely unbuilt: the page has
+no input, no profile to create, no link into `/app`, and one CTA. An e2e test
+asserts all of that rather than trusting the markup to stay that way.
+
+### The data is generated, and checked for staleness
+
+`packages/procurement/src/sample-verdicts.ts` (which notices, which profiles,
+and the engine run) + `scripts/generate-sample-verdicts.ts` (writes the file)
+→ `apps/web/src/lib/sample-verdicts.generated.ts`, committed.
+
+`tests/integration/sample-verdicts-committed.test.ts` regenerates and
+compares. It lives in `tests/` because it is exactly a cross-boundary check —
+`packages/procurement` builds the data, `apps/web` consumes it, and neither
+may import the other. The failure it prevents is the quiet one: change a
+component weight or an exclusion rule, and a public page keeps showing
+yesterday's numbers while telling visitors they are today's. It also asserts
+that every notice is TED-published, that an excluded lot carries no score and
+no breakdown, and that each breakdown sums to the score it explains.
+
+The generator refuses to write a set that collapses to fewer than three
+outcome classes, or one with no EXCLUDED case.
+
+### A real bug this surfaced
+
+The first version of the generator had its own notice → `LotInput` mapper. It
+read the deadline as `lot.submissionDeadline` (the field is `lot.deadline`)
+and the country from `lot.country`, which `NormalizedLot` has never had. Both
+resolved to `undefined` and the engine scored the wrong input without
+complaining — every sample verdict lost all 15 geography points and reported
+"no submission deadline published".
+
+Fixed by deleting the lookalike: the mapping is now
+`packages/procurement/src/notice-lot-input.ts`, shared with the ingestion
+path, mirroring `run-window.ts` + `scoring-input.ts` field by field and
+covered by `notice-lot-input.test.ts` (6 tests pinned against real fixtures).
+`firstLanguageValue` / `nutsToCountry` moved out of `run-window.ts` into
+`lot-normalization.ts` so both callers use one copy. `COMPONENT_KEY_TO_DB` is
+now exported from `score.ts` so the demo labels components with the same
+vocabulary the customer UI reads.
+
+It also declines rather than guesses: a lot whose value is non-EUR is
+reported as `value_needs_fx_rate` instead of being scored with the value
+dropped, because production converts through an ECB rate at score time and
+"not published" would understate the lot. That is why the Czech
+CPV/subject-mismatch fixture is committed but not used on the page.
+
+### Fixtures
+
+Seven new real notices under `tests/fixtures/ted/1.13/`, sanitized per the
+`ted-fixture-refresh` skill (two required replacing a personal mailbox and a
+mobile number; four contained no natural-person data):
+
+| fixture                            | notice      | why it is worth keeping                                    |
+| ---------------------------------- | ----------- | ---------------------------------------------------------- |
+| `real-cyber-pentest`               | 578580-2026 | DE, CPV 72800000 penetration testing, 32-day runway        |
+| `real-it-framework-three-lot`      | 580079-2026 | DE, three lots, per-lot EUR values above a small ceiling   |
+| `real-it-consulting-two-lot`       | 579968-2026 | DE, two lots sharing a CPV set but differing in subject    |
+| `real-broadband-no-deadline`       | 579541-2026 | DE, CPV 72400000 with NO value and NO deadline published   |
+| `real-cpv-mismatch-print-services` | 578736-2026 | CZ, an IT-services CPV on a managed-printing contract, CZK |
+| `real-works-multi-cpv`             | 580930-2026 | SK, works notice carrying one 72\* code among nineteen     |
+
+The sandbox cannot reach ted.europa.eu — the agent proxy denies the CONNECT
+with 403 — so the fetch ran in CI. `.github/workflows/ted-fixture-fetch.yml`
+and `scripts/fetch-raw-ted-notices.mjs` gained an optional `cpv_prefixes`
+input for it (prefix expansion copied from `buildScopeQuery`, which is
+live-validated, rather than reinvented). Run 32646377636, filter
+`72,48,79417000`.
+
+### Review findings, and what they changed
+
+Reviewed by the `product` and `security` agents before merge. Three findings
+were acted on; two more were hardening.
+
+- **Personal data reproduced in fixture metadata (HIGH, security).** The
+  `sanitization` field of two new `.meta.json` files quoted the exact personal
+  mailbox and mobile number that had just been replaced in the XML — which
+  puts back precisely what the replacement took out, and departs from the
+  convention the existing fixtures follow (field path + occurrence count, never
+  the value). Rewritten to that convention, and the branch's history rewritten
+  so the values never reach the default branch. The `ted-fixture-refresh`
+  skill now states the rule explicitly at step 4; it was convention, not
+  written down, which is why it was got wrong.
+- **"Written before the notices were picked, not fitted to them afterwards"
+  (HIGH, product).** The page asserted that as fact about process. It was not
+  true: the cyber profile's keyword list was broadened after seeing that
+  German notices use `IT-Sicherheit` and `Sicherheitsanalysen`. Whether those
+  are fair as standard trade vocabulary is a real argument, but it answers a
+  different question than the sentence asked. Replaced with the claim that is
+  actually defensible — the profiles use the ordinary trade vocabulary such a
+  firm lists on its own site, not words lifted from any one notice.
+- **The demo never showed a risk flag (MEDIUM, product).** The four original
+  notices are German and Slovak, and flag detection is an English pattern set,
+  so zero flags was correct behaviour rather than a casting accident — but the
+  flagship demo then never once shows the feature it exists to sell. Added a
+  fifth verdict on the one English IT notice in the fetch (IE, 579868-2026),
+  which raises a genuine POSSIBLE `framework_membership` flag off the lot
+  title. The page now states the language limit rather than leaving the
+  absence unexplained.
+- **`sourceKind` was computed but never rendered (MEDIUM, product).** Every
+  committed verdict is TED-published and a test enforces it, but the page had
+  no code path for the `eforms_example` case the generator can legitimately
+  produce. It now renders the distinction instead of depending on case
+  selection to make it moot.
+- **Hardening (LOW, security).** `buildSampleVerdicts` throws on a
+  `meta.source` that is neither a TED notice nor an OP-TED example URL, rather
+  than letting a meta field become an `href` on a public page.
+  `scripts/fetch-raw-ted-notices.mjs` validates the publication-number shape
+  before using it as a filename and allowlists the XML link's origin.
+
+### Deliberate omissions
+
+- No profile was tuned per case. Each was written once, in the ordinary trade
+  vocabulary for its trade and market, and the five numbers are whatever the
+  engine returned. One judgement call is on the record: the cyber profile's
+  keywords were broadened to include `it-sicherheit` and `sicherheitsanalysen`
+  after the first run, which moved that verdict from 78.5 to 86.5 and across
+  the Strong-match threshold. They are standard German terms for the trade,
+  but they were added after seeing the notice, so the page no longer claims
+  the profiles predate the case selection.
+- The facts strip shows the deadline DATE, not a countdown: a relative figure
+  computed by `formatRelativeDeadline` sat one day off the engine's own "32
+  days" in the breakdown beside it. Two numbers for one fact, on a page whose
+  argument is that the numbers are checkable.
+- Scores are pinned to 2026-08-21T09:00Z (the morning the notices published)
+  and the page says so. Deadline runway is a scored component, so a "live"
+  demo would drift daily away from the numbers shown.
+
+### Still open on audit item 11
+
+`/cybersecurity-tenders` and `/cloud-tenders` category pages, and the
+comparison module.
 
 ## Notes
 

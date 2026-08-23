@@ -4,6 +4,7 @@ import { adminApi } from '../../lib/admin-api';
 import { appendCursor, startCursor, type CursorState } from '../../lib/cursor';
 import { formatIsoUtc } from '../../lib/format';
 import { Pager } from '../../components/admin/Pager';
+import { AdminPage } from '../../components/admin/AdminPage';
 import type { AdminOrgSummary } from '../../lib/admin-types';
 
 export function Organizations(): ReactElement {
@@ -44,9 +45,11 @@ export function Organizations(): ReactElement {
   }
 
   return (
-    <>
-      <title>Organizations — Admin</title>
-      <h1>Organizations</h1>
+    <AdminPage
+      documentTitle="Organizations — Admin"
+      heading="Organizations"
+      note="Every organization on the platform. Selecting one opens its detail view, which is where suspension lives — nothing on this page mutates anything."
+    >
       <form
         className="admin-search"
         onSubmit={(event) => {
@@ -65,7 +68,9 @@ export function Organizations(): ReactElement {
           {error}
         </p>
       )}
-      {!loading && state !== null && state.items.length === 0 && <p>No organizations found.</p>}
+      {!loading && state !== null && state.items.length === 0 && (
+        <p className="admin-empty">No organizations found.</p>
+      )}
       {!loading && state !== null && state.items.length > 0 && (
         <div className="admin-table-scroll">
           <table>
@@ -104,6 +109,6 @@ export function Organizations(): ReactElement {
         loading={loadingMore}
         onLoadMore={() => void loadMore()}
       />
-    </>
+    </AdminPage>
   );
 }

@@ -5,6 +5,7 @@ import { Combobox } from '../../components/Combobox';
 import { ConfirmAction } from '../../components/ConfirmAction';
 import { CPV_SUGGESTIONS } from '../../data/cpv-suggestions';
 import { api, ApiError } from '../../lib/api';
+import { fetchBillingStatus, type BillingStatus } from '../../lib/billing';
 import { usePublicConfig } from '../../lib/public-config';
 import { useAuth } from '../../lib/auth-context';
 import { localComboboxSource, type ComboboxOption } from '../../lib/combobox-filter';
@@ -65,28 +66,6 @@ function describeSaveError(cause: unknown): string {
     }
   }
   return 'Could not save — please try again.';
-}
-
-/** `packages/billing/src/plans.ts` `SubscriptionPlan`/`SubscriptionStatus`/`PaymentState` — kept as string literals here rather than importing `@bidmorrow/billing` into the web bundle for a handful of enum values. */
-type SubscriptionPlan = 'founding' | 'standard';
-type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid';
-
-interface BillingStatus {
-  entitlement: {
-    active: boolean;
-    plan: SubscriptionPlan | null;
-    status: SubscriptionStatus | null;
-    reason: string;
-  };
-  subscription: {
-    plan: SubscriptionPlan;
-    status: SubscriptionStatus;
-    cancelAtPeriodEnd: boolean;
-    currentPeriodEndAt: number | null;
-    price: { amountMinorUnits: number; currency: string; interval: string };
-    paymentState: SubscriptionStatus;
-  } | null;
-  foundingAvailable: boolean;
 }
 
 /** `GET /api/billing/invoices`'s `InvoiceSummary` (`packages/billing/src/invoices.ts`). */
@@ -331,7 +310,7 @@ export function Settings(): ReactElement {
 
   async function refreshBillingStatus(): Promise<void> {
     try {
-      const res = await api.get<BillingStatus>('/api/billing/status');
+      const res = await fetchBillingStatus();
       setBilling(res);
     } catch {
       // Best-effort refresh after cancel/reactivate — the mutation itself

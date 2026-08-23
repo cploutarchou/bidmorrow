@@ -68,6 +68,7 @@ import {
   companyExclusions,
   companyGeographies,
   companyKeywords,
+  savedSearches,
   companyProfiles,
   digestPreferences,
   matchingPreferences,
@@ -224,6 +225,7 @@ export async function purgeOrganizationOwnedRows(
     companyExclusions,
     matchingPreferences,
     digestPreferences,
+    savedSearches,
   ] as const) {
     companyRowsDeleted += (
       await db

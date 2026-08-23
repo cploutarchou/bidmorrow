@@ -179,6 +179,33 @@
   --sig-info: #7fb3ea;
   --sig-ok: var(--accent);
 
+  /* type scale — Theme Spec §09's seven steps, verbatim. Written in the
+     `font` shorthand's `size/line-height` form, which is how the spec
+     defines them: `font: var(--t-body) var(--font-ui)`.
+
+     Introduced additively; no existing call site is migrated here. The file
+     carries 215 `font-size` declarations across 52 distinct values, and a
+     scan found only TWO whose size AND line-height already match a step
+     exactly (.mkt-hold__lede, .hp-plan__desc, both --t-body). Even those are
+     left alone: the `font` shorthand also resets weight, style, variant and
+     stretch, so adopting it is not the no-op it looks like. Migrating the
+     other 26 size-only near-matches would move type on a live, signed-off
+     design, so consolidation is a deliberate follow-up PR.
+
+     First consumers are therefore new CSS only (.btn-ghost--sm and the
+     not-yet-shipped .billing-success copy).
+
+     No light/dark variants: type sizes do not change with theme, so unlike
+     the color tokens these are defined once and are not repeated in the
+     [data-theme='light'] and prefers-color-scheme blocks below. */
+  --t-display: 3.25rem/1.05;
+  --t-h1: 2.125rem/1.15;
+  --t-h2: 1.5rem/1.25;
+  --t-h3: 1.0625rem/1.35;
+  --t-body: 0.9375rem/1.6;
+  --t-small: 0.8125rem/1.5;
+  --t-micro: 0.6875rem/1.45;
+
   /* type — self-hosted (see @font-face above) */
   --font-head: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-ui: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -391,6 +418,14 @@
 /* Increased contrast: strengthen strokes and widen the focus ring. */
 @media (prefers-contrast: more) {
   :root {
+    /* v2 names. These were missing: the block below only re-pointed the
+       pre-v2 aliases, which are themselves defined AS var(--line) /
+       var(--line-hair) — so every selector written against the v2 names
+       (~34 call sites, including .tender-card's border and fit gutter) got
+       no contrast boost at all for users who ask for one. */
+    --line: var(--line-strong);
+    --line-hair: var(--line-strong);
+    /* pre-v2 aliases, kept for selectors not yet migrated */
     --stroke: var(--stroke-strong);
     --stroke-faint: var(--stroke-strong);
   }
@@ -1736,7 +1771,10 @@ td {
   }
 }
 
-.admin-main section {
+/* Pre-design fallback: only unclassed `<section>` elements still get the old
+   rule-and-margin treatment. Converted admin bodies lay themselves out with
+   `.admin-page`'s grid gap instead, and must not also draw this line. */
+.admin-main section:not([class]) {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--color-border);
@@ -1771,6 +1809,405 @@ td {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.25rem;
+}
+/* ============================================================
+   ADMIN PAGE BODIES — 2026-08-21 handoff redesign
+   (`BidMorrow Admin.dc.html`). PR #67 converted only the shell; every page
+   body under it was still pre-design markup (plain h1/section/table), which
+   is what this vocabulary replaces.
+
+   Two deliberate departures from the export, both forced by constraints the
+   prototype does not have:
+
+   1. The export draws its tables as `div` grids with a per-section
+      `grid-template-columns` written as an inline `style` attribute. This
+      app ships `style-src 'self'` with no `'unsafe-inline'`
+      (apps/web/public/_headers), so an inline style attribute is BLOCKED in
+      production — and the repo contains none anywhere, by design. Real
+      `<table>` elements are kept and restyled to the same visual result:
+      mono cells, uppercase micro headings on a raised strip, hairline row
+      rules, rounded container. Table semantics are preserved rather than
+      traded away for a column ratio.
+   2. The export's arm->confirm strip is `position: sticky` at the viewport
+      bottom, driven by one page-level `pending` state machine. This app has
+      no such machine — each mutation owns its own `ConfirmAction` — so the
+      strip is styled in flow. Making it sticky would require moving
+      confirmation state up out of the component, which is behaviour, not
+      styling, and is not in this change.
+   ============================================================ */
+
+/* Page frame: title, one-line note, then the body blocks, evenly spaced.
+   Replaces the per-`section` bottom rule the pre-design pages relied on. */
+.admin-page {
+  display: grid;
+  gap: var(--s5);
+  align-content: start;
+}
+
+.admin-page__head {
+  display: grid;
+  gap: var(--s1);
+}
+
+/* A titled block inside a page: eyebrow heading, then its content. Carries a
+   class specifically so the legacy `.admin-main section:not([class])` rule
+   does not also draw a bottom rule under it. */
+.admin-section {
+  display: grid;
+  gap: var(--s3);
+  align-content: start;
+}
+
+.admin-page__title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 1.625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.admin-page__note {
+  margin: 0;
+  max-width: 86ch;
+  font-size: 0.84375rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* Visible confirmation of a mutation. The pre-design pages put this text in
+   `.visually-hidden-status`, so an operator who suspended an organization or
+   rewrote a feature flag saw nothing at all — only a screen-reader user got
+   the confirmation. It stays a live region; it is simply no longer hidden. */
+.admin-flash {
+  margin: 0;
+  background: var(--accent-tint);
+  border: 1px solid var(--accent-line);
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.8125rem;
+  font-family: var(--font-num);
+  font-size: 0.78125rem;
+  line-height: 1.5;
+  color: var(--ink-1);
+}
+
+.admin-flash:empty {
+  display: none;
+}
+
+.admin-flash--risk {
+  background: var(--sig-risk-tint);
+  border-color: var(--sig-risk);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .admin-flash {
+    animation: rise-in 260ms ease-out both;
+  }
+}
+
+/* Health cards — one fact each, with the border carrying the tone. */
+.admin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr));
+  gap: var(--s3);
+}
+
+.admin-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+  padding: 0.875rem 1rem;
+  display: grid;
+  gap: var(--s1);
+  align-content: start;
+}
+
+.admin-card--ok {
+  border-color: var(--accent-line);
+}
+
+.admin-card--caution {
+  border-color: var(--sig-caution);
+}
+
+.admin-card--risk {
+  border-color: var(--sig-risk);
+}
+
+.admin-card__label,
+.admin-fact__label,
+.admin-panel__label {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.65625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.admin-card__value {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 1.3125rem;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+
+.admin-card--caution .admin-card__value {
+  color: var(--sig-caution);
+}
+
+.admin-card--risk .admin-card__value {
+  color: var(--sig-risk);
+}
+
+.admin-card__note {
+  margin: 0;
+  font-size: 0.78125rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* Fact strip — denser than the cards; hairline gaps rather than borders, so
+   a row of counts reads as one object. */
+.admin-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11.25rem, 1fr));
+  /* Separators are drawn as outlines on the cells, not as a 1px grid gap over
+     a hairline-coloured container. With the gap technique, a last row that
+     does not fill its columns leaves the container colour showing through,
+     which reads as a broken empty cell — the count of facts per page is not
+     always a multiple of the column count. */
+  gap: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+  overflow: hidden;
+}
+
+.admin-fact {
+  background: var(--bg-panel);
+  /* Outlines overlap on shared edges, so neighbours still read as one
+     hairline; unlike borders they take no layout space. */
+  outline: 1px solid var(--line-hair);
+  padding: 0.8125rem 0.9375rem;
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+.admin-fact__value {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 1.1875rem;
+  font-weight: 600;
+  color: var(--ink-1);
+  overflow-wrap: anywhere;
+}
+
+.admin-fact__value--sm {
+  font-size: 0.90625rem;
+  font-weight: 500;
+}
+
+/* Panel — the container for anything that is not a table: forms, previews,
+   grouped readouts. */
+.admin-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+  padding: 0.9375rem 1rem;
+  display: grid;
+  gap: 0.6875rem;
+  align-content: start;
+}
+
+.admin-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18.75rem, 1fr));
+  gap: var(--s3);
+}
+
+/* Filter pills — replace the pre-design `<select>` where the option set is
+   short and worth seeing at a glance. */
+.admin-pills {
+  display: flex;
+  gap: 0.4375rem;
+  flex-wrap: wrap;
+}
+
+.admin-pill {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  border-radius: 999px;
+  padding: 0.375rem 0.75rem;
+  font-family: var(--font-num);
+  font-size: 0.71875rem;
+  cursor: pointer;
+  min-height: 2rem;
+}
+
+.admin-pill:hover {
+  color: var(--ink-1);
+  border-color: var(--line-strong);
+}
+
+.admin-pill[aria-pressed='true'] {
+  background: var(--accent-tint);
+  border-color: var(--accent-line);
+  color: var(--ink-1);
+}
+
+/* Ops table. The scroll container is also the card: `overflow-x: auto`
+   already clips, so a rounded border on the same element gives the design's
+   card treatment without a second wrapper at every call site.
+
+   Scoped to `.admin-main` on purpose. `.admin-table-scroll` is NOT
+   admin-only despite the name — pages/app/Settings.tsx reuses it for the
+   customer invoice history, where it must keep meaning nothing more than
+   "this table may scroll sideways". Unscoped, these rules would restyle a
+   customer surface in internal-ops clothing. */
+.admin-main .admin-table-scroll {
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+}
+
+.admin-main .admin-table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  /* The global `table` rule sets `margin: 1rem 0`, which inside this bordered
+     container renders as empty bands above and below the rows. */
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.78125rem;
+}
+
+.admin-main .admin-table-scroll th {
+  background: var(--bg-raised);
+  border: 0;
+  border-bottom: 1px solid var(--line-hair);
+  padding: 0.625rem 1rem;
+  text-align: left;
+  font-family: var(--font-num);
+  font-size: 0.65625rem;
+  font-weight: 400;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.admin-main .admin-table-scroll td {
+  background: var(--bg-panel);
+  border: 0;
+  border-bottom: 1px solid var(--line-hair);
+  padding: 0.6875rem 1rem;
+  line-height: 1.45;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.admin-main .admin-table-scroll tr:last-child td {
+  border-bottom: 0;
+}
+
+/* First column names the row's subject, so it carries the strong ink. */
+.admin-main .admin-table-scroll td:first-child {
+  color: var(--ink-1);
+}
+
+.admin-tone-ok {
+  color: var(--accent-text);
+}
+
+.admin-tone-caution {
+  color: var(--sig-caution);
+}
+
+.admin-tone-risk {
+  color: var(--sig-risk);
+}
+
+/* Free-text records (support notes, ingestion errors). */
+.admin-notes {
+  display: grid;
+  gap: 0.5625rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-note {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  display: grid;
+  gap: 0.3125rem;
+}
+
+.admin-note__body {
+  margin: 0;
+  font-size: 0.84375rem;
+  line-height: 1.55;
+  color: var(--ink-1);
+}
+
+.admin-note__meta {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+}
+
+/* Untrusted or verbatim payloads — rendered as text, never as markup. */
+.admin-code-block {
+  margin: 0;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line-hair);
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  font-family: var(--font-num);
+  font-size: 0.71875rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.admin-empty {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.78125rem;
+  color: var(--ink-3);
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Filter row: inputs sit on the baseline with their result count. */
+.admin-filters {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.admin-filters .form-field {
+  margin: 0;
+}
+
+.admin-count {
+  font-family: var(--font-num);
+  font-size: 0.71875rem;
+  color: var(--ink-3);
+  padding-bottom: 0.625rem;
 }
 
 @media (max-width: 40rem) {
@@ -6605,6 +7042,86 @@ button.danger:active,
   font-size: 0.85rem;
 }
 
+/* Ghost / tertiary button — Theme Spec §06's third rank ("three ranks, two
+   heights, one radius"), which the codebase never had: every quiet button
+   today still carries a 1px accent border (.btn-quiet, .mkt-btn-quiet), so
+   there is no borderless rank for low-emphasis actions.
+
+   Added as NEW classes rather than by changing .cta / .btn-quiet /
+   .mkt-btn-*. Re-pointing those would move pixels across a live, signed-off
+   design; new surfaces adopt this rank, and consolidating the three existing
+   button vocabularies is a follow-up.
+
+   Note the spec's own inconsistency: it sets buttons at 14px, which is not a
+   step on its seven-step type scale (--t-body is 15px, --t-small 13px). The
+   14px is kept here because it is what the button spec says; the small
+   variant does sit exactly on --t-small. */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 150ms var(--ease),
+    background-color 150ms var(--ease);
+}
+
+.btn-ghost:hover {
+  color: var(--ink-1);
+  background: var(--bg-raised);
+}
+
+.btn-ghost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-ghost--sm {
+  height: 30px;
+  padding: 0 8px;
+  font: var(--t-small) var(--font-ui);
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* Post-checkout confirmation (/app/billing/success). Deliberately plain: it
+   reuses the Settings plan card and the feed's skeleton so the page needs no
+   vocabulary of its own. */
+.billing-success {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: var(--s6) var(--s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+/* First consumer of the type scale for running copy. Safe to adopt here
+   because this page is new and has never shipped, so there is no rendered
+   design to preserve — unlike the 200+ existing font-size declarations,
+   which keep their literals until a deliberate migration PR. */
+.billing-success p {
+  font: var(--t-body) var(--font-ui);
+}
+
+.billing-success__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s4);
+  margin-top: var(--s2);
+}
+
 /* Print stylesheet: isolates `#billing-print-area` (Settings' entire
    Billing section) regardless of AppShell/Settings markup elsewhere on the
    page — visibility (not display) so layout containers collapse cleanly,
@@ -6761,5 +7278,635 @@ button.danger:active,
 }
 .combobox-add-row .combobox {
   flex: 1 1 16rem;
+  margin-bottom: 0;
+}
+
+/* ============================================================
+   DETAIL SLIDE-OVER — 2026-08-21 handoff (`BidMorrow Client Area.dc.html`).
+   Opens a tender beside the feed instead of navigating away from it.
+   Behaviour, routing and the accessibility contract live in
+   components/DetailSheet.tsx; this is only the surface.
+   ============================================================ */
+
+/* Set on <body> while a sheet is open, so the page behind cannot be scrolled
+   away underneath it. A class rather than an inline style: this app ships
+   `style-src 'self'` and keeps zero inline styles. */
+body.sheet-open {
+  overflow: hidden;
+}
+
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 9, 0.55);
+  z-index: 50;
+}
+
+.sheet-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(42.5rem, 100%);
+  background: var(--bg-panel);
+  border-left: 1px solid var(--line);
+  border-radius: 1.5rem 0 0 1.5rem;
+  box-shadow: var(--shadow-panel);
+  z-index: 51;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(1rem, 2.5vw, 1.75rem);
+  display: grid;
+  gap: var(--s4);
+  align-content: start;
+}
+
+/* The panel takes focus on open; it is a scroll container, so it must show
+   that it has focus without drawing a ring around the whole viewport edge. */
+.sheet-panel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -4px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sheet-scrim {
+    animation: sheet-fade 140ms ease-out both;
+  }
+  .sheet-panel {
+    animation: sheet-slide 180ms ease-out both;
+  }
+}
+
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-slide {
+  from {
+    transform: translateX(1.5rem);
+    opacity: 0;
+  }
+}
+
+/* On a phone the sheet is the whole screen, so the inner corner radius and
+   the left border have nothing to sit against. */
+@media (max-width: 44rem) {
+  .sheet-panel {
+    border-radius: 0;
+    border-left: 0;
+  }
+}
+
+.sheet-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+}
+
+.sheet-head__id {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex-wrap: wrap;
+}
+
+.sheet-head__deadline {
+  font-size: 0.78125rem;
+  color: var(--ink-2);
+}
+
+.sheet-close {
+  margin-left: auto;
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+  /* 2.75rem, not the design's 30px: this is the sheet's only dismissal
+     control besides Escape, and it has to clear the 44px touch target the
+     rest of the app already meets. */
+  width: 2.75rem;
+  height: 2.75rem;
+  color: var(--ink-2);
+  cursor: pointer;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.sheet-close:hover {
+  color: var(--ink-1);
+  border-color: var(--line-strong);
+}
+
+.sheet-title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ink-1);
+  text-wrap: pretty;
+}
+
+.sheet-meta {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.sheet-tabs {
+  display: flex;
+  gap: var(--s4);
+  border-bottom: 1px solid var(--line-hair);
+}
+
+.sheet-tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  padding: 0.625rem 0.125rem;
+  /* Keeps the row a 44px target even though the control is visually a label. */
+  min-height: 2.75rem;
+  margin-bottom: -1px;
+}
+
+.sheet-tab:hover {
+  color: var(--ink-1);
+}
+
+.sheet-tab[aria-selected='true'] {
+  color: var(--ink-1);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+
+.sheet-panel-body {
+  display: grid;
+  gap: var(--s4);
+  align-content: start;
+}
+
+/* The panel body is focusable so a keyboard user can scroll it; that focus
+   should read as "you are in this region", not as a control. */
+.sheet-panel-body:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--r-m);
+}
+
+.sheet-body {
+  display: grid;
+  gap: var(--s4);
+}
+
+/* Inside the sheet the score table is the widest thing on a narrow panel. */
+.sheet-panel .score-anatomy table {
+  display: block;
+  overflow-x: auto;
+}
+
+/* ============================================================
+   ONBOARDING — sector picker + scope estimate (2026-08-21 handoff,
+   `BidMorrow Onboarding.dc.html`). The sector grid lets a non-IT company
+   start from its own line of work; the estimate panel is what stops that
+   becoming a promise of coverage the product does not have.
+   ============================================================ */
+
+.ob-sector-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--s5);
+  display: grid;
+  gap: var(--s2);
+}
+
+.ob-sector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--s2);
+}
+
+.ob-sector-card {
+  display: grid;
+  gap: 0.25rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+  padding: 0.75rem 0.875rem;
+  cursor: pointer;
+  /* Comfortably past the 44px touch target the rest of the app meets. */
+  min-height: 3.25rem;
+}
+
+.ob-sector-card:hover {
+  border-color: var(--line-strong);
+}
+
+.ob-sector-card--selected {
+  border-color: var(--accent-line);
+  background: var(--accent-tint);
+}
+
+.ob-sector-card__label {
+  font-size: 0.875rem;
+  color: var(--ink-1);
+}
+
+.ob-sector-card__divisions {
+  font-size: 0.71875rem;
+  color: var(--ink-3);
+}
+
+/* Marks a selected code that is saved but returns nothing today. Deliberately
+   a caution, not a risk: the code is kept and starts scoring if ingestion is
+   widened — it is not an error the user has to fix. */
+.ob-chip-toggle__oos {
+  font-family: var(--font-num);
+  font-size: 0.65625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sig-caution);
+  border: 1px solid var(--sig-caution);
+  border-radius: 999px;
+  padding: 0.0625rem 0.375rem;
+  margin-left: 0.375rem;
+}
+
+.ob-estimate {
+  background: var(--bg-panel);
+  border: 1px solid var(--accent-line);
+  border-radius: 0.875rem;
+  padding: 0.9375rem 1rem;
+  margin: 0 0 var(--s4);
+  display: grid;
+  gap: 0.375rem;
+}
+
+/* Every chosen code is outside the ingested scope, so this selection returns
+   nothing at all — the one state the panel exists to make impossible to miss. */
+.ob-estimate--none {
+  border-color: var(--sig-caution);
+  background: var(--sig-caution-tint);
+}
+
+.ob-estimate__value {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+}
+
+.ob-estimate__note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.ob-estimate__scope {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-1);
+}
+
+.ob-estimate__caveat {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* ============================================================
+   FEED LEFT RAIL — 2026-08-21 handoff (`BidMorrow Client Area.dc.html`).
+   Saved searches beside the results, so a filter set is a named thing the
+   workspace re-applies rather than something retyped every morning.
+   ============================================================ */
+
+.feed-layout {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  gap: clamp(1rem, 2.4vw, 2rem);
+  align-items: start;
+}
+
+/* `minmax(0, 1fr)` above matters: without it the results column takes its
+   min-content width from the widest card and the rail gets squeezed. */
+.feed-main {
+  min-width: 0;
+}
+
+.feed-rail {
+  position: sticky;
+  top: var(--s4);
+  display: grid;
+  gap: var(--s5);
+  align-content: start;
+}
+
+/* The rail is an accelerator, not the content. On a narrow screen it drops
+   below the results rather than competing with them for width. */
+@media (max-width: 60rem) {
+  .feed-layout {
+    grid-template-columns: 1fr;
+  }
+  .feed-rail {
+    position: static;
+    order: 2;
+  }
+  .feed-main {
+    order: 1;
+  }
+}
+
+.feed-rail__block {
+  display: grid;
+  gap: var(--s2);
+}
+
+.feed-rail__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.feed-rail__title {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.feed-rail__head .btn-ghost--sm {
+  margin-left: auto;
+}
+
+.feed-rail__form {
+  display: grid;
+  gap: var(--s1);
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: var(--r-l);
+  padding: var(--s3);
+}
+
+.feed-rail__form label {
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.feed-rail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.feed-rail__list li {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+}
+
+.feed-rail__item {
+  flex: 1;
+  min-width: 0;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--r-m) var(--r-m) 0;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+  text-align: left;
+  /* Long names truncate rather than reflowing the rail. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0.5rem 0.625rem;
+  min-height: 2.75rem;
+}
+
+.feed-rail__item:hover {
+  color: var(--ink-1);
+  background: var(--bg-panel);
+}
+
+.feed-rail__item[aria-current='true'] {
+  background: var(--bg-panel);
+  border-left-color: var(--accent);
+  color: var(--ink-1);
+  font-weight: 600;
+}
+
+.feed-rail__remove {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--ink-3);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  /* Small glyph, full-size target. */
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.feed-rail__remove:hover {
+  color: var(--sig-risk);
+}
+
+.feed-rail__profile {
+  margin: 0;
+  font-size: 0.78125rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* --- Public sample-verdict demo (/sample-verdicts) ---------------------
+   Deliberately built from the marketing vocabulary (`.mkt-section`,
+   `.mkt-truth-card`, `.mkt-table-card`) plus the app's own `.score-badge`,
+   because the page's claim is that these are the product's real verdicts —
+   showing them in a bespoke visual language would undercut that. What is
+   added here is only the per-verdict layout the marketing pages have no
+   equivalent of. */
+
+/* Three cards, so the shared two-column `.mkt-truth-grid` would leave an
+   orphan on its own row. Same cards, right column count. */
+.sample-frame {
+  margin-top: var(--s6);
+}
+
+@media (min-width: 60rem) {
+  .sample-frame {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.sample-verdicts {
+  display: grid;
+  gap: var(--s6);
+}
+
+.sample-verdict {
+  background: var(--surface-1);
+  border: 1px solid var(--line-hair);
+  border-radius: var(--r-m);
+  padding: var(--s5);
+}
+
+.sample-verdict__head {
+  display: grid;
+  gap: var(--s2);
+  padding-bottom: var(--s4);
+  border-bottom: 1px solid var(--line-hair);
+}
+
+.sample-verdict__supplier {
+  margin: 0;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.sample-verdict__title {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.sample-verdict__buyer,
+.sample-verdict__badge,
+.sample-verdict__recommendation {
+  margin: 0;
+}
+
+.sample-verdict__buyer {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+.sample-verdict__recommendation {
+  font-weight: 600;
+}
+
+/* Facts strip: outlines rather than a 1px-gap hairline grid, so a short
+   final row cannot render the container colour as a broken empty cell. */
+.sample-verdict__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0;
+  margin: var(--s4) 0;
+}
+
+.sample-verdict__facts > div {
+  outline: 1px solid var(--line-hair);
+  padding: var(--s3) var(--s4);
+}
+
+.sample-verdict__facts dt {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.sample-verdict__facts dd {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.sample-verdict__breakdown h3,
+.sample-verdict__exclusion h3,
+.sample-verdict__flags h3 {
+  font-size: 1rem;
+  margin: var(--s5) 0 var(--s3);
+}
+
+/* The breakdown table is the page's whole argument, so it gets more room
+   than `.mkt-table-card`'s default and its explanation column is allowed to
+   be the wide one. */
+.sample-verdict .mkt-table-card {
+  padding: 0;
+  margin: 0;
+}
+
+.sample-verdict .mkt-table-card table {
+  min-width: 44rem;
+}
+
+.sample-verdict .mkt-table-card td:last-child {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+/* "35 / 35" is one value; letting it wrap onto two lines reads as two. */
+.sample-verdict .mkt-table-card td:nth-child(2) {
+  white-space: nowrap;
+}
+
+.sample-verdict__exclusion p {
+  margin: 0 0 var(--s3);
+}
+
+.sample-verdict__flags ul {
+  margin: 0;
+  padding-left: var(--s4);
+  display: grid;
+  gap: var(--s2);
+}
+
+.sample-verdict__foot {
+  margin-top: var(--s5);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line-hair);
+  display: grid;
+  gap: var(--s2);
+}
+
+.sample-verdict__foot p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.sample-verdict__why {
+  color: var(--ink-2);
+}
+
+.sample-notes {
+  margin-top: var(--s6);
+}
+
+.sample-notes p {
+  margin: 0 0 var(--s3);
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.sample-notes p:last-child {
   margin-bottom: 0;
 }

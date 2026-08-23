@@ -1,8 +1,12 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { COMPANY_PRESETS, CONTRACT_NATURES, type ContractNature } from '@bidmorrow/domain';
+import { CPV_SECTORS, SECTOR_LABEL_NOTE, findSector } from '../../lib/cpv-sectors';
+import { isIngestedCpvCode } from '../../lib/onboarding-scope';
+import { ScopeEstimate } from '../../components/ScopeEstimate';
 import { Combobox } from '../../components/Combobox';
 import { Logo } from '../../components/Logo';
+import { NoIndex } from '../../components/NoIndex';
 import { ThemeToggle } from '../../components/ThemeToggle';
 import { PRODUCT_NAME } from '../../copy';
 import { CPV_SUGGESTIONS } from '../../data/cpv-suggestions';
@@ -33,7 +37,6 @@ import {
  */
 
 type ScreenId =
-  | 'welcome'
   | 'workspace'
   | 'basics'
   | 'preset'
@@ -57,10 +60,7 @@ interface ScreenMeta {
   readonly title: string;
 }
 
-const PHASE_LABELS = ['Company', 'Coverage', 'Signals', 'Review'] as const;
-
 const SCREENS: readonly ScreenMeta[] = [
-  { id: 'welcome', phase: 0, title: 'Welcome' },
   { id: 'workspace', phase: 0, title: 'Create workspace' },
   { id: 'basics', phase: 0, title: 'Company basics' },
   { id: 'preset', phase: 1, title: 'Start from a preset' },
@@ -74,6 +74,93 @@ const SCREENS: readonly ScreenMeta[] = [
   { id: 'review', phase: 3, title: 'Review' },
 ];
 
+type StepId = 'company' | 'sector' | 'scope' | 'fit' | 'digest';
+
+interface StepMeta {
+  readonly id: StepId;
+  /** Stepper label. */
+  readonly label: string;
+  readonly title: string;
+  readonly blurb: string;
+  /** Existing screen bodies shown together under this step. */
+  readonly screens: readonly ScreenId[];
+  /**
+   * Resources this step persists, in the order they must be written. The
+   * step's single Continue runs them in sequence and stops at the first
+   * failure, so an error surfaces next to the fields that caused it rather
+   * than three steps later on Review.
+   */
+  readonly saves: readonly ResourceKey[];
+}
+
+/**
+ * The 2026-08-21 handoff compresses the 12-screen assistant into five steps.
+ *
+ * The screen bodies themselves are unchanged: each step simply shows several
+ * of them at once, so all of the existing per-resource state, validation,
+ * dirty-tracking and resume behaviour carries over intact rather than being
+ * rewritten. What changes is navigation — one Continue per step instead of
+ * one per resource — and the progress model the stepper reports.
+ */
+const STEPS: readonly StepMeta[] = [
+  {
+    id: 'company',
+    label: 'Company',
+    title: 'Who is bidding?',
+    blurb:
+      'Your workspace name is the only required field. Everything else makes the matching better and stays editable in Settings.',
+    screens: ['workspace', 'basics'],
+    saves: ['profile'],
+  },
+  {
+    id: 'sector',
+    label: 'Starting point',
+    title: 'What line of work are you in?',
+    blurb:
+      'Pick the sector closest to your work and BidMorrow fills in a starting set of CPV codes. Nothing is hidden — you see every code on the next step and can change all of it.',
+    screens: ['preset'],
+    saves: [],
+  },
+  {
+    id: 'scope',
+    label: 'Scope',
+    title: 'What you sell, and where.',
+    blurb:
+      'This is the step that decides whether a tender is scored for you at all. The estimate shows what these choices would have returned over the last 30 days.',
+    screens: ['cpv', 'countries'],
+    saves: ['cpv', 'countries'],
+  },
+  {
+    id: 'fit',
+    label: 'Fit',
+    title: 'What counts as a real opportunity.',
+    blurb:
+      'Contract size, how much runway you need before a deadline, the words that describe your work, and the phrases that mean a notice is never for you.',
+    screens: ['value', 'keywords', 'capabilities', 'exclusions'],
+    saves: ['value', 'keywords', 'capabilities', 'exclusions'],
+  },
+  {
+    id: 'digest',
+    label: 'Digest & review',
+    title: 'How you hear about it.',
+    blurb: 'One digest a day at most, then a look at everything you have set before it goes live.',
+    screens: ['digest', 'review'],
+    saves: ['digest'],
+  },
+];
+
+function stepIndexOfScreen(id: ScreenId): number {
+  const index = STEPS.findIndex((step) => step.screens.includes(id));
+  if (index === -1) throw new Error(`onboarding screen ${id} belongs to no step`);
+  return index;
+}
+
+function stepAt(index: number): StepMeta {
+  const step = STEPS[index];
+  if (step === undefined) throw new Error(`unknown onboarding step index: ${String(index)}`);
+  return step;
+}
+
 function screenIndexOf(id: ScreenId): number {
   const index = SCREENS.findIndex((s) => s.id === id);
   if (index === -1) throw new Error(`unknown onboarding screen id: ${id}`);
@@ -85,13 +172,25 @@ function screenIndexOf(id: ScreenId): number {
  * `retreat`/the resume effect, so this never actually falls back; the
  * fallback only exists to satisfy `noUncheckedIndexedAccess`. */
 function screenAt(index: number): ScreenMeta {
-  return SCREENS[index] ?? SCREENS[0] ?? { id: 'welcome', phase: 0, title: 'Welcome' };
+  return SCREENS[index] ?? SCREENS[0] ?? { id: 'workspace', phase: 0, title: 'Create workspace' };
 }
 
 const BASICS_SCREEN_INDEX = screenIndexOf('basics');
 const REVIEW_SCREEN_INDEX = screenIndexOf('review');
 
 /** Which screen a Review row's "Edit" link jumps to. */
+/** Save order for the whole profile — used by Review's finish sweep. */
+const RESOURCE_ORDER: readonly ResourceKey[] = [
+  'profile',
+  'cpv',
+  'countries',
+  'value',
+  'keywords',
+  'capabilities',
+  'exclusions',
+  'digest',
+];
+
 const RESOURCE_SCREEN_INDEX: Record<ResourceKey, number> = {
   profile: screenIndexOf('basics'),
   cpv: screenIndexOf('cpv'),
@@ -101,19 +200,6 @@ const RESOURCE_SCREEN_INDEX: Record<ResourceKey, number> = {
   capabilities: screenIndexOf('capabilities'),
   exclusions: screenIndexOf('exclusions'),
   digest: screenIndexOf('digest'),
-};
-
-/** Which resource a screen's Back/Skip actions mark dirty (screens with no
- * API-backed resource — welcome, workspace, preset, review — are omitted). */
-const SCREEN_RESOURCE: Partial<Record<ScreenId, ResourceKey>> = {
-  basics: 'profile',
-  cpv: 'cpv',
-  countries: 'countries',
-  value: 'value',
-  keywords: 'keywords',
-  capabilities: 'capabilities',
-  exclusions: 'exclusions',
-  digest: 'digest',
 };
 
 const EMPLOYEE_BAND_OPTIONS = ['1-10', '11-25', '26-50', '51-100', '101-250', '250+'];
@@ -178,6 +264,8 @@ export function Onboarding(): ReactElement {
 
   // Company basics + preset
   const [presetKey, setPresetKey] = useState<string>('');
+  /** Sector shortcut chosen on the preset screen; pre-fills CPV codes only. */
+  const [sectorId, setSectorId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');
   const [website, setWebsite] = useState('');
@@ -361,7 +449,19 @@ export function Onboarding(): ReactElement {
     setSaved((s) => ({ ...s, [key]: true }));
   }
 
-  const minScreenIndex = hasOrg === true ? BASICS_SCREEN_INDEX : 0;
+  const stepIndex = stepIndexOfScreen(screenAt(screenIndex).id);
+  const currentStep = stepAt(stepIndex);
+
+  /** Is this screen body part of the step being shown? */
+  function inStep(id: ScreenId): boolean {
+    return currentStep.screens.includes(id);
+  }
+
+  function goToStep(index: number): void {
+    const clamped = Math.min(Math.max(index, 0), STEPS.length - 1);
+    const first = stepAt(clamped).screens[0];
+    if (first !== undefined) setScreenIndex(screenIndexOf(first));
+  }
 
   function advance(): void {
     if (editingFromReview) {
@@ -369,54 +469,59 @@ export function Onboarding(): ReactElement {
       setScreenIndex(REVIEW_SCREEN_INDEX);
       return;
     }
-    setScreenIndex((i) => Math.min(i + 1, REVIEW_SCREEN_INDEX));
+    goToStep(stepIndex + 1);
   }
 
-  function retreat(): void {
+  function handleBack(): void {
     if (editingFromReview) {
       setEditingFromReview(false);
       setScreenIndex(REVIEW_SCREEN_INDEX);
       return;
     }
-    setScreenIndex((i) => Math.max(i - 1, minScreenIndex));
+    goToStep(stepIndex - 1);
   }
 
-  function handleBack(): void {
-    const key = SCREEN_RESOURCE[screenAt(screenIndex).id];
-    if (key !== undefined) markDirty(key);
-    retreat();
-  }
-  function handleSkip(): void {
-    const key = SCREEN_RESOURCE[screenAt(screenIndex).id];
-    if (key !== undefined) markDirty(key);
-    advance();
-  }
-  function handleSaveAndContinue(key: ResourceKey, run: () => Promise<boolean>): () => void {
-    return () => {
-      void run().then((ok) => {
-        if (ok) {
-          markSaved(key);
-          advance();
-        }
-      });
-    };
-  }
   function editRow(key: ResourceKey): void {
     setError(null);
     setEditingFromReview(true);
     setScreenIndex(RESOURCE_SCREEN_INDEX[key]);
   }
 
-  async function createOrganization(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    setBusy(true);
-    setError(null);
+  async function createOrganizationIfNeeded(): Promise<boolean> {
+    if (hasOrg === true) return true;
     try {
       await api.post('/api/org', { name: orgName });
       setHasOrg(true);
-      advance();
+      return true;
     } catch {
       setError('Could not create your workspace. Please try again.');
+      return false;
+    }
+  }
+
+  /**
+   * The single Continue for a step: create the workspace if this is the first
+   * step and there isn't one yet, then write each of the step's resources in
+   * order, stopping at the first failure so the error lands next to the
+   * fields that caused it. Only a fully-saved step advances.
+   */
+  async function continueStep(): Promise<void> {
+    setBusy(true);
+    setError(null);
+    setFailedResourceLabel(null);
+    try {
+      if (currentStep.id === 'company' && !(await createOrganizationIfNeeded())) return;
+      for (const key of currentStep.saves) {
+        const saver = RESOURCE_SAVERS[key];
+        const ok = await saver.run();
+        if (!ok) {
+          setFailedResourceLabel(saver.label);
+          setError(`Could not save "${saver.label}" — please review it and try again.`);
+          return;
+        }
+        markSaved(key);
+      }
+      advance();
     } finally {
       setBusy(false);
     }
@@ -483,6 +588,25 @@ export function Onboarding(): ReactElement {
       presetKey: key,
     });
     if (ok) setSaved((s) => ({ ...s, profile: true }));
+  }
+
+  /**
+   * Sector shortcut — pre-fills CPV codes only.
+   *
+   * Deliberately narrower than `selectPreset`: a preset also carries keywords
+   * and capabilities that were written for IT consultancies, and applying
+   * those to a catering company would be worse than leaving them empty.
+   * Sector selection is also not persisted as `presetKey`, because it is not
+   * one of the bundled presets and claiming otherwise would misreport what
+   * the profile was built from.
+   */
+  function selectSector(id: string): void {
+    const sector = findSector(id);
+    if (sector === null) return;
+    setSectorId(id);
+    setPresetKey('');
+    setCpvCodes(sector.codes.map((entry) => entry.code));
+    setSaved((s) => ({ ...s, cpv: false }));
   }
 
   async function saveCpv(): Promise<boolean> {
@@ -628,6 +752,29 @@ export function Onboarding(): ReactElement {
   }
 
   /**
+   * One place naming every resource, its human label and how to persist it.
+   * Both the per-step Continue and Review's "Finish setup" walk this, so a
+   * resource cannot be saved by one path and forgotten by the other.
+   *
+   * `profile` leads: `POST /onboarding/complete` 409s without an existing
+   * company_profiles row, so it always has to run at least once even if the
+   * user never touched Company basics.
+   */
+  const RESOURCE_SAVERS: Record<ResourceKey, { label: string; run: () => Promise<boolean> }> = {
+    profile: { label: 'Company profile', run: saveBasics },
+    cpv: { label: 'CPV codes', run: saveCpv },
+    countries: { label: 'Countries', run: saveGeographies },
+    value: { label: 'Value & deadline', run: saveMatchingPreferences },
+    keywords: { label: 'Keywords', run: saveKeywords },
+    capabilities: {
+      label: 'Capabilities & certifications',
+      run: saveCapabilitiesAndCertifications,
+    },
+    exclusions: { label: 'Exclusions', run: saveExclusions },
+    digest: { label: 'Digest', run: saveDigestPreferences },
+  };
+
+  /**
    * Review "Finish setup" (fix for F14/§3.6): fires every outstanding PUT
    * for a resource whose local state was never explicitly saved — including
    * preset-prefilled-but-skipped resources — THEN calls
@@ -637,32 +784,16 @@ export function Onboarding(): ReactElement {
   async function finishSetup(): Promise<void> {
     setError(null);
     setFailedResourceLabel(null);
-    const outstanding: { key: ResourceKey; label: string; run: () => Promise<boolean> }[] = [
-      // `profile` is never skipped in practice — `POST onboarding/complete`
-      // 409s without an existing company_profiles row, so this always runs
-      // at least once if the user never explicitly saved Company basics.
-      { key: 'profile', label: 'Company profile', run: saveBasics },
-      { key: 'cpv', label: 'CPV codes', run: saveCpv },
-      { key: 'countries', label: 'Countries', run: saveGeographies },
-      { key: 'value', label: 'Value & deadline', run: saveMatchingPreferences },
-      { key: 'keywords', label: 'Keywords', run: saveKeywords },
-      {
-        key: 'capabilities',
-        label: 'Capabilities & certifications',
-        run: saveCapabilitiesAndCertifications,
-      },
-      { key: 'exclusions', label: 'Exclusions', run: saveExclusions },
-      { key: 'digest', label: 'Digest', run: saveDigestPreferences },
-    ];
-    for (const item of outstanding) {
-      if (saved[item.key]) continue;
-      const ok = await item.run();
+    for (const key of RESOURCE_ORDER) {
+      if (saved[key]) continue;
+      const saver = RESOURCE_SAVERS[key];
+      const ok = await saver.run();
       if (!ok) {
-        setFailedResourceLabel(item.label);
-        setError(`Could not save "${item.label}" — please review it and try again.`);
+        setFailedResourceLabel(saver.label);
+        setError(`Could not save "${saver.label}" — please review it and try again.`);
         return;
       }
-      markSaved(item.key);
+      markSaved(key);
     }
     await complete();
   }
@@ -716,9 +847,6 @@ export function Onboarding(): ReactElement {
   }
 
   const cpvScope = computeCpvScopeOverlap(cpvCodes);
-  const currentScreen = screenAt(screenIndex);
-  const screensInPhase = SCREENS.filter((s) => s.phase === currentScreen.phase);
-  const positionInPhase = screensInPhase.findIndex((s) => s.id === currentScreen.id) + 1;
   const minValueOverMax =
     minValueEur.length > 0 && maxValueEur.length > 0 && Number(minValueEur) > Number(maxValueEur);
 
@@ -739,13 +867,12 @@ export function Onboarding(): ReactElement {
           Skip to main content
         </a>
         <title>{`You're all set — Onboarding — ${PRODUCT_NAME}`}</title>
+        <NoIndex />
         <OnboardingHeader />
         <main id="main-content" className="assistant-main">
-          <PhaseStepper currentPhase={3} />
+          <StepStepper currentStepIndex={STEPS.length} />
           <div className="assistant-card">
-            <h1 ref={headingRef} tabIndex={-1}>
-              You're all set
-            </h1>
+            <h2 className="ob-section-title">You're all set</h2>
             {scopeOverlapWarning && (
               <p role="alert" className="form-warning scope-warning">
                 <strong>Heads up:</strong> your CPV preferences don't currently overlap with
@@ -807,22 +934,23 @@ export function Onboarding(): ReactElement {
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
-      <title>{`${currentScreen.title} — Onboarding — ${PRODUCT_NAME}`}</title>
+      <title>{`${currentStep.title} — Onboarding — ${PRODUCT_NAME}`}</title>
+      <NoIndex />
       <OnboardingHeader />
       <main id="main-content" className="assistant-main">
-        <PhaseStepper currentPhase={currentScreen.phase} />
+        <StepStepper currentStepIndex={stepIndex} />
         {/* Decorative determinate fill under the stepper — the aria-live
             text below is the accessible source of truth (docs/redesign/
             app-interface-spec.md §7.2b). Native <progress>, never an inline
             width (CSP style-src 'self'). */}
         <progress
           className="score-bar assistant-meter"
-          value={screenIndex}
-          max={REVIEW_SCREEN_INDEX}
+          value={stepIndex}
+          max={STEPS.length - 1}
           aria-hidden="true"
         />
         <p className="assistant-progress" aria-live="polite">
-          {PHASE_LABELS[currentScreen.phase]} · step {positionInPhase} of {screensInPhase.length}
+          Step {stepIndex + 1} of {STEPS.length} · {currentStep.label}
         </p>
         <div className="assistant-card">
           {error !== null && (
@@ -831,35 +959,23 @@ export function Onboarding(): ReactElement {
             </p>
           )}
 
-          <div className="assistant-screen" key={currentScreen.id}>
-            {currentScreen.id === 'welcome' && (
+          <div className="assistant-screen" key={currentStep.id}>
+            <h1 ref={headingRef} tabIndex={-1}>
+              {currentStep.title}
+            </h1>
+            <p className="assistant-why">{currentStep.blurb}</p>
+            {inStep('workspace') && hasOrg !== true && (
               <>
-                <h1 ref={headingRef} tabIndex={-1}>
-                  Let's set up your scoring profile
-                </h1>
-                <p>
-                  This takes about 5 minutes across 4 short phases — your company, what you cover,
-                  the signals that refine your score, and a final review before anything goes live.
-                  Nothing is required upfront: a preset can fill in a working starting profile for
-                  you in one click.
-                </p>
-                <div className="step-actions">
-                  <button className="cta" type="button" onClick={advance}>
-                    Get started
-                  </button>
-                </div>
-              </>
-            )}
-
-            {currentScreen.id === 'workspace' && (
-              <>
-                <h1 ref={headingRef} tabIndex={-1}>
-                  Name your workspace
-                </h1>
+                <h2 className="ob-section-title">Name your workspace</h2>
                 <p>
                   This is your organization's account name — you can change it later in Settings.
                 </p>
-                <form onSubmit={(event) => void createOrganization(event)}>
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void continueStep();
+                  }}
+                >
                   <div className="form-field">
                     <label htmlFor="org-name">Organization name</label>
                     <input
@@ -869,20 +985,13 @@ export function Onboarding(): ReactElement {
                       onChange={(event) => setOrgName(event.target.value)}
                     />
                   </div>
-                  <div className="step-actions">
-                    <button className="cta" type="submit" disabled={busy}>
-                      Create workspace
-                    </button>
-                  </div>
                 </form>
               </>
             )}
 
-            {currentScreen.id === 'basics' && (
+            {inStep('basics') && (
               <>
-                <h1 ref={headingRef} tabIndex={-1}>
-                  Tell us about your company
-                </h1>
+                <h2 className="ob-section-title">Tell us about your company</h2>
                 <p className="assistant-why">
                   Used to personalize your account — not a scoring input itself.
                 </p>
@@ -941,26 +1050,51 @@ export function Onboarding(): ReactElement {
                     ))}
                   </select>
                 </div>
-                <StepActions
-                  busy={busy}
-                  onBack={handleBack}
-                  onSkip={editingFromReview ? undefined : handleSkip}
-                  onSave={handleSaveAndContinue('profile', saveBasics)}
-                  saveLabel={editingFromReview ? 'Save & return to review' : undefined}
-                />
               </>
             )}
 
-            {currentScreen.id === 'preset' && (
+            {inStep('preset') && (
               <>
-                <h1 ref={headingRef} tabIndex={-1}>
-                  Start from a preset
-                </h1>
+                <h2 className="ob-section-title">Start from a preset</h2>
                 <p className="assistant-why">
                   A preset only pre-fills CPV codes, keywords, and capabilities — the next few
                   screens save each one to your account, and you can edit everything before it's
                   used.
                 </p>
+
+                <fieldset className="ob-sector-fieldset">
+                  <legend>Not an IT company? Start from your sector</legend>
+                  <p className="hint">
+                    Every CPV sector, not just IT. Picking one fills in a starting set of CPV codes
+                    on the next step — you see every code there and can change all of it.
+                  </p>
+                  <div className="ob-sector-grid">
+                    {CPV_SECTORS.map((sector) => (
+                      <label
+                        key={sector.id}
+                        className={
+                          sectorId === sector.id
+                            ? 'ob-sector-card ob-sector-card--selected'
+                            : 'ob-sector-card'
+                        }
+                      >
+                        <input
+                          type="radio"
+                          name="sector"
+                          value={sector.id}
+                          checked={sectorId === sector.id}
+                          onChange={() => selectSector(sector.id)}
+                        />
+                        <span className="ob-sector-card__label">{sector.label}</span>
+                        <span className="ob-sector-card__divisions num">
+                          CPV {sector.divisions}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="hint">{SECTOR_LABEL_NOTE}</p>
+                </fieldset>
+
                 <div className="ob-preset-grid" role="radiogroup" aria-label="Company preset">
                   {COMPANY_PRESETS.map((preset) => (
                     <div
@@ -1014,36 +1148,29 @@ export function Onboarding(): ReactElement {
                     </label>
                     <p className="ob-preset-card__desc">
                       Build your own CPV, keyword, and capability list — you'll need to add at least
-                      one CPV code on the next screen.
+                      one CPV code on the next step.
                     </p>
                   </div>
-                </div>
-                <div className="step-actions">
-                  <button type="button" className="btn-quiet" onClick={handleBack} disabled={busy}>
-                    Back
-                  </button>
-                  <button className="cta" type="button" onClick={advance} disabled={busy}>
-                    Continue
-                  </button>
                 </div>
               </>
             )}
 
-            {currentScreen.id === 'cpv' && (
+            {inStep('cpv') && (
               <>
-                <h1 ref={headingRef} tabIndex={-1}>
-                  Which CPV codes describe your work?
-                </h1>
+                <h2 className="ob-section-title">Which CPV codes describe your work?</h2>
                 <p className="assistant-why">
                   CPV codes drive up to 35 of your 100 points — and decide which tenders get scored
                   at all.
                 </p>
                 <p>
                   There's no skip on this screen: without at least one CPV code, BidMorrow has
-                  nothing to match you against. The fastest way to a valid list is a preset (go Back
-                  to pick one) — every preset code is chosen to sit inside BidMorrow's current
-                  ingestion scope.
+                  nothing to match you against. The fastest way to a valid list is a preset or a
+                  sector (go Back to pick one). Every <em>preset</em> code sits inside BidMorrow's
+                  current ingestion scope; sector codes outside it are saved to your profile but
+                  return nothing until ingestion is widened — the panel below shows exactly what
+                  your current selection would have returned.
                 </p>
+                <ScopeEstimate cpvCodes={cpvCodes} countryCodes={countries} />
                 <div className="form-field">
                   <label htmlFor="cpv-search">Search CPV codes</label>
                   <input
@@ -1055,19 +1182,36 @@ export function Onboarding(): ReactElement {
                   />
                 </div>
                 <fieldset>
-                  <legend>CPV codes from the bundled presets</legend>
+                  <legend>Suggested CPV codes</legend>
                   {/* Client-side filter only — selected codes filtered out of
                     view stay selected (state is the source of truth), same
                     behavior as the country search above. */}
                   {(() => {
+                    // The bundled presets, plus the chosen sector's codes,
+                    // plus anything already selected. Without the last two a
+                    // sector pick would leave codes selected but invisible —
+                    // and therefore impossible to remove here.
+                    const labels = new Map<string, string>();
+                    for (const code of PRESET_CPV_CODES) {
+                      labels.set(code, CPV_SHORTHAND_LABELS[code] ?? 'CPV code');
+                    }
+                    for (const entry of findSector(sectorId)?.codes ?? []) {
+                      labels.set(entry.code, entry.label);
+                    }
+                    for (const code of cpvCodes) {
+                      if (!labels.has(code)) {
+                        labels.set(code, CPV_SHORTHAND_LABELS[code] ?? 'CPV code');
+                      }
+                    }
+                    const allCodes = [...labels.keys()];
                     const query = cpvSearch.trim().toLowerCase();
                     const visibleCodes =
                       query.length === 0
-                        ? PRESET_CPV_CODES
-                        : PRESET_CPV_CODES.filter(
+                        ? allCodes
+                        : allCodes.filter(
                             (code) =>
                               code.toLowerCase().includes(query) ||
-                              (CPV_SHORTHAND_LABELS[code] ?? '').toLowerCase().includes(query),
+                              (labels.get(code) ?? '').toLowerCase().includes(query),
                           );
                     if (visibleCodes.length === 0) {
                       return <p className="hint">No codes match your search.</p>;
@@ -1090,8 +1234,11 @@ export function Onboarding(): ReactElement {
                               />
                               <span className="ob-chip-toggle__code num">{code}</span>
                               <span className="ob-chip-toggle__label">
-                                {CPV_SHORTHAND_LABELS[code] ?? 'CPV code'}
+                                {labels.get(code) ?? 'CPV code'}
                               </span>
+                              {!isIngestedCpvCode(code) && (
+                                <span className="ob-chip-toggle__oos">out of scope</span>
+                              )}
                             </label>
                           </li>
                         ))}
@@ -1136,7 +1283,12 @@ export function Onboarding(): ReactElement {
                     onCommit={commitCpvSuggestion}
                     describedBy={manualCpvError !== null ? 'manual-cpv-error' : undefined}
                   />
-                  <button type="button" className="btn-add" onClick={addManualCpv}>
+                  <button
+                    type="button"
+                    className="btn-add"
+                    aria-label="Add CPV code"
+                    onClick={addManualCpv}
+                  >
                     Add
                   </button>
                 </div>
@@ -1165,27 +1317,14 @@ export function Onboarding(): ReactElement {
                     </>
                   )}
                 </p>
-                <div className="step-actions">
-                  <button type="button" className="btn-quiet" onClick={handleBack} disabled={busy}>
-                    Back
-                  </button>
-                  <button
-                    className="cta"
-                    type="button"
-                    disabled={busy || cpvCodes.length === 0}
-                    onClick={handleSaveAndContinue('cpv', saveCpv)}
-                  >
-                    {editingFromReview ? 'Save & return to review' : 'Save & continue'}
-                  </button>
-                </div>
               </>
             )}
 
-            {currentScreen.id === 'countries' && (
+            {inStep('countries') && (
               <>
-                <h1 ref={headingRef} tabIndex={-1}>
+                <h2 className="ob-section-title">
                   Which countries' opportunities do you want to see?
-                </h1>
+                </h2>
                 <p className="assistant-why">
                   Location match is worth up to 15 of your 100 points.
                 </p>
@@ -1262,26 +1401,22 @@ export function Onboarding(): ReactElement {
                       value={nutsInput}
                       onChange={(event) => setNutsInput(event.target.value)}
                     />
-                    <button type="button" className="btn-add" onClick={addNuts}>
+                    <button
+                      type="button"
+                      className="btn-add"
+                      aria-label="Add NUTS region"
+                      onClick={addNuts}
+                    >
                       Add
                     </button>
                   </div>
                 </details>
-                <StepActions
-                  busy={busy}
-                  onBack={handleBack}
-                  onSkip={editingFromReview ? undefined : handleSkip}
-                  onSave={handleSaveAndContinue('countries', saveGeographies)}
-                  saveLabel={editingFromReview ? 'Save & return to review' : undefined}
-                />
               </>
             )}
 
-            {currentScreen.id === 'value' && (
+            {inStep('value') && (
               <>
-                <h1 ref={headingRef} tabIndex={-1}>
-                  What contract value and timing work for you?
-                </h1>
+                <h2 className="ob-section-title">What contract value and timing work for you?</h2>
                 <p className="assistant-why">
                   Value fit is worth up to 10 points; a deadline runway below your threshold
                   excludes a tender outright.
@@ -1354,21 +1489,12 @@ export function Onboarding(): ReactElement {
                     }}
                   />
                 </div>
-                <StepActions
-                  busy={busy || minValueOverMax}
-                  onBack={handleBack}
-                  onSkip={editingFromReview ? undefined : handleSkip}
-                  onSave={handleSaveAndContinue('value', saveMatchingPreferences)}
-                  saveLabel={editingFromReview ? 'Save & return to review' : undefined}
-                />
               </>
             )}
 
-            {currentScreen.id === 'keywords' && (
+            {inStep('keywords') && (
               <>
-                <h1 ref={headingRef} tabIndex={-1}>
-                  What keywords describe the work you want?
-                </h1>
+                <h2 className="ob-section-title">What keywords describe the work you want?</h2>
                 <p className="assistant-why">
                   Capability and keyword fit is worth up to 20 of your 100 points.
                 </p>
@@ -1400,6 +1526,7 @@ export function Onboarding(): ReactElement {
                   <button
                     type="button"
                     className="btn-add"
+                    aria-label="Add keyword"
                     onClick={() => {
                       if (keywordInput.trim().length > 0) {
                         setKeywords((ks) => [
@@ -1419,21 +1546,12 @@ export function Onboarding(): ReactElement {
                     Add
                   </button>
                 </div>
-                <StepActions
-                  busy={busy}
-                  onBack={handleBack}
-                  onSkip={editingFromReview ? undefined : handleSkip}
-                  onSave={handleSaveAndContinue('keywords', saveKeywords)}
-                  saveLabel={editingFromReview ? 'Save & return to review' : undefined}
-                />
               </>
             )}
 
-            {currentScreen.id === 'capabilities' && (
+            {inStep('capabilities') && (
               <>
-                <h1 ref={headingRef} tabIndex={-1}>
-                  Capabilities & certifications
-                </h1>
+                <h2 className="ob-section-title">Capabilities & certifications</h2>
                 <p className="assistant-why">
                   Capability and keyword fit is worth up to 20 points; certifications also count
                   toward eligibility signals worth up to 5.
@@ -1468,6 +1586,7 @@ export function Onboarding(): ReactElement {
                     <button
                       type="button"
                       className="btn-add"
+                      aria-label="Add capability"
                       onClick={() => {
                         if (capabilityInput.trim().length > 0) {
                           setCapabilities((cs) => [...cs, capabilityInput.trim()]);
@@ -1526,6 +1645,7 @@ export function Onboarding(): ReactElement {
                     <button
                       type="button"
                       className="btn-add"
+                      aria-label="Add certification"
                       onClick={() => {
                         if (newCertCode === 'OTHER' && newCertLabel.trim().length === 0) return;
                         setCertifications((cs) => [
@@ -1543,21 +1663,12 @@ export function Onboarding(): ReactElement {
                     </button>
                   </div>
                 </fieldset>
-                <StepActions
-                  busy={busy}
-                  onBack={handleBack}
-                  onSkip={editingFromReview ? undefined : handleSkip}
-                  onSave={handleSaveAndContinue('capabilities', saveCapabilitiesAndCertifications)}
-                  saveLabel={editingFromReview ? 'Save & return to review' : undefined}
-                />
               </>
             )}
 
-            {currentScreen.id === 'exclusions' && (
+            {inStep('exclusions') && (
               <>
-                <h1 ref={headingRef} tabIndex={-1}>
-                  Anything you want to exclude?
-                </h1>
+                <h2 className="ob-section-title">Anything you want to exclude?</h2>
                 <p className="assistant-why">
                   Exclusions remove tenders before scoring — you'll never see them.
                 </p>
@@ -1592,6 +1703,7 @@ export function Onboarding(): ReactElement {
                   <button
                     type="button"
                     className="btn-add"
+                    aria-label="Add exclusion"
                     onClick={() => {
                       if (exclusionInput.trim().length > 0) {
                         setExclusions((ex) => [
@@ -1606,21 +1718,12 @@ export function Onboarding(): ReactElement {
                     Add
                   </button>
                 </div>
-                <StepActions
-                  busy={busy}
-                  onBack={handleBack}
-                  onSkip={editingFromReview ? undefined : handleSkip}
-                  onSave={handleSaveAndContinue('exclusions', saveExclusions)}
-                  saveLabel={editingFromReview ? 'Save & return to review' : undefined}
-                />
               </>
             )}
 
-            {currentScreen.id === 'digest' && (
+            {inStep('digest') && (
               <>
-                <h1 ref={headingRef} tabIndex={-1}>
-                  Your daily digest
-                </h1>
+                <h2 className="ob-section-title">Your daily digest</h2>
                 <p className="assistant-why">
                   One email a day, only when there's something worth your attention.
                 </p>
@@ -1663,22 +1766,14 @@ export function Onboarding(): ReactElement {
                   </select>
                 </div>
                 <p className="hint">Your timezone: {digestTimezone} — used for digest timing.</p>
-                <StepActions
-                  busy={busy}
-                  onBack={handleBack}
-                  onSkip={editingFromReview ? undefined : handleSkip}
-                  onSave={handleSaveAndContinue('digest', saveDigestPreferences)}
-                  saveLabel={editingFromReview ? 'Save & return to review' : undefined}
-                />
               </>
             )}
 
-            {currentScreen.id === 'review' && (
+            {inStep('review') && (
               <ReviewScreen
-                headingRef={headingRef}
                 busy={busy}
                 failedResourceLabel={failedResourceLabel}
-                onBack={() => setScreenIndex((i) => Math.max(i - 1, minScreenIndex))}
+                onBack={() => goToStep(stepIndex - 1)}
                 onFinish={() => void finishSetup()}
                 onEdit={editRow}
                 presetLabel={COMPANY_PRESETS.find((p) => p.key === presetKey)?.label ?? null}
@@ -1769,6 +1864,25 @@ export function Onboarding(): ReactElement {
                 }}
               />
             )}
+
+            {/* One Continue per step. The last step is the exception: Review
+                carries its own Finish, which additionally sweeps up anything
+                still unsaved before completing. */}
+            {currentStep.id !== 'digest' && (
+              <StepActions
+                busy={busy}
+                onBack={stepIndex === 0 && hasOrg !== true ? undefined : handleBack}
+                onSave={() => void continueStep()}
+                saveDisabled={currentStep.id === 'scope' && cpvCodes.length === 0}
+                saveLabel={
+                  editingFromReview
+                    ? 'Save & return to review'
+                    : currentStep.id === 'company' && hasOrg !== true
+                      ? 'Create workspace & continue'
+                      : 'Save & continue'
+                }
+              />
+            )}
           </div>
         </div>
       </main>
@@ -1806,18 +1920,18 @@ function valueSummary(fields: {
   return parts.length > 0 ? parts.join(' · ') : 'No value or deadline limits set — using defaults.';
 }
 
-function PhaseStepper({ currentPhase }: { currentPhase: number }): ReactElement {
+function StepStepper({ currentStepIndex }: { currentStepIndex: number }): ReactElement {
   return (
-    <ol className="assistant-phases" aria-label="Setup phases">
-      {PHASE_LABELS.map((label, index) => (
+    <ol className="assistant-phases" aria-label="Setup steps">
+      {STEPS.map((step, index) => (
         <li
-          key={label}
+          key={step.id}
           className="assistant-phase"
-          data-state={index < currentPhase ? 'done' : undefined}
-          aria-current={index === currentPhase ? 'step' : undefined}
+          data-state={index < currentStepIndex ? 'done' : undefined}
+          aria-current={index === currentStepIndex ? 'step' : undefined}
         >
-          {index < currentPhase && <span aria-hidden="true">✓ </span>}
-          {label}
+          {index < currentStepIndex && <span aria-hidden="true">✓ </span>}
+          {step.label}
         </li>
       ))}
     </ol>
@@ -1867,30 +1981,33 @@ function OnboardingHeader(): ReactElement {
   );
 }
 
+/**
+ * A step's actions. There is no Skip: a step now covers several resources at
+ * once, so "skip" had no single meaning — leaving a field blank and
+ * continuing already saves nothing for it, which is what Skip did.
+ */
 function StepActions({
   busy,
   onBack,
-  onSkip,
   onSave,
   saveLabel,
+  saveDisabled = false,
 }: {
   busy: boolean;
-  onBack: () => void;
-  onSkip?: (() => void) | undefined;
+  /** Omitted on the first step when there is nowhere to go back to. */
+  onBack?: (() => void) | undefined;
   onSave: () => void;
   saveLabel?: string | undefined;
+  saveDisabled?: boolean;
 }): ReactElement {
   return (
     <div className="step-actions">
-      <button type="button" className="btn-quiet" onClick={onBack} disabled={busy}>
-        Back
-      </button>
-      {onSkip !== undefined && (
-        <button type="button" className="btn-quiet" onClick={onSkip} disabled={busy}>
-          Skip
+      {onBack !== undefined && (
+        <button type="button" className="btn-quiet" onClick={onBack} disabled={busy}>
+          Back
         </button>
       )}
-      <button className="cta" type="button" onClick={onSave} disabled={busy}>
+      <button className="cta" type="button" onClick={onSave} disabled={busy || saveDisabled}>
         {saveLabel ?? 'Save & continue'}
       </button>
     </div>
@@ -1903,7 +2020,6 @@ interface ReviewRowData {
 }
 
 function ReviewScreen({
-  headingRef,
   busy,
   failedResourceLabel,
   onBack,
@@ -1912,7 +2028,6 @@ function ReviewScreen({
   presetLabel,
   rows,
 }: {
-  headingRef: React.RefObject<HTMLHeadingElement | null>;
   busy: boolean;
   failedResourceLabel: string | null;
   onBack: () => void;
@@ -1944,9 +2059,7 @@ function ReviewScreen({
 
   return (
     <>
-      <h1 ref={headingRef} tabIndex={-1}>
-        Review your scoring profile
-      </h1>
+      <h2 className="ob-section-title">Review your scoring profile</h2>
       <p>
         This is exactly what will be saved when you finish — including anything a preset filled in
         that you haven't explicitly saved yet.

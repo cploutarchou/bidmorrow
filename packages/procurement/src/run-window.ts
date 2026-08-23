@@ -37,6 +37,7 @@ import type { SearchRowFields } from './search-row';
 import { buildScopeQuery } from './scope';
 import type { IngestionScope, PublicationWindow } from './scope';
 import { buildSnapshotR2Key, gzipText, sha256Hex } from './snapshot';
+import { firstLanguageValue, nutsToCountry } from './lot-normalization';
 import { deriveValueEur, divideValueAcrossLots } from './value';
 
 /**
@@ -960,21 +961,6 @@ export function boundIssuesForErrorDetail(issues: readonly ParseIssue[]): readon
     runningLength += entryLength;
   }
   return [...kept, marker];
-}
-
-/** First value from a `{lang: text}` map (deterministic key order is not guaranteed; any variant is fine for a display title). */
-function firstLanguageValue(map: Readonly<Record<string, string>> | null): string | null {
-  if (map === null) {
-    return null;
-  }
-  const first = Object.values(map)[0];
-  return first ?? null;
-}
-
-/** NUTS codes are country-prefixed (first 2 letters); falls back to the buyer country when a NUTS code is too short to trust. */
-function nutsToCountry(nuts: string, buyerCountry: { countryCode: string } | null): string {
-  const prefix = nuts.slice(0, 2).toUpperCase();
-  return /^[A-Z]{2}$/.test(prefix) ? prefix : (buyerCountry?.countryCode ?? prefix);
 }
 
 function dedupeCpv<T extends { lotId: string; cpvCode: string }>(entries: T[]): T[] {

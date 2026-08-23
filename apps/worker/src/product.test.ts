@@ -212,6 +212,111 @@ describe('GET /api/org/presets', () => {
   });
 });
 
+describe('saved searches', () => {
+  it('round-trips, enforces the unique name, and never leaks across organizations', async () => {
+    const owner = await setUpOrg('SavedSearchOrg');
+
+    const created = await fetchApi('/api/org/saved-searches', {
+      method: 'POST',
+      headers: jsonHeaders(owner.cookie),
+      body: JSON.stringify({
+        name: 'Security & SOC (CY, GR)',
+        tab: 'strong',
+        // `country` is empty on purpose: empty values are not filters and
+        // must not be stored as though they were.
+        filters: { minScore: '70', country: '', buyerName: 'Ministry' },
+      }),
+    });
+    expect(created.status).toBe(201);
+    const createdBody = (await created.json()) as {
+      savedSearch: { id: string; name: string; tab: string; filters: Record<string, string> };
+    };
+    expect(createdBody.savedSearch.tab).toBe('strong');
+    expect(createdBody.savedSearch.filters).toEqual({ minScore: '70', buyerName: 'Ministry' });
+
+    const listed = await fetchApi('/api/org/saved-searches', {
+      headers: { cookie: owner.cookie },
+    });
+    expect(listed.status).toBe(200);
+    const listedBody = (await listed.json()) as { savedSearches: { name: string }[] };
+    expect(listedBody.savedSearches.map((r) => r.name)).toEqual(['Security & SOC (CY, GR)']);
+
+    // Same name twice in one workspace is indistinguishable in the rail, so
+    // it is refused rather than silently duplicated or overwritten.
+    const duplicate = await fetchApi('/api/org/saved-searches', {
+      method: 'POST',
+      headers: jsonHeaders(owner.cookie),
+      body: JSON.stringify({ name: 'Security & SOC (CY, GR)', tab: 'today', filters: {} }),
+    });
+    expect(duplicate.status).toBe(409);
+    expect(await duplicate.json()).toEqual({ error: 'duplicate_name' });
+
+    // A second organization sees none of it, and cannot delete by id —
+    // which must 404 exactly like a nonexistent id, so the endpoint is not
+    // an existence oracle for another tenant's rows.
+    const other = await setUpOrg('SavedSearchOtherOrg');
+    const otherList = await fetchApi('/api/org/saved-searches', {
+      headers: { cookie: other.cookie },
+    });
+    expect((await otherList.json()) as unknown).toEqual({ savedSearches: [] });
+
+    const crossDelete = await fetchApi(`/api/org/saved-searches/${createdBody.savedSearch.id}`, {
+      method: 'DELETE',
+      headers: jsonHeaders(other.cookie),
+    });
+    expect(crossDelete.status).toBe(404);
+    const missingDelete = await fetchApi('/api/org/saved-searches/does-not-exist', {
+      method: 'DELETE',
+      headers: jsonHeaders(other.cookie),
+    });
+    expect(missingDelete.status).toBe(404);
+
+    // ...and the owner's row is still there after the failed cross-tenant delete.
+    const stillThere = await fetchApi('/api/org/saved-searches', {
+      headers: { cookie: owner.cookie },
+    });
+    expect(((await stillThere.json()) as { savedSearches: unknown[] }).savedSearches).toHaveLength(
+      1,
+    );
+
+    const removed = await fetchApi(`/api/org/saved-searches/${createdBody.savedSearch.id}`, {
+      method: 'DELETE',
+      headers: jsonHeaders(owner.cookie),
+    });
+    expect(removed.status).toBe(204);
+    const afterDelete = await fetchApi('/api/org/saved-searches', {
+      headers: { cookie: owner.cookie },
+    });
+    expect(((await afterDelete.json()) as { savedSearches: unknown[] }).savedSearches).toHaveLength(
+      0,
+    );
+  });
+
+  it('rejects an unknown tab and an unknown filter key', async () => {
+    const org = await setUpOrg('SavedSearchValidationOrg');
+    const badTab = await fetchApi('/api/org/saved-searches', {
+      method: 'POST',
+      headers: jsonHeaders(org.cookie),
+      body: JSON.stringify({ name: 'Bad tab', tab: 'everything', filters: {} }),
+    });
+    expect(badTab.status).toBe(400);
+
+    // `.strict()` matters: an unknown key would otherwise be persisted into
+    // the blob and handed back to the client as though it were a real filter.
+    const badFilter = await fetchApi('/api/org/saved-searches', {
+      method: 'POST',
+      headers: jsonHeaders(org.cookie),
+      body: JSON.stringify({ name: 'Bad filter', tab: 'today', filters: { nope: 'x' } }),
+    });
+    expect(badFilter.status).toBe(400);
+  });
+
+  it('requires an organization', async () => {
+    const response = await fetchApi('/api/org/saved-searches');
+    expect(response.status).toBe(401);
+  });
+});
+
 describe('profile-bundle PUT endpoints', () => {
   it('cpv-preferences: owner-only, caps at 30, cross-org isolation', async () => {
     const owner = await setUpOrg('CpvOwnerOrg');

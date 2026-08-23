@@ -3,10 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BidMorrow - Find the tenders worth pursuing. Skip the rest.</title>
+    <!-- Neutral site-level fallbacks only. Every page renders its own
+         title/description/canonical + OG block via components/PageMeta.tsx,
+         which React 19 hoists into this head at runtime. These two must stay
+         page-agnostic: previously they carried Home's copy, so a crawler or
+         share scraper reading the pre-hydration shell attributed Home's title
+         and description to /pricing, /terms and every other route
+         (docs/redesign/seo-content-strategy.md T6/T8). Serving the real
+         per-page metadata in raw HTML needs the prerender step, which is a
+         later milestone. -->
+    <title>BidMorrow — Bid/No-Bid Intelligence for EU Public Procurement</title>
     <meta
       name="description"
-      content="BidMorrow is bid/no-bid qualification intelligence for EU public procurement. It answers one question: “Should a company like mine spend time investigating this tender?”"
+      content="Bid/no-bid qualification intelligence for EU public procurement — deterministic 0–100 scoring on official TED notices, explained point by point."
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.png" type="image/png" sizes="48x48" />

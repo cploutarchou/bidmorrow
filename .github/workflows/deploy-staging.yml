@@ -98,6 +98,36 @@ jobs:
       - name: Build web SPA
         run: pnpm --filter @bidmorrow/web build
 
+      - name: Mark staging assets noindex
+        # Staging must not be indexed: it duplicates production content on a
+        # public hostname. The Worker's robots.txt already returns a blanket
+        # `Disallow: /` for non-production, but that is NOT sufficient here.
+        # This zone has Cloudflare's managed robots.txt turned on, which
+        # prepends its own `User-agent: *` / `Allow: /` group to whatever the
+        # origin returns (verified live, site-health run 32633482361). Crawlers
+        # merge groups sharing a user-agent, and `Allow: /` vs `Disallow: /` is
+        # a same-length tie that resolves to the LEAST restrictive rule — so
+        # the blanket Disallow is neutralised.
+        #
+        # `X-Robots-Tag` is immune to that merge, and is the stronger control
+        # regardless: `Disallow` only asks a crawler not to FETCH, which also
+        # stops it reading any `noindex` on the page, so a disallowed URL can
+        # still be indexed from external links. A response header cannot be
+        # missed that way.
+        #
+        # Injected here rather than committed to apps/web/public/_headers
+        # because that file ships to production too, where these pages MUST
+        # stay indexable. Production's own deploy does not run this step.
+        run: |
+          headers=apps/web/dist/_headers
+          test -f "$headers" || { echo "::error::$headers missing after build"; exit 1; }
+          grep -qx '/\*' "$headers" || { echo "::error::no '/*' rule in $headers — refusing to guess where to add X-Robots-Tag"; exit 1; }
+          # Insert into the existing /* block rather than appending a second
+          # one, so there is no dependency on how duplicate rules are merged.
+          awk '{ print } /^\/\*$/ { print "  X-Robots-Tag: noindex, nofollow" }' "$headers" > "$headers.tmp"
+          mv "$headers.tmp" "$headers"
+          grep -A1 -x '/\*' "$headers"
+
       - name: Deploy Worker (staging)
         # No --var overrides: env.staging vars carry the canonical
         # https://staging.bidmorrow.com URLs, and the deploy attaches the
@@ -155,6 +185,10 @@ jobs:
           curl -sf "$base/api/health/ready" | grep -q '"ok"'
           # SPA serves with the security headers from public/_headers.
           curl -sfI "$base/" | grep -qi 'content-security-policy'
+          # ...and with the staging-only noindex header injected above. This
+          # is what actually keeps staging out of search results, so a silent
+          # regression here must fail the deploy, not go unnoticed.
+          curl -sfI "$base/" | grep -qi '^x-robots-tag:.*noindex'
           # E2E test hooks MUST be dead on staging (double gate).
           code=$(curl -s -o /dev/null -w '%{http_code}' "$base/api/test/mailbox")
           test "$code" = "404"

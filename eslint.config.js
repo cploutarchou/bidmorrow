@@ -54,9 +54,10 @@ export default tseslint.config(
     rules: {},
   },
   {
-    // Node CLI helper scripts (E2E dev-vars writer, etc.): run under plain
-    // node, so node globals exist and stdout logging is their job.
-    files: ['scripts/**/*.mjs'],
+    // Node CLI helper scripts (E2E dev-vars writer, the sample-verdict
+    // generator, etc.): run under plain node, so node globals exist and
+    // stdout logging is their job.
+    files: ['scripts/**/*.mjs', 'packages/*/scripts/**/*.ts'],
     languageOptions: {
       globals: { console: 'readonly', process: 'readonly', URL: 'readonly' },
     },

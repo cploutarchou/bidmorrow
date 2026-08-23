@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import {
   componentLabel,
   componentMaxPoints,
@@ -59,6 +59,11 @@ export function TenderCard({
   onIgnore: (matchId: string, nextIgnored: boolean) => void;
 }): ReactElement {
   const modifier = CLASS_TO_CARD_MODIFIER[item.classification];
+  // Handing the current location forward is what lets App.tsx open this
+  // tender as a slide-over over the feed instead of navigating away. It stays
+  // a real <Link>, so middle-click, ctrl-click and "copy link address" all
+  // still resolve to the full page — a click handler would have broken those.
+  const location = useLocation();
   return (
     <article className={modifier.length > 0 ? `tender-card ${modifier}` : 'tender-card'}>
       <div className="tender-card__head">
@@ -69,7 +74,9 @@ export function TenderCard({
         <p className="tender-card__deadline num">{formatRelativeDeadline(item.deadlineAt, now)}</p>
       </div>
       <h3 className="tender-card__title">
-        <Link to={`/app/tenders/${item.matchId}`}>{item.title}</Link>
+        <Link to={`/app/tenders/${item.matchId}`} state={{ backgroundLocation: location }}>
+          {item.title}
+        </Link>
       </h3>
       <p className="tender-card__meta">
         {item.buyerName ?? 'Buyer not published'} · {item.country ?? 'Country not published'} ·{' '}

@@ -48,11 +48,36 @@ if (!Number.isInteger(MAX_NOTICES) || MAX_NOTICES < 1 || MAX_NOTICES > 100) {
   process.exit(1);
 }
 
+/**
+ * Optional CPV prefix filter, comma-separated (e.g. `72,48,79417000`).
+ * Without it the fetch returns whatever the window happens to contain,
+ * which is fine for schema-diversity fixtures but useless when a specific
+ * sector is needed. Prefixes shorter than 8 digits get the `*` wildcard,
+ * exactly as `buildScopeQuery` in packages/procurement/src/scope.ts does —
+ * that form is live-validated, so this stays identical to it rather than
+ * inventing a second dialect.
+ */
+const CPV_PREFIXES = (process.env.CPV_PREFIXES ?? '')
+  .split(',')
+  .map((entry) => entry.trim())
+  .filter((entry) => entry.length > 0);
+if (CPV_PREFIXES.some((entry) => !/^[0-9]{2,8}$/.test(entry))) {
+  console.error(`CPV_PREFIXES must be 2-8 digit codes, got: ${process.env.CPV_PREFIXES}`);
+  process.exit(1);
+}
+
 const since = new Date(Date.now() - DAYS_BACK * 86_400_000);
 const ymd = since.toISOString().slice(0, 10).replaceAll('-', '');
 
+const clauses = ['form-type = competition', `publication-date >= ${ymd}`];
+if (CPV_PREFIXES.length > 0) {
+  const terms = CPV_PREFIXES.map((entry) => (entry.length >= 8 ? entry : `${entry}*`));
+  clauses.unshift(`classification-cpv IN (${terms.join(', ')})`);
+}
+console.log(`CPV filter: ${CPV_PREFIXES.length > 0 ? CPV_PREFIXES.join(', ') : '(none)'}`);
+
 const searchBody = {
-  query: `form-type = competition AND publication-date >= ${ymd} SORT BY publication-date`,
+  query: `${clauses.join(' AND ')} SORT BY publication-date`,
   fields: [
     'publication-number',
     'publication-date',
@@ -104,6 +129,26 @@ for (const notice of picked) {
   const xmlUrl = notice.links?.xml?.MUL;
   if (typeof number !== 'string' || typeof xmlUrl !== 'string') {
     console.log(`skipping row without publication-number/links.xml.MUL`);
+    continue;
+  }
+  // Both values come from the API response and both are used unsafely by
+  // default: `number` becomes a filesystem path and `xmlUrl` a fetch target.
+  // A traversal publication-number would write outside raw-fixtures/, and an
+  // off-origin link would send this runner's request somewhere TED did not
+  // publish. Neither is reachable without a compromised API over TLS, but
+  // neither costs anything to rule out either.
+  if (!/^\d{1,10}-\d{4}$/.test(number)) {
+    console.log(`skipping row with an unexpected publication-number shape: ${number}`);
+    continue;
+  }
+  let xmlHost = null;
+  try {
+    xmlHost = new URL(xmlUrl).host;
+  } catch {
+    xmlHost = null;
+  }
+  if (xmlHost !== 'ted.europa.eu' && xmlHost !== 'api.ted.europa.eu') {
+    console.log(`skipping ${number}: links.xml.MUL points off-origin (${String(xmlHost)})`);
     continue;
   }
   const xmlResponse = await fetch(xmlUrl, {

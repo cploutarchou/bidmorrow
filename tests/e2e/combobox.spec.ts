@@ -228,15 +228,14 @@ test('combobox: onboarding CPV screen commits a suggestion via keyboard, updates
   await signUpAndVerify(page, { name: 'Combobox Onboarding User', email, password: TEST_PASSWORD });
   await login(page, email, TEST_PASSWORD);
 
+  // Five-step flow: Company -> Starting point -> Scope (CPV + countries).
   await page.goto('/onboarding');
-  await page.getByRole('button', { name: 'Get started' }).click();
   await page.getByLabel('Organization name').fill(`Combobox Onboarding Org ${String(Date.now())}`);
-  await page.getByRole('button', { name: 'Create workspace' }).click();
-  await page.getByRole('button', { name: 'Skip' }).click(); // company basics
+  await page.getByRole('button', { name: 'Create workspace & continue' }).click();
 
   await expect(page.getByRole('heading', { name: 'Start from a preset' })).toBeVisible();
   await page.getByRole('radio', { name: 'Start from scratch' }).check();
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'Save & continue' }).click();
 
   await expect(
     page.getByRole('heading', { name: 'Which CPV codes describe your work?' }),

@@ -8,7 +8,10 @@ import { expect, test } from '@playwright/test';
 
 test('home page renders headline and CTA', async ({ page }) => {
   await page.goto('/');
-  await expect(page).toHaveTitle(/BidMorrow.*EU public procurement/);
+  // Home's title is now the M0.2 metadata string (lib/seo.ts MARKETING_META.home).
+  // Asserting it here also proves React's hoisted per-page title wins over the
+  // neutral static fallback in index.html.
+  await expect(page).toHaveTitle(/BidMorrow — Bid\/No-Bid Intelligence for EU Tenders/);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   // The 2026-08-21 handoff homepage repeats the CTA deliberately (hero,
   // pricing section, closing panel) — assert the first, not a unique one.
@@ -82,4 +85,61 @@ test.describe('mobile nav menu', () => {
     await expect(page).toHaveURL(/\/pricing$/);
     await expect(page.locator('.mkt-menu-panel.is-open')).toHaveCount(0);
   });
+});
+
+/**
+ * The public sample-verdict demo (docs/product-scope.md "Product policy
+ * lock", 2026-08-17).
+ *
+ * Two things are asserted that a screenshot would not catch: that the page
+ * shows the engine's real arithmetic, and that it stays a demo rather than
+ * becoming a free tier.
+ */
+test('sample verdicts page shows real engine output for real notices', async ({ page }) => {
+  await page.goto('/sample-verdicts');
+  await expect(page).toHaveTitle(/Sample Verdicts/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  // Every verdict is one article, each with a heading naming a real tender.
+  const verdicts = page.locator('article.sample-verdict');
+  await expect(verdicts).toHaveCount(5);
+
+  // The strong match's breakdown is present and its components are the real
+  // engine vocabulary, not illustrative labels.
+  const strong = verdicts.first();
+  await expect(strong.getByText('Strong match')).toBeVisible();
+  await expect(strong.getByRole('rowheader', { name: 'CPV fit' })).toBeVisible();
+  await expect(strong.getByRole('rowheader', { name: 'Deadline runway' })).toBeVisible();
+
+  // The excluded verdict shows NO score and NO breakdown — the engine never
+  // scored it, and showing a 0 would be a different, false claim.
+  const excluded = verdicts.last();
+  await expect(excluded.getByText('Excluded')).toBeVisible();
+  await expect(excluded.getByRole('table')).toHaveCount(0);
+  await expect(excluded.getByText(/never reached a score/i)).toBeVisible();
+
+  // At least one verdict shows a real risk flag with its evidence — the
+  // feature the demo exists to sell is otherwise invisible on it.
+  await expect(page.getByRole('heading', { name: 'Detected risk flags' })).toHaveCount(1);
+
+  // Every notice links to TED itself.
+  const sourceLinks = page.getByRole('link', { name: /Read the original notice on TED/ });
+  await expect(sourceLinks).toHaveCount(5);
+  for (const href of await sourceLinks.evaluateAll((links) =>
+    links.map((l) => l.getAttribute('href')),
+  )) {
+    expect(href).toMatch(/^https:\/\/ted\.europa\.eu\//);
+  }
+});
+
+test('sample verdicts page is a demo, not a free tier', async ({ page }) => {
+  await page.goto('/sample-verdicts');
+  // The policy's hard boundary: an anonymous visitor cannot submit a tender,
+  // build a profile or reach the feed from here. Enforced structurally —
+  // there is nothing to type into and no link inward.
+  await expect(page.locator('main input, main textarea, main select')).toHaveCount(0);
+  await expect(page.locator('main a[href^="/app"]')).toHaveCount(0);
+  await expect(
+    page.getByRole('link', { name: 'Get verdicts matched to your company' }),
+  ).toBeVisible();
 });

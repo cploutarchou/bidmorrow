@@ -1,0 +1,11 @@
+{
+  "source": "https://ted.europa.eu/en/notice/579868-2026",
+  "sourceNoticeId": "579868-2026",
+  "publicationDate": "2026-08-21",
+  "retrievalDate": "2026-08-23",
+  "sdkVersion": "1.13",
+  "sdkGitTag": null,
+  "case": "SDK 1.13 single-lot cn-standard notice (IRL, open procedure), and the only ENGLISH-language IT notice in the fixture set: a single-party framework agreement for supply, delivery and maintenance, CPV 48150000 with 48321000/48100000/48000000/72263000/72267100 additional, NUTS IE061, EUR 4,000,000, deadline 2026-09-18. Risk-flag detection is an English pattern set (packages/matching/src/risk-flags.ts), so this is the fixture that exercises it end to end: the engine raises a POSSIBLE framework_membership flag off the lot title. Every other real fixture is non-English and correctly raises none, which is worth having both sides of.",
+  "origin": "Real TED-published notice fetched from the TED Search API (links.xml.MUL) by the ted-fixture-fetch workflow, run 32646377636, on 2026-08-23 with the CPV filter 72,48,79417000 — the session sandbox cannot reach ted.europa.eu (the agent proxy denies the CONNECT). Verbatim source XML apart from the documented sanitization.",
+  "sanitization": "None required. Contacts are the buyer's procurement mailbox (procurement@kwetb.ie), the review body (HighCourtCentralOffice@courts.ie) and the eSender, each with a switchboard number. No natural person is identified. No structural changes."
+}
