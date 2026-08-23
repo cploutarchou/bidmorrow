@@ -3,6 +3,8 @@ import { adminApi } from '../../lib/admin-api';
 import { ApiError } from '../../lib/api';
 import { diffComponents, mismatchMarker, type TraceComponent } from '../../lib/admin-trace';
 import { ConfirmAction } from '../../components/admin/ConfirmAction';
+import { AdminPage } from '../../components/admin/AdminPage';
+import { AdminFlash } from '../../components/admin/AdminFlash';
 import type { AdminMatchTraceResult } from '../../lib/admin-types';
 
 const MAX_NOTICE_IDS = 100;
@@ -25,6 +27,7 @@ export function Matching(): ReactElement {
   const [idKind, setIdKind] = useState<'noticeIds' | 'lotIds'>('noticeIds');
   const [idsText, setIdsText] = useState('');
   const [recomputeStatus, setRecomputeStatus] = useState<string | null>(null);
+  const [flashTone, setFlashTone] = useState<'ok' | 'risk'>('ok');
   const [busy, setBusy] = useState(false);
 
   async function loadTrace(): Promise<void> {
@@ -61,8 +64,10 @@ export function Matching(): ReactElement {
       const result = await adminApi.recomputeMatches(
         idKind === 'noticeIds' ? { noticeIds: ids } : { lotIds: ids },
       );
+      setFlashTone('ok');
       setRecomputeStatus(`Enqueued ${String(result.enqueuedMessages)} recompute message(s).`);
     } catch {
+      setFlashTone('risk');
       setRecomputeStatus('Could not enqueue recompute.');
     } finally {
       setBusy(false);
@@ -89,14 +94,15 @@ export function Matching(): ReactElement {
   const diffRows = trace !== null ? diffComponents(storedComponents, liveComponents) : [];
 
   return (
-    <>
-      <title>Matching — Admin</title>
-      <h1>Matching</h1>
-
-      <section>
-        <h2>Match trace</h2>
+    <AdminPage
+      documentTitle="Matching — Admin"
+      heading="Matching"
+      note="Trace one organization/lot pair to see why it scored what it scored, and enqueue a bounded recompute. A stored-vs-live mismatch means the engine changed since the score was written."
+    >
+      <section className="admin-section">
+        <h2 className="admin-panel__label">Match trace</h2>
         <form
-          className="form-field inline"
+          className="form-field inline admin-filters"
           onSubmit={(event) => {
             event.preventDefault();
             void loadTrace();
@@ -121,11 +127,11 @@ export function Matching(): ReactElement {
         {trace !== null && (
           <>
             {trace.note !== undefined && <p className="form-warning">{trace.note}</p>}
-            <h3>Summary</h3>
-            <dl className="detail-facts">
-              <div>
-                <dt>Stored score / classification</dt>
-                <dd>
+            <h3 className="admin-panel__label">Summary</h3>
+            <dl className="admin-facts">
+              <div className="admin-fact">
+                <dt className="admin-fact__label">Stored score / classification</dt>
+                <dd className="admin-fact__value admin-fact__value--sm">
                   {trace.stored?.match !== undefined
                     ? `${String((trace.stored.match as { score?: unknown }).score ?? '—')} / ${String(
                         (trace.stored.match as { classification?: unknown }).classification ?? '—',
@@ -133,9 +139,9 @@ export function Matching(): ReactElement {
                     : 'No stored match'}
                 </dd>
               </div>
-              <div>
-                <dt>Live recompute</dt>
-                <dd>
+              <div className="admin-fact">
+                <dt className="admin-fact__label">Live recompute</dt>
+                <dd className="admin-fact__value admin-fact__value--sm">
                   {trace.live === null
                     ? 'Not computed (see note above)'
                     : trace.live.kind === 'excluded'
@@ -143,15 +149,17 @@ export function Matching(): ReactElement {
                       : `${String(trace.live.score ?? '—')} / ${trace.live.classification ?? '—'}`}
                 </dd>
               </div>
-              <div>
-                <dt>Engine version</dt>
-                <dd>{trace.engineVersion ?? '—'}</dd>
+              <div className="admin-fact">
+                <dt className="admin-fact__label">Engine version</dt>
+                <dd className="admin-fact__value admin-fact__value--sm">
+                  {trace.engineVersion ?? '—'}
+                </dd>
               </div>
             </dl>
 
-            <h3>Stored vs live components</h3>
+            <h3 className="admin-panel__label">Stored vs live components</h3>
             {diffRows.length === 0 ? (
-              <p>No components to compare.</p>
+              <p className="admin-empty">No components to compare.</p>
             ) : (
               <div className="admin-table-scroll">
                 <table>
@@ -188,19 +196,23 @@ export function Matching(): ReactElement {
               </div>
             )}
 
-            <h3>Inputs (raw)</h3>
-            <p>Organization scoring profile and mapped lot input, as used by the live recompute:</p>
-            <pre>{JSON.stringify(trace.orgProfile ?? null, null, 2)}</pre>
-            <pre>{JSON.stringify(trace.lotInput ?? null, null, 2)}</pre>
+            <h3 className="admin-panel__label">Inputs (raw)</h3>
+            <p className="admin-card__note">
+              Organization scoring profile and mapped lot input, as used by the live recompute:
+            </p>
+            <pre className="admin-code-block">
+              {JSON.stringify(trace.orgProfile ?? null, null, 2)}
+            </pre>
+            <pre className="admin-code-block">
+              {JSON.stringify(trace.lotInput ?? null, null, 2)}
+            </pre>
           </>
         )}
       </section>
 
-      <section>
-        <h2>Recompute matches</h2>
-        <p role="status" aria-live="polite" className="visually-hidden-status">
-          {recomputeStatus}
-        </p>
+      <section className="admin-panel">
+        <h2 className="admin-panel__label">Recompute matches</h2>
+        <AdminFlash message={recomputeStatus} tone={flashTone} />
         <fieldset>
           <legend>ID kind</legend>
           <label className="checkbox-row">
@@ -246,6 +258,6 @@ export function Matching(): ReactElement {
           />
         )}
       </section>
-    </>
+    </AdminPage>
   );
 }

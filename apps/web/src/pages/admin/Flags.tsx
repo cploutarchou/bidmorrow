@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import { adminApi } from '../../lib/admin-api';
 import { formatIsoUtc } from '../../lib/format';
 import { ConfirmAction } from '../../components/admin/ConfirmAction';
+import { AdminPage } from '../../components/admin/AdminPage';
+import { AdminFlash } from '../../components/admin/AdminFlash';
 import type { AdminFlag } from '../../lib/admin-types';
 
 export function Flags(): ReactElement {
@@ -13,6 +15,9 @@ export function Flags(): ReactElement {
   const [editDescription, setEditDescription] = useState('');
   const [busy, setBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  // Tone is tracked next to the message so a failure is not shown in the
+  // same affirmative styling as a success.
+  const [flashTone, setFlashTone] = useState<'ok' | 'risk'>('ok');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -43,6 +48,7 @@ export function Flags(): ReactElement {
     try {
       parsedValue = JSON.parse(editValue);
     } catch {
+      setFlashTone('risk');
       setStatusMessage('Value must be valid JSON (e.g. "true", "42", or a quoted string).');
       return;
     }
@@ -53,10 +59,12 @@ export function Flags(): ReactElement {
         value: parsedValue,
         ...(editDescription.trim().length > 0 ? { description: editDescription.trim() } : {}),
       });
+      setFlashTone('ok');
       setStatusMessage(`Flag ${editingKey} updated.`);
       setEditingKey(null);
       await load();
     } catch {
+      setFlashTone('risk');
       setStatusMessage('Could not update flag.');
     } finally {
       setBusy(false);
@@ -64,12 +72,12 @@ export function Flags(): ReactElement {
   }
 
   return (
-    <>
-      <title>Feature flags — Admin</title>
-      <h1>Feature flags</h1>
-      <p role="status" aria-live="polite" className="visually-hidden-status">
-        {statusMessage}
-      </p>
+    <AdminPage
+      documentTitle="Feature flags — Admin"
+      heading="Feature flags"
+      note="Operational switches read by the server at runtime. Every change is typed-confirmed and written to the audit log."
+    >
+      <AdminFlash message={statusMessage} tone={flashTone} />
       {loading && <p>Loading…</p>}
       {error !== null && (
         <p role="alert" className="form-error">
@@ -109,8 +117,8 @@ export function Flags(): ReactElement {
       )}
 
       {editingKey !== null && (
-        <section>
-          <h2>Editing {editingKey}</h2>
+        <section className="admin-panel">
+          <h2 className="admin-panel__label">Editing {editingKey}</h2>
           <div className="form-field">
             <label htmlFor="flag-value">Value (JSON)</label>
             <input
@@ -141,6 +149,6 @@ export function Flags(): ReactElement {
           </div>
         </section>
       )}
-    </>
+    </AdminPage>
   );
 }

@@ -6,6 +6,8 @@ import { formatIsoUtc } from '../../lib/format';
 import { validateBackfillRange } from '../../lib/admin-date-range';
 import { validateCpvScope } from '../../lib/admin-scope';
 import { ConfirmAction } from '../../components/admin/ConfirmAction';
+import { AdminPage } from '../../components/admin/AdminPage';
+import { AdminFlash } from '../../components/admin/AdminFlash';
 import { Pager } from '../../components/admin/Pager';
 import type {
   AdminIngestionError,
@@ -45,6 +47,7 @@ export function Ingestion(): ReactElement {
   const [noticeLoading, setNoticeLoading] = useState(false);
 
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [flashTone, setFlashTone] = useState<'ok' | 'risk'>('ok');
   const [busy, setBusy] = useState(false);
 
   const [cpvFamiliesText, setCpvFamiliesText] = useState('72,48,79417000');
@@ -147,8 +150,10 @@ export function Ingestion(): ReactElement {
     setStatusMessage(null);
     try {
       await adminApi.pauseIngestion();
+      setFlashTone('ok');
       setStatusMessage('Ingestion paused.');
     } catch {
+      setFlashTone('risk');
       setStatusMessage('Could not pause ingestion.');
     } finally {
       setBusy(false);
@@ -160,8 +165,10 @@ export function Ingestion(): ReactElement {
     setStatusMessage(null);
     try {
       await adminApi.resumeIngestion();
+      setFlashTone('ok');
       setStatusMessage('Ingestion resumed.');
     } catch {
+      setFlashTone('risk');
       setStatusMessage('Could not resume ingestion.');
     } finally {
       setBusy(false);
@@ -184,8 +191,10 @@ export function Ingestion(): ReactElement {
     setStatusMessage(null);
     try {
       await adminApi.updateIngestionScope({ cpvFamilies, countries });
+      setFlashTone('ok');
       setStatusMessage('Ingestion scope updated.');
     } catch {
+      setFlashTone('risk');
       setStatusMessage('Could not update ingestion scope.');
     } finally {
       setBusy(false);
@@ -200,8 +209,10 @@ export function Ingestion(): ReactElement {
     setStatusMessage(null);
     try {
       const result = await adminApi.runBackfill({ fromDate, toDate });
+      setFlashTone('ok');
       setStatusMessage(`Backfill enqueued: ${String(result.enqueuedWindows)} windows.`);
     } catch {
+      setFlashTone('risk');
       setStatusMessage('Could not enqueue backfill.');
     } finally {
       setBusy(false);
@@ -209,15 +220,15 @@ export function Ingestion(): ReactElement {
   }
 
   return (
-    <>
-      <title>Ingestion — Admin</title>
-      <h1>Ingestion</h1>
-      <p role="status" aria-live="polite" className="visually-hidden-status">
-        {statusMessage}
-      </p>
+    <AdminPage
+      documentTitle="Ingestion — Admin"
+      heading="Ingestion"
+      note="The TED intake pipeline: run history, per-notice fetch retries, and the scope and backfill controls. Render-pending skips are counted apart from genuine fetch failures — a slow origin is not evidence of refusal."
+    >
+      <AdminFlash message={statusMessage} tone={flashTone} />
 
-      <section>
-        <h2>Pause / resume ingestion</h2>
+      <section className="admin-panel">
+        <h2 className="admin-panel__label">Pause / resume ingestion</h2>
         <div className="button-row">
           <ConfirmAction
             label="Pause ingestion"
@@ -235,8 +246,8 @@ export function Ingestion(): ReactElement {
         </div>
       </section>
 
-      <section>
-        <h2>Recent runs</h2>
+      <section className="admin-section">
+        <h2 className="admin-panel__label">Recent runs</h2>
         {runsLoading && <p>Loading…</p>}
         {runsError !== null && (
           <p role="alert" className="form-error">
@@ -291,21 +302,21 @@ export function Ingestion(): ReactElement {
         )}
       </section>
 
-      <section>
-        <h2>Fetch retries</h2>
+      <section className="admin-section">
+        <h2 className="admin-panel__label">Fetch retries</h2>
         {fetchRetriesCounts !== null && (
-          <dl className="detail-facts">
-            <div>
-              <dt>Pending</dt>
-              <dd>{fetchRetriesCounts.pending}</dd>
+          <dl className="admin-facts">
+            <div className="admin-fact">
+              <dt className="admin-fact__label">Pending</dt>
+              <dd className="admin-fact__value">{fetchRetriesCounts.pending}</dd>
             </div>
-            <div>
-              <dt>Recovered</dt>
-              <dd>{fetchRetriesCounts.recovered}</dd>
+            <div className="admin-fact">
+              <dt className="admin-fact__label">Recovered</dt>
+              <dd className="admin-fact__value admin-tone-ok">{fetchRetriesCounts.recovered}</dd>
             </div>
-            <div>
-              <dt>Abandoned</dt>
-              <dd>{fetchRetriesCounts.abandoned}</dd>
+            <div className="admin-fact">
+              <dt className="admin-fact__label">Abandoned</dt>
+              <dd className="admin-fact__value admin-tone-risk">{fetchRetriesCounts.abandoned}</dd>
             </div>
           </dl>
         )}
@@ -316,7 +327,7 @@ export function Ingestion(): ReactElement {
           </p>
         )}
         {!fetchRetriesLoading && fetchRetries !== null && fetchRetries.items.length === 0 && (
-          <p>No fetch retries recorded.</p>
+          <p className="admin-empty">No fetch retries recorded.</p>
         )}
         {!fetchRetriesLoading && fetchRetries !== null && fetchRetries.items.length > 0 && (
           <>
@@ -358,10 +369,10 @@ export function Ingestion(): ReactElement {
         )}
       </section>
 
-      <section>
-        <h2>Errors for a run</h2>
+      <section className="admin-panel">
+        <h2 className="admin-panel__label">Errors for a run</h2>
         <form
-          className="form-field inline"
+          className="form-field inline admin-filters"
           onSubmit={(event) => {
             event.preventDefault();
             void loadErrors();
@@ -415,7 +426,9 @@ export function Ingestion(): ReactElement {
                           >
                             {expandedErrorId === err.id ? 'Hide detail' : 'Show detail'}
                           </button>
-                          {expandedErrorId === err.id && <pre>{err.detailJson}</pre>}
+                          {expandedErrorId === err.id && (
+                            <pre className="admin-code-block">{err.detailJson}</pre>
+                          )}
                         </>
                       ) : (
                         '—'
@@ -429,10 +442,10 @@ export function Ingestion(): ReactElement {
         )}
       </section>
 
-      <section>
-        <h2>Notice lookup</h2>
+      <section className="admin-panel">
+        <h2 className="admin-panel__label">Notice lookup</h2>
         <form
-          className="form-field inline"
+          className="form-field inline admin-filters"
           onSubmit={(event) => {
             event.preventDefault();
             void lookupNotice();
@@ -454,7 +467,7 @@ export function Ingestion(): ReactElement {
         )}
         {notice !== null && (
           <>
-            <h3>Versions</h3>
+            <h3 className="admin-panel__label">Versions</h3>
             <div className="admin-table-scroll">
               <table>
                 <caption className="visually-hidden-status">Notice versions</caption>
@@ -480,7 +493,7 @@ export function Ingestion(): ReactElement {
                 </tbody>
               </table>
             </div>
-            <h3>Snapshot keys</h3>
+            <h3 className="admin-panel__label">Snapshot keys</h3>
             <div className="admin-table-scroll">
               <table>
                 <caption className="visually-hidden-status">Snapshot keys</caption>
@@ -510,8 +523,8 @@ export function Ingestion(): ReactElement {
         )}
       </section>
 
-      <section>
-        <h2>Ingestion scope (CPV families + countries)</h2>
+      <section className="admin-panel">
+        <h2 className="admin-panel__label">Ingestion scope (CPV families + countries)</h2>
         <div className="form-field">
           <label htmlFor="scope-cpv">
             CPV families (comma-separated, max {MAX_SCOPE_FAMILIES})
@@ -545,8 +558,8 @@ export function Ingestion(): ReactElement {
         )}
       </section>
 
-      <section>
-        <h2>Backfill (bounded to {MAX_BACKFILL_DAYS} days)</h2>
+      <section className="admin-panel">
+        <h2 className="admin-panel__label">Backfill (bounded to {MAX_BACKFILL_DAYS} days)</h2>
         <div className="form-field">
           <label htmlFor="backfill-from">From date</label>
           <input
@@ -583,6 +596,6 @@ export function Ingestion(): ReactElement {
           </>
         )}
       </section>
-    </>
+    </AdminPage>
   );
 }
