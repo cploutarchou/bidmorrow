@@ -37,100 +37,81 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     // dumped on /app to hit the feed's 403 dead-end (the single worst
     // moment in the product before this fix).
     await expect(page).toHaveURL(/\/onboarding$/);
-    await expect(
-      page.getByRole('heading', { name: "Let's set up your scoring profile" }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Who is bidding?' })).toBeVisible();
   });
 
-  test('onboarding: create workspace, apply preset, edit CPV + keywords, add capability + certification, complete', async () => {
+  test('onboarding: five steps — workspace, preset, scope, fit, review', async () => {
     await page.goto('/onboarding');
 
-    // Welcome (Company phase, screen 1 of 3) — no API call, no Back/Skip.
-    await expect(
-      page.getByRole('heading', { name: "Let's set up your scoring profile" }),
-    ).toBeVisible();
-    await page.getByRole('button', { name: 'Get started' }).click();
+    // The 12-screen assistant is now five steps. Each screen body still
+    // exists — they are grouped, not rewritten — so the per-section headings
+    // below are the same ones, demoted under each step's own <h1>.
 
-    // Create workspace (Company phase, screen 2 of 3).
+    // Step 1 — Company: naming the workspace is what creates the org, so the
+    // create and the profile save happen behind one Continue.
+    await expect(page.getByRole('heading', { name: 'Who is bidding?' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Name your workspace' })).toBeVisible();
-    await page.getByLabel('Organization name').fill(orgName);
-    await page.getByRole('button', { name: 'Create workspace' }).click();
-
-    // Company basics (Company phase, screen 3 of 3).
     await expect(page.getByRole('heading', { name: 'Tell us about your company' })).toBeVisible();
+    await page.getByLabel('Organization name').fill(orgName);
     await page.getByLabel('Company name').fill('E2E Critical Path Consulting');
+    await page.getByRole('button', { name: 'Create workspace & continue' }).click();
+
+    // Step 2 — Starting point.
+    await expect(
+      page.getByRole('heading', { name: 'What line of work are you in?' }),
+    ).toBeVisible();
+    await page.getByRole('radio', { name: /Cybersecurity consultancy/ }).check();
     await page.getByRole('button', { name: 'Save & continue' }).click();
 
-    // Start from a preset (Coverage phase, screen 1 of 4).
-    await expect(page.getByRole('heading', { name: 'Start from a preset' })).toBeVisible();
-    await page.getByRole('radio', { name: /Cybersecurity consultancy/ }).check();
-    await page.getByRole('button', { name: 'Continue' }).click();
-
-    // CPV codes (Coverage phase, screen 2 of 4 — NEVER skippable). Preset
-    // codes are pre-selected; edit by adding the exact CPV of demo lot 1
-    // (72150000) so it's guaranteed to be scored.
+    // Step 3 — Scope: CPV and countries together. Preset codes are
+    // pre-selected; add the exact CPV of demo lot 1 (72150000) so it is
+    // guaranteed to be scored.
+    await expect(page.getByRole('heading', { name: 'What you sell, and where.' })).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'Which CPV codes describe your work?' }),
     ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: "Which countries' opportunities do you want to see?" }),
+    ).toBeVisible();
     await expect(page.getByRole('checkbox', { name: /79417000/ })).toBeChecked();
+    // There is no Skip anywhere in the wizard now: a step covers several
+    // resources, so leaving a field blank and continuing IS the skip.
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
     await page.getByLabel('Add another 8-digit CPV code').fill('72150000');
-    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await page.getByRole('button', { name: 'Add CPV code' }).click();
     // Live scope-overlap indicator (fix for F15/§3.4) — non-blocking, shown
     // before the user commits, not only at the end of the wizard.
     await expect(page.locator('.ob-scope-indicator--ok')).toHaveText(/5 of your 5 codes/);
     await page.getByRole('button', { name: 'Save & continue' }).click();
 
-    // Countries (Coverage phase, screen 3 of 4) — skip.
+    // Step 4 — Fit: value, keywords, capabilities and exclusions on one step.
     await expect(
-      page.getByRole('heading', { name: "Which countries' opportunities do you want to see?" }),
+      page.getByRole('heading', { name: 'What counts as a real opportunity.' }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Skip' }).click();
-
-    // Value & deadline (Coverage phase, screen 4 of 4) — skip.
+    // The preset seeds "penetration testing" as BOTH a keyword and a
+    // capability, and those two lists now sit on the same step — so this has
+    // to say which list it means.
     await expect(
-      page.getByRole('heading', { name: 'What contract value and timing work for you?' }),
+      page.getByRole('button', { name: 'Remove keyword penetration testing' }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Skip' }).click();
-
-    // Keywords (Signals phase, screen 1 of 3) — preset keywords pre-filled;
-    // edit by adding one more.
-    await expect(
-      page.getByRole('heading', { name: 'What keywords describe the work you want?' }),
-    ).toBeVisible();
-    await expect(page.getByText('penetration testing')).toBeVisible();
     await page.getByLabel('Add a keyword').fill('cyber security services');
-    await page.getByRole('button', { name: 'Add', exact: true }).click();
-    await page.getByRole('button', { name: 'Save & continue' }).click();
-
-    // Capabilities & certifications (Signals phase, screen 2 of 3) — two
-    // "Add" buttons on this screen; target each by proximity to its own
-    // input, not by role name alone.
-    await expect(
-      page.getByRole('heading', { name: 'Capabilities & certifications' }),
-    ).toBeVisible();
+    await page.getByRole('button', { name: 'Add keyword' }).click();
+    // Grouping several sections onto one step put four bare "Add" buttons
+    // side by side, so each now carries an accessible name saying what it
+    // adds — better for screen readers, and unambiguous here.
     await page.locator('#capability-input').fill('Critical infrastructure audits');
-    await page.locator('#capability-input').locator('xpath=following-sibling::button[1]').click();
+    await page.getByRole('button', { name: 'Add capability' }).click();
     await expect(page.getByText('Critical infrastructure audits')).toBeVisible();
-    await page.getByLabel('Certification').selectOption('ISO_27001');
-    await page.locator('#cert-code').locator('xpath=following-sibling::button[1]').click();
+    await page.getByLabel('Certification', { exact: true }).selectOption('ISO_27001');
+    await page.getByRole('button', { name: 'Add certification' }).click();
     await expect(page.getByText('ISO_27001', { exact: false }).first()).toBeVisible();
     await page.getByRole('button', { name: 'Save & continue' }).click();
 
-    // Exclusions (Signals phase, screen 3 of 3) — skip.
-    await expect(
-      page.getByRole('heading', { name: 'Anything you want to exclude?' }),
-    ).toBeVisible();
-    await page.getByRole('button', { name: 'Skip' }).click();
-
-    // Digest (Review phase, screen 1 of 3) — skip.
+    // Step 5 — Digest & review. The reconciliation rows still matter: a
+    // preset-prefilled resource must read as saved or "will be saved", never
+    // as empty/lost (fix for F14 — the preset-skip data-loss defect).
+    await expect(page.getByRole('heading', { name: 'How you hear about it.' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Your daily digest' })).toBeVisible();
-    await page.getByRole('button', { name: 'Skip' }).click();
-
-    // Review (Review phase, screen 2 of 3) — the reconciliation screen: the
-    // preset-prefilled-but-never-explicitly-saved Company profile row must
-    // read as "will be saved when you finish", never as empty/lost (fix for
-    // F14 — the preset-skip data-loss defect).
     await expect(page.getByRole('heading', { name: 'Review your scoring profile' })).toBeVisible();
     await expect(page.getByText('10 keywords')).toBeVisible();
 

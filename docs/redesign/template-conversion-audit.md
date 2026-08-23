@@ -82,7 +82,7 @@ localStorage ops-state) was excluded from the comparison by instruction.
    page. Both surfaces render one `TenderDetailContent`, so they cannot
    drift. Only the Summary and Score tabs exist — Requirements, Buyer and
    Activity are item 7 below and were not stubbed.
-3. Onboarding redesign — **PARTIALLY DONE 2026-08-23.**
+3. ~~Onboarding redesign~~ — **DONE 2026-08-23.**
    - **DONE — 12-sector CPV picker** (`apps/web/src/lib/cpv-sectors.ts`).
      Any company can now start from its own line of work, not just IT.
      Sector selection pre-fills CPV codes only: presets also carry keywords
@@ -94,9 +94,16 @@ localStorage ops-state) was excluded from the comparison by instruction.
      **division** rule the scoring pre-filter applies. Country is reported
      separately, never folded into the headline, because geography is a
      scored component and not a gate.
-   - **NOT DONE — the 5-step flow compression.** The 13-screen wizard is
-     signed-off M1 work with e2e coverage; restructuring it is a separate,
-     riskier change and is deliberately not bundled with the two above.
+   - **DONE 2026-08-23 — the 5-step flow compression.** Company · Starting
+     point · Scope · Fit · Digest & review. The screen bodies are grouped,
+     not rewritten, so every field's validation, dirty-tracking and resume
+     behaviour carries over; what changed is navigation (one Continue per
+     step, which saves that step's resources in order and stops at the first
+     failure) and the progress model. The welcome splash is gone — the
+     design has no such screen and each step now carries its own title and
+     blurb. Skip is gone too: with several resources per step it had no
+     single meaning, and leaving a field blank and continuing already does
+     what it did.
    - Fixed on the way through: the client-side scope indicator reduced
      `79417000` to the division `79`, so it reported the whole of division
      79 as covered. Harmless while onboarding was IT-only; a false promise
