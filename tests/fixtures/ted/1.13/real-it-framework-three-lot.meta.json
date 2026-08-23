@@ -1,0 +1,11 @@
+{
+  "source": "https://ted.europa.eu/en/notice/580079-2026",
+  "sourceNoticeId": "580079-2026",
+  "publicationDate": "2026-08-21",
+  "retrievalDate": "2026-08-23",
+  "sdkVersion": "1.13",
+  "sdkGitTag": null,
+  "case": "SDK 1.13 three-lot cn-standard notice (DEU, open procedure) from a regional authority: software packaging and quality assurance roles, every lot CPV 72000000, NUTS DE714, per-lot values published in EUR (6,925,800 / 6,640,200 / 6,591,800), shared deadline 2026-09-01. A framework large enough that value scoring, not sector fit, is what separates suppliers — the case where a lot matches on subject but sits above a small consultancy's ceiling.",
+  "origin": "Real TED-published notice fetched from the TED Search API (links.xml.MUL) by the ted-fixture-fetch workflow, run 32646377636, on 2026-08-23 with the CPV filter 72,48,79417000 — the session sandbox cannot reach ted.europa.eu (the agent proxy denies the CONNECT). Verbatim source XML apart from the documented sanitization.",
+  "sanitization": "None required. Contacts are the buyer's procurement mailbox (vergabestelle@hzd.hessen.de, named for the \"Z6-Vergabestelle\" unit), the review-body mailbox and the eSender noreply address, with switchboard numbers. No natural person is identified. No structural changes."
+}

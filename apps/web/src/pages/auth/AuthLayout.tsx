@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { PRODUCT_NAME } from '../../copy';
 import { Logo } from '../../components/Logo';
 import { ThemeToggle } from '../../components/ThemeToggle';
+import { NoIndex } from '../../components/NoIndex';
 
 /**
  * Shared shell for the five auth screens — 2026-08-21 handoff redesign
@@ -41,6 +42,7 @@ export function AuthLayout({
   return (
     <>
       <title>{`${title} — ${PRODUCT_NAME}`}</title>
+      <NoIndex />
       {/* Phase 12 stage A: AppShell already had a skip-link; AuthLayout
           (login/signup/verify/reset) didn't — found via the keyboard
           traversal E2E spec, fixed for consistency across every page shell. */}

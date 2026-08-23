@@ -3,6 +3,7 @@ import { adminApi } from '../../lib/admin-api';
 import { appendCursor, startCursor, type CursorState } from '../../lib/cursor';
 import { formatIsoUtc } from '../../lib/format';
 import { Pager } from '../../components/admin/Pager';
+import { AdminPage } from '../../components/admin/AdminPage';
 import type { AdminAuditEvent } from '../../lib/admin-types';
 
 export function Audit(): ReactElement {
@@ -51,11 +52,13 @@ export function Audit(): ReactElement {
   }
 
   return (
-    <>
-      <title>Audit — Admin</title>
-      <h1>Audit events</h1>
+    <AdminPage
+      documentTitle="Audit — Admin"
+      heading="Audit events"
+      note="Every admin action lands here, including the ones that failed. Filters apply when submitted, not as you type."
+    >
       <form
-        className="filter-bar"
+        className="filter-bar admin-filters"
         onSubmit={(event) => {
           event.preventDefault();
           void load();
@@ -97,7 +100,9 @@ export function Audit(): ReactElement {
           {error}
         </p>
       )}
-      {!loading && events !== null && events.items.length === 0 && <p>No audit events found.</p>}
+      {!loading && events !== null && events.items.length === 0 && (
+        <p className="admin-empty">No audit events found.</p>
+      )}
       {!loading && events !== null && events.items.length > 0 && (
         <>
           <div className="admin-table-scroll">
@@ -142,6 +147,6 @@ export function Audit(): ReactElement {
           />
         </>
       )}
-    </>
+    </AdminPage>
   );
 }

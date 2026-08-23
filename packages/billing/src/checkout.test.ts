@@ -170,7 +170,7 @@ describe('createCheckoutSession — Stripe Tax params (FLAG_STRIPE_TAX)', () => 
       line_items: [{ price: PRICE_IDS.standard, quantity: 1 }],
       metadata: { organizationId: ORG_ID, plan: 'standard' },
       subscription_data: { metadata: { organizationId: ORG_ID, plan: 'standard' } },
-      success_url: `${APP_BASE_URL}/app/settings?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${APP_BASE_URL}/app/billing/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${APP_BASE_URL}/app/settings?checkout=cancelled`,
     });
   });

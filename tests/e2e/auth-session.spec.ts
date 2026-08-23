@@ -147,16 +147,13 @@ test.describe.serial('auth: redirects, session expiry, verify-email', () => {
       .then(() => true)
       .catch(() => false);
     if (wentToOnboarding) {
-      await page.getByRole('button', { name: 'Get started' }).click();
+      // Five steps, one Continue each (see tests/e2e/helpers.ts).
       await page.getByLabel('Organization name').fill(orgName);
-      await page.getByRole('button', { name: 'Create workspace' }).click();
-      await page.getByRole('button', { name: 'Skip' }).click();
+      await page.getByRole('button', { name: 'Create workspace & continue' }).click();
       await page.getByRole('radio', { name: /Cybersecurity consultancy/ }).check();
-      await page.getByRole('button', { name: 'Continue' }).click();
       await page.getByRole('button', { name: 'Save & continue' }).click();
-      for (let i = 0; i < 6; i += 1) {
-        await page.getByRole('button', { name: 'Skip' }).click();
-      }
+      await page.getByRole('button', { name: 'Save & continue' }).click();
+      await page.getByRole('button', { name: 'Save & continue' }).click();
       await expect(
         page.getByRole('heading', { name: 'Review your scoring profile' }),
       ).toBeVisible();

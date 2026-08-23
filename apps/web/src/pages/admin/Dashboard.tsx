@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { adminApi } from '../../lib/admin-api';
 import { formatIsoUtc } from '../../lib/format';
+import { AdminPage } from '../../components/admin/AdminPage';
 import type { AdminHealthDetails, AdminUsageCounts } from '../../lib/admin-types';
 
 export function Dashboard(): ReactElement {
@@ -27,9 +28,11 @@ export function Dashboard(): ReactElement {
   }, []);
 
   return (
-    <>
-      <title>Admin dashboard — BidMorrow</title>
-      <h1>Dashboard</h1>
+    <AdminPage
+      documentTitle="Admin dashboard — BidMorrow"
+      heading="Dashboard"
+      note="System health at a glance. A paused queue is a deliberate state, not a fault — check the flag before treating it as an incident."
+    >
       {loading && <p>Loading…</p>}
       {error !== null && (
         <p role="alert" className="form-error">
@@ -38,26 +41,101 @@ export function Dashboard(): ReactElement {
       )}
       {health !== null && (
         <>
-          <section>
-            <h2>Ingestion</h2>
-            <p className={health.ingestion.stale ? 'form-warning' : undefined}>
-              <strong>Status: {health.ingestion.stale ? 'STALE' : 'OK'}</strong> — last successful
-              run: {formatIsoUtc(health.ingestion.lastSuccessfulRunAt)}
-            </p>
-            <p>
-              Paused: <strong>{health.ingestion.paused ? 'Yes' : 'No'}</strong> · Errors (24h):{' '}
-              {health.ingestion.errors24h}
-            </p>
-          </section>
+          <div className="admin-cards">
+            <div
+              className={
+                health.ingestion.stale ? 'admin-card admin-card--risk' : 'admin-card admin-card--ok'
+              }
+            >
+              <p className="admin-card__label">Ingestion</p>
+              <p className="admin-card__value">{health.ingestion.stale ? 'STALE' : 'OK'}</p>
+              <p className="admin-card__note">
+                Last successful run {formatIsoUtc(health.ingestion.lastSuccessfulRunAt)}
+              </p>
+            </div>
 
-          <section>
-            <h2>Digest</h2>
-            <p>
-              Paused: <strong>{health.digest.paused ? 'Yes' : 'No'}</strong>
-            </p>
-            <h3>Recent digest cycle runs</h3>
+            <div
+              className={health.ingestion.paused ? 'admin-card admin-card--caution' : 'admin-card'}
+            >
+              <p className="admin-card__label">Ingestion queue</p>
+              <p className="admin-card__value">{health.ingestion.paused ? 'Paused' : 'Running'}</p>
+              <p className="admin-card__note">
+                {health.ingestion.errors24h} error
+                {health.ingestion.errors24h === 1 ? '' : 's'} in the last 24 hours
+              </p>
+            </div>
+
+            <div className={health.digest.paused ? 'admin-card admin-card--caution' : 'admin-card'}>
+              <p className="admin-card__label">Digest</p>
+              <p className="admin-card__value">{health.digest.paused ? 'Paused' : 'Running'}</p>
+              <p className="admin-card__note">
+                {health.digest.recentRuns.length} recent cycle run
+                {health.digest.recentRuns.length === 1 ? '' : 's'} recorded
+              </p>
+            </div>
+
+            <div
+              className={
+                health.email.failures24h > 0 ? 'admin-card admin-card--caution' : 'admin-card'
+              }
+            >
+              <p className="admin-card__label">Email</p>
+              <p className="admin-card__value">{health.email.failures24h}</p>
+              <p className="admin-card__note">Delivery failures in the last 24 hours</p>
+            </div>
+
+            <div className="admin-card">
+              <p className="admin-card__label">Database size</p>
+              <p className="admin-card__value">
+                {health.db.measured
+                  ? `${(health.db.approxBytes ?? 0).toLocaleString()} bytes`
+                  : 'Unmeasured'}
+              </p>
+              <p className="admin-card__note">
+                {health.db.measured
+                  ? 'Approximate, from the PRAGMA-based estimate.'
+                  : 'The PRAGMA-based estimate was unavailable. Reported as unmeasured rather than shown as zero, which would read as an empty database.'}
+              </p>
+            </div>
+
+            <div className="admin-card">
+              <p className="admin-card__label">Dead-letter queue</p>
+              <p className="admin-card__note">{health.dlq.note}</p>
+            </div>
+          </div>
+
+          {usage !== null && (
+            <section className="admin-section">
+              <h2 className="admin-panel__label">Usage counts</h2>
+              <div className="admin-facts">
+                <div className="admin-fact">
+                  <p className="admin-fact__label">Organizations</p>
+                  <p className="admin-fact__value">{usage.organizations}</p>
+                </div>
+                <div className="admin-fact">
+                  <p className="admin-fact__label">Users</p>
+                  <p className="admin-fact__value">{usage.users}</p>
+                </div>
+                <div className="admin-fact">
+                  <p className="admin-fact__label">Notices</p>
+                  <p className="admin-fact__value">{usage.notices}</p>
+                </div>
+                <div className="admin-fact">
+                  <p className="admin-fact__label">Lots</p>
+                  <p className="admin-fact__value">{usage.lots}</p>
+                </div>
+                <div className="admin-fact">
+                  <p className="admin-fact__label">Matches</p>
+                  <p className="admin-fact__value">{usage.matches}</p>
+                </div>
+              </div>
+            </section>
+          )}
+
+          <section className="admin-section">
+            <h2 className="admin-panel__label">Recent digest cycle runs</h2>
             {health.digest.recentRuns.length === 0 ? (
-              <p>No recent digest runs.</p>
+              <p className="admin-empty">No recent digest runs.</p>
             ) : (
               <div className="admin-table-scroll">
                 <table>
@@ -83,30 +161,8 @@ export function Dashboard(): ReactElement {
             )}
           </section>
 
-          <section>
-            <h2>Email</h2>
-            <p>Failures (24h): {health.email.failures24h}</p>
-          </section>
-
-          <section>
-            <h2>Database size</h2>
-            {health.db.measured ? (
-              <p>Approx. size: {(health.db.approxBytes ?? 0).toLocaleString()} bytes (measured)</p>
-            ) : (
-              <p>
-                Size not measured — the PRAGMA-based estimate was unavailable, this is honestly
-                reported as unmeasured rather than shown as zero.
-              </p>
-            )}
-          </section>
-
-          <section>
-            <h2>Dead-letter queue</h2>
-            <p>{health.dlq.note}</p>
-          </section>
-
-          <section>
-            <h2>Flag states</h2>
+          <section className="admin-section">
+            <h2 className="admin-panel__label">Flag states</h2>
             <div className="admin-table-scroll">
               <table>
                 <caption className="visually-hidden-status">Feature flag states</caption>
@@ -129,34 +185,6 @@ export function Dashboard(): ReactElement {
           </section>
         </>
       )}
-
-      {usage !== null && (
-        <section>
-          <h2>Usage counts</h2>
-          <dl className="detail-facts">
-            <div>
-              <dt>Organizations</dt>
-              <dd>{usage.organizations}</dd>
-            </div>
-            <div>
-              <dt>Users</dt>
-              <dd>{usage.users}</dd>
-            </div>
-            <div>
-              <dt>Notices</dt>
-              <dd>{usage.notices}</dd>
-            </div>
-            <div>
-              <dt>Lots</dt>
-              <dd>{usage.lots}</dd>
-            </div>
-            <div>
-              <dt>Matches</dt>
-              <dd>{usage.matches}</dd>
-            </div>
-          </dl>
-        </section>
-      )}
-    </>
+    </AdminPage>
   );
 }

@@ -101,9 +101,13 @@ test('feed card + tender detail: Save is keyboard-reachable and Enter-activatabl
     'true',
   );
 
+  // Opening a tender from the feed now renders the slide-over sheet OVER the
+  // feed, which stays mounted with its own Save button — so every locator
+  // below is scoped to the dialog rather than the page.
   await firstCard.locator('h3 a').click();
-  await expect(page.getByRole('heading', { name: 'Score breakdown' })).toBeVisible();
-  const detailSaveButton = page.getByRole('button', { name: 'Saved', exact: true });
+  const sheet = page.getByRole('dialog');
+  await expect(sheet).toBeVisible();
+  const detailSaveButton = sheet.getByRole('button', { name: 'Saved', exact: true });
   await keyboardFocus(page, detailSaveButton);
   expect(
     await hasVisibleFocusStyle(detailSaveButton),
@@ -112,12 +116,12 @@ test('feed card + tender detail: Save is keyboard-reachable and Enter-activatabl
   // Toggle it off and back on via Enter to prove keyboard activation, not
   // just focus, works end to end.
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('button', { name: 'Save', exact: true })).toHaveAttribute(
+  await expect(sheet.getByRole('button', { name: 'Save', exact: true })).toHaveAttribute(
     'aria-pressed',
     'false',
   );
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('button', { name: 'Saved', exact: true })).toHaveAttribute(
+  await expect(sheet.getByRole('button', { name: 'Saved', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   );

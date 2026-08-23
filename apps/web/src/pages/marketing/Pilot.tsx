@@ -1,15 +1,12 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
+import { PageMeta } from '../../components/PageMeta';
+import { MARKETING_META } from '../../lib/seo';
 
 export function Pilot(): ReactElement {
   return (
     <>
-      <title>Founding pilot — BidMorrow</title>
-      <meta
-        name="description"
-        content="Join BidMorrow's founding pilot: the first 50 customers get the founding price and a direct line to the team building it."
-      />
-      <link rel="canonical" href="https://bidmorrow.com/pilot" />
+      <PageMeta {...MARKETING_META.pilot} />
 
       <p className="mkt-eyebrow">Founding pilot</p>
       <h1>Founding pilot</h1>

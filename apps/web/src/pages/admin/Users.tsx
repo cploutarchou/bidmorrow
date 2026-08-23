@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import { adminApi } from '../../lib/admin-api';
 import { appendCursor, startCursor, type CursorState } from '../../lib/cursor';
 import { Pager } from '../../components/admin/Pager';
+import { AdminPage } from '../../components/admin/AdminPage';
 import type { AdminUserSummary } from '../../lib/admin-types';
 
 export function Users(): ReactElement {
@@ -42,9 +43,11 @@ export function Users(): ReactElement {
   }
 
   return (
-    <>
-      <title>Users — Admin</title>
-      <h1>Users</h1>
+    <AdminPage
+      documentTitle="Users — Admin"
+      heading="Users"
+      note="Accounts across every organization, with the organizations each one belongs to. Read-only: user records cannot be edited from the admin surface."
+    >
       <form
         className="admin-search"
         onSubmit={(event) => {
@@ -63,7 +66,9 @@ export function Users(): ReactElement {
           {error}
         </p>
       )}
-      {!loading && state !== null && state.items.length === 0 && <p>No users found.</p>}
+      {!loading && state !== null && state.items.length === 0 && (
+        <p className="admin-empty">No users found.</p>
+      )}
       {!loading && state !== null && state.items.length > 0 && (
         <div className="admin-table-scroll">
           <table>
@@ -94,6 +99,6 @@ export function Users(): ReactElement {
         loading={loadingMore}
         onLoadMore={() => void loadMore()}
       />
-    </>
+    </AdminPage>
   );
 }

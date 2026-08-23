@@ -4,6 +4,8 @@ import { ApiError } from '../../lib/api';
 import { appendCursor, startCursor, type CursorState } from '../../lib/cursor';
 import { formatIsoUtc } from '../../lib/format';
 import { ConfirmAction } from '../../components/admin/ConfirmAction';
+import { AdminPage } from '../../components/admin/AdminPage';
+import { AdminFlash } from '../../components/admin/AdminFlash';
 import { Pager } from '../../components/admin/Pager';
 import type { AdminDigestPreview, AdminDigestRun, AdminEmailFailure } from '../../lib/admin-types';
 
@@ -23,6 +25,7 @@ export function Digest(): ReactElement {
   const [previewError, setPreviewError] = useState<string | null>(null);
 
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [flashTone, setFlashTone] = useState<'ok' | 'risk'>('ok');
   const [busy, setBusy] = useState(false);
 
   const loadRuns = useCallback(async () => {
@@ -103,8 +106,10 @@ export function Digest(): ReactElement {
     setStatusMessage(null);
     try {
       await adminApi.pauseDigest();
+      setFlashTone('ok');
       setStatusMessage('Digest paused.');
     } catch {
+      setFlashTone('risk');
       setStatusMessage('Could not pause digest.');
     } finally {
       setBusy(false);
@@ -116,8 +121,10 @@ export function Digest(): ReactElement {
     setStatusMessage(null);
     try {
       await adminApi.resumeDigest();
+      setFlashTone('ok');
       setStatusMessage('Digest resumed.');
     } catch {
+      setFlashTone('risk');
       setStatusMessage('Could not resume digest.');
     } finally {
       setBusy(false);
@@ -125,15 +132,15 @@ export function Digest(): ReactElement {
   }
 
   return (
-    <>
-      <title>Digest — Admin</title>
-      <h1>Digest</h1>
-      <p role="status" aria-live="polite" className="visually-hidden-status">
-        {statusMessage}
-      </p>
+    <AdminPage
+      documentTitle="Digest — Admin"
+      heading="Digest"
+      note="The daily digest cycle: whether it is running, what it sent, what bounced, and a preview of exactly what one organization would receive."
+    >
+      <AdminFlash message={statusMessage} tone={flashTone} />
 
-      <section>
-        <h2>Pause / resume digest</h2>
+      <section className="admin-panel">
+        <h2 className="admin-panel__label">Pause / resume digest</h2>
         <div className="button-row">
           <ConfirmAction
             label="Pause digest"
@@ -151,8 +158,8 @@ export function Digest(): ReactElement {
         </div>
       </section>
 
-      <section>
-        <h2>Recent digest runs</h2>
+      <section className="admin-section">
+        <h2 className="admin-panel__label">Recent digest runs</h2>
         {runsLoading && <p>Loading…</p>}
         {runsError !== null && (
           <p role="alert" className="form-error">
@@ -195,8 +202,8 @@ export function Digest(): ReactElement {
         )}
       </section>
 
-      <section>
-        <h2>Email failures</h2>
+      <section className="admin-section">
+        <h2 className="admin-panel__label">Email failures</h2>
         {failuresLoading && <p>Loading…</p>}
         {failuresError !== null && (
           <p role="alert" className="form-error">
@@ -239,10 +246,10 @@ export function Digest(): ReactElement {
         )}
       </section>
 
-      <section>
-        <h2>Preview a digest</h2>
+      <section className="admin-panel">
+        <h2 className="admin-panel__label">Preview a digest</h2>
         <form
-          className="form-field inline"
+          className="form-field inline admin-filters"
           onSubmit={(event) => {
             event.preventDefault();
             void loadPreview();
@@ -279,15 +286,15 @@ export function Digest(): ReactElement {
               text-alternative, and the raw HTML source — never injected as
               markup.
             */}
-            <h3>Subject</h3>
+            <h3 className="admin-panel__label">Subject</h3>
             <p>{preview.rendered.subject}</p>
-            <h3>Text alternative</h3>
-            <pre>{preview.rendered.text}</pre>
-            <h3>Raw HTML source (not rendered as markup)</h3>
-            <pre>{preview.rendered.html}</pre>
+            <h3 className="admin-panel__label">Text alternative</h3>
+            <pre className="admin-code-block">{preview.rendered.text}</pre>
+            <h3 className="admin-panel__label">Raw HTML source (not rendered as markup)</h3>
+            <pre className="admin-code-block">{preview.rendered.html}</pre>
           </>
         )}
       </section>
-    </>
+    </AdminPage>
   );
 }

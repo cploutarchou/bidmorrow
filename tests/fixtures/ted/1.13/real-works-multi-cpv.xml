@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><ContractNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+   <ext:UBLExtensions>
+      <ext:UBLExtension>
+         <ext:ExtensionContent>
+            <efext:EformsExtension>
+               <efac:NoticeSubType>
+                  <cbc:SubTypeCode listName="notice-subtype">17</cbc:SubTypeCode>
+               </efac:NoticeSubType>
+               <efac:Organizations>
+                  <efac:Organization>
+                     <efac:Company>
+                        <cbc:WebsiteURI>www.uvo.gov.sk</cbc:WebsiteURI>
+                        <cac:PartyIdentification>
+                           <cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+                        </cac:PartyIdentification>
+                        <cac:PartyName>
+                           <cbc:Name languageID="SLK"><![CDATA[Úrad pre verejné obstarávanie]]></cbc:Name>
+                        </cac:PartyName>
+                        <cac:PostalAddress>
+                           <cbc:StreetName><![CDATA[Ružová dolina]]></cbc:StreetName>
+                           <cbc:AdditionalStreetName><![CDATA[10]]></cbc:AdditionalStreetName>
+                           <cbc:CityName><![CDATA[Bratislava - mestská časť Ružinov]]></cbc:CityName>
+                           <cbc:PostalZone><![CDATA[82109]]></cbc:PostalZone>
+                           <cbc:CountrySubentityCode listName="nuts">SK010</cbc:CountrySubentityCode>
+                           <cac:Country>
+                              <cbc:IdentificationCode listName="country">SVK</cbc:IdentificationCode>
+                           </cac:Country>
+                        </cac:PostalAddress>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>31797903</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>2021511008</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:Contact>
+                           <cbc:Telephone>+421250264111</cbc:Telephone>
+                           <cbc:ElectronicMail>info@uvo.gov.sk</cbc:ElectronicMail>
+                        </cac:Contact>
+                     </efac:Company>
+                  </efac:Organization>
+                  <efac:Organization>
+                     <efbc:AcquiringCPBIndicator>false</efbc:AcquiringCPBIndicator>
+                     <efbc:AwardingCPBIndicator>false</efbc:AwardingCPBIndicator>
+                     <efac:Company>
+                        <cac:PartyIdentification>
+                           <cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+                        </cac:PartyIdentification>
+                        <cac:PartyName>
+                           <cbc:Name languageID="SLK"><![CDATA[VODOHOSPODÁRSKA VÝSTAVBA, ŠTÁTNY PODNIK]]></cbc:Name>
+                        </cac:PartyName>
+                        <cac:PostalAddress>
+                           <cbc:StreetName><![CDATA[P.O.BOX 45, Karloveská]]></cbc:StreetName>
+                           <cbc:AdditionalStreetName><![CDATA[2]]></cbc:AdditionalStreetName>
+                           <cbc:CityName><![CDATA[Bratislava - mestská časť Karlova Ves]]></cbc:CityName>
+                           <cbc:PostalZone><![CDATA[84204]]></cbc:PostalZone>
+                           <cbc:CountrySubentityCode listName="nuts">SK010</cbc:CountrySubentityCode>
+                           <cac:Country>
+                              <cbc:IdentificationCode listName="country">SVK</cbc:IdentificationCode>
+                           </cac:Country>
+                        </cac:PostalAddress>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>00156752</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:PartyLegalEntity>
+                           <cbc:CompanyID>2020480198</cbc:CompanyID>
+                        </cac:PartyLegalEntity>
+                        <cac:Contact>
+                           <cbc:Telephone>+00 0000 000000</cbc:Telephone>
+                           <cbc:ElectronicMail>contact@example-buyer.example</cbc:ElectronicMail>
+                        </cac:Contact>
+                     </efac:Company>
+                  </efac:Organization>
+               </efac:Organizations>
+            <efac:Publication><efbc:NoticePublicationID schemeName="ojs-notice-id">00580930-2026</efbc:NoticePublicationID><efbc:GazetteID schemeName="ojs-id">161/2026</efbc:GazetteID><efbc:PublicationDate>2026-08-21+02:00</efbc:PublicationDate></efac:Publication></efext:EformsExtension>
+         </ext:ExtensionContent>
+      </ext:UBLExtension>
+   </ext:UBLExtensions>
+   <cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+   <cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+   <cbc:ID schemeName="notice-id">f1ea7f57-b706-41f5-af69-e6efcb8e5db8</cbc:ID>
+   <cbc:ContractFolderID>860fc29a-f6e8-43e4-bffd-a6c78f06cb8a</cbc:ContractFolderID>
+   <cbc:IssueDate>2026-08-19+02:00</cbc:IssueDate>
+   <cbc:IssueTime>15:42:07+02:00</cbc:IssueTime>
+   <cbc:VersionID>01</cbc:VersionID>
+   <cbc:RegulatoryDomain>32014L0025</cbc:RegulatoryDomain>
+   <cbc:NoticeTypeCode listName="competition">cn-standard</cbc:NoticeTypeCode>
+   <cbc:NoticeLanguageCode listName="language">SLK</cbc:NoticeLanguageCode>
+   <cac:ContractingParty>
+      <cbc:BuyerProfileURI>https://www.uvo.gov.sk/vyhladavanie/vyhladavanie-profilov/detail/256</cbc:BuyerProfileURI>
+      <cac:ContractingPartyType>
+         <cbc:PartyTypeCode listName="buyer-legal-type">pub-undert</cbc:PartyTypeCode>
+      </cac:ContractingPartyType>
+      <cac:ContractingActivity>
+         <cbc:ActivityTypeCode listName="entity-activity">electricity</cbc:ActivityTypeCode>
+      </cac:ContractingActivity>
+      <cac:Party>
+         <cac:PartyIdentification>
+            <cbc:ID>ORG-0002</cbc:ID>
+         </cac:PartyIdentification>
+         <cac:ServiceProviderParty>
+            <cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode>
+            <cac:Party>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0001</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:Party>
+         </cac:ServiceProviderParty>
+      </cac:Party>
+   </cac:ContractingParty>
+   <cac:TenderingTerms>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-grounds-source">epo-notice</cbc:TendererRequirementTypeCode>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+      <cac:TendererQualificationRequest>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-crim</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="SLK"><![CDATA[Uchádzač alebo záujemca preukazuje splnenie podmienky účasti podľa § 32 ods. 1 písm. a) zákona o verejnom obstarávaní č. 343/2015 Z.z., že nebol on, ani jeho štatutárny orgán, ani člen štatutárneho orgánu, ani člen dozorného orgánu, ani prokurista právoplatne odsúdený za trestný čin korupcie, trestný čin poškodzovania finančných záujmov Európskych spoločenstiev, trestný čin legalizácie príjmu z trestnej činnosti, trestný čin založenia, zosnovania a podporovania zločineckej skupiny, trestný čin založenia, zosnovania alebo podporovania teroristickej skupiny, trestný čin terorizmu a niektorých foriem účasti na terorizme, trestný čin obchodovania s ľuďmi, trestný čin, ktorého skutková podstata súvisí s podnikaním alebo trestný čin machinácie pri verejnom obstarávaní a verejnej dražbe jedným z nasledovných spôsobov: 
+
+1. doloženým výpisom z registra trestov nie starším ako tri mesiace, 
+2. zápisom do Zoznamu hospodárskych subjektov,
+3. predbežne vyplneným jednotným európskym dokumentom (JED) podľa § 39 ods. (1) ZVO.
+
+Ak uchádzač alebo záujemca má sídlo, miesto podnikania alebo obvyklý pobyt mimo územia Slovenskej republiky a štát jeho sídla, miesta podnikania alebo obvyklého pobytu nevydáva požadovaný doklad alebo nevydáva ani rovnocenný doklad, možno ho nahradiť čestným vyhlásením podľa predpisov platných v štáte jeho sídla, miesta podnikania alebo obvyklého pobytu.
+]]></cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-pmt</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="SLK"><![CDATA[Uchádzač alebo záujemca preukazuje splnenie podmienky účasti podľa § 32 ods. 1 písm. b) a c) zákona o verejnom obstarávaní č. 343/2015 Z.z., t. j. že: 
+ - nemá evidované nedoplatky na poistnom na sociálne poistenie a zdravotná poisťovňa neeviduje voči nemu pohľadávky po splatnosti podľa osobitných predpisov,
+ - nemá evidované daňové nedoplatky voči daňovému úradu a colnému úradu podľa osobitných predpisov v Slovenskej republike a v štáte sídla, miesta podnikania alebo obvyklého pobytu, jedným z nasledovných spôsobov:
+
+1. doloženým potvrdením zdravotnej poisťovne , Sociálnej poisťovne, a doloženým potvrdením miestneho príslušného daňového úradu a colného úradu nie starším ako tri mesiace,
+2. zápisom do Zoznamu hospodárskych subjektov,
+3. predbežne vyplneným jednotným európskym dokumentom (JED) podľa § 39 ods. 1 ZVO.
+
+Ak uchádzač alebo záujemca má sídlo, miesto podnikania alebo obvyklý pobyt mimo územia Slovenskej republiky a štát jeho sídla, miesta podnikania alebo obvyklého pobytu nevydáva požadovaný doklad alebo rovnocenný doklad, možno ho nahradiť čestným vyhlásením podľa predpisov platných v danom štáte.
+]]></cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-sitn</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="SLK"><![CDATA[Uchádzač alebo záujemca preukazuje splnenie podmienky účasti podľa § 32 ods. 1 písm. d) zákona o verejnom obstarávaní č. 343/2015 Z.z., t. j. že nebol na jeho majetok vyhlásený konkurz, nie je v reštrukturalizácii, nie je v likvidácii, ani nebolo proti nemu zastavené konkurzné konanie pre nedostatok majetku alebo zrušený konkurz pre nedostatok majetku, jedným z nasledovných spôsobov:
+
+1. doloženým potvrdením príslušného súdu nie starším ako tri mesiace,
+2. zápisom do Zoznamu hospodárskych subjektov,
+3. predbežne vyplneným jednotným európskym dokumentom (JED) podľa § 39 ods. 1 ZVO.
+
+Ak uchádzač alebo záujemca má sídlo, miesto podnikania alebo obvyklý pobyt mimo územia Slovenskej republiky a štát jeho sídla, miesta podnikania alebo obvyklého pobytu nevydáva požadovaný doklad alebo rovnocenný doklad, možno ho nahradiť čestným vyhlásením podľa predpisov platných v danom štáte.]]></cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-natl</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="SLK"><![CDATA[Uchádzač alebo záujemca preukazuje splnenie podmienky účasti, že je oprávnený dodávať tovar, uskutočňovať stavebné práce alebo poskytovať službu podľa § 32 ods. 1 písm. e)  zákona o verejnom obstarávaní č. 343/2015 Z. z. doloženým dokladom o oprávnení dodávať tovar, uskutočňovať stavebné práce alebo poskytovať službu, ktorý zodpovedá predmetu zákazky.
+
+Uchádzač alebo záujemca preukazuje splnenie podmienky účasti, že nemá uložený zákaz účasti vo verejnom obstarávaní potvrdený konečným rozhodnutím v Slovenskej republike a v štáte sídla, miesta podnikania alebo obvyklého pobytu podľa  §32 ods. 1 písm. f) zákona o verejnom obstarávaní č. 343/2015 Z.z. doloženým čestným vyhlásením.]]></cbc:Description>
+         </cac:SpecificTendererRequirement>
+         <cac:SpecificTendererRequirement>
+            <cbc:TendererRequirementTypeCode listName="exclusion-ground">exg-mis</cbc:TendererRequirementTypeCode>
+            <cbc:Description languageID="SLK"><![CDATA[Verejný obstarávateľ a obstarávateľ môžu kedykoľvek počas verejného obstarávania vylúčiť uchádzača alebo záujemcu, ak existujú dôvody týkajúce sa podstatného porušenia zmluvných povinností, závažného porušenia profesijných povinností, narušením hospodárskej súťaže, porušením povinností v oblasti profesijnej etiky, pracovného, sociálneho alebo environmentálneho práva. Verejný obstarávateľ a obstarávateľ vylúčia kedykoľvek počas verejného obstarávania uchádzača alebo záujemcu, ak poskytol nepravdivé informácie, pokúsil sa neoprávnene ovplyvniť postup verejného obstarávania, prípadne sa zapojil do jeho prípravy spôsobom, ktorý znemožňuje zabezpečiť hospodársku súťaž, konflikt záujmov nemnožno odstrániť inými účinnými opatreniami.]]></cbc:Description>
+         </cac:SpecificTendererRequirement>
+      </cac:TendererQualificationRequest>
+   </cac:TenderingTerms>
+   <cac:TenderingProcess>
+      <cbc:ProcedureCode listName="procurement-procedure-type">open</cbc:ProcedureCode>
+      <cac:ProcessJustification>
+         <cbc:ProcessReasonCode listName="accelerated-procedure">false</cbc:ProcessReasonCode>
+      </cac:ProcessJustification>
+   </cac:TenderingProcess>
+   <cac:ProcurementProject>
+      <cbc:ID>265/2026; S-000955/2026</cbc:ID>
+      <cbc:Name languageID="SLK"><![CDATA[Inovácia a modernizácia Vodnej elektrárne Čunovo]]></cbc:Name>
+      <cbc:Description languageID="SLK"><![CDATA[Predmetom zákazky je inovácia a modernizácia technologickej stavby v rozsahu projekčných prác, inžinierskej činnosti, demontážnych prác sústrojenstiev turbína – generátor a zariadení, ktoré sú predmetom zákazky, opráv a/alebo dodávok nových zariadení, spätnej montáže sústrojenstiev turbína – generátor a súvisiacich zariadení, ako aj uvedenie predmetu zákazky do prevádzky. 
+Zákazka bude realizovaná v šiestich sekciách, pričom jedna sekcia bude pozostávať z viacerých prevádzkových a dielčích prevádzkových súborov - najmä turbíny, čerpací agregát, regulátory turbín a budenia, rozvodne, generátory, elektrické ochrany, blokové transformátory, procesné stanice. 
+Podrobnosti sú uvedené v súťažných podkladoch.
+]]></cbc:Description>
+      <cbc:ProcurementTypeCode listName="contract-nature">works</cbc:ProcurementTypeCode>
+      <cbc:Note languageID="SLK"><![CDATA[1) Obstarávateľ v súvislosti s preukázaním splnenia podmienok účasti podľa § 32 zákona číslo 343/2015 Z.z. o verejnom obstarávaní v znení neskorších predpisov (ďalej v celom oznámení len "zákon o VO") upozorňuje, že podmienky účasti podľa § 32 odseku 1 písm. a) zákona o VO musí spĺňať aj iná osoba ako osoba podľa § 32 odseku 1 písm. a) zákona o VO, ak táto osoba má právo za ňu konať, práva spojené s rozhodovaním alebo kontrolou v hospodárskom subjekte, ktorý sa chce zúčastniť verejného obstarávania. Splnenie tejto podmienky účasti s ohľadom na § 32 ods. 7 Zákona o VO preukazuje uchádzač obstarávateľovi predložením
+čestného vyhlásenia alebo vyhlásenia podľa § 32 odseku 5 zákona o VO, ak právo štátu uchádzača alebo záujemcu so sídlom, miestom podnikania alebo obvyklým pobytom mimo územia Slovenskej republiky neupravuje inštitút čestného vyhlásenia, ako súčasť ponuky. V čestnom vyhlásení alebo vyhlásení uchádzač alebo záujemca uvedie zoznam osôb podľa prvej vety. Podrobnosti sú uvedené v § 32 ods. 7 a 8 zákona o VO a vo zväzku číslo 4 súťažných podkladov. 
+2) Obstarávateľ upozorňuje, že s ohľadom na zákon číslo 177/2018 Z.z. o niektorých opatreniach na znižovanie administratívnej záťaže využívaním informačných systémov verejnej správy a o zmene a doplnení niektorých zákonov (zákon proti byrokracii) v platnom znení nemá prístup do verejných registrov, z ktorých by si v procese vyhodnocovania splnenia podmienok účasti mohol zabezpečiť prístup k dokladom preukazujúcim splnenie podmienok účasti uchádzača v zmysle Zákona o VO. 
+3) Obstarávateľ neumožňuje uchádzačovi vyplniť len oddiel „α“ časti IV formuláru Jednotného európskeho dokumentu (GLOBÁLNY ÚDAJ PRE VŠETKY PODMIENKY ÚČASTI), na základe čoho je uchádzač povinný vyplniť aj ostatné oddiely časti IV formuláru Jednotného európskeho dokumentu. 
+4) Obstarávateľ vyžaduje, aby úspešný uchádzač pred podpisom zmluvy predložil doklady uvedené v článku XVI súťažných podkladoch. 
+5) Obstarávateľ nesmie uzavrieť zmluvu s uchádzačom alebo uchádzačmi, ktorí majú povinnosť zapisovať sa do registrov partnerov verejného sektora a nie sú zapísaní v registri partnerov verejného sektora alebo ktorých subdodávatelia alebo subdodávatelia podľa osobitného predpisu, ktorí majú povinnosť
+zapisovať sa do registra partnerov verejného sektora a nie sú zapísaní v registri partnerov verejného sektora. 
+6) Ďalšie podmienky pre predloženie ponuky a vykonanie zákazky sú uvedené v súťažných podkladoch.]]></cbc:Note>
+      <cac:ProcurementAdditionalType>
+         <cbc:ProcurementTypeCode listName="contract-nature">supplies</cbc:ProcurementTypeCode>
+      </cac:ProcurementAdditionalType>
+      <cac:ProcurementAdditionalType>
+         <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+      </cac:ProcurementAdditionalType>
+      <cac:RequestedTenderTotal>
+         <cbc:EstimatedOverallContractAmount currencyID="EUR">34500000</cbc:EstimatedOverallContractAmount>
+      </cac:RequestedTenderTotal>
+      <cac:MainCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">45251120</cbc:ItemClassificationCode>
+      </cac:MainCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">45453000</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">45223000</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">45100000</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">45111300</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">45223210</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">42112200</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">45315200</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">51111000</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">31110000</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">31120000</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">31170000</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">31214000</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">50532300</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">50532100</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">50532200</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">50532400</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">50312620</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:AdditionalCommodityClassification>
+         <cbc:ItemClassificationCode listName="cpv">72267200</cbc:ItemClassificationCode>
+      </cac:AdditionalCommodityClassification>
+      <cac:RealizedLocation>
+         <cac:Address>
+            <cbc:StreetName><![CDATA[Vodná elektráreň Čunovo]]></cbc:StreetName>
+            <cbc:AdditionalStreetName><![CDATA[1001]]></cbc:AdditionalStreetName>
+            <cbc:CityName><![CDATA[Čunovo]]></cbc:CityName>
+            <cbc:PostalZone><![CDATA[850 09]]></cbc:PostalZone>
+            <cbc:CountrySubentityCode listName="nuts">SK010</cbc:CountrySubentityCode>
+            <cac:Country>
+               <cbc:IdentificationCode listName="country">SVK</cbc:IdentificationCode>
+            </cac:Country>
+         </cac:Address>
+      </cac:RealizedLocation>
+   </cac:ProcurementProject>
+   <cac:ProcurementProjectLot>
+      <cbc:ID schemeName="Lot">LOT-0001</cbc:ID>
+      <cac:TenderingTerms>
+         <cbc:VariantConstraintCode listName="permission">not-allowed</cbc:VariantConstraintCode>
+         <cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+         <cbc:RequiredCurriculaCode listName="requirement-stage">t-requ</cbc:RequiredCurriculaCode>
+         <cbc:RecurringProcurementIndicator>false</cbc:RecurringProcurementIndicator>
+         <cac:RequiredFinancialGuarantee>
+            <cbc:GuaranteeTypeCode listName="tender-guarantee-required">true</cbc:GuaranteeTypeCode>
+            <cbc:Description languageID="SLK"><![CDATA[Obstarávateľ vyžaduje zloženie zábezpeky ponuky vo výške 500.000,00 EUR. Podmienky pre zloženie zábezpeky sú uvedené vo Zväzku 1 súťažných podkladov.
+Lehota viazanosti ponúk je 12 mesiacov od vyhlásenia tohto obstarávania (zverejnenia Oznámenia o vyhlásení verejného obstarávania v Úradnom vestníku Európskej únie), pričom obstarávateľ si vyhradzuje právo na jej predĺženie najviac na 12 mesiacov od uplynutia lehoty na predkladanie ponúk.	V prípade predĺženia lehoty viazanosti ponúk je uchádzač povinný doručiť obstarávateľovi dodatok k Bankovej záruke alebo Poisteniu záruky alebo novú Bankovú záruku alebo Poistenie záruky s platnosťou do uplynutia predĺženej lehoty viazanosti ponúk pri dodržaní podmienok uvedených v článku X Zväzku 1 súťažných podkladov.
+]]></cbc:Description>
+         </cac:RequiredFinancialGuarantee>
+         <cac:CallForTendersDocumentReference>
+            <ext:UBLExtensions>
+               <ext:UBLExtension>
+                  <ext:ExtensionContent>
+                     <efext:EformsExtension>
+                        <efac:OfficialLanguages>
+                           <cac:Language>
+                              <cbc:ID>SLK</cbc:ID>
+                           </cac:Language>
+                        </efac:OfficialLanguages>
+                     </efext:EformsExtension>
+                  </ext:ExtensionContent>
+               </ext:UBLExtension>
+            </ext:UBLExtensions>
+            <cbc:ID>v rámci zväzku 3 súťažných podkladov (opis predmetu zákazky) je obmedzený prístup k prílohám opisu predmetu zákazky a "Dokumentácii poskytnutej objednávateľom"; v rámci zväzku 2 súťažných podmienok (obchodné podmienky) je obmedzený prístup k bezpečnostným politikám, ktoré tvoria prílohu číslo 4 zmluvy o zabezpečení plnenia bezpečnostných opatrení a notifikačných povinností.</cbc:ID>
+            <cbc:DocumentTypeCode listName="communication-justification">sen-info</cbc:DocumentTypeCode>
+            <cbc:DocumentType>restricted-document</cbc:DocumentType>
+            <cac:Attachment>
+               <cac:ExternalReference>
+                  <cbc:URI>https://www.uvo.gov.sk/vyhladavanie/vyhladavanie-zakaziek/dokumenty/563823</cbc:URI>
+               </cac:ExternalReference>
+            </cac:Attachment>
+         </cac:CallForTendersDocumentReference>
+         <cac:PaymentTerms>
+            <cbc:Note languageID="SLK"><![CDATA[Časť predmetu zákazky bude financovaná z prostriedkov Modernizačného fondu na základe zmluvy o poskytnutí podpory z Environmentálneho fondu formou dotácie z prostriedkov Modernizačného fondu číslo MoF0139250023 uzatvorenej medzi obstarávateľom a Environmentálnym fondom. Uzatvorená zmluva je zverejnená na https://www.crz.gov.sk/zmluva/11849557/. ]]></cbc:Note>
+         </cac:PaymentTerms>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cbc:CompanyLegalFormCode listName="required">true</cbc:CompanyLegalFormCode>
+            <cbc:CompanyLegalForm languageID="SLK"><![CDATA[V prípade skupiny dodávateľov úspešný uchádzač v rámci súčinnosti pri uzatvorení zmluvy v súlade s bodom 16.5 súťažných podkladov predloží originál alebo úradne overenú fotokópiu zmluvy o vytvorení zoskupenia v zmysle bodu 2.9 časti 2.1 Zväzku 2 súťažných podkladov (nie zmluvy o budúcej zmluve), v ktorej budú o.i. jednoznačne stanovené vzájomné práva a povinnosti členov skupiny dodávateľov, kto sa ako časťou bude podieľať na plnení zákazky, ako aj skutočnosť, že všetci členovia skupiny dodávateľov sú (nie budú) zaviazaní zo záväzkov voči obstarávateľovi spoločne a nerozdielne.]]></cbc:CompanyLegalForm>
+         </cac:TendererQualificationRequest>
+         <cac:TendererQualificationRequest>
+            <cac:SpecificTendererRequirement>
+               <cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+            </cac:SpecificTendererRequirement>
+         </cac:TendererQualificationRequest>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="conditions">performance</cbc:ExecutionRequirementCode>
+            <cbc:Description languageID="SLK"><![CDATA[Podmienky plnenia sú uvedené vo Zväzku 2 súťažných podkladov (Obchodné podmienky).]]></cbc:Description>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="einvoicing">required</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="fsr">false</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:ContractExecutionRequirement>
+            <cbc:ExecutionRequirementCode listName="esignature-submission">false</cbc:ExecutionRequirementCode>
+         </cac:ContractExecutionRequirement>
+         <cac:AwardingTerms>
+            <cac:AwardingCriterion>
+               <cac:SubordinateAwardingCriterion>
+                  <ext:UBLExtensions>
+                     <ext:UBLExtension>
+                        <ext:ExtensionContent>
+                           <efext:EformsExtension>
+                              <efac:AwardCriterionParameter>
+                                 <efbc:ParameterCode listName="number-fixed">fix-tot</efbc:ParameterCode>
+                                 <efbc:ParameterNumeric>100</efbc:ParameterNumeric>
+                              </efac:AwardCriterionParameter>
+                           </efext:EformsExtension>
+                        </ext:ExtensionContent>
+                     </ext:UBLExtension>
+                  </ext:UBLExtensions>
+                  <cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+                  <cbc:Name languageID="SLK"><![CDATA[Celková cena v EUR bez DPH]]></cbc:Name>
+                  <cbc:Description languageID="SLK"><![CDATA[Kritériom na vyhodnotenie konečných ponúk je najnižšia celková cena za predmet zákazky v EUR bez DPH (ďalej len „Celková cena“) uvedená v návrhu na plnenie kritérií, ktorá bude zodpovedať celkovej cene uvedenej v štruktúrovanom rozpočte. Bližšie podrobnosti sú uvedené v súťažných podkladoch.]]></cbc:Description>
+               </cac:SubordinateAwardingCriterion>
+            </cac:AwardingCriterion>
+         </cac:AwardingTerms>
+         <cac:AdditionalInformationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0002</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:AdditionalInformationParty>
+         <cac:TenderRecipientParty>
+            <cbc:EndpointID>https://evo.isepvo.sk//evoportal/sk-sk/Public/OrderSearch/Detail?id=563823</cbc:EndpointID>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0002</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderRecipientParty>
+         <cac:TenderEvaluationParty>
+            <cac:PartyIdentification>
+               <cbc:ID>ORG-0002</cbc:ID>
+            </cac:PartyIdentification>
+         </cac:TenderEvaluationParty>
+         <cac:TenderValidityPeriod>
+            <cbc:DurationMeasure unitCode="MONTH">12</cbc:DurationMeasure>
+         </cac:TenderValidityPeriod>
+         <cac:AppealTerms>
+            <cac:PresentationPeriod>
+               <cbc:Description languageID="SLK"><![CDATA[Lehoty na predloženie námietok upravuje platný a účinný zákon o verejnom obstarávaní.]]></cbc:Description>
+            </cac:PresentationPeriod>
+            <cac:AppealInformationParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0001</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealInformationParty>
+            <cac:AppealReceiverParty>
+               <cac:PartyIdentification>
+                  <cbc:ID>ORG-0001</cbc:ID>
+               </cac:PartyIdentification>
+            </cac:AppealReceiverParty>
+         </cac:AppealTerms>
+         <cac:Language>
+            <cbc:ID>SLK</cbc:ID>
+         </cac:Language>
+         <cac:PostAwardProcess>
+            <cbc:ElectronicOrderUsageIndicator>false</cbc:ElectronicOrderUsageIndicator>
+            <cbc:ElectronicPaymentUsageIndicator>true</cbc:ElectronicPaymentUsageIndicator>
+         </cac:PostAwardProcess>
+         <cac:SecurityClearanceTerm>
+            <cbc:Code listName="required">false</cbc:Code>
+         </cac:SecurityClearanceTerm>
+      </cac:TenderingTerms>
+      <cac:TenderingProcess>
+         <ext:UBLExtensions>
+            <ext:UBLExtension>
+               <ext:ExtensionContent>
+                  <efext:EformsExtension>
+                     <efbc:AccessToolName><![CDATA[Informačný systém elektronického verejného obstarávania IS EVO ako súčasť elektronického prostriedku Elektronická platforma.]]></efbc:AccessToolName>
+                  </efext:EformsExtension>
+               </ext:ExtensionContent>
+            </ext:UBLExtension>
+         </ext:UBLExtensions>
+         <cbc:SubmissionMethodCode listName="esubmission">required</cbc:SubmissionMethodCode>
+         <cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+         <cac:TenderSubmissionDeadlinePeriod>
+            <cbc:EndDate>2026-09-30+02:00</cbc:EndDate>
+            <cbc:EndTime>10:00:00+02:00</cbc:EndTime>
+         </cac:TenderSubmissionDeadlinePeriod>
+         <cac:OpenTenderEvent>
+            <cbc:OccurrenceDate>2026-09-30+02:00</cbc:OccurrenceDate>
+            <cbc:OccurrenceTime>10:01:00+02:00</cbc:OccurrenceTime>
+            <cbc:Description languageID="SLK"><![CDATA[Obstarávateľ umožní uchádzačom, ktorí predložili ponuky, účasť na otváraní ponúk. Umožnením účasti na otváraní ponúk sa rozumie ich sprístupnenie prostredníctvom funkcionality Systému EVO a to v rozsahu počtu ponúk predložených v lehote na predkladanie ponúk a návrhov na plnenie kritérií, ktoré sa dajú vyjadriť číslom. 
+Obstarávateľ upozorňuje, že v prípade, ak uchádzači na zabezpečenie svojej ponuky využijú možnosť zaheslovania svojej ponuky, a najneskôr do uplynutia lehoty na otváranie ponúk neoznámia obstarávateľovi heslo potrebné na sprístupnenie ponuky resp. toto heslo neuvedú priamo v Systéme EVO, obstarávateľ takúto situáciu vyhodnotí ako situáciu, keď nie je možné sprístupniť obsah ponuky uchádzača, na základe čoho obstarávateľ v súlade s § 49 ods. 4 písm. b) Zákona o VO vylúči takéhoto uchádzača z obstarávania.]]></cbc:Description>
+            <cac:OccurenceLocation>
+               <cbc:Description languageID="SLK"><![CDATA[sprístupnenie prostredníctvom funkcionality Systému EVO]]></cbc:Description>
+            </cac:OccurenceLocation>
+         </cac:OpenTenderEvent>
+         <cac:AuctionTerms>
+            <cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+         </cac:AuctionTerms>
+         <cac:FrameworkAgreement>
+            <cac:SubsequentProcessTenderRequirement>
+               <cbc:Name><![CDATA[buyer-categories]]></cbc:Name>
+            </cac:SubsequentProcessTenderRequirement>
+         </cac:FrameworkAgreement>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="framework-agreement">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+         <cac:ContractingSystem>
+            <cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+         </cac:ContractingSystem>
+      </cac:TenderingProcess>
+      <cac:ProcurementProject>
+         <cbc:ID>265/2026; S-000955/2026</cbc:ID>
+         <cbc:Name languageID="SLK"><![CDATA[Inovácia a modernizácia Vodnej elektrárne Čunovo]]></cbc:Name>
+         <cbc:Description languageID="SLK"><![CDATA[Predmetom zákazky je inovácia a modernizácia technologickej stavby v rozsahu projekčných prác, inžinierskej činnosti, demontážnych prác sústrojenstiev turbína – generátor a zariadení, ktoré sú predmetom zákazky, opráv a/alebo dodávok nových zariadení, spätnej montáže sústrojenstiev turbína – generátor a súvisiacich zariadení, ako aj uvedenie predmetu zákazky do prevádzky. 
+Zákazka bude realizovaná v šiestich sekciách, pričom jedna sekcia bude pozostávať z viacerých prevádzkových a dielčích prevádzkových súborov - najmä turbíny, čerpací agregát, regulátory turbín a budenia, rozvodne, generátory, elektrické ochrany, blokové transformátory, procesné stanice. 
+Podrobnosti sú uvedené v súťažných podkladoch.
+]]></cbc:Description>
+         <cbc:ProcurementTypeCode listName="contract-nature">works</cbc:ProcurementTypeCode>
+         <cbc:Note languageID="SLK"><![CDATA[1) Obstarávateľ na časť súťažných podkladov (vo Zväzku 3 súťažných podkladov - prílohy opisu predmetu zákazky a "Dokumentácia poskytnutá objednávateľom"; vo Zväzku 2 súťažných podmienok (obchodné podmienky) - bezpečnostné politiky, ktoré tvoria prílohu číslo 4 zmluvy o zabezpečení plnenia bezpečnostných opatrení a notifikačných povinností) aplikuje postup podľa § 20 ods. 9 zákona o VO a tieto dokumenty budú záujemcom poskytnuté až po uzatvorení dohody o mlčanlivosti a podpise Oboznámenia sa s citlivými informáciami, ktoré tvoria prílohu číslo 1 a 2 Zväzku 1 súťažných podkladov. Proces uzatvorenia dohody o mlčanlivosti a podpisu Oboznámenia sa s citlivými informáciami je uvedený v článku III súťažných podkladov. 
+2) Obstarávateľ odporúča obhliadku každému záujemcovi, ktorý bude mať o obhliadku záujem postupom uvedeným v článku VI súťažných podkladov.]]></cbc:Note>
+         <cbc:SMESuitableIndicator>true</cbc:SMESuitableIndicator>
+         <cac:ProcurementAdditionalType>
+            <cbc:ProcurementTypeCode listName="contract-nature">supplies</cbc:ProcurementTypeCode>
+         </cac:ProcurementAdditionalType>
+         <cac:ProcurementAdditionalType>
+            <cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+         </cac:ProcurementAdditionalType>
+         <cac:ProcurementAdditionalType>
+            <cbc:ProcurementTypeCode listName="strategic-procurement">none</cbc:ProcurementTypeCode>
+         </cac:ProcurementAdditionalType>
+         <cac:RequestedTenderTotal>
+            <cbc:EstimatedOverallContractAmount currencyID="EUR">34500000</cbc:EstimatedOverallContractAmount>
+         </cac:RequestedTenderTotal>
+         <cac:MainCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">45251120</cbc:ItemClassificationCode>
+         </cac:MainCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">45453000</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">45223000</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">45100000</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">45111300</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">45223210</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">42112200</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">45315200</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">51111000</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">31110000</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">31120000</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">31170000</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">31214000</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">50532300</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">50532100</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">50532200</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">50532400</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">50312620</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:AdditionalCommodityClassification>
+            <cbc:ItemClassificationCode listName="cpv">72267200</cbc:ItemClassificationCode>
+         </cac:AdditionalCommodityClassification>
+         <cac:RealizedLocation>
+            <cac:Address>
+               <cbc:StreetName><![CDATA[Vodná elektráreň Čunovo]]></cbc:StreetName>
+               <cbc:AdditionalStreetName><![CDATA[1001]]></cbc:AdditionalStreetName>
+               <cbc:CityName><![CDATA[Čunovo]]></cbc:CityName>
+               <cbc:PostalZone><![CDATA[850 09]]></cbc:PostalZone>
+               <cbc:CountrySubentityCode listName="nuts">SK010</cbc:CountrySubentityCode>
+               <cac:Country>
+                  <cbc:IdentificationCode listName="country">SVK</cbc:IdentificationCode>
+               </cac:Country>
+            </cac:Address>
+         </cac:RealizedLocation>
+         <cac:PlannedPeriod>
+            <cbc:DurationMeasure unitCode="DAY">1560</cbc:DurationMeasure>
+         </cac:PlannedPeriod>
+         <cac:ContractExtension>
+            <cbc:MaximumNumberNumeric>0</cbc:MaximumNumberNumeric>
+         </cac:ContractExtension>
+      </cac:ProcurementProject>
+   </cac:ProcurementProjectLot>
+</ContractNotice>

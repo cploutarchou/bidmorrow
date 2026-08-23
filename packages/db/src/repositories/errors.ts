@@ -25,6 +25,25 @@ export class CapExceededError extends Error {
 }
 
 /**
+ * A saved search with this name already exists in the organization
+ * (`uq_saved_searches__organization_id_name`). Two identically-named
+ * searches are indistinguishable in the feed's rail, so the caller reports
+ * it rather than creating a near-duplicate or overwriting a colleague's.
+ */
+export class DuplicateSavedSearchError extends Error {
+  readonly code = 'DUPLICATE_SAVED_SEARCH' as const;
+
+  constructor(
+    readonly organizationId: string,
+    /** Deliberately not `name` — that is `Error.name`, set just below. */
+    readonly searchName: string,
+  ) {
+    super(`saved_searches: "${searchName}" already exists for this organization`);
+    this.name = 'DuplicateSavedSearchError';
+  }
+}
+
+/**
  * A digest run for (organization, digest_date) already exists — another
  * invocation owns that day's digest (docs/data-model.md §8: the unique
  * constraint is the dedupe mechanism). The caller must stop, not retry.

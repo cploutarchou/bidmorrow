@@ -1,0 +1,901 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><ContractNotice xmlns="urn:oasis:names:specification:ubl:schema:xsd:ContractNotice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:defext="german-eforms-extension" xmlns:efac="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:efbc="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:efext="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<ext:UBLExtensions>
+		<ext:UBLExtension>
+			<ext:ExtensionContent>
+				<efext:EformsExtension>
+					<efac:Changes>
+						<efbc:ChangedNoticeIdentifier>ccc2393b-25ac-4407-b52a-443144179710-01</efbc:ChangedNoticeIdentifier>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="DEU">Für "Organisation Internet Address" (ORG-0001) wurde der Wert "https://https://charite.de" hinzugefügt.</efbc:ChangeDescription>
+							<efbc:ProcurementDocumentsChangeDate>2026-08-19+02:00</efbc:ProcurementDocumentsChangeDate>
+							<efbc:ProcurementDocumentsChangeIndicator>true</efbc:ProcurementDocumentsChangeIndicator>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>ORG-0001</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="DEU">Für "Organisation Internet Address" (ORG-0002) wurde der Wert "https://https://charite.de" hinzugefügt.</efbc:ChangeDescription>
+							<efbc:ProcurementDocumentsChangeDate>2026-08-19+02:00</efbc:ProcurementDocumentsChangeDate>
+							<efbc:ProcurementDocumentsChangeIndicator>true</efbc:ProcurementDocumentsChangeIndicator>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>ORG-0002</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="DEU">Für "Organisation Internet Address" (ORG-0003) wurde der Wert "https://https://www.berlin.de/sen/wirtschaft/wirtschaft/wirtschaftsrecht/vergabekammer/" hinzugefügt.</efbc:ChangeDescription>
+							<efbc:ProcurementDocumentsChangeDate>2026-08-19+02:00</efbc:ProcurementDocumentsChangeDate>
+							<efbc:ProcurementDocumentsChangeIndicator>true</efbc:ProcurementDocumentsChangeIndicator>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>ORG-0003</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="DEU">Für "Organisation Internet Address" (ORG-0004) wurde der Wert "https://https://www.berlin.de/sen/wirtschaft/wirtschaft/wirtschaftsrecht/vergabekammer/" hinzugefügt.</efbc:ChangeDescription>
+							<efbc:ProcurementDocumentsChangeDate>2026-08-19+02:00</efbc:ProcurementDocumentsChangeDate>
+							<efbc:ProcurementDocumentsChangeIndicator>true</efbc:ProcurementDocumentsChangeIndicator>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>ORG-0004</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="DEU">Für "Organisation Internet Address" (ORG-0005) wurde der Wert "https://https://www.berlin.de/sen/wirtschaft/wirtschaft/wirtschaftsrecht/vergabekammer/" hinzugefügt.</efbc:ChangeDescription>
+							<efbc:ProcurementDocumentsChangeDate>2026-08-19+02:00</efbc:ProcurementDocumentsChangeDate>
+							<efbc:ProcurementDocumentsChangeIndicator>true</efbc:ProcurementDocumentsChangeIndicator>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>ORG-0005</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="DEU">Der Wert für "Selection Criteria Description" (LOT-0002) wurde von "Gefordert sind 3 Referenzen aus den letzten drei Jahren (2023, 2024 oder 2025) über früher ausgeführte oder laufende vergleichbare Aufträge.
+
+Sofern es sich um Aufträge handelt, die in den letzten 3 Jahren noch nicht abgeschlossen wurden, ist der bisher erreichte Stand anzugeben. Noch nicht realisierte Leistungsstände können nicht gewertet werden.
+
+Vergleichbare Aufträge sind IT-Sourcing Beratungsleistungen und Projektbegleitung. Nachzuweisen sind mindestens drei Referenzen über vergleichbare Leistungen aus den letzten drei Jahren. Diese sollen insgesamt folgende Mindestanforderungen erfüllen:
+
+a) Jede Referenz muss mind. 500 Personentage in den Bereichen IT-Sourcing Beratungsleistungen und Projektbegleitung umfassen.
+
+b) Zwei der drei Referenzen müssen die Strukturierung von IT-Sourcing- und Vergabeprojekten im deutschen Gesundheitswesen beinhalten.
+
+c) Eine der drei Referenzen muss die Strukturierung von IT-Vergabevorhaben im öffentlichen Sektor mit Mehrlosstrategie ( &gt; 3 Losen) und Multi-Provider Zuschlag beinhalten." auf "Gefordert sind 3 Referenzen aus den letzten drei Jahren (2023, 2024 oder 2025) über früher ausgeführte oder laufende vergleichbare Aufträge.
+
+Sofern es sich um Aufträge handelt, die in den letzten 3 Jahren noch nicht abgeschlossen wurden, ist der bisher erreichte Stand anzugeben. Noch nicht realisierte Leistungsstände können nicht gewertet werden.
+
+Vergleichbare Aufträge sind IT-Sourcing Beratungsleistungen und Projektbegleitung. Nachzuweisen sind mindestens drei Referenzen über vergleichbare Leistungen aus den letzten drei Jahren. Diese sollen insgesamt folgende Mindestanforderungen erfüllen:
+
+a) Jede Referenz muss mind. 500 Personentage in den Bereichen IT-Sourcing Beratungsleistungen und Projektbegleitung umfassen.
+
+b) Zwei der drei Referenzen müssen die Strukturierung von IT-Sourcing- und Vergabeprojekten im deutschen Gesundheitswesen beinhalten. Zum Deutschen Gesundheitsweisen zählen: Leistungserbringer, Krankenkassen, Gesundheitsbehörden und Forschungseinrichtungen im Bereich Life Sciences oder in einem vergleichbaren Bereich.
+
+c)Eine der drei Referenzen muss die Beratung und Begleitung eines EU-weiten Vergabeverfahrens für IT-Leistungen im öffentlichen Sektor nach dem Vergaberecht von der Vorbereitung bis zum Abschluss beinhalten. Das Referenzprojekt muss dabei mehrere Lose enthalten und bei mehreren dieser Lose müssen mehrere Auftragnehmer bezuschlagt worden sein." geändert.</efbc:ChangeDescription>
+							<efbc:ProcurementDocumentsChangeDate>2026-08-19+02:00</efbc:ProcurementDocumentsChangeDate>
+							<efbc:ProcurementDocumentsChangeIndicator>true</efbc:ProcurementDocumentsChangeIndicator>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>LOT-0002</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="DEU">Der Wert für "Deadline Receipt Tenders" (LOT-0001) wurde von "2026-08-25+02:00" auf "2026-08-28+02:00" geändert.</efbc:ChangeDescription>
+							<efbc:ProcurementDocumentsChangeDate>2026-08-19+02:00</efbc:ProcurementDocumentsChangeDate>
+							<efbc:ProcurementDocumentsChangeIndicator>true</efbc:ProcurementDocumentsChangeIndicator>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>LOT-0001</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="DEU">Der Wert für "Deadline Receipt Tenders" (LOT-0002) wurde von "2026-08-25+02:00" auf "2026-08-28+02:00" geändert.</efbc:ChangeDescription>
+							<efbc:ProcurementDocumentsChangeDate>2026-08-19+02:00</efbc:ProcurementDocumentsChangeDate>
+							<efbc:ProcurementDocumentsChangeIndicator>true</efbc:ProcurementDocumentsChangeIndicator>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>LOT-0002</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="DEU">Der Wert für "Tender Validity Deadline" (LOT-0001) wurde von "33" auf "30" geändert.</efbc:ChangeDescription>
+							<efbc:ProcurementDocumentsChangeDate>2026-08-19+02:00</efbc:ProcurementDocumentsChangeDate>
+							<efbc:ProcurementDocumentsChangeIndicator>true</efbc:ProcurementDocumentsChangeIndicator>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>LOT-0001</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="DEU">Der Wert für "Tender Validity Deadline" (LOT-0002) wurde von "33" auf "30" geändert.</efbc:ChangeDescription>
+							<efbc:ProcurementDocumentsChangeDate>2026-08-19+02:00</efbc:ProcurementDocumentsChangeDate>
+							<efbc:ProcurementDocumentsChangeIndicator>true</efbc:ProcurementDocumentsChangeIndicator>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>LOT-0002</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="DEU">Der Wert für "Public Opening Date" (LOT-0001) wurde von "2026-08-25+02:00" auf "2026-08-28+02:00" geändert.</efbc:ChangeDescription>
+							<efbc:ProcurementDocumentsChangeDate>2026-08-19+02:00</efbc:ProcurementDocumentsChangeDate>
+							<efbc:ProcurementDocumentsChangeIndicator>true</efbc:ProcurementDocumentsChangeIndicator>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>LOT-0001</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:Change>
+							<efbc:ChangeDescription languageID="DEU">Der Wert für "Public Opening Date" (LOT-0002) wurde von "2026-08-25+02:00" auf "2026-08-28+02:00" geändert.</efbc:ChangeDescription>
+							<efbc:ProcurementDocumentsChangeDate>2026-08-19+02:00</efbc:ProcurementDocumentsChangeDate>
+							<efbc:ProcurementDocumentsChangeIndicator>true</efbc:ProcurementDocumentsChangeIndicator>
+							<efac:ChangedSection>
+								<efbc:ChangedSectionIdentifier>LOT-0002</efbc:ChangedSectionIdentifier>
+							</efac:ChangedSection>
+						</efac:Change>
+						<efac:ChangeReason>
+							<cbc:ReasonCode listName="change-corrig-justification">cor-pub</cbc:ReasonCode>
+						</efac:ChangeReason>
+					</efac:Changes>
+					<efac:NoticeSubType>
+						<cbc:SubTypeCode listName="notice-subtype">16</cbc:SubTypeCode>
+					</efac:NoticeSubType>
+					<efac:Organizations>
+						<efac:Organization>
+							<efbc:AwardingCPBIndicator>false</efbc:AwardingCPBIndicator>
+							<efac:Company>
+								<cbc:WebsiteURI>https://https://charite.de</cbc:WebsiteURI>
+								<cac:PartyIdentification>
+									<cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+								</cac:PartyIdentification>
+								<cac:PartyName>
+									<cbc:Name languageID="DEU">Charité Universitätsmedizin Berlin</cbc:Name>
+								</cac:PartyName>
+								<cac:PostalAddress>
+									<cbc:StreetName>Augustenburger Platz 1</cbc:StreetName>
+									<cbc:CityName>Berlin</cbc:CityName>
+									<cbc:PostalZone>13353</cbc:PostalZone>
+									<cbc:CountrySubentityCode listName="nuts-lvl3">DE300</cbc:CountrySubentityCode>
+									<cac:Country>
+										<cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+									</cac:Country>
+								</cac:PostalAddress>
+								<cac:PartyLegalEntity>
+									<cbc:CompanyID>98005_10000000</cbc:CompanyID>
+								</cac:PartyLegalEntity>
+								<cac:Contact>
+									<cbc:Name>Zentrale Vergabestelle</cbc:Name>
+									<cbc:Telephone>+49 00000000</cbc:Telephone>
+									<cbc:ElectronicMail>zentrale-vergabestelle-vol@charite.de</cbc:ElectronicMail>
+								</cac:Contact>
+							</efac:Company>
+						</efac:Organization>
+						<efac:Organization>
+							<efac:Company>
+								<cbc:WebsiteURI>https://https://charite.de</cbc:WebsiteURI>
+								<cac:PartyIdentification>
+									<cbc:ID schemeName="organization">ORG-0002</cbc:ID>
+								</cac:PartyIdentification>
+								<cac:PartyName>
+									<cbc:Name languageID="DEU">Charité Universitätsmedizin Berlin</cbc:Name>
+								</cac:PartyName>
+								<cac:PostalAddress>
+									<cbc:StreetName>Augustenburger Platz 1</cbc:StreetName>
+									<cbc:CityName>Berlin</cbc:CityName>
+									<cbc:PostalZone>13353</cbc:PostalZone>
+									<cbc:CountrySubentityCode listName="nuts-lvl3">DE300</cbc:CountrySubentityCode>
+									<cac:Country>
+										<cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+									</cac:Country>
+								</cac:PostalAddress>
+								<cac:PartyLegalEntity>
+									<cbc:CompanyID>98005_10000000</cbc:CompanyID>
+								</cac:PartyLegalEntity>
+								<cac:Contact>
+									<cbc:Name>Zentrale Vergabestelle</cbc:Name>
+									<cbc:Telephone>+49 00000000</cbc:Telephone>
+									<cbc:ElectronicMail>zentrale-vergabestelle-vol@charite.de</cbc:ElectronicMail>
+								</cac:Contact>
+							</efac:Company>
+						</efac:Organization>
+						<efac:Organization>
+							<efac:Company>
+								<cbc:WebsiteURI>https://https://www.berlin.de/sen/wirtschaft/wirtschaft/wirtschaftsrecht/vergabekammer/</cbc:WebsiteURI>
+								<cac:PartyIdentification>
+									<cbc:ID schemeName="organization">ORG-0003</cbc:ID>
+								</cac:PartyIdentification>
+								<cac:PartyName>
+									<cbc:Name languageID="DEU">Vergabekammer des Landes Berlin</cbc:Name>
+								</cac:PartyName>
+								<cac:PostalAddress>
+									<cbc:StreetName>Martin-Luther-Str. 105</cbc:StreetName>
+									<cbc:CityName>Berlin</cbc:CityName>
+									<cbc:PostalZone>10825</cbc:PostalZone>
+									<cbc:CountrySubentityCode listName="nuts-lvl3">DE300</cbc:CountrySubentityCode>
+									<cac:Country>
+										<cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+									</cac:Country>
+								</cac:PostalAddress>
+								<cac:PartyLegalEntity>
+									<cbc:CompanyID>98137_10113802</cbc:CompanyID>
+								</cac:PartyLegalEntity>
+								<cac:Contact>
+									<cbc:Telephone>+49 30 9013 8316</cbc:Telephone>
+									<cbc:ElectronicMail>vergabekammer@senweb.berlin.de</cbc:ElectronicMail>
+								</cac:Contact>
+							</efac:Company>
+						</efac:Organization>
+						<efac:Organization>
+							<efac:Company>
+								<cbc:WebsiteURI>https://https://www.berlin.de/sen/wirtschaft/wirtschaft/wirtschaftsrecht/vergabekammer/</cbc:WebsiteURI>
+								<cac:PartyIdentification>
+									<cbc:ID schemeName="organization">ORG-0004</cbc:ID>
+								</cac:PartyIdentification>
+								<cac:PartyName>
+									<cbc:Name languageID="DEU">Vergabekammer des Landes Berlin</cbc:Name>
+								</cac:PartyName>
+								<cac:PostalAddress>
+									<cbc:StreetName>Martin-Luther-Str. 105</cbc:StreetName>
+									<cbc:CityName>Berlin</cbc:CityName>
+									<cbc:PostalZone>10825</cbc:PostalZone>
+									<cbc:CountrySubentityCode listName="nuts-lvl3">DE300</cbc:CountrySubentityCode>
+									<cac:Country>
+										<cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+									</cac:Country>
+								</cac:PostalAddress>
+								<cac:PartyLegalEntity>
+									<cbc:CompanyID>98137_10113803</cbc:CompanyID>
+								</cac:PartyLegalEntity>
+								<cac:Contact>
+									<cbc:Telephone>+49 30 9013 8316</cbc:Telephone>
+									<cbc:ElectronicMail>vergabekammer@senweb.berlin.de</cbc:ElectronicMail>
+								</cac:Contact>
+							</efac:Company>
+						</efac:Organization>
+						<efac:Organization>
+							<efac:Company>
+								<cbc:WebsiteURI>https://https://www.berlin.de/sen/wirtschaft/wirtschaft/wirtschaftsrecht/vergabekammer/</cbc:WebsiteURI>
+								<cac:PartyIdentification>
+									<cbc:ID schemeName="organization">ORG-0005</cbc:ID>
+								</cac:PartyIdentification>
+								<cac:PartyName>
+									<cbc:Name languageID="DEU">Vergabekammer des Landes Berlin</cbc:Name>
+								</cac:PartyName>
+								<cac:PostalAddress>
+									<cbc:StreetName>Martin-Luther-Str. 105</cbc:StreetName>
+									<cbc:CityName>Berlin</cbc:CityName>
+									<cbc:PostalZone>10825</cbc:PostalZone>
+									<cbc:CountrySubentityCode listName="nuts-lvl3">DE300</cbc:CountrySubentityCode>
+									<cac:Country>
+										<cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+									</cac:Country>
+								</cac:PostalAddress>
+								<cac:PartyLegalEntity>
+									<cbc:CompanyID>98137_10113804</cbc:CompanyID>
+								</cac:PartyLegalEntity>
+								<cac:Contact>
+									<cbc:Telephone>+49 30 9013 8316</cbc:Telephone>
+									<cbc:ElectronicMail>vergabekammer@senweb.berlin.de</cbc:ElectronicMail>
+								</cac:Contact>
+							</efac:Company>
+						</efac:Organization>
+					<efac:Organization><efac:Company><cac:PartyIdentification><cbc:ID schemeName="organization">ORG-0006</cbc:ID></cac:PartyIdentification><cac:PartyName><cbc:Name languageID="DEU">Datenservice Öffentlicher Einkauf (in Verantwortung des Beschaffungsamts des BMI)</cbc:Name></cac:PartyName><cac:PostalAddress><cbc:CityName>Bonn</cbc:CityName><cbc:PostalZone>53119</cbc:PostalZone><cbc:CountrySubentityCode listName="nuts">DEA22</cbc:CountrySubentityCode><cac:Country><cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode></cac:Country></cac:PostalAddress><cac:PartyLegalEntity><cbc:CompanyID schemeID="002">0204:994-DOEVD-83</cbc:CompanyID></cac:PartyLegalEntity><cac:Contact><cbc:Telephone>+49228996100</cbc:Telephone><cbc:ElectronicMail>noreply.esender_hub@bescha.bund.de</cbc:ElectronicMail></cac:Contact></efac:Company></efac:Organization></efac:Organizations>
+				<efac:Publication><efbc:NoticePublicationID schemeName="ojs-notice-id">00579968-2026</efbc:NoticePublicationID><efbc:GazetteID schemeName="ojs-id">161/2026</efbc:GazetteID><efbc:PublicationDate>2026-08-21+02:00</efbc:PublicationDate></efac:Publication></efext:EformsExtension>
+			</ext:ExtensionContent>
+		</ext:UBLExtension>
+	</ext:UBLExtensions>
+	<cbc:UBLVersionID>2.3</cbc:UBLVersionID>
+	<cbc:CustomizationID>eforms-sdk-1.13</cbc:CustomizationID>
+	<cbc:ProfileID>eforms-sdk-1.13</cbc:ProfileID>
+	<cbc:ID schemeName="notice-id">7a3b2112-0f60-46bd-a6c9-a60e416eb228</cbc:ID>
+	<cbc:ContractFolderID>4a24816b-1b2f-40f0-a6c9-d4c267f9eae9</cbc:ContractFolderID>
+	<cbc:IssueDate>2026-08-19+02:00</cbc:IssueDate>
+	<cbc:IssueTime>14:52:20+02:00</cbc:IssueTime>
+	<cbc:VersionID>01</cbc:VersionID>
+	<cbc:RequestedPublicationDate>2026-08-21+02:00</cbc:RequestedPublicationDate>
+	<cbc:RegulatoryDomain>32014L0024</cbc:RegulatoryDomain>
+	<cbc:NoticeTypeCode listName="competition">cn-standard</cbc:NoticeTypeCode>
+	<cbc:NoticeLanguageCode languageID="DEU">DEU</cbc:NoticeLanguageCode>
+	<cac:ContractingParty>
+		<cbc:BuyerProfileURI>https://vergabeplattform.charite.de</cbc:BuyerProfileURI>
+		<cac:ContractingPartyType>
+			<cbc:PartyTypeCode listName="buyer-legal-type">body-pl-ra</cbc:PartyTypeCode>
+		</cac:ContractingPartyType>
+		<cac:ContractingActivity>
+			<cbc:ActivityTypeCode listName="authority-activity">health</cbc:ActivityTypeCode>
+		</cac:ContractingActivity>
+		<cac:Party>
+			<cac:PartyIdentification>
+				<cbc:ID schemeName="organization">ORG-0001</cbc:ID>
+			</cac:PartyIdentification>
+		<cac:ServiceProviderParty><cbc:ServiceTypeCode listName="organisation-role">ted-esen</cbc:ServiceTypeCode><cac:Party><cac:PartyIdentification><cbc:ID schemeName="organization">ORG-0006</cbc:ID></cac:PartyIdentification></cac:Party></cac:ServiceProviderParty></cac:Party>
+	</cac:ContractingParty>
+	<cac:TenderingTerms>
+		<cac:ProcurementLegislationDocumentReference>
+			<cbc:ID>vgv</cbc:ID>
+		</cac:ProcurementLegislationDocumentReference>
+		<cac:TendererQualificationRequest>
+			<cac:SpecificTendererRequirement>
+				<cbc:TendererRequirementTypeCode listName="exclusion-grounds-source">epo-procurement-document</cbc:TendererRequirementTypeCode>
+			</cac:SpecificTendererRequirement>
+		</cac:TendererQualificationRequest>
+		<cac:LotDistribution>
+			<cbc:MaximumLotsAwardedNumeric>2</cbc:MaximumLotsAwardedNumeric>
+			<cbc:MaximumLotsSubmittedNumeric>2</cbc:MaximumLotsSubmittedNumeric>
+		</cac:LotDistribution>
+	</cac:TenderingTerms>
+	<cac:TenderingProcess>
+		<cbc:ProcedureCode listName="procurement-procedure-type">open</cbc:ProcedureCode>
+		<cac:ProcessJustification>
+			<cbc:ProcessReasonCode listName="accelerated-procedure">false</cbc:ProcessReasonCode>
+		</cac:ProcessJustification>
+	</cac:TenderingProcess>
+	<cac:ProcurementProject>
+		<cbc:ID>AL 55/26</cbc:ID>
+		<cbc:Name languageID="DEU">RV für IT-Beratungsleistungen und Projektbegleitung</cbc:Name>
+		<cbc:Description languageID="DEU">Die Charité - Universitätsmedizin Berlin, Charitéplatz 1, 10117 Berlin, schreibt eine Rahmenvereinbarung für IT-Beratungsleistungen und Projektbegleitung aus.
+
+Es bestehen gesonderte Anforderungen nach dem Berliner Ausschreibungs- und Vergabegesetz (BerlAVG), siehe Vergabeunterlagen.
+
+Nähere Informationen können den auf der Vergabeplattform der Charité (https://vergabeplattform.charite.de) zur Verfügung gestellten Unterlagen entnommen werden.</cbc:Description>
+		<cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+		<cbc:Note languageID="DEU">Die Vergabeunterlagen stehen ausschließlich auf unserem Bieterportal zum Download zur Verfügung.
+
+Eine Registrierung ist nicht erforderlich, wird jedoch empfohlen, da Sie dann über alle Änderungen informiert werden und so das Risiko der Einreichung falscher/ungenügender Unterlagen gemindert wird.
+
+Ihre Fragen/Hinweise reichen Sie bitte ebenfalls nur über https://vergabeplattform.charite.de ein.
+
+Es sind nur elektronische Angebote zugelassen.
+Signatur und Zusatzsoftware werden nicht benötigt.
+
+Bitte beachten Sie, dass die Ausschreibungsunterlagen erst ca. drei Tage nach der Weiterleitung zur Veröffentlichung im Amtsblatt der EU auf dem Bieterportal zur Verfügung stehen.</cbc:Note>
+		<cac:MainCommodityClassification>
+			<cbc:ItemClassificationCode listName="cpv">72000000</cbc:ItemClassificationCode>
+		</cac:MainCommodityClassification>
+		<cac:AdditionalCommodityClassification>
+			<cbc:ItemClassificationCode listName="cpv">72220000</cbc:ItemClassificationCode>
+		</cac:AdditionalCommodityClassification>
+		<cac:AdditionalCommodityClassification>
+			<cbc:ItemClassificationCode listName="cpv">72224000</cbc:ItemClassificationCode>
+		</cac:AdditionalCommodityClassification>
+		<cac:AdditionalCommodityClassification>
+			<cbc:ItemClassificationCode listName="cpv">72227000</cbc:ItemClassificationCode>
+		</cac:AdditionalCommodityClassification>
+		<cac:RealizedLocation>
+			<cac:Address>
+				<cbc:CountrySubentityCode listName="nuts-lvl3">DE300</cbc:CountrySubentityCode>
+				<cac:Country>
+					<cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+				</cac:Country>
+			</cac:Address>
+		</cac:RealizedLocation>
+	</cac:ProcurementProject>
+	<cac:ProcurementProjectLot>
+		<cbc:ID schemeName="Lot">LOT-0001</cbc:ID>
+		<cac:TenderingTerms>
+			<ext:UBLExtensions>
+				<ext:UBLExtension>
+					<ext:ExtensionContent>
+						<efext:EformsExtension>
+							<efac:SelectionCriteria>
+								<cbc:TendererRequirementTypeCode listName="selection-criterion">slc-abil-ref-services</cbc:TendererRequirementTypeCode>
+								<cbc:Description languageID="DEU">Gefordert sind 3 Referenzen aus den letzten drei Jahren (2023, 2024 oder 2025) über früher ausgeführte oder laufende vergleichbare Aufträge.
+
+Sofern es sich um Aufträge handelt, die in den letzten 3 Jahren noch nicht abgeschlossen wurden, ist der bisher erreichte Stand anzugeben. Noch nicht realisierte Leistungsstände können nicht gewertet werden.
+
+Vergleichbare Aufträge sind IT-Beratungsleistungen und Projektbegleitung. Nachzuweisen sind mindestens drei Referenzen über vergleichbare Leistungen aus den letzten drei Jahren. Diese sollen folgende Mindestanforderungen erfüllen:
+
+a) Bei mind. zwei der drei Referenzen ist ein Krankenhaus-Maximalversorger (&gt; 600 Betten) oder eine Universitätsklinik oder eine öffentliche Einrichtung (Stadtverwaltung, Stadtwerke etc.) Auftraggeber.
+
+b) Jede Referenz muss mind. 5.000 Personentage in dem Bereich IT-Beratungsleistungen und Projektbegleitung umfassen.</cbc:Description>
+							</efac:SelectionCriteria>
+							<efac:StrategicProcurement>
+								<efbc:ApplicableLegalBasis listName="cvd-scope">false</efbc:ApplicableLegalBasis>
+							</efac:StrategicProcurement>
+						</efext:EformsExtension>
+					</ext:ExtensionContent>
+				</ext:UBLExtension>
+			</ext:UBLExtensions>
+			<cbc:VariantConstraintCode listName="permission">not-allowed</cbc:VariantConstraintCode>
+			<cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+			<cbc:MultipleTendersCode listName="permission">allowed</cbc:MultipleTendersCode>
+			<cac:RequiredFinancialGuarantee>
+				<cbc:GuaranteeTypeCode listName="tender-guarantee-required">false</cbc:GuaranteeTypeCode>
+			</cac:RequiredFinancialGuarantee>
+			<cac:CallForTendersDocumentReference>
+				<ext:UBLExtensions>
+					<ext:UBLExtension>
+						<ext:ExtensionContent>
+							<efext:EformsExtension>
+								<efac:OfficialLanguages>
+									<cac:Language>
+										<cbc:ID>DEU</cbc:ID>
+									</cac:Language>
+								</efac:OfficialLanguages>
+							</efext:EformsExtension>
+						</ext:ExtensionContent>
+					</ext:UBLExtension>
+				</ext:UBLExtensions>
+				<cbc:ID>AL 55/26</cbc:ID>
+				<cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+				<cac:Attachment>
+					<cac:ExternalReference>
+						<cbc:URI>https://vergabeplattform.charite.de?tid=efa634c37f6d7f1652d11453d93fe5cb</cbc:URI>
+					</cac:ExternalReference>
+				</cac:Attachment>
+			</cac:CallForTendersDocumentReference>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-notice</cbc:TendererRequirementTypeCode>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:TendererQualificationRequest>
+				<cbc:CompanyLegalFormCode listName="required">false</cbc:CompanyLegalFormCode>
+			</cac:TendererQualificationRequest>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="missing-info-submission">late-some</cbc:TendererRequirementTypeCode>
+					<cbc:Description languageID="DEU">Gemäß der gesetzlichen Bedingungen können Unterlagen nachgefordert werden.</cbc:Description>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:Description languageID="DEU">Es bestehen gesonderte Anforderungen nach dem Berliner Ausschreibungs- und Vergabegesetz (BerlAVG), siehe Vergabeunterlagen.</cbc:Description>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="einvoicing">required</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:AwardingTerms>
+				<cac:AwardingCriterion>
+					<cac:SubordinateAwardingCriterion>
+						<ext:UBLExtensions>
+							<ext:UBLExtension>
+								<ext:ExtensionContent>
+									<efext:EformsExtension>
+										<efac:AwardCriterionParameter>
+											<efbc:ParameterCode listName="number-weight">per-exa</efbc:ParameterCode>
+											<efbc:ParameterNumeric>30</efbc:ParameterNumeric>
+										</efac:AwardCriterionParameter>
+									</efext:EformsExtension>
+								</ext:ExtensionContent>
+							</ext:UBLExtension>
+						</ext:UBLExtensions>
+						<cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+						<cbc:Name languageID="DEU">Niedrigster Preis</cbc:Name>
+						<cbc:Description languageID="DEU">Niedrigster Preis</cbc:Description>
+					</cac:SubordinateAwardingCriterion>
+					<cac:SubordinateAwardingCriterion>
+						<ext:UBLExtensions>
+							<ext:UBLExtension>
+								<ext:ExtensionContent>
+									<efext:EformsExtension>
+										<efac:AwardCriterionParameter>
+											<efbc:ParameterCode listName="number-weight">per-exa</efbc:ParameterCode>
+											<efbc:ParameterNumeric>30</efbc:ParameterNumeric>
+										</efac:AwardCriterionParameter>
+									</efext:EformsExtension>
+								</ext:ExtensionContent>
+							</ext:UBLExtension>
+						</ext:UBLExtensions>
+						<cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+						<cbc:Name languageID="DEU">Erfahrung und Expertise des eingesetzten Personals</cbc:Name>
+						<cbc:Description languageID="DEU">Im Rahmen der Zuschlagsbewertung werden die Erfahrung und Expertise der eingesetzten Personen (Partner-Berater, Senior-Berater &amp; Junior-Berater) bewertet. 
+
+Bitte geben Sie Ihre Angaben dazu in einem eigenen Dokument an, das einen Umfang von 15 Seiten (Standard Schriftart und Schriftgröße, exkl. Deckblatt und Inhaltsverzeichnis) in Schriftform nicht übersteigen darf (inklusive der eigenen Referenzen). Sollte die konzeptionelle Darstellung mit einer anderen Schriftart und/oder Schriftgröße kleiner als 11 eingereicht werden, behalten wir uns vor, einen Punkteabzug in Höhe von 10 % auf die erreichte Punktzahl vorzunehmen. Bei einer Überschreitung werden nur die ersten 15 Seiten für die Wertung herangezogen.</cbc:Description>
+					</cac:SubordinateAwardingCriterion>
+					<cac:SubordinateAwardingCriterion>
+						<ext:UBLExtensions>
+							<ext:UBLExtension>
+								<ext:ExtensionContent>
+									<efext:EformsExtension>
+										<efac:AwardCriterionParameter>
+											<efbc:ParameterCode listName="number-weight">per-exa</efbc:ParameterCode>
+											<efbc:ParameterNumeric>40</efbc:ParameterNumeric>
+										</efac:AwardCriterionParameter>
+									</efext:EformsExtension>
+								</ext:ExtensionContent>
+							</ext:UBLExtension>
+						</ext:UBLExtensions>
+						<cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+						<cbc:Name languageID="DEU">Umsetzungskonzept</cbc:Name>
+						<cbc:Description languageID="DEU">Im Rahmen der Angebotsbewertung ist ein Umsetzungskonzept vorzulegen. Das Umsetzungskonzept hat der Bieter als eigenes Dokument unter Bezug auf die im Folgenden genannten Unterkriterien einzureichen.
+
+Wenn das Konzept eingereicht wird, werden die Konzeptinhalte Vertragsgegenstand, d.h. dass die darin versprochenen Leistungen zu Leistungspflichten werden, insofern das Angebot bezuschlagt wird. Das Konzept darf insgesamt einen Umfang von 10 Seiten (exkl. Deckblatt und Inhaltsverzeichnis) in Schriftform nicht übersteigen und muss als eigenes Dokument eingereicht werden. Sollte die konzeptionelle Darstellung mit einer anderen Schriftart und/oder Schriftgröße kleiner als 11 eingereicht werden, behalten wir uns vor, einen Punkteabzug in Höhe von 10 % auf die erreichte Punktzahl vorzunehmen. Bei einer Überschreitung werden nur die ersten 10 Seiten für die Wertung herangezogen.</cbc:Description>
+					</cac:SubordinateAwardingCriterion>
+				</cac:AwardingCriterion>
+				<cac:Prize>
+					<cbc:RankCode>1</cbc:RankCode>
+				</cac:Prize>
+			</cac:AwardingTerms>
+			<cac:AdditionalInformationParty>
+				<cac:PartyIdentification>
+					<cbc:ID>ORG-0002</cbc:ID>
+				</cac:PartyIdentification>
+			</cac:AdditionalInformationParty>
+			<cac:TenderRecipientParty>
+				<cbc:EndpointID>https://vergabeplattform.charite.de?tid=efa634c37f6d7f1652d11453d93fe5cb</cbc:EndpointID>
+			</cac:TenderRecipientParty>
+			<cac:TenderValidityPeriod>
+				<cbc:DurationMeasure unitCode="DAY">30</cbc:DurationMeasure>
+			</cac:TenderValidityPeriod>
+			<cac:AppealTerms>
+				<cac:PresentationPeriod>
+					<cbc:Description languageID="DEU">Verstöße gegen Vergabevorschriften, die aufgrund der Bekanntmachung oder in den Vergabeunterlagen erkennbar sind, sind spätestens bis zum Ablauf der Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber zu rügen (§ 160 Abs. 3 GWB).
+
+Im Übrigen sind Verstöße gegen Vergabevorschriften innerhalb einer Frist von zehn Kalendertagen nach Kenntnis gegenüber dem Auftraggeber zu rügen. Ein Nachprüfungsantrag ist innerhalb von 15 Kalendertagen nach Eingang der Mitteilung des Auftraggebers, einer Rüge nicht abhelfen zu wollen, bei der zuständigen Vergabekammer zu stellen (§ 160 GWB).
+
+Die o.a. Fristengelten nicht, wenn der Auftraggeber gemäß § 135 Absatz 1 Nr. 2 GWB den Auftrag ohne vorherige Veröffentlichung einer Bekanntmachung im Amtsblatt der Europäischen Union vergeben hat, ohne dass dies aufgrund Gesetzes gestattet ist.
+
+Setzt sich ein Auftraggeber über die Unwirksamkeit eines geschlossenen Vertrages hinweg, indem er die Informations- und Wartepflicht missachtet (§ 134 GWB) oder ohne vorherige Veröffentlichung einer Bekanntmachung im Amtsblatt der Europäischen Union vergeben hat, ohne dass dies aufgrund Gesetzes gestattet ist, kann die Unwirksamkeit nur festgestellt werden, wenn sie im Nachprüfungsverfahren innerhalb von 30 Kalendertagen nach der Information der betroffenen Bieter und Bewerber durch den öffentlichen Auftraggeber über den Abschluss des Vertrags, jedoch nicht später als sechs Monate nach Vertragsschluss geltend gemacht worden ist.
+
+Hat der Auftraggeber die Auftragsvergabe im Amtsblatt der Europäischen Union bekanntgemacht, endet die Frist 30 Kalendertage nach Veröffentlichung der Bekannt-machung der Auftragsvergabe im Amtsblatt der Europäischen Union (§ 135 GWB).</cbc:Description>
+				</cac:PresentationPeriod>
+				<cac:AppealInformationParty>
+					<cac:PartyIdentification>
+						<cbc:ID>ORG-0005</cbc:ID>
+					</cac:PartyIdentification>
+				</cac:AppealInformationParty>
+				<cac:AppealReceiverParty>
+					<cac:PartyIdentification>
+						<cbc:ID>ORG-0003</cbc:ID>
+					</cac:PartyIdentification>
+				</cac:AppealReceiverParty>
+				<cac:MediationParty>
+					<cac:PartyIdentification>
+						<cbc:ID>ORG-0004</cbc:ID>
+					</cac:PartyIdentification>
+				</cac:MediationParty>
+			</cac:AppealTerms>
+			<cac:Language>
+				<cbc:ID>DEU</cbc:ID>
+			</cac:Language>
+			<cac:PostAwardProcess>
+				<cbc:ElectronicOrderUsageIndicator>true</cbc:ElectronicOrderUsageIndicator>
+				<cbc:ElectronicPaymentUsageIndicator>true</cbc:ElectronicPaymentUsageIndicator>
+			</cac:PostAwardProcess>
+		</cac:TenderingTerms>
+		<cac:TenderingProcess>
+			<cbc:SubmissionMethodCode listName="esubmission">required</cbc:SubmissionMethodCode>
+			<cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+			<cbc:AccessToolsURI>https://vergabeplattform.charite.de</cbc:AccessToolsURI>
+			<cac:TenderSubmissionDeadlinePeriod>
+				<cbc:EndDate>2026-08-28+02:00</cbc:EndDate>
+				<cbc:EndTime>10:00:00+02:00</cbc:EndTime>
+			</cac:TenderSubmissionDeadlinePeriod>
+			<cac:OpenTenderEvent>
+				<cbc:OccurrenceDate>2026-08-28+02:00</cbc:OccurrenceDate>
+				<cbc:OccurrenceTime>11:00:00+02:00</cbc:OccurrenceTime>
+				<cbc:Description languageID="DEU">Es sind keine Bieter zum Submissionstermin zugelassen (e-Vergabe).</cbc:Description>
+				<cac:OccurenceLocation>
+					<cbc:Description languageID="DEU">Zentrale Vergabestelle der Charité - Universitätsmedizin Berlin</cbc:Description>
+				</cac:OccurenceLocation>
+			</cac:OpenTenderEvent>
+			<cac:AuctionTerms>
+				<cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+			</cac:AuctionTerms>
+			<cac:FrameworkAgreement>
+				<cbc:MaximumOperatorQuantity>3</cbc:MaximumOperatorQuantity>
+				<cac:SubsequentProcessTenderRequirement>
+					<cbc:Name>buyer-categories</cbc:Name>
+				</cac:SubsequentProcessTenderRequirement>
+			</cac:FrameworkAgreement>
+			<cac:ContractingSystem>
+				<cbc:ContractingSystemTypeCode listName="framework-agreement">fa-w-rc</cbc:ContractingSystemTypeCode>
+			</cac:ContractingSystem>
+			<cac:ContractingSystem>
+				<cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+			</cac:ContractingSystem>
+		</cac:TenderingProcess>
+		<cac:ProcurementProject>
+			<cbc:ID schemeName="InternalID">1</cbc:ID>
+			<cbc:Name languageID="DEU">Strategischer Schwerpunkt</cbc:Name>
+			<cbc:Description languageID="DEU">Der Rahmenvertrag dient der Deckung des Bedarfs an strategischen IT-Beratungsleistungen sowie projektbegleitender Unterstützung durch qualifizierte Berater:innen des Auftragnehmers im jeweiligen bedarfsspezifischen Kontext.</cbc:Description>
+			<cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+			<cbc:SMESuitableIndicator>false</cbc:SMESuitableIndicator>
+			<cac:ProcurementAdditionalType>
+				<cbc:ProcurementTypeCode listName="strategic-procurement">none</cbc:ProcurementTypeCode>
+			</cac:ProcurementAdditionalType>
+			<cac:MainCommodityClassification>
+				<cbc:ItemClassificationCode listName="cpv">72000000</cbc:ItemClassificationCode>
+			</cac:MainCommodityClassification>
+			<cac:AdditionalCommodityClassification>
+				<cbc:ItemClassificationCode listName="cpv">72220000</cbc:ItemClassificationCode>
+			</cac:AdditionalCommodityClassification>
+			<cac:AdditionalCommodityClassification>
+				<cbc:ItemClassificationCode listName="cpv">72224000</cbc:ItemClassificationCode>
+			</cac:AdditionalCommodityClassification>
+			<cac:AdditionalCommodityClassification>
+				<cbc:ItemClassificationCode listName="cpv">72227000</cbc:ItemClassificationCode>
+			</cac:AdditionalCommodityClassification>
+			<cac:RealizedLocation>
+				<cbc:Description languageID="DEU">Berlin</cbc:Description>
+				<cac:Address>
+					<cbc:CountrySubentityCode listName="nuts-lvl3">DE300</cbc:CountrySubentityCode>
+					<cac:Country>
+						<cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+					</cac:Country>
+				</cac:Address>
+			</cac:RealizedLocation>
+			<cac:PlannedPeriod>
+				<cbc:DurationMeasure unitCode="MONTH">48</cbc:DurationMeasure>
+			</cac:PlannedPeriod>
+			<cac:ContractExtension>
+				<cbc:MaximumNumberNumeric>2</cbc:MaximumNumberNumeric>
+				<cac:Renewal>
+					<cac:Period>
+						<cbc:Description languageID="DEU">2 * 12 months</cbc:Description>
+					</cac:Period>
+				</cac:Renewal>
+			</cac:ContractExtension>
+		</cac:ProcurementProject>
+	</cac:ProcurementProjectLot>
+	<cac:ProcurementProjectLot>
+		<cbc:ID schemeName="Lot">LOT-0002</cbc:ID>
+		<cac:TenderingTerms>
+			<ext:UBLExtensions>
+				<ext:UBLExtension>
+					<ext:ExtensionContent>
+						<efext:EformsExtension>
+							<efac:SelectionCriteria>
+								<cbc:TendererRequirementTypeCode listName="selection-criterion">slc-abil-ref-services</cbc:TendererRequirementTypeCode>
+								<cbc:Description languageID="DEU">Gefordert sind 3 Referenzen aus den letzten drei Jahren (2023, 2024 oder 2025) über früher ausgeführte oder laufende vergleichbare Aufträge.
+
+Sofern es sich um Aufträge handelt, die in den letzten 3 Jahren noch nicht abgeschlossen wurden, ist der bisher erreichte Stand anzugeben. Noch nicht realisierte Leistungsstände können nicht gewertet werden.
+
+Vergleichbare Aufträge sind IT-Sourcing Beratungsleistungen und Projektbegleitung. Nachzuweisen sind mindestens drei Referenzen über vergleichbare Leistungen aus den letzten drei Jahren. Diese sollen insgesamt folgende Mindestanforderungen erfüllen:
+
+a) Jede Referenz muss mind. 500 Personentage in den Bereichen IT-Sourcing Beratungsleistungen und Projektbegleitung umfassen.
+
+b) Zwei der drei Referenzen müssen die Strukturierung von IT-Sourcing- und Vergabeprojekten im deutschen Gesundheitswesen beinhalten. Zum Deutschen Gesundheitsweisen zählen: Leistungserbringer, Krankenkassen, Gesundheitsbehörden und Forschungseinrichtungen im Bereich Life Sciences oder in einem vergleichbaren Bereich.
+
+c)Eine der drei Referenzen muss die Beratung und Begleitung eines EU-weiten Vergabeverfahrens für IT-Leistungen im öffentlichen Sektor nach dem Vergaberecht von der Vorbereitung bis zum Abschluss beinhalten. Das Referenzprojekt muss dabei mehrere Lose enthalten und bei mehreren dieser Lose müssen mehrere Auftragnehmer bezuschlagt worden sein.</cbc:Description>
+							</efac:SelectionCriteria>
+							<efac:StrategicProcurement>
+								<efbc:ApplicableLegalBasis listName="cvd-scope">false</efbc:ApplicableLegalBasis>
+							</efac:StrategicProcurement>
+						</efext:EformsExtension>
+					</ext:ExtensionContent>
+				</ext:UBLExtension>
+			</ext:UBLExtensions>
+			<cbc:VariantConstraintCode listName="permission">not-allowed</cbc:VariantConstraintCode>
+			<cbc:FundingProgramCode listName="eu-funded">no-eu-funds</cbc:FundingProgramCode>
+			<cbc:MultipleTendersCode listName="permission">allowed</cbc:MultipleTendersCode>
+			<cac:RequiredFinancialGuarantee>
+				<cbc:GuaranteeTypeCode listName="tender-guarantee-required">false</cbc:GuaranteeTypeCode>
+			</cac:RequiredFinancialGuarantee>
+			<cac:CallForTendersDocumentReference>
+				<ext:UBLExtensions>
+					<ext:UBLExtension>
+						<ext:ExtensionContent>
+							<efext:EformsExtension>
+								<efac:OfficialLanguages>
+									<cac:Language>
+										<cbc:ID>DEU</cbc:ID>
+									</cac:Language>
+								</efac:OfficialLanguages>
+							</efext:EformsExtension>
+						</ext:ExtensionContent>
+					</ext:UBLExtension>
+				</ext:UBLExtensions>
+				<cbc:ID>AL 55/26</cbc:ID>
+				<cbc:DocumentType>non-restricted-document</cbc:DocumentType>
+				<cac:Attachment>
+					<cac:ExternalReference>
+						<cbc:URI>https://vergabeplattform.charite.de?tid=efa634c37f6d7f1652d11453d93fe5cb</cbc:URI>
+					</cac:ExternalReference>
+				</cac:Attachment>
+			</cac:CallForTendersDocumentReference>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="selection-criteria-source">epo-notice</cbc:TendererRequirementTypeCode>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:TendererQualificationRequest>
+				<cbc:CompanyLegalFormCode listName="required">false</cbc:CompanyLegalFormCode>
+			</cac:TendererQualificationRequest>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="missing-info-submission">late-some</cbc:TendererRequirementTypeCode>
+					<cbc:Description languageID="DEU">Gemäß der gesetzlichen Bedingungen können Unterlagen nachgefordert werden.</cbc:Description>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:TendererQualificationRequest>
+				<cac:SpecificTendererRequirement>
+					<cbc:TendererRequirementTypeCode listName="reserved-procurement">none</cbc:TendererRequirementTypeCode>
+				</cac:SpecificTendererRequirement>
+			</cac:TendererQualificationRequest>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="reserved-execution">no</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:Description languageID="DEU">Es bestehen gesonderte Anforderungen nach dem Berliner Ausschreibungs- und Vergabegesetz (BerlAVG), siehe Vergabeunterlagen.</cbc:Description>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="einvoicing">required</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:ContractExecutionRequirement>
+				<cbc:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</cbc:ExecutionRequirementCode>
+			</cac:ContractExecutionRequirement>
+			<cac:AwardingTerms>
+				<cac:AwardingCriterion>
+					<cac:SubordinateAwardingCriterion>
+						<ext:UBLExtensions>
+							<ext:UBLExtension>
+								<ext:ExtensionContent>
+									<efext:EformsExtension>
+										<efac:AwardCriterionParameter>
+											<efbc:ParameterCode listName="number-weight">per-exa</efbc:ParameterCode>
+											<efbc:ParameterNumeric>30</efbc:ParameterNumeric>
+										</efac:AwardCriterionParameter>
+									</efext:EformsExtension>
+								</ext:ExtensionContent>
+							</ext:UBLExtension>
+						</ext:UBLExtensions>
+						<cbc:AwardingCriterionTypeCode listName="award-criterion-type">price</cbc:AwardingCriterionTypeCode>
+						<cbc:Name languageID="DEU">Niedrigster Preis</cbc:Name>
+						<cbc:Description languageID="DEU">Niedrigster Preis</cbc:Description>
+					</cac:SubordinateAwardingCriterion>
+					<cac:SubordinateAwardingCriterion>
+						<ext:UBLExtensions>
+							<ext:UBLExtension>
+								<ext:ExtensionContent>
+									<efext:EformsExtension>
+										<efac:AwardCriterionParameter>
+											<efbc:ParameterCode listName="number-weight">per-exa</efbc:ParameterCode>
+											<efbc:ParameterNumeric>30</efbc:ParameterNumeric>
+										</efac:AwardCriterionParameter>
+									</efext:EformsExtension>
+								</ext:ExtensionContent>
+							</ext:UBLExtension>
+						</ext:UBLExtensions>
+						<cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+						<cbc:Name languageID="DEU">Erfahrung und Expertise des eingesetzten Personals</cbc:Name>
+						<cbc:Description languageID="DEU">Im Rahmen der Zuschlagsbewertung werden die Erfahrung und Expertise der eingesetzten Personen (Partner-Berater, Senior-Berater &amp; Junior-Berater) bewertet. 
+
+Bitte geben Sie Ihre Angaben dazu in einem eigenen Dokument an, das einen Umfang von 15 Seiten (Standard Schriftart und Schriftgröße, exkl. Deckblatt und Inhaltsverzeichnis) in Schriftform nicht übersteigen darf (inklusive der eigenen Referenzen). Sollte die konzeptionelle Darstellung mit einer anderen Schriftart und/oder Schriftgröße kleiner als 11 eingereicht werden, behalten wir uns vor, einen Punkteabzug in Höhe von 10 % auf die erreichte Punktzahl vorzunehmen. Bei einer Überschreitung werden nur die ersten 15 Seiten für die Wertung herangezogen.</cbc:Description>
+					</cac:SubordinateAwardingCriterion>
+					<cac:SubordinateAwardingCriterion>
+						<ext:UBLExtensions>
+							<ext:UBLExtension>
+								<ext:ExtensionContent>
+									<efext:EformsExtension>
+										<efac:AwardCriterionParameter>
+											<efbc:ParameterCode listName="number-weight">per-exa</efbc:ParameterCode>
+											<efbc:ParameterNumeric>40</efbc:ParameterNumeric>
+										</efac:AwardCriterionParameter>
+									</efext:EformsExtension>
+								</ext:ExtensionContent>
+							</ext:UBLExtension>
+						</ext:UBLExtensions>
+						<cbc:AwardingCriterionTypeCode listName="award-criterion-type">quality</cbc:AwardingCriterionTypeCode>
+						<cbc:Name languageID="DEU">Umsetzungskonzept</cbc:Name>
+						<cbc:Description languageID="DEU">Im Rahmen der Angebotsbewertung ist ein Umsetzungskonzept vorzulegen. Das Umsetzungskonzept hat der Bieter als eigenes Dokument unter Bezug auf die im Folgenden genannten Unterkriterien einzureichen.
+
+Wenn das Konzept eingereicht wird, werden die Konzeptinhalte Vertragsgegenstand, d.h. dass die darin versprochenen Leistungen zu Leistungspflichten werden, insofern das Angebot bezuschlagt wird. Das Konzept darf insgesamt einen Umfang von 10 Seiten (exkl. Deckblatt und Inhaltsverzeichnis) in Schriftform nicht übersteigen und muss als eigenes Dokument eingereicht werden. Sollte die konzeptionelle Darstellung mit einer anderen Schriftart und/oder Schriftgröße kleiner als 11 eingereicht werden, behalten wir uns vor, einen Punkteabzug in Höhe von 10 % auf die erreichte Punktzahl vorzunehmen. Bei einer Überschreitung werden nur die ersten 10 Seiten für die Wertung herangezogen.</cbc:Description>
+					</cac:SubordinateAwardingCriterion>
+				</cac:AwardingCriterion>
+				<cac:Prize>
+					<cbc:RankCode>1</cbc:RankCode>
+				</cac:Prize>
+			</cac:AwardingTerms>
+			<cac:AdditionalInformationParty>
+				<cac:PartyIdentification>
+					<cbc:ID>ORG-0002</cbc:ID>
+				</cac:PartyIdentification>
+			</cac:AdditionalInformationParty>
+			<cac:TenderRecipientParty>
+				<cbc:EndpointID>https://vergabeplattform.charite.de?tid=efa634c37f6d7f1652d11453d93fe5cb</cbc:EndpointID>
+			</cac:TenderRecipientParty>
+			<cac:TenderValidityPeriod>
+				<cbc:DurationMeasure unitCode="DAY">30</cbc:DurationMeasure>
+			</cac:TenderValidityPeriod>
+			<cac:AppealTerms>
+				<cac:PresentationPeriod>
+					<cbc:Description languageID="DEU">Verstöße gegen Vergabevorschriften, die aufgrund der Bekanntmachung oder in den Vergabeunterlagen erkennbar sind, sind spätestens bis zum Ablauf der Frist zur Bewerbung oder zur Angebotsabgabe gegenüber dem Auftraggeber zu rügen (§ 160 Abs. 3 GWB).
+
+Im Übrigen sind Verstöße gegen Vergabevorschriften innerhalb einer Frist von zehn Kalendertagen nach Kenntnis gegenüber dem Auftraggeber zu rügen. Ein Nachprüfungsantrag ist innerhalb von 15 Kalendertagen nach Eingang der Mitteilung des Auftraggebers, einer Rüge nicht abhelfen zu wollen, bei der zuständigen Vergabekammer zu stellen (§ 160 GWB).
+
+Die o.a. Fristengelten nicht, wenn der Auftraggeber gemäß § 135 Absatz 1 Nr. 2 GWB den Auftrag ohne vorherige Veröffentlichung einer Bekanntmachung im Amtsblatt der Europäischen Union vergeben hat, ohne dass dies aufgrund Gesetzes gestattet ist.
+
+Setzt sich ein Auftraggeber über die Unwirksamkeit eines geschlossenen Vertrages hinweg, indem er die Informations- und Wartepflicht missachtet (§ 134 GWB) oder ohne vorherige Veröffentlichung einer Bekanntmachung im Amtsblatt der Europäischen Union vergeben hat, ohne dass dies aufgrund Gesetzes gestattet ist, kann die Unwirksamkeit nur festgestellt werden, wenn sie im Nachprüfungsverfahren innerhalb von 30 Kalendertagen nach der Information der betroffenen Bieter und Bewerber durch den öffentlichen Auftraggeber über den Abschluss des Vertrags, jedoch nicht später als sechs Monate nach Vertragsschluss geltend gemacht worden ist.
+
+Hat der Auftraggeber die Auftragsvergabe im Amtsblatt der Europäischen Union bekanntgemacht, endet die Frist 30 Kalendertage nach Veröffentlichung der Bekannt-machung der Auftragsvergabe im Amtsblatt der Europäischen Union (§ 135 GWB).</cbc:Description>
+				</cac:PresentationPeriod>
+				<cac:AppealInformationParty>
+					<cac:PartyIdentification>
+						<cbc:ID>ORG-0005</cbc:ID>
+					</cac:PartyIdentification>
+				</cac:AppealInformationParty>
+				<cac:AppealReceiverParty>
+					<cac:PartyIdentification>
+						<cbc:ID>ORG-0003</cbc:ID>
+					</cac:PartyIdentification>
+				</cac:AppealReceiverParty>
+				<cac:MediationParty>
+					<cac:PartyIdentification>
+						<cbc:ID>ORG-0004</cbc:ID>
+					</cac:PartyIdentification>
+				</cac:MediationParty>
+			</cac:AppealTerms>
+			<cac:Language>
+				<cbc:ID>DEU</cbc:ID>
+			</cac:Language>
+			<cac:PostAwardProcess>
+				<cbc:ElectronicOrderUsageIndicator>true</cbc:ElectronicOrderUsageIndicator>
+				<cbc:ElectronicPaymentUsageIndicator>true</cbc:ElectronicPaymentUsageIndicator>
+			</cac:PostAwardProcess>
+		</cac:TenderingTerms>
+		<cac:TenderingProcess>
+			<cbc:SubmissionMethodCode listName="esubmission">required</cbc:SubmissionMethodCode>
+			<cbc:GovernmentAgreementConstraintIndicator>true</cbc:GovernmentAgreementConstraintIndicator>
+			<cbc:AccessToolsURI>https://vergabeplattform.charite.de</cbc:AccessToolsURI>
+			<cac:TenderSubmissionDeadlinePeriod>
+				<cbc:EndDate>2026-08-28+02:00</cbc:EndDate>
+				<cbc:EndTime>10:00:00+02:00</cbc:EndTime>
+			</cac:TenderSubmissionDeadlinePeriod>
+			<cac:OpenTenderEvent>
+				<cbc:OccurrenceDate>2026-08-28+02:00</cbc:OccurrenceDate>
+				<cbc:OccurrenceTime>11:00:00+02:00</cbc:OccurrenceTime>
+				<cbc:Description languageID="DEU">Es sind keine Bieter zum Submissionstermin zugelassen (e-Vergabe).</cbc:Description>
+				<cac:OccurenceLocation>
+					<cbc:Description languageID="DEU">Zentrale Vergabestelle der Charité - Universitätsmedizin Berlin</cbc:Description>
+				</cac:OccurenceLocation>
+			</cac:OpenTenderEvent>
+			<cac:AuctionTerms>
+				<cbc:AuctionConstraintIndicator>false</cbc:AuctionConstraintIndicator>
+			</cac:AuctionTerms>
+			<cac:FrameworkAgreement>
+				<cbc:MaximumOperatorQuantity>5</cbc:MaximumOperatorQuantity>
+				<cac:SubsequentProcessTenderRequirement>
+					<cbc:Name>buyer-categories</cbc:Name>
+				</cac:SubsequentProcessTenderRequirement>
+			</cac:FrameworkAgreement>
+			<cac:ContractingSystem>
+				<cbc:ContractingSystemTypeCode listName="framework-agreement">fa-w-rc</cbc:ContractingSystemTypeCode>
+			</cac:ContractingSystem>
+			<cac:ContractingSystem>
+				<cbc:ContractingSystemTypeCode listName="dps-usage">none</cbc:ContractingSystemTypeCode>
+			</cac:ContractingSystem>
+		</cac:TenderingProcess>
+		<cac:ProcurementProject>
+			<cbc:ID schemeName="InternalID">2</cbc:ID>
+			<cbc:Name languageID="DEU">Sourcing Schwerpunkt</cbc:Name>
+			<cbc:Description languageID="DEU">Der Rahmenvertrag dient der Deckung des Bedarfs an strategischen IT-Beratungsleistungen sowie projektbegleitender Unterstützung durch qualifizierte Berater:innen des Auftragnehmers im jeweiligen bedarfsspezifischen Kontext.</cbc:Description>
+			<cbc:ProcurementTypeCode listName="contract-nature">services</cbc:ProcurementTypeCode>
+			<cbc:SMESuitableIndicator>false</cbc:SMESuitableIndicator>
+			<cac:ProcurementAdditionalType>
+				<cbc:ProcurementTypeCode listName="strategic-procurement">none</cbc:ProcurementTypeCode>
+			</cac:ProcurementAdditionalType>
+			<cac:MainCommodityClassification>
+				<cbc:ItemClassificationCode listName="cpv">72000000</cbc:ItemClassificationCode>
+			</cac:MainCommodityClassification>
+			<cac:AdditionalCommodityClassification>
+				<cbc:ItemClassificationCode listName="cpv">72220000</cbc:ItemClassificationCode>
+			</cac:AdditionalCommodityClassification>
+			<cac:AdditionalCommodityClassification>
+				<cbc:ItemClassificationCode listName="cpv">72224000</cbc:ItemClassificationCode>
+			</cac:AdditionalCommodityClassification>
+			<cac:AdditionalCommodityClassification>
+				<cbc:ItemClassificationCode listName="cpv">72227000</cbc:ItemClassificationCode>
+			</cac:AdditionalCommodityClassification>
+			<cac:RealizedLocation>
+				<cbc:Description languageID="DEU">Berlin</cbc:Description>
+				<cac:Address>
+					<cbc:CountrySubentityCode listName="nuts-lvl3">DE300</cbc:CountrySubentityCode>
+					<cac:Country>
+						<cbc:IdentificationCode listName="country">DEU</cbc:IdentificationCode>
+					</cac:Country>
+				</cac:Address>
+			</cac:RealizedLocation>
+			<cac:PlannedPeriod>
+				<cbc:DurationMeasure unitCode="MONTH">48</cbc:DurationMeasure>
+			</cac:PlannedPeriod>
+			<cac:ContractExtension>
+				<cbc:MaximumNumberNumeric>2</cbc:MaximumNumberNumeric>
+				<cac:Renewal>
+					<cac:Period>
+						<cbc:Description languageID="DEU">2 * 12 months</cbc:Description>
+					</cac:Period>
+				</cac:Renewal>
+			</cac:ContractExtension>
+		</cac:ProcurementProject>
+	</cac:ProcurementProjectLot>
+</ContractNotice>

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { Link } from 'react-router';
-import { HEADLINE, PRODUCT_NAME, SUBHEADLINE } from '../../copy';
+import { HEADLINE, SUBHEADLINE } from '../../copy';
+import { PageMeta } from '../../components/PageMeta';
+import { MARKETING_META } from '../../lib/seo';
 
 /**
  * Homepage — 2026-08-21 handoff redesign (`BidMorrow Homepage.dc.html`).
@@ -483,12 +485,7 @@ export function Home(): ReactElement {
 
   return (
     <>
-      <title>{`${PRODUCT_NAME} — Bid/no-bid qualification intelligence for EU public procurement`}</title>
-      <meta
-        name="description"
-        content="BidMorrow scores every TED procurement notice against your company profile so you know which tenders are worth investigating today."
-      />
-      <link rel="canonical" href="https://bidmorrow.com/" />
+      <PageMeta {...MARKETING_META.home} />
 
       <div className="hp-hero-wrap">
         <div className="hp-grid-bg" aria-hidden="true">

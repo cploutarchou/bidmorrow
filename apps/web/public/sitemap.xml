@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The public marketing URLs (docs/redesign/seo-content-strategy.md §5).
+  App, onboarding, admin and auth routes are deliberately absent: they are
+  noindex, and three of the four are also disallowed in robots.txt.
+
+  `lastmod` is omitted on purpose. The spec allows either a real per-page
+  content-change date or nothing at all, and forbids a fake always-today
+  value — an untrue lastmod on every URL teaches crawlers to ignore the
+  signal. A real one needs the build to stamp dates from git history, which
+  arrives with the prerender step.
+
+  `priority` and `changefreq` are omitted: Google ignores both.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://bidmorrow.com/</loc></url>
+  <url><loc>https://bidmorrow.com/how-it-works</loc></url>
+  <url><loc>https://bidmorrow.com/methodology</loc></url>
+  <url><loc>https://bidmorrow.com/sample-verdicts</loc></url>
+  <url><loc>https://bidmorrow.com/pricing</loc></url>
+  <url><loc>https://bidmorrow.com/pilot</loc></url>
+  <url><loc>https://bidmorrow.com/contact</loc></url>
+  <url><loc>https://bidmorrow.com/privacy</loc></url>
+  <url><loc>https://bidmorrow.com/terms</loc></url>
+</urlset>

@@ -62,14 +62,63 @@ localStorage ops-state) was excluded from the comparison by instruction.
 
 ### Majors (template surfaces)
 
-1. Admin theme-v2 page bodies, all ten sections — styling only, cheapest
-   major, internal audience.
-2. Client Area detail slide-over sheet (replace full-page navigation;
-   frontend-only for the existing Analysis content).
-3. Onboarding redesign: 5-step flow restructure → 12-sector CPV picker
-   (new sector reference data) → scope-estimate panel (new 30-day
-   estimate API).
-4. Feed left rail (needs saved-searches API) · global search/⌘K palette.
+1. ~~Admin theme-v2 page bodies, all ten sections~~ — **DONE 2026-08-23.**
+   Card grid, fact strips, panel vocabulary, mono ops tables, filter pills
+   and a visible mutation flash across all 11 admin pages. Two deliberate
+   departures from the export: its `div`-grid tables carry a per-section
+   `grid-template-columns` as an inline `style` attribute, which this app's
+   `style-src 'self'` CSP forbids, so real `<table>` elements are kept and
+   restyled instead; and its arm→confirm strip is `position: sticky` off a
+   single page-level `pending` state machine the app does not have, so the
+   strip is styled in flow. The remaining admin minors below (ops pills
+   wired to state, state-aware pause/resume, rail counts, ingestion
+   sub-views, flag JSON hint) are unchanged.
+2. ~~Client Area detail slide-over sheet~~ — **DONE 2026-08-23.** Opened
+   from the feed, a tender now slides over it instead of navigating away.
+   Deliberately NOT the prototype's state-only overlay: it is driven by the
+   same `/app/tenders/:matchId` route via react-router's
+   `backgroundLocation`, so the tender keeps one real linkable URL, Back
+   closes the sheet, and a shared link or refresh still renders the full
+   page. Both surfaces render one `TenderDetailContent`, so they cannot
+   drift. Only the Summary and Score tabs exist — Requirements, Buyer and
+   Activity are item 7 below and were not stubbed.
+3. ~~Onboarding redesign~~ — **DONE 2026-08-23.**
+   - **DONE — 12-sector CPV picker** (`apps/web/src/lib/cpv-sectors.ts`).
+     Any company can now start from its own line of work, not just IT.
+     Sector selection pre-fills CPV codes only: presets also carry keywords
+     and capabilities written for IT consultancies, which would be worse
+     than nothing for a catering company.
+   - **DONE — 30-day scope estimate.** New `POST
+/api/org/onboarding/scope-estimate` + `estimateScope` repository
+     function, counting real lots over a real window using the same CPV
+     **division** rule the scoring pre-filter applies. Country is reported
+     separately, never folded into the headline, because geography is a
+     scored component and not a gate.
+   - **DONE 2026-08-23 — the 5-step flow compression.** Company · Starting
+     point · Scope · Fit · Digest & review. The screen bodies are grouped,
+     not rewritten, so every field's validation, dirty-tracking and resume
+     behaviour carries over; what changed is navigation (one Continue per
+     step, which saves that step's resources in order and stops at the first
+     failure) and the progress model. The welcome splash is gone — the
+     design has no such screen and each step now carries its own title and
+     blurb. Skip is gone too: with several resources per step it had no
+     single meaning, and leaving a field blank and continuing already does
+     what it did.
+   - Fixed on the way through: the client-side scope indicator reduced
+     `79417000` to the division `79`, so it reported the whole of division
+     79 as covered. Harmless while onboarding was IT-only; a false promise
+     to exactly the business-services companies the sector picker is for.
+4. Feed left rail · global search/⌘K palette — **RAIL DONE 2026-08-23.**
+   New `saved_searches` table (migration 0010), org-scoped repository and
+   `/api/org/saved-searches` CRUD, plus the rail itself: name the current
+   filter set, re-apply it, delete it. Workspace-wide by design — a saved
+   search is a team's view of the market, not a personal bookmark.
+   Two blocks of the design were deliberately NOT built, because both would
+   have meant inventing numbers: the per-search and per-shelf hit counts
+   (nothing counts those today), and the "78% complete" profile meter (there
+   is no completeness model). The rail's profile line states what the
+   profile actually holds instead. **The ⌘K palette is still open** — see
+   the note below on why most of its designed commands cannot be honest yet.
 5. Pipeline (kanban) view — new backend domain.
 6. Insights view — new analytics endpoints.
 7. Detail tabs Requirements / Buyer intelligence / Activity+notes —
@@ -83,8 +132,37 @@ localStorage ops-state) was excluded from the comparison by instruction.
    confirmation for paying customers.
 10. Route code splitting + budget compliance (admin out of customer
     bundle).
-11. M3 final slice: sample-verdict demo, category pages, comparison
-    module (all policy-locked IN scope).
+11. M3 final slice — **SAMPLE-VERDICT DEMO DONE 2026-08-23**; category
+    pages and the comparison module still open (all policy-locked IN
+    scope).
+    - `/sample-verdicts`: four real TED-published notices scored by the
+      production engine against two representative supplier profiles,
+      spanning Strong match / Worth reviewing / Low fit / Excluded, each
+      with its full component breakdown and a link to the notice on TED.
+      Nothing on the page is hand-written except the one-line "why we
+      chose this one", which is labelled as ours.
+    - The data is generated, not authored
+      (`packages/procurement/scripts/generate-sample-verdicts.ts` →
+      `apps/web/src/lib/sample-verdicts.generated.ts`), and
+      `tests/integration/sample-verdicts-committed.test.ts` fails if the
+      committed file stops matching a fresh engine run — the failure mode
+      that mattered was a page confidently showing numbers the engine no
+      longer produces.
+    - Four new fixtures under `tests/fixtures/ted/1.13/` (real German,
+      Czech and Slovak notices, fetched via the `ted-fixture-fetch`
+      workflow, which gained a CPV-prefix filter for the purpose). The
+      sandbox cannot reach ted.europa.eu — the agent proxy denies the
+      CONNECT — so the fetch has to run in CI.
+    - The notice → `LotInput` mapping the demo needs is now a shared,
+      tested module (`packages/procurement/src/notice-lot-input.ts`)
+      rather than a lookalike written for the generator. The lookalike
+      read the deadline off a property that does not exist and the country
+      off a lot field `NormalizedLot` has never had, and the engine
+      scored the wrong input without complaining: every sample verdict
+      was understated by 15 geography points and reported "no deadline
+      published".
+    - No `WORTH_REVIEWING`-to-`STRONG_MATCH` tuning was done. The profiles
+      were written once and the four scores are whatever came out.
 
 ### Minors (grouped)
 
@@ -92,7 +170,9 @@ localStorage ops-state) was excluded from the comparison by instruction.
   tokens, three-rank buttons, `--accent-hover/press`, `--field-inner-lit`,
   `--bg-overlay`.
 - Shared components: low-fit/excluded card states, deadline urgency inks,
-  visible status flash, arm→confirm strip with consequence copy.
+  ~~visible status flash~~ (done for admin 2026-08-23; the customer app
+  surfaces still route status text through `visually-hidden-status`),
+  arm→confirm strip with consequence copy.
 - Auth polish: pre-submit validation, silent-failure fix, confirmation
   states. Marketing nav `aria-current`. Cookie-banner bottom padding.
 - Feed/Settings: sort control + KPI row, "why this score" expander,
@@ -108,6 +188,29 @@ localStorage ops-state) was excluded from the comparison by instruction.
   written; per-visit latin ~57 KB is compliant via unicode-range — record
   the raised budget), stale Lucide note in dependency-versions.md, stale
   pre-v2 comments.
+
+## Status — first four items implemented 2026-08-22, merged 2026-08-23
+
+Merged to `main` as `068e8d9` (PR #79) with CI green. The merge was held for
+~17 hours by an account-level GitHub Actions block: every run failed in 1–3
+seconds with zero steps executed and no logs, including a re-dispatch of an
+unchanged workflow that had succeeded earlier the same day, which ruled out
+the branch and the workflow files. The owner cleared it on the billing side.
+
+| Pending item                                                | Status                                                                                                                         |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| M0.2 SEO artifact set                                       | **DONE** — metadata + OG block, noindex, env-aware robots.txt, sitemap, generated share image                                  |
+| `/app/billing/success`                                      | **DONE** — polls billing status, three honest states, 7 tests on the retry logic                                               |
+| Route code splitting                                        | **DONE** — marketing entry 478.00 kB → 58.28 kB first-party + 230.57 kB vendor; admin verified absent from the customer bundle |
+| Theme foundation tokens                                     | **DONE (additive)** — `--t-*` scale, ghost button rank, `prefers-contrast` bug fixed                                           |
+| CSS budget (91 kB vs 25 kB)                                 | **NOT fixed** — one global stylesheet, so chunking cannot split it; needs a per-surface split                                  |
+| Type-scale call-site migration                              | **Deferred** — only 2 of 215 declarations matched exactly, and the `font` shorthand resets weight                              |
+| `--accent-hover/press`, `--field-inner-lit`, `--bg-overlay` | **Still unwired** — each moves pixels; belongs in a reviewed restyling PR                                                      |
+| Admin page bodies (ten sections + org detail)               | **DONE 2026-08-23** — see the note under "Majors" below                                                                        |
+| Detail slide-over sheet                                     | **DONE 2026-08-23** — route-driven, so the URL survives; Summary + Score tabs only                                             |
+| CSS budget after the admin work                             | **91 kB → 97 kB** against the same 25 kB budget — the new vocabulary added ~6 kB; the per-surface split is still the fix       |
+
+Everything else in the pending list below is untouched and still stands.
 
 ## Recommended implementation order
 

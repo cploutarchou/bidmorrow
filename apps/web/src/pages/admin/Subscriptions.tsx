@@ -3,6 +3,7 @@ import { adminApi } from '../../lib/admin-api';
 import { appendCursor, startCursor, type CursorState } from '../../lib/cursor';
 import { formatIsoUtc } from '../../lib/format';
 import { Pager } from '../../components/admin/Pager';
+import { AdminPage } from '../../components/admin/AdminPage';
 import type { AdminSubscription } from '../../lib/admin-types';
 
 const STATUSES = ['', 'trialing', 'active', 'past_due', 'canceled', 'unpaid'] as const;
@@ -50,18 +51,23 @@ export function Subscriptions(): ReactElement {
   }
 
   return (
-    <>
-      <title>Subscriptions — Admin</title>
-      <h1>Subscriptions</h1>
-      <div className="form-field">
-        <label htmlFor="sub-status">Filter by status</label>
-        <select id="sub-status" value={status} onChange={(event) => setStatus(event.target.value)}>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s.length === 0 ? 'All' : s}
-            </option>
-          ))}
-        </select>
+    <AdminPage
+      documentTitle="Subscriptions — Admin"
+      heading="Subscriptions"
+      note="Billing state as written by the Stripe webhook. Stripe remains the source of truth — a row here can lag a very recent change until its webhook is delivered."
+    >
+      <div className="admin-pills" role="group" aria-label="Filter by status">
+        {STATUSES.map((s) => (
+          <button
+            key={s}
+            type="button"
+            className="admin-pill"
+            aria-pressed={status === s}
+            onClick={() => setStatus(s)}
+          >
+            {s.length === 0 ? 'All' : s}
+          </button>
+        ))}
       </div>
 
       {loading && <p>Loading…</p>}
@@ -70,7 +76,9 @@ export function Subscriptions(): ReactElement {
           {error}
         </p>
       )}
-      {!loading && state !== null && state.items.length === 0 && <p>No subscriptions found.</p>}
+      {!loading && state !== null && state.items.length === 0 && (
+        <p className="admin-empty">No subscriptions found.</p>
+      )}
       {!loading && state !== null && state.items.length > 0 && (
         <div className="admin-table-scroll">
           <table>
@@ -103,6 +111,6 @@ export function Subscriptions(): ReactElement {
         loading={loadingMore}
         onLoadMore={() => void loadMore()}
       />
-    </>
+    </AdminPage>
   );
 }

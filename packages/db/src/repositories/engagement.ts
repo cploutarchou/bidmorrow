@@ -20,6 +20,7 @@ import {
   ignoredTenders,
   savedTenders,
 } from '../schema/engagement';
+import { savedSearches } from '../schema/company';
 import { tenderMatches } from '../schema/matching';
 import { DuplicateDigestError, TenantMismatchError } from './errors';
 import { assertIsoDate } from './shared';
@@ -501,11 +502,13 @@ export interface NullifyUserAuthorshipCounts {
   readonly savedTendersNulled: number;
   readonly ignoredTendersNulled: number;
   readonly customerFeedbackNulled: number;
+  readonly savedSearchesNulled: number;
 }
 
 /**
  * SET NULLs `userId`'s authorship attribution on `saved_tenders` /
- * `ignored_tenders` / `customer_feedback` rows, restricted to the given
+ * `ignored_tenders` / `customer_feedback` / `saved_searches` rows,
+ * restricted to the given
  * organizations AND that user's own authored rows — never a bare `userId`
  * match with no organization scope, so this can never touch another org's
  * data by construction. Called by `routes/account.ts` immediately before
@@ -518,11 +521,16 @@ export async function nullifyUserAuthorship(
   organizationIds: readonly OrganizationId[],
 ): Promise<NullifyUserAuthorshipCounts> {
   if (organizationIds.length === 0) {
-    return { savedTendersNulled: 0, ignoredTendersNulled: 0, customerFeedbackNulled: 0 };
+    return {
+      savedTendersNulled: 0,
+      ignoredTendersNulled: 0,
+      customerFeedbackNulled: 0,
+      savedSearchesNulled: 0,
+    };
   }
   const now = Date.now();
   const orgIds = [...organizationIds];
-  const [savedRows, ignoredRows, feedbackRows] = await db.batch([
+  const [savedRows, ignoredRows, feedbackRows, savedSearchRows] = await db.batch([
     db
       .update(savedTenders)
       .set({ savedByUserId: null })
@@ -547,11 +555,25 @@ export async function nullifyUserAuthorship(
         and(inArray(customerFeedback.organizationId, orgIds), eq(customerFeedback.userId, userId)),
       )
       .returning({ id: customerFeedback.id }),
+    // A saved search belongs to the workspace, so a departing member's
+    // account deletion clears the authorship but leaves the search itself
+    // for the colleagues still using it.
+    db
+      .update(savedSearches)
+      .set({ createdByUserId: null, updatedAt: now })
+      .where(
+        and(
+          inArray(savedSearches.organizationId, orgIds),
+          eq(savedSearches.createdByUserId, userId),
+        ),
+      )
+      .returning({ id: savedSearches.id }),
   ]);
   return {
     savedTendersNulled: savedRows.length,
     ignoredTendersNulled: ignoredRows.length,
     customerFeedbackNulled: feedbackRows.length,
+    savedSearchesNulled: savedSearchRows.length,
   };
 }
 

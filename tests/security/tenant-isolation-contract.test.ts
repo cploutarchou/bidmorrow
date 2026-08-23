@@ -37,6 +37,7 @@ const TENANT_FILES = [
   'identity.ts',
   'matching.ts',
   'ops.ts',
+  'saved-searches.ts',
 ] as const;
 
 /** Global (non-tenant) data: shared corpus, ingestion plumbing, ops config. */
