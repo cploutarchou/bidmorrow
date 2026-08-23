@@ -1,0 +1,3422 @@
+/* ============================================================
+   MARKETING — the public site (MarketingLayout + pages/marketing +
+   NotFound + consent banner + launch countdown).
+
+   Imported by MarketingLayout.tsx, which is eager, so this ships in
+   the entry chunk alongside base.css — that pair IS the marketing
+   CSS budget. Split from styles.css 2026-08-23; original order
+   preserved within the file.
+   ============================================================ */
+
+/* --- Marketing ---
+   `.pricing-grid`/`.pricing-card`/`.price`/`.steps-list` (pre-Strata
+   Pricing/How-it-works layout) were removed in Slice 3 — both pages now
+   use the `.mkt-*` components below instead; grepped clean, no other
+   caller. */
+
+/* `.feature-list` started Home-only — upgraded in place from a bulleted
+   list into a Strata card grid (docs/redesign/mockups/
+   direction-g-strata.html `.truth-cards`/`.trust-grid` language). Slice 3
+   reuses it as-is on Pilot ("What you get"/"What we ask") — same short
+   list-of-facts shape, no page-specific variant needed. */
+.feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--s4);
+}
+
+.feature-list li {
+  border-radius: var(--r-m);
+  padding: var(--s5);
+  background: var(--surface-1);
+  border: 1px solid var(--stroke);
+  color: var(--text-2);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+/* ============================================================
+   MARKETING SITE — Strata (Slice 1: shell — MarketingLayout header/
+   footer/theme toggle; Slice 2: Home page hero + teaser sections; Slice 3:
+   the remaining public pages — Pricing, How it works, Methodology, Pilot,
+   Contact, Privacy, Terms).
+   docs/redesign/mockups/direction-g-strata.html is the visual target;
+   this is its language migrated into the token layer above, never its
+   inline <style> copied wholesale (CSP: style-src 'self', no
+   unsafe-inline). Deliberately its OWN `.mkt-*` namespace for every NEW
+   element — `.site-header`/`.hero`/`.feature-list`/`.cta` are upgraded
+   IN PLACE instead (they're shared with auth, admin, and several
+   already-Strata app screens; see the comments at each of those rules
+   above for why). Builds on the M0.1 token layer and the `.glass`
+   utility merged above. Slice 3's pages render inside the shared,
+   centered `#main-content` box (none of them opt into `fullBleed` —
+   that stays Home-only), so their own compositions (page head, plan
+   cards, step list, prose) size themselves within that ~64rem column
+   rather than reaching for `.mkt-wrap`.
+   ============================================================ */
+
+/* Shared Strata content-width utility (mockup's `.wrap`): used by the
+   header nav, the footer, and every full-bleed Home section. */
+.mkt-wrap {
+  width: min(1160px, 100% - 2 * var(--s5));
+  margin-inline: auto;
+}
+
+/* Home opts its `<main>` out of the shared centered text column (the
+   `#main-content` rule under "Layout containers" above) so its own
+   full-bleed sections (each with its own `.mkt-wrap`) can run edge to
+   edge with the hero wash background. Higher specificity than the plain
+   `#main-content` ID rule via the extra class, so it wins without
+   touching that rule (still used, unchanged, by every other marketing
+   page and by `AuthLayout`). */
+#main-content.mkt-main--full {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Mono, uppercase, letter-spaced, accent-colored — Control Room's
+   "panel-head" eyebrow language (direction-b-control-room.html `.eyebrow`). */
+.mkt-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+  margin: 0 0 var(--s4);
+}
+
+.mkt-eyebrow::before {
+  content: '';
+  width: 22px;
+  height: 1px;
+  background: var(--accent-edge);
+}
+
+/* --- Hero (`.hero` itself is upgraded in place; everything inside it
+   that's new to this slice is `.mkt-*`) --- */
+.hero {
+  position: relative;
+  background: var(--wash-hero);
+  padding: var(--s8) 0 var(--s7);
+  overflow: clip;
+}
+
+.mkt-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: var(--s7);
+  align-items: center;
+}
+
+.hero h1 {
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
+  font-weight: 700;
+  margin: 0 0 var(--s5);
+  text-wrap: balance;
+}
+
+.mkt-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  align-items: center;
+  margin-bottom: var(--s4);
+}
+
+/* Secondary/quiet button — `.cta` above already covers the primary
+   accent-filled action everywhere it's shared; this ghost variant is new
+   to marketing, so it stays `.mkt-*`-namespaced rather than colliding
+   with the app-only `.btn-quiet` (styles.css `APP INTERFACE` section).
+   Control Room's quiet button: transparent fill, teal text + border, same
+   8px radius as the primary (direction-b-control-room.html `.btn-quiet`). */
+.mkt-btn-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: var(--r-s);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.65rem 1.3rem;
+  background: transparent;
+  color: var(--accent-text);
+  border: 1px solid var(--sol-1);
+  transition:
+    background-color 200ms var(--ease),
+    transform 120ms var(--ease);
+}
+
+.mkt-btn-quiet:hover {
+  background: var(--accent-soft);
+}
+
+.mkt-hero-panel {
+  border-radius: var(--r-l);
+  padding: var(--s5);
+  display: grid;
+  gap: var(--s4);
+  align-content: start;
+}
+
+.mkt-hero-panel__caption {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--stroke-faint);
+}
+
+.mkt-hero-panel__note {
+  font-size: 0.92rem;
+  color: var(--text-2);
+  margin: 0;
+}
+
+.mkt-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.mkt-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: var(--surface-1);
+  color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.28rem 0.7rem;
+  white-space: nowrap;
+}
+
+.mkt-chip--mono {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.mkt-chip--solar {
+  background: var(--accent-soft);
+  border-color: var(--accent-edge);
+  color: var(--accent-text);
+}
+
+.mkt-tier-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-2);
+}
+
+.mkt-tier-list li:not(:last-child)::after {
+  content: '\2192';
+  margin-inline-start: var(--s2);
+  color: var(--stroke-strong);
+}
+
+/* --- Section rhythm (value / how it works / methodology / pricing) --- */
+.mkt-section {
+  padding: var(--s8) 0;
+}
+
+.mkt-section + .mkt-section {
+  border-top: 1px solid var(--stroke-faint);
+}
+
+.mkt-section--deep {
+  background: var(--wash-deep);
+}
+
+.mkt-section-head {
+  max-width: 46rem;
+  margin-bottom: var(--s6);
+}
+
+.mkt-section-head h2 {
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  margin: 0 0 var(--s3);
+}
+
+.mkt-section-lede {
+  color: var(--text-2);
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.mkt-section-link {
+  margin-top: var(--s5);
+}
+
+.mkt-section-link a {
+  display: inline-block;
+  color: var(--accent-text);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 200ms var(--ease);
+}
+
+.mkt-section-link a:hover {
+  text-decoration: underline;
+  transform: translateX(3px);
+}
+
+/* --- How it works teaser --- */
+.mkt-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s4);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.mkt-step {
+  border-radius: var(--r-m);
+  padding: var(--s5);
+  background: var(--surface-1);
+  border: 1px solid var(--stroke);
+  display: grid;
+  gap: var(--s2);
+  align-content: start;
+}
+
+.mkt-step__num {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-text);
+  border: 1px solid var(--accent-edge);
+  border-radius: 999px;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* `h2` alongside `h3` for the same reason as `.mkt-truth-card` above — How
+   it works (Slice 3) uses `.mkt-step` at top-level heading depth. */
+.mkt-step h2,
+.mkt-step h3 {
+  font-size: 1.02rem;
+  margin: 0;
+}
+
+.mkt-step p {
+  font-size: 0.9rem;
+  color: var(--text-2);
+  margin: 0;
+}
+
+/* --- Methodology teaser --- */
+.mkt-truth-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s4);
+}
+
+.mkt-truth-card {
+  border-radius: var(--r-m);
+  padding: var(--s5);
+}
+
+/* `h2` is included alongside `h3` because Slice 3's Methodology page uses
+   `.mkt-truth-card` at top-level heading depth (h1 > h2, no intervening
+   section h2) — Home's teaser nests the same card one level deeper (h1 >
+   h2 > h3). Same visual treatment, correct heading order either way. */
+.mkt-truth-card h2,
+.mkt-truth-card h3 {
+  font-size: 1.05rem;
+  margin: 0 0 var(--s2);
+}
+
+.mkt-truth-card p {
+  font-size: 0.92rem;
+  color: var(--text-2);
+  margin: 0;
+}
+
+/* --- Pricing teaser (substance frozen — see copy.ts/Pricing.tsx: €29
+   founding for the first 50 customers, €49 standard) --- */
+.mkt-plan-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+}
+
+.mkt-plan-chip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  border-radius: var(--r-m);
+  padding: var(--s5);
+  background: var(--surface-1);
+  border: 1px solid var(--stroke);
+  min-width: 14rem;
+  flex: 1 1 14rem;
+}
+
+.mkt-plan-chip--founding {
+  background: var(--glass-solid);
+  border-color: var(--accent-edge);
+  box-shadow: var(--shadow-m), var(--edge-lit);
+}
+
+.mkt-plan-chip__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.mkt-plan-chip--founding .mkt-plan-chip__label {
+  color: var(--accent-text);
+}
+
+.mkt-plan-chip__price {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+.mkt-plan-chip__per {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: var(--text-3);
+  margin-left: 0.35rem;
+}
+
+/* --- Standalone pages (Slice 3) --- */
+
+/* Full pricing cards on the Pricing page itself — same substance-frozen
+   founding/standard pair as `.mkt-plan-chip` above (the Home teaser), but
+   a full card (price + description + feature list + CTA) instead of a
+   compact chip, so it gets its own set of rules rather than overloading
+   `.mkt-plan-chip`'s smaller shape. */
+.mkt-plans {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s5);
+  align-items: stretch;
+  margin: var(--s6) 0;
+}
+
+.mkt-plan {
+  border-radius: var(--r-l);
+  padding: var(--s6);
+  display: grid;
+  gap: var(--s4);
+  align-content: start;
+  background: var(--surface-1);
+  border: 1px solid var(--stroke);
+}
+
+.mkt-plan--founding {
+  background: var(--glass-solid);
+  border-color: var(--accent-edge);
+  box-shadow: var(--shadow-l), var(--edge-lit);
+}
+
+.mkt-plan h2 {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.mkt-plan__cap {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+  margin: 0;
+}
+
+.mkt-plan__price {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.mkt-plan__desc {
+  font-size: 0.92rem;
+  color: var(--text-2);
+  margin: 0;
+}
+
+.mkt-plan__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s2);
+}
+
+.mkt-plan__list li {
+  font-size: 0.9rem;
+  color: var(--text-2);
+}
+
+/* Control Room's `>`-prefixed list marker (direction-b-control-room.html
+   `ul.plain-deal li::before`) — replaces the Strata checkmark. */
+.mkt-plan__list li::before {
+  content: '>';
+  display: inline-block;
+  margin-right: var(--s2);
+  color: var(--accent-text);
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+/* `.cta`/`.mkt-btn-quiet` are grid items inside `.mkt-plan` (a single-
+   column grid) and would otherwise stretch to the full card width by
+   `justify-items: normal`'s stretch behavior — pin them to their content
+   size instead, same as any other pill button. */
+.mkt-plan .cta,
+.mkt-plan .mkt-btn-quiet {
+  justify-self: start;
+}
+
+.mkt-plans-foot {
+  color: var(--text-3);
+  font-size: 0.95rem;
+  max-width: 60ch;
+}
+
+/* Methodology's score-component table: same card language as
+   `.mkt-truth-card` (radius/padding), plus horizontal scroll so the
+   3-column table never overflows a narrow viewport. */
+.mkt-table-card {
+  border-radius: var(--r-m);
+  padding: var(--s4) var(--s5);
+  overflow-x: auto;
+  margin: var(--s4) 0 var(--s6);
+}
+
+.mkt-table-card table {
+  margin: 0;
+}
+
+/* Mockup's breakdown-table language: tabular-mono points column,
+   hairline row rules only (never a full grid). Scoped inside
+   `.mkt-table-card` — the global bordered `th, td` rule stays for admin. */
+.mkt-table-card td,
+.mkt-table-card th {
+  border-inline: none;
+  border-top: 1px solid var(--stroke-faint);
+}
+.mkt-table-card thead th {
+  border-top: none;
+}
+.mkt-table-card td:nth-child(2) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Comfortable reading measure + heading rhythm for long-form pages
+   (Contact, Privacy, Terms, and Methodology's prose sections) — the
+   shared `#main-content` column is ~64rem, wider than is comfortable to
+   read a paragraph across. */
+.mkt-prose {
+  max-width: 65ch;
+}
+
+.mkt-prose h2 {
+  font-size: 1.25rem;
+  margin: var(--s7) 0 var(--s3);
+}
+
+.mkt-prose h2:first-child {
+  margin-top: 0;
+}
+
+.mkt-prose p,
+.mkt-prose ul,
+.mkt-prose ol {
+  color: var(--text-2);
+  margin: 0 0 var(--s4);
+}
+
+.mkt-prose li {
+  margin-bottom: var(--s2);
+}
+
+.mkt-prose strong {
+  color: var(--text-1);
+}
+
+/* Generic glass-card padding for a short callout panel (Contact's mailto
+   line; Privacy/Terms' "final legal text pending" notice) — deliberately
+   minimal (no page-specific children classes, unlike `.mkt-hero-panel`)
+   so it composes with plain paragraph content. */
+.mkt-panel {
+  border-radius: var(--r-m);
+  padding: var(--s5);
+}
+
+/* --- Footer --- */
+.mkt-footer {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: 0;
+  padding-block: var(--s7) var(--s6);
+  background: var(--ground-deep);
+  border-top: 1px solid var(--stroke-faint);
+  font-size: 0.86rem;
+  color: var(--text-3);
+}
+
+.mkt-footer__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: var(--s6);
+}
+
+.mkt-footer__wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-1);
+  text-decoration: none;
+  margin-bottom: var(--s3);
+}
+
+.mkt-footer p {
+  font-size: 0.82rem;
+  max-width: 58ch;
+  margin: 0.35rem 0;
+}
+
+.mkt-footer .nav-list {
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* --- Mobile nav (hamburger + dropdown panel) ---
+   `.mkt-menu-toggle`/`.mkt-menu-panel` only ever render inside
+   MarketingLayout's header nav. Hidden by default (desktop: the inline
+   `.nav-list`/`.nav-actions` above do the job); the `@media (max-width:
+   56rem)` block below swaps that around — an intentional improvement on
+   the approved mockup, which only hides the links under its equivalent
+   breakpoint and puts nothing in their place (the reported "3 stacked
+   rows" bug). React only toggles the `is-open` class and the `inert`
+   attribute (MarketingLayout.tsx) — no inline `style` (CSP: style-src
+   'self'). `inert` (not just CSS) is what actually removes the closed
+   panel's links from the tab order and the accessibility tree; the
+   visibility/opacity/transform transition below is the visual layer on
+   top of that, and is fully neutralized by the reduced-motion kill-switch
+   near the top of this file (`*, *::before, *::after { transition: none
+   !important }`). */
+.mkt-menu-toggle {
+  display: none;
+}
+
+.mkt-menu-panel {
+  display: none;
+}
+
+@media (max-width: 56rem) {
+  .site-header .nav-list,
+  .site-header .nav-actions {
+    display: none;
+  }
+
+  .mkt-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* >= 44px touch target (WCAG 2.5.8). */
+    width: 44px;
+    height: 44px;
+    /* Hamburger sits at the far LEFT of the header (owner preference), with
+       the wordmark following it — `order: -1` makes it the first flex item
+       instead of `margin-left: auto` pushing it to the right. */
+    order: -1;
+    border-radius: var(--r-m);
+    border: 1px solid var(--stroke);
+    background: var(--surface-1);
+    color: var(--text-1);
+    cursor: pointer;
+    transition:
+      border-color 180ms var(--ease),
+      transform 120ms var(--ease);
+  }
+
+  .mkt-menu-toggle:hover {
+    border-color: var(--stroke-strong);
+  }
+
+  .mkt-menu-toggle svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .mkt-menu-panel {
+    display: block;
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    margin-top: var(--s3);
+    padding: var(--s4) var(--s5) var(--s5);
+    border-radius: var(--r-m);
+    background: var(--glass-solid);
+    border: 1px solid var(--stroke-faint);
+    box-shadow: var(--shadow-m);
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition:
+      opacity 200ms var(--ease),
+      transform 200ms var(--ease),
+      visibility 0s linear 200ms;
+  }
+
+  .mkt-menu-panel.is-open {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+      opacity 200ms var(--ease),
+      transform 200ms var(--ease),
+      visibility 0s linear 0s;
+  }
+
+  .mkt-menu-panel__links {
+    list-style: none;
+    margin: 0 0 var(--s4);
+    padding: 0;
+    display: grid;
+    gap: var(--s1);
+  }
+
+  .mkt-menu-panel__links a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--r-s);
+    text-decoration: none;
+    color: var(--text-2);
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .mkt-menu-panel__links a:hover {
+    color: var(--text-1);
+    background: var(--surface-1);
+  }
+
+  .mkt-menu-panel__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+    padding-top: var(--s4);
+    border-top: 1px solid var(--stroke-faint);
+  }
+
+  .mkt-menu-panel__actions > a:not(.cta) {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    text-decoration: none;
+    color: var(--text-2);
+    font-weight: 600;
+  }
+
+  .mkt-menu-panel__actions > a:not(.cta):hover {
+    color: var(--text-1);
+  }
+
+  .mkt-menu-panel__actions .cta {
+    justify-content: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 64rem) {
+  .mkt-hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .mkt-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 48rem) {
+  .mkt-truth-grid {
+    grid-template-columns: 1fr;
+  }
+  .mkt-footer__inner {
+    grid-template-columns: 1fr;
+  }
+  .mkt-plans {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 30rem) {
+  .hero {
+    padding: var(--s6) 0 var(--s7);
+  }
+  .mkt-section {
+    padding: var(--s7) 0;
+  }
+  .mkt-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* How it works (Slice 3) has 5 steps, not Home's fixed 4 — reflow instead
+   of forcing `repeat(4, ...)`'s uneven last row. Declared after every
+   `.mkt-steps` breakpoint above (same specificity, later in source) so it
+   wins at every width without touching Home's own grid. */
+.mkt-steps--flow {
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+}
+
+/* Marketing responsive tightening (docs/redesign/app-interface-spec.md
+   §13.2). */
+@media (max-width: 30rem) {
+  .mkt-cta-row .cta,
+  .mkt-cta-row .mkt-btn-quiet {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  .mkt-plan-row {
+    flex-direction: column;
+  }
+  .mkt-hero-panel {
+    padding: 1.25rem;
+  }
+}
+
+/* ============================================================
+   MARKETING PAGES — 2026-08-21 handoff redesign
+   ("Bidmorrow repository connection" design bundle,
+   `BidMorrow Marketing.dc.html`): How it works, Methodology and
+   Pricing rebuilt to the new layout. Same rules as the rest of this
+   section — the design's inline styles are migrated into tokens here
+   (CSP: no unsafe-inline), its `--bm-*` palette maps onto the
+   Control Room tokens (canvas→ground, panel→glass-solid,
+   line-hair→stroke-faint, accent→sol-1, caution/risk→status tokens),
+   fonts stay system stacks (no webfonts) and the theme stays
+   single-dark — both owner decisions that supersede the prototype's
+   Archivo import and light/dark toggle. Every animation use is inside
+   `prefers-reduced-motion: no-preference`, and the global reduce
+   kill-switch above still wins regardless.
+   ============================================================ */
+
+/* --- Shared: standfirst under the page h1 (design's 19px lede) --- */
+.mkt-standfirst {
+  max-width: 58ch;
+  font-size: 1.15rem;
+  line-height: 1.55;
+  color: var(--text-2);
+  text-wrap: pretty;
+  margin: 0 0 clamp(2.25rem, 5vw, 4rem);
+}
+
+/* --- Shared: section titles inside the redesigned pages --- */
+.mkt-sec-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.125rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.mkt-sec-lede {
+  margin: 0;
+  max-width: 68ch;
+  font-size: 1.03rem;
+  line-height: 1.62;
+  color: var(--text-2);
+  text-wrap: pretty;
+}
+
+/* --- How it works: five flow rows (number / body / 300px figure) --- */
+.mkt-flow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mkt-flow__step {
+  display: grid;
+  grid-template-columns: 84px 1fr 300px;
+  gap: clamp(1rem, 3vw, 2.25rem);
+  padding: 1.875rem 0;
+  border-top: 1px solid var(--stroke-faint);
+  align-items: start;
+}
+
+.mkt-flow__step:last-child {
+  border-bottom: 1px solid var(--stroke-faint);
+}
+
+.mkt-flow__num {
+  font-family: var(--font-display);
+  font-size: 2.75rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--accent-text);
+}
+
+.mkt-flow__body {
+  display: grid;
+  gap: 0.5625rem;
+}
+
+.mkt-flow__body h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.4375rem, 2.6vw, 1.875rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.mkt-flow__body p {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 1.03rem;
+  line-height: 1.62;
+  color: var(--text-2);
+  text-wrap: pretty;
+}
+
+.mkt-flow__link {
+  justify-self: start;
+  font-size: 0.9rem;
+  text-decoration: underline;
+}
+
+/* Figures: one panel per step, in the step's own motion vocabulary. */
+.mkt-figure {
+  background: var(--glass-solid);
+  border: 1px solid var(--stroke-faint);
+  border-radius: var(--r-xl);
+  padding: 1rem;
+  min-height: 132px;
+}
+
+/* 1 — profile chips */
+.mkt-figure--chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4375rem;
+  align-content: flex-start;
+}
+
+.mkt-fig-chip {
+  border: 1px solid var(--accent-edge);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border-radius: 999px;
+  padding: 0.3125rem 0.6875rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
+/* 2 — TED scan */
+.mkt-figure--scan {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 0.5625rem;
+  align-content: start;
+}
+
+.mkt-fig-line {
+  height: 8px;
+  background: var(--ground-deep);
+  border-radius: 999px;
+  display: block;
+}
+
+.mkt-fig-line:nth-child(1) {
+  width: 92%;
+}
+.mkt-fig-line:nth-child(2) {
+  width: 76%;
+}
+.mkt-fig-line:nth-child(3) {
+  width: 84%;
+}
+.mkt-fig-line:nth-child(4) {
+  width: 61%;
+}
+.mkt-fig-line:nth-child(5) {
+  width: 88%;
+}
+.mkt-fig-line:nth-child(6) {
+  width: 48%;
+}
+
+.mkt-fig-scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: var(--sol-1);
+  opacity: 0.75;
+  display: block;
+}
+
+/* 3 — score bars */
+.mkt-figure--bars {
+  display: grid;
+  gap: 0.5625rem;
+  align-content: center;
+}
+
+.mkt-fig-bar {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.mkt-fig-bar__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+}
+
+.mkt-fig-bar__label {
+  color: var(--text-3);
+}
+
+.mkt-fig-bar__value {
+  color: var(--text-2);
+}
+
+.mkt-fig-bar--lead .mkt-fig-bar__value {
+  color: var(--accent-text);
+}
+
+.mkt-fig-bar--unknown .mkt-fig-bar__value {
+  color: var(--status-caution-text);
+}
+
+.mkt-fig-bar__track {
+  height: 4px;
+  background: var(--ground-deep);
+  border-radius: 999px;
+  overflow: hidden;
+  display: block;
+}
+
+.mkt-fig-bar__fill {
+  display: block;
+  height: 4px;
+  background: var(--sol-1);
+  transform-origin: left;
+}
+
+.mkt-fig-bar--unknown .mkt-fig-bar__fill {
+  background: var(--status-caution-text);
+}
+
+.mkt-fig-bar:nth-child(1) .mkt-fig-bar__fill {
+  width: 100%;
+}
+.mkt-fig-bar:nth-child(2) .mkt-fig-bar__fill {
+  width: 70%;
+}
+.mkt-fig-bar:nth-child(3) .mkt-fig-bar__fill {
+  width: 100%;
+}
+.mkt-fig-bar:nth-child(4) .mkt-fig-bar__fill {
+  width: 50%;
+}
+.mkt-fig-bar:nth-child(5) .mkt-fig-bar__fill {
+  width: 100%;
+}
+
+/* 4 — feed sort */
+.mkt-figure--feed {
+  display: grid;
+  gap: 0.5rem;
+  align-content: center;
+  overflow: hidden;
+}
+
+.mkt-fig-card {
+  border: 1px solid var(--stroke-faint);
+  border-radius: var(--r-m);
+  padding: 0.5625rem 0.6875rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.625rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+}
+
+.mkt-fig-card__label {
+  color: var(--text-3);
+}
+
+.mkt-fig-card__score {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+
+.mkt-fig-card--lead {
+  border-color: var(--accent-edge);
+  background: var(--accent-soft);
+}
+
+.mkt-fig-card--lead .mkt-fig-card__label,
+.mkt-fig-card--lead .mkt-fig-card__score {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+/* 5 — digest week */
+.mkt-figure--digest {
+  display: grid;
+  gap: 0.75rem;
+  align-content: center;
+}
+
+.mkt-fig-days {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.mkt-fig-day {
+  flex: 1 1 0;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--stroke-faint);
+  background: transparent;
+}
+
+.mkt-fig-day--send {
+  border-color: var(--accent-edge);
+  background: var(--accent-soft);
+}
+
+.mkt-fig-note {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+/* CTA row note ("€29/month · first 50 customers") */
+.mkt-cta-note {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-3);
+}
+
+/* --- Methodology: page stack + component split --- */
+.mkt-method {
+  display: grid;
+  gap: clamp(2.125rem, 5vw, 3.5rem);
+}
+
+.mkt-method section {
+  display: grid;
+  gap: 1.125rem;
+}
+
+.mkt-comp-head,
+.mkt-comp-row {
+  display: grid;
+  grid-template-columns: 1fr 66px 270px;
+  gap: 0.875rem;
+}
+
+.mkt-comp-head {
+  padding-bottom: 2px;
+}
+
+.mkt-comp-head span {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.mkt-comp-head span:nth-child(2) {
+  text-align: right;
+}
+
+.mkt-comp-list {
+  display: grid;
+  gap: 0.8125rem;
+}
+
+.mkt-comp-row {
+  align-items: center;
+  border-top: 1px solid var(--stroke-faint);
+  padding-top: 0.75rem;
+}
+
+.mkt-comp-row__name {
+  display: grid;
+  gap: 0.375rem;
+  font-size: 0.91rem;
+  color: var(--text-1);
+}
+
+.mkt-comp-row__track {
+  height: 6px;
+  background: var(--ground-deep);
+  border-radius: 999px;
+  overflow: hidden;
+  display: block;
+}
+
+.mkt-comp-row__fill {
+  display: block;
+  height: 6px;
+  background: var(--sol-1);
+  transform-origin: left;
+}
+
+.mkt-comp-row:nth-child(1) .mkt-comp-row__fill {
+  width: 100%;
+}
+.mkt-comp-row:nth-child(2) .mkt-comp-row__fill {
+  width: 57%;
+}
+.mkt-comp-row:nth-child(3) .mkt-comp-row__fill {
+  width: 43%;
+}
+.mkt-comp-row:nth-child(4) .mkt-comp-row__fill {
+  width: 29%;
+}
+.mkt-comp-row:nth-child(5) .mkt-comp-row__fill {
+  width: 14%;
+}
+.mkt-comp-row:nth-child(6) .mkt-comp-row__fill {
+  width: 14%;
+}
+.mkt-comp-row:nth-child(7) .mkt-comp-row__fill {
+  width: 14%;
+}
+.mkt-comp-row:nth-child(8) .mkt-comp-row__fill {
+  width: 14%;
+}
+
+.mkt-comp-row__max {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  color: var(--text-2);
+  text-align: right;
+}
+
+.mkt-comp-row__policy {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+.mkt-comp-row__policy--accent {
+  color: var(--accent-text);
+}
+
+/* --- Methodology: score tiers --- */
+.mkt-tiers {
+  display: grid;
+  gap: 0.5625rem;
+  max-width: 820px;
+}
+
+.mkt-tier {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 1rem;
+  padding: 0.8125rem 0;
+  border-top: 1px solid var(--stroke-faint);
+  align-items: baseline;
+}
+
+.mkt-tier__range {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.mkt-tier__range--strong {
+  color: var(--accent-text);
+}
+
+.mkt-tier__range--top {
+  color: var(--text-1);
+}
+
+.mkt-tier__range--low {
+  color: var(--text-3);
+}
+
+.mkt-tier__body {
+  display: grid;
+  gap: 0.1875rem;
+}
+
+.mkt-tier__label {
+  font-size: 0.9375rem;
+  color: var(--text-1);
+}
+
+.mkt-tier__note {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+/* --- Methodology: risk-flag pills + confidence cards --- */
+.mkt-pill-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mkt-pill {
+  border: 1px solid var(--stroke-faint);
+  border-radius: 999px;
+  padding: 0.4375rem 0.8125rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-2);
+}
+
+.mkt-evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.mkt-evidence-card {
+  border-radius: 14px;
+  padding: 0.875rem 1rem;
+  display: grid;
+  gap: 0.3125rem;
+}
+
+.mkt-evidence-card p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.mkt-evidence-card--confirmed {
+  border: 1px solid var(--accent-edge);
+  background: var(--accent-soft);
+}
+
+.mkt-evidence-card--possible {
+  border: 1px solid var(--status-caution-text);
+  background: var(--status-caution-wash);
+}
+
+/* --- Methodology: the five exclusion rules --- */
+.mkt-rule {
+  grid-template-columns: 34px 1fr;
+  gap: 0.75rem;
+  padding: 0.875rem 1.125rem;
+  align-items: baseline;
+}
+
+.mkt-rule__num {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent-text);
+}
+
+.mkt-rule__text {
+  font-size: 0.91rem;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+/* --- Redesign page-flow spacing + small addenda --- */
+.mkt-flow + .mkt-cta-row {
+  padding: clamp(2.125rem, 5vw, 3.375rem) 0;
+  margin-bottom: 0;
+}
+
+.mkt-plan__cap--quiet {
+  color: var(--text-3);
+}
+
+.mkt-hold {
+  margin-bottom: var(--s6);
+}
+
+.mkt-factgrid {
+  margin: var(--s5) 0 var(--s6);
+}
+
+/* --- Pricing: quiet standard card (design: transparent + hairline) --- */
+.mkt-plan--quiet {
+  background: transparent;
+  border-color: var(--stroke-faint);
+}
+
+/* --- Pricing: twelve-month price-hold comparison --- */
+.mkt-hold {
+  background: var(--glass-solid);
+  border: 1px solid var(--stroke-faint);
+  border-radius: 24px;
+  padding: clamp(1.375rem, 3vw, 2rem);
+  display: grid;
+  gap: 1.125rem;
+}
+
+.mkt-hold__head {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.mkt-hold__cap {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.mkt-hold__lede {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.mkt-hold__bars {
+  display: grid;
+  gap: 0.875rem;
+}
+
+.mkt-hold__line {
+  display: grid;
+  gap: 0.4375rem;
+}
+
+.mkt-hold__labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--text-3);
+}
+
+.mkt-hold__total {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9375rem;
+  color: var(--text-2);
+}
+
+.mkt-hold__line--founding .mkt-hold__labels,
+.mkt-hold__line--founding .mkt-hold__total {
+  color: var(--accent-text);
+}
+
+.mkt-hold__line--founding .mkt-hold__total {
+  font-weight: 600;
+}
+
+.mkt-hold__track {
+  height: 10px;
+  background: var(--ground-deep);
+  border-radius: 999px;
+  overflow: hidden;
+  display: block;
+}
+
+.mkt-hold__fill {
+  display: block;
+  height: 10px;
+  background: var(--stroke-strong);
+  width: 100%;
+}
+
+.mkt-hold__line--founding .mkt-hold__fill {
+  background: var(--sol-1);
+  width: 59%; /* 348 / 588 */
+  transform-origin: left;
+}
+
+.mkt-hold__months {
+  display: flex;
+  gap: 0.3125rem;
+  align-items: flex-end;
+}
+
+.mkt-hold__month {
+  flex: 1 1 0;
+  height: 20px;
+  border-radius: 3px;
+  border: 1px solid var(--accent-edge);
+  background: var(--accent-soft);
+}
+
+.mkt-hold__note {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--text-3);
+}
+
+/* --- Motion (all uses gated; global reduce kill-switch still wins) --- */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes mkt-scan {
+    0% {
+      transform: translateY(-6px);
+      opacity: 0;
+    }
+    18% {
+      opacity: 1;
+    }
+    82% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(108px);
+      opacity: 0;
+    }
+  }
+  @keyframes mkt-grow-x {
+    0% {
+      transform: scaleX(0);
+    }
+    55% {
+      transform: scaleX(1);
+    }
+    100% {
+      transform: scaleX(1);
+    }
+  }
+  @keyframes mkt-chip-in {
+    0%,
+    12% {
+      opacity: 0.14;
+      transform: translateY(3px);
+    }
+    26%,
+    88% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0.14;
+      transform: translateY(3px);
+    }
+  }
+  @keyframes mkt-pulse {
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+    50% {
+      opacity: 0.85;
+    }
+  }
+  @keyframes mkt-lift {
+    0%,
+    12% {
+      transform: translateY(26px);
+      opacity: 0.25;
+    }
+    40%,
+    88% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(26px);
+      opacity: 0.25;
+    }
+  }
+  @keyframes mkt-settle {
+    0%,
+    12% {
+      transform: translateY(-13px);
+    }
+    40%,
+    100% {
+      transform: translateY(0);
+    }
+  }
+
+  .mkt-fig-chip {
+    animation: mkt-chip-in 7s ease-in-out infinite;
+  }
+  .mkt-fig-chip:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .mkt-fig-chip:nth-child(2) {
+    animation-delay: 340ms;
+  }
+  .mkt-fig-chip:nth-child(3) {
+    animation-delay: 680ms;
+  }
+  .mkt-fig-chip:nth-child(4) {
+    animation-delay: 1020ms;
+  }
+  .mkt-fig-chip:nth-child(5) {
+    animation-delay: 1360ms;
+  }
+  .mkt-fig-chip:nth-child(6) {
+    animation-delay: 1700ms;
+  }
+  .mkt-fig-chip:nth-child(7) {
+    animation-delay: 2040ms;
+  }
+  .mkt-fig-chip:nth-child(8) {
+    animation-delay: 2380ms;
+  }
+
+  .mkt-fig-scanline {
+    animation: mkt-scan 2.8s ease-in-out infinite;
+  }
+
+  .mkt-fig-bar__fill {
+    animation: mkt-grow-x 6s ease-out infinite;
+  }
+  .mkt-fig-bar:nth-child(2) .mkt-fig-bar__fill {
+    animation-delay: 160ms;
+  }
+  .mkt-fig-bar:nth-child(3) .mkt-fig-bar__fill {
+    animation-delay: 320ms;
+  }
+  .mkt-fig-bar:nth-child(4) .mkt-fig-bar__fill {
+    animation-delay: 480ms;
+  }
+  .mkt-fig-bar:nth-child(5) .mkt-fig-bar__fill {
+    animation-delay: 640ms;
+  }
+
+  .mkt-fig-card--lead {
+    animation: mkt-lift 7s ease-in-out infinite;
+  }
+  .mkt-fig-card:nth-child(2) {
+    animation: mkt-settle 7s ease-in-out 120ms infinite;
+  }
+  .mkt-fig-card:nth-child(3) {
+    animation: mkt-settle 7s ease-in-out 240ms infinite;
+  }
+
+  .mkt-fig-day {
+    animation: mkt-pulse 5.5s ease-in-out infinite;
+  }
+  .mkt-fig-day:nth-child(2) {
+    animation-delay: 260ms;
+  }
+  .mkt-fig-day:nth-child(3) {
+    animation-delay: 520ms;
+  }
+  .mkt-fig-day:nth-child(4) {
+    animation-delay: 780ms;
+  }
+  .mkt-fig-day:nth-child(5) {
+    animation-delay: 1040ms;
+  }
+  .mkt-fig-day:nth-child(6) {
+    animation-delay: 1300ms;
+  }
+  .mkt-fig-day:nth-child(7) {
+    animation-delay: 1560ms;
+  }
+
+  .mkt-comp-row__fill {
+    animation: mkt-grow-x 5.5s ease-out infinite;
+  }
+  .mkt-comp-row:nth-child(2) .mkt-comp-row__fill {
+    animation-delay: 110ms;
+  }
+  .mkt-comp-row:nth-child(3) .mkt-comp-row__fill {
+    animation-delay: 220ms;
+  }
+  .mkt-comp-row:nth-child(4) .mkt-comp-row__fill {
+    animation-delay: 330ms;
+  }
+  .mkt-comp-row:nth-child(5) .mkt-comp-row__fill {
+    animation-delay: 440ms;
+  }
+  .mkt-comp-row:nth-child(6) .mkt-comp-row__fill {
+    animation-delay: 550ms;
+  }
+  .mkt-comp-row:nth-child(7) .mkt-comp-row__fill {
+    animation-delay: 660ms;
+  }
+  .mkt-comp-row:nth-child(8) .mkt-comp-row__fill {
+    animation-delay: 770ms;
+  }
+
+  .mkt-hold__line--founding .mkt-hold__fill {
+    animation: mkt-grow-x 3.4s ease-out both;
+  }
+  .mkt-hold__month {
+    animation: mkt-pulse 6s ease-in-out infinite;
+  }
+  .mkt-hold__month:nth-child(2) {
+    animation-delay: 190ms;
+  }
+  .mkt-hold__month:nth-child(3) {
+    animation-delay: 380ms;
+  }
+  .mkt-hold__month:nth-child(4) {
+    animation-delay: 570ms;
+  }
+  .mkt-hold__month:nth-child(5) {
+    animation-delay: 760ms;
+  }
+  .mkt-hold__month:nth-child(6) {
+    animation-delay: 950ms;
+  }
+  .mkt-hold__month:nth-child(7) {
+    animation-delay: 1140ms;
+  }
+  .mkt-hold__month:nth-child(8) {
+    animation-delay: 1330ms;
+  }
+  .mkt-hold__month:nth-child(9) {
+    animation-delay: 1520ms;
+  }
+  .mkt-hold__month:nth-child(10) {
+    animation-delay: 1710ms;
+  }
+  .mkt-hold__month:nth-child(11) {
+    animation-delay: 1900ms;
+  }
+  .mkt-hold__month:nth-child(12) {
+    animation-delay: 2090ms;
+  }
+}
+
+/* --- Responsive collapse (design's 860px / 760px rules) --- */
+@media (max-width: 53.75rem) {
+  .mkt-flow__step {
+    grid-template-columns: 64px 1fr;
+  }
+  .mkt-flow__step .mkt-figure {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 47.5rem) {
+  .mkt-comp-head,
+  .mkt-comp-row {
+    grid-template-columns: 1fr 66px;
+  }
+  .mkt-comp-head span:nth-child(3) {
+    display: none;
+  }
+  .mkt-comp-row__policy {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ============================================================
+   HOMEPAGE — 2026-08-21 handoff redesign (`BidMorrow
+   Homepage.dc.html`). Same porting rules as the marketing/auth
+   sections above. Bars are native <progress class="score-bar">
+   (CSP), the score rings are SVG attributes, and every animation
+   use sits inside `prefers-reduced-motion: no-preference`.
+   ============================================================ */
+
+.hp-hero-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Drifting grid + pulsing accent dots behind the hero. */
+.hp-grid-bg {
+  position: absolute;
+  left: -40px;
+  right: -40px;
+  top: -80px;
+  height: 660px;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.hp-grid-bg__cols,
+.hp-grid-bg__rows {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.hp-grid-bg__cols {
+  background-image: repeating-linear-gradient(90deg, var(--line-hair) 0 1px, transparent 1px 84px);
+}
+
+.hp-grid-bg__rows {
+  background-image: repeating-linear-gradient(0deg, var(--line-hair) 0 1px, transparent 1px 84px);
+  opacity: 0.7;
+}
+
+.hp-grid-bg__dot {
+  position: absolute;
+  border-radius: 999px;
+  background: var(--accent);
+  display: block;
+  opacity: 0.2;
+}
+
+.hp-grid-bg__dot--1 {
+  left: 12%;
+  top: 180px;
+  width: 6px;
+  height: 6px;
+}
+.hp-grid-bg__dot--2 {
+  left: 46%;
+  top: 96px;
+  width: 5px;
+  height: 5px;
+}
+.hp-grid-bg__dot--3 {
+  left: 72%;
+  top: 268px;
+  width: 7px;
+  height: 7px;
+}
+.hp-grid-bg__dot--4 {
+  left: 88%;
+  top: 132px;
+  width: 4px;
+  height: 4px;
+}
+
+.hp-hero {
+  position: relative;
+  padding-top: clamp(3.5rem, 9vw, 6rem);
+}
+
+.hp-hero h1 {
+  margin: 0 0 1.5rem;
+  font-family: var(--font-head);
+  font-size: clamp(2.375rem, 8vw, 4.75rem);
+  line-height: 1.02;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  max-width: 20ch;
+  text-wrap: pretty;
+}
+
+.hp-hero__sub {
+  margin: 0 0 2.25rem;
+  max-width: 62ch;
+  font-size: 1.1875rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* Section rhythm. */
+.hp-section {
+  padding-top: clamp(2.5rem, 6vw, 4rem);
+}
+
+.hp-section--major {
+  padding-top: clamp(3.75rem, 9vw, 6.5rem);
+}
+
+.hp-section--last {
+  padding-bottom: clamp(3rem, 6vw, 5rem);
+}
+
+.hp-h2 {
+  margin: 0 0 0.875rem;
+  font-family: var(--font-head);
+  font-size: clamp(1.875rem, 5vw, 2.875rem);
+  line-height: 1.08;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  max-width: 26ch;
+}
+
+.hp-lede {
+  margin: 0 0 2.25rem;
+  max-width: 68ch;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* --- Demo feed panel --- */
+.hp-demo {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: clamp(20px, 3vw, 32px);
+  padding: clamp(0.875rem, 2.6vw, 1.625rem);
+  box-shadow: var(--shadow-panel);
+}
+
+.hp-demo__chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0 0.375rem 1.25rem;
+}
+
+.hp-demo__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+
+.hp-demo__crumb {
+  margin-left: 0.5rem;
+  font-family: var(--font-num);
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+.hp-demo__geo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0 0.375rem 1.125rem;
+}
+
+.hp-demo__geo-note {
+  font-size: 0.78rem;
+  color: var(--ink-3);
+}
+
+.hp-geo-chip {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line-hair);
+  border-radius: 999px;
+  padding: 0.3125rem 0.75rem;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.hp-geo-chip.is-active {
+  background: var(--accent-tint);
+  border-color: var(--accent-line);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.hp-demo__cards {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* Visible product-truth caption over the example cards (review PR-001):
+   the panel is illustrative, and sighted users must see that, not just AT. */
+.hp-demo__disclaimer {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+  padding: 0 0.375rem;
+}
+
+/* Demo tender card: fit gutter carries strength (Theme Spec §04/§07). */
+.hp-card {
+  display: grid;
+  grid-template-columns: 4px 1fr;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-hair);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.hp-card__gutter {
+  background: var(--line-strong);
+}
+
+.hp-card--strong .hp-card__gutter {
+  background: var(--accent);
+}
+
+.hp-card--mid .hp-card__gutter {
+  background: var(--accent-line);
+}
+
+.hp-card__body {
+  padding: 1.25rem 1.375rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.hp-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.hp-ring {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.hp-ring--lg {
+  width: 56px;
+  height: 56px;
+}
+
+.hp-ring__track {
+  stroke: var(--bg-sunken);
+}
+
+.hp-ring__fill {
+  stroke: var(--accent);
+}
+
+.hp-card--mid .hp-ring__fill {
+  stroke: var(--accent-line);
+}
+
+.hp-card--neutral .hp-ring__fill {
+  stroke: var(--line-strong);
+}
+
+.hp-ring__num {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-num);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ink-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-ring--lg .hp-ring__num {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.hp-card__chip {
+  border-radius: 999px;
+  padding: 0.1875rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+}
+
+.hp-card--strong .hp-card__chip,
+.hp-card--mid .hp-card__chip {
+  background: var(--accent-tint);
+  border-color: var(--accent-line);
+  color: var(--accent-text);
+}
+
+.hp-card--mid .hp-card__chip {
+  background: transparent;
+}
+
+.hp-card__deadline {
+  margin-left: auto;
+  font-family: var(--font-num);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-card__deadline--risk {
+  color: var(--sig-risk);
+}
+
+.hp-card__deadline--caution {
+  color: var(--sig-caution);
+}
+
+.hp-card__deadline--quiet {
+  color: var(--ink-2);
+}
+
+.hp-card__title {
+  margin: 0 0 0.3125rem;
+  font-family: var(--font-head);
+  font-size: 1.3125rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.hp-card__meta {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--ink-2);
+}
+
+.hp-card__comps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.375rem 1.75rem;
+}
+
+.hp-comp {
+  display: grid;
+  grid-template-columns: 1fr 70px 52px;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.hp-comp__name {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hp-comp__pts {
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  color: var(--ink-3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Risk line: signal colors, never fit colors. */
+.hp-risk {
+  margin: 0;
+  display: flex;
+  gap: 0.5625rem;
+  align-items: baseline;
+  border-radius: 0 12px 12px 0;
+  padding: 0.5625rem 0.75rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--ink-1);
+}
+
+.hp-risk--blocker {
+  background: var(--sig-risk-tint);
+  border-left: 2px solid var(--sig-risk);
+}
+
+.hp-risk--caution {
+  background: var(--sig-caution-tint);
+  border-left: 2px solid var(--sig-caution);
+}
+
+.hp-risk__kind {
+  font-family: var(--font-num);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.hp-risk--blocker .hp-risk__kind {
+  color: var(--sig-risk);
+}
+
+.hp-risk--caution .hp-risk__kind {
+  color: var(--sig-caution);
+}
+
+/* --- Facts row --- */
+.hp-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.875rem;
+}
+
+.hp-fact {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 22px;
+  padding: 1.375rem;
+}
+
+.hp-fact__value {
+  margin: 0 0 0.625rem;
+  font-family: var(--font-head);
+  font-size: 1.875rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.hp-fact__label {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* --- How-it-works stepper --- */
+.hp-how {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.hp-how__steps {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.hp-step {
+  appearance: none;
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--line-hair);
+  border-radius: 20px;
+  padding: 1.125rem 1.25rem;
+  cursor: pointer;
+  display: grid;
+  gap: 0.5rem;
+  font-family: var(--font-ui);
+  color: var(--ink-1);
+}
+
+.hp-step.is-active {
+  background: var(--bg-panel);
+  border-color: var(--accent-line);
+}
+
+.hp-step__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.hp-step__num {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-family: var(--font-num);
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+  flex: 0 0 auto;
+}
+
+.hp-step.is-active .hp-step__num {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.hp-step__title {
+  font-family: var(--font-head);
+  font-size: 1.1875rem;
+  font-weight: 600;
+}
+
+.hp-step__detail {
+  display: grid;
+  gap: 0.625rem;
+  padding-left: 2.625rem;
+}
+
+.hp-step__body {
+  font-size: 0.91rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+  display: block;
+}
+
+.hp-step__progress {
+  height: 2px;
+}
+
+.hp-how__controls {
+  display: flex;
+  gap: 0.625rem;
+  align-items: center;
+  padding-top: 0.25rem;
+}
+
+.hp-how__play {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.hp-how__counter {
+  font-size: 0.78rem;
+  color: var(--ink-3);
+}
+
+/* Stage panel. */
+.hp-stage {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 24px;
+  padding: 1.625rem;
+  min-height: 300px;
+  display: grid;
+  align-content: start;
+  gap: 1.125rem;
+}
+
+.hp-stage__caption {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.hp-stage__note {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.hp-stage__scan {
+  position: relative;
+  display: grid;
+  gap: 0.5625rem;
+  overflow: hidden;
+  padding: 0.25rem 0;
+}
+
+.hp-stage__line {
+  height: 8px;
+  background: var(--bg-sunken);
+  border-radius: 999px;
+  display: block;
+}
+
+.hp-stage__line:nth-child(1) {
+  width: 92%;
+}
+.hp-stage__line:nth-child(2) {
+  width: 76%;
+}
+.hp-stage__line:nth-child(3) {
+  width: 84%;
+}
+.hp-stage__line:nth-child(4) {
+  width: 61%;
+}
+.hp-stage__line:nth-child(5) {
+  width: 88%;
+}
+.hp-stage__line:nth-child(6) {
+  width: 48%;
+}
+
+.hp-stage__scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.7;
+  display: block;
+}
+
+.hp-stage__chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.hp-stage__chip {
+  background: var(--accent-tint);
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  padding: 0.375rem 0.75rem;
+  font-family: var(--font-num);
+  font-size: 0.78rem;
+  color: var(--accent-text);
+}
+
+.hp-stage__bars {
+  display: grid;
+  gap: 0.5625rem;
+}
+
+.hp-sbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px 56px;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.hp-sbar__label {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+
+.hp-sbar__pts {
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  color: var(--ink-3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-verdict {
+  display: grid;
+  gap: 0.875rem;
+}
+
+.hp-verdict__head {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.hp-verdict__id {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.hp-verdict__chip {
+  background: var(--accent-tint);
+  border: 1px solid var(--accent-line);
+  color: var(--accent-text);
+  border-radius: 999px;
+  padding: 0.1875rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  justify-self: start;
+}
+
+.hp-verdict__band {
+  font-family: var(--font-num);
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+/* --- Methodology truths --- */
+.hp-truths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.hp-truth {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 24px;
+  padding: 1.75rem;
+}
+
+.hp-truth h3 {
+  margin: 0 0 0.625rem;
+  font-family: var(--font-head);
+  font-size: 1.375rem;
+  font-weight: 600;
+}
+
+.hp-truth p {
+  margin: 0;
+  font-size: 0.91rem;
+  line-height: 1.65;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* --- Score section --- */
+.hp-score {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.hp-score__list {
+  max-width: none;
+}
+
+.hp-scorerow {
+  grid-template-columns: minmax(0, 1fr) 96px 52px;
+  gap: 0.875rem;
+  align-items: center;
+  padding: 0.875rem 1.125rem;
+}
+
+.hp-scorerow__label {
+  font-size: 0.91rem;
+  color: var(--ink-1);
+}
+
+.hp-scorerow__max {
+  font-family: var(--font-num);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-statuses {
+  display: grid;
+  gap: 0.875rem;
+}
+
+.hp-status {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 18px;
+  padding: 1.125rem 1.25rem;
+}
+
+.hp-status__label {
+  margin: 0 0 0.3125rem;
+  font-size: 0.91rem;
+  font-weight: 600;
+}
+
+.hp-status__note {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* --- Tiers --- */
+.hp-tiers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.875rem;
+}
+
+.hp-tier {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 20px;
+  padding: 1.25rem;
+}
+
+.hp-tier--strong {
+  border-color: var(--accent-line);
+}
+
+.hp-tier__range {
+  margin: 0 0 0.625rem;
+  font-family: var(--font-num);
+  font-size: 0.78rem;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-tier__range--strong {
+  color: var(--accent-text);
+}
+
+.hp-tier__label {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-head);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.hp-tier__note {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* --- Coverage --- */
+.hp-coverage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.75rem;
+  align-items: start;
+  margin-top: 2.25rem;
+}
+
+.hp-coverage__cap {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.hp-coverage__pills {
+  margin-bottom: 1rem;
+}
+
+.hp-pill {
+  background: var(--bg-panel);
+  border-color: var(--line);
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+}
+
+.hp-coverage__note {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.hp-coverage__note strong {
+  color: var(--ink-1);
+  font-weight: 400;
+}
+
+.hp-rules {
+  display: grid;
+  gap: 0.625rem;
+  margin-bottom: 0.875rem;
+}
+
+.hp-rule {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 0.75rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 16px;
+  padding: 0.875rem 1rem;
+}
+
+.hp-rule__num {
+  font-family: var(--font-num);
+  font-size: 0.8125rem;
+  color: var(--accent-text);
+}
+
+.hp-rule p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--ink-1);
+}
+
+/* --- Pricing --- */
+.hp-plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.hp-plan {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 28px;
+  padding: 2rem;
+}
+
+.hp-plan--founding {
+  border-color: var(--accent-line);
+}
+
+.hp-plan__cap {
+  margin: 0 0 1rem;
+  font-family: var(--font-num);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.hp-plan__cap--accent {
+  color: var(--accent-text);
+}
+
+.hp-plan__price {
+  margin: 0 0 0.375rem;
+  font-family: var(--font-head);
+  font-size: 3.25rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.hp-plan__per {
+  font-family: var(--font-ui);
+  font-size: 1.0625rem;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.hp-plan__desc {
+  margin: 0 0 1.375rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.hp-plan__list {
+  list-style: none;
+  margin: 0 0 1.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.6875rem;
+}
+
+.hp-plan__list li {
+  font-size: 0.91rem;
+  line-height: 1.55;
+  color: var(--ink-1);
+  display: grid;
+  grid-template-columns: 15px 1fr;
+  gap: 0.625rem;
+}
+
+.hp-plan__list li::before {
+  content: '✓';
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.hp-plan .cta,
+.hp-plan .mkt-btn-quiet {
+  justify-self: start;
+}
+
+.hp-plans__foot {
+  margin: 1.375rem 0 0;
+  font-size: 0.875rem;
+  color: var(--ink-3);
+}
+
+/* --- FAQ --- */
+.hp-faqs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.hp-faq {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 20px;
+  padding: 1.375rem 1.5rem;
+}
+
+.hp-faq__q {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-head);
+  font-size: 1.1875rem;
+  font-weight: 600;
+}
+
+.hp-faq__a {
+  margin: 0;
+  font-size: 0.91rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* --- Closing CTA --- */
+.hp-close {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: clamp(20px, 3vw, 32px);
+  padding: clamp(1.75rem, 5vw, 3.5rem) clamp(1.25rem, 4vw, 3rem);
+  display: flex;
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+  flex-wrap: wrap;
+}
+
+.hp-close h2 {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-head);
+  font-size: 2.5rem;
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  max-width: 24ch;
+}
+
+.hp-close p {
+  margin: 0;
+  max-width: 56ch;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.hp-close .cta {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* --- Consent banner + dialog --- */
+.consent-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  background: var(--bg-overlay);
+  border-top: 1px solid var(--line);
+  box-shadow: var(--shadow-overlay);
+}
+
+.consent-banner__inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.125rem clamp(1rem, 4vw, 1.75rem);
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.consent-banner__copy {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.consent-banner__title {
+  margin: 0 0 0.25rem;
+  font-size: 0.91rem;
+  font-weight: 600;
+}
+
+.consent-banner__note {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.consent-banner__actions {
+  display: flex;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+}
+
+.consent-btn {
+  appearance: none;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.6875rem 1.25rem;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.consent-btn--accent {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.consent-btn--raised {
+  background: var(--bg-raised);
+  color: var(--ink-1);
+}
+
+.consent-btn--danger {
+  border-color: var(--sig-risk);
+  color: var(--sig-risk);
+}
+
+.consent-btn--close {
+  border: 0;
+  margin-left: auto;
+  color: var(--ink-3);
+  font-weight: 400;
+  padding-inline: 0.25rem;
+}
+
+.consent-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 9, 0.55);
+  z-index: 61;
+}
+
+.consent-dialog {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 62;
+  width: min(620px, calc(100% - 32px));
+  max-height: min(86vh, 760px);
+  overflow-y: auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow-overlay);
+  padding: 1.625rem;
+}
+
+.consent-dialog__title {
+  margin: 0 0 0.375rem;
+  font-family: var(--font-head);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.consent-dialog__lede {
+  margin: 0 0 1.25rem;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.consent-rows {
+  max-width: none;
+}
+
+.consent-row {
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: 1rem;
+  align-items: start;
+}
+
+.consent-row__label {
+  margin: 0 0 0.25rem;
+  font-size: 0.91rem;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+
+.consent-row__note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.consent-row__control {
+  display: grid;
+  gap: 0.375rem;
+  justify-items: end;
+}
+
+.consent-row__locked {
+  font-family: var(--font-num);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border: 1px solid var(--line-hair);
+  border-radius: 999px;
+  padding: 0.3125rem 0.625rem;
+}
+
+.consent-row__state {
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+
+.consent-switch {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  width: 42px;
+  height: 25px;
+  border-radius: 999px;
+  background: var(--line);
+  position: relative;
+  display: inline-block;
+}
+
+.consent-switch.is-on {
+  background: var(--accent);
+}
+
+.consent-switch__knob {
+  position: absolute;
+  top: 2.5px;
+  left: 2.5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  display: block;
+}
+
+.consent-switch.is-on .consent-switch__knob {
+  left: 19.5px;
+}
+
+.consent-dialog__actions {
+  display: flex;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+  margin-top: 1.25rem;
+}
+
+.consent-dialog__foot {
+  margin: 1rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+.consent-footer {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+  align-content: start;
+}
+
+.consent-footer__state {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--ink-3);
+}
+
+.consent-footer__buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.consent-footer .consent-btn {
+  font-size: 0.78rem;
+  padding: 0.5rem 0.875rem;
+}
+
+/* --- Motion (gated; global reduce kill-switch still wins) --- */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes hp-drift-a {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(42px);
+    }
+  }
+  @keyframes hp-drift-b {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(42px);
+    }
+  }
+  @keyframes hp-pulse {
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+    50% {
+      opacity: 0.9;
+    }
+  }
+  @keyframes hp-rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes hp-scan {
+    0% {
+      transform: translateY(-6px);
+      opacity: 0;
+    }
+    18% {
+      opacity: 1;
+    }
+    82% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(108px);
+      opacity: 0;
+    }
+  }
+
+  .hp-grid-bg__cols {
+    animation: hp-drift-a 26s linear infinite alternate;
+  }
+  .hp-grid-bg__rows {
+    animation: hp-drift-b 34s linear infinite alternate;
+  }
+  .hp-grid-bg__dot--1 {
+    animation: hp-pulse 4.5s ease-in-out infinite;
+  }
+  .hp-grid-bg__dot--2 {
+    animation: hp-pulse 6s ease-in-out 1.2s infinite;
+  }
+  .hp-grid-bg__dot--3 {
+    animation: hp-pulse 5.2s ease-in-out 2.4s infinite;
+  }
+  .hp-grid-bg__dot--4 {
+    animation: hp-pulse 7s ease-in-out 0.6s infinite;
+  }
+
+  .hp-stage__line {
+    animation: hp-rise-in 420ms ease-out both;
+  }
+  .hp-stage__line:nth-child(2) {
+    animation-delay: 90ms;
+  }
+  .hp-stage__line:nth-child(3) {
+    animation-delay: 180ms;
+  }
+  .hp-stage__line:nth-child(4) {
+    animation-delay: 270ms;
+  }
+  .hp-stage__line:nth-child(5) {
+    animation-delay: 360ms;
+  }
+  .hp-stage__line:nth-child(6) {
+    animation-delay: 450ms;
+  }
+  .hp-stage__scanline {
+    animation: hp-scan 2.6s ease-in-out infinite;
+  }
+  .hp-stage__chip {
+    animation: hp-rise-in 380ms ease-out both;
+  }
+  .hp-stage__chip:nth-child(2) {
+    animation-delay: 80ms;
+  }
+  .hp-stage__chip:nth-child(3) {
+    animation-delay: 160ms;
+  }
+  .hp-stage__chip:nth-child(4) {
+    animation-delay: 240ms;
+  }
+  .hp-stage__chip:nth-child(5) {
+    animation-delay: 320ms;
+  }
+  .hp-stage__chip:nth-child(6) {
+    animation-delay: 400ms;
+  }
+  .hp-verdict {
+    animation: hp-rise-in 420ms ease-out both;
+  }
+}
+
+@media (max-width: 47.5rem) {
+  .hp-card__comps {
+    grid-template-columns: 1fr;
+  }
+  .hp-close .cta {
+    margin-left: 0;
+  }
+}
+
+/* ============================================================
+   LAUNCH COUNTDOWN — pre-launch announcement bar + countdown numerals
+   (owner decision 2026-08-21: end-of-August launch; prelaunch.ts /
+   public-config drive visibility, so staging/local never show it unless
+   the flag is flipped on deliberately).
+   ============================================================ */
+.launch-banner {
+  background: var(--accent-tint);
+  border-bottom: 1px solid var(--accent-line);
+}
+
+.launch-banner__inner {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0;
+}
+
+.launch-banner__note {
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.launch-countdown {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.launch-countdown__label {
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.launch-countdown__value {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+
+/* --- Public sample-verdict demo (/sample-verdicts) ---------------------
+   Deliberately built from the marketing vocabulary (`.mkt-section`,
+   `.mkt-truth-card`, `.mkt-table-card`) plus the app's own `.score-badge`,
+   because the page's claim is that these are the product's real verdicts —
+   showing them in a bespoke visual language would undercut that. What is
+   added here is only the per-verdict layout the marketing pages have no
+   equivalent of. */
+
+/* Three cards, so the shared two-column `.mkt-truth-grid` would leave an
+   orphan on its own row. Same cards, right column count. */
+.sample-frame {
+  margin-top: var(--s6);
+}
+
+@media (min-width: 60rem) {
+  .sample-frame {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.sample-verdicts {
+  display: grid;
+  gap: var(--s6);
+}
+
+.sample-verdict {
+  background: var(--surface-1);
+  border: 1px solid var(--line-hair);
+  border-radius: var(--r-m);
+  padding: var(--s5);
+}
+
+.sample-verdict__head {
+  display: grid;
+  gap: var(--s2);
+  padding-bottom: var(--s4);
+  border-bottom: 1px solid var(--line-hair);
+}
+
+.sample-verdict__supplier {
+  margin: 0;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.sample-verdict__title {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.sample-verdict__buyer,
+.sample-verdict__badge,
+.sample-verdict__recommendation {
+  margin: 0;
+}
+
+.sample-verdict__buyer {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+.sample-verdict__recommendation {
+  font-weight: 600;
+}
+
+/* Facts strip: outlines rather than a 1px-gap hairline grid, so a short
+   final row cannot render the container colour as a broken empty cell. */
+.sample-verdict__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0;
+  margin: var(--s4) 0;
+}
+
+.sample-verdict__facts > div {
+  outline: 1px solid var(--line-hair);
+  padding: var(--s3) var(--s4);
+}
+
+.sample-verdict__facts dt {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.sample-verdict__facts dd {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.sample-verdict__breakdown h3,
+.sample-verdict__exclusion h3,
+.sample-verdict__flags h3 {
+  font-size: 1rem;
+  margin: var(--s5) 0 var(--s3);
+}
+
+/* The breakdown table is the page's whole argument, so it gets more room
+   than `.mkt-table-card`'s default and its explanation column is allowed to
+   be the wide one. */
+.sample-verdict .mkt-table-card {
+  padding: 0;
+  margin: 0;
+}
+
+.sample-verdict .mkt-table-card table {
+  min-width: 44rem;
+}
+
+.sample-verdict .mkt-table-card td:last-child {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+/* "35 / 35" is one value; letting it wrap onto two lines reads as two. */
+.sample-verdict .mkt-table-card td:nth-child(2) {
+  white-space: nowrap;
+}
+
+.sample-verdict__exclusion p {
+  margin: 0 0 var(--s3);
+}
+
+.sample-verdict__flags ul {
+  margin: 0;
+  padding-left: var(--s4);
+  display: grid;
+  gap: var(--s2);
+}
+
+.sample-verdict__foot {
+  margin-top: var(--s5);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line-hair);
+  display: grid;
+  gap: var(--s2);
+}
+
+.sample-verdict__foot p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.sample-verdict__why {
+  color: var(--ink-2);
+}
+
+.sample-notes {
+  margin-top: var(--s6);
+}
+
+.sample-notes p {
+  margin: 0 0 var(--s3);
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.sample-notes p:last-child {
+  margin-bottom: 0;
+}
+
+/* /cybersecurity-tenders CPV table: `.mkt-table-card` sets its SECOND column
+   mono because the breakdown tables carry points there — here the code is
+   the first column and the second is prose, so the roles swap. */
+.cpv-label-table td:nth-child(2) {
+  font-family: inherit;
+  font-variant-numeric: normal;
+}
+
+.cpv-label-table td:nth-child(1) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --- Home: honest unnamed comparison module (#compare) ----------------- */
+
+/* The BidMorrow column is the argument; give it the reading emphasis the
+   row order already implies, without color-only signalling. The shared
+   `.mkt-table-card td:nth-child(2)` mono rule is for score tables whose
+   second column is points — here it is prose, so restore the text face. */
+.hp-compare table {
+  min-width: 44rem;
+  table-layout: fixed;
+}
+
+.hp-compare th:first-child {
+  width: 8.5rem;
+}
+
+.hp-compare td:nth-child(2) {
+  font-family: inherit;
+  font-variant-numeric: normal;
+  font-weight: 500;
+}
+
+.hp-compare td:nth-child(3) {
+  color: var(--ink-2);
+}
+
+.hp-compare__note {
+  max-width: 65ch;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}

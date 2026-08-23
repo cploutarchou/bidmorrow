@@ -1,0 +1,2279 @@
+/* ============================================================
+   APP — the customer product surface: onboarding assistant + sector
+   picker, feed + left rail, tender detail + slide-over, settings,
+   billing, combobox.
+
+   Imported by AppShell.tsx (lazy), Onboarding.tsx and TenderSheet.tsx,
+   so it loads with the first /app or /onboarding chunk and never
+   reaches marketing visitors. Split from styles.css 2026-08-23;
+   original order preserved within the file.
+   ============================================================ */
+
+/* ============================================================
+   Onboarding setup assistant (M1 — Strata onboarding overhaul)
+   Own frame, no AppShell chrome (docs/redesign/ux-strategy.md §5.5): a
+   deliberate "you're setting up" mode. Layered surfaces, phase-pill
+   stepper, and glass panel reuse the M0.1 token layer; the reduced-
+   transparency/no-backdrop-filter fallback mirrors `.glass` above.
+   ============================================================ */
+.assistant-frame {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--wash-deep);
+}
+
+.assistant-header {
+  /* escape the bare `header` element box — same root cause as .app-header
+     (docs/redesign/app-interface-spec.md §2.1/§7.2a). Handoff redesign:
+     the wizard header sits on a panel step, per `BidMorrow
+     Onboarding.dc.html`. */
+  max-width: none;
+  margin-inline: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1.5rem;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--line-hair);
+}
+
+.assistant-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.assistant-main {
+  flex: 1;
+  width: 100%;
+  max-width: 40rem;
+  margin-inline: auto;
+  padding: 2rem 1.5rem 4rem;
+  display: grid;
+  gap: 1.25rem;
+  /* QA fix (2026-08-18): default grid align-content:stretch was stretching
+     the stepper pills into tall ovals on short viewports whenever this
+     grid has extra vertical space (e.g. welcome/completion screens on a
+     1440x900 display) — grid items should size to content, not fill the
+     row track. */
+  align-content: start;
+}
+
+.assistant-phases {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-phase {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-3);
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+}
+/* Connector hairline bridging the stepper's flex gap — mockup's `.phases`
+   connected-rail language. */
+.assistant-phase + .assistant-phase::before {
+  content: '';
+  width: 1.25rem;
+  height: 1px;
+  background: var(--stroke);
+  position: absolute;
+  left: -1.375rem;
+  top: 50%;
+}
+@media (max-width: 30rem) {
+  .assistant-phase + .assistant-phase::before {
+    content: none;
+  }
+}
+
+.assistant-phase[data-state='done'] {
+  color: var(--accent-text);
+  border-color: var(--accent-edge);
+}
+
+.assistant-phase[aria-current='step'] {
+  color: var(--accent-text);
+  border-color: var(--accent-line);
+  background: var(--accent-tint);
+  /* Theme v2: no glow shadows (Theme Spec §01 "Instrument, not dashboard") */
+}
+
+/* Handoff redesign: the progress line reads as the step kicker — mono
+   uppercase accent, per the prototype's `stepKicker`. */
+.assistant-progress {
+  margin: 0;
+  font-size: 0.75rem;
+  font-family: var(--font-num);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+/* Decorative determinate progress fill under the stepper — reuses the
+   CSP-safe native <progress> pattern (.score-bar), never an inline width;
+   the aria-live .assistant-progress text above is the accessible source of
+   truth. */
+.assistant-meter {
+  height: 3px;
+}
+
+.assistant-card {
+  border-radius: 20px;
+  border: 1px solid var(--line-hair);
+  background: var(--bg-panel);
+  padding: 1.75rem;
+  display: grid;
+  gap: 1.15rem;
+}
+
+.assistant-card h1 {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: clamp(1.75rem, 6.4vw, 2.25rem);
+  line-height: 1.08;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.assistant-card h1:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 4px;
+  border-radius: 0.25rem;
+}
+
+.assistant-why {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* One wrapper per screen (Onboarding.tsx keys it on currentScreen.id) so a
+   mount animation fires on every screen change — the card itself persists
+   across screens, so CSS mount animations on the card would never
+   re-trigger without this. */
+.assistant-screen {
+  display: grid;
+  gap: 1.15rem;
+} /* takes over the card's inner gap */
+@media (prefers-reduced-motion: no-preference) {
+  .assistant-screen {
+    animation: rise-in 240ms var(--ease);
+  }
+}
+
+/* --- Preset picker cards --- */
+.ob-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.75rem;
+}
+
+.ob-preset-card {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  background: var(--surface-1);
+  padding: 1rem;
+  cursor: pointer;
+  transition:
+    border-color 200ms var(--ease),
+    box-shadow 200ms var(--ease);
+}
+
+.ob-preset-card > label {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ob-preset-card--selected {
+  border-color: var(--accent-edge);
+  background: var(--accent-soft);
+  box-shadow:
+    0 0 0 1px var(--sol-1),
+    0 0 20px rgba(53, 211, 192, 0.15);
+}
+
+.ob-preset-card__label {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.ob-preset-card__desc {
+  font-size: 0.9rem;
+  color: var(--text-2);
+}
+
+.ob-preset-card__stats {
+  font-size: 0.8rem;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+
+.ob-preset-card details {
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+
+.ob-preset-card summary {
+  cursor: pointer;
+  color: var(--color-link);
+  font-weight: 600;
+}
+
+/* --- CPV chip toggles + scope indicator --- */
+.ob-chip-toggle-list {
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0;
+}
+
+.ob-chip-toggle {
+  display: flex;
+  align-items: center; /* 44px target, all widths */
+  min-height: 2.75rem;
+  gap: 0.6rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-s);
+  background: var(--surface-1);
+  padding: 0.55rem 0.8rem;
+  cursor: pointer;
+}
+
+.ob-chip-toggle--on {
+  border-color: var(--accent-edge);
+  background: var(--accent-soft);
+}
+
+.ob-chip-toggle__code {
+  /* QA fix (2026-08-18): was `var(--text-3)` — the chip surface is raised
+     (surface-1 unselected / accent-soft when `--on`), and against the
+     teal accent-soft surface --text-3 measures ~4.04:1 (fail); --text-2
+     clears both the unselected (~5.65:1) and selected (~4.80:1) surfaces. */
+  color: var(--text-2);
+  font-size: 0.78rem;
+  flex: none;
+}
+
+.ob-chip-toggle__label {
+  color: var(--text-1);
+}
+
+.ob-scope-indicator {
+  margin: 0;
+  font-size: 0.9rem;
+  border-radius: var(--r-m);
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--stroke);
+  background: var(--surface-1);
+  color: var(--text-2);
+}
+
+.ob-scope-indicator--ok {
+  border-color: var(--status-strong-text);
+  color: var(--status-strong-text);
+}
+
+.ob-scope-indicator--warn {
+  border-color: var(--status-caution-text);
+  background: var(--status-caution-wash);
+  color: var(--status-caution-text);
+}
+
+/* --- Region-grouped country picker --- */
+.ob-region-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.ob-advanced {
+  border: 1px solid var(--stroke-faint);
+  border-radius: var(--r-m);
+  padding: 0.5rem 0.9rem;
+}
+
+.ob-advanced summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* --- Review reconciliation table --- */
+.ob-review-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.ob-review-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  background: var(--surface-1);
+  padding: 0.85rem 1rem;
+}
+
+.ob-review-row__state {
+  flex: none;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.ob-review-row__state--saved {
+  color: var(--status-strong-text);
+}
+
+.ob-review-row__state--will-save {
+  color: var(--status-caution-text);
+}
+
+.ob-review-row__state--empty {
+  color: var(--text-3);
+}
+
+.ob-review-row__body {
+  flex: 1;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.ob-review-row__label {
+  font-weight: 600;
+}
+
+.ob-review-row__summary {
+  font-size: 0.9rem;
+  color: var(--text-2);
+  margin: 0;
+}
+
+/* --- Done screen checklist --- */
+.ob-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ob-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+}
+
+.ob-checklist__mark {
+  flex: none;
+  width: 1.25rem;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-3);
+}
+.ob-checklist__mark--done {
+  color: var(--status-strong-text);
+}
+
+/* --- Tabs & filters --- */
+.tab-list {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.tab {
+  border-radius: 999px;
+}
+
+.tab--active {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+}
+
+/* --- Feed / cards --- */
+.tender-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.tender-card {
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.tender-card__meta {
+  color: var(--color-muted);
+  margin: 0.25rem 0;
+}
+
+.tender-card__reasons {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+
+.tender-card__risk {
+  font-weight: 600;
+}
+
+.tender-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* --- Detail page --- */
+.detail-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.detail-facts dt {
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.notice-description {
+  white-space: pre-wrap;
+}
+
+.tender-detail__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 1.5rem 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+th,
+td {
+  border: 1px solid var(--color-border);
+  padding: 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+/* ============================================================
+   APP INTERFACE — Strata (M2: Feed, Tender detail, Settings)
+   docs/redesign/ux-strategy.md §5. Deliberately its OWN class
+   namespace (`.app-*`, `.feed-*`, `.tender-detail__*`, `.settings-*`,
+   `.btn-*`) — never a redeclaration of `.site-header`/`.nav-list`/
+   `.cta`/`.filter-bar`/`.detail-facts`, which marketing (M3 shell/Home
+   done; other marketing pages untouched) and the internal admin surface
+   (untouched) also use. Builds on the M0.1 token layer and the `.glass`
+   utility already merged above.
+   ============================================================ */
+
+/* --- General-purpose button utilities (app screens only — `.cta` stays
+   exactly as marketing/auth/admin already use it). Same Control Room
+   button language as `.cta`/`.mkt-btn-quiet`: 8px radius, teal accent,
+   solid fill for the primary action, transparent for the quiet one. --- */
+.btn-quiet,
+.btn-solar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: var(--r-s);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.65rem 1.3rem;
+  border: 1px solid var(--sol-1);
+  transition:
+    background-color 200ms var(--ease),
+    filter 200ms var(--ease),
+    transform 120ms var(--ease);
+}
+.btn-quiet {
+  background: transparent;
+  color: var(--accent-text);
+}
+.btn-quiet:hover {
+  background: var(--accent-soft);
+}
+.btn-quiet[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btn-solar {
+  background: var(--accent-grad);
+  color: var(--accent-ink);
+}
+.btn-solar:hover {
+  filter: brightness(1.1);
+}
+.btn-sm {
+  font-size: 0.85rem;
+  padding: 0.45rem 0.95rem;
+}
+
+/* --- App shell (Feed / Tender detail / Settings only) --- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  /* Escape the bare `header { max-width: 44rem; ... }` box (root cause
+     docs/redesign/app-interface-spec.md §2.1) — same pattern as
+     `.site-header` above: a full-bleed bar with its content re-centered by
+     `.app-header-inner`. Overrides ALL sides of `.glass`'s border shorthand
+     (combined on the same element) — a hairline on the bottom edge only,
+     never a full box. */
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: 0;
+  padding-block: 0;
+  border: none;
+  border-bottom: 1px solid var(--stroke-faint);
+}
+.app-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+  min-height: var(--app-header-h);
+  padding-block: 0.5rem;
+}
+.app-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+  color: var(--text-1);
+  text-decoration: none;
+}
+.app-wordmark::after {
+  content: '_';
+  color: var(--accent-text);
+}
+.app-nav-list {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin: 0 0 0 auto;
+  padding: 0;
+  list-style: none;
+}
+.app-nav-list a {
+  color: var(--text-2);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 14px;
+  transition:
+    color 180ms var(--ease),
+    background-color 180ms var(--ease);
+}
+.app-nav-list a:hover {
+  color: var(--text-1);
+}
+/* A real selected indicator, not color alone (WCAG 1.4.1 "use of color"):
+   raised pill + underline together, per the handoff header. */
+.app-nav-list a[aria-current='page'] {
+  color: var(--ink-1);
+  background: var(--bg-raised);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+.app-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+/* Avatar initials chip (handoff header). */
+.app-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 14px;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-num);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+.app-main {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: 2rem 1.5rem 4rem;
+}
+/* App page titles step down to workspace scale — the app is an instrument,
+   not a landing page (also fixes the Feed↔Settings h1 size mismatch and
+   long TenderDetail titles). The `.assistant-card h1` onboarding rule is
+   separate and unchanged. */
+.app-main h1 {
+  font-size: 1.5rem;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  margin: 0 0 1.25rem;
+}
+
+/* Mobile app bar (§4.2): the app nav has exactly three actions (Feed,
+   Settings, Log out) — a hamburger would hide two links behind a tap for
+   no benefit. A two-row bar instead: row 1 wordmark + Log out, row 2 a
+   full-width segmented Feed | Settings strip with 44px targets. */
+@media (max-width: 40rem) {
+  :root {
+    --app-header-h: 6.25rem;
+  }
+  .app-header-inner {
+    flex-wrap: wrap;
+    gap: 0 1rem;
+    min-height: 0;
+    padding-block: 0.5rem 0;
+  }
+  .app-wordmark {
+    align-items: center;
+    min-height: 2.75rem;
+  }
+  .app-nav-actions {
+    margin-left: auto;
+  }
+  .app-nav-list {
+    order: 3;
+    width: 100%;
+    margin: 0;
+    gap: 0;
+    border-top: 1px solid var(--stroke-faint);
+  }
+  .app-nav-list li {
+    flex: 1;
+  }
+  .app-nav-list a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem; /* 44px */
+    padding: 0;
+  }
+}
+
+/* --- Feed: view switcher (score-band tabs + shelf tabs) --- */
+.feed-view-switcher {
+  margin-bottom: 1.25rem;
+}
+.feed-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  background: var(--surface-1);
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  width: fit-content;
+  max-width: 100%;
+}
+.tab {
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 2.25rem;
+  transition:
+    background-color 180ms var(--ease),
+    color 180ms var(--ease),
+    transform 120ms var(--ease);
+}
+.tab:hover {
+  color: var(--text-1);
+}
+.tab--active {
+  background: var(--accent-grad);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+/* Group styling keys off `data-group` (always present) instead of a
+   conditionally-dropped `tab--shelf` class — fixes the vanishing divider
+   when a shelf tab is active (root cause docs/redesign/app-interface-
+   spec.md §2.2). */
+.feed-tabs [data-group='shelf']:not(.tab--active) {
+  color: var(--text-3);
+}
+/* Exactly ONE divider: between the last score tab and the first shelf tab. */
+.feed-tabs [data-group='score'] + [data-group='shelf'] {
+  position: relative;
+  margin-inline-start: 1.1rem;
+}
+.feed-tabs [data-group='score'] + [data-group='shelf']::before {
+  content: '';
+  position: absolute;
+  left: -0.55rem;
+  top: 20%;
+  bottom: 20%;
+  width: 1px;
+  background: var(--stroke);
+}
+@media (max-width: 56rem) {
+  .feed-tabs {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .tab {
+    min-height: 2.75rem;
+  }
+}
+
+/* --- Feed: collapsible filter disclosure (fix for F26/C10) --- */
+/* Collapsed state is a quiet, fit-content toolbar control; the open body is
+   a proper Control Room panel (docs/redesign/app-interface-spec.md §5.3). */
+.feed-filters {
+  border: none;
+  background: none;
+  border-radius: 0;
+  margin-bottom: 1.5rem;
+}
+.feed-filters summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-s);
+  background: var(--surface-1);
+  color: var(--text-2);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition:
+    border-color 180ms var(--ease),
+    color 180ms var(--ease);
+}
+.feed-filters summary:hover {
+  color: var(--text-1);
+  border-color: var(--stroke-strong);
+}
+.feed-filters[open] summary {
+  color: var(--text-1);
+  border-color: var(--accent-edge);
+}
+.feed-filters summary::-webkit-details-marker {
+  display: none;
+}
+.feed-filters summary::after {
+  content: '';
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-right: 2px solid var(--text-3);
+  border-bottom: 2px solid var(--text-3);
+  transform: rotate(45deg);
+  transition: transform 200ms var(--ease);
+}
+.feed-filters[open] summary::after {
+  transform: rotate(-135deg);
+}
+.filters-badge {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-edge);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+}
+.feed-filter-body {
+  margin-top: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  background: var(--glass-solid);
+  box-shadow: var(--shadow-s);
+  display: grid;
+  gap: 1.25rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .feed-filters[open] .feed-filter-body {
+    animation: rise-in 200ms var(--ease);
+  }
+}
+.feed-filter-group {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.feed-filter-group legend {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 0;
+}
+.feed-filter-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.feed-filter-fields .form-field {
+  flex: 1 1 11rem;
+  max-width: 16rem;
+  margin-bottom: 0;
+}
+.feed-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--stroke-faint);
+}
+
+/* --- Feed: page title + column discipline ---
+   App titles step down to workspace scale via the shared `.app-main h1`
+   rule above. Cap the reading column so wide screens don't stretch cards
+   into 1100px-wide slabs — scanning a ranked queue is a single-column
+   task. */
+.tender-list,
+.feed-skeleton-list,
+.feed-empty,
+.feed-filters {
+  max-width: 58rem;
+}
+
+/* --- Feed: empty states + skeleton loading --- */
+/* Centered, designed composition (a pure-CSS radar motif, no asset) that
+   also solves the "vast empty ground below the fold" defect via a
+   generous min-height. */
+.feed-empty {
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-l);
+  background: var(--glass-solid);
+  box-shadow: var(--shadow-s);
+  padding: 4rem 1.5rem;
+  min-height: 20rem;
+  display: grid;
+  gap: 0.6rem;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+  color: var(--text-2);
+}
+.feed-empty__glyph {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 50%;
+  position: relative;
+  background: radial-gradient(circle, rgba(53, 211, 192, 0.12), transparent 65%);
+}
+.feed-empty__glyph::before {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border: 1px dashed var(--stroke);
+  border-radius: 50%;
+}
+.feed-empty__glyph::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px;
+  border-radius: 50%;
+  background: var(--sol-1);
+  box-shadow: 0 0 12px rgba(53, 211, 192, 0.6);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .feed-empty__glyph::after {
+    animation: empty-ping 3s ease-in-out infinite;
+  }
+  @keyframes empty-ping {
+    0%,
+    100% {
+      box-shadow: 0 0 8px rgba(53, 211, 192, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 16px rgba(53, 211, 192, 0.75);
+    }
+  }
+}
+.feed-empty__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--text-1);
+}
+.feed-empty__body {
+  margin: 0;
+  font-size: 0.95rem;
+  max-width: 34ch;
+}
+.feed-empty__actions {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+/* Tab switches / feed loads: the list and empty state are unmounted during
+   `loading` (skeleton shows), so a mount animation re-triggers on every
+   tab change with zero JS. */
+@media (prefers-reduced-motion: no-preference) {
+  .tender-list,
+  .feed-empty {
+    animation: rise-in 240ms var(--ease);
+  }
+  /* Hero panel scan sweep — shared by the app empty-state panel and the
+     marketing hero panel (§8.3 device 3): one diagonal teal sheen pass on
+     mount, then static. */
+  .feed-empty {
+    position: relative;
+    overflow: hidden;
+  }
+  .feed-empty::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-110%);
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(53, 211, 192, 0.08) 50%,
+      transparent 60%
+    );
+    animation: panel-scan 1.4s var(--ease) 400ms 1 forwards;
+    pointer-events: none;
+  }
+  @keyframes panel-scan {
+    to {
+      transform: translateX(110%);
+    }
+  }
+}
+.feed-skeleton-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+.feed-skeleton-card {
+  height: 6.5rem;
+  border-radius: var(--r-m);
+  background: linear-gradient(90deg, var(--surface-1), var(--surface-2), var(--surface-1));
+  background-size: 200% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .feed-skeleton-card {
+    animation: skeleton-sheen 1.6s ease-in-out infinite;
+  }
+  @keyframes skeleton-sheen {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+/* --- Feed: 402 subscription-required notice (fix for F17) --- */
+.subscribe-required {
+  border-radius: var(--r-l);
+  border: 1px solid var(--accent-edge);
+  padding: 2rem;
+  display: grid;
+  gap: 1rem;
+  max-width: 40rem;
+}
+.subscribe-required__price-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.subscribe-required__price {
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  padding: 0.6rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+}
+.subscribe-required__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* --- Tender card (Feed list) — 2026-08-21 handoff anatomy: a left fit
+   gutter carries match strength (Theme Spec §04/§07 + Client Area
+   prototype); cards lose their shadow. --- */
+.tender-card {
+  border: 1px solid var(--line-hair);
+  border-left: 3px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--bg-panel);
+  padding: 1.25rem 1.4rem;
+  display: grid;
+  gap: 0.55rem;
+  transition:
+    transform 200ms var(--ease),
+    border-color 200ms var(--ease);
+}
+.tender-card--strong {
+  border-left-color: var(--accent);
+}
+.tender-card--worth-reviewing {
+  border-left-color: var(--accent-line);
+}
+.tender-card--possible {
+  border-left-color: var(--line-strong);
+}
+
+/* Score ring beside the badge — SVG attributes only (CSP-safe). */
+.score-ring {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+.score-ring__track {
+  stroke: var(--bg-sunken);
+}
+.score-ring__fill {
+  stroke: var(--line-strong);
+}
+.tender-card--strong .score-ring__fill {
+  stroke: var(--accent);
+}
+.tender-card--worth-reviewing .score-ring__fill {
+  stroke: var(--accent-line);
+}
+.score-ring__num {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-num);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--ink-1);
+  font-variant-numeric: tabular-nums;
+}
+.tender-card__id {
+  display: flex;
+  align-items: center;
+  gap: 0.6875rem;
+  flex-wrap: wrap;
+}
+.tender-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+.tender-card__title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+}
+.tender-card__title a {
+  color: var(--text-1);
+  text-decoration: none;
+}
+.tender-card__title a:hover {
+  color: var(--accent-text);
+  text-decoration: underline;
+}
+.tender-card__deadline {
+  color: var(--text-2);
+  font-size: 0.82rem;
+  margin: 0;
+}
+.tender-card__meta {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-3);
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+.tender-card__reasons {
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
+}
+.tender-card__risk {
+  font-size: 0.85rem;
+  color: var(--status-caution-text);
+  margin: 0;
+}
+.tender-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--stroke-faint);
+}
+/* Visible pressed state for Save/Ignore toggles — not color-only, the
+   label text already flips Saved/Ignored too. */
+.btn-quiet[aria-pressed='true'] {
+  background: var(--accent-soft);
+}
+
+/* --- Card-level score anatomy (fix for requirement D — real 8
+   components, docs/matching-engine.md) --- */
+.card-anatomy {
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.card-anatomy__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-3);
+}
+.card-anatomy__name {
+  flex: none;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-anatomy__pts {
+  flex: none;
+  color: var(--text-2);
+}
+
+/* --- Tender detail --- */
+.tender-detail {
+  max-width: 56rem;
+}
+.tender-detail__breadcrumb {
+  display: inline-block;
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+.tender-detail__breadcrumb:hover {
+  color: var(--text-1);
+}
+.tender-detail__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.detail-facts {
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-l);
+  background: var(--glass-solid);
+  padding: 1.25rem;
+  gap: 1rem 1.5rem;
+}
+.detail-facts dt {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 0.15rem;
+}
+.detail-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.feedback-form {
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-l);
+  background: var(--glass-solid);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+.ted-attribution {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--stroke-faint);
+  color: var(--text-3);
+  font-size: 0.8rem;
+}
+.score-anatomy {
+  border-radius: var(--r-l);
+  border: 1px solid var(--stroke);
+  background: var(--glass-solid); /* was --surface-1 */
+  padding: 1.25rem;
+  box-shadow: var(--shadow-s);
+  overflow-x: auto;
+}
+.score-anatomy table {
+  margin: 1rem 0 0;
+  min-width: 34rem; /* scrolls inside the panel on mobile */
+}
+/* De-spreadsheet the score table — scoped inside `.score-anatomy`; the
+   global bordered `th, td` rule stays for admin. */
+.score-anatomy th,
+.score-anatomy td {
+  border: none;
+  border-top: 1px solid var(--stroke-faint);
+  padding: 0.5rem 0.75rem;
+}
+.score-anatomy thead th {
+  border-top: none;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.score-anatomy caption {
+  caption-side: top;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 0.5rem;
+}
+.risk-flags {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.risk-flag {
+  border: 1px solid var(--stroke);
+  border-left: 3px solid var(--status-caution-text);
+  border-radius: var(--r-s);
+  background: var(--status-caution-wash);
+  padding: 0.75rem 1rem;
+}
+.risk-flag__headline {
+  margin: 0;
+  font-weight: 600;
+}
+.risk-flag__evidence {
+  margin: 0.35rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-2);
+}
+
+/* --- Settings: in-page section navigation (fix for C4) --- */
+.settings-shell {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr); /* was 14rem */
+  gap: 2rem;
+  align-items: start;
+}
+.settings-content {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+  max-width: 48rem;
+}
+.settings-nav {
+  position: sticky;
+  top: calc(var(--app-header-h) + 1.25rem); /* was hardcoded 5.5rem */
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  background: var(--glass-solid); /* was --surface-1 */
+  padding: 0.6rem;
+}
+.settings-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+.settings-nav a {
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--r-s);
+  color: var(--text-2);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem; /* was 0.9rem */
+  transition: color 180ms var(--ease);
+}
+.settings-nav a:hover {
+  color: var(--text-1);
+}
+.settings-nav a[aria-current='true'] {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent-text); /* not color-only */
+}
+/* Sections become opaque panels — the perceived "empty right half" is
+   fixed by giving the column a designed boundary, not by stretching forms
+   to 1100px (form measure stays capped for usability). */
+.settings-group {
+  margin: 0;
+  padding: 1.5rem 1.75rem 1.75rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-l);
+  background: var(--glass-solid);
+  box-shadow: var(--shadow-s);
+  scroll-margin-top: calc(var(--app-header-h) + 1rem);
+}
+.settings-group > h2 {
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--stroke-faint);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.settings-subsection {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--stroke-faint);
+  scroll-margin-top: calc(var(--app-header-h) + 1rem);
+}
+.settings-subsection:first-of-type {
+  margin-top: 1rem;
+  padding-top: 0;
+  border-top: none;
+}
+.settings-subsection h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+.settings-danger {
+  border-color: var(--danger-edge);
+}
+.settings-danger h2 {
+  color: var(--status-danger-text);
+  border-bottom-color: var(--danger-edge);
+}
+#delete-confirm {
+  max-width: 16rem;
+}
+@media (max-width: 56rem) {
+  .settings-shell {
+    display: block;
+  }
+  .settings-nav {
+    position: sticky;
+    top: var(--app-header-h);
+    z-index: 15;
+    margin-bottom: 1.25rem;
+    padding: 0.5rem;
+  }
+  .settings-nav ul {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.35rem;
+  }
+  .settings-nav a {
+    white-space: nowrap;
+    min-height: 2.75rem; /* 44px */
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    padding: 0.4rem 1rem;
+  }
+  .settings-nav a[aria-current='true'] {
+    box-shadow: none;
+    border-color: var(--accent-edge);
+  }
+  .settings-group,
+  .settings-subsection {
+    scroll-margin-top: calc(var(--app-header-h) + 4.5rem);
+  }
+}
+
+/* --- Responsive: 44px targets at ≤48rem (768) --- */
+@media (max-width: 48rem) {
+  .cta,
+  .btn-quiet,
+  .btn-solar,
+  .btn-add,
+  button.danger {
+    min-height: 2.75rem;
+  }
+  .checkbox-row {
+    min-height: 2.75rem;
+  }
+}
+
+/* --- Responsive: ≤30rem (480 — covers 320–480) --- */
+@media (max-width: 30rem) {
+  .app-main {
+    padding-inline: 1rem;
+  }
+  .settings-group {
+    padding: 1.25rem 1rem 1.5rem;
+  }
+  .form-actions .cta {
+    width: 100%;
+  }
+  .form-field.inline .btn-add {
+    flex: 1 1 auto;
+  }
+  .feed-empty {
+    padding: 3rem 1.25rem;
+  }
+  .feed-filter-fields .form-field {
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .subscribe-required {
+    padding: 1.5rem 1.25rem;
+  }
+  .subscribe-required__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tender-card__actions {
+    flex-wrap: wrap;
+  }
+}
+
+/* ============================================================
+   BILLING — Settings' plan card, invoice history, cancel/reactivate
+   controls, and print stylesheet.
+   ============================================================ */
+
+/* Status badge — same visual language as `.score-badge` (border in
+   currentColor, text-first: color alone never carries the status, the
+   label text next to/inside it is the primary signal). */
+.billing-status-badge {
+  display: inline-block;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.25rem;
+  border: 1px solid currentColor;
+  font-size: 0.85rem;
+}
+.billing-status-badge--ok {
+  color: var(--status-strong-text);
+}
+.billing-status-badge--info {
+  color: var(--status-info-text);
+}
+.billing-status-badge--warn {
+  color: var(--status-caution-text);
+}
+.billing-status-badge--danger {
+  color: var(--status-danger-text);
+}
+.billing-status-badge--muted {
+  color: var(--status-low-text);
+}
+
+.billing-plan-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  background: var(--surface-1);
+}
+.billing-plan-card__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+.billing-plan-card__plan {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* Past-due/unpaid overdue notice — same visual language as `.form-warning`
+   but in the danger tone (this is a payment failure, not a soft caution). */
+.billing-overdue-notice {
+  border: 2px solid var(--status-danger-text);
+  background: rgba(248, 113, 113, 0.1);
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+}
+
+.billing-cancel-panel {
+  margin: 1.25rem 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  background: var(--surface-1);
+}
+
+.billing-invoice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.billing-invoice-actions a {
+  font-size: 0.85rem;
+}
+
+/* Ghost / tertiary button — Theme Spec §06's third rank ("three ranks, two
+   heights, one radius"), which the codebase never had: every quiet button
+   today still carries a 1px accent border (.btn-quiet, .mkt-btn-quiet), so
+   there is no borderless rank for low-emphasis actions.
+
+   Added as NEW classes rather than by changing .cta / .btn-quiet /
+   .mkt-btn-*. Re-pointing those would move pixels across a live, signed-off
+   design; new surfaces adopt this rank, and consolidating the three existing
+   button vocabularies is a follow-up.
+
+   Note the spec's own inconsistency: it sets buttons at 14px, which is not a
+   step on its seven-step type scale (--t-body is 15px, --t-small 13px). The
+   14px is kept here because it is what the button spec says; the small
+   variant does sit exactly on --t-small. */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 150ms var(--ease),
+    background-color 150ms var(--ease);
+}
+
+.btn-ghost:hover {
+  color: var(--ink-1);
+  background: var(--bg-raised);
+}
+
+.btn-ghost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-ghost--sm {
+  height: 30px;
+  padding: 0 8px;
+  font: var(--t-small) var(--font-ui);
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* Post-checkout confirmation (/app/billing/success). Deliberately plain: it
+   reuses the Settings plan card and the feed's skeleton so the page needs no
+   vocabulary of its own. */
+.billing-success {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: var(--s6) var(--s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+/* First consumer of the type scale for running copy. Safe to adopt here
+   because this page is new and has never shipped, so there is no rendered
+   design to preserve — unlike the 200+ existing font-size declarations,
+   which keep their literals until a deliberate migration PR. */
+.billing-success p {
+  font: var(--t-body) var(--font-ui);
+}
+
+.billing-success__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s4);
+  margin-top: var(--s2);
+}
+
+/* Print stylesheet: isolates `#billing-print-area` (Settings' entire
+   Billing section) regardless of AppShell/Settings markup elsewhere on the
+   page — visibility (not display) so layout containers collapse cleanly,
+   black-on-white, no interactive controls (nothing to click on paper). */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #billing-print-area,
+  #billing-print-area * {
+    visibility: visible;
+  }
+  #billing-print-area {
+    position: absolute;
+    inset: 0;
+    padding: 1.5rem;
+    background: #fff;
+    color: #000;
+  }
+  #billing-print-area h2,
+  #billing-print-area h3,
+  #billing-print-area strong {
+    color: #000;
+  }
+  #billing-print-area a {
+    color: #000;
+    text-decoration: underline;
+  }
+  #billing-print-area .billing-status-badge {
+    border-color: #000;
+    color: #000;
+  }
+  #billing-print-area button,
+  #billing-print-area .no-print {
+    display: none !important;
+  }
+  #billing-print-area table,
+  #billing-print-area th,
+  #billing-print-area td {
+    border: 1px solid #000;
+    color: #000;
+  }
+}
+
+/* ============================================================
+   COMBOBOX — accessible autocomplete popup (`components/Combobox.tsx`).
+   The popup is a small floating panel using the same recessed-field/panel
+   depth language as `.settings-nav`/`.form-field` (glass-solid background,
+   --stroke border, --r-m radius) so it reads as part of the existing
+   Control Room system rather than a new visual pattern.
+   ============================================================ */
+.combobox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 32rem;
+  margin-bottom: 1rem;
+}
+.combobox > label {
+  font-weight: 600;
+}
+.combobox__hint {
+  margin: 0;
+}
+.combobox__field {
+  position: relative;
+}
+.combobox__field input {
+  width: 100%;
+}
+.combobox__popup {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  background: var(--glass-solid);
+  box-shadow: var(--shadow-m);
+  padding: 0.35rem;
+}
+.combobox__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.1rem;
+}
+.combobox__option {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 2.75rem; /* 44px — WCAG 2.5.8 target size, this list is used inside the onboarding wizard too */
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--r-s);
+  cursor: pointer;
+  color: var(--text-1);
+}
+.combobox__option-label {
+  overflow-wrap: anywhere;
+}
+.combobox__option-sublabel {
+  color: var(--text-3);
+  font-size: 0.82rem;
+  flex: none;
+}
+/* "Active" (keyboard/pointer highlight) — distinct from "chosen" below:
+   accent wash + an inset bar, mirroring `.settings-nav a[aria-current]`'s
+   already-AA-verified treatment, so this is never a new color pairing. */
+.combobox__option--active {
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent-text);
+}
+/* "Chosen" (already added to the caller's list) — a checkmark glyph is the
+   primary signal (never color-only), text dims to --text-2 as a secondary
+   cue. Can combine with --active (hovering a chosen option). */
+.combobox__option--chosen {
+  color: var(--text-2);
+}
+.combobox__option-chosen-mark {
+  color: var(--accent-text);
+  font-weight: 700;
+  flex: none;
+}
+.combobox__status {
+  margin: 0.35rem 0.25rem 0.15rem;
+  color: var(--text-2);
+  font-size: 0.85rem;
+}
+.combobox__status--error {
+  color: var(--status-danger-text);
+}
+@media (max-width: 30rem) {
+  .combobox__popup {
+    max-height: 12rem;
+  }
+}
+
+/* A Combobox always renders its own label-above-input (like `.form-field`,
+   never the compact `.form-field.inline` label-hidden-beside-input shape —
+   it needs room for the hint/popup/live-region below the input). This row
+   pairs it with the existing free-text "Add" button beside it, without
+   nesting `.combobox` inside `.form-field.inline` (whose CSS assumes flat
+   label/input/button children, not a component that renders its own). */
+.combobox-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+.combobox-add-row .combobox {
+  flex: 1 1 16rem;
+  margin-bottom: 0;
+}
+
+/* ============================================================
+   DETAIL SLIDE-OVER — 2026-08-21 handoff (`BidMorrow Client Area.dc.html`).
+   Opens a tender beside the feed instead of navigating away from it.
+   Behaviour, routing and the accessibility contract live in
+   components/DetailSheet.tsx; this is only the surface.
+   ============================================================ */
+
+/* Set on <body> while a sheet is open, so the page behind cannot be scrolled
+   away underneath it. A class rather than an inline style: this app ships
+   `style-src 'self'` and keeps zero inline styles. */
+body.sheet-open {
+  overflow: hidden;
+}
+
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 9, 0.55);
+  z-index: 50;
+}
+
+.sheet-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(42.5rem, 100%);
+  background: var(--bg-panel);
+  border-left: 1px solid var(--line);
+  border-radius: 1.5rem 0 0 1.5rem;
+  box-shadow: var(--shadow-panel);
+  z-index: 51;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(1rem, 2.5vw, 1.75rem);
+  display: grid;
+  gap: var(--s4);
+  align-content: start;
+}
+
+/* The panel takes focus on open; it is a scroll container, so it must show
+   that it has focus without drawing a ring around the whole viewport edge. */
+.sheet-panel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -4px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sheet-scrim {
+    animation: sheet-fade 140ms ease-out both;
+  }
+  .sheet-panel {
+    animation: sheet-slide 180ms ease-out both;
+  }
+}
+
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-slide {
+  from {
+    transform: translateX(1.5rem);
+    opacity: 0;
+  }
+}
+
+/* On a phone the sheet is the whole screen, so the inner corner radius and
+   the left border have nothing to sit against. */
+@media (max-width: 44rem) {
+  .sheet-panel {
+    border-radius: 0;
+    border-left: 0;
+  }
+}
+
+.sheet-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+}
+
+.sheet-head__id {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex-wrap: wrap;
+}
+
+.sheet-head__deadline {
+  font-size: 0.78125rem;
+  color: var(--ink-2);
+}
+
+.sheet-close {
+  margin-left: auto;
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+  /* 2.75rem, not the design's 30px: this is the sheet's only dismissal
+     control besides Escape, and it has to clear the 44px touch target the
+     rest of the app already meets. */
+  width: 2.75rem;
+  height: 2.75rem;
+  color: var(--ink-2);
+  cursor: pointer;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.sheet-close:hover {
+  color: var(--ink-1);
+  border-color: var(--line-strong);
+}
+
+.sheet-title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ink-1);
+  text-wrap: pretty;
+}
+
+.sheet-meta {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.sheet-tabs {
+  display: flex;
+  gap: var(--s4);
+  border-bottom: 1px solid var(--line-hair);
+}
+
+.sheet-tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  padding: 0.625rem 0.125rem;
+  /* Keeps the row a 44px target even though the control is visually a label. */
+  min-height: 2.75rem;
+  margin-bottom: -1px;
+}
+
+.sheet-tab:hover {
+  color: var(--ink-1);
+}
+
+.sheet-tab[aria-selected='true'] {
+  color: var(--ink-1);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+
+.sheet-panel-body {
+  display: grid;
+  gap: var(--s4);
+  align-content: start;
+}
+
+/* The panel body is focusable so a keyboard user can scroll it; that focus
+   should read as "you are in this region", not as a control. */
+.sheet-panel-body:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--r-m);
+}
+
+.sheet-body {
+  display: grid;
+  gap: var(--s4);
+}
+
+/* Inside the sheet the score table is the widest thing on a narrow panel. */
+.sheet-panel .score-anatomy table {
+  display: block;
+  overflow-x: auto;
+}
+
+/* ============================================================
+   ONBOARDING — sector picker + scope estimate (2026-08-21 handoff,
+   `BidMorrow Onboarding.dc.html`). The sector grid lets a non-IT company
+   start from its own line of work; the estimate panel is what stops that
+   becoming a promise of coverage the product does not have.
+   ============================================================ */
+
+.ob-sector-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--s5);
+  display: grid;
+  gap: var(--s2);
+}
+
+.ob-sector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--s2);
+}
+
+.ob-sector-card {
+  display: grid;
+  gap: 0.25rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: 0.875rem;
+  padding: 0.75rem 0.875rem;
+  cursor: pointer;
+  /* Comfortably past the 44px touch target the rest of the app meets. */
+  min-height: 3.25rem;
+}
+
+.ob-sector-card:hover {
+  border-color: var(--line-strong);
+}
+
+.ob-sector-card--selected {
+  border-color: var(--accent-line);
+  background: var(--accent-tint);
+}
+
+.ob-sector-card__label {
+  font-size: 0.875rem;
+  color: var(--ink-1);
+}
+
+.ob-sector-card__divisions {
+  font-size: 0.71875rem;
+  color: var(--ink-3);
+}
+
+/* Marks a selected code that is saved but returns nothing today. Deliberately
+   a caution, not a risk: the code is kept and starts scoring if ingestion is
+   widened — it is not an error the user has to fix. */
+.ob-chip-toggle__oos {
+  font-family: var(--font-num);
+  font-size: 0.65625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sig-caution);
+  border: 1px solid var(--sig-caution);
+  border-radius: 999px;
+  padding: 0.0625rem 0.375rem;
+  margin-left: 0.375rem;
+}
+
+.ob-estimate {
+  background: var(--bg-panel);
+  border: 1px solid var(--accent-line);
+  border-radius: 0.875rem;
+  padding: 0.9375rem 1rem;
+  margin: 0 0 var(--s4);
+  display: grid;
+  gap: 0.375rem;
+}
+
+/* Every chosen code is outside the ingested scope, so this selection returns
+   nothing at all — the one state the panel exists to make impossible to miss. */
+.ob-estimate--none {
+  border-color: var(--sig-caution);
+  background: var(--sig-caution-tint);
+}
+
+.ob-estimate__value {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+}
+
+.ob-estimate__note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.ob-estimate__scope {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-1);
+}
+
+.ob-estimate__caveat {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* ============================================================
+   FEED LEFT RAIL — 2026-08-21 handoff (`BidMorrow Client Area.dc.html`).
+   Saved searches beside the results, so a filter set is a named thing the
+   workspace re-applies rather than something retyped every morning.
+   ============================================================ */
+
+.feed-layout {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  gap: clamp(1rem, 2.4vw, 2rem);
+  align-items: start;
+}
+
+/* `minmax(0, 1fr)` above matters: without it the results column takes its
+   min-content width from the widest card and the rail gets squeezed. */
+.feed-main {
+  min-width: 0;
+}
+
+.feed-rail {
+  position: sticky;
+  top: var(--s4);
+  display: grid;
+  gap: var(--s5);
+  align-content: start;
+}
+
+/* The rail is an accelerator, not the content. On a narrow screen it drops
+   below the results rather than competing with them for width. */
+@media (max-width: 60rem) {
+  .feed-layout {
+    grid-template-columns: 1fr;
+  }
+  .feed-rail {
+    position: static;
+    order: 2;
+  }
+  .feed-main {
+    order: 1;
+  }
+}
+
+.feed-rail__block {
+  display: grid;
+  gap: var(--s2);
+}
+
+.feed-rail__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.feed-rail__title {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.feed-rail__head .btn-ghost--sm {
+  margin-left: auto;
+}
+
+.feed-rail__form {
+  display: grid;
+  gap: var(--s1);
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  border-radius: var(--r-l);
+  padding: var(--s3);
+}
+
+.feed-rail__form label {
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.feed-rail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.feed-rail__list li {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+}
+
+.feed-rail__item {
+  flex: 1;
+  min-width: 0;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--r-m) var(--r-m) 0;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+  text-align: left;
+  /* Long names truncate rather than reflowing the rail. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0.5rem 0.625rem;
+  min-height: 2.75rem;
+}
+
+.feed-rail__item:hover {
+  color: var(--ink-1);
+  background: var(--bg-panel);
+}
+
+.feed-rail__item[aria-current='true'] {
+  background: var(--bg-panel);
+  border-left-color: var(--accent);
+  color: var(--ink-1);
+  font-weight: 600;
+}
+
+.feed-rail__remove {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--ink-3);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  /* Small glyph, full-size target. */
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.feed-rail__remove:hover {
+  color: var(--sig-risk);
+}
+
+.feed-rail__profile {
+  margin: 0;
+  font-size: 0.78125rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}

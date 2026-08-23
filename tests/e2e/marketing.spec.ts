@@ -53,7 +53,7 @@ test('pricing page renders both plans', async ({ page }) => {
 });
 
 // Mobile header: the nav collapses into a hamburger menu below ~56rem
-// (styles.css `MARKETING SITE` section) instead of wrapping the desktop
+// (styles/marketing.css `MARKETING SITE` section) instead of wrapping the desktop
 // `.nav-list`/`.nav-actions` into stacked rows.
 test.describe('mobile nav menu', () => {
   test.use({ viewport: { width: 390, height: 844 } });

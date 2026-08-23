@@ -93,7 +93,7 @@ export function TenderCard({
                   // Native <progress>, never an inline `style` width — CSP is
                   // `style-src 'self'` with no unsafe-inline (.claude/agents/
                   // frontend-engineer.md); the fill is styled entirely via
-                  // ::-webkit-progress-value/::-moz-progress-bar in styles.css.
+                  // ::-webkit-progress-value/::-moz-progress-bar in styles/base.css.
                   <progress
                     className="score-bar score-bar--sm"
                     value={component.points}

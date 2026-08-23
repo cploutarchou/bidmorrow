@@ -1,3 +1,4 @@
+import '../../styles/admin.css';
 import type { ReactElement, ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
 import { ThemeToggle } from '../ThemeToggle';
