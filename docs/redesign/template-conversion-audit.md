@@ -226,8 +226,9 @@ localStorage ops-state) was excluded from the comparison by instruction.
   2026-08-24.** Field-adjacent validation on the CPV / country / NUTS
   add-rows and the value range (aria-invalid + role=alert, onboarding's
   vocabulary), the prototype's "N to fix" issues banner + flagged nav dot
-  (only for conditions that verifiably break matching: inverted value
-  range, zero CPV codes), a digest timezone select
+  (only for conditions that are verifiably always wrong: an inverted
+  value range, which no tender value can fall inside, and zero CPV
+  codes, which score nothing), a digest timezone select
   (`Intl.supportedValuesOf`), and a preferred-NUTS add-row (the
   `preferred_nuts` kind the engine already scores at full geography
   points but no UI ever offered). Server side, the same pass closed two

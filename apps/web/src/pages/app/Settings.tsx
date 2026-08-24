@@ -344,18 +344,21 @@ export function Settings(): ReactElement {
 
   /**
    * The prototype's "N to fix before the next run" layer — only conditions
-   * that verifiably break matching belong here: an inverted value range
-   * excludes every tender (the pre-filter compares against both bounds), and
-   * with zero CPV codes the division pre-filter (packages/procurement
-   * score.ts) intersects nothing, so nothing is ever scored. Computed from
-   * the live edit state — this is what saving right now would produce.
+   * that are verifiably always wrong belong here: with zero CPV codes the
+   * division pre-filter (packages/procurement score.ts) intersects nothing,
+   * so nothing is ever scored; and no tender's value can fall inside an
+   * inverted range, so the value component can never score it (the server
+   * rejects the save too). Computed from the live edit state — this is what
+   * saving right now would produce.
    */
   const profileIssues: string[] = [];
   if (!loading && cpvCodes.length === 0) {
     profileIssues.push('No CPV codes — without at least one, no tender is ever scored for you.');
   }
   if (minValueOverMax) {
-    profileIssues.push('Minimum contract value is above the maximum — that range matches nothing.');
+    profileIssues.push(
+      "Minimum contract value is above the maximum — no tender's value can fall inside that range.",
+    );
   }
   const flaggedGroups = new Set(profileIssues.length > 0 ? ['matching-profile'] : []);
 

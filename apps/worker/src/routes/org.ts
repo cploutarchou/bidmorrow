@@ -196,7 +196,7 @@ const matchingPreferencesSchema = z
   .refine((prefs) => {
     if (prefs.minValueEur === null || prefs.maxValueEur === null) return true;
     return prefs.minValueEur <= prefs.maxValueEur;
-  }, 'minValueEur must not exceed maxValueEur — an inverted range excludes every tender');
+  }, 'minValueEur must not exceed maxValueEur — no tender value can fall inside an inverted range');
 
 /**
  * An invalid IANA zone stored here would make `Intl.DateTimeFormat` throw

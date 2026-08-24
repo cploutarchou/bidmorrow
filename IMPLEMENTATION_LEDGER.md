@@ -4056,9 +4056,10 @@ before any network call (8-digit CPV, alpha-2 country, `CC` + up to 3
 characters NUTS — each with aria-invalid/role=alert in onboarding's error
 vocabulary); the value-range pair gets the min≤max inline error onboarding
 already had; and the prototype's "N to fix" issues banner + caution dot on
-the flagged nav group landed with only conditions that verifiably break
-matching (inverted range — the pre-filter excludes everything; zero CPV
-codes — empty division set intersects nothing, per score.ts). The digest
+the flagged nav group landed with only conditions that are verifiably
+always wrong (inverted range — no tender's value can fall inside it, so
+the value component can never score; zero CPV codes — empty division set
+intersects nothing, per score.ts). The digest
 section gained a timezone select (`Intl.supportedValuesOf`, stored legacy
 alias prepended so the select can't silently misreport), and Geographies
 gained a preferred-NUTS add-row — the `preferred_nuts` kind the engine has
@@ -4067,7 +4068,8 @@ no UI ever offered. Geography chips split into countries vs NUTS lists and
 stopped rendering the raw kind discriminant.
 
 Server: two real gaps closed. `matching-preferences` accepted min > max (a
-range that matches nothing); now 400. `digest-preferences` accepted ANY
+range no tender value can fall inside — always a user error, though lots
+are still scored, losing at most the 10-point value component); now 400. `digest-preferences` accepted ANY
 string as timezone — and `selectDigestOrgs` passes it into
 `Intl.DateTimeFormat`, which throws on an invalid zone inside the loop over
 all orgs, so one bad row would have killed every customer's digest. Now:
