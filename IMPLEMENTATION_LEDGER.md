@@ -4086,6 +4086,45 @@ bundle test, and a critical-path e2e test driving all of it through the UI
 add + save, timezone select persisting through reload). Full gates green;
 critical-path (13) and accessibility (12, incl. settings axe) suites green.
 
+## Feed sort control + KPI strip (2026-08-24)
+
+The audit's "sort control + KPI row" feed minors, with the repository work
+they actually require.
+
+Sort: the feed was hard-ordered score DESC with a `score:id` keyset
+cursor. `listFeedRows` now takes `sort: fit | deadline | value | newest`
+(default `fit`, the historical order). Each order keeps the `id DESC`
+tiebreak, and `deadline`/`value` put NULL keys LAST via an `IS NULL`
+ordering term — a tender with no deadline or value belongs after every one
+that has one, not (SQLite's default) first. Cursors are namespaced per
+sort (`dl:`/`val:`/`new:`, with a `null` key form once pagination enters
+the NULLS-LAST tail; `fit` keeps its historical un-prefixed shape), and a
+cursor replayed against a different sort is refused as malformed — the
+route's existing 400 `invalid_cursor` path — never silently reinterpreted,
+which would skip or repeat rows.
+
+KPI strip: `GET /api/org/feed/stats` returns four counts each DEFINED as
+"what the matching tab shows" (same engine-version scoping, EXCLUDED and
+expiry rules as `listFeedRows`): new today, closing ≤ 7 days, strong,
+saved. The prototype's tiles ("2 have no owner", "pipeline value")
+reference features the product doesn't have and were not faked. The
+endpoint carries the same 402 entitlement gate as the feed — aggregate
+counts must never be cheaper to reach than the list. In the UI the strip
+is an accelerator like the rail's profile line: a fetch failure hides it
+and never disturbs the feed.
+
+Pinned by: D1 repo tests (deadline order + pagination across the null
+boundary, value/newest orders, cross-sort cursor rejection, stats counts
+vs tab definitions incl. tenant isolation), two worker route tests (sort
+reorders + bad sort 400s + cross-sort cursor 400s; stats scoped per org,
+401 anonymous), and a critical-path e2e test that asserts the sort select
+genuinely reorders the seeded demo lots (values 250k/180k/150k and
+deadlines Sep 15 vs Oct 1 give each order a known first card). One test
+helper fix along the way: `seedLot`'s `valueEur ?? 100_000` swallowed an
+explicit null, so a "no published value" lot silently got one — now
+`=== undefined`, matching its own deadline convention. Full gates green;
+critical-path 14/14, accessibility 12/12.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

@@ -10,7 +10,22 @@
  * risk flags is written in ONE D1 batch (a single SQL transaction), so a
  * match row can never exist without its decomposition.
  */
-import { and, desc, eq, exists, gt, inArray, gte, lt, lte, not, or, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  exists,
+  gt,
+  inArray,
+  gte,
+  isNull,
+  lt,
+  lte,
+  not,
+  or,
+  sql,
+} from 'drizzle-orm';
 import type {
   ComponentStatus,
   MatchClassification,
@@ -585,11 +600,22 @@ export interface FeedFilters {
   readonly publishedAfter?: string;
 }
 
+/**
+ * Feed sort orders (prototype's Sort select). Every order carries the
+ * `id DESC` tiebreak so pagination stays deterministic, and `deadline`/
+ * `value` put NULL keys LAST — a tender with no deadline or no published
+ * value belongs after every tender that has one, not (SQLite's default)
+ * first.
+ */
+export type FeedSort = 'fit' | 'deadline' | 'value' | 'newest';
+
 export interface ListFeedArgs extends Pagination, FeedFilters {
   readonly tab: FeedTab;
   readonly engineVersion: string;
   /** Injected clock — `today` and expired-deadline exclusion are time-dependent. */
   readonly now: number;
+  /** Defaults to `fit` (score DESC) — the order the feed always had. */
+  readonly sort?: FeedSort;
 }
 
 export interface FeedComponentSummary {
@@ -647,6 +673,32 @@ function decodeScoreCursor(cursor: string): { score: number; id: string } {
     throw new Error('listFeedRows: malformed cursor');
   }
   return { score, id };
+}
+
+/**
+ * Cursors for the non-default sorts are namespaced (`dl:`/`val:`/`new:`) so
+ * a cursor can never be replayed against a different sort's ordering — the
+ * keyset predicate would silently skip or repeat rows. `dl:`/`val:` carry a
+ * `null` key once pagination has entered the NULLS-LAST tail. The `fit`
+ * cursor keeps its historical un-prefixed `${score}:${id}` shape.
+ */
+function decodeKeyedCursor(
+  cursor: string,
+  prefix: 'dl' | 'val' | 'new',
+): { key: number | null; id: string } {
+  const parts = cursor.split(':');
+  if (parts.length !== 3 || parts[0] !== prefix) {
+    throw new Error('listFeedRows: malformed cursor');
+  }
+  const id = parts[2] ?? '';
+  if (id.length === 0) throw new Error('listFeedRows: malformed cursor');
+  if (parts[1] === 'null') {
+    if (prefix === 'new') throw new Error('listFeedRows: malformed cursor'); // scoredAt is never null
+    return { key: null, id };
+  }
+  const key = Number(parts[1]);
+  if (!Number.isFinite(key)) throw new Error('listFeedRows: malformed cursor');
+  return { key, id };
 }
 
 /**
@@ -771,14 +823,87 @@ export async function listFeedRows(
     );
   }
 
+  const sort: FeedSort = args.sort ?? 'fit';
+
   if (args.cursor !== undefined) {
-    const cursor = decodeScoreCursor(args.cursor);
-    const keyset = or(
-      lt(tenderMatches.score, cursor.score),
-      and(eq(tenderMatches.score, cursor.score), lt(tenderMatches.id, cursor.id)),
-    );
+    let keyset;
+    switch (sort) {
+      case 'fit': {
+        const cursor = decodeScoreCursor(args.cursor);
+        keyset = or(
+          lt(tenderMatches.score, cursor.score),
+          and(eq(tenderMatches.score, cursor.score), lt(tenderMatches.id, cursor.id)),
+        );
+        break;
+      }
+      case 'deadline': {
+        const cursor = decodeKeyedCursor(args.cursor, 'dl');
+        keyset =
+          cursor.key === null
+            ? // Already inside the NULLS-LAST tail: only null-deadline rows remain.
+              and(isNull(tenderLots.deadlineAt), lt(tenderMatches.id, cursor.id))
+            : // Ascending over non-null deadlines; every null row sorts after.
+              or(
+                and(
+                  not(isNull(tenderLots.deadlineAt)),
+                  or(
+                    gt(tenderLots.deadlineAt, cursor.key),
+                    and(eq(tenderLots.deadlineAt, cursor.key), lt(tenderMatches.id, cursor.id)),
+                  ),
+                ),
+                isNull(tenderLots.deadlineAt),
+              );
+        break;
+      }
+      case 'value': {
+        const cursor = decodeKeyedCursor(args.cursor, 'val');
+        keyset =
+          cursor.key === null
+            ? and(isNull(tenderLots.estimatedValueEur), lt(tenderMatches.id, cursor.id))
+            : // Descending over non-null values; every null row sorts after.
+              or(
+                and(
+                  not(isNull(tenderLots.estimatedValueEur)),
+                  or(
+                    lt(tenderLots.estimatedValueEur, cursor.key),
+                    and(
+                      eq(tenderLots.estimatedValueEur, cursor.key),
+                      lt(tenderMatches.id, cursor.id),
+                    ),
+                  ),
+                ),
+                isNull(tenderLots.estimatedValueEur),
+              );
+        break;
+      }
+      case 'newest': {
+        const cursor = decodeKeyedCursor(args.cursor, 'new');
+        const key = cursor.key as number; // 'new' cursors never carry null (decode enforces it)
+        keyset = or(
+          lt(tenderMatches.scoredAt, key),
+          and(eq(tenderMatches.scoredAt, key), lt(tenderMatches.id, cursor.id)),
+        );
+        break;
+      }
+    }
     if (keyset !== undefined) conditions.push(keyset);
   }
+
+  // `x IS NULL` evaluates 0/1, so ascending on it puts NULL keys last.
+  const ordering = {
+    fit: [desc(tenderMatches.score), desc(tenderMatches.id)],
+    deadline: [
+      asc(sql`${tenderLots.deadlineAt} IS NULL`),
+      asc(tenderLots.deadlineAt),
+      desc(tenderMatches.id),
+    ],
+    value: [
+      asc(sql`${tenderLots.estimatedValueEur} IS NULL`),
+      desc(tenderLots.estimatedValueEur),
+      desc(tenderMatches.id),
+    ],
+    newest: [desc(tenderMatches.scoredAt), desc(tenderMatches.id)],
+  }[sort];
 
   const rows = await db
     .select({ match: tenderMatches, lot: tenderLots, notice: tenderNotices, buyer: buyers })
@@ -787,10 +912,21 @@ export async function listFeedRows(
     .innerJoin(tenderNotices, eq(tenderMatches.noticeId, tenderNotices.id))
     .leftJoin(buyers, eq(tenderNotices.buyerId, buyers.id))
     .where(and(...conditions))
-    .orderBy(desc(tenderMatches.score), desc(tenderMatches.id))
+    .orderBy(...ordering)
     .limit(limit + 1);
 
-  const page = toPage(rows, limit, (last) => `${last.match.score}:${last.match.id}`);
+  const page = toPage(rows, limit, (last) => {
+    switch (sort) {
+      case 'fit':
+        return `${last.match.score}:${last.match.id}`;
+      case 'deadline':
+        return `dl:${last.lot.deadlineAt ?? 'null'}:${last.match.id}`;
+      case 'value':
+        return `val:${last.lot.estimatedValueEur ?? 'null'}:${last.match.id}`;
+      case 'newest':
+        return `new:${last.match.scoredAt}:${last.match.id}`;
+    }
+  });
   if (page.items.length === 0) {
     return { items: [], nextCursor: page.nextCursor };
   }
@@ -890,6 +1026,76 @@ export async function listFeedRows(
   });
 
   return { items, nextCursor: page.nextCursor };
+}
+
+export interface FeedStats {
+  /** What the `today` tab shows: scored in the last 24h, unexpired. */
+  readonly newToday: number;
+  /** Visible matches whose deadline falls within the next 7 days. */
+  readonly closingSoon: number;
+  /** What the `strong` tab shows. */
+  readonly strong: number;
+  /** What the `saved` tab shows (saved rows survive their deadline). */
+  readonly saved: number;
+}
+
+/**
+ * The feed's KPI strip. Each count is defined as "what the matching tab
+ * shows" — same engine-version scoping, same EXCLUDED and expired-deadline
+ * rules as `listFeedRows`, no filters — so a tile can never disagree with
+ * the list a click lands on. (The prototype's tiles referenced owners and
+ * pipeline value; those features don't exist, and a number the product
+ * can't back would be invented data.)
+ */
+export async function getFeedStats(
+  db: Db,
+  organizationId: OrganizationId,
+  args: { engineVersion: string; now: number },
+): Promise<FeedStats> {
+  const base = [
+    eq(tenderMatches.organizationId, organizationId),
+    eq(tenderMatches.engineVersion, args.engineVersion),
+    sql`${tenderMatches.classification} <> 'EXCLUDED'`,
+  ];
+  const unexpired = sql`(${tenderLots.deadlineAt} IS NULL OR ${tenderLots.deadlineAt} >= ${args.now})`;
+  const countFrom = (conditions: Parameters<typeof and>) =>
+    db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(tenderMatches)
+      .innerJoin(tenderLots, eq(tenderMatches.lotId, tenderLots.id))
+      .where(and(...conditions));
+
+  const [newTodayRows, closingSoonRows, strongRows, savedRows] = await db.batch([
+    countFrom([...base, unexpired, gte(tenderMatches.scoredAt, args.now - MS_PER_DAY_FEED)]),
+    countFrom([
+      ...base,
+      sql`${tenderLots.deadlineAt} IS NOT NULL`,
+      gte(tenderLots.deadlineAt, args.now),
+      lte(tenderLots.deadlineAt, args.now + 7 * MS_PER_DAY_FEED),
+    ]),
+    countFrom([...base, unexpired, eq(tenderMatches.classification, 'STRONG_MATCH')]),
+    countFrom([
+      ...base,
+      exists(
+        db
+          .select({ one: sql`1` })
+          .from(savedTenders)
+          .where(
+            and(
+              eq(savedTenders.organizationId, organizationId),
+              eq(savedTenders.lotId, tenderMatches.lotId),
+            ),
+          ),
+      ),
+    ]),
+  ]);
+
+  return {
+    newToday: newTodayRows[0]?.count ?? 0,
+    closingSoon: closingSoonRows[0]?.count ?? 0,
+    strong: strongRows[0]?.count ?? 0,
+    saved: savedRows[0]?.count ?? 0,
+  };
 }
 
 // ---------------------------------------------------------------------------

@@ -9,7 +9,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { getEntitlement, isEntitlementEnforced } from '@bidmorrow/billing';
-import { createDb, listFeedRows } from '@bidmorrow/db';
+import { createDb, getFeedStats, listFeedRows } from '@bidmorrow/db';
 import { ENGINE_VERSION } from '@bidmorrow/matching';
 
 import type { AppBindings } from '../env';
@@ -40,6 +40,7 @@ const feedQuerySchema = z
       .optional(),
     limit: z.coerce.number().int().min(1).max(50).optional(),
     cursor: z.string().trim().min(1).max(200).optional(),
+    sort: z.enum(['fit', 'deadline', 'value', 'newest']).optional(),
   })
   .strict();
 
@@ -88,6 +89,7 @@ feedRoutes.get('/feed', zValidator('query', feedQuerySchema), async (c) => {
       ...(query.publishedAfter !== undefined ? { publishedAfter: query.publishedAfter } : {}),
       ...(query.limit !== undefined ? { limit: query.limit } : {}),
       ...(query.cursor !== undefined ? { cursor: query.cursor } : {}),
+      ...(query.sort !== undefined ? { sort: query.sort } : {}),
     });
   } catch (cause) {
     if (cause instanceof Error && cause.message.includes('malformed cursor')) {
@@ -97,4 +99,30 @@ feedRoutes.get('/feed', zValidator('query', feedQuerySchema), async (c) => {
   }
 
   return c.json({ items: page.items, nextCursor: page.nextCursor });
+});
+
+/**
+ * The feed's KPI strip — four counts defined as "what the matching tab
+ * shows" (repository doc). Gated exactly like the feed itself: same org
+ * resolution, same 402 when entitlement is enforced and inactive — the
+ * counts reveal feed contents in aggregate, so they must never be cheaper
+ * to reach than the feed.
+ */
+feedRoutes.get('/feed/stats', async (c) => {
+  const db = createDb(c.env.DB);
+  const organizationId = c.get('organizationId');
+  if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
+
+  if (await isEntitlementEnforced(db)) {
+    const entitlement = await getEntitlement(db, organizationId);
+    if (!entitlement.active) {
+      return c.json({ error: 'subscription_required', reason: entitlement.reason }, 402);
+    }
+  }
+
+  const stats = await getFeedStats(db, organizationId, {
+    engineVersion: ENGINE_VERSION,
+    now: Date.now(),
+  });
+  return c.json({ stats });
 });
