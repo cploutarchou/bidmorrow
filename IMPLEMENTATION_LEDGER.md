@@ -4184,6 +4184,83 @@ The audit's five remaining admin minors, shipped as one pass.
 New worker test: rail-counts 404-cloaks non-admins and returns numeric
 totals (admin.d1.test.ts, 23 passing). Full gates green.
 
+## Arm→confirm strip with consequence copy (2026-08-24)
+
+The last shared-components audit minor. The admin `ConfirmAction` becomes
+two-phase: at rest it is one action button; clicking ARMS an in-flow strip
+that states the consequence, requires the exact confirm literal the API
+already demands, and offers Cancel. Focus moves into the input on arm and
+back to the arm button on cancel. In flow rather than the prototype's
+`position: sticky` — that shape needs a page-level pending state machine
+the app deliberately does not have (same call as the admin-bodies PR).
+
+All eight admin call sites gained consequence sentences, each verified
+against the implementation rather than copied blind from the prototype:
+ingestion pause/resume (checkpoint catch-up wording from the corrected
+PR #98 copy), digest pause/resume (missed local dates are not back-sent),
+scope update (applies from the next window; old-scope notices kept),
+backfill (one window per day per the handler's enumerateDays; re-fetches
+deduplicated by content hash per insertSnapshotIfNewHash), recompute
+(new-version rows; feed reads latest per lot — docs/matching-engine.md
+wording), suspend/unsuspend (feed 403 + digest de-selection, both pinned
+by existing admin.d1 tests), and flag update (read per request, no staged
+rollout). The Flags editor's own close button was renamed "Close editor"
+so the armed strip's Cancel is unambiguous.
+
+The customer danger-zone `ConfirmAction` (components/ConfirmAction.tsx)
+is deliberately untouched: different component, and its surrounding copy
+already states the consequence.
+
+## 402 paywall + checkout-success e2e assertions (2026-08-24)
+
+The M2 leftover. The 402 paywall was untestable end-to-end: enforcement
+defaults off, and the local stack has no Stripe, so no subscription can
+ever satisfy it when on. A deliberately narrow test hook closes that —
+`POST /api/test/entitlement-enforced {enabled}` flips exactly one named
+flag, boolean only, behind the same double gate (`APP_ENV` local/test AND
+`E2E_TEST_HOOKS=true`) and session check as `score-now`; a new
+test-hooks.d1 test pins that it 404s outside the gate.
+
+Three e2e tests in billing.spec.ts:
+
+1. **402 paywall** — flag on (reset in `finally` — it is global and the
+   file runs serially): `/app` renders the designed paywall heading, never
+   the generic failure copy, with no tender cards and no KPI strip behind
+   it; after reset the same session's feed works again.
+2. **Checkout-success confirmed** — `/api/billing/status` network-stubbed
+   with the documented active-subscription shape (the response shape is
+   pinned server-side by packages/billing tests); asserts plan and price
+   render from the RESPONSE, never the URL, per the page's own rule 1.
+3. **Still-activating** — real server, no stub: the poll exhausts (~15s)
+   into "Still activating", never a failure message or fabricated
+   confirmation.
+
+All three pass against the real wrangler stack (5 passed / 3 skipped in
+the file). Full gates green.
+
+## Docs hygiene: font budget, Lucide note, pre-v2 comments (2026-08-24)
+
+The audit's docs-hygiene tail item, resolved by measuring rather than
+copying the audit's own numbers.
+
+dependency-versions.md had two layered font sections (Strata's 80.89 KB
+ships; Control Room's "0 B, no budget") — both superseded by reality: the
+2026-08-21 handoff vendored Archivo + Source Code Pro as ten
+unicode-range woff2 subsets. A new dated section records today's `du -b`
+measurements: 362,504 B on disk, per-visit latin 56,908 B ≈ 55.6 KB —
+inside even the old 90 KB Strata figure once that budget is read as what
+it always meant to protect, per-visit transfer. The audit's "181 KB
+shipped" matched no current measurement and is noted as superseded. The
+Lucide "not yet used in any component" claim is corrected (Menu/X in
+MarketingLayout.tsx since PR #67) and the table row no longer claims
+@fontsource devDependencies that left package.json with the handoff.
+
+The "stale pre-v2 comments" half was audited rather than assumed: all
+four pre-v2 comments live in styles/base.css and every claim they make is
+still true post-split (the aliases resolve; legacy selectors still use
+them). They stand. The genuinely dead legacy rules those aliases serve
+belong to the CSS dead-rule pruning item, which remains open.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

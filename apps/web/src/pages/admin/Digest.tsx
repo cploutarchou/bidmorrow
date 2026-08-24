@@ -151,12 +151,17 @@ export function Digest(): ReactElement {
           <div className="admin-pause-control">
             <p className="hint">
               {digestPaused
-                ? 'The digest is PAUSED — no cycles are being sent. Resuming picks up on the next hourly check; missed local dates are not back-sent.'
-                : 'The digest is running. Pausing stops cycles from being sent; nothing is deleted, and resuming picks up on the next hourly check.'}
+                ? 'The digest is PAUSED — no cycles are being sent.'
+                : 'The digest is running.'}
             </p>
             <ConfirmAction
               label={digestPaused ? 'Resume digest' : 'Pause digest'}
               confirmText={digestPaused ? 'RESUME_DIGEST' : 'PAUSE_DIGEST'}
+              consequence={
+                digestPaused
+                  ? 'Sending resumes on the next hourly check. Local dates missed while paused are not back-sent.'
+                  : 'Cycles stop being sent. Nothing is deleted; resuming picks up on the next hourly check.'
+              }
               busy={busy}
               {...(digestPaused ? {} : { variant: 'danger' as const })}
               onConfirm={() => (digestPaused ? void resume() : void pause())}

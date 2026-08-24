@@ -216,7 +216,17 @@ localStorage ops-state) was excluded from the comparison by instruction.
   remaining `visually-hidden-status` uses are legitimately SR-only
   content. The earlier "customer surfaces still hidden-only" note was
   stale),
-  arm→confirm strip with consequence copy.
+  ~~arm→confirm strip with consequence copy~~ (**DONE 2026-08-24** — the
+  admin `ConfirmAction` is now two-phase: a resting action button ARMS an
+  in-flow strip stating the consequence, requiring the typed literal, and
+  offering Cancel, with focus moved into the input on arm and back on
+  cancel. All eight admin call sites carry consequence sentences verified
+  against the implementation, not copied blind from the prototype — e.g.
+  the backfill one states the one-window-per-day and hash-dedup facts from
+  the actual handler. In flow, never sticky: the prototype's sticky strip
+  needs a page-level pending state machine the app deliberately lacks.
+  The customer danger-zone `ConfirmAction` is left as is — its surrounding
+  copy already states the consequence, and it is a different component).
 - ~~Auth polish: pre-submit validation, silent-failure fix, confirmation
   states. Marketing nav `aria-current`. Cookie-banner bottom padding.~~ —
   **DONE 2026-08-23.** ForgotPassword's network failure is now a visible
@@ -287,12 +297,33 @@ localStorage ops-state) was excluded from the comparison by instruction.
   every pathname change, with three deliberate exceptions documented in the
   file (initial load, search-only changes, and the slide-over sheet in both
   directions — `DetailSheet` owns focus there). Both are pinned by keyboard
-  e2e tests. Still open: 402/success e2e assertions,
-  `toHaveScreenshot` baselines, zoom/reflow pass.
-- Docs hygiene: font-budget reconciliation (181 KB shipped vs 90 KB
-  written; per-visit latin ~57 KB is compliant via unicode-range — record
-  the raised budget), stale Lucide note in dependency-versions.md, stale
-  pre-v2 comments.
+  e2e tests. Still open: `toHaveScreenshot` baselines, zoom/reflow pass.
+  ~~402/success e2e assertions~~ — **DONE 2026-08-24.** Three new e2e
+  tests: the 402 paywall (a narrow, double-gated local-only test hook
+  flips `entitlement_enforced` for exactly the test's window, always reset
+  in `finally`; asserts the designed paywall state and that no feed
+  content or KPI strip leaks behind it, then that the reset restores the
+  feed), the checkout-success confirmed state (network-stubbed
+  `/api/billing/status` — the local stack has no Stripe, so this tests
+  the page's rendering contract against the documented response shape,
+  itself pinned by packages/billing tests), and the still-activating
+  state via real poll exhaustion (~15s against the real server, no stub).
+  The hook 404s outside the gate — pinned by a new test-hooks.d1 test.
+- ~~Docs hygiene: font-budget reconciliation, stale Lucide note, stale
+  pre-v2 comments.~~ — **DONE 2026-08-24.** dependency-versions.md gained
+  a superseding "Fonts re-introduced" section with today's measurements:
+  ten unicode-range subsets, 362,504 B on disk (the audit's "181 KB"
+  matched no current measurement and is superseded), per-visit latin
+  56,908 B ≈ 55.6 KB — inside even the old Strata-era 90 KB figure read
+  as the transfer budget it now explicitly is. The Lucide "not yet used"
+  note is corrected (Menu/X in MarketingLayout since PR #67), and its
+  table row no longer claims @fontsource devDependencies that left
+  package.json with the handoff. The pre-v2 comments were audited rather
+  than assumed stale: all four live in styles/base.css, and each claim
+  (aliases still resolve, selectors still use them — e.g. app.css's
+  legacy `.tender-card` block) is still TRUE post-split, so they stand;
+  the genuinely dead legacy rules they describe belong to the CSS
+  dead-rule pruning item, not to comment hygiene.
 
 ## Status — first four items implemented 2026-08-22, merged 2026-08-23
 
@@ -342,5 +373,6 @@ Everything else in the pending list below is untouched and still stands.
   never closed or descoped; code contains neither.
 - M3 merge (#42) and follow-ups (#43, 5dc8dc8) and the re-skin merge
   (09d186b) lack ledger PR records.
-- Font budget exceeded without a recorded decision.
-- dependency-versions.md Lucide note stale.
+- ~~Font budget exceeded without a recorded decision.~~ (recorded in
+  dependency-versions.md "Fonts re-introduced", 2026-08-24)
+- ~~dependency-versions.md Lucide note stale.~~ (corrected 2026-08-24)
