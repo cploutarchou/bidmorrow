@@ -210,6 +210,33 @@ describe('INTERNAL_ADMIN gate: 404 for non-admin, 200 for admin (sample routes)'
     const body = (await response.json()) as { items: { key: string }[] };
     expect(body.items.length).toBeGreaterThan(0);
   });
+
+  it('GET /api/admin/rail-counts: 404 cloak for non-admin; numeric per-section totals for admin', async () => {
+    const nonAdmin = await createVerifiedUser(uniqueEmail('non-admin-rail'));
+    const denied = await fetchApi('/api/admin/rail-counts', { headers: { cookie: nonAdmin } });
+    expect(denied.status).toBe(404);
+
+    const cookie = await adminCookie();
+    const response = await fetchApi('/api/admin/rail-counts', { headers: { cookie } });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, number>;
+    for (const key of [
+      'organizations',
+      'users',
+      'subscriptions',
+      'ingestionRuns',
+      'digestRuns',
+      'supportNotes',
+      'auditEvents',
+      'flags',
+    ]) {
+      expect(typeof body[key]).toBe('number');
+    }
+    // Only assert what this test controls: users exist (the admin itself)
+    // and the flag set is the static enum.
+    expect(body['users']).toBeGreaterThan(0);
+    expect(body['flags']).toBeGreaterThan(0);
+  });
 });
 
 describe('audit logging (SEC-P4-07)', () => {

@@ -4149,6 +4149,41 @@ HUMAN_DECISION_BLOCKERS.md item 13 with the recommended alternative (a
 per-rule "N excluded, last 30 days" count in Settings) — not launch
 blocking, no work until the owner picks a shape.
 
+## Admin minors: ops pills, rail counts, state-aware pause, sub-views, flag hint (2026-08-24)
+
+The audit's five remaining admin minors, shipped as one pass.
+
+- **Ops pills**: the shell header shows `ingestion ok/paused` and
+  `digest ok/paused` from the SAME health-details response `AdminGate`
+  already made to authorize the surface — threaded through a small
+  `AdminOpsProvider` context instead of a duplicate fetch. The prototype's
+  third pill (audit-event count) deliberately lives in the rail count
+  instead: one source for that number.
+- **Rail counts**: new `GET /api/admin/rail-counts` — seven COUNT(*)s in
+  one D1 batch (orgs, users, subscriptions, ingestion runs, digest runs,
+  support notes, audit events) plus the static `FEATURE_FLAG_KEYS` length
+  counted at the route (an unset flag still occupies a Flags-page row).
+  Best-effort in the shell: a failed fetch renders the rail without
+  counts, never breaks it.
+- **State-aware pause/resume**: Ingestion and Digest render one control
+  matching the actual paused state — Pause (danger) when running, Resume
+  when paused — with the consequence sentence beside it (ingestion copy
+  from the prototype; digest copy checked against the scheduler's actual
+  resume semantics: missed local dates are not back-sent). Success paths
+  call the context refresh, so the header pills flip without a reload.
+  The old two-buttons block remains as the fallback when health state is
+  somehow absent.
+- **Ingestion sub-views**: runs / fetch retry queue / errors-for-a-run now
+  switch behind the existing `admin-pills` vocabulary instead of stacking
+  into one wall; the notice lookup, scope and backfill controls stay
+  always-visible.
+- **Flag JSON hint**: the editor surfaces the same JSON.parse gate
+  `saveEdit` enforces, per keystroke, so the typed confirmation is never
+  spent on a doomed value (aria-invalid + described-by wired).
+
+New worker test: rail-counts 404-cloaks non-admins and returns numeric
+totals (admin.d1.test.ts, 23 passing). Full gates green.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

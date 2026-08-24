@@ -23,6 +23,7 @@ import type {
   AdminPage,
   AdminSubscription,
   AdminSupportNote,
+  AdminRailCounts,
   AdminUsageCounts,
   AdminUserSummary,
 } from './admin-types';
@@ -39,6 +40,7 @@ function qs(params: Record<string, string | undefined>): string {
 export const adminApi = {
   healthDetails: (): Promise<AdminHealthDetails> => api.get('/api/admin/health-details'),
   usage: (): Promise<AdminUsageCounts> => api.get('/api/admin/usage'),
+  railCounts: (): Promise<AdminRailCounts> => api.get('/api/admin/rail-counts'),
 
   searchOrgs: (args: { query?: string; cursor?: string }): Promise<AdminPage<AdminOrgSummary>> =>
     api.get(`/api/admin/orgs${qs(args)}`),

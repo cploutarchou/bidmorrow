@@ -47,6 +47,7 @@ import {
   getRecentErrorCounts,
   getDbSizeEstimate,
   getTenderMatchByLot,
+  getRailCounts,
   getUsageCounts,
   insertAuditEvent,
   insertSupportNote,
@@ -805,6 +806,15 @@ adminRoutes.get('/usage', async (c) => {
   const db = createDb(c.env.DB);
   const usage = await getUsageCounts(db);
   return c.json(usage);
+});
+
+/** Per-section totals for the admin shell rail (prototype's nav counts).
+ *  Flags are the static `FEATURE_FLAG_KEYS` enum, counted here rather than
+ *  in SQL — an unset flag still occupies a row on the Flags page. */
+adminRoutes.get('/rail-counts', async (c) => {
+  const db = createDb(c.env.DB);
+  const counts = await getRailCounts(db);
+  return c.json({ ...counts, flags: FEATURE_FLAG_KEYS.length });
 });
 
 // ---------------------------------------------------------------------------
