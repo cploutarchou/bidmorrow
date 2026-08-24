@@ -4288,6 +4288,34 @@ Pinned by a new test in accessibility.spec.ts asserting no public page
 scrolls horizontally at 320px — it runs in both the desktop and mobile
 Playwright projects, so the guard holds on every future run.
 
+## Staging migration failure: block comments break wrangler --remote (2026-08-24)
+
+Owner reported the staging deploy failing at the migration step:
+`incomplete input: SQLITE_ERROR [code: 7500]` applying 1 migration to
+bidmorrow-staging. Diagnosis: `0010_saved_searches.sql` is the repo's
+only migration using `/* */` block comments inside a statement, and it is
+the only one that ever failed remotely. wrangler's `--remote` path splits
+statements before the D1 HTTP API and mishandles multi-line block
+comments — the API receives a truncated fragment. The local apply path
+parses them fine, which is why CI's from-empty chain apply never caught
+it.
+
+State verified against BOTH live databases before touching anything:
+staging has no partial `saved_searches` objects and its `d1_migrations`
+records only 0001–0009 (the failed apply left nothing behind); production
+also sits at 0009. Editing the unapplied file is therefore safe
+everywhere. Consequence worth knowing: the migration step precedes the
+deploy step, so staging deploys have been failing since 0010 merged
+(2026-08-23) — staging carries none of the code merged since, and
+catches up on the next green deploy.
+
+Fix: 0010's block comments rewritten as `--` line comments (column notes
+moved above the statement, with the why recorded in the file), and the
+migration-safety skill gained authoring rule 6 banning block comments in
+migrations. Verified: the db suite re-applies the full chain from empty
+(vitest-pool-workers) and passes 67/67, including the saved-searches
+repository tests.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
