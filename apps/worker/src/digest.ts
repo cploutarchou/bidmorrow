@@ -63,7 +63,7 @@ export async function runDigestScheduleJob(
   utcNow: number = Date.now(),
 ): Promise<{ enqueued: number }> {
   const db = createDb(env.DB);
-  const due = await selectDigestOrgs(db, { utcNow });
+  const due = await selectDigestOrgs(db, { utcNow }, logger);
   const messages: DigestQueueMessage[] = due.map((org) => ({
     kind: 'digest',
     organizationId: org.organizationId,

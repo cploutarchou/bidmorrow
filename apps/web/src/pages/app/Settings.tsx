@@ -55,6 +55,30 @@ const KEYWORD_COMBOBOX_OPTIONS: readonly ComboboxOption[] = KEYWORD_SUGGESTIONS.
 }));
 const keywordComboboxSource = localComboboxSource(KEYWORD_COMBOBOX_OPTIONS);
 
+/**
+ * Options for the digest timezone select. `Intl.supportedValuesOf` returns
+ * canonical IANA zones only, so a stored legacy alias (still valid — the
+ * server validates by constructing a formatter, which resolves aliases)
+ * must be prepended or the select would silently display the wrong zone.
+ */
+function timezoneOptions(current: string): string[] {
+  let zones: string[];
+  try {
+    zones = [...Intl.supportedValuesOf('timeZone')];
+  } catch {
+    zones = ['UTC', 'Europe/Nicosia', 'Europe/Athens', 'Europe/Berlin', 'Europe/Dublin'];
+  }
+  return zones.includes(current) ? zones : [current, ...zones];
+}
+
+/** Same shape checks the worker's schemas imply, run before the network
+ * round-trip so a typo gets field-adjacent feedback instead of a 400. */
+const CPV_CODE_PATTERN = /^\d{8}$/;
+const COUNTRY_CODE_PATTERN = /^[A-Z]{2}$/;
+/** 2-letter country + up to 3 more characters; a bare country code is a
+ * legitimate prefix (the engine matches preferred NUTS by prefix). */
+const NUTS_CODE_PATTERN = /^[A-Z]{2}[A-Z0-9]{0,3}$/;
+
 /** Mirrors the worker's own 422 `cap_exceeded` shape (packages/db repos). */
 function describeSaveError(cause: unknown): string {
   if (cause instanceof ApiError && cause.status === 422) {
@@ -172,12 +196,16 @@ export function Settings(): ReactElement {
 
   const [cpvCodes, setCpvCodes] = useState<string[]>([]);
   const [newCpv, setNewCpv] = useState('');
+  const [cpvAddError, setCpvAddError] = useState<string | null>(null);
 
   const [keywords, setKeywords] = useState<KeywordDto[]>([]);
   const [newKeyword, setNewKeyword] = useState('');
 
   const [geographies, setGeographies] = useState<GeographyDto[]>([]);
   const [newGeography, setNewGeography] = useState('');
+  const [countryAddError, setCountryAddError] = useState<string | null>(null);
+  const [newNuts, setNewNuts] = useState('');
+  const [nutsAddError, setNutsAddError] = useState<string | null>(null);
 
   const [exclusions, setExclusions] = useState<ExclusionDto[]>([]);
   const [newExclusion, setNewExclusion] = useState('');
@@ -308,6 +336,32 @@ export function Settings(): ReactElement {
   /** Only known non-owner signal available client-side (see the invoices-effect comment above) — used to hide/disable owner-only mutation controls as a UX nicety, never as the security boundary (the server independently 403s every mutation for a non-owner regardless of what this renders). */
   const knownNonOwner = invoicesState.kind === 'forbidden';
 
+  const minValueOverMax =
+    matching !== null &&
+    matching.minValueEur !== null &&
+    matching.maxValueEur !== null &&
+    matching.minValueEur > matching.maxValueEur;
+
+  /**
+   * The prototype's "N to fix before the next run" layer — only conditions
+   * that are verifiably always wrong belong here: with zero CPV codes the
+   * division pre-filter (packages/procurement score.ts) intersects nothing,
+   * so nothing is ever scored; and no tender's value can fall inside an
+   * inverted range, so the value component can never score it (the server
+   * rejects the save too). Computed from the live edit state — this is what
+   * saving right now would produce.
+   */
+  const profileIssues: string[] = [];
+  if (!loading && cpvCodes.length === 0) {
+    profileIssues.push('No CPV codes — without at least one, no tender is ever scored for you.');
+  }
+  if (minValueOverMax) {
+    profileIssues.push(
+      "Minimum contract value is above the maximum — no tender's value can fall inside that range.",
+    );
+  }
+  const flaggedGroups = new Set(profileIssues.length > 0 ? ['matching-profile'] : []);
+
   async function refreshBillingStatus(): Promise<void> {
     try {
       const res = await fetchBillingStatus();
@@ -422,6 +476,12 @@ export function Settings(): ReactElement {
 
   async function saveMatching(): Promise<void> {
     if (matching === null) return;
+    if (minValueOverMax) {
+      // The server now rejects an inverted range too; catching it here keeps
+      // the feedback next to the fields instead of a generic 400 message.
+      setSaveError('Fix the value range first — the minimum is above the maximum.');
+      return;
+    }
     setSaveError(null);
     try {
       await api.put('/api/org/matching-preferences', {
@@ -559,6 +619,23 @@ export function Settings(): ReactElement {
         </p>
       )}
 
+      {/* role=status (polite): present at load for a broken profile and
+          appears live while editing — assertive interruption is not
+          warranted for a persistent condition. */}
+      {profileIssues.length > 0 && (
+        <div className="settings-issues" role="status">
+          <p className="settings-issues__title">
+            {profileIssues.length === 1 ? '1 thing' : `${String(profileIssues.length)} things`} to
+            fix in your matching profile
+          </p>
+          <ul>
+            {profileIssues.map((issue) => (
+              <li key={issue}>{issue}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="settings-shell">
         <nav className="settings-nav" aria-label="Settings sections">
           <ul>
@@ -569,6 +646,9 @@ export function Settings(): ReactElement {
                   aria-current={activeGroup === group.id ? 'true' : undefined}
                 >
                   {group.label}
+                  {flaggedGroups.has(group.id) && (
+                    <span className="settings-nav__flag" aria-label="has an issue to fix" />
+                  )}
                 </a>
               </li>
             ))}
@@ -723,31 +803,50 @@ export function Settings(): ReactElement {
                   id="new-cpv"
                   label="Add CPV code"
                   value={newCpv}
-                  onValueChange={setNewCpv}
+                  onValueChange={(value) => {
+                    setNewCpv(value);
+                    setCpvAddError(null);
+                  }}
                   source={cpvComboboxSource}
                   placeholder="e.g. 72220000 or software"
                   hint="A curated shortlist, not exhaustive — any 8-digit CPV code is still accepted below."
                   isChosen={(option) => cpvCodes.includes(option.value)}
+                  describedBy={cpvAddError !== null ? 'new-cpv-error' : undefined}
                   onCommit={(option) => {
+                    // Suggestions are known-good 8-digit codes by dataset
+                    // construction — no shape re-check needed here.
                     if (!cpvCodes.includes(option.value) && cpvCodes.length < 30) {
                       setCpvCodes((cs) => [...cs, option.value]);
                     }
                     setNewCpv('');
+                    setCpvAddError(null);
                   }}
                 />
                 <button
                   type="button"
                   className="btn-add"
                   onClick={() => {
-                    if (newCpv.trim().length > 0 && cpvCodes.length < 30) {
-                      setCpvCodes((cs) => [...cs, newCpv.trim()]);
-                      setNewCpv('');
+                    const trimmed = newCpv.trim();
+                    if (trimmed.length === 0) return;
+                    if (!CPV_CODE_PATTERN.test(trimmed)) {
+                      setCpvAddError('CPV codes are 8 digits (for example 72220000).');
+                      return;
                     }
+                    if (!cpvCodes.includes(trimmed) && cpvCodes.length < 30) {
+                      setCpvCodes((cs) => [...cs, trimmed]);
+                    }
+                    setNewCpv('');
+                    setCpvAddError(null);
                   }}
                 >
                   Add
                 </button>
               </div>
+              {cpvAddError !== null && (
+                <p id="new-cpv-error" role="alert" className="form-error">
+                  {cpvAddError}
+                </p>
+              )}
               <div className="form-actions">
                 <button className="cta" type="button" onClick={() => void saveCpv()}>
                   Save CPV codes
@@ -827,25 +926,32 @@ export function Settings(): ReactElement {
             <section className="settings-subsection">
               <h3>Geographies</h3>
               <ul className="chip-list">
-                {geographies.map((geo, index) => (
-                  <li key={`${geo.kind}-${geo.code}-${index}`}>
-                    {geo.kind}: {geo.code}
-                    <button
-                      type="button"
-                      aria-label={`Remove geography ${geo.code}`}
-                      onClick={() => setGeographies((gs) => gs.filter((_, i) => i !== index))}
-                    >
-                      ×
-                    </button>
-                  </li>
-                ))}
+                {geographies
+                  .map((geo, index) => ({ geo, index }))
+                  .filter(({ geo }) => geo.kind !== 'preferred_nuts')
+                  .map(({ geo, index }) => (
+                    <li key={`${geo.kind}-${geo.code}-${String(index)}`}>
+                      {geo.code}
+                      {geo.kind === 'country_served' ? ' · served' : ''}
+                      <button
+                        type="button"
+                        aria-label={`Remove geography ${geo.code}`}
+                        onClick={() => setGeographies((gs) => gs.filter((_, i) => i !== index))}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
               </ul>
               <div className="combobox-add-row">
                 <Combobox
                   id="new-geo"
                   label="Add country code (opportunity country)"
                   value={newGeography}
-                  onValueChange={(v) => setNewGeography(v.toUpperCase())}
+                  onValueChange={(v) => {
+                    setNewGeography(v.toUpperCase());
+                    setCountryAddError(null);
+                  }}
                   source={countryComboboxSource}
                   placeholder="e.g. Germany or DE"
                   hint="EU/EEA countries shown here — any 2-letter country code is still accepted below."
@@ -854,6 +960,7 @@ export function Settings(): ReactElement {
                       (g) => g.kind === 'opportunity_country' && g.code === option.value,
                     )
                   }
+                  describedBy={countryAddError !== null ? 'new-geo-error' : undefined}
                   onCommit={(option) => {
                     if (
                       !geographies.some(
@@ -866,24 +973,107 @@ export function Settings(): ReactElement {
                       ]);
                     }
                     setNewGeography('');
+                    setCountryAddError(null);
                   }}
                 />
                 <button
                   type="button"
                   className="btn-add"
                   onClick={() => {
-                    if (newGeography.trim().length > 0) {
+                    const trimmed = newGeography.trim();
+                    if (trimmed.length === 0) return;
+                    if (!COUNTRY_CODE_PATTERN.test(trimmed)) {
+                      setCountryAddError('Country codes are 2 letters (for example DE).');
+                      return;
+                    }
+                    if (
+                      !geographies.some(
+                        (g) => g.kind === 'opportunity_country' && g.code === trimmed,
+                      )
+                    ) {
                       setGeographies((gs) => [
                         ...gs,
-                        { kind: 'opportunity_country', code: newGeography.trim() },
+                        { kind: 'opportunity_country', code: trimmed },
                       ]);
-                      setNewGeography('');
                     }
+                    setNewGeography('');
+                    setCountryAddError(null);
                   }}
                 >
                   Add
                 </button>
               </div>
+              {countryAddError !== null && (
+                <p id="new-geo-error" role="alert" className="form-error">
+                  {countryAddError}
+                </p>
+              )}
+
+              <h4 className="settings-subheading">Preferred NUTS regions</h4>
+              <p className="hint">
+                Scored as a bonus, never a filter — a lot inside a preferred region scores the full
+                geography points; anywhere else still scores by country.
+              </p>
+              <ul className="chip-list">
+                {geographies
+                  .map((geo, index) => ({ geo, index }))
+                  .filter(({ geo }) => geo.kind === 'preferred_nuts')
+                  .map(({ geo, index }) => (
+                    <li key={`${geo.kind}-${geo.code}-${String(index)}`}>
+                      {geo.code}
+                      <button
+                        type="button"
+                        aria-label={`Remove NUTS region ${geo.code}`}
+                        onClick={() => setGeographies((gs) => gs.filter((_, i) => i !== index))}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+              <div className="form-field inline">
+                <label htmlFor="new-nuts">Add NUTS region code</label>
+                <input
+                  id="new-nuts"
+                  type="text"
+                  value={newNuts}
+                  placeholder="e.g. DE30"
+                  aria-invalid={nutsAddError !== null}
+                  aria-describedby={nutsAddError !== null ? 'new-nuts-error' : undefined}
+                  onChange={(e) => {
+                    setNewNuts(e.target.value.toUpperCase());
+                    setNutsAddError(null);
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn-add"
+                  onClick={() => {
+                    const trimmed = newNuts.trim();
+                    if (trimmed.length === 0) return;
+                    if (!NUTS_CODE_PATTERN.test(trimmed)) {
+                      setNutsAddError(
+                        'NUTS codes are a 2-letter country plus up to 3 characters (for example DE30 — DE alone covers all of Germany).',
+                      );
+                      return;
+                    }
+                    if (
+                      !geographies.some((g) => g.kind === 'preferred_nuts' && g.code === trimmed)
+                    ) {
+                      setGeographies((gs) => [...gs, { kind: 'preferred_nuts', code: trimmed }]);
+                    }
+                    setNewNuts('');
+                    setNutsAddError(null);
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+              {nutsAddError !== null && (
+                <p id="new-nuts-error" role="alert" className="form-error">
+                  {nutsAddError}
+                </p>
+              )}
               <div className="form-actions">
                 <button className="cta" type="button" onClick={() => void saveGeographies()}>
                   Save geographies
@@ -1055,6 +1245,8 @@ export function Settings(): ReactElement {
                     type="number"
                     min={0}
                     value={matching.minValueEur ?? ''}
+                    aria-invalid={minValueOverMax}
+                    aria-describedby={minValueOverMax ? 'settings-value-range-error' : undefined}
                     onChange={(e) =>
                       setMatching({
                         ...matching,
@@ -1070,6 +1262,8 @@ export function Settings(): ReactElement {
                     type="number"
                     min={0}
                     value={matching.maxValueEur ?? ''}
+                    aria-invalid={minValueOverMax}
+                    aria-describedby={minValueOverMax ? 'settings-value-range-error' : undefined}
                     onChange={(e) =>
                       setMatching({
                         ...matching,
@@ -1078,6 +1272,11 @@ export function Settings(): ReactElement {
                     }
                   />
                 </div>
+                {minValueOverMax && (
+                  <p id="settings-value-range-error" role="alert" className="form-error">
+                    Minimum value must not exceed the maximum.
+                  </p>
+                )}
                 <fieldset className="field-group">
                   <legend>Contract types you support</legend>
                   {CONTRACT_NATURES.map((nature) => (
@@ -1153,6 +1352,23 @@ export function Settings(): ReactElement {
                   <option value="POSSIBLE_MATCH">Possible match or better</option>
                   <option value="LOW_FIT">Everything</option>
                 </select>
+              </div>
+              <div className="form-field">
+                <label htmlFor="settings-digest-timezone">Timezone</label>
+                <select
+                  id="settings-digest-timezone"
+                  value={digest.timezone}
+                  onChange={(e) => setDigest({ ...digest, timezone: e.target.value })}
+                >
+                  {timezoneOptions(digest.timezone).map((zone) => (
+                    <option key={zone} value={zone}>
+                      {zone}
+                    </option>
+                  ))}
+                </select>
+                <p className="hint">
+                  Used for digest timing — your digest sends once a day from 06:00 in this timezone.
+                </p>
               </div>
               <div className="form-actions">
                 <button className="cta" type="button" onClick={() => void saveDigest()}>

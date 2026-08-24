@@ -376,7 +376,13 @@ describe('profile-bundle PUT endpoints', () => {
     const geographies = await fetchApi('/api/org/geographies', {
       method: 'PUT',
       headers: jsonHeaders(org.cookie),
-      body: JSON.stringify({ geographies: [{ kind: 'opportunity_country', code: 'CY' }] }),
+      body: JSON.stringify({
+        geographies: [
+          { kind: 'opportunity_country', code: 'CY' },
+          // The settings NUTS add-row writes this kind — keep it covered.
+          { kind: 'preferred_nuts', code: 'DE30' },
+        ],
+      }),
     });
     expect(geographies.status).toBe(200);
 
@@ -423,6 +429,49 @@ describe('profile-bundle PUT endpoints', () => {
     });
     const digestBody = (await digestGet.json()) as { digest: { timezone: string } };
     expect(digestBody.digest.timezone).toBe('Europe/Nicosia');
+  });
+
+  it('rejects an inverted value range (min > max) with a 400', async () => {
+    const org = await setUpOrg('InvertedRangeOrg');
+    const res = await fetchApi('/api/org/matching-preferences', {
+      method: 'PUT',
+      headers: jsonHeaders(org.cookie),
+      body: JSON.stringify({
+        minValueEur: 500_000,
+        maxValueEur: 10_000,
+        supportedContractNatures: ['services'],
+        minimumDaysRemaining: null,
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects an invalid IANA timezone with a 400 (a stored bad zone would crash the digest scheduler)', async () => {
+    const org = await setUpOrg('BadTimezoneOrg');
+    const res = await fetchApi('/api/org/digest-preferences', {
+      method: 'PUT',
+      headers: jsonHeaders(org.cookie),
+      body: JSON.stringify({
+        enabled: true,
+        sendEmpty: false,
+        minClassification: 'WORTH_REVIEWING',
+        timezone: 'Europe/Nowhere',
+      }),
+    });
+    expect(res.status).toBe(400);
+
+    // A legacy alias resolves via ICU and must stay accepted.
+    const alias = await fetchApi('/api/org/digest-preferences', {
+      method: 'PUT',
+      headers: jsonHeaders(org.cookie),
+      body: JSON.stringify({
+        enabled: true,
+        sendEmpty: false,
+        minClassification: 'WORTH_REVIEWING',
+        timezone: 'UTC',
+      }),
+    });
+    expect(alias.status).toBe(200);
   });
 });
 

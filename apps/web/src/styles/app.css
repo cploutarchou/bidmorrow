@@ -1368,6 +1368,50 @@ td {
   background: var(--accent-soft);
   box-shadow: inset 2px 0 0 var(--accent-text); /* not color-only */
 }
+/* Caution dot on a section with an unresolved issue (prototype's flagged
+   nav) — supplementary to the issues banner, which carries the words. */
+.settings-nav__flag {
+  margin-left: auto;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--status-caution-text);
+  flex: none;
+}
+
+/* "N to fix" banner above the settings shell — same caution vocabulary as
+   .ob-scope-indicator--warn, sized as a page-level notice. */
+.settings-issues {
+  border: 1px solid var(--status-caution-text);
+  border-radius: var(--r-m);
+  background: var(--status-caution-wash);
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+}
+.settings-issues__title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-1);
+}
+.settings-issues ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.2rem;
+}
+.settings-issues li {
+  font-size: 0.9rem;
+  color: var(--text-2);
+}
+
+/* Sub-grouping inside a subsection (e.g. preferred NUTS under Geographies). */
+.settings-subheading {
+  margin: 1.25rem 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-1);
+}
 /* Sections become opaque panels — the perceived "empty right half" is
    fixed by giving the column a designed boundary, not by stretching forms
    to 1100px (form measure stays capped for usability). */
