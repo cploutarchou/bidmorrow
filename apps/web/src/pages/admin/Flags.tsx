@@ -42,6 +42,15 @@ export function Flags(): ReactElement {
     setEditDescription(flag.description ?? '');
   }
 
+  const editValueIsValidJson = ((): boolean => {
+    try {
+      JSON.parse(editValue);
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+
   async function saveEdit(): Promise<void> {
     if (editingKey === null) return;
     let parsedValue: unknown;
@@ -124,8 +133,21 @@ export function Flags(): ReactElement {
             <input
               id="flag-value"
               value={editValue}
+              aria-invalid={!editValueIsValidJson}
+              aria-describedby="flag-value-hint"
               onChange={(event) => setEditValue(event.target.value)}
             />
+            {/* Live validity readout (prototype's flag hint) — the same
+                JSON.parse gate saveEdit enforces, surfaced per keystroke so
+                the typed confirmation is never spent on a doomed value. */}
+            <p
+              id="flag-value-hint"
+              className={editValueIsValidJson ? 'hint admin-tone-ok' : 'hint admin-tone-risk'}
+            >
+              {editValueIsValidJson
+                ? 'Valid JSON literal.'
+                : 'Value must be valid JSON (e.g. true, 42, or a quoted string).'}
+            </p>
           </div>
           <div className="form-field">
             <label htmlFor="flag-description">Description</label>

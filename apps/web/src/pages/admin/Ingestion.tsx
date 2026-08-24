@@ -6,6 +6,7 @@ import { formatIsoUtc } from '../../lib/format';
 import { validateBackfillRange } from '../../lib/admin-date-range';
 import { validateCpvScope } from '../../lib/admin-scope';
 import { ConfirmAction } from '../../components/admin/ConfirmAction';
+import { useAdminOps } from '../../components/admin/admin-health';
 import { AdminPage } from '../../components/admin/AdminPage';
 import { AdminFlash } from '../../components/admin/AdminFlash';
 import { Pager } from '../../components/admin/Pager';
@@ -20,6 +21,9 @@ const MAX_BACKFILL_DAYS = 90;
 const MAX_SCOPE_FAMILIES = 20;
 
 export function Ingestion(): ReactElement {
+  const ops = useAdminOps();
+  const ingestionPaused = ops?.health?.ingestion.paused ?? null;
+  const [view, setView] = useState<'runs' | 'retries' | 'errors'>('runs');
   const [runs, setRuns] = useState<CursorState<AdminIngestionRun> | null>(null);
   const [runsLoading, setRunsLoading] = useState(true);
   const [runsError, setRunsError] = useState<string | null>(null);
@@ -152,6 +156,7 @@ export function Ingestion(): ReactElement {
       await adminApi.pauseIngestion();
       setFlashTone('ok');
       setStatusMessage('Ingestion paused.');
+      await ops?.refresh();
     } catch {
       setFlashTone('risk');
       setStatusMessage('Could not pause ingestion.');
@@ -167,6 +172,7 @@ export function Ingestion(): ReactElement {
       await adminApi.resumeIngestion();
       setFlashTone('ok');
       setStatusMessage('Ingestion resumed.');
+      await ops?.refresh();
     } catch {
       setFlashTone('risk');
       setStatusMessage('Could not resume ingestion.');
@@ -229,218 +235,277 @@ export function Ingestion(): ReactElement {
 
       <section className="admin-panel">
         <h2 className="admin-panel__label">Pause / resume ingestion</h2>
-        <div className="button-row">
-          <ConfirmAction
-            label="Pause ingestion"
-            confirmText="PAUSE_INGESTION"
-            busy={busy}
-            variant="danger"
-            onConfirm={() => void pause()}
-          />
-          <ConfirmAction
-            label="Resume ingestion"
-            confirmText="RESUME_INGESTION"
-            busy={busy}
-            onConfirm={() => void resume()}
-          />
-        </div>
-      </section>
-
-      <section className="admin-section">
-        <h2 className="admin-panel__label">Recent runs</h2>
-        {runsLoading && <p>Loading…</p>}
-        {runsError !== null && (
-          <p role="alert" className="form-error">
-            {runsError}
-          </p>
-        )}
-        {!runsLoading && runs !== null && (
-          <>
-            <div className="admin-table-scroll">
-              <table>
-                <caption className="visually-hidden-status">Ingestion runs</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Run ID</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Window</th>
-                    <th scope="col">Notices seen/upserted</th>
-                    <th scope="col">Errors</th>
-                    <th scope="col">Fetch failures</th>
-                    <th scope="col">Render pending</th>
-                    <th scope="col">Started</th>
-                    <th scope="col">Finished</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {runs.items.map((run) => (
-                    <tr key={run.id}>
-                      <td>{run.id}</td>
-                      <td>{run.status}</td>
-                      <td>
-                        {run.windowFrom} – {run.windowTo}
-                      </td>
-                      <td>
-                        {run.noticesSeen} / {run.noticesUpserted}
-                      </td>
-                      <td>{run.errorsCount}</td>
-                      <td>{run.noticesFetchFailed}</td>
-                      <td>{run.noticesRenderPending}</td>
-                      <td>{formatIsoUtc(run.startedAt)}</td>
-                      <td>{formatIsoUtc(run.finishedAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <Pager
-              nextCursor={runs.nextCursor}
-              loading={false}
-              onLoadMore={() => void loadMoreRuns()}
+        {/* State-aware control (prototype): one action, matching the actual
+            paused state, with the consequence stated beside it. The
+            two-buttons-always fallback covers the (theoretically impossible
+            behind AdminGate) case of missing health state. */}
+        {ingestionPaused !== null ? (
+          <div className="admin-pause-control">
+            <p className="hint">
+              {ingestionPaused
+                ? 'Ingestion is PAUSED — scheduled windows are not being enqueued. Resuming lets the next window run normally; nothing is backfilled automatically.'
+                : 'Ingestion is running. Pausing stops scheduled windows from being enqueued; notices already fetched are unaffected.'}
+            </p>
+            <ConfirmAction
+              label={ingestionPaused ? 'Resume ingestion' : 'Pause ingestion'}
+              confirmText={ingestionPaused ? 'RESUME_INGESTION' : 'PAUSE_INGESTION'}
+              busy={busy}
+              {...(ingestionPaused ? {} : { variant: 'danger' as const })}
+              onConfirm={() => (ingestionPaused ? void resume() : void pause())}
             />
-          </>
-        )}
-      </section>
-
-      <section className="admin-section">
-        <h2 className="admin-panel__label">Fetch retries</h2>
-        {fetchRetriesCounts !== null && (
-          <dl className="admin-facts">
-            <div className="admin-fact">
-              <dt className="admin-fact__label">Pending</dt>
-              <dd className="admin-fact__value">{fetchRetriesCounts.pending}</dd>
-            </div>
-            <div className="admin-fact">
-              <dt className="admin-fact__label">Recovered</dt>
-              <dd className="admin-fact__value admin-tone-ok">{fetchRetriesCounts.recovered}</dd>
-            </div>
-            <div className="admin-fact">
-              <dt className="admin-fact__label">Abandoned</dt>
-              <dd className="admin-fact__value admin-tone-risk">{fetchRetriesCounts.abandoned}</dd>
-            </div>
-          </dl>
-        )}
-        {fetchRetriesLoading && <p>Loading…</p>}
-        {fetchRetriesError !== null && (
-          <p role="alert" className="form-error">
-            {fetchRetriesError}
-          </p>
-        )}
-        {!fetchRetriesLoading && fetchRetries !== null && fetchRetries.items.length === 0 && (
-          <p className="admin-empty">No fetch retries recorded.</p>
-        )}
-        {!fetchRetriesLoading && fetchRetries !== null && fetchRetries.items.length > 0 && (
-          <>
-            <div className="admin-table-scroll">
-              <table>
-                <caption className="visually-hidden-status">Ingestion fetch retries</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Source notice</th>
-                    <th scope="col">Publication date</th>
-                    <th scope="col">Attempts</th>
-                    <th scope="col">Next attempt</th>
-                    <th scope="col">Last error code</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Updated</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {fetchRetries.items.map((retry) => (
-                    <tr key={retry.id}>
-                      <td>{retry.sourceNoticeId}</td>
-                      <td>{retry.publicationDate}</td>
-                      <td>{retry.attempts}</td>
-                      <td>{formatIsoUtc(retry.nextAttemptAt)}</td>
-                      <td>{retry.lastErrorCode}</td>
-                      <td>{retry.status}</td>
-                      <td>{formatIsoUtc(retry.updatedAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <Pager
-              nextCursor={fetchRetries.nextCursor}
-              loading={false}
-              onLoadMore={() => void loadMoreFetchRetries()}
+          </div>
+        ) : (
+          <div className="button-row">
+            <ConfirmAction
+              label="Pause ingestion"
+              confirmText="PAUSE_INGESTION"
+              busy={busy}
+              variant="danger"
+              onConfirm={() => void pause()}
             />
-          </>
-        )}
-      </section>
-
-      <section className="admin-panel">
-        <h2 className="admin-panel__label">Errors for a run</h2>
-        <form
-          className="form-field inline admin-filters"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void loadErrors();
-          }}
-        >
-          <label htmlFor="errors-run-id">Ingestion run ID</label>
-          <input
-            id="errors-run-id"
-            value={errorsRunId}
-            onChange={(event) => setErrorsRunId(event.target.value)}
-          />
-          <button type="submit">Load errors</button>
-        </form>
-        {errorsLoading && <p>Loading…</p>}
-        {errorsError !== null && (
-          <p role="alert" className="form-error">
-            {errorsError}
-          </p>
-        )}
-        {errors !== null && errors.items.length === 0 && <p>No errors for that run.</p>}
-        {errors !== null && errors.items.length > 0 && (
-          <div className="admin-table-scroll">
-            <table>
-              <caption className="visually-hidden-status">Ingestion errors</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Stage</th>
-                  <th scope="col">Error code</th>
-                  <th scope="col">Source notice</th>
-                  <th scope="col">Message</th>
-                  <th scope="col">Detail</th>
-                </tr>
-              </thead>
-              <tbody>
-                {errors.items.map((err) => (
-                  <tr key={err.id}>
-                    <td>{err.stage}</td>
-                    <td>{err.errorCode}</td>
-                    <td>{err.sourceNoticeId ?? '—'}</td>
-                    <td>{err.message}</td>
-                    <td>
-                      {err.detailJson !== null ? (
-                        <>
-                          <button
-                            type="button"
-                            className="link-button"
-                            onClick={() =>
-                              setExpandedErrorId(expandedErrorId === err.id ? null : err.id)
-                            }
-                            aria-expanded={expandedErrorId === err.id}
-                          >
-                            {expandedErrorId === err.id ? 'Hide detail' : 'Show detail'}
-                          </button>
-                          {expandedErrorId === err.id && (
-                            <pre className="admin-code-block">{err.detailJson}</pre>
-                          )}
-                        </>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <ConfirmAction
+              label="Resume ingestion"
+              confirmText="RESUME_INGESTION"
+              busy={busy}
+              onConfirm={() => void resume()}
+            />
           </div>
         )}
       </section>
+
+      {/* Sub-views (prototype's ingestion filter pills): the three read
+          surfaces switch instead of stacking into one wall; the notice
+          lookup, scope and backfill controls stay always-visible below. */}
+      <div className="admin-pills" role="group" aria-label="Ingestion view">
+        <button
+          type="button"
+          className="admin-pill"
+          aria-pressed={view === 'runs'}
+          onClick={() => setView('runs')}
+        >
+          Ingestion runs
+        </button>
+        <button
+          type="button"
+          className="admin-pill"
+          aria-pressed={view === 'retries'}
+          onClick={() => setView('retries')}
+        >
+          Fetch retry queue
+        </button>
+        <button
+          type="button"
+          className="admin-pill"
+          aria-pressed={view === 'errors'}
+          onClick={() => setView('errors')}
+        >
+          Errors for a run
+        </button>
+      </div>
+
+      {view === 'runs' && (
+        <section className="admin-section">
+          <h2 className="admin-panel__label">Recent runs</h2>
+          {runsLoading && <p>Loading…</p>}
+          {runsError !== null && (
+            <p role="alert" className="form-error">
+              {runsError}
+            </p>
+          )}
+          {!runsLoading && runs !== null && (
+            <>
+              <div className="admin-table-scroll">
+                <table>
+                  <caption className="visually-hidden-status">Ingestion runs</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Run ID</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Window</th>
+                      <th scope="col">Notices seen/upserted</th>
+                      <th scope="col">Errors</th>
+                      <th scope="col">Fetch failures</th>
+                      <th scope="col">Render pending</th>
+                      <th scope="col">Started</th>
+                      <th scope="col">Finished</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {runs.items.map((run) => (
+                      <tr key={run.id}>
+                        <td>{run.id}</td>
+                        <td>{run.status}</td>
+                        <td>
+                          {run.windowFrom} – {run.windowTo}
+                        </td>
+                        <td>
+                          {run.noticesSeen} / {run.noticesUpserted}
+                        </td>
+                        <td>{run.errorsCount}</td>
+                        <td>{run.noticesFetchFailed}</td>
+                        <td>{run.noticesRenderPending}</td>
+                        <td>{formatIsoUtc(run.startedAt)}</td>
+                        <td>{formatIsoUtc(run.finishedAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Pager
+                nextCursor={runs.nextCursor}
+                loading={false}
+                onLoadMore={() => void loadMoreRuns()}
+              />
+            </>
+          )}
+        </section>
+      )}
+
+      {view === 'retries' && (
+        <section className="admin-section">
+          <h2 className="admin-panel__label">Fetch retries</h2>
+          {fetchRetriesCounts !== null && (
+            <dl className="admin-facts">
+              <div className="admin-fact">
+                <dt className="admin-fact__label">Pending</dt>
+                <dd className="admin-fact__value">{fetchRetriesCounts.pending}</dd>
+              </div>
+              <div className="admin-fact">
+                <dt className="admin-fact__label">Recovered</dt>
+                <dd className="admin-fact__value admin-tone-ok">{fetchRetriesCounts.recovered}</dd>
+              </div>
+              <div className="admin-fact">
+                <dt className="admin-fact__label">Abandoned</dt>
+                <dd className="admin-fact__value admin-tone-risk">
+                  {fetchRetriesCounts.abandoned}
+                </dd>
+              </div>
+            </dl>
+          )}
+          {fetchRetriesLoading && <p>Loading…</p>}
+          {fetchRetriesError !== null && (
+            <p role="alert" className="form-error">
+              {fetchRetriesError}
+            </p>
+          )}
+          {!fetchRetriesLoading && fetchRetries !== null && fetchRetries.items.length === 0 && (
+            <p className="admin-empty">No fetch retries recorded.</p>
+          )}
+          {!fetchRetriesLoading && fetchRetries !== null && fetchRetries.items.length > 0 && (
+            <>
+              <div className="admin-table-scroll">
+                <table>
+                  <caption className="visually-hidden-status">Ingestion fetch retries</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Source notice</th>
+                      <th scope="col">Publication date</th>
+                      <th scope="col">Attempts</th>
+                      <th scope="col">Next attempt</th>
+                      <th scope="col">Last error code</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fetchRetries.items.map((retry) => (
+                      <tr key={retry.id}>
+                        <td>{retry.sourceNoticeId}</td>
+                        <td>{retry.publicationDate}</td>
+                        <td>{retry.attempts}</td>
+                        <td>{formatIsoUtc(retry.nextAttemptAt)}</td>
+                        <td>{retry.lastErrorCode}</td>
+                        <td>{retry.status}</td>
+                        <td>{formatIsoUtc(retry.updatedAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Pager
+                nextCursor={fetchRetries.nextCursor}
+                loading={false}
+                onLoadMore={() => void loadMoreFetchRetries()}
+              />
+            </>
+          )}
+        </section>
+      )}
+
+      {view === 'errors' && (
+        <section className="admin-panel">
+          <h2 className="admin-panel__label">Errors for a run</h2>
+          <form
+            className="form-field inline admin-filters"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void loadErrors();
+            }}
+          >
+            <label htmlFor="errors-run-id">Ingestion run ID</label>
+            <input
+              id="errors-run-id"
+              value={errorsRunId}
+              onChange={(event) => setErrorsRunId(event.target.value)}
+            />
+            <button type="submit">Load errors</button>
+          </form>
+          {errorsLoading && <p>Loading…</p>}
+          {errorsError !== null && (
+            <p role="alert" className="form-error">
+              {errorsError}
+            </p>
+          )}
+          {errors !== null && errors.items.length === 0 && <p>No errors for that run.</p>}
+          {errors !== null && errors.items.length > 0 && (
+            <div className="admin-table-scroll">
+              <table>
+                <caption className="visually-hidden-status">Ingestion errors</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Stage</th>
+                    <th scope="col">Error code</th>
+                    <th scope="col">Source notice</th>
+                    <th scope="col">Message</th>
+                    <th scope="col">Detail</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {errors.items.map((err) => (
+                    <tr key={err.id}>
+                      <td>{err.stage}</td>
+                      <td>{err.errorCode}</td>
+                      <td>{err.sourceNoticeId ?? '—'}</td>
+                      <td>{err.message}</td>
+                      <td>
+                        {err.detailJson !== null ? (
+                          <>
+                            <button
+                              type="button"
+                              className="link-button"
+                              onClick={() =>
+                                setExpandedErrorId(expandedErrorId === err.id ? null : err.id)
+                              }
+                              aria-expanded={expandedErrorId === err.id}
+                            >
+                              {expandedErrorId === err.id ? 'Hide detail' : 'Show detail'}
+                            </button>
+                            {expandedErrorId === err.id && (
+                              <pre className="admin-code-block">{err.detailJson}</pre>
+                            )}
+                          </>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="admin-panel">
         <h2 className="admin-panel__label">Notice lookup</h2>

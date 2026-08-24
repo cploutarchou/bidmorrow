@@ -28,11 +28,11 @@ import { and, count, desc, eq, gte, like, lt, sql } from 'drizzle-orm';
 import type { OrganizationId } from '@bidmorrow/domain';
 
 import type { Db } from '../client';
-import { auditEvents } from '../schema/ops';
+import { auditEvents, supportNotes } from '../schema/ops';
 import { companyProfiles, digestPreferences } from '../schema/company';
 import { customerFeedback, digestRuns, emailDeliveries, savedTenders } from '../schema/engagement';
 import { organizationMembers, organizations, users } from '../schema/identity';
-import { ingestionErrors } from '../schema/ingestion';
+import { ingestionErrors, ingestionRuns } from '../schema/ingestion';
 import { tenderMatches } from '../schema/matching';
 import { tenderLots, tenderNotices } from '../schema/tender';
 import { subscriptions } from '../schema/billing';
@@ -350,6 +350,42 @@ export async function getUsageCounts(db: Db): Promise<UsageCounts> {
     notices: noticesN,
     lots: lotsN,
     matches: matchesN,
+  };
+}
+
+export interface RailCounts {
+  readonly organizations: number;
+  readonly users: number;
+  readonly subscriptions: number;
+  readonly ingestionRuns: number;
+  readonly digestRuns: number;
+  readonly supportNotes: number;
+  readonly auditEvents: number;
+}
+
+/**
+ * Per-section totals for the admin shell's rail (prototype's nav counts) —
+ * plain COUNT(*)s in one D1 batch. Flags are not counted here: the flag set
+ * is the static `FEATURE_FLAG_KEYS` enum, which the route layer owns.
+ */
+export async function getRailCounts(db: Db): Promise<RailCounts> {
+  const [orgsN, usersN, subsN, ingestionN, digestN, supportN, auditN] = await db.batch([
+    db.select({ n: count() }).from(organizations),
+    db.select({ n: count() }).from(users),
+    db.select({ n: count() }).from(subscriptions),
+    db.select({ n: count() }).from(ingestionRuns),
+    db.select({ n: count() }).from(digestRuns),
+    db.select({ n: count() }).from(supportNotes),
+    db.select({ n: count() }).from(auditEvents),
+  ]);
+  return {
+    organizations: orgsN[0]?.n ?? 0,
+    users: usersN[0]?.n ?? 0,
+    subscriptions: subsN[0]?.n ?? 0,
+    ingestionRuns: ingestionN[0]?.n ?? 0,
+    digestRuns: digestN[0]?.n ?? 0,
+    supportNotes: supportN[0]?.n ?? 0,
+    auditEvents: auditN[0]?.n ?? 0,
   };
 }
 
