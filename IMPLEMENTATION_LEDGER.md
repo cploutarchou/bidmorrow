@@ -4211,6 +4211,33 @@ The customer danger-zone `ConfirmAction` (components/ConfirmAction.tsx)
 is deliberately untouched: different component, and its surrounding copy
 already states the consequence.
 
+## 402 paywall + checkout-success e2e assertions (2026-08-24)
+
+The M2 leftover. The 402 paywall was untestable end-to-end: enforcement
+defaults off, and the local stack has no Stripe, so no subscription can
+ever satisfy it when on. A deliberately narrow test hook closes that —
+`POST /api/test/entitlement-enforced {enabled}` flips exactly one named
+flag, boolean only, behind the same double gate (`APP_ENV` local/test AND
+`E2E_TEST_HOOKS=true`) and session check as `score-now`; a new
+test-hooks.d1 test pins that it 404s outside the gate.
+
+Three e2e tests in billing.spec.ts:
+
+1. **402 paywall** — flag on (reset in `finally` — it is global and the
+   file runs serially): `/app` renders the designed paywall heading, never
+   the generic failure copy, with no tender cards and no KPI strip behind
+   it; after reset the same session's feed works again.
+2. **Checkout-success confirmed** — `/api/billing/status` network-stubbed
+   with the documented active-subscription shape (the response shape is
+   pinned server-side by packages/billing tests); asserts plan and price
+   render from the RESPONSE, never the URL, per the page's own rule 1.
+3. **Still-activating** — real server, no stub: the poll exhausts (~15s)
+   into "Still activating", never a failure message or fabricated
+   confirmation.
+
+All three pass against the real wrangler stack (5 passed / 3 skipped in
+the file). Full gates green.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
