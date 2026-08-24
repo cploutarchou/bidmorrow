@@ -222,7 +222,21 @@ localStorage ops-state) was excluded from the comparison by instruction.
   (**DONE 2026-08-23** — a native `<details>` on the card revealing the
   engine's component explanation strings, which the feed payload already
   carried and the card never rendered),
-  settings validation layer, timezone control, NUTS add, Appearance pane,
+  ~~settings validation layer, timezone control, NUTS add~~ — **DONE
+  2026-08-24.** Field-adjacent validation on the CPV / country / NUTS
+  add-rows and the value range (aria-invalid + role=alert, onboarding's
+  vocabulary), the prototype's "N to fix" issues banner + flagged nav dot
+  (only for conditions that verifiably break matching: inverted value
+  range, zero CPV codes), a digest timezone select
+  (`Intl.supportedValuesOf`), and a preferred-NUTS add-row (the
+  `preferred_nuts` kind the engine already scores at full geography
+  points but no UI ever offered). Server side, the same pass closed two
+  real gaps: matching-preferences now rejects min > max, and
+  digest-preferences rejects invalid IANA timezones — a stored bad zone
+  made `Intl.DateTimeFormat` throw inside `selectDigestOrgs`' loop,
+  which would have killed the digest for EVERY org; the scheduler also
+  now guards per-org and logs `digest.skipped.invalid_timezone` for
+  legacy rows. Appearance pane,
   unified save bar; danger zone deletes account not organisation
   (product decision).
 - Admin: ops pills, state-aware pause/resume, rail counts, ingestion

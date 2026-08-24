@@ -252,6 +252,55 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     await expect(page.getByText(/reached the limit of 50 items for this list/)).toBeVisible();
   });
 
+  test('settings: validation layer — bad inputs get field-adjacent errors, NUTS and timezone round-trip', async () => {
+    await page.goto('/app/settings');
+    await expect(page.getByRole('heading', { name: 'Company profile' })).toBeVisible();
+
+    // A malformed CPV code is rejected before any network round-trip.
+    await page.getByLabel('Add CPV code').fill('123');
+    await page
+      .locator('.combobox-add-row', { has: page.locator('#new-cpv') })
+      .getByRole('button', { name: 'Add', exact: true })
+      .click();
+    await expect(page.getByText('CPV codes are 8 digits (for example 72220000).')).toBeVisible();
+
+    // An inverted value range flags the field pair, the page-level issues
+    // banner, and the nav dot — and clears when the range is fixed.
+    await page.getByLabel('Minimum contract value (EUR)').fill('500000');
+    await page.getByLabel('Maximum contract value (EUR)').fill('10000');
+    await expect(page.getByText('Minimum value must not exceed the maximum.')).toBeVisible();
+    await expect(page.getByText(/to fix in your matching profile/)).toBeVisible();
+    await page.getByLabel('Maximum contract value (EUR)').fill('900000');
+    await expect(page.getByText(/to fix in your matching profile/)).not.toBeVisible();
+
+    // NUTS entry: shape-checked, uppercased, saved through the same
+    // geographies endpoint (kind preferred_nuts).
+    await page.getByLabel('Add NUTS region code').fill('x');
+    const nutsAdd = page
+      .locator('.form-field.inline', { has: page.locator('#new-nuts') })
+      .getByRole('button', { name: 'Add', exact: true });
+    await nutsAdd.click();
+    await expect(page.getByText(/NUTS codes are a 2-letter country/)).toBeVisible();
+    await page.getByLabel('Add NUTS region code').fill('de30');
+    await nutsAdd.click();
+    await expect(page.locator('.chip-list li', { hasText: 'DE30' })).toBeVisible();
+    await page.getByRole('button', { name: 'Save geographies' }).click();
+    // Target the visually-hidden live region, not getByRole('status') — the
+    // issues banner is also role=status, so the role query can be ambiguous.
+    await expect(page.locator('p[role="status"].visually-hidden-status')).toHaveText(
+      'Geographies saved.',
+    );
+
+    // Digest timezone select persists through save.
+    await page.getByLabel('Timezone').selectOption('Europe/Berlin');
+    await page.getByRole('button', { name: 'Save digest preferences' }).click();
+    await expect(page.locator('p[role="status"].visually-hidden-status')).toHaveText(
+      'Digest preferences saved.',
+    );
+    await page.reload();
+    await expect(page.getByLabel('Timezone')).toHaveValue('Europe/Berlin');
+  });
+
   test('settings: billing renders the honest no-subscription empty state', async () => {
     await expect(page.getByText('No active subscription.')).toBeVisible();
     await expect(page.getByRole('button', { name: /Subscribe — Standard/ })).toBeVisible();
