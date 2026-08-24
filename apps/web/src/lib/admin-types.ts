@@ -39,6 +39,18 @@ export interface AdminUsageCounts {
   matches: number;
 }
 
+/** `GET /api/admin/rail-counts` — per-section totals for the shell rail. */
+export interface AdminRailCounts {
+  organizations: number;
+  users: number;
+  subscriptions: number;
+  ingestionRuns: number;
+  digestRuns: number;
+  supportNotes: number;
+  auditEvents: number;
+  flags: number;
+}
+
 // --- Organizations / users / subscriptions -----------------------------
 
 export interface AdminOrgSummary {
