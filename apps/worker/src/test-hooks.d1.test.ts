@@ -84,4 +84,13 @@ describe("/api/test/* with E2E_TEST_HOOKS unset (this suite's real worker env)",
     const response = await fetchApi('/api/test/score-now', { method: 'POST' });
     expect(response.status).toBe(404);
   });
+
+  it('POST /api/test/entitlement-enforced 404s (the flag can never be flipped outside the gate)', async () => {
+    const response = await fetchApi('/api/test/entitlement-enforced', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ enabled: true }),
+    });
+    expect(response.status).toBe(404);
+  });
 });

@@ -297,8 +297,18 @@ localStorage ops-state) was excluded from the comparison by instruction.
   every pathname change, with three deliberate exceptions documented in the
   file (initial load, search-only changes, and the slide-over sheet in both
   directions — `DetailSheet` owns focus there). Both are pinned by keyboard
-  e2e tests. Still open: 402/success e2e assertions,
-  `toHaveScreenshot` baselines, zoom/reflow pass.
+  e2e tests. Still open: `toHaveScreenshot` baselines, zoom/reflow pass.
+  ~~402/success e2e assertions~~ — **DONE 2026-08-24.** Three new e2e
+  tests: the 402 paywall (a narrow, double-gated local-only test hook
+  flips `entitlement_enforced` for exactly the test's window, always reset
+  in `finally`; asserts the designed paywall state and that no feed
+  content or KPI strip leaks behind it, then that the reset restores the
+  feed), the checkout-success confirmed state (network-stubbed
+  `/api/billing/status` — the local stack has no Stripe, so this tests
+  the page's rendering contract against the documented response shape,
+  itself pinned by packages/billing tests), and the still-activating
+  state via real poll exhaustion (~15s against the real server, no stub).
+  The hook 404s outside the gate — pinned by a new test-hooks.d1 test.
 - Docs hygiene: font-budget reconciliation (181 KB shipped vs 90 KB
   written; per-visit latin ~57 KB is compliant via unicode-range — record
   the raised budget), stale Lucide note in dependency-versions.md, stale
