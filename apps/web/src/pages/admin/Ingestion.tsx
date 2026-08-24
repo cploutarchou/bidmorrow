@@ -243,12 +243,17 @@ export function Ingestion(): ReactElement {
           <div className="admin-pause-control">
             <p className="hint">
               {ingestionPaused
-                ? 'Ingestion is PAUSED — scheduled windows are not being enqueued. Resuming picks up from the stored checkpoint on the next run: days missed while paused are caught up automatically, bounded per run.'
-                : 'Ingestion is running. Pausing stops scheduled windows from being enqueued; notices already fetched are unaffected.'}
+                ? 'Ingestion is PAUSED — scheduled windows are not being enqueued.'
+                : 'Ingestion is running.'}
             </p>
             <ConfirmAction
               label={ingestionPaused ? 'Resume ingestion' : 'Pause ingestion'}
               confirmText={ingestionPaused ? 'RESUME_INGESTION' : 'PAUSE_INGESTION'}
+              consequence={
+                ingestionPaused
+                  ? 'Scheduled windows resume from the stored checkpoint on the next run — days missed while paused are caught up automatically, bounded per run.'
+                  : 'Scheduled windows stop being enqueued. Notices already fetched are unaffected.'
+              }
               busy={busy}
               {...(ingestionPaused ? {} : { variant: 'danger' as const })}
               onConfirm={() => (ingestionPaused ? void resume() : void pause())}
@@ -617,6 +622,7 @@ export function Ingestion(): ReactElement {
           <ConfirmAction
             label="Update ingestion scope"
             confirmText="UPDATE_INGESTION_SCOPE"
+            consequence="Applies from the next scheduled window. Notices already ingested under the old scope are kept, not removed."
             busy={busy}
             onConfirm={() => void submitScope()}
           />
@@ -654,6 +660,7 @@ export function Ingestion(): ReactElement {
             <ConfirmAction
               label="Run backfill"
               confirmText="RUN_BACKFILL"
+              consequence="Enqueues one ingestion window per day in the range, processed alongside scheduled runs. Re-fetched notices are deduplicated by content hash — nothing is double-ingested."
               busy={busy}
               variant="danger"
               onConfirm={() => void submitBackfill()}

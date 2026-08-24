@@ -216,7 +216,17 @@ localStorage ops-state) was excluded from the comparison by instruction.
   remaining `visually-hidden-status` uses are legitimately SR-only
   content. The earlier "customer surfaces still hidden-only" note was
   stale),
-  arm→confirm strip with consequence copy.
+  ~~arm→confirm strip with consequence copy~~ (**DONE 2026-08-24** — the
+  admin `ConfirmAction` is now two-phase: a resting action button ARMS an
+  in-flow strip stating the consequence, requiring the typed literal, and
+  offering Cancel, with focus moved into the input on arm and back on
+  cancel. All eight admin call sites carry consequence sentences verified
+  against the implementation, not copied blind from the prototype — e.g.
+  the backfill one states the one-window-per-day and hash-dedup facts from
+  the actual handler. In flow, never sticky: the prototype's sticky strip
+  needs a page-level pending state machine the app deliberately lacks.
+  The customer danger-zone `ConfirmAction` is left as is — its surrounding
+  copy already states the consequence, and it is a different component).
 - ~~Auth polish: pre-submit validation, silent-failure fix, confirmation
   states. Marketing nav `aria-current`. Cookie-banner bottom padding.~~ —
   **DONE 2026-08-23.** ForgotPassword's network failure is now a visible

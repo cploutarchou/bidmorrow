@@ -4184,6 +4184,33 @@ The audit's five remaining admin minors, shipped as one pass.
 New worker test: rail-counts 404-cloaks non-admins and returns numeric
 totals (admin.d1.test.ts, 23 passing). Full gates green.
 
+## Arm→confirm strip with consequence copy (2026-08-24)
+
+The last shared-components audit minor. The admin `ConfirmAction` becomes
+two-phase: at rest it is one action button; clicking ARMS an in-flow strip
+that states the consequence, requires the exact confirm literal the API
+already demands, and offers Cancel. Focus moves into the input on arm and
+back to the arm button on cancel. In flow rather than the prototype's
+`position: sticky` — that shape needs a page-level pending state machine
+the app deliberately does not have (same call as the admin-bodies PR).
+
+All eight admin call sites gained consequence sentences, each verified
+against the implementation rather than copied blind from the prototype:
+ingestion pause/resume (checkpoint catch-up wording from the corrected
+PR #98 copy), digest pause/resume (missed local dates are not back-sent),
+scope update (applies from the next window; old-scope notices kept),
+backfill (one window per day per the handler's enumerateDays; re-fetches
+deduplicated by content hash per insertSnapshotIfNewHash), recompute
+(new-version rows; feed reads latest per lot — docs/matching-engine.md
+wording), suspend/unsuspend (feed 403 + digest de-selection, both pinned
+by existing admin.d1 tests), and flag update (read per request, no staged
+rollout). The Flags editor's own close button was renamed "Close editor"
+so the armed strip's Cancel is unambiguous.
+
+The customer danger-zone `ConfirmAction` (components/ConfirmAction.tsx)
+is deliberately untouched: different component, and its surrounding copy
+already states the consequence.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
