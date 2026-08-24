@@ -4125,6 +4125,30 @@ explicit null, so a "no published value" lot silently got one — now
 `=== undefined`, matching its own deadline convention. Full gates green;
 critical-path 14/14, accessibility 12/12.
 
+## Low-fit card collapse + excluded-in-feed ruled owner-gated (2026-08-24)
+
+The audit's "low-fit/excluded card states" minor, resolved as one shipped
+half and one governed half.
+
+Shipped: the Theme Spec §07 low-fit collapse. The chip states landed with
+the theme-foundation PR; what was missing was the card treatment —
+`tender-card--low` now renders LOW_FIT rows with a hairline left border,
+tighter padding and a dimmed, smaller title. The spec's "no component
+bars" was already true (LOW_FIT persists no components — the feed payload
+carries none), so the collapse is purely visual weight. One deliberate
+departure, documented in the CSS: Save/Ignore stay visible — the spec
+hides actions until hover, which is unreachable on touch and awkward for
+keyboard users.
+
+Governed: the EXCLUDED card state is NOT built. The product review ruled
+the shipped keep-hidden behavior correct (the feed enumeration in
+docs/product-scope.md has no excluded surfacing; "skip the rest" is the
+headline promise) and the prototype's excluded-under-Possible model out
+of scope without an explicit owner trade-off. Recorded as
+HUMAN_DECISION_BLOCKERS.md item 13 with the recommended alternative (a
+per-rule "N excluded, last 30 days" count in Settings) — not launch
+blocking, no work until the owner picks a shape.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

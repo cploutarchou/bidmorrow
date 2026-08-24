@@ -196,7 +196,18 @@ localStorage ops-state) was excluded from the comparison by instruction.
 - Theme foundation: `--t-*` type-scale tokens, `prefers-contrast` line
   tokens, three-rank buttons, `--accent-hover/press`, `--field-inner-lit`,
   `--bg-overlay`.
-- Shared components: low-fit/excluded card states, ~~deadline urgency
+- Shared components: ~~low-fit card state~~ (**DONE 2026-08-24** — Theme
+  Spec §07 collapse as visual weight: hairline left border, tighter
+  padding, dimmed smaller title; the bars/expander were already absent
+  because LOW_FIT rows persist no components. Deliberate departure:
+  Save/Ignore stay visible — the spec's hover-only actions are unreachable
+  on touch and awkward for keyboard users). **Excluded card state is now
+  OWNER-GATED**: the product review (2026-08-24) ruled the shipped
+  keep-hidden behavior correct — docs/product-scope.md's feed enumeration
+  has no excluded surfacing, and "skip the rest" is the headline promise —
+  so the prototype's excluded-under-Possible model needs an explicit
+  owner trade-off first; the recommended shape if pursued is a per-rule
+  "N excluded, last 30 days" count in Settings, not feed rows. ~~deadline urgency
   inks~~ (**DONE 2026-08-23** — thresholds read off the design's own Home
   demo-feed data, <7 days risk / <14 caution, supplementary to the deadline
   text), ~~visible status flash~~ (**fully done** — the admin pages flash via

@@ -1152,6 +1152,24 @@ td {
 .tender-card--possible {
   border-left-color: var(--line-strong);
 }
+/* Theme Spec §07 low-fit collapse: quieter card, dimmed title, tighter
+   padding. LOW_FIT feed rows already carry no component bars (component
+   persistence rule — docs/matching-engine.md), so the "collapse" here is
+   the visual weight. One deliberate departure from the spec: it hides
+   Save/Ignore until hover, but hover-only actions are unreachable on touch
+   and awkward for keyboard users, so the actions stay visible and rely on
+   their existing quiet styling. */
+.tender-card--low {
+  border-left-color: var(--line-hair);
+  padding: 0.85rem 1.4rem;
+  gap: 0.4rem;
+}
+.tender-card--low .tender-card__title {
+  font-size: 1rem;
+}
+.tender-card--low .tender-card__title a {
+  color: var(--text-2);
+}
 
 /* Score ring beside the badge — SVG attributes only (CSP-safe). */
 .score-ring {
