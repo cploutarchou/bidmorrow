@@ -4238,6 +4238,29 @@ Three e2e tests in billing.spec.ts:
 All three pass against the real wrangler stack (5 passed / 3 skipped in
 the file). Full gates green.
 
+## Docs hygiene: font budget, Lucide note, pre-v2 comments (2026-08-24)
+
+The audit's docs-hygiene tail item, resolved by measuring rather than
+copying the audit's own numbers.
+
+dependency-versions.md had two layered font sections (Strata's 80.89 KB
+ships; Control Room's "0 B, no budget") — both superseded by reality: the
+2026-08-21 handoff vendored Archivo + Source Code Pro as ten
+unicode-range woff2 subsets. A new dated section records today's `du -b`
+measurements: 362,504 B on disk, per-visit latin 56,908 B ≈ 55.6 KB —
+inside even the old 90 KB Strata figure once that budget is read as what
+it always meant to protect, per-visit transfer. The audit's "181 KB
+shipped" matched no current measurement and is noted as superseded. The
+Lucide "not yet used in any component" claim is corrected (Menu/X in
+MarketingLayout.tsx since PR #67) and the table row no longer claims
+@fontsource devDependencies that left package.json with the handoff.
+
+The "stale pre-v2 comments" half was audited rather than assumed: all
+four pre-v2 comments live in styles/base.css and every claim they make is
+still true post-split (the aliases resolve; legacy selectors still use
+them). They stand. The genuinely dead legacy rules those aliases serve
+belong to the CSS dead-rule pruning item, which remains open.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

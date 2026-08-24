@@ -309,10 +309,21 @@ localStorage ops-state) was excluded from the comparison by instruction.
   itself pinned by packages/billing tests), and the still-activating
   state via real poll exhaustion (~15s against the real server, no stub).
   The hook 404s outside the gate — pinned by a new test-hooks.d1 test.
-- Docs hygiene: font-budget reconciliation (181 KB shipped vs 90 KB
-  written; per-visit latin ~57 KB is compliant via unicode-range — record
-  the raised budget), stale Lucide note in dependency-versions.md, stale
-  pre-v2 comments.
+- ~~Docs hygiene: font-budget reconciliation, stale Lucide note, stale
+  pre-v2 comments.~~ — **DONE 2026-08-24.** dependency-versions.md gained
+  a superseding "Fonts re-introduced" section with today's measurements:
+  ten unicode-range subsets, 362,504 B on disk (the audit's "181 KB"
+  matched no current measurement and is superseded), per-visit latin
+  56,908 B ≈ 55.6 KB — inside even the old Strata-era 90 KB figure read
+  as the transfer budget it now explicitly is. The Lucide "not yet used"
+  note is corrected (Menu/X in MarketingLayout since PR #67), and its
+  table row no longer claims @fontsource devDependencies that left
+  package.json with the handoff. The pre-v2 comments were audited rather
+  than assumed stale: all four live in styles/base.css, and each claim
+  (aliases still resolve, selectors still use them — e.g. app.css's
+  legacy `.tender-card` block) is still TRUE post-split, so they stand;
+  the genuinely dead legacy rules they describe belong to the CSS
+  dead-rule pruning item, not to comment hygiene.
 
 ## Status — first four items implemented 2026-08-22, merged 2026-08-23
 
@@ -362,5 +373,6 @@ Everything else in the pending list below is untouched and still stands.
   never closed or descoped; code contains neither.
 - M3 merge (#42) and follow-ups (#43, 5dc8dc8) and the re-skin merge
   (09d186b) lack ledger PR records.
-- Font budget exceeded without a recorded decision.
-- dependency-versions.md Lucide note stale.
+- ~~Font budget exceeded without a recorded decision.~~ (recorded in
+  dependency-versions.md "Fonts re-introduced", 2026-08-24)
+- ~~dependency-versions.md Lucide note stale.~~ (corrected 2026-08-24)
