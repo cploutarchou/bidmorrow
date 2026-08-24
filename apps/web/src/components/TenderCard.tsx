@@ -14,7 +14,11 @@ const CLASS_TO_CARD_MODIFIER: Record<FeedRow['classification'], string> = {
   STRONG_MATCH: 'tender-card--strong',
   WORTH_REVIEWING: 'tender-card--worth-reviewing',
   POSSIBLE_MATCH: 'tender-card--possible',
-  LOW_FIT: '',
+  // Theme Spec §07 low-fit collapse — visual weight only; the bars/expander
+  // are already absent because LOW_FIT rows persist no components.
+  LOW_FIT: 'tender-card--low',
+  // EXCLUDED rows never reach the feed today (listFeedRows filters them);
+  // whether they should is a product-scope question, not a styling one.
   EXCLUDED: '',
 };
 

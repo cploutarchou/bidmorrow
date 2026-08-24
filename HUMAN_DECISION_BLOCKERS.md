@@ -401,6 +401,29 @@ needs to be a manual step again.
 
 ---
 
+## 13. Excluded tenders in the customer feed — OPEN (2026-08-24, non-urgent)
+
+**Decision needed:** should customers ever SEE tenders their own exclusion
+rules removed? Today they never appear (deliberate: the feed enumeration
+in docs/product-scope.md has no excluded surfacing, and "skip the rest" is
+the headline promise). The design prototype disagrees — its settings copy
+says "Excluded tenders still appear under Possible with the rule that
+tripped them", and the Theme Spec defines an EXCLUDED card chip.
+
+The 2026-08-24 product review ruled keep-hidden the correct V1 default and
+the prototype's model out of scope without an explicit owner trade-off.
+Real gap acknowledged: a wrongly-firing exclusion rule (e.g. an over-broad
+phrase) is invisible to the customer. Recommended shape IF you want it:
+a per-rule "N tenders excluded, last 30 days" count in Settings with
+drill-down — not excluded rows in the feed.
+
+Options: (a) keep hidden (default, no work); (b) per-rule counts in
+Settings (recommended if anything); (c) prototype's model (excluded rows
+under Possible). Not launch-blocking. Say the word and the chosen shape
+gets built.
+
+---
+
 ## Not blockers (deliberately)
 
 - **TED API: public, no credential required** — reinstated 2026-08-18

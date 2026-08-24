@@ -192,14 +192,39 @@ const matchingPreferencesSchema = z
     supportedContractNatures: z.array(z.enum(CONTRACT_NATURES)).max(CONTRACT_NATURES.length),
     minimumDaysRemaining: z.number().int().nonnegative().nullable(),
   })
-  .strict();
+  .strict()
+  .refine((prefs) => {
+    if (prefs.minValueEur === null || prefs.maxValueEur === null) return true;
+    return prefs.minValueEur <= prefs.maxValueEur;
+  }, 'minValueEur must not exceed maxValueEur — no tender value can fall inside an inverted range');
+
+/**
+ * An invalid IANA zone stored here would make `Intl.DateTimeFormat` throw
+ * inside the digest scheduler's per-org loop (`selectDigestOrgs`), so it must
+ * never reach the database. Constructing a formatter is the authoritative
+ * check — unlike `Intl.supportedValuesOf`, it also accepts valid aliases
+ * (e.g. legacy zone names ICU still resolves).
+ */
+function isValidIanaTimezone(timezone: string): boolean {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const digestPreferencesSchema = z
   .object({
     enabled: z.boolean(),
     sendEmpty: z.boolean(),
     minClassification: z.enum(['STRONG_MATCH', 'WORTH_REVIEWING', 'POSSIBLE_MATCH', 'LOW_FIT']),
-    timezone: z.string().trim().min(1).max(64),
+    timezone: z
+      .string()
+      .trim()
+      .min(1)
+      .max(64)
+      .refine(isValidIanaTimezone, 'must be a valid IANA timezone (for example Europe/Nicosia)'),
   })
   .strict();
 

@@ -196,7 +196,18 @@ localStorage ops-state) was excluded from the comparison by instruction.
 - Theme foundation: `--t-*` type-scale tokens, `prefers-contrast` line
   tokens, three-rank buttons, `--accent-hover/press`, `--field-inner-lit`,
   `--bg-overlay`.
-- Shared components: low-fit/excluded card states, ~~deadline urgency
+- Shared components: ~~low-fit card state~~ (**DONE 2026-08-24** — Theme
+  Spec §07 collapse as visual weight: hairline left border, tighter
+  padding, dimmed smaller title; the bars/expander were already absent
+  because LOW_FIT rows persist no components. Deliberate departure:
+  Save/Ignore stay visible — the spec's hover-only actions are unreachable
+  on touch and awkward for keyboard users). **Excluded card state is now
+  OWNER-GATED**: the product review (2026-08-24) ruled the shipped
+  keep-hidden behavior correct — docs/product-scope.md's feed enumeration
+  has no excluded surfacing, and "skip the rest" is the headline promise —
+  so the prototype's excluded-under-Possible model needs an explicit
+  owner trade-off first; the recommended shape if pursued is a per-rule
+  "N excluded, last 30 days" count in Settings, not feed rows. ~~deadline urgency
   inks~~ (**DONE 2026-08-23** — thresholds read off the design's own Home
   demo-feed data, <7 days risk / <14 caution, supplementary to the deadline
   text), ~~visible status flash~~ (**fully done** — the admin pages flash via
@@ -218,11 +229,33 @@ localStorage ops-state) was excluded from the comparison by instruction.
   an open consent banner gives the document bottom clearance so the
   footer's privacy link and cookie-preferences reopener stay reachable.
   Each fix is pinned by an e2e test.
-- Feed/Settings: sort control + KPI row, ~~"why this score" expander~~
+- Feed/Settings: ~~sort control + KPI row~~ (**DONE 2026-08-24** — a
+  four-order sort select (fit / deadline soonest / value highest / newest)
+  wired through per-sort namespaced keyset cursors in `listFeedRows`
+  (NULLs-last for deadline/value, cross-sort cursor replay refused as
+  invalid), and a KPI strip whose four tiles are each defined as "what the
+  matching tab shows" via `GET /api/org/feed/stats` — the prototype's
+  owner/pipeline tiles reference features that don't exist and were not
+  faked), ~~"why this score" expander~~
   (**DONE 2026-08-23** — a native `<details>` on the card revealing the
   engine's component explanation strings, which the feed payload already
   carried and the card never rendered),
-  settings validation layer, timezone control, NUTS add, Appearance pane,
+  ~~settings validation layer, timezone control, NUTS add~~ — **DONE
+  2026-08-24.** Field-adjacent validation on the CPV / country / NUTS
+  add-rows and the value range (aria-invalid + role=alert, onboarding's
+  vocabulary), the prototype's "N to fix" issues banner + flagged nav dot
+  (only for conditions that are verifiably always wrong: an inverted
+  value range, which no tender value can fall inside, and zero CPV
+  codes, which score nothing), a digest timezone select
+  (`Intl.supportedValuesOf`), and a preferred-NUTS add-row (the
+  `preferred_nuts` kind the engine already scores at full geography
+  points but no UI ever offered). Server side, the same pass closed two
+  real gaps: matching-preferences now rejects min > max, and
+  digest-preferences rejects invalid IANA timezones — a stored bad zone
+  made `Intl.DateTimeFormat` throw inside `selectDigestOrgs`' loop,
+  which would have killed the digest for EVERY org; the scheduler also
+  now guards per-org and logs `digest.skipped.invalid_timezone` for
+  legacy rows. Appearance pane,
   unified save bar; danger zone deletes account not organisation
   (product decision).
 - Admin: ops pills, state-aware pause/resume, rail counts, ingestion

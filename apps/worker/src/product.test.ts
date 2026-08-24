@@ -376,7 +376,13 @@ describe('profile-bundle PUT endpoints', () => {
     const geographies = await fetchApi('/api/org/geographies', {
       method: 'PUT',
       headers: jsonHeaders(org.cookie),
-      body: JSON.stringify({ geographies: [{ kind: 'opportunity_country', code: 'CY' }] }),
+      body: JSON.stringify({
+        geographies: [
+          { kind: 'opportunity_country', code: 'CY' },
+          // The settings NUTS add-row writes this kind — keep it covered.
+          { kind: 'preferred_nuts', code: 'DE30' },
+        ],
+      }),
     });
     expect(geographies.status).toBe(200);
 
@@ -423,6 +429,49 @@ describe('profile-bundle PUT endpoints', () => {
     });
     const digestBody = (await digestGet.json()) as { digest: { timezone: string } };
     expect(digestBody.digest.timezone).toBe('Europe/Nicosia');
+  });
+
+  it('rejects an inverted value range (min > max) with a 400', async () => {
+    const org = await setUpOrg('InvertedRangeOrg');
+    const res = await fetchApi('/api/org/matching-preferences', {
+      method: 'PUT',
+      headers: jsonHeaders(org.cookie),
+      body: JSON.stringify({
+        minValueEur: 500_000,
+        maxValueEur: 10_000,
+        supportedContractNatures: ['services'],
+        minimumDaysRemaining: null,
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects an invalid IANA timezone with a 400 (a stored bad zone would crash the digest scheduler)', async () => {
+    const org = await setUpOrg('BadTimezoneOrg');
+    const res = await fetchApi('/api/org/digest-preferences', {
+      method: 'PUT',
+      headers: jsonHeaders(org.cookie),
+      body: JSON.stringify({
+        enabled: true,
+        sendEmpty: false,
+        minClassification: 'WORTH_REVIEWING',
+        timezone: 'Europe/Nowhere',
+      }),
+    });
+    expect(res.status).toBe(400);
+
+    // A legacy alias resolves via ICU and must stay accepted.
+    const alias = await fetchApi('/api/org/digest-preferences', {
+      method: 'PUT',
+      headers: jsonHeaders(org.cookie),
+      body: JSON.stringify({
+        enabled: true,
+        sendEmpty: false,
+        minClassification: 'WORTH_REVIEWING',
+        timezone: 'UTC',
+      }),
+    });
+    expect(alias.status).toBe(200);
   });
 });
 
@@ -536,6 +585,84 @@ describe('GET /api/org/feed', () => {
     expect(response.status).toBe(400);
     const body = (await response.json()) as { error: string };
     expect(body.error).toBe('invalid_cursor');
+  });
+
+  it('sort=deadline reorders the feed; an unknown sort value 400s; a cross-sort cursor 400s', async () => {
+    const org = await setUpOrg('FeedSortOrg');
+    const db = createDb(env.DB);
+    const later = await seedLot(db, 'product-sort-later', {
+      deadlineAt: Date.now() + 20 * 86_400_000,
+    });
+    const sooner = await seedLot(db, 'product-sort-sooner', {
+      deadlineAt: Date.now() + 2 * 86_400_000,
+    });
+    // Higher score on the LATER deadline, so fit and deadline orders differ.
+    await seedMatch(db, org.orgId, later, { score: 95 });
+    await seedMatch(db, org.orgId, sooner, { score: 85 });
+
+    const byFit = await fetchApi('/api/org/feed?tab=strong', {
+      headers: { cookie: org.cookie },
+    });
+    const fitBody = (await byFit.json()) as { items: { lotId: string }[]; nextCursor: string };
+    expect(fitBody.items.map((r) => r.lotId)).toEqual([later.lotId, sooner.lotId]);
+
+    const byDeadline = await fetchApi('/api/org/feed?tab=strong&sort=deadline', {
+      headers: { cookie: org.cookie },
+    });
+    expect(byDeadline.status).toBe(200);
+    const deadlineBody = (await byDeadline.json()) as { items: { lotId: string }[] };
+    expect(deadlineBody.items.map((r) => r.lotId)).toEqual([sooner.lotId, later.lotId]);
+
+    const badSort = await fetchApi('/api/org/feed?tab=strong&sort=sideways', {
+      headers: { cookie: org.cookie },
+    });
+    expect(badSort.status).toBe(400);
+
+    // A fit cursor replayed under sort=deadline is refused as invalid, never
+    // silently reinterpreted against the other ordering.
+    const fitFirstPage = await fetchApi('/api/org/feed?tab=strong&limit=1', {
+      headers: { cookie: org.cookie },
+    });
+    const fitFirstBody = (await fitFirstPage.json()) as { nextCursor: string };
+    const crossSort = await fetchApi(
+      `/api/org/feed?tab=strong&sort=deadline&cursor=${encodeURIComponent(fitFirstBody.nextCursor)}`,
+      { headers: { cookie: org.cookie } },
+    );
+    expect(crossSort.status).toBe(400);
+  });
+});
+
+describe('GET /api/org/feed/stats', () => {
+  it('returns tab-consistent counts scoped to the org; 401s without a session', async () => {
+    const org = await setUpOrg('FeedStatsOrg');
+    const other = await setUpOrg('FeedStatsOtherOrg');
+    const db = createDb(env.DB);
+    const closing = await seedLot(db, 'product-stats-closing', {
+      deadlineAt: Date.now() + 3 * 86_400_000,
+    });
+    await seedMatch(db, org.orgId, closing, { score: 90 });
+
+    const response = await fetchApi('/api/org/feed/stats', {
+      headers: { cookie: org.cookie },
+    });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      stats: { newToday: number; closingSoon: number; strong: number; saved: number };
+    };
+    expect(body.stats.newToday).toBe(1);
+    expect(body.stats.closingSoon).toBe(1);
+    expect(body.stats.strong).toBe(1);
+    expect(body.stats.saved).toBe(0);
+
+    // The other org sees zeros — counts are tenant-scoped.
+    const otherResponse = await fetchApi('/api/org/feed/stats', {
+      headers: { cookie: other.cookie },
+    });
+    const otherBody = (await otherResponse.json()) as { stats: { strong: number } };
+    expect(otherBody.stats.strong).toBe(0);
+
+    const anonymous = await fetchApi('/api/org/feed/stats');
+    expect(anonymous.status).toBe(401);
   });
 });
 

@@ -135,6 +135,26 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     expect(count).toBeGreaterThan(0);
   });
 
+  test('feed: KPI strip renders and the sort control genuinely reorders', async () => {
+    // KPI tiles: presence and labels only — the numbers depend on the wall
+    // clock (e.g. "Closing ≤ 7 days" is 0 until a demo deadline is near),
+    // so asserting exact values would make this test rot with time.
+    const statTerms = page.locator('.feed-stats dt');
+    await expect(statTerms).toHaveCount(4);
+    await expect(statTerms.nth(0)).toHaveText('New today');
+    await expect(statTerms.nth(1)).toHaveText('Closing ≤ 7 days');
+
+    // The demo seed gives deterministic, DISTINCT orders: values are
+    // 250k/180k/150k and deadlines are Sep 15 vs Oct 1 — so each sort has a
+    // known first card regardless of what the engine scored them.
+    const firstTitle = page.locator('article.tender-card h3 a').first();
+    await page.getByLabel('Sort').selectOption('value');
+    await expect(firstTitle).toHaveText('Security monitoring software licences');
+    await page.getByLabel('Sort').selectOption('deadline');
+    await expect(firstTitle).toHaveText('Penetration testing and security assessment services');
+    await page.getByLabel('Sort').selectOption('fit');
+  });
+
   test('tender detail: opens as a slide-over over the feed, score breakdown, TED link, save', async () => {
     const firstCardLink = page.locator('article.tender-card h3 a').first();
     firstMatchHref = await firstCardLink.getAttribute('href');
@@ -250,6 +270,55 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     }
     await page.getByRole('button', { name: 'Save keywords' }).click();
     await expect(page.getByText(/reached the limit of 50 items for this list/)).toBeVisible();
+  });
+
+  test('settings: validation layer — bad inputs get field-adjacent errors, NUTS and timezone round-trip', async () => {
+    await page.goto('/app/settings');
+    await expect(page.getByRole('heading', { name: 'Company profile' })).toBeVisible();
+
+    // A malformed CPV code is rejected before any network round-trip.
+    await page.getByLabel('Add CPV code').fill('123');
+    await page
+      .locator('.combobox-add-row', { has: page.locator('#new-cpv') })
+      .getByRole('button', { name: 'Add', exact: true })
+      .click();
+    await expect(page.getByText('CPV codes are 8 digits (for example 72220000).')).toBeVisible();
+
+    // An inverted value range flags the field pair, the page-level issues
+    // banner, and the nav dot — and clears when the range is fixed.
+    await page.getByLabel('Minimum contract value (EUR)').fill('500000');
+    await page.getByLabel('Maximum contract value (EUR)').fill('10000');
+    await expect(page.getByText('Minimum value must not exceed the maximum.')).toBeVisible();
+    await expect(page.getByText(/to fix in your matching profile/)).toBeVisible();
+    await page.getByLabel('Maximum contract value (EUR)').fill('900000');
+    await expect(page.getByText(/to fix in your matching profile/)).not.toBeVisible();
+
+    // NUTS entry: shape-checked, uppercased, saved through the same
+    // geographies endpoint (kind preferred_nuts).
+    await page.getByLabel('Add NUTS region code').fill('x');
+    const nutsAdd = page
+      .locator('.form-field.inline', { has: page.locator('#new-nuts') })
+      .getByRole('button', { name: 'Add', exact: true });
+    await nutsAdd.click();
+    await expect(page.getByText(/NUTS codes are a 2-letter country/)).toBeVisible();
+    await page.getByLabel('Add NUTS region code').fill('de30');
+    await nutsAdd.click();
+    await expect(page.locator('.chip-list li', { hasText: 'DE30' })).toBeVisible();
+    await page.getByRole('button', { name: 'Save geographies' }).click();
+    // Target the visually-hidden live region, not getByRole('status') — the
+    // issues banner is also role=status, so the role query can be ambiguous.
+    await expect(page.locator('p[role="status"].visually-hidden-status')).toHaveText(
+      'Geographies saved.',
+    );
+
+    // Digest timezone select persists through save.
+    await page.getByLabel('Timezone').selectOption('Europe/Berlin');
+    await page.getByRole('button', { name: 'Save digest preferences' }).click();
+    await expect(page.locator('p[role="status"].visually-hidden-status')).toHaveText(
+      'Digest preferences saved.',
+    );
+    await page.reload();
+    await expect(page.getByLabel('Timezone')).toHaveValue('Europe/Berlin');
   });
 
   test('settings: billing renders the honest no-subscription empty state', async () => {
