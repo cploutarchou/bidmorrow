@@ -320,14 +320,23 @@ export function Feed(): ReactElement {
 
   async function loadMore(): Promise<void> {
     if (state === null || state.nextCursor === null) return;
+    // Same request-id guard as load(): a tab/filter/sort change that resolves
+    // while this page fetch is in flight must not have stale-order rows
+    // appended onto the fresh list (and vice versa — a newer load() discards
+    // this response). The spinner flag itself is unconditional: it is purely
+    // local UI state and must never be left stuck on a superseded response.
+    const requestId = latestRequestId.current + 1;
+    latestRequestId.current = requestId;
     setLoadingMore(true);
     setError(null);
     try {
       const res = await api.get<FeedResponse>(
         `/api/org/feed?${buildQuery(tab, filters, sort, state.nextCursor)}`,
       );
+      if (latestRequestId.current !== requestId) return;
       setState((prev) => (prev === null ? startCursor(res) : appendCursor(prev, res)));
     } catch {
+      if (latestRequestId.current !== requestId) return;
       setError('Could not load more results. Please try again.');
     } finally {
       setLoadingMore(false);
