@@ -1,10 +1,13 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { Outlet } from 'react-router';
 import { adminApi } from '../../lib/admin-api';
+import type { AdminHealthDetails } from '../../lib/admin-types';
 import { NotFound } from '../../pages/NotFound';
+import { AdminOpsProvider } from './admin-health';
 import { AdminShell } from './AdminShell';
 
-type GateState = 'loading' | 'authorized' | 'denied';
+type GateState =
+  { kind: 'loading' } | { kind: 'authorized'; health: AdminHealthDetails } | { kind: 'denied' };
 
 /**
  * Access probe for the entire `/admin/*` subtree: calls
@@ -16,24 +19,26 @@ type GateState = 'loading' | 'authorized' | 'denied';
  * independently authorizes every `/api/admin/*` call the pages below make.
  */
 export function AdminGate(): ReactElement {
-  const [state, setState] = useState<GateState>('loading');
+  const [state, setState] = useState<GateState>({ kind: 'loading' });
 
   useEffect(() => {
     let cancelled = false;
     adminApi
       .healthDetails()
-      .then(() => {
-        if (!cancelled) setState('authorized');
+      .then((health) => {
+        // The gate's own probe response seeds the shared ops state (pills,
+        // pause-control state) instead of being thrown away and re-fetched.
+        if (!cancelled) setState({ kind: 'authorized', health });
       })
       .catch(() => {
-        if (!cancelled) setState('denied');
+        if (!cancelled) setState({ kind: 'denied' });
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  if (state === 'loading') {
+  if (state.kind === 'loading') {
     return (
       <main id="main-content">
         <p>Loading…</p>
@@ -41,13 +46,15 @@ export function AdminGate(): ReactElement {
     );
   }
 
-  if (state === 'denied') {
+  if (state.kind === 'denied') {
     return <NotFound />;
   }
 
   return (
-    <AdminShell>
-      <Outlet />
-    </AdminShell>
+    <AdminOpsProvider initialHealth={state.health}>
+      <AdminShell>
+        <Outlet />
+      </AdminShell>
+    </AdminOpsProvider>
   );
 }

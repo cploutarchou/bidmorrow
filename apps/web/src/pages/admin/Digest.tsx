@@ -4,12 +4,15 @@ import { ApiError } from '../../lib/api';
 import { appendCursor, startCursor, type CursorState } from '../../lib/cursor';
 import { formatIsoUtc } from '../../lib/format';
 import { ConfirmAction } from '../../components/admin/ConfirmAction';
+import { useAdminOps } from '../../components/admin/admin-health';
 import { AdminPage } from '../../components/admin/AdminPage';
 import { AdminFlash } from '../../components/admin/AdminFlash';
 import { Pager } from '../../components/admin/Pager';
 import type { AdminDigestPreview, AdminDigestRun, AdminEmailFailure } from '../../lib/admin-types';
 
 export function Digest(): ReactElement {
+  const ops = useAdminOps();
+  const digestPaused = ops?.health?.digest.paused ?? null;
   const [runs, setRuns] = useState<CursorState<AdminDigestRun> | null>(null);
   const [runsLoading, setRunsLoading] = useState(true);
   const [runsError, setRunsError] = useState<string | null>(null);
@@ -108,6 +111,7 @@ export function Digest(): ReactElement {
       await adminApi.pauseDigest();
       setFlashTone('ok');
       setStatusMessage('Digest paused.');
+      await ops?.refresh();
     } catch {
       setFlashTone('risk');
       setStatusMessage('Could not pause digest.');
@@ -123,6 +127,7 @@ export function Digest(): ReactElement {
       await adminApi.resumeDigest();
       setFlashTone('ok');
       setStatusMessage('Digest resumed.');
+      await ops?.refresh();
     } catch {
       setFlashTone('risk');
       setStatusMessage('Could not resume digest.');
@@ -141,21 +146,39 @@ export function Digest(): ReactElement {
 
       <section className="admin-panel">
         <h2 className="admin-panel__label">Pause / resume digest</h2>
-        <div className="button-row">
-          <ConfirmAction
-            label="Pause digest"
-            confirmText="PAUSE_DIGEST"
-            busy={busy}
-            variant="danger"
-            onConfirm={() => void pause()}
-          />
-          <ConfirmAction
-            label="Resume digest"
-            confirmText="RESUME_DIGEST"
-            busy={busy}
-            onConfirm={() => void resume()}
-          />
-        </div>
+        {/* Same state-aware shape as the ingestion control. */}
+        {digestPaused !== null ? (
+          <div className="admin-pause-control">
+            <p className="hint">
+              {digestPaused
+                ? 'The digest is PAUSED — no cycles are being sent. Resuming picks up on the next hourly check; missed local dates are not back-sent.'
+                : 'The digest is running. Pausing stops cycles from being sent; nothing is deleted, and resuming picks up on the next hourly check.'}
+            </p>
+            <ConfirmAction
+              label={digestPaused ? 'Resume digest' : 'Pause digest'}
+              confirmText={digestPaused ? 'RESUME_DIGEST' : 'PAUSE_DIGEST'}
+              busy={busy}
+              {...(digestPaused ? {} : { variant: 'danger' as const })}
+              onConfirm={() => (digestPaused ? void resume() : void pause())}
+            />
+          </div>
+        ) : (
+          <div className="button-row">
+            <ConfirmAction
+              label="Pause digest"
+              confirmText="PAUSE_DIGEST"
+              busy={busy}
+              variant="danger"
+              onConfirm={() => void pause()}
+            />
+            <ConfirmAction
+              label="Resume digest"
+              confirmText="RESUME_DIGEST"
+              busy={busy}
+              onConfirm={() => void resume()}
+            />
+          </div>
+        )}
       </section>
 
       <section className="admin-section">

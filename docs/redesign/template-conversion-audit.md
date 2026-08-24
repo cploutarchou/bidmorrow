@@ -258,8 +258,21 @@ localStorage ops-state) was excluded from the comparison by instruction.
   legacy rows. Appearance pane,
   unified save bar; danger zone deletes account not organisation
   (product decision).
-- Admin: ops pills, state-aware pause/resume, rail counts, ingestion
-  sub-views, flag JSON hint.
+- ~~Admin: ops pills, state-aware pause/resume, rail counts, ingestion
+  sub-views, flag JSON hint.~~ — **DONE 2026-08-24.** The shell's header
+  now carries live ingestion/digest pause pills fed by the same
+  health-details response AdminGate already made (re-used via a small ops
+  context, not re-fetched); the rail shows per-section totals from a new
+  `GET /api/admin/rail-counts` (7 COUNTs in one D1 batch + the static flag
+  enum length); Ingestion/Digest render ONE state-aware pause/resume
+  control with the consequence stated beside it (both call the context's
+  refresh so the pills flip without a reload); Ingestion's three read
+  surfaces (runs / fetch retry queue / errors-for-a-run) switch behind
+  the existing `admin-pills` vocabulary instead of stacking; and the flag
+  editor shows the prototype's live JSON-validity hint (same parse gate
+  saveEdit enforces, surfaced per keystroke). Departure: the prototype's
+  third header pill (audit-event count) lives in the rail count instead —
+  one source for that number, not two.
 - Testing/a11y: ~~feed-tab keyboard model + keyboard spec~~,
   ~~route-change focus management~~ and ~~mobile Playwright project~~ —
   **DONE 2026-08-23.** The `mobile-chromium` project runs the marketing,
