@@ -110,11 +110,32 @@ export interface DueDigestOrg {
  * are small (docs/cost-model.md), matching the unpaginated-scan pattern
  * used elsewhere (`listOrgsEligibleForScoring`).
  */
-export async function selectDigestOrgs(db: Db, args: { utcNow: number }): Promise<DueDigestOrg[]> {
+export async function selectDigestOrgs(
+  db: Db,
+  args: { utcNow: number },
+  logger?: Logger,
+): Promise<DueDigestOrg[]> {
   const candidates = await listOrgsWithDigestEnabled(db);
   const due: DueDigestOrg[] = [];
   for (const org of candidates) {
-    const { localDate, localHour } = localDateAndHour(args.utcNow, org.timezone);
+    // Guard each org individually: `Intl.DateTimeFormat` throws on an
+    // invalid stored timezone, and an uncaught throw here would abort the
+    // whole loop — one bad row must never sink every other org's digest.
+    // (The PUT route now rejects invalid zones, so this covers only rows
+    // that predate that check or arrive by another path.) Surfaced via the
+    // logger, never swallowed.
+    let local: { localDate: string; localHour: number };
+    try {
+      local = localDateAndHour(args.utcNow, org.timezone);
+    } catch (cause) {
+      logger?.error('digest.skipped.invalid_timezone', {
+        organization_id: org.organizationId,
+        timezone: org.timezone,
+        error: cause instanceof Error ? cause.message : String(cause),
+      });
+      continue;
+    }
+    const { localDate, localHour } = local;
     if (localHour < DEFAULT_SEND_HOUR_LOCAL) continue;
     const existing = await getDigestRunByDate(db, org.organizationId, localDate);
     if (existing !== null) continue;

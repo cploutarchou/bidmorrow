@@ -4046,6 +4046,109 @@ region with the visible `.app-toast`, and the remaining
 counts, a table caption, onboarding state labels). Verified by grep before
 correcting the doc, not assumed.
 
+## Settings validation layer + digest timezone + preferred NUTS (2026-08-24)
+
+The audit's "settings validation layer, timezone control, NUTS add" trio,
+shipped as one Settings pass with the server-side gaps it exposed.
+
+Client (`Settings.tsx`): the CPV, country and NUTS add-rows validate shape
+before any network call (8-digit CPV, alpha-2 country, `CC` + up to 3
+characters NUTS — each with aria-invalid/role=alert in onboarding's error
+vocabulary); the value-range pair gets the min≤max inline error onboarding
+already had; and the prototype's "N to fix" issues banner + caution dot on
+the flagged nav group landed with only conditions that are verifiably
+always wrong (inverted range — no tender's value can fall inside it, so
+the value component can never score; zero CPV codes — empty division set
+intersects nothing, per score.ts). The digest
+section gained a timezone select (`Intl.supportedValuesOf`, stored legacy
+alias prepended so the select can't silently misreport), and Geographies
+gained a preferred-NUTS add-row — the `preferred_nuts` kind the engine has
+scored at full geography points all along (geography.ts prefix match) but
+no UI ever offered. Geography chips split into countries vs NUTS lists and
+stopped rendering the raw kind discriminant.
+
+Server: two real gaps closed. `matching-preferences` accepted min > max (a
+range no tender value can fall inside — always a user error, though lots
+are still scored, losing at most the 10-point value component); now 400. `digest-preferences` accepted ANY
+string as timezone — and `selectDigestOrgs` passes it into
+`Intl.DateTimeFormat`, which throws on an invalid zone inside the loop over
+all orgs, so one bad row would have killed every customer's digest. Now:
+the PUT validates by constructing a formatter (accepts aliases that
+`supportedValuesOf` omits), and the scheduler additionally guards per-org,
+logging `digest.skipped.invalid_timezone` and continuing — covered by a D1
+test writing the bad row through the repository, the way a legacy record
+would exist.
+
+Pinned by: two new worker 400 tests + a UTC-alias acceptance check, the
+scheduler-resilience D1 test, a preferred_nuts round-trip in the settings
+bundle test, and a critical-path e2e test driving all of it through the UI
+(bad CPV inline error, inverted range → banner → fixed → banner gone, NUTS
+add + save, timezone select persisting through reload). Full gates green;
+critical-path (13) and accessibility (12, incl. settings axe) suites green.
+
+## Feed sort control + KPI strip (2026-08-24)
+
+The audit's "sort control + KPI row" feed minors, with the repository work
+they actually require.
+
+Sort: the feed was hard-ordered score DESC with a `score:id` keyset
+cursor. `listFeedRows` now takes `sort: fit | deadline | value | newest`
+(default `fit`, the historical order). Each order keeps the `id DESC`
+tiebreak, and `deadline`/`value` put NULL keys LAST via an `IS NULL`
+ordering term — a tender with no deadline or value belongs after every one
+that has one, not (SQLite's default) first. Cursors are namespaced per
+sort (`dl:`/`val:`/`new:`, with a `null` key form once pagination enters
+the NULLS-LAST tail; `fit` keeps its historical un-prefixed shape), and a
+cursor replayed against a different sort is refused as malformed — the
+route's existing 400 `invalid_cursor` path — never silently reinterpreted,
+which would skip or repeat rows.
+
+KPI strip: `GET /api/org/feed/stats` returns four counts each DEFINED as
+"what the matching tab shows" (same engine-version scoping, EXCLUDED and
+expiry rules as `listFeedRows`): new today, closing ≤ 7 days, strong,
+saved. The prototype's tiles ("2 have no owner", "pipeline value")
+reference features the product doesn't have and were not faked. The
+endpoint carries the same 402 entitlement gate as the feed — aggregate
+counts must never be cheaper to reach than the list. In the UI the strip
+is an accelerator like the rail's profile line: a fetch failure hides it
+and never disturbs the feed.
+
+Pinned by: D1 repo tests (deadline order + pagination across the null
+boundary, value/newest orders, cross-sort cursor rejection, stats counts
+vs tab definitions incl. tenant isolation), two worker route tests (sort
+reorders + bad sort 400s + cross-sort cursor 400s; stats scoped per org,
+401 anonymous), and a critical-path e2e test that asserts the sort select
+genuinely reorders the seeded demo lots (values 250k/180k/150k and
+deadlines Sep 15 vs Oct 1 give each order a known first card). One test
+helper fix along the way: `seedLot`'s `valueEur ?? 100_000` swallowed an
+explicit null, so a "no published value" lot silently got one — now
+`=== undefined`, matching its own deadline convention. Full gates green;
+critical-path 14/14, accessibility 12/12.
+
+## Low-fit card collapse + excluded-in-feed ruled owner-gated (2026-08-24)
+
+The audit's "low-fit/excluded card states" minor, resolved as one shipped
+half and one governed half.
+
+Shipped: the Theme Spec §07 low-fit collapse. The chip states landed with
+the theme-foundation PR; what was missing was the card treatment —
+`tender-card--low` now renders LOW_FIT rows with a hairline left border,
+tighter padding and a dimmed, smaller title. The spec's "no component
+bars" was already true (LOW_FIT persists no components — the feed payload
+carries none), so the collapse is purely visual weight. One deliberate
+departure, documented in the CSS: Save/Ignore stay visible — the spec
+hides actions until hover, which is unreachable on touch and awkward for
+keyboard users.
+
+Governed: the EXCLUDED card state is NOT built. The product review ruled
+the shipped keep-hidden behavior correct (the feed enumeration in
+docs/product-scope.md has no excluded surfacing; "skip the rest" is the
+headline promise) and the prototype's excluded-under-Possible model out
+of scope without an explicit owner trade-off. Recorded as
+HUMAN_DECISION_BLOCKERS.md item 13 with the recommended alternative (a
+per-rule "N excluded, last 30 days" count in Settings) — not launch
+blocking, no work until the owner picks a shape.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

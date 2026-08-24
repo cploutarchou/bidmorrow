@@ -695,6 +695,81 @@ td {
 /* --- Feed: view switcher (score-band tabs + shelf tabs) --- */
 .feed-view-switcher {
   margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.feed-view-switcher .feed-tabs {
+  flex: 1 1 auto;
+}
+.feed-sort {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+}
+.feed-sort label {
+  font-size: 0.85rem;
+  color: var(--text-3);
+}
+.feed-sort select {
+  min-height: 2.25rem;
+  width: auto;
+}
+
+/* KPI strip above the tabs (prototype's stat tiles): definition-list
+   semantics, number-forward layout, hairline-joined tiles. */
+.feed-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--stroke-faint);
+  border: 1px solid var(--stroke-faint);
+  border-radius: var(--r-m);
+  overflow: hidden;
+  margin: 0 0 1.25rem;
+}
+.feed-stat {
+  background: var(--surface-1);
+  padding: 0.85rem 1rem 0.95rem;
+  margin: 0;
+}
+.feed-stat dt {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-3);
+  margin-bottom: 0.35rem;
+}
+.feed-stat dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.feed-stat dd span {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-3);
+}
+.feed-stat--caution dd {
+  color: var(--status-caution-text);
+}
+.feed-stat--caution dd span {
+  color: var(--text-3);
+}
+@media (max-width: 48rem) {
+  .feed-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 .feed-tabs {
   display: flex;
@@ -1077,6 +1152,24 @@ td {
 .tender-card--possible {
   border-left-color: var(--line-strong);
 }
+/* Theme Spec §07 low-fit collapse: quieter card, dimmed title, tighter
+   padding. LOW_FIT feed rows already carry no component bars (component
+   persistence rule — docs/matching-engine.md), so the "collapse" here is
+   the visual weight. One deliberate departure from the spec: it hides
+   Save/Ignore until hover, but hover-only actions are unreachable on touch
+   and awkward for keyboard users, so the actions stay visible and rely on
+   their existing quiet styling. */
+.tender-card--low {
+  border-left-color: var(--line-hair);
+  padding: 0.85rem 1.4rem;
+  gap: 0.4rem;
+}
+.tender-card--low .tender-card__title {
+  font-size: 1rem;
+}
+.tender-card--low .tender-card__title a {
+  color: var(--text-2);
+}
 
 /* Score ring beside the badge — SVG attributes only (CSP-safe). */
 .score-ring {
@@ -1367,6 +1460,50 @@ td {
   color: var(--accent-text);
   background: var(--accent-soft);
   box-shadow: inset 2px 0 0 var(--accent-text); /* not color-only */
+}
+/* Caution dot on a section with an unresolved issue (prototype's flagged
+   nav) — supplementary to the issues banner, which carries the words. */
+.settings-nav__flag {
+  margin-left: auto;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--status-caution-text);
+  flex: none;
+}
+
+/* "N to fix" banner above the settings shell — same caution vocabulary as
+   .ob-scope-indicator--warn, sized as a page-level notice. */
+.settings-issues {
+  border: 1px solid var(--status-caution-text);
+  border-radius: var(--r-m);
+  background: var(--status-caution-wash);
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+}
+.settings-issues__title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-1);
+}
+.settings-issues ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.2rem;
+}
+.settings-issues li {
+  font-size: 0.9rem;
+  color: var(--text-2);
+}
+
+/* Sub-grouping inside a subsection (e.g. preferred NUTS under Geographies). */
+.settings-subheading {
+  margin: 1.25rem 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-1);
 }
 /* Sections become opaque panels — the perceived "empty right half" is
    fixed by giving the column a designed boundary, not by stretching forms

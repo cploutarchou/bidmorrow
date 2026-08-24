@@ -91,6 +91,30 @@ describe('runDigestScheduleJob', () => {
     await runDigestScheduleJob(fakeEnv, createLogger({ test: true }));
     expect(sent.length).toBeGreaterThanOrEqual(0);
   });
+
+  it('one org with an invalid stored timezone is skipped without sinking the other orgs', async () => {
+    const db = createDb(env.DB);
+    const utcNow = Date.parse('2026-08-15T12:00:00Z');
+    // The PUT route now rejects invalid zones, but the repository does not —
+    // this writes the bad row exactly the way a legacy record would exist.
+    // Before selectDigestOrgs guarded per-org, Intl.DateTimeFormat's throw
+    // here aborted the WHOLE selection loop: every org lost its digest.
+    const badOrgId = await makeOrgWithDigestPrefs(db, {
+      enabled: true,
+      timezone: 'Europe/Nowhere',
+    });
+    const goodOrgId = await makeOrgWithDigestPrefs(db, { enabled: true, timezone: 'UTC' });
+
+    const { sent, queue } = makeFakeDigestQueue();
+    const fakeEnv = { DB: env.DB, DIGEST_QUEUE: queue } as unknown as Env;
+
+    const result = await runDigestScheduleJob(fakeEnv, createLogger({ test: true }), utcNow);
+
+    expect(result.enqueued).toBeGreaterThanOrEqual(1);
+    const orgIds = sent.map((m) => m.organizationId);
+    expect(orgIds).toContain(goodOrgId);
+    expect(orgIds).not.toContain(badOrgId);
+  });
 });
 
 describe('resolveDigestProvider', () => {
