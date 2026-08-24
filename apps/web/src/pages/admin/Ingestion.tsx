@@ -243,7 +243,7 @@ export function Ingestion(): ReactElement {
           <div className="admin-pause-control">
             <p className="hint">
               {ingestionPaused
-                ? 'Ingestion is PAUSED — scheduled windows are not being enqueued. Resuming lets the next window run normally; nothing is backfilled automatically.'
+                ? 'Ingestion is PAUSED — scheduled windows are not being enqueued. Resuming picks up from the stored checkpoint on the next run: days missed while paused are caught up automatically, bounded per run.'
                 : 'Ingestion is running. Pausing stops scheduled windows from being enqueued; notices already fetched are unaffected.'}
             </p>
             <ConfirmAction

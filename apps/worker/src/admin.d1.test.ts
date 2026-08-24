@@ -232,9 +232,8 @@ describe('INTERNAL_ADMIN gate: 404 for non-admin, 200 for admin (sample routes)'
     ]) {
       expect(typeof body[key]).toBe('number');
     }
-    // Users exist in this suite (the admin itself), the flag set is the
-    // static enum, and the audit middleware has logged at least this request
-    // cycle's reads by the time earlier tests ran.
+    // Only assert what this test controls: users exist (the admin itself)
+    // and the flag set is the static enum.
     expect(body['users']).toBeGreaterThan(0);
     expect(body['flags']).toBeGreaterThan(0);
   });
