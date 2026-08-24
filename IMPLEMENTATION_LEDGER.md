@@ -4261,6 +4261,33 @@ still true post-split (the aliases resolve; legacy selectors still use
 them). They stand. The genuinely dead legacy rules those aliases serve
 belong to the CSS dead-rule pruning item, which remains open.
 
+## Zoom/reflow pass — 320px, WCAG 1.4.10 (2026-08-24)
+
+Probed all 13 public pages at 320px (the reflow breakpoint — 400% zoom on
+a 1280px desktop) with an instrumented Playwright pass that lists the
+unclipped offenders, then bisected the survivors by hiding sections.
+
+Two real failures found and fixed:
+
+- **/sample-verdicts and /cybersecurity-tenders scrolled 482px.** The
+  breakdown table carries `min-width: 44rem` behind an `overflow-x: auto`
+  scroller — correct in isolation, but the verdict list's implicit grid
+  column has an `auto` minimum that includes the table's min-content, so
+  every card inflated to ~754px and the scroller never engaged. Fix: the
+  list column is now `minmax(0, 1fr)` (commented in the CSS with the why).
+- **Home scrolled 24px.** Six `repeat(auto-fit, minmax(300px|320px, 1fr))`
+  grids whose minimum exceeds the 272px content box at 320px.
+
+Fix applied wholesale, not just where it burned: every fixed grid minimum
+across marketing/app/admin/base is now `minmax(min(N, 100%), 1fr)` —
+byte-identical rendering at any width where N fits, shrink-to-container
+below it. Verified value-preserving by re-running the marketing (11),
+accessibility (13, incl. the new test) and mobile (11) suites green.
+
+Pinned by a new test in accessibility.spec.ts asserting no public page
+scrolls horizontally at 320px — it runs in both the desktop and mobile
+Playwright projects, so the guard holds on every future run.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
