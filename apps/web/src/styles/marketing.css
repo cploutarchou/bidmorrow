@@ -24,7 +24,7 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
   gap: var(--s4);
 }
 
@@ -801,7 +801,7 @@
    `.mkt-steps` breakpoint above (same specificity, later in source) so it
    wins at every width without touching Home's own grid. */
 .mkt-steps--flow {
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
 }
 
 /* Marketing responsive tightening (docs/redesign/app-interface-spec.md
@@ -1326,7 +1326,7 @@
 
 .mkt-evidence-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 0.75rem;
 }
 
@@ -2168,7 +2168,7 @@
 /* --- Facts row --- */
 .hp-facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
   gap: 0.875rem;
 }
 
@@ -2197,7 +2197,7 @@
 /* --- How-it-works stepper --- */
 .hp-how {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   gap: 1.75rem;
   align-items: start;
 }
@@ -2448,7 +2448,7 @@
 /* --- Methodology truths --- */
 .hp-truths {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   gap: 1rem;
 }
 
@@ -2477,7 +2477,7 @@
 /* --- Score section --- */
 .hp-score {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   gap: 1.75rem;
   align-items: start;
 }
@@ -2535,7 +2535,7 @@
 /* --- Tiers --- */
 .hp-tiers {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
   gap: 0.875rem;
 }
 
@@ -2579,7 +2579,7 @@
 /* --- Coverage --- */
 .hp-coverage {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   gap: 1.75rem;
   align-items: start;
   margin-top: 2.25rem;
@@ -2648,7 +2648,7 @@
 /* --- Pricing --- */
 .hp-plans {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   gap: 1rem;
 }
 
@@ -2735,7 +2735,7 @@
 /* --- FAQ --- */
 .hp-faqs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
   gap: 1rem;
 }
 
@@ -3259,6 +3259,12 @@ body.consent-banner-open {
 
 .sample-verdicts {
   display: grid;
+  /* minmax(0, …), not a bare implicit column: the breakdown table inside
+     each card carries min-width: 44rem behind an overflow-x scroller, and
+     a track's default auto minimum would inflate every card to the
+     table's width — 480px of horizontal page scroll at 320px (WCAG
+     1.4.10 reflow failure, caught by the 2026-08-24 probe). */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s6);
 }
 
@@ -3310,7 +3316,7 @@ body.consent-banner-open {
    final row cannot render the container colour as a broken empty cell. */
 .sample-verdict__facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
   gap: 0;
   margin: var(--s4) 0;
 }

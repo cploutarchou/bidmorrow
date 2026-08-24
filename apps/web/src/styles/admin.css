@@ -301,7 +301,7 @@
 /* Health cards — one fact each, with the border carrying the tone. */
 .admin-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(14.5rem, 100%), 1fr));
   gap: var(--s3);
 }
 
@@ -365,7 +365,7 @@
    a row of counts reads as one object. */
 .admin-facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11.25rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(11.25rem, 100%), 1fr));
   /* Separators are drawn as outlines on the cells, not as a 1px grid gap over
      a hairline-coloured container. With the gap technique, a last row that
      does not fill its columns leaves the container colour showing through,
@@ -417,7 +417,7 @@
 
 .admin-panels {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18.75rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(18.75rem, 100%), 1fr));
   gap: var(--s3);
 }
 

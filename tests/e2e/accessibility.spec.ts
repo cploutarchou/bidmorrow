@@ -87,6 +87,45 @@ test.describe('unauthenticated pages', () => {
   });
 });
 
+test.describe('unauthenticated pages — 320px reflow (WCAG 1.4.10)', () => {
+  // 2026-08-24 zoom/reflow pass. 320 CSS px is the reflow breakpoint (400%
+  // zoom on a 1280px desktop). The page must not scroll horizontally —
+  // wide content scrolls inside its own overflow-x container instead. The
+  // probe that motivated this found two real failures, both grid minimums
+  // that could not shrink: `repeat(auto-fit, minmax(300px, 1fr))` (272px
+  // content box < 300px) and the sample-verdict breakdown table's 44rem
+  // min-width inflating its grid track. Every fixed grid minimum is now
+  // `minmax(min(Npx, 100%), 1fr)` and the verdict list column is
+  // `minmax(0, 1fr)`; this test keeps them that way.
+  const REFLOW_PAGES = [
+    '/',
+    '/how-it-works',
+    '/methodology',
+    '/pricing',
+    '/sample-verdicts',
+    '/cybersecurity-tenders',
+    '/pilot',
+    '/contact',
+    '/privacy',
+    '/terms',
+    '/login',
+    '/signup',
+  ];
+
+  test('no page scrolls horizontally at 320px', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    for (const path of REFLOW_PAGES) {
+      await page.goto(path);
+      // Lazy marketing chunks: wait for real content before measuring.
+      await expect(page.locator('main h1, main h2').first()).toBeVisible();
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow, `${path} scrolls horizontally at 320px`).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
 test.describe('authenticated pages', () => {
   test.describe.configure({ mode: 'serial' });
   let email = '';

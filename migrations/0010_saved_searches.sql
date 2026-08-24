@@ -33,15 +33,24 @@
 --
 -- No data is dropped or retyped by this migration; it creates one new table.
 
+-- Column notes, kept OUTSIDE the statement as `--` comments on purpose:
+-- wrangler's --remote path splits statements before sending them to the
+-- D1 HTTP API, and its splitter mishandles /* */ block comments inside a
+-- statement — the API receives a truncated fragment and fails with
+-- SQLITE_ERROR "incomplete input" [7500]. This file was the repo's first
+-- migration to use block comments and the first to fail on staging
+-- (2026-08-24); the local apply path parses them fine, which is why CI's
+-- from-empty chain apply never caught it.
+--   tab          — feed tab the search applies to: today | strong |
+--                  worth_reviewing | possible | saved | ignored.
+--   filters_json — JSON object of the feed filter fields; validated by
+--                  the API on write.
 CREATE TABLE saved_searches (
   id TEXT PRIMARY KEY,
   organization_id TEXT NOT NULL REFERENCES organizations(id),
   created_by_user_id TEXT REFERENCES users(id),
   name TEXT NOT NULL,
-  /* Feed tab the search applies to: today | strong | worth_reviewing |
-     possible | saved | ignored. */
   tab TEXT NOT NULL,
-  /* JSON object of the feed filter fields; validated by the API on write. */
   filters_json TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL

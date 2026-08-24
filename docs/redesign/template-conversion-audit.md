@@ -297,7 +297,20 @@ localStorage ops-state) was excluded from the comparison by instruction.
   every pathname change, with three deliberate exceptions documented in the
   file (initial load, search-only changes, and the slide-over sheet in both
   directions — `DetailSheet` owns focus there). Both are pinned by keyboard
-  e2e tests. Still open: `toHaveScreenshot` baselines, zoom/reflow pass.
+  e2e tests. Still open: `toHaveScreenshot` baselines.
+  ~~Zoom/reflow pass~~ — **DONE 2026-08-24.** A 320px probe (WCAG 1.4.10
+  reflow breakpoint = 400% zoom on 1280px) over all 13 public pages found
+  two real failures: the sample-verdict pages scrolled 482px horizontally
+  (the breakdown table's 44rem min-width inflated its grid track past the
+  overflow-x scroller meant to contain it — the classic auto-minimum grid
+  blowout) and Home scrolled 24px (`repeat(auto-fit, minmax(300px/320px,
+1fr))` grids whose minimum exceeds the 272px content box). Fixed by
+  making EVERY fixed grid minimum reflow-safe — `minmax(min(N, 100%),
+1fr)` across marketing/app/admin/base stylesheets (value-preserving at
+  any width where the minimum fits) — and giving the verdict list an
+  explicit `minmax(0, 1fr)` column. All 13 pages re-probe at 0px overflow,
+  pinned by a new reflow test in accessibility.spec.ts that runs in both
+  the desktop and mobile projects.
   ~~402/success e2e assertions~~ — **DONE 2026-08-24.** Three new e2e
   tests: the 402 paywall (a narrow, double-gated local-only test hook
   flips `entitlement_enforced` for exactly the test's window, always reset

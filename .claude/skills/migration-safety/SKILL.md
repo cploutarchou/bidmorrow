@@ -22,6 +22,12 @@ Migrations are one-way doors. Every schema change follows this checklist.
    tables; a NOT NULL addition needs a DEFAULT or a rebuild.
 5. No data-destructive statement (DROP, DELETE, retyping) without an explicit
    note in the migration header comment stating what is lost and why.
+6. `--` line comments ONLY — never `/* */` block comments. wrangler's
+   `--remote` path splits statements before the D1 HTTP API and mishandles
+   block comments inside a statement, failing the apply with SQLITE_ERROR
+   "incomplete input" [7500]. The local apply path parses them fine, so CI's
+   from-empty chain apply does NOT catch this — it first surfaces on the
+   staging deploy (0010, 2026-08-24).
 
 ## Verification (every migration)
 
