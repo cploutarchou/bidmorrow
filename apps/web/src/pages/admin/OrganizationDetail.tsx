@@ -186,6 +186,7 @@ export function OrganizationDetail(): ReactElement {
           <ConfirmAction
             label="Unsuspend organization"
             confirmText="UNSUSPEND_ORGANIZATION"
+            consequence="Access is restored immediately; the digest resumes at the next selection cycle."
             busy={busy}
             onConfirm={() => void unsuspend()}
           />
@@ -193,6 +194,7 @@ export function OrganizationDetail(): ReactElement {
           <ConfirmAction
             label="Suspend organization"
             confirmText="SUSPEND_ORGANIZATION"
+            consequence="Members lose access to the feed at once. Data is kept, and the digest stops selecting this organization."
             busy={busy}
             variant="danger"
             onConfirm={() => void suspend()}

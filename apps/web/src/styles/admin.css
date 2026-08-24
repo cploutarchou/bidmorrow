@@ -125,6 +125,29 @@
   max-width: 46rem;
 }
 
+/* Armed confirm strip (prototype's arm→confirm): the expanded phase of
+   ConfirmAction — consequence sentence, typed literal, confirm + cancel.
+   In flow, never sticky (no page-level pending state machine). */
+.admin-confirm--armed {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--sig-caution);
+  border-radius: var(--r-m);
+  background: var(--bg-sunken);
+  padding: 0.9rem 1rem;
+  display: grid;
+  gap: 0.6rem;
+  max-width: 46rem;
+}
+.admin-confirm--armed.admin-confirm--danger {
+  border-left-color: var(--sig-risk);
+}
+.admin-confirm__consequence {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-1);
+}
+
 .admin-rail a:hover {
   color: var(--ink-1);
   text-decoration: none;

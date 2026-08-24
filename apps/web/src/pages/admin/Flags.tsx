@@ -161,12 +161,16 @@ export function Flags(): ReactElement {
             <ConfirmAction
               label="Update flag"
               confirmText="UPDATE_FLAG"
+              consequence="Takes effect on the next request that reads this flag — there is no staged rollout."
               busy={busy}
               variant="danger"
               onConfirm={() => void saveEdit()}
             />
+            {/* Renamed from "Cancel": the armed confirm strip has its own
+                Cancel now, and two identically-labeled buttons with
+                different effects would be ambiguous. */}
             <button type="button" onClick={() => setEditingKey(null)}>
-              Cancel
+              Close editor
             </button>
           </div>
         </section>
