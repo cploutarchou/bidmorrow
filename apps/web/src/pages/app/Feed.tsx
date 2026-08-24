@@ -58,8 +58,27 @@ function countActiveFilters(filters: Filters): number {
   return Object.values(filters).filter((v) => v.length > 0).length;
 }
 
-function buildQuery(tab: Tab, filters: Filters, cursor: string | undefined): string {
+/** Mirrors the worker's `sort` enum (apps/worker/src/routes/feed.ts). */
+type Sort = 'fit' | 'deadline' | 'value' | 'newest';
+
+const SORT_OPTIONS: { id: Sort; label: string }[] = [
+  { id: 'fit', label: 'Fit score' },
+  { id: 'deadline', label: 'Deadline soonest' },
+  { id: 'value', label: 'Value highest' },
+  { id: 'newest', label: 'Newest' },
+];
+
+/** `GET /api/org/feed/stats` — each count is what the matching tab shows. */
+interface FeedStats {
+  newToday: number;
+  closingSoon: number;
+  strong: number;
+  saved: number;
+}
+
+function buildQuery(tab: Tab, filters: Filters, sort: Sort, cursor: string | undefined): string {
   const params = new URLSearchParams({ tab });
+  if (sort !== 'fit') params.set('sort', sort);
   if (filters.minScore.length > 0) params.set('minScore', filters.minScore);
   if (filters.country.length > 0) params.set('country', filters.country);
   if (filters.cpvPrefix.length > 0) params.set('cpvPrefix', filters.cpvPrefix);
@@ -85,6 +104,7 @@ interface FoundingAvailability {
 export function Feed(): ReactElement {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('today');
+  const [sort, setSort] = useState<Sort>('fit');
   const tablistRef = useRef<HTMLDivElement>(null);
 
   /** Roving tabs (same model as the detail sheet's tablist): the active tab
@@ -116,7 +136,28 @@ export function Feed(): ReactElement {
   const [foundingAvailable, setFoundingAvailable] = useState<boolean | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [profileSummary, setProfileSummary] = useState<string | null>(null);
+  const [stats, setStats] = useState<FeedStats | null>(null);
   const now = Date.now();
+
+  // KPI strip (prototype's stat tiles, restricted to counts the product can
+  // actually back — each tile is "what the matching tab shows"). An
+  // accelerator like the rail's profile line: a failure hides the row and
+  // must never disturb the feed (a non-entitled org's 402 lands here too —
+  // the feed request renders the real paywall state).
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<{ stats: FeedStats }>('/api/org/feed/stats')
+      .then((res) => {
+        if (!cancelled) setStats(res.stats);
+      })
+      .catch(() => {
+        if (!cancelled) setStats(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // The rail's profile line. Built from what the profile actually holds —
   // no completeness percentage, because the product has no such model and a
@@ -160,7 +201,11 @@ export function Feed(): ReactElement {
     setFilters(next);
     setTab(search.tab as Tab);
     setUseCustomCountry(next.country.length > 0 && !countryOptions.includes(next.country));
-    void load(search.tab as Tab, next);
+    // Saved searches predate the sort control and store no order — applying
+    // one resets to the default fit ordering rather than inheriting whatever
+    // sort happens to be active.
+    setSort('fit');
+    void load(search.tab as Tab, next, 'fit');
   }
 
   // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) —
@@ -199,7 +244,7 @@ export function Feed(): ReactElement {
   const latestRequestId = useRef(0);
 
   const load = useCallback(
-    async (nextTab: Tab, nextFilters: Filters) => {
+    async (nextTab: Tab, nextFilters: Filters, nextSort: Sort) => {
       const requestId = latestRequestId.current + 1;
       latestRequestId.current = requestId;
       setLoading(true);
@@ -207,7 +252,7 @@ export function Feed(): ReactElement {
       setSubscriptionRequired(null);
       try {
         const res = await api.get<FeedResponse>(
-          `/api/org/feed?${buildQuery(nextTab, nextFilters, undefined)}`,
+          `/api/org/feed?${buildQuery(nextTab, nextFilters, nextSort, undefined)}`,
         );
         if (latestRequestId.current !== requestId) return; // superseded by a newer request
         setState(startCursor(res));
@@ -248,10 +293,10 @@ export function Feed(): ReactElement {
   );
 
   useEffect(() => {
-    // Intentionally re-runs only when the tab changes — filters are applied
-    // explicitly via the "Apply filters" submit, not on every keystroke.
-    void load(tab, filters);
-    // filters/load are deliberately excluded from deps for the reason above.
+    // Intentionally re-runs only when the tab changes — filters and sort are
+    // applied explicitly by their own handlers, not on every keystroke.
+    void load(tab, filters, sort);
+    // filters/sort/load are deliberately excluded from deps for the reason above.
   }, [tab]);
 
   // Reads real founding-plan availability for the 402 notice's pricing line
@@ -275,14 +320,23 @@ export function Feed(): ReactElement {
 
   async function loadMore(): Promise<void> {
     if (state === null || state.nextCursor === null) return;
+    // Same request-id guard as load(): a tab/filter/sort change that resolves
+    // while this page fetch is in flight must not have stale-order rows
+    // appended onto the fresh list (and vice versa — a newer load() discards
+    // this response). The spinner flag itself is unconditional: it is purely
+    // local UI state and must never be left stuck on a superseded response.
+    const requestId = latestRequestId.current + 1;
+    latestRequestId.current = requestId;
     setLoadingMore(true);
     setError(null);
     try {
       const res = await api.get<FeedResponse>(
-        `/api/org/feed?${buildQuery(tab, filters, state.nextCursor)}`,
+        `/api/org/feed?${buildQuery(tab, filters, sort, state.nextCursor)}`,
       );
+      if (latestRequestId.current !== requestId) return;
       setState((prev) => (prev === null ? startCursor(res) : appendCursor(prev, res)));
     } catch {
+      if (latestRequestId.current !== requestId) return;
       setError('Could not load more results. Please try again.');
     } finally {
       setLoadingMore(false);
@@ -290,13 +344,18 @@ export function Feed(): ReactElement {
   }
 
   function onFilterSubmit(): void {
-    void load(tab, filters);
+    void load(tab, filters, sort);
   }
 
   function clearFilters(): void {
     setFilters(EMPTY_FILTERS);
     setUseCustomCountry(false);
-    void load(tab, EMPTY_FILTERS);
+    void load(tab, EMPTY_FILTERS, sort);
+  }
+
+  function onSortChange(next: Sort): void {
+    setSort(next);
+    void load(tab, filters, next);
   }
 
   // The detail sheet stays open OVER this feed, so a save or ignore made in
@@ -391,6 +450,38 @@ export function Feed(): ReactElement {
             profileSummary={profileSummary}
           />
           <div className="feed-main">
+            {/* dt/dd pairs — the note rides inside the dd (a bare <p> is
+                invalid inside a <dl>'s div wrapper). */}
+            {stats !== null && (
+              <dl className="feed-stats" aria-label="Feed overview">
+                <div className="feed-stat">
+                  <dt>New today</dt>
+                  <dd>
+                    {stats.newToday} <span>scored in the last 24 hours</span>
+                  </dd>
+                </div>
+                <div
+                  className={stats.closingSoon > 0 ? 'feed-stat feed-stat--caution' : 'feed-stat'}
+                >
+                  <dt>Closing ≤ 7 days</dt>
+                  <dd>
+                    {stats.closingSoon} <span>deadline within a week</span>
+                  </dd>
+                </div>
+                <div className="feed-stat">
+                  <dt>Strong matches</dt>
+                  <dd>
+                    {stats.strong} <span>open right now</span>
+                  </dd>
+                </div>
+                <div className="feed-stat">
+                  <dt>Saved</dt>
+                  <dd>
+                    {stats.saved} <span>on your shelf</span>
+                  </dd>
+                </div>
+              </dl>
+            )}
             <div className="feed-view-switcher">
               <div
                 role="tablist"
@@ -413,6 +504,20 @@ export function Feed(): ReactElement {
                     {t.label}
                   </button>
                 ))}
+              </div>
+              <div className="feed-sort">
+                <label htmlFor="feed-sort">Sort</label>
+                <select
+                  id="feed-sort"
+                  value={sort}
+                  onChange={(event) => onSortChange(event.target.value as Sort)}
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

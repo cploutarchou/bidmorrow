@@ -218,7 +218,14 @@ localStorage ops-state) was excluded from the comparison by instruction.
   an open consent banner gives the document bottom clearance so the
   footer's privacy link and cookie-preferences reopener stay reachable.
   Each fix is pinned by an e2e test.
-- Feed/Settings: sort control + KPI row, ~~"why this score" expander~~
+- Feed/Settings: ~~sort control + KPI row~~ (**DONE 2026-08-24** — a
+  four-order sort select (fit / deadline soonest / value highest / newest)
+  wired through per-sort namespaced keyset cursors in `listFeedRows`
+  (NULLs-last for deadline/value, cross-sort cursor replay refused as
+  invalid), and a KPI strip whose four tiles are each defined as "what the
+  matching tab shows" via `GET /api/org/feed/stats` — the prototype's
+  owner/pipeline tiles reference features that don't exist and were not
+  faked), ~~"why this score" expander~~
   (**DONE 2026-08-23** — a native `<details>` on the card revealing the
   engine's component explanation strings, which the feed payload already
   carried and the card never rendered),

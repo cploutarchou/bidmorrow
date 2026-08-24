@@ -24,6 +24,7 @@ import {
 } from './tender-corpus';
 import { ignoreTender, saveTender } from './engagement';
 import {
+  getFeedStats,
   insertTenderMatches,
   listFeedRows,
   replaceTenderMatches,
@@ -88,9 +89,11 @@ async function seedLot(
         lotNumber: '1',
         title: `Lot for ${sourceNoticeId}`,
         contractNature: 'services',
-        estimatedValueAmount: overrides.valueEur ?? 100_000,
+        // `=== undefined` (not ??) so an explicit null seeds a genuinely
+        // unvalued lot — same convention as deadlineAt below.
+        estimatedValueAmount: overrides.valueEur === undefined ? 100_000 : overrides.valueEur,
         estimatedValueCurrency: 'EUR',
-        estimatedValueEur: overrides.valueEur ?? 100_000,
+        estimatedValueEur: overrides.valueEur === undefined ? 100_000 : overrides.valueEur,
         valueIsDerived: false,
         deadlineAt:
           overrides.deadlineAt === undefined ? T0 + 30 * 86_400_000 : overrides.deadlineAt,
@@ -511,4 +514,213 @@ describe('insertTenderMatches / replaceTenderMatches at scale (P-4)', () => {
       .where(eq(tenderMatches.organizationId, orgId));
     expect(finalRows).toHaveLength(MATCH_COUNT);
   }, 30_000);
+});
+
+describe('listFeedRows sort orders', () => {
+  let db: Db;
+
+  beforeEach(() => {
+    db = testDb();
+  });
+
+  it("'deadline' orders soonest first with null deadlines LAST, stable across the null boundary", async () => {
+    const { orgId } = await insertTestOrganization(db, 'Feed Sort Deadline Org');
+    const in5d = await seedLot(db, 'sort-dl-5d', { deadlineAt: T0 + 5 * 86_400_000 });
+    const in10d = await seedLot(db, 'sort-dl-10d', { deadlineAt: T0 + 10 * 86_400_000 });
+    const noDeadlineA = await seedLot(db, 'sort-dl-null-a', { deadlineAt: null });
+    const in2d = await seedLot(db, 'sort-dl-2d', { deadlineAt: T0 + 2 * 86_400_000 });
+    const noDeadlineB = await seedLot(db, 'sort-dl-null-b', { deadlineAt: null });
+    await insertTenderMatches(db, orgId, {
+      matches: [in5d, in10d, noDeadlineA, in2d, noDeadlineB].map((s) => matchInput(s, 50, T0)),
+    });
+
+    const all = await listFeedRows(db, orgId, {
+      tab: 'possible',
+      engineVersion: ENGINE_VERSION,
+      now: T0 + 1000,
+      sort: 'deadline',
+    });
+    // Soonest -> latest, then the null-deadline tail (any internal order).
+    expect(all.items.slice(0, 3).map((r) => r.lotId)).toEqual([
+      in2d.lotId,
+      in5d.lotId,
+      in10d.lotId,
+    ]);
+    expect(new Set(all.items.slice(3).map((r) => r.lotId))).toEqual(
+      new Set([noDeadlineA.lotId, noDeadlineB.lotId]),
+    );
+
+    // Pagination crosses the non-null -> null boundary without loss or dupes.
+    const collected: string[] = [];
+    let cursor: string | undefined;
+    for (let page = 0; page < 4; page += 1) {
+      const result = await listFeedRows(db, orgId, {
+        tab: 'possible',
+        engineVersion: ENGINE_VERSION,
+        now: T0 + 1000,
+        sort: 'deadline',
+        limit: 2,
+        ...(cursor !== undefined ? { cursor } : {}),
+      });
+      collected.push(...result.items.map((r) => r.lotId));
+      if (result.nextCursor === null) break;
+      cursor = result.nextCursor;
+    }
+    expect(collected).toEqual(all.items.map((r) => r.lotId));
+  });
+
+  it("'value' orders highest first with unvalued lots LAST; 'newest' orders by scoredAt DESC", async () => {
+    const { orgId } = await insertTestOrganization(db, 'Feed Sort Value Org');
+    const small = await seedLot(db, 'sort-val-small', { valueEur: 50_000 });
+    const big = await seedLot(db, 'sort-val-big', { valueEur: 900_000 });
+    const unvalued = await seedLot(db, 'sort-val-null', { valueEur: null });
+    await insertTenderMatches(db, orgId, {
+      matches: [
+        matchInput(small, 50, T0),
+        matchInput(big, 51, T0 + 60_000),
+        matchInput(unvalued, 52, T0 + 120_000),
+      ],
+    });
+
+    const byValue = await listFeedRows(db, orgId, {
+      tab: 'possible',
+      engineVersion: ENGINE_VERSION,
+      now: T0 + 1000,
+      sort: 'value',
+    });
+    expect(byValue.items.map((r) => r.lotId)).toEqual([big.lotId, small.lotId, unvalued.lotId]);
+
+    const byNewest = await listFeedRows(db, orgId, {
+      tab: 'possible',
+      engineVersion: ENGINE_VERSION,
+      now: T0 + 1000,
+      sort: 'newest',
+    });
+    expect(byNewest.items.map((r) => r.lotId)).toEqual([unvalued.lotId, big.lotId, small.lotId]);
+
+    // 'newest' paginates on its own cursor.
+    const firstPage = await listFeedRows(db, orgId, {
+      tab: 'possible',
+      engineVersion: ENGINE_VERSION,
+      now: T0 + 1000,
+      sort: 'newest',
+      limit: 1,
+    });
+    expect(firstPage.nextCursor).not.toBeNull();
+    const secondPage = await listFeedRows(db, orgId, {
+      tab: 'possible',
+      engineVersion: ENGINE_VERSION,
+      now: T0 + 1000,
+      sort: 'newest',
+      limit: 1,
+      ...(firstPage.nextCursor !== null ? { cursor: firstPage.nextCursor } : {}),
+    });
+    expect(secondPage.items.map((r) => r.lotId)).toEqual([big.lotId]);
+  });
+
+  it('a cursor from one sort is rejected under another (namespaced cursors)', async () => {
+    const { orgId } = await insertTestOrganization(db, 'Feed Sort Cursor Org');
+    const seeds = await Promise.all(
+      Array.from({ length: 3 }, (_, i) => seedLot(db, `sort-cursor-${i}`)),
+    );
+    await insertTenderMatches(db, orgId, {
+      matches: seeds.map((seed, i) => matchInput(seed, 50 + i, T0)),
+    });
+
+    const fitPage = await listFeedRows(db, orgId, {
+      tab: 'possible',
+      engineVersion: ENGINE_VERSION,
+      now: T0 + 1000,
+      limit: 1,
+    });
+    expect(fitPage.nextCursor).not.toBeNull();
+    // Replaying the fit cursor against the deadline ordering would silently
+    // skip/repeat rows — it must be refused, not reinterpreted.
+    await expect(
+      listFeedRows(db, orgId, {
+        tab: 'possible',
+        engineVersion: ENGINE_VERSION,
+        now: T0 + 1000,
+        sort: 'deadline',
+        limit: 1,
+        cursor: fitPage.nextCursor as string,
+      }),
+    ).rejects.toThrow('malformed cursor');
+
+    const deadlinePage = await listFeedRows(db, orgId, {
+      tab: 'possible',
+      engineVersion: ENGINE_VERSION,
+      now: T0 + 1000,
+      sort: 'deadline',
+      limit: 1,
+    });
+    await expect(
+      listFeedRows(db, orgId, {
+        tab: 'possible',
+        engineVersion: ENGINE_VERSION,
+        now: T0 + 1000,
+        limit: 1,
+        cursor: deadlinePage.nextCursor as string,
+      }),
+    ).rejects.toThrow('malformed cursor');
+  });
+});
+
+describe('getFeedStats', () => {
+  let db: Db;
+
+  beforeEach(() => {
+    db = testDb();
+  });
+
+  it('each count matches its tab definition (24h window, 7-day closing window, expiry, saved shelf)', async () => {
+    const { orgId, userId } = await insertTestOrganization(db, 'Feed Stats Org');
+    const now = T0 + 1000;
+
+    // Counts in newToday + closingSoon + strong.
+    const strongClosing = await seedLot(db, 'stats-strong-closing', {
+      deadlineAt: now + 3 * 86_400_000,
+    });
+    // Old score (outside 24h), far deadline: strong only.
+    const strongFar = await seedLot(db, 'stats-strong-far', {
+      deadlineAt: now + 30 * 86_400_000,
+    });
+    // Expired: in NO count except saved (below).
+    const expired = await seedLot(db, 'stats-expired', { deadlineAt: now - 1000 });
+    // Possible, closing window: closingSoon + newToday but never strong.
+    const possibleClosing = await seedLot(db, 'stats-possible-closing', {
+      deadlineAt: now + 6 * 86_400_000,
+    });
+
+    await insertTenderMatches(db, orgId, {
+      matches: [
+        matchInput(strongClosing, 90, now - 1000),
+        matchInput(strongFar, 92, now - 2 * 86_400_000),
+        matchInput(expired, 95, now - 1000),
+        matchInput(possibleClosing, 50, now - 1000),
+      ],
+    });
+    await saveTender(db, orgId, {
+      lotId: expired.lotId,
+      noticeId: expired.noticeId,
+      savedByUserId: userId,
+    });
+
+    const stats = await getFeedStats(db, orgId, { engineVersion: ENGINE_VERSION, now });
+    // newToday: strongClosing + possibleClosing (expired is out despite its
+    // fresh score; strongFar's score is 2 days old).
+    expect(stats.newToday).toBe(2);
+    expect(stats.closingSoon).toBe(2);
+    expect(stats.strong).toBe(2);
+    // saved keeps the expired lot — same rule as the saved tab.
+    expect(stats.saved).toBe(1);
+
+    // Another org's corpus never leaks into these counts.
+    const { orgId: otherOrgId } = await insertTestOrganization(db, 'Feed Stats Other Org');
+    const otherStats = await getFeedStats(db, otherOrgId, {
+      engineVersion: ENGINE_VERSION,
+      now,
+    });
+    expect(otherStats).toEqual({ newToday: 0, closingSoon: 0, strong: 0, saved: 0 });
+  });
 });

@@ -135,6 +135,26 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     expect(count).toBeGreaterThan(0);
   });
 
+  test('feed: KPI strip renders and the sort control genuinely reorders', async () => {
+    // KPI tiles: presence and labels only — the numbers depend on the wall
+    // clock (e.g. "Closing ≤ 7 days" is 0 until a demo deadline is near),
+    // so asserting exact values would make this test rot with time.
+    const statTerms = page.locator('.feed-stats dt');
+    await expect(statTerms).toHaveCount(4);
+    await expect(statTerms.nth(0)).toHaveText('New today');
+    await expect(statTerms.nth(1)).toHaveText('Closing ≤ 7 days');
+
+    // The demo seed gives deterministic, DISTINCT orders: values are
+    // 250k/180k/150k and deadlines are Sep 15 vs Oct 1 — so each sort has a
+    // known first card regardless of what the engine scored them.
+    const firstTitle = page.locator('article.tender-card h3 a').first();
+    await page.getByLabel('Sort').selectOption('value');
+    await expect(firstTitle).toHaveText('Security monitoring software licences');
+    await page.getByLabel('Sort').selectOption('deadline');
+    await expect(firstTitle).toHaveText('Penetration testing and security assessment services');
+    await page.getByLabel('Sort').selectOption('fit');
+  });
+
   test('tender detail: opens as a slide-over over the feed, score breakdown, TED link, save', async () => {
     const firstCardLink = page.locator('article.tender-card h3 a').first();
     firstMatchHref = await firstCardLink.getAttribute('href');
