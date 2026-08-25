@@ -53,6 +53,9 @@ jobs:
         run: pnpm test:e2e
         env:
           CI: 'true'
+          # Debug-level wrangler log FILE (uploaded below on failure). The
+          # job log is unaffected: Playwright ignores the webServer's stdout.
+          WRANGLER_LOG: debug
 
       - name: Upload Playwright report on failure
         if: failure()
