@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactElement } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { CONTRACT_NATURES, type ContractNature } from '@bidmorrow/domain';
 import { Combobox } from '../../components/Combobox';
 import { ConfirmAction } from '../../components/ConfirmAction';
@@ -375,6 +375,20 @@ export function Settings(): ReactElement {
       // data until the next load, never a lost mutation.
     }
   }
+
+  // Header "Billing" link and other `#section` deep links: the sections
+  // mount only after the profile loads, so the browser's own anchor jump
+  // has nothing to land on. Scroll once, after load, to the requested group.
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (loading) return;
+    const id = hash.slice(1);
+    if (id.length === 0 || !SETTINGS_GROUPS.some((group) => group.id === id)) return;
+    const el = document.getElementById(id);
+    if (el === null) return;
+    el.scrollIntoView({ block: 'start' });
+    setActiveGroup(id);
+  }, [loading, hash]);
 
   // Fix for requirement C ("current-section indication"): scrollspy over the
   // 5 group anchors. Best-effort — degrades to a static (non-highlighting)

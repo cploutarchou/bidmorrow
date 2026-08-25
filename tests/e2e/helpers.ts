@@ -106,8 +106,9 @@ export async function scoreNow(request: APIRequestContext): Promise<void> {
 export async function bootstrapOnboardedUserWithMatches(
   page: Page,
   orgNamePrefix: string,
+  options: { readonly email?: string } = {},
 ): Promise<{ email: string }> {
-  const email = uniqueEmail(orgNamePrefix.toLowerCase().replace(/\s+/g, '-'));
+  const email = options.email ?? uniqueEmail(orgNamePrefix.toLowerCase().replace(/\s+/g, '-'));
   await signUpAndVerify(page, { name: `${orgNamePrefix} User`, email, password: TEST_PASSWORD });
   await login(page, email, TEST_PASSWORD);
 

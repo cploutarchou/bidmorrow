@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { api, ApiError } from '../../lib/api';
+import { DEFAULT_FEED_VIEW, parseFeedView, type FeedView } from '../../lib/feed-view';
 import { appendCursor, startCursor, type CursorState } from '../../lib/cursor';
 import type { FeedResponse, FeedRow } from '../../lib/types';
 import { subscribeToMatchUpdates } from '../../lib/match-events';
@@ -10,7 +11,7 @@ import type { OrgProfileResponse } from '../../lib/onboarding-types';
 import { TenderCard } from '../../components/TenderCard';
 import { SubscriptionRequiredNotice } from '../../components/SubscriptionRequiredNotice';
 
-type Tab = 'today' | 'strong' | 'worth_reviewing' | 'possible' | 'saved' | 'ignored';
+type Tab = FeedView;
 
 /**
  * Fix for C5 (docs/redesign/ux-strategy.md §5.1): the score-band views and
@@ -103,7 +104,27 @@ interface FoundingAvailability {
 
 export function Feed(): ReactElement {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>('today');
+  // The URL is the single source of truth for the active view: `?view=`
+  // makes shelves linkable (header "Saved" link, bookmarks, reload) and a
+  // tab click writes it back with `replace` so history is not spammed.
+  // Deriving `tab` from the URL (rather than mirroring URL <-> state with
+  // two effects) is what keeps an external navigation from ping-ponging.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab: Tab = parseFeedView(searchParams.get('view'));
+  const setTab = useCallback(
+    (next: Tab): void => {
+      setSearchParams(
+        (previous) => {
+          const params = new URLSearchParams(previous);
+          if (next === DEFAULT_FEED_VIEW) params.delete('view');
+          else params.set('view', next);
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const [sort, setSort] = useState<Sort>('fit');
   const tablistRef = useRef<HTMLDivElement>(null);
 
@@ -199,13 +220,13 @@ export function Feed(): ReactElement {
   function applySavedSearch(search: SavedSearch): void {
     const next: Filters = { ...EMPTY_FILTERS, ...search.filters };
     setFilters(next);
-    setTab(search.tab as Tab);
+    setTab(parseFeedView(search.tab));
     setUseCustomCountry(next.country.length > 0 && !countryOptions.includes(next.country));
     // Saved searches predate the sort control and store no order — applying
     // one resets to the default fit ordering rather than inheriting whatever
     // sort happens to be active.
     setSort('fit');
-    void load(search.tab as Tab, next, 'fit');
+    void load(parseFeedView(search.tab), next, 'fit');
   }
 
   // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) —
