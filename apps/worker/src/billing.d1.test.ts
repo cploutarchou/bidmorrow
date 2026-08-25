@@ -55,8 +55,8 @@ const PASSWORD = 'correct horse battery staple 1!';
 
 // Sandbox sentinels only — mirrors vitest.config.ts's fake bindings.
 const TEST_WEBHOOK_SECRET = 'pdl_ntfset_fake_for_worker_tests_only';
-const TEST_FOUNDING_PRICE = 'pri_fake_founding_test';
-const TEST_STANDARD_PRICE = 'pri_fake_standard_test';
+const TEST_FOUNDING_PRICE = 'pri_01fakefoundingtest00000000';
+const TEST_STANDARD_PRICE = 'pri_01fakestandardtest00000000';
 
 let uniqueSeq = 0;
 function uniqueEmail(prefix = 'billing'): string {

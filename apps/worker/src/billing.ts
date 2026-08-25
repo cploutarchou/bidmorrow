@@ -43,26 +43,60 @@ export function resolvePaddleEnvironment(value: string | undefined): PaddleEnvir
  * staging/production (`@bidmorrow/config` `DEPLOYED_REQUIRED_NAMES`).
  */
 export function resolveBillingConfig(env: Env): BillingConfig | null {
-  const environment = resolvePaddleEnvironment(env.PADDLE_ENVIRONMENT);
+  const environment = resolvePaddleEnvironment(normalizeSecret(env.PADDLE_ENVIRONMENT));
+  const apiKey = normalizeSecret(env.PADDLE_API_KEY);
+  const webhookSecret = normalizeSecret(env.PADDLE_WEBHOOK_SECRET);
+  const clientToken = normalizeSecret(env.PADDLE_CLIENT_TOKEN);
+  const founding = normalizeSecret(env.PADDLE_PRICE_FOUNDING_MONTHLY);
+  const standard = normalizeSecret(env.PADDLE_PRICE_STANDARD_MONTHLY);
   if (
-    env.PADDLE_API_KEY === undefined ||
-    env.PADDLE_WEBHOOK_SECRET === undefined ||
-    env.PADDLE_CLIENT_TOKEN === undefined ||
-    env.PADDLE_PRICE_FOUNDING_MONTHLY === undefined ||
-    env.PADDLE_PRICE_STANDARD_MONTHLY === undefined ||
+    apiKey === undefined ||
+    webhookSecret === undefined ||
+    clientToken === undefined ||
+    founding === undefined ||
+    standard === undefined ||
     environment === null
   ) {
     return null;
   }
+  // Shape checks, not just presence: a client token (`test_…`/`live_…`) or
+  // a `Bearer …` string pasted into PADDLE_API_KEY produces Paddle's
+  // `403 authentication_malformed` on every call (seen on staging
+  // 2026-08-26). Better to surface `not_configured` than a 500 per click.
+  if (
+    !API_KEY_SHAPE.test(apiKey) ||
+    !PRICE_ID_SHAPE.test(founding) ||
+    !PRICE_ID_SHAPE.test(standard)
+  ) {
+    return null;
+  }
   return {
-    paddle: createPaddleClient({ apiKey: env.PADDLE_API_KEY, environment }),
-    priceIds: {
-      founding: env.PADDLE_PRICE_FOUNDING_MONTHLY,
-      standard: env.PADDLE_PRICE_STANDARD_MONTHLY,
-    },
+    paddle: createPaddleClient({ apiKey, environment }),
+    priceIds: { founding, standard },
     environment,
-    clientToken: env.PADDLE_CLIENT_TOKEN,
-    webhookSecret: env.PADDLE_WEBHOOK_SECRET,
+    clientToken,
+    webhookSecret,
     appBaseUrl: env.APP_BASE_URL,
   };
+}
+
+const API_KEY_SHAPE = /^pdl_(sdbx|live)_apikey_[A-Za-z0-9_-]+$/;
+const PRICE_ID_SHAPE = /^pri_[a-z0-9]{26}$/;
+
+/**
+ * Secrets pasted through a dashboard/CLI routinely pick up a trailing
+ * newline, surrounding spaces or wrapping quotes — every one of which
+ * turns into a malformed `Authorization` header or an unknown price id
+ * downstream. Strip them here; an empty result counts as unset.
+ */
+export function normalizeSecret(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  let v = value.trim();
+  if (
+    v.length >= 2 &&
+    ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")))
+  ) {
+    v = v.slice(1, -1).trim();
+  }
+  return v.length === 0 ? undefined : v;
 }
