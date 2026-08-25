@@ -17,6 +17,7 @@ export const SUBSCRIPTION_STATUSES = [
 export * from './errors';
 export * from './paddle-client';
 export * from './webhook-signature';
+export * from './provenance';
 export * from './plans';
 export * from './checkout';
 export * from './portal';

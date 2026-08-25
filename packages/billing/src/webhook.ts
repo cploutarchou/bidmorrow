@@ -18,10 +18,14 @@
  *
  * Organization resolution is different from state: it is read from
  * `custom_data.organization_id`, which we set ourselves on the checkout
- * transaction (checkout.ts) and Paddle copies onto the subscription — an
- * identity label, not mutable payment state, so trusting the
- * (signature-verified) payload for it is safe. If the payload lacks it the
- * re-fetched entity is consulted before giving up.
+ * transaction (checkout.ts) and Paddle copies onto the subscription. A
+ * Paddle signature only proves Paddle sent the event — the public
+ * Paddle.js token lets anyone mint a subscription with arbitrary
+ * `custom_data` (SEC-PDL-01) — so the id is trusted ONLY when its
+ * `organization_sig` HMAC (provenance.ts) verifies. Unsigned or
+ * mis-signed ids are `ignored`, never written and never used as an FK.
+ * If the payload lacks it the re-fetched entity is consulted before
+ * giving up.
  *
  * Idempotency: `insertBillingEventIfNew` (unique `provider_event_id`) runs
  * FIRST, before any other DB write or Paddle API call — a duplicate
@@ -50,6 +54,7 @@ import {
   type SubscriptionsReadClient,
 } from './paddle-client';
 import { mapPaddleSubscriptionStatus, planFromPriceId, type PriceIds } from './plans';
+import { ORGANIZATION_ID_KEY, verifyOrganizationProvenance } from './provenance';
 import type { PaddleEvent } from './webhook-signature';
 
 export const SUBSCRIBED_WEBHOOK_EVENT_TYPES = [
@@ -88,18 +93,27 @@ export function isHandledEvent(event: PaddleEvent): event is HandledEvent {
   );
 }
 
-/** Safe wrapper: absent/blank/non-string custom_data never throws, just resolves to null. */
-export function organizationIdFromCustomData(
+/**
+ * Resolves the organization from `custom_data` ONLY when the provenance
+ * signature verifies (provenance.ts). Absent/blank/unsigned/mis-signed
+ * data never throws — it resolves to null.
+ */
+export async function organizationIdFromCustomData(
+  provenanceSecret: string,
   customData: Readonly<Record<string, unknown>> | null | undefined,
-): OrganizationId | null {
-  const raw = customData?.['organization_id'];
+): Promise<OrganizationId | null> {
+  if (!(await verifyOrganizationProvenance(provenanceSecret, customData))) return null;
+  const raw = customData?.[ORGANIZATION_ID_KEY];
   if (typeof raw !== 'string' || raw.trim().length === 0) return null;
   return toOrganizationId(raw);
 }
 
-/** Cheap, synchronous, no-network organization resolution from the (signature-verified) payload. */
-export function resolveOrganizationIdFromPayload(event: HandledEvent): OrganizationId | null {
-  return organizationIdFromCustomData(event.data.custom_data);
+/** No-network organization resolution from the (Paddle-signed AND provenance-signed) payload. */
+export function resolveOrganizationIdFromPayload(
+  provenanceSecret: string,
+  event: HandledEvent,
+): Promise<OrganizationId | null> {
+  return organizationIdFromCustomData(provenanceSecret, event.data.custom_data);
 }
 
 export function resolveSubscriptionId(event: HandledEvent): string {
@@ -110,6 +124,8 @@ export interface WebhookDeps {
   readonly db: Db;
   readonly paddle: { readonly subscriptions: SubscriptionsReadClient };
   readonly priceIds: PriceIds;
+  /** Verifies `custom_data.organization_sig` (provenance.ts) — the notification-destination secret. */
+  readonly provenanceSecret: string;
   readonly logger?: Logger;
 }
 
@@ -156,7 +172,8 @@ async function syncSubscriptionState(
   const subscription = await deps.paddle.subscriptions.get(subscriptionId);
 
   const organizationId =
-    payloadOrganizationId ?? organizationIdFromCustomData(subscription.custom_data);
+    payloadOrganizationId ??
+    (await organizationIdFromCustomData(deps.provenanceSecret, subscription.custom_data));
   if (organizationId === null) {
     deps.logger?.warn('billing.webhook.unresolvable', {
       provider_event_id: event.event_id,
@@ -188,6 +205,17 @@ async function syncSubscriptionState(
     before.billingCustomerId !== subscription.customer_id &&
     blocksNewCheckout(before.status)
   ) {
+    if (status === 'canceled') {
+      // Already reconciled (or canceled by the customer): Paddle keeps
+      // sending `subscription.updated`/`canceled` for the duplicate, and a
+      // second cancel call would be rejected → `failed` row → 3-day retry
+      // storm. Acknowledge without touching Paddle or the org's row.
+      deps.logger?.info('billing.webhook.duplicate_already_canceled', {
+        organizationId,
+        duplicateBillingSubscriptionId: subscription.id,
+      });
+      return 'duplicate_reconciled';
+    }
     await reconcileDuplicateCustomer(deps, organizationId, before, subscription);
     return 'duplicate_reconciled';
   }
@@ -236,7 +264,12 @@ export async function processPaddleEvent(
   event: PaddleEvent,
 ): Promise<ProcessOutcome> {
   const handled = isHandledEvent(event);
-  const cheapOrganizationId = handled ? resolveOrganizationIdFromPayload(event) : null;
+  // Only a provenance-verified id is ever written (it is an FK on
+  // billing_events) — an attacker-chosen value must not be able to turn
+  // the insert into a constraint error and a 3-day retry loop.
+  const cheapOrganizationId = handled
+    ? await resolveOrganizationIdFromPayload(deps.provenanceSecret, event)
+    : null;
   const isNew = await insertBillingEventIfNew(deps.db, {
     providerEventId: event.event_id,
     type: event.event_type,

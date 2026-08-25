@@ -76,7 +76,12 @@ billingRoutes.post(
     let result;
     try {
       result = await createCheckoutTransaction(
-        { db, paddle: config.paddle, priceIds: config.priceIds },
+        {
+          db,
+          paddle: config.paddle,
+          priceIds: config.priceIds,
+          provenanceSecret: config.webhookSecret,
+        },
         { organizationId, plan },
       );
     } catch (cause) {

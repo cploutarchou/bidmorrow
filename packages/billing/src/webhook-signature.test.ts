@@ -37,18 +37,29 @@ describe('parsePaddleSignatureHeader', () => {
   const H1 = 'a'.repeat(64);
 
   it('parses the documented shape', () => {
-    expect(parsePaddleSignatureHeader(`ts=${NOW};h1=${H1}`)).toEqual({ ts: NOW, h1: H1 });
+    expect(parsePaddleSignatureHeader(`ts=${NOW};h1=${H1}`)).toEqual({ ts: NOW, h1: [H1] });
   });
 
   it('is tolerant of key order, whitespace and uppercase hex', () => {
     expect(parsePaddleSignatureHeader(` h1=${H1.toUpperCase()} ; ts=${NOW} `)).toEqual({
       ts: NOW,
-      h1: H1,
+      h1: [H1],
     });
   });
 
   it('ignores unknown keys (forward compatibility)', () => {
-    expect(parsePaddleSignatureHeader(`ts=${NOW};h1=${H1};h2=${H1}`)).toEqual({ ts: NOW, h1: H1 });
+    expect(parsePaddleSignatureHeader(`ts=${NOW};h1=${H1};h2=${H1}`)).toEqual({
+      ts: NOW,
+      h1: [H1],
+    });
+  });
+
+  it('collects every h1 value (secret-rotation window sends several)', () => {
+    const other = H1.replace(/^./, (c) => (c === '0' ? '1' : '0'));
+    expect(parsePaddleSignatureHeader(`ts=${NOW};h1=${other};h1=${H1}`)).toEqual({
+      ts: NOW,
+      h1: [other, H1],
+    });
   });
 
   it('rejects malformed headers', () => {
@@ -81,6 +92,20 @@ describe('verifyPaddleWebhook', () => {
       event_type: 'subscription.updated',
       data: { id: 'sub_01test' },
     });
+  });
+
+  it('verifies when ANY h1 matches (rotation) and rejects when none does', async () => {
+    const good = await computePaddleSignature(SECRET, NOW, BODY);
+    const bad = await computePaddleSignature('rotated-away', NOW, BODY);
+    const event = await verifyPaddleWebhook(BODY, `ts=${NOW};h1=${bad};h1=${good}`, SECRET, {
+      nowSeconds: NOW,
+    });
+    expect(event.event_id).toBe('evt_01test');
+    expect(
+      await reason(
+        verifyPaddleWebhook(BODY, `ts=${NOW};h1=${bad};h1=${bad}`, SECRET, { nowSeconds: NOW }),
+      ),
+    ).toBe('mismatch');
   });
 
   it('rejects a malformed header', async () => {

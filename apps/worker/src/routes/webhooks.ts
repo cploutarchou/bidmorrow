@@ -39,8 +39,7 @@ webhookRoutes.use('*', createIpRateLimit('/api/webhooks/paddle'));
 
 webhookRoutes.post('/paddle', async (c) => {
   const config = resolveBillingConfig(c.env);
-  const webhookSecret = c.env.PADDLE_WEBHOOK_SECRET;
-  if (config === null || webhookSecret === undefined) {
+  if (config === null) {
     c.get('logger').error('billing.webhook.not_configured', {});
     return c.json({ error: 'not_configured' }, 503);
   }
@@ -53,7 +52,7 @@ webhookRoutes.post('/paddle', async (c) => {
 
   let event;
   try {
-    event = await verifyPaddleWebhook(rawBody, signature, webhookSecret);
+    event = await verifyPaddleWebhook(rawBody, signature, config.webhookSecret);
   } catch {
     // Never leak the verification reason.
     c.get('logger').warn('billing.webhook.invalid_signature', {});
@@ -64,7 +63,13 @@ webhookRoutes.post('/paddle', async (c) => {
   const logger = c.get('logger').child({ billing_event_id: event.event_id });
   try {
     const outcome = await processPaddleEvent(
-      { db, paddle: config.paddle, priceIds: config.priceIds, logger },
+      {
+        db,
+        paddle: config.paddle,
+        priceIds: config.priceIds,
+        provenanceSecret: config.webhookSecret,
+        logger,
+      },
       event,
     );
     logger.info('billing.webhook.processed', { type: event.event_type, outcome });

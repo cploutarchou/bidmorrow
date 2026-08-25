@@ -15,6 +15,7 @@ import type { Env } from './env';
 const FULL = {
   APP_BASE_URL: 'https://bidmorrow.local',
   PADDLE_API_KEY: 'pdl_sdbx_apikey_fake',
+  PADDLE_WEBHOOK_SECRET: 'pdl_ntfset_fake',
   PADDLE_CLIENT_TOKEN: 'test_fake_token',
   PADDLE_ENVIRONMENT: 'sandbox',
   PADDLE_PRICE_FOUNDING_MONTHLY: 'pri_fake_founding',
@@ -44,6 +45,7 @@ describe('resolvePaddleEnvironment', () => {
 describe('resolveBillingConfig', () => {
   it.each([
     'PADDLE_API_KEY',
+    'PADDLE_WEBHOOK_SECRET',
     'PADDLE_CLIENT_TOKEN',
     'PADDLE_ENVIRONMENT',
     'PADDLE_PRICE_FOUNDING_MONTHLY',
@@ -66,6 +68,7 @@ describe('resolveBillingConfig', () => {
     });
     expect(config?.environment).toBe('sandbox');
     expect(config?.clientToken).toBe('test_fake_token');
+    expect(config?.webhookSecret).toBe('pdl_ntfset_fake');
     expect(config?.appBaseUrl).toBe('https://bidmorrow.local');
     expect(config?.paddle.subscriptions).toBeDefined();
   });

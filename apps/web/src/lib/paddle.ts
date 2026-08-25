@@ -29,8 +29,14 @@ export function loadPaddle(): Promise<Paddle | null> {
         environment: config.paddle.environment,
         eventCallback: handleEvent,
       });
-      return paddle ?? null;
+      if (paddle === undefined) {
+        // Don't memoise a transient load failure — the next click retries.
+        instance = null;
+        return null;
+      }
+      return paddle;
     } catch {
+      instance = null;
       return null;
     }
   })();

@@ -33,6 +33,7 @@ const {
   resolveFoundingCap,
 } = await import('./checkout');
 const { DEFAULT_FOUNDING_CAP } = await import('./plans');
+const { signOrganizationProvenance } = await import('./provenance');
 const { FoundingPlanUnavailableError, SubscriptionAlreadyExistsError } = await import('./errors');
 
 describe('blocksNewCheckout (existing-subscription 409 guard)', () => {
@@ -88,6 +89,8 @@ describe('resolveFoundingCap', () => {
 const ORG_ID = 'org_test_01J0CHECKOUT' as OrganizationId;
 const FAKE_DB = {} as never;
 const PRICE_IDS = { founding: 'pri_founding_test', standard: 'pri_standard_test' };
+const SECRET = 'pdl_ntfset_test_secret';
+const ORG_SIG = await signOrganizationProvenance(SECRET, ORG_ID);
 
 function subscriptionRow(overrides: Partial<Subscription> = {}): Subscription {
   return {
@@ -154,7 +157,7 @@ describe('createCheckoutTransaction', () => {
     const { client, create } = fakeTransactions();
     await expect(
       createCheckoutTransaction(
-        { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS },
+        { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
         { organizationId: ORG_ID, plan: 'standard' },
       ),
     ).rejects.toBeInstanceOf(SubscriptionAlreadyExistsError);
@@ -167,7 +170,7 @@ describe('createCheckoutTransaction', () => {
     const { client, create } = fakeTransactions();
     await expect(
       createCheckoutTransaction(
-        { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS },
+        { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
         { organizationId: ORG_ID, plan: 'founding' },
       ),
     ).rejects.toMatchObject({ name: 'FoundingPlanUnavailableError', reason: 'flag_closed' });
@@ -180,7 +183,7 @@ describe('createCheckoutTransaction', () => {
     countNonCanceledSubscriptionsByPlan.mockResolvedValue(DEFAULT_FOUNDING_CAP);
     const { client, create } = fakeTransactions();
     const error = await createCheckoutTransaction(
-      { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS },
+      { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
       { organizationId: ORG_ID, plan: 'founding' },
     ).catch((cause: unknown) => cause);
     expect(error).toBeInstanceOf(FoundingPlanUnavailableError);
@@ -188,18 +191,18 @@ describe('createCheckoutTransaction', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it('creates a transaction for a brand-new customer: env price id, org custom_data, EUR, no customer_id', async () => {
+  it('creates a transaction for a brand-new customer: env price id, SIGNED org custom_data, EUR, no customer_id', async () => {
     getSubscription.mockResolvedValue(null);
     const { client, create } = fakeTransactions('txn_01new');
     const result = await createCheckoutTransaction(
-      { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS },
+      { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
       { organizationId: ORG_ID, plan: 'standard' },
     );
     expect(result).toEqual({ transactionId: 'txn_01new' });
     expect(create).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledWith({
       items: [{ price_id: 'pri_standard_test', quantity: 1 }],
-      custom_data: { organization_id: ORG_ID, plan: 'standard' },
+      custom_data: { organization_id: ORG_ID, organization_sig: ORG_SIG, plan: 'standard' },
       currency_code: 'EUR',
     });
     expect(create.mock.calls[0]?.[0]).not.toHaveProperty('customer_id');
@@ -212,12 +215,12 @@ describe('createCheckoutTransaction', () => {
     openFoundingFlags();
     const { client, create } = fakeTransactions();
     await createCheckoutTransaction(
-      { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS },
+      { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
       { organizationId: ORG_ID, plan: 'founding' },
     );
     expect(create.mock.calls[0]?.[0]).toMatchObject({
       items: [{ price_id: 'pri_founding_test', quantity: 1 }],
-      custom_data: { organization_id: ORG_ID, plan: 'founding' },
+      custom_data: { organization_id: ORG_ID, organization_sig: ORG_SIG, plan: 'founding' },
     });
   });
 
@@ -228,7 +231,7 @@ describe('createCheckoutTransaction', () => {
       .mockResolvedValueOnce(subscriptionRow({ status: 'canceled', billingCustomerId: 'ctm_x' }));
     const { client, create } = fakeTransactions();
     await createCheckoutTransaction(
-      { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS },
+      { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
       { organizationId: ORG_ID, plan: 'standard' },
     );
     expect(create.mock.calls[0]?.[0]).toMatchObject({ customer_id: 'ctm_x' });
@@ -241,7 +244,7 @@ describe('createCheckoutTransaction', () => {
     const { client, create } = fakeTransactions();
     await expect(
       createCheckoutTransaction(
-        { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS },
+        { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
         { organizationId: ORG_ID, plan: 'standard' },
       ),
     ).rejects.toBeInstanceOf(SubscriptionAlreadyExistsError);
@@ -254,7 +257,7 @@ describe('createCheckoutTransaction', () => {
     const { client } = fakeTransactions(null);
     await expect(
       createCheckoutTransaction(
-        { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS },
+        { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
         { organizationId: ORG_ID, plan: 'standard' },
       ),
     ).rejects.toThrow(/no id/);
@@ -267,7 +270,12 @@ describe('createCheckoutTransaction', () => {
     });
     await expect(
       createCheckoutTransaction(
-        { db: FAKE_DB, paddle: { transactions: { create } }, priceIds: PRICE_IDS },
+        {
+          db: FAKE_DB,
+          paddle: { transactions: { create } },
+          priceIds: PRICE_IDS,
+          provenanceSecret: SECRET,
+        },
         { organizationId: ORG_ID, plan: 'standard' },
       ),
     ).rejects.toThrow('paddle down');

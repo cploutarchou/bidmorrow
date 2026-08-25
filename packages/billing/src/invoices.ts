@@ -19,6 +19,7 @@ import type { OrganizationId } from '@bidmorrow/domain';
 
 import { NoBillingCustomerError } from './errors';
 import {
+  PaddleApiError,
   paddleAmountToMinorUnits,
   paddleTimestampToMillis,
   type PaddleTransaction,
@@ -126,7 +127,17 @@ export async function getInvoicePdfForOrganization(
   if (subscription === null) {
     throw new NoBillingCustomerError(args.organizationId);
   }
-  const transaction = await deps.paddle.transactions.get(args.transactionId);
+  let transaction: PaddleTransaction;
+  try {
+    transaction = await deps.paddle.transactions.get(args.transactionId);
+  } catch (cause) {
+    // A missing id must look exactly like a foreign one (SEC-PDL-03):
+    // Paddle's 404 becomes our not_found instead of a distinguishable 502.
+    if (cause instanceof PaddleApiError && cause.status === 404) {
+      return { kind: 'not_found' };
+    }
+    throw cause;
+  }
   if (transaction.customer_id !== subscription.billingCustomerId) {
     // Belongs to someone else (or nobody): indistinguishable from "does not
     // exist" to the caller by design.

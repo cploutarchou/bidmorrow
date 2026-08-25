@@ -46,7 +46,7 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
    set in BOTH `staging` and `production` environments. Both
    environments redeployed the same evening to push the new values —
    real signup-verification + digest email is LIVE.
-5. **Paddle live account** (item 4, REPLACES the former Stripe item —
+5. **Paddle live account** (detailed in item 4 below — REPLACES the former Stripe item —
    ADR-0011, 2026-08-25): get the live Paddle seller account approved,
    website approval for `bidmorrow.com`, live catalog, live notification
    destination for `https://bidmorrow.com/api/webhooks/paddle` (can be

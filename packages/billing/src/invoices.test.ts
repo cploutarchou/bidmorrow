@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Subscription } from '@bidmorrow/db';
 import type { OrganizationId } from '@bidmorrow/domain';
 
-import type { PaddleTransaction } from './paddle-client';
+import { PaddleApiError, type PaddleTransaction } from './paddle-client';
 
 const getSubscription = vi.fn();
 
@@ -207,6 +207,33 @@ describe('getInvoicePdfForOrganization', () => {
     );
     expect(outcome).toEqual({ kind: 'not_found' });
     expect(invoice).not.toHaveBeenCalled();
+  });
+
+  it('maps a Paddle 404 on the transaction lookup to not_found — indistinguishable from a foreign id (SEC-PDL-03)', async () => {
+    getSubscription.mockResolvedValue(subscriptionRow());
+    const { paddle, invoice } = fakeTransactions({
+      get: new PaddleApiError(404, 'entity_not_found', 'req_1', 'transaction not found'),
+    });
+    expect(
+      await getInvoicePdfForOrganization(
+        { db: FAKE_DB, paddle },
+        { organizationId: ORG_ID, transactionId: 'txn_01missing' },
+      ),
+    ).toEqual({ kind: 'not_found' });
+    expect(invoice).not.toHaveBeenCalled();
+  });
+
+  it('still propagates non-404 provider errors on the transaction lookup', async () => {
+    getSubscription.mockResolvedValue(subscriptionRow());
+    const { paddle } = fakeTransactions({
+      get: new PaddleApiError(500, null, null, 'paddle down'),
+    });
+    await expect(
+      getInvoicePdfForOrganization(
+        { db: FAKE_DB, paddle },
+        { organizationId: ORG_ID, transactionId: 'txn_01test' },
+      ),
+    ).rejects.toBeInstanceOf(PaddleApiError);
   });
 
   it('returns not_found for a transaction with no customer', async () => {

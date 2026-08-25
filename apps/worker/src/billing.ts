@@ -20,6 +20,12 @@ export interface BillingConfig {
   readonly environment: PaddleEnvironment;
   /** Public Paddle.js client-side token (`test_…`/`live_…`) — safe to expose. */
   readonly clientToken: string;
+  /**
+   * Notification-destination secret. Verifies `paddle-signature` on the
+   * webhook AND signs/verifies `custom_data.organization_sig` (provenance)
+   * — so it is required for checkout too, not only for the webhook route.
+   */
+  readonly webhookSecret: string;
   readonly appBaseUrl: string;
 }
 
@@ -40,6 +46,7 @@ export function resolveBillingConfig(env: Env): BillingConfig | null {
   const environment = resolvePaddleEnvironment(env.PADDLE_ENVIRONMENT);
   if (
     env.PADDLE_API_KEY === undefined ||
+    env.PADDLE_WEBHOOK_SECRET === undefined ||
     env.PADDLE_CLIENT_TOKEN === undefined ||
     env.PADDLE_PRICE_FOUNDING_MONTHLY === undefined ||
     env.PADDLE_PRICE_STANDARD_MONTHLY === undefined ||
@@ -55,6 +62,7 @@ export function resolveBillingConfig(env: Env): BillingConfig | null {
     },
     environment,
     clientToken: env.PADDLE_CLIENT_TOKEN,
+    webhookSecret: env.PADDLE_WEBHOOK_SECRET,
     appBaseUrl: env.APP_BASE_URL,
   };
 }

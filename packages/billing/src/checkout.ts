@@ -34,6 +34,11 @@ import { countNonCanceledSubscriptionsByPlan } from '@bidmorrow/db';
 import { FoundingPlanUnavailableError, SubscriptionAlreadyExistsError } from './errors';
 import type { TransactionsClient } from './paddle-client';
 import {
+  ORGANIZATION_ID_KEY,
+  ORGANIZATION_SIG_KEY,
+  signOrganizationProvenance,
+} from './provenance';
+import {
   DEFAULT_FOUNDING_CAP,
   priceIdForPlan,
   type PriceIds,
@@ -44,6 +49,8 @@ export interface CheckoutDeps {
   readonly db: Db;
   readonly paddle: { readonly transactions: Pick<TransactionsClient, 'create'> };
   readonly priceIds: PriceIds;
+  /** Signs `custom_data.organization_id` so the webhook can prove WE created the transaction (provenance.ts). */
+  readonly provenanceSecret: string;
 }
 
 export interface CreateCheckoutArgs {
@@ -140,7 +147,14 @@ export async function createCheckoutTransaction(
 
   const transaction = await deps.paddle.transactions.create({
     items: [{ price_id: priceId, quantity: 1 }],
-    custom_data: { organization_id: args.organizationId, plan: args.plan },
+    custom_data: {
+      [ORGANIZATION_ID_KEY]: args.organizationId,
+      [ORGANIZATION_SIG_KEY]: await signOrganizationProvenance(
+        deps.provenanceSecret,
+        args.organizationId,
+      ),
+      plan: args.plan,
+    },
     currency_code: 'EUR',
     ...(reactivatingCustomer !== undefined ? { customer_id: reactivatingCustomer } : {}),
   });

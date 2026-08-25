@@ -127,6 +127,15 @@ production`. A clock more than 5 minutes off also 400s (tolerance).
   drift is possible — reconcile affected orgs against Paddle subscription
   state (admin tool, Phase 10).
 
+**`billing.webhook.duplicate_checkout_reconciled` in the logs** means an
+organization completed two concurrent checkouts; the processor cancelled
+the second Paddle subscription immediately, but Paddle does NOT refund it
+automatically. Action: open the duplicate subscription's transaction in
+the Paddle dashboard and issue a full refund (sandbox auto-approves;
+live refunds may need Paddle approval). Later `subscription.updated`/
+`canceled` events for that duplicate are acknowledged as
+`duplicate_reconciled` without further calls.
+
 ### D1 size approaching limit (60% alert)
 
 1. Verify the retention purge job is actually running and pruning (counts

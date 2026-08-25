@@ -30,6 +30,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isFoundingPlanAvailable,
   processPaddleEvent,
+  signOrganizationProvenance,
   signPaddleWebhook,
   type PaddleEvent,
   type PaddleSubscription,
@@ -844,14 +845,29 @@ function makeFakePaddle(getImpl: (id: string) => Promise<PaddleSubscription>): {
   return fake;
 }
 
-function subscriptionEvent(args: {
+async function subscriptionEvent(args: {
   id: string;
   type: string;
   organizationId: string | null;
   subscriptionId: string;
   /** Deliberately possibly-stale payload status — the processor must ignore this and re-fetch. */
   payloadStatus?: string;
-}): PaddleEvent {
+  /** Omit the provenance signature (SEC-PDL-01 forgery case). Default: signed like checkout.ts writes it. */
+  unsigned?: boolean;
+}): Promise<PaddleEvent> {
+  const customData =
+    args.organizationId === null
+      ? null
+      : args.unsigned === true
+        ? { organization_id: args.organizationId, plan: 'standard' }
+        : {
+            organization_id: args.organizationId,
+            organization_sig: await signOrganizationProvenance(
+              TEST_WEBHOOK_SECRET,
+              args.organizationId,
+            ),
+            plan: 'standard',
+          };
   return {
     event_id: args.id,
     event_type: args.type,
@@ -861,10 +877,7 @@ function subscriptionEvent(args: {
       id: args.subscriptionId,
       status: args.payloadStatus ?? 'active',
       customer_id: 'ctm_payload_never_trusted',
-      custom_data:
-        args.organizationId === null
-          ? null
-          : { organization_id: args.organizationId, plan: 'standard' },
+      custom_data: customData,
       items: [{ price: { id: TEST_STANDARD_PRICE } }],
       current_billing_period: null,
       scheduled_change: null,
@@ -873,6 +886,7 @@ function subscriptionEvent(args: {
 }
 
 const PRICE_IDS = { founding: TEST_FOUNDING_PRICE, standard: TEST_STANDARD_PRICE };
+const DEPS_BASE = { priceIds: PRICE_IDS, provenanceSecret: TEST_WEBHOOK_SECRET };
 
 describe('processPaddleEvent (fake Paddle client, real D1)', () => {
   it('subscription.created re-fetches and upserts, firing subscription_started once', async () => {
@@ -881,14 +895,14 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
     const paddle = makeFakePaddle(async (id) =>
       fakeSubscription({ id, customer_id: 'ctm_created_1', status: 'active' }),
     );
-    const event = subscriptionEvent({
+    const event = await subscriptionEvent({
       id: 'evt_created_1',
       type: 'subscription.created',
       organizationId: orgId,
       subscriptionId: 'sub_created_1',
     });
 
-    const outcome = await processPaddleEvent({ db, paddle, priceIds: PRICE_IDS }, event);
+    const outcome = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
     expect(outcome).toBe('processed');
 
     const subscription = await getSubscription(db, toOrganizationId(orgId));
@@ -925,8 +939,8 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
       }),
     );
     const outcome = await processPaddleEvent(
-      { db, paddle, priceIds: PRICE_IDS },
-      subscriptionEvent({
+      { db, paddle, ...DEPS_BASE },
+      await subscriptionEvent({
         id: 'evt_sched_1',
         type: 'subscription.updated',
         organizationId: orgId,
@@ -944,15 +958,15 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
     const paddle = makeFakePaddle(async (id) =>
       fakeSubscription({ id, customer_id: 'ctm_dup_1', status: 'active' }),
     );
-    const event = subscriptionEvent({
+    const event = await subscriptionEvent({
       id: 'evt_duplicate_1',
       type: 'subscription.activated',
       organizationId: orgId,
       subscriptionId: 'sub_dup_1',
     });
 
-    const first = await processPaddleEvent({ db, paddle, priceIds: PRICE_IDS }, event);
-    const second = await processPaddleEvent({ db, paddle, priceIds: PRICE_IDS }, event);
+    const first = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
+    const second = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
     expect(first).toBe('processed');
     expect(second).toBe('duplicate');
     expect(paddle.getCallCount).toBe(1);
@@ -966,8 +980,8 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
       fakeSubscription({ id, customer_id: 'ctm_ooo_1', status: 'active' }),
     );
     await processPaddleEvent(
-      { db, paddle: seedPaddle, priceIds: PRICE_IDS },
-      subscriptionEvent({
+      { db, paddle: seedPaddle, ...DEPS_BASE },
+      await subscriptionEvent({
         id: 'evt_ooo_newer',
         type: 'subscription.created',
         organizationId: orgId,
@@ -981,8 +995,8 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
       fakeSubscription({ id, customer_id: 'ctm_ooo_1', status: 'active' }),
     );
     const outcome = await processPaddleEvent(
-      { db, paddle: stalePaddle, priceIds: PRICE_IDS },
-      subscriptionEvent({
+      { db, paddle: stalePaddle, ...DEPS_BASE },
+      await subscriptionEvent({
         id: 'evt_ooo_older',
         type: 'subscription.canceled',
         organizationId: orgId,
@@ -1009,12 +1023,69 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
       data: { id: 'txn_01h1vjes1y163xfj1rh1tkfb65' },
     };
 
-    const outcome = await processPaddleEvent({ db, paddle, priceIds: PRICE_IDS }, event);
+    const outcome = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
     expect(outcome).toBe('ignored');
     expect(paddle.getCallCount).toBe(0);
 
     const row = await getBillingEventByProviderId(db, 'evt_unknown_type');
     expect(row?.status).toBe('ignored');
+  });
+
+  it('SEC-PDL-01: a forged UNSIGNED organization_id is ignored — one ignored row with organization null, no subscription', async () => {
+    const { orgId } = await setUpOrg('WebhookForgedUnsigned');
+    const db = createDb(env.DB);
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({
+        id,
+        customer_id: 'ctm_forged',
+        status: 'active',
+        custom_data: { organization_id: orgId, plan: 'standard' },
+      }),
+    );
+    const outcome = await processPaddleEvent(
+      { db, paddle, ...DEPS_BASE },
+      await subscriptionEvent({
+        id: 'evt_forged_unsigned',
+        type: 'subscription.created',
+        organizationId: orgId,
+        subscriptionId: 'sub_forged_unsigned',
+        unsigned: true,
+      }),
+    );
+    expect(outcome).toBe('ignored');
+    expect(await billingEventCount('evt_forged_unsigned')).toBe(1);
+    const row = await getBillingEventByProviderId(db, 'evt_forged_unsigned');
+    expect(row?.status).toBe('ignored');
+    expect(row?.organizationId).toBeNull();
+    expect(await getSubscription(db, toOrganizationId(orgId))).toBeNull();
+  });
+
+  it('SEC-PDL-01: an unsigned custom_data naming a NON-EXISTENT org never becomes an FK write (no throw)', async () => {
+    await setUpOrg('WebhookForgedGhost');
+    const db = createDb(env.DB);
+    const ghost = 'org_does_not_exist_01J0GHOST';
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({
+        id,
+        customer_id: 'ctm_ghost',
+        status: 'active',
+        custom_data: { organization_id: ghost, plan: 'standard' },
+      }),
+    );
+    const outcome = await processPaddleEvent(
+      { db, paddle, ...DEPS_BASE },
+      await subscriptionEvent({
+        id: 'evt_forged_ghost',
+        type: 'subscription.created',
+        organizationId: ghost,
+        subscriptionId: 'sub_forged_ghost',
+        unsigned: true,
+      }),
+    );
+    expect(outcome).toBe('ignored');
+    const row = await getBillingEventByProviderId(db, 'evt_forged_ghost');
+    expect(row?.status).toBe('ignored');
+    expect(row?.organizationId).toBeNull();
   });
 
   it('handled type with no resolvable organization (no custom_data anywhere): ignored, nothing written', async () => {
@@ -1024,8 +1095,8 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
       fakeSubscription({ id, customer_id: 'ctm_orphan', status: 'active', custom_data: null }),
     );
     const outcome = await processPaddleEvent(
-      { db, paddle, priceIds: PRICE_IDS },
-      subscriptionEvent({
+      { db, paddle, ...DEPS_BASE },
+      await subscriptionEvent({
         id: 'evt_orphan',
         type: 'subscription.created',
         organizationId: null,
@@ -1050,8 +1121,8 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
     );
     await expect(
       processPaddleEvent(
-        { db, paddle, priceIds: PRICE_IDS },
-        subscriptionEvent({
+        { db, paddle, ...DEPS_BASE },
+        await subscriptionEvent({
           id: 'evt_badprice',
           type: 'subscription.created',
           organizationId: orgId,
@@ -1067,7 +1138,7 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
   it('failure-then-retry: a failed attempt is retried (not treated as a duplicate) and can succeed', async () => {
     const { orgId } = await setUpOrg('WebhookRetry');
     const db = createDb(env.DB);
-    const event = subscriptionEvent({
+    const event = await subscriptionEvent({
       id: 'evt_retry_1',
       type: 'subscription.created',
       organizationId: orgId,
@@ -1078,7 +1149,7 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
       throw new Error('simulated transient Paddle API failure');
     });
     await expect(
-      processPaddleEvent({ db, paddle: failingPaddle, priceIds: PRICE_IDS }, event),
+      processPaddleEvent({ db, paddle: failingPaddle, ...DEPS_BASE }, event),
     ).rejects.toThrow('simulated transient Paddle API failure');
     const failedRow = await getBillingEventByProviderId(db, 'evt_retry_1');
     expect(failedRow?.status).toBe('failed');
@@ -1086,10 +1157,7 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
     const succeedingPaddle = makeFakePaddle(async (id) =>
       fakeSubscription({ id, customer_id: 'ctm_retry_1', status: 'active' }),
     );
-    const outcome = await processPaddleEvent(
-      { db, paddle: succeedingPaddle, priceIds: PRICE_IDS },
-      event,
-    );
+    const outcome = await processPaddleEvent({ db, paddle: succeedingPaddle, ...DEPS_BASE }, event);
     expect(outcome).toBe('processed');
 
     const finalRow = await getBillingEventByProviderId(db, 'evt_retry_1');
@@ -1108,14 +1176,14 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
     const paddle = makeFakePaddle(async (id) =>
       fakeSubscription({ id, customer_id: existingB.billingCustomerId, status: 'active' }),
     );
-    const event = subscriptionEvent({
+    const event = await subscriptionEvent({
       id: 'evt_tenant_mismatch',
       type: 'subscription.created',
       organizationId: orgA.orgId,
       subscriptionId: 'sub_tenant_mismatch',
     });
 
-    await expect(processPaddleEvent({ db, paddle, priceIds: PRICE_IDS }, event)).rejects.toThrow();
+    await expect(processPaddleEvent({ db, paddle, ...DEPS_BASE }, event)).rejects.toThrow();
 
     const row = await getBillingEventByProviderId(db, 'evt_tenant_mismatch');
     expect(row?.status).toBe('failed');
@@ -1134,14 +1202,14 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
     const paddle = makeFakePaddle(async (id) =>
       fakeSubscription({ id, customer_id: 'ctm_double_checkout', status: 'active' }),
     );
-    const event = subscriptionEvent({
+    const event = await subscriptionEvent({
       id: 'evt_double_checkout',
       type: 'subscription.created',
       organizationId: orgId,
       subscriptionId: 'sub_double_checkout',
     });
 
-    const outcome = await processPaddleEvent({ db, paddle, priceIds: PRICE_IDS }, event);
+    const outcome = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
     expect(outcome).toBe('duplicate_reconciled');
 
     expect(paddle.cancelCalls).toEqual([
@@ -1167,7 +1235,7 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
     const paddle = makeFakePaddle(async (id) =>
       fakeSubscription({ id, customer_id: seeded.billingCustomerId, status: 'past_due' }),
     );
-    const event = subscriptionEvent({
+    const event = await subscriptionEvent({
       id: 'evt_same_customer_update',
       type: 'subscription.past_due',
       organizationId: orgId,
@@ -1175,7 +1243,7 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
       payloadStatus: 'past_due',
     });
 
-    const outcome = await processPaddleEvent({ db, paddle, priceIds: PRICE_IDS }, event);
+    const outcome = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
     expect(outcome).toBe('processed');
     expect(paddle.cancelCalls).toEqual([]);
 
@@ -1198,14 +1266,14 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
     const paddle = makeFakePaddle(async (id) =>
       fakeSubscription({ id, customer_id: canceled.billingCustomerId, status: 'active' }),
     );
-    const event = subscriptionEvent({
+    const event = await subscriptionEvent({
       id: 'evt_reactivate',
       type: 'subscription.created',
       organizationId: orgId,
       subscriptionId: 'sub_reactivated',
     });
 
-    const outcome = await processPaddleEvent({ db, paddle, priceIds: PRICE_IDS }, event);
+    const outcome = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
     expect(outcome).toBe('processed');
     expect(paddle.cancelCalls).toEqual([]);
 
@@ -1225,8 +1293,8 @@ describe('processPaddleEvent (fake Paddle client, real D1)', () => {
       fakeSubscription({ id, customer_id: seeded.billingCustomerId, status: 'canceled' }),
     );
     const outcome = await processPaddleEvent(
-      { db, paddle, priceIds: PRICE_IDS },
-      subscriptionEvent({
+      { db, paddle, ...DEPS_BASE },
+      await subscriptionEvent({
         id: 'evt_canceled_transition',
         type: 'subscription.canceled',
         organizationId: orgId,

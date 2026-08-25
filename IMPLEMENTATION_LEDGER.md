@@ -4420,6 +4420,29 @@ checkout service: sandbox still needs the domain added under Website
 approval and a default payment link (owner 4b) — so the real
 end-to-end sandbox checkout is deferred to staging once 4a/4b are done.
 
+Independent reviews (same day, read-only, both re-ran the gates):
+
+- security: no Critical/High. SEC-PDL-01 (Medium) — a Paddle signature
+  proves the sender, not that WE created the transaction; the public
+  Paddle.js token lets anyone open `Checkout.open({ items, customData })`
+  with a forged `organization_id`, bypassing every server gate and able
+  to grief another org (and a non-existent id would FK-fail → 500 → 3-day
+  retry loop). FIXED: checkout signs `custom_data.organization_sig`
+  (HMAC, keyed with the notification secret, `provenance.ts`); the
+  webhook trusts the id only when it verifies, else `ignored` with a
+  null org — no schema, no extra API call. SEC-PDL-02 — the threat model
+  claimed a reconciliation job that never existed: struck, residual risk
+  reworded; C3 line corrected. SEC-PDL-03 — a missing invoice id was a
+  502 while a foreign one was a 404: Paddle 404 now maps to not_found.
+  SEC-PDL-05 — multiple `h1` values (secret rotation) now accepted.
+- production-reviewer: PASS with one should-fix. F1 — after a SEC-P9-03
+  reconciliation, later events for the (now canceled) duplicate would
+  re-call cancel, fail, and retry for 3 days: FIXED (canceled duplicate
+  acknowledged without a Paddle call). Nits: runbook refund line for
+  reconciled duplicates (added), `font-src` parity in `_headers` (added),
+  `loadPaddle` no longer memoises a transient load failure, blockers
+  numbering clarified.
+
 Verified: format/lint/typecheck; root vitest 660 (3 skipped), worker 260,
 db 68, security 13; web build; e2e billing.spec 5 passed / 3 expected
 skips. Owner-side remaining in HUMAN_DECISION_BLOCKERS.md item 4

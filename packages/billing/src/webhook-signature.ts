@@ -35,14 +35,15 @@ export interface PaddleEvent<TData = unknown> {
 
 export interface ParsedPaddleSignature {
   readonly ts: number;
-  readonly h1: string;
+  /** One or more signatures — Paddle sends several while a destination secret is being rotated. */
+  readonly h1: readonly string[];
 }
 
 /** Pure header parse — exported for unit tests; tolerant of key order, strict on shape. */
 export function parsePaddleSignatureHeader(header: string): ParsedPaddleSignature | null {
   const parts = header.split(';').map((p) => p.trim());
   let ts: number | null = null;
-  let h1: string | null = null;
+  const h1: string[] = [];
   for (const part of parts) {
     const eq = part.indexOf('=');
     if (eq <= 0) return null;
@@ -53,11 +54,11 @@ export function parsePaddleSignatureHeader(header: string): ParsedPaddleSignatur
       ts = Number(value);
     } else if (key === 'h1') {
       if (!/^[0-9a-f]{64}$/i.test(value)) return null;
-      h1 = value.toLowerCase();
+      h1.push(value.toLowerCase());
     }
     // Unknown keys are ignored (forward compatibility), never fatal.
   }
-  if (ts === null || h1 === null) return null;
+  if (ts === null || h1.length === 0) return null;
   return { ts, h1 };
 }
 
@@ -127,7 +128,13 @@ export async function verifyPaddleWebhook(
   }
 
   const expected = await computePaddleSignature(secret, parsed.ts, rawBody);
-  if (!timingSafeEqualHex(expected, parsed.h1)) {
+  // Any matching h1 is sufficient (secret rotation window); every
+  // candidate is compared in constant time.
+  let matched = false;
+  for (const candidate of parsed.h1) {
+    matched = timingSafeEqualHex(expected, candidate) || matched;
+  }
+  if (!matched) {
     throw new PaddleSignatureVerificationError('mismatch');
   }
 

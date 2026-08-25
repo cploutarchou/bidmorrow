@@ -97,6 +97,12 @@ https://sandbox-cdn.paddle.com 'unsafe-inline'` (Paddle.js loads its
    container — found with a CSP probe against the sandbox, not from docs).
    `'unsafe-inline'` is granted for styles only; script-src stays strict.
    The same list lives in `apps/web/public/_headers`.
+   9b. **Organization provenance** (SEC-PDL-01, found in security review): the
+   Paddle.js client token is public, so a Paddle-signed event is not proof
+   that our server created the transaction. Checkout signs
+   `custom_data.organization_id` with an HMAC (`organization_sig`, keyed
+   with the notification secret); the webhook trusts the id only when the
+   HMAC verifies and `ignore`s anything else. Stateless, no schema change.
 10. **Environment names**: `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`,
     `PADDLE_PRICE_FOUNDING_MONTHLY`, `PADDLE_PRICE_STANDARD_MONTHLY`
     (secrets); `PADDLE_CLIENT_TOKEN` (public Paddle.js token),
