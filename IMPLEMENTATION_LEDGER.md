@@ -4261,6 +4261,96 @@ still true post-split (the aliases resolve; legacy selectors still use
 them). They stand. The genuinely dead legacy rules those aliases serve
 belong to the CSS dead-rule pruning item, which remains open.
 
+## Zoom/reflow pass — 320px, WCAG 1.4.10 (2026-08-24)
+
+Probed all 13 public pages at 320px (the reflow breakpoint — 400% zoom on
+a 1280px desktop) with an instrumented Playwright pass that lists the
+unclipped offenders, then bisected the survivors by hiding sections.
+
+Two real failures found and fixed:
+
+- **/sample-verdicts and /cybersecurity-tenders scrolled 482px.** The
+  breakdown table carries `min-width: 44rem` behind an `overflow-x: auto`
+  scroller — correct in isolation, but the verdict list's implicit grid
+  column has an `auto` minimum that includes the table's min-content, so
+  every card inflated to ~754px and the scroller never engaged. Fix: the
+  list column is now `minmax(0, 1fr)` (commented in the CSS with the why).
+- **Home scrolled 24px.** Six `repeat(auto-fit, minmax(300px|320px, 1fr))`
+  grids whose minimum exceeds the 272px content box at 320px.
+
+Fix applied wholesale, not just where it burned: every fixed grid minimum
+across marketing/app/admin/base is now `minmax(min(N, 100%), 1fr)` —
+byte-identical rendering at any width where N fits, shrink-to-container
+below it. Verified value-preserving by re-running the marketing (11),
+accessibility (13, incl. the new test) and mobile (11) suites green.
+
+Pinned by a new test in accessibility.spec.ts asserting no public page
+scrolls horizontally at 320px — it runs in both the desktop and mobile
+Playwright projects, so the guard holds on every future run.
+
+## Staging migration failure: block comments break wrangler --remote (2026-08-24)
+
+Owner reported the staging deploy failing at the migration step:
+`incomplete input: SQLITE_ERROR [code: 7500]` applying 1 migration to
+bidmorrow-staging. Diagnosis: `0010_saved_searches.sql` is the repo's
+only migration using `/* */` block comments inside a statement, and it is
+the only one that ever failed remotely. wrangler's `--remote` path splits
+statements before the D1 HTTP API and mishandles multi-line block
+comments — the API receives a truncated fragment. The local apply path
+parses them fine, which is why CI's from-empty chain apply never caught
+it.
+
+State verified against BOTH live databases before touching anything:
+staging has no partial `saved_searches` objects and its `d1_migrations`
+records only 0001–0009 (the failed apply left nothing behind); production
+also sits at 0009. Editing the unapplied file is therefore safe
+everywhere. Consequence worth knowing: the migration step precedes the
+deploy step, so staging deploys have been failing since 0010 merged
+(2026-08-23) — staging carries none of the code merged since, and
+catches up on the next green deploy.
+
+Fix: 0010's block comments rewritten as `--` line comments (column notes
+moved above the statement, with the why recorded in the file), and the
+migration-safety skill gained authoring rule 6 banning block comments in
+migrations. Verified: the db suite re-applies the full chain from empty
+(vitest-pool-workers) and passes 67/67, including the saved-searches
+repository tests.
+
+## Nightly E2E has been red since 2026-08-19 — diagnostics landed, cause open (2026-08-25)
+
+Found while merging #103: `E2E (nightly)` (schedule-only, so never on a
+PR) has failed every night since 08-19. Two distinct phases:
+
+- 08-19 → 08-22: exactly one test failed per run (41 passed) — a
+  keyword-cap timing test, then an auth redirect test; ordinary flakes.
+- 08-24 and 08-25: workerd DIED mid-suite. wrangler prints a single
+  empty `✘ [ERROR]` line (no message — the signature of the process being
+  killed rather than throwing) and every later test fails with
+  `ERR_CONNECTION_REFUSED` (34/84, then 43/90 failures). The crash point
+  differs between runs (after 5 scoring runs on 08-24, after 1 on 08-25),
+  so it is not a specific test. The `kj … Broken pipe` lines that precede
+  it on some runs are benign — the local wrangler logs show 26 of them
+  across today's green runs. (08-23 was a 4-second runner abort, unrelated.)
+
+Not reproducible on demand: two `workflow_dispatch` runs of the same
+workflow at ~16:15 UTC on the same code passed 87/87 (4.5 min each), on
+the identical runner image, Chrome 151 and Playwright cache state as the
+failing 03:00 UTC runs. wrangler/workerd versions have not changed since
+before the failures began.
+
+What #104 adds so the next scheduled failure is diagnosable: the
+`~/.config/.wrangler/logs/` directory is uploaded as a `wrangler-logs`
+artifact on failure (it was never captured — the job log only ever had the
+empty error line), and the nightly step runs with `WRANGLER_LOG=debug`
+(file only; Playwright ignores the webServer's stdout). Also noted: the
+Playwright browser cache never hits because actions/cache only saves on a
+green job, so every red nightly re-downloads ~120 MB; today's green
+dispatch should have seeded it.
+
+Next: read the `wrangler-logs` artifact from the first red nightly after
+#104 merges. Working hypothesis is workerd being OOM-killed on the runner
+(empty error, no stack, time-of-day dependent) — confirm before acting.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
