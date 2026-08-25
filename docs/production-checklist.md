@@ -69,10 +69,12 @@ gates the production launch.
 
 ## Billing
 
-- [ ] Stripe webhook signature verification (`constructEventAsync`) — no
-      unverified path exists
-- [ ] Event-ID idempotency DB-enforced; state re-fetched from Stripe
-- [ ] Entitlements enforced server-side; test/live modes never mixed
+- [ ] Paddle webhook signature verification (HMAC-SHA256, `verifyPaddleWebhook`)
+      — no unverified path exists
+- [ ] Event-ID idempotency DB-enforced (`provider_event_id`); state re-fetched
+      from Paddle
+- [ ] Entitlements enforced server-side; sandbox/live never mixed
+      (`PADDLE_ENVIRONMENT` matches the key/token prefixes)
 
 ## Admin & ops
 
@@ -113,7 +115,7 @@ gates the production launch.
 - [ ] **D1 restore test performed on staging and documented**
       (docs/backup-restore.md drill — mandatory)
 - [ ] Rollback drill performed (`wrangler rollback` on staging)
-- [ ] Custom domain, Stripe live webhook, Resend SPF/DKIM/DMARC verified
+- [ ] Custom domain, Paddle live notification destination + website approval + default payment link, Resend SPF/DKIM/DMARC verified
 
 ## Cost
 

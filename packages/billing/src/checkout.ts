@@ -1,101 +1,67 @@
 /**
- * Stripe-hosted Checkout session creation (`mode: 'subscription'`). No card
- * data ever touches our code — this only ever returns a Stripe-hosted URL.
+ * Checkout = a SERVER-created Paddle transaction, opened client-side by
+ * Paddle.js (`Paddle.Checkout.open({ transactionId })`). No card data ever
+ * touches our code — the overlay is Paddle-hosted.
  *
- * Customer/organization linking (verified from the installed SDK's
- * `esm/resources/Checkout/Sessions.d.ts` — `client_reference_id`: "A unique
- * string to reference the Checkout Session. This can be a customer ID... to
- * reconcile the session with your internal systems"): the session is
- * created with BOTH `client_reference_id` and `metadata.organizationId` set
- * to the organization id, AND `subscription_data.metadata.organizationId`
- * (also confirmed present on `SessionCreateParams.SubscriptionData` in the
- * same file) so the metadata is copied onto the Stripe Subscription object
- * itself at creation. That third copy is what makes org resolution
- * order-independent in the webhook processor (webhook.ts): a
- * `customer.subscription.*` event carries `object.metadata.organizationId`
- * directly, and an `invoice.paid`/`invoice.payment_failed` event carries an
- * immutable snapshot of it at `object.parent.subscription_details.metadata`
- * (per the SDK's doc comment on `Invoice.Parent.SubscriptionDetails.metadata`:
- * "Becomes an immutable snapshot of the subscription metadata at the time
- * of invoice finalization") — no event ever needs to look up a
- * not-yet-linked `stripe_customer_id` in our own DB to know which
- * organization it belongs to, regardless of Stripe's at-least-once,
- * order-NOT-guaranteed delivery.
+ * Why a transaction rather than letting the SPA pass `items` to Paddle.js:
+ * the server stays the sole authority on WHAT is bought and FOR WHOM. The
+ * transaction carries `items: [{ price_id }]` chosen from our env-supplied
+ * price ids, and `custom_data.organization_id` — which Paddle copies onto
+ * the subscription it creates when the transaction completes. That copy is
+ * what makes organization resolution in the webhook processor
+ * (webhook.ts) order-independent: every `subscription.*` event carries
+ * `data.custom_data.organization_id` directly, so no event ever needs to
+ * look up a not-yet-linked customer id in our own DB, regardless of
+ * Paddle's at-least-once, order-NOT-guaranteed delivery.
  *
  * Reactivation after cancellation: `subscriptions.organization_id` is
  * DB-unique (docs/data-model.md §9, 1:1) so a canceled row cannot simply be
- * re-inserted with a brand-new Stripe customer — the existing
- * `stripe_customer_id` is passed as Checkout's `customer` param instead
- * (Checkout in `subscription` mode reuses rather than duplicates an
- * existing customer when one is supplied), so the eventual webhook upsert
- * still resolves via the SAME unique `stripe_customer_id` and updates the
- * same row rather than colliding on `organization_id`.
+ * re-inserted under a brand-new Paddle customer — the existing
+ * `billing_customer_id` is passed as the transaction's `customer_id`, so
+ * the eventual webhook upsert resolves via the SAME unique customer id and
+ * updates the same row rather than colliding on `organization_id`.
  *
- * Stripe Tax (2026-08-16 owner decision, gated by `FLAG_STRIPE_TAX`): when
- * on, the session additionally carries `automatic_tax: { enabled: true }`
- * and `tax_id_collection: { enabled: true }` (B2B customers can enter a VAT
- * ID for reverse charge). Both params, and `customer_update`, are declared
- * on `SessionCreateParams` in the installed SDK's
- * `esm/resources/Checkout/Sessions.d.ts` (`automatic_tax?:
- * SessionCreateParams.AutomaticTax`, `tax_id_collection?:
- * SessionCreateParams.TaxIdCollection`, `customer_update?:
- * SessionCreateParams.CustomerUpdate` — the latter's own doc comment: "Can
- * only be provided when `customer` is provided"). The .d.ts doc comments do
- * NOT themselves spell out that automatic tax additionally REQUIRES
- * `customer_update` when reusing an existing `customer` (that requirement
- * lives in Stripe's runtime validation / docs.stripe.com, not the type
- * declarations — docs.stripe.com was unreachable from this sandbox's
- * network policy when this was written, so this is cross-checked from
- * Stripe's own published API reference content and confirmed third-party
- * integration reports instead of a live fetch): with an existing customer,
- * automatic tax needs to know whether it may treat the billing address
- * Checkout collects as authoritative (`customer_update.address: 'auto'`),
- * and enabling `tax_id_collection` for an existing customer separately
- * requires permission to save the business name Stripe derives from the tax
- * ID back onto that customer (`customer_update.name: 'auto'`) — so both are
- * set (only when `customer` is passed; `customer_update` is invalid without
- * it, per the doc comment above) rather than left for Stripe to reject.
- * Flag OFF is byte-identical to pre-Stripe-Tax params (no automatic_tax/
- * tax_id_collection/customer_update key at all) — see `checkout.test.ts`.
- *
- * NOT settable in code — dashboard-only prerequisites before turning the
- * flag on, in BOTH test and live mode: Stripe Tax must be activated
- * (origin/business address configured), tax registrations added for every
- * jurisdiction being charged VAT in, and each Price's `tax_behavior`
- * (inclusive/exclusive) set. None of this is a Checkout Session param this
- * file can pass — see the report accompanying this change for the full
- * list.
+ * Tax: Paddle is Merchant of Record. Prices are `tax_mode: internal`
+ * (tax-INCLUSIVE, owner decision 2026-08-26 — €29/€49 is the amount the
+ * customer pays); Paddle computes the VAT share for the customer's country
+ * inside that amount, collects and remits it. Nothing tax-related is
+ * configurable from this code path — the previous Stripe Tax flag is gone.
  */
 import { getFeatureFlag, getSubscription, type Db } from '@bidmorrow/db';
-import { FLAG_FOUNDING_CAP, FLAG_FOUNDING_PLAN_OPEN, FLAG_STRIPE_TAX } from '@bidmorrow/config';
+import { FLAG_FOUNDING_CAP, FLAG_FOUNDING_PLAN_OPEN } from '@bidmorrow/config';
 import type { OrganizationId } from '@bidmorrow/domain';
 import { countNonCanceledSubscriptionsByPlan } from '@bidmorrow/db';
 
 import { FoundingPlanUnavailableError, SubscriptionAlreadyExistsError } from './errors';
+import type { TransactionsClient } from './paddle-client';
+import {
+  ORGANIZATION_ID_KEY,
+  ORGANIZATION_SIG_KEY,
+  signOrganizationProvenance,
+} from './provenance';
 import {
   DEFAULT_FOUNDING_CAP,
   priceIdForPlan,
   type PriceIds,
   type SubscriptionPlan,
 } from './plans';
-import type { CheckoutStripeClient } from './stripe-types';
 
 export interface CheckoutDeps {
   readonly db: Db;
-  readonly stripe: CheckoutStripeClient;
+  readonly paddle: { readonly transactions: Pick<TransactionsClient, 'create'> };
   readonly priceIds: PriceIds;
-  /** No trailing slash, e.g. `https://app.bidmorrow.com`. */
-  readonly appBaseUrl: string;
+  /** Signs `custom_data.organization_id` so the webhook can prove WE created the transaction (provenance.ts). */
+  readonly provenanceSecret: string;
 }
 
-export interface CreateCheckoutSessionArgs {
+export interface CreateCheckoutArgs {
   readonly organizationId: OrganizationId;
   readonly plan: SubscriptionPlan;
 }
 
-export interface CheckoutSessionResult {
-  readonly url: string;
-  readonly stripeSessionId: string;
+export interface CheckoutResult {
+  /** `txn_…` — the SPA passes this to `Paddle.Checkout.open({ transactionId })`. */
+  readonly transactionId: string;
 }
 
 /**
@@ -104,7 +70,7 @@ export interface CheckoutSessionResult {
  */
 export function blocksNewCheckout(status: string): boolean {
   return (
-    status === 'trialing' || status === 'active' || status === 'past_due' || status === 'unpaid'
+    status === 'trialing' || status === 'active' || status === 'past_due' || status === 'paused'
   );
 }
 
@@ -121,19 +87,7 @@ export function resolveFoundingCap(flag: { readonly valueJson: string } | null):
 }
 
 /**
- * `flag.value_json` for `FLAG_STRIPE_TAX` is a bare JSON boolean, e.g.
- * `"true"`. Pure, no DB. Identical semantics to {@link isFoundingPlanOpenFlag}
- * (absent row, explicit `false`, or any non-boolean-`true` JSON value all
- * resolve to "off" — today's Checkout params, unchanged); a malformed
- * non-JSON `value_json` still throws from `JSON.parse` rather than being
- * silently swallowed, matching that function's established behavior too.
- */
-export function isStripeTaxEnabledFlag(flag: { readonly valueJson: string } | null): boolean {
-  return flag !== null && JSON.parse(flag.valueJson) === true;
-}
-
-/**
- * Non-throwing read of the same guard `createCheckoutSession` enforces —
+ * Non-throwing read of the same guard `createCheckoutTransaction` enforces —
  * used by `GET /api/billing/status` so the UI knows whether to show the
  * founding Subscribe button at all (never inferred client-side).
  */
@@ -160,15 +114,15 @@ async function assertFoundingPlanOpen(db: Db): Promise<void> {
 }
 
 /**
- * Creates a Stripe-hosted Checkout session for a new (or reactivating)
- * subscription. Throws {@link SubscriptionAlreadyExistsError} (409 at the
- * route layer) or {@link FoundingPlanUnavailableError} (409/422) before any
- * Stripe API call — guards run against our own DB only.
+ * Creates the Paddle transaction for a new (or reactivating) subscription.
+ * Throws {@link SubscriptionAlreadyExistsError} (409 at the route layer) or
+ * {@link FoundingPlanUnavailableError} (409) before any Paddle API call —
+ * guards run against our own DB only.
  */
-export async function createCheckoutSession(
+export async function createCheckoutTransaction(
   deps: CheckoutDeps,
-  args: CreateCheckoutSessionArgs,
-): Promise<CheckoutSessionResult> {
+  args: CreateCheckoutArgs,
+): Promise<CheckoutResult> {
   const existing = await getSubscription(deps.db, args.organizationId);
   if (existing !== null && blocksNewCheckout(existing.status)) {
     throw new SubscriptionAlreadyExistsError(args.organizationId);
@@ -179,75 +133,35 @@ export async function createCheckoutSession(
   }
 
   const priceId = priceIdForPlan(deps.priceIds, args.plan);
-  const metadata = { organizationId: args.organizationId, plan: args.plan };
 
-  // SEC-P9-03: re-read immediately before the Stripe network call. This
-  // narrows — but cannot close — the classic check-then-act race: two
-  // concurrent requests can both pass the FIRST `getSubscription` guard
-  // above (neither sees a row yet), and both still reach this point before
-  // either's Checkout session is completed by the owner. This second read
-  // shrinks the window from "guard + the full Stripe API round trip" down
-  // to just this DB round trip, which is not zero but is the cheapest
-  // narrowing available without a distributed lock or a schema change (both
-  // out of scope here). The residual race is closed authoritatively
-  // server-side in the webhook processor, not here: if the owner completes
-  // BOTH sessions anyway, `webhook.ts`'s `syncSubscriptionState` detects the
-  // second webhook's Stripe customer id doesn't match this organization's
-  // existing (still non-canceled) row and cancels+reconciles the duplicate
-  // Stripe subscription automatically, so a still-open window here can
-  // never wedge a webhook or orphan a live subscription undetected.
+  // SEC-P9-03: re-read immediately before the network call. This narrows —
+  // but cannot close — the check-then-act race between two concurrent
+  // checkouts for the same org. The residual race is closed
+  // authoritatively in the webhook processor: `syncSubscriptionState`
+  // detects a second live subscription under a different customer id and
+  // cancels + reconciles it (see webhook.ts `reconcileDuplicateCustomer`).
   const recheck = await getSubscription(deps.db, args.organizationId);
   if (recheck !== null && blocksNewCheckout(recheck.status)) {
     throw new SubscriptionAlreadyExistsError(args.organizationId);
   }
+  const reactivatingCustomer = recheck?.billingCustomerId;
 
-  // Same read style as `assertFoundingPlanOpen` above: `getFeatureFlag`
-  // against `deps.db`, default (row absent or not exactly JSON `true`) is
-  // OFF — see `isStripeTaxEnabledFlag` and this file's header for the full
-  // Stripe Tax rationale and the .d.ts citation for every param below.
-  const stripeTaxFlag = await getFeatureFlag(deps.db, FLAG_STRIPE_TAX);
-  const stripeTaxEnabled = isStripeTaxEnabledFlag(stripeTaxFlag);
-  const reactivatingCustomer = recheck?.stripeCustomerId;
-
-  // Deliberately reads off `recheck` (the freshest row), not `existing`
-  // (the first, staler read) — if a row appeared between the two reads
-  // (e.g. a canceled row written by a webhook that raced this request),
-  // reusing its `stripe_customer_id` here is exactly the reactivation
-  // behavior described in this file's header, and it also means the
-  // second read above is not wasted on the happy path.
-  const session = await deps.stripe.checkout.sessions.create({
-    mode: 'subscription',
-    client_reference_id: args.organizationId,
-    ...(reactivatingCustomer !== undefined ? { customer: reactivatingCustomer } : {}),
-    line_items: [{ price: priceId, quantity: 1 }],
-    metadata,
-    subscription_data: { metadata },
-    // Dedicated confirmation route: it polls /api/billing/status until the
-    // webhook below has written the subscription row, so a customer never
-    // lands on a page telling them they have no subscription seconds after
-    // paying. `session_id` is kept for support traceability; nothing
-    // resolves it today.
-    success_url: `${deps.appBaseUrl}/app/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${deps.appBaseUrl}/app/settings?checkout=cancelled`,
-    ...(stripeTaxEnabled
-      ? {
-          automatic_tax: { enabled: true },
-          tax_id_collection: { enabled: true },
-          // `customer_update` is only valid alongside `customer` (see this
-          // file's header) — omitted entirely on the brand-new-customer
-          // path rather than sent with nothing meaningful to update.
-          ...(reactivatingCustomer !== undefined
-            ? { customer_update: { address: 'auto', name: 'auto' } as const }
-            : {}),
-        }
-      : {}),
+  const transaction = await deps.paddle.transactions.create({
+    items: [{ price_id: priceId, quantity: 1 }],
+    custom_data: {
+      [ORGANIZATION_ID_KEY]: args.organizationId,
+      [ORGANIZATION_SIG_KEY]: await signOrganizationProvenance(
+        deps.provenanceSecret,
+        args.organizationId,
+      ),
+      plan: args.plan,
+    },
+    currency_code: 'EUR',
+    ...(reactivatingCustomer !== undefined ? { customer_id: reactivatingCustomer } : {}),
   });
 
-  if (session.url === null) {
-    // Never happens for a `hosted_page` (default) subscription-mode
-    // session, but the SDK types it nullable — fail loudly rather than
-    // return an unusable empty string to the client.
-    throw new Error('createCheckoutSession: Stripe returned a session with no url');
+  if (typeof transaction.id !== 'string' || transaction.id.length === 0) {
+    throw new Error('createCheckoutTransaction: Paddle returned a transaction with no id');
   }
-  return { url: session.url, stripeSessionId: session.id };
+  return { transactionId: transaction.id };
 }

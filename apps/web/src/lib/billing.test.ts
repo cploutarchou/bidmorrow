@@ -2,7 +2,7 @@
  * `pollForSubscription` — the retry behaviour behind the post-checkout
  * confirmation page (/app/billing/success).
  *
- * This is the part with real failure modes: the Stripe webhook writes the
+ * This is the part with real failure modes: the Paddle webhook writes the
  * subscription row asynchronously, so the page has to distinguish "not written
  * yet" from "never going to be written" without ever telling a paying customer
  * their payment failed.
@@ -23,7 +23,7 @@ const SUBSCRIBED: BillingStatus = {
     status: 'active',
     cancelAtPeriodEnd: false,
     currentPeriodEndAt: 1_800_000_000_000,
-    price: { amountMinorUnits: 2900, currency: 'eur', interval: 'month' },
+    price: { amountMinorUnits: 2900, currency: 'eur', interval: 'month', taxInclusive: true },
     paymentState: 'active',
   },
   foundingAvailable: true,

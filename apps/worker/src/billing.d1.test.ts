@@ -1,50 +1,48 @@
 /**
- * Billing (Phase 9) integration tests: real workerd + local D1
- * (@cloudflare/vitest-pool-workers), Stripe test-mode sentinels only (never
+ * Billing integration tests (ADR-0011, Paddle): real workerd + local D1
+ * (@cloudflare/vitest-pool-workers), Paddle SANDBOX sentinels only (never
  * real credentials — HUMAN_DECISION_BLOCKERS.md item 4).
  *
  * Two tiers, deliberately split:
  *
- * 1. HTTP-level (`/api/billing/*`, `/api/webhooks/stripe`) — everything
- *    reachable WITHOUT a real network call to Stripe: guard paths that
- *    short-circuit before any Stripe API call (409 existing-subscription,
- *    409 founding-unavailable, 404 no-billing-customer, role/auth gates),
- *    webhook signature verification (pure local HMAC via
- *    `stripe.webhooks.constructEventAsync`/`generateTestHeaderStringAsync`
- *    — no network either), idempotent replay, and the entitlement
- *    enforcement flag gating `/api/org/feed`. The route handlers build
- *    their own real `Stripe` client from `c.env.STRIPE_SECRET_KEY`
- *    (vitest.config.ts's fake sentinel), so a code path that would
- *    actually REACH Stripe's network (e.g. a successful checkout session
- *    creation, or the webhook's `subscriptions.retrieve` re-fetch) is
- *    deliberately not exercised at this layer.
- * 2. Direct `processStripeEvent` calls (tier 2, below) — bypasses the HTTP
- *    layer entirely, calling `@bidmorrow/billing`'s `processStripeEvent`
- *    with a real local-D1 `db` and a FAKE, hand-written `stripe` object
- *    (satisfies `WebhookStripeClient`, no real `Stripe` instance, no
- *    network). This is where idempotent-duplicate, out-of-order
- *    (state-always-from-re-fetch), unknown-type-ack, failure-then-retry,
- *    and the cross-org `TenantMismatchError` guard are proven — exactly
- *    the "webhook processor with FAKE stripe client (injected)" tier the
- *    phase plan calls for.
+ * 1. HTTP-level (`/api/billing/*`, `/api/webhooks/paddle`) — everything
+ *    reachable WITHOUT a real network call to Paddle: guard paths that
+ *    short-circuit before any Paddle API call (409 existing-subscription,
+ *    409 founding-unavailable, 404 no-billing-customer, role/auth gates,
+ *    malformed ids), webhook signature verification (pure local HMAC via
+ *    `signPaddleWebhook` — no network either), idempotent replay, and the
+ *    entitlement enforcement flag gating `/api/org/feed`. The route
+ *    handlers build their own real Paddle client from `c.env.PADDLE_*`
+ *    (vitest.config.ts's fake sentinels), so a code path that would
+ *    actually REACH Paddle's network (a successful checkout transaction,
+ *    the invoice PDF lookup, the webhook's `subscriptions.get` re-fetch)
+ *    is deliberately not exercised at this layer — packages/billing's unit
+ *    tests cover those with injected fakes.
+ * 2. Direct `processPaddleEvent` calls (tier 2, below) — bypasses the HTTP
+ *    layer, calling `@bidmorrow/billing`'s processor with a real local-D1
+ *    `db` and a FAKE, hand-written Paddle client (no network). This is
+ *    where idempotent-duplicate, out-of-order (state-always-from-re-fetch),
+ *    unknown-type-ack, failure-then-retry, the cross-org
+ *    `TenantMismatchError` guard, and SEC-P9-03 reconciliation are proven.
  */
 import { env, exports } from 'cloudflare:workers';
 import { describe, expect, it } from 'vitest';
-import type Stripe from 'stripe';
 import {
-  createStripeClient,
   isFoundingPlanAvailable,
-  processStripeEvent,
-  type WebhookStripeClient,
+  processPaddleEvent,
+  signOrganizationProvenance,
+  signPaddleWebhook,
+  type PaddleEvent,
+  type PaddleSubscription,
+  type SubscriptionsReadClient,
 } from '@bidmorrow/billing';
 import {
   addOrganizationMember,
   createDb,
-  getBillingEventByStripeId,
+  getBillingEventByProviderId,
   getSubscription,
-  insertAuditEvent,
   setFeatureFlag,
-  upsertSubscriptionByStripeCustomerId,
+  upsertSubscriptionByBillingCustomerId,
   type Db,
 } from '@bidmorrow/db';
 import { organizationId as toOrganizationId } from '@bidmorrow/domain';
@@ -55,11 +53,10 @@ const BASE = 'https://bidmorrow.local';
 const STATE_CHANGING_HEADERS = { origin: 'http://localhost:8787' };
 const PASSWORD = 'correct horse battery staple 1!';
 
-// Test-mode sentinels only — mirrors vitest.config.ts's fake bindings.
-// Never a real Stripe key/secret (HUMAN_DECISION_BLOCKERS.md item 4).
-const TEST_WEBHOOK_SECRET = 'whsec_fake_for_worker_tests_only';
-const TEST_FOUNDING_PRICE = 'price_fake_founding_test';
-const TEST_STANDARD_PRICE = 'price_fake_standard_test';
+// Sandbox sentinels only — mirrors vitest.config.ts's fake bindings.
+const TEST_WEBHOOK_SECRET = 'pdl_ntfset_fake_for_worker_tests_only';
+const TEST_FOUNDING_PRICE = 'pri_01fakefoundingtest00000000';
+const TEST_STANDARD_PRICE = 'pri_01fakestandardtest00000000';
 
 let uniqueSeq = 0;
 function uniqueEmail(prefix = 'billing'): string {
@@ -132,20 +129,29 @@ async function seedSubscription(
   db: Db,
   orgId: string,
   overrides: Partial<{
-    status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid';
+    status: 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
     plan: 'founding' | 'standard';
     currentPeriodEndAt: number | null;
   }> = {},
 ) {
   seedSeq += 1;
-  return upsertSubscriptionByStripeCustomerId(db, toOrganizationId(orgId), {
-    stripeCustomerId: `cus_test_${String(seedSeq)}`,
-    stripeSubscriptionId: `sub_test_${String(seedSeq)}`,
+  return upsertSubscriptionByBillingCustomerId(db, toOrganizationId(orgId), {
+    billingCustomerId: `ctm_test_${String(seedSeq)}`,
+    billingSubscriptionId: `sub_test_${String(seedSeq)}`,
     status: overrides.status ?? 'active',
     plan: overrides.plan ?? 'standard',
     currentPeriodEndAt: overrides.currentPeriodEndAt ?? Date.now() + 30 * 24 * 60 * 60 * 1000,
     cancelAtPeriodEnd: false,
   });
+}
+
+async function billingEventCount(providerEventId: string): Promise<number> {
+  const count = await env.DB.prepare(
+    'SELECT COUNT(*) as n FROM billing_events WHERE provider_event_id = ?',
+  )
+    .bind(providerEventId)
+    .first<{ n: number }>();
+  return count?.n ?? 0;
 }
 
 describe('GET /api/billing/status', () => {
@@ -160,7 +166,7 @@ describe('GET /api/billing/status', () => {
     });
   });
 
-  it('reflects a seeded active subscription, including price + paymentState', async () => {
+  it('reflects a seeded active subscription, including tax-exclusive price + paymentState', async () => {
     const { cookie, orgId } = await setUpOrg('StatusActive');
     const db = createDb(env.DB);
     await seedSubscription(db, orgId, { status: 'active', plan: 'founding' });
@@ -175,7 +181,7 @@ describe('GET /api/billing/status', () => {
         status: 'active',
         cancelAtPeriodEnd: false,
         paymentState: 'active',
-        price: { amountMinorUnits: 2900, currency: 'eur', interval: 'month' },
+        price: { amountMinorUnits: 2900, currency: 'eur', interval: 'month', taxInclusive: true },
       },
     });
   });
@@ -194,6 +200,19 @@ describe('GET /api/billing/status', () => {
         paymentState: 'past_due',
         price: { amountMinorUnits: 4900, currency: 'eur', interval: 'month' },
       },
+    });
+  });
+
+  it('a paused subscription is stored as paused and is NOT entitled', async () => {
+    const { cookie, orgId } = await setUpOrg('StatusPaused');
+    const db = createDb(env.DB);
+    await seedSubscription(db, orgId, { status: 'paused' });
+
+    const response = await fetchApi('/api/billing/status', { headers: { cookie } });
+    const body = await response.json();
+    expect(body).toMatchObject({
+      entitlement: { active: false, status: 'paused', reason: 'paused' },
+      subscription: { status: 'paused', paymentState: 'paused' },
     });
   });
 
@@ -238,9 +257,21 @@ describe('GET /api/billing/status', () => {
     const cappedBody = (await capped.json()) as { foundingAvailable: boolean };
     expect(cappedBody.foundingAvailable).toBe(false);
 
-    // Matches the pure unit-level assertion (checkout.test.ts) end-to-end
-    // through the real DB-backed isFoundingPlanAvailable.
     expect(await isFoundingPlanAvailable(db)).toBe(false);
+  });
+});
+
+describe('GET /api/public-config', () => {
+  it('exposes ONLY the public Paddle.js token + environment, never the API key or price ids', async () => {
+    const response = await fetchApi('/api/public-config');
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    expect(JSON.parse(text)).toMatchObject({
+      paddle: { clientToken: 'test_fake_client_token', environment: 'sandbox' },
+    });
+    expect(text).not.toContain('pdl_sdbx_apikey');
+    expect(text).not.toContain('pdl_ntfset');
+    expect(text).not.toContain('pri_fake');
   });
 });
 
@@ -266,7 +297,7 @@ describe('POST /api/billing/checkout', () => {
     expect(response.status).toBe(403);
   });
 
-  it('409s when the org already has a non-canceled subscription', async () => {
+  it('409s when the org already has a non-canceled subscription (before any Paddle call)', async () => {
     const { cookie, orgId } = await setUpOrg('CheckoutExisting');
     const db = createDb(env.DB);
     await seedSubscription(db, orgId, { status: 'active' });
@@ -280,13 +311,24 @@ describe('POST /api/billing/checkout', () => {
     expect(await response.json()).toEqual({ error: 'subscription_exists' });
   });
 
-  it('409s founding_unavailable (flag_closed) before any Stripe call', async () => {
+  it('409s when the org has a PAUSED subscription — it still holds the slot', async () => {
+    const { cookie, orgId } = await setUpOrg('CheckoutPaused');
+    const db = createDb(env.DB);
+    await seedSubscription(db, orgId, { status: 'paused' });
+
+    const response = await fetchApi('/api/billing/checkout', {
+      method: 'POST',
+      headers: jsonHeaders(cookie),
+      body: JSON.stringify({ plan: 'standard' }),
+    });
+    expect(response.status).toBe(409);
+  });
+
+  it('409s founding_unavailable (flag_closed) before any Paddle call', async () => {
     const { cookie } = await setUpOrg('CheckoutFoundingClosed');
     const db = createDb(env.DB);
-    // Global flags are shared across this file's tests (one D1 per file,
-    // same pattern documented elsewhere in this suite) — explicitly close
-    // the flag rather than relying on its absent-by-default state, since an
-    // earlier test may have already opened it.
+    // Global flags are shared across this file's tests (one D1 per file) —
+    // explicitly close the flag rather than relying on the absent default.
     await setFeatureFlag(db, {
       key: 'founding_plan_open',
       valueJson: 'false',
@@ -301,7 +343,7 @@ describe('POST /api/billing/checkout', () => {
     expect(await response.json()).toEqual({ error: 'founding_unavailable', reason: 'flag_closed' });
   });
 
-  it('409s founding_unavailable (cap_reached) before any Stripe call', async () => {
+  it('409s founding_unavailable (cap_reached) before any Paddle call', async () => {
     const { cookie } = await setUpOrg('CheckoutFoundingCap');
     const db = createDb(env.DB);
     await setFeatureFlag(db, {
@@ -335,7 +377,7 @@ describe('POST /api/billing/portal', () => {
     expect(response.status).toBe(403);
   });
 
-  it('404s (no_billing_customer) before any Stripe call when the org has never checked out', async () => {
+  it('404s (no_billing_customer) before any Paddle call when the org has never checked out', async () => {
     const { cookie } = await setUpOrg('PortalNoCustomer');
     const response = await fetchApi('/api/billing/portal', {
       method: 'POST',
@@ -368,7 +410,7 @@ describe('GET /api/billing/invoices', () => {
     expect(response.status).toBe(403);
   });
 
-  it('200s with an empty list + hasBillingCustomer:false before any Stripe call when the org has never checked out, and audit-logs the access', async () => {
+  it('200s with an empty list + hasBillingCustomer:false before any Paddle call when the org has never checked out, and audit-logs the access', async () => {
     const { cookie, orgId } = await setUpOrg('InvoicesNoCustomer');
     const response = await fetchApi('/api/billing/invoices', { headers: { cookie } });
     expect(response.status).toBe(200);
@@ -384,6 +426,43 @@ describe('GET /api/billing/invoices', () => {
 
     const responseB = await fetchApi('/api/billing/invoices', { headers: { cookie: orgB.cookie } });
     expect(await responseB.json()).toEqual({ invoices: [], hasBillingCustomer: false });
+  });
+});
+
+describe('GET /api/billing/invoices/:transactionId/pdf', () => {
+  const VALID_SHAPE = 'txn_01h1vjes1y163xfj1rh1tkfb65';
+
+  it('401s when unauthenticated', async () => {
+    const response = await fetchApi(`/api/billing/invoices/${VALID_SHAPE}/pdf`);
+    expect(response.status).toBe(401);
+  });
+
+  it('403s for a MEMBER (non-owner)', async () => {
+    const owner = await setUpOrg('PdfMember');
+    const memberCookie = await addMember(owner.orgId, uniqueEmail('pdf-member'));
+    const response = await fetchApi(`/api/billing/invoices/${VALID_SHAPE}/pdf`, {
+      headers: { cookie: memberCookie },
+    });
+    expect(response.status).toBe(403);
+  });
+
+  it('400s a malformed transaction id before any Paddle call (zod)', async () => {
+    const { cookie } = await setUpOrg('PdfMalformed');
+    for (const bad of ['not-a-txn', 'txn_short', 'sub_01h1vjes1y163xfj1rh1tkfb65', 'txn_%2E%2E']) {
+      const response = await fetchApi(`/api/billing/invoices/${bad}/pdf`, {
+        headers: { cookie },
+      });
+      expect(response.status, bad).toBe(400);
+    }
+  });
+
+  it('404s before any Paddle call when the org has never checked out', async () => {
+    const { cookie } = await setUpOrg('PdfNoCustomer');
+    const response = await fetchApi(`/api/billing/invoices/${VALID_SHAPE}/pdf`, {
+      headers: { cookie },
+    });
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: 'not_found' });
   });
 });
 
@@ -451,18 +530,16 @@ describe('POST /api/billing/cancel', () => {
     expect(await response.json()).toEqual({ error: 'already_canceled' });
   });
 
-  it('200s idempotently (no Stripe call, no new audit row) when already scheduled to cancel', async () => {
+  it('200s idempotently (no Paddle call, no new audit row) when already scheduled to cancel', async () => {
     const { cookie, orgId } = await setUpOrg('CancelAlreadyScheduled');
     const db = createDb(env.DB);
     const seeded = await seedSubscription(db, orgId, {
       status: 'active',
       currentPeriodEndAt: 1_800_000_000_000,
     });
-    // Mark it already scheduled to cancel directly via the repository — the
-    // exact state this outcome branch checks for, without any Stripe call.
-    await upsertSubscriptionByStripeCustomerId(db, toOrganizationId(orgId), {
-      stripeCustomerId: seeded.stripeCustomerId,
-      stripeSubscriptionId: seeded.stripeSubscriptionId,
+    await upsertSubscriptionByBillingCustomerId(db, toOrganizationId(orgId), {
+      billingCustomerId: seeded.billingCustomerId,
+      billingSubscriptionId: seeded.billingSubscriptionId,
       status: 'active',
       plan: 'standard',
       currentPeriodEndAt: 1_800_000_000_000,
@@ -480,7 +557,6 @@ describe('POST /api/billing/cancel', () => {
       currentPeriodEndAt: 1_800_000_000_000,
       effective: 'period_end',
     });
-    // Idempotent no-op: no new audit row for a request that changed nothing.
     expect(await auditEventCount(orgId, 'billing.subscription_cancel_scheduled')).toBe(0);
   });
 });
@@ -541,26 +617,29 @@ describe('POST /api/billing/reactivate', () => {
     expect(await auditEventCount(orgId, 'billing.subscription_reactivated')).toBe(0);
   });
 
-  it('409s not_scheduled for a past_due subscription even if cancelAtPeriodEnd is set', async () => {
-    const { cookie, orgId } = await setUpOrg('ReactivatePastDue');
-    const db = createDb(env.DB);
-    const seeded = await seedSubscription(db, orgId, { status: 'past_due' });
-    await upsertSubscriptionByStripeCustomerId(db, toOrganizationId(orgId), {
-      stripeCustomerId: seeded.stripeCustomerId,
-      stripeSubscriptionId: seeded.stripeSubscriptionId,
-      status: 'past_due',
-      plan: 'standard',
-      currentPeriodEndAt: seeded.currentPeriodEndAt,
-      cancelAtPeriodEnd: true,
-    });
+  it.each(['past_due', 'paused'] as const)(
+    '409s not_scheduled for a %s subscription even if cancelAtPeriodEnd is set',
+    async (status) => {
+      const { cookie, orgId } = await setUpOrg(`Reactivate_${status}`);
+      const db = createDb(env.DB);
+      const seeded = await seedSubscription(db, orgId, { status });
+      await upsertSubscriptionByBillingCustomerId(db, toOrganizationId(orgId), {
+        billingCustomerId: seeded.billingCustomerId,
+        billingSubscriptionId: seeded.billingSubscriptionId,
+        status,
+        plan: 'standard',
+        currentPeriodEndAt: seeded.currentPeriodEndAt,
+        cancelAtPeriodEnd: true,
+      });
 
-    const response = await fetchApi('/api/billing/reactivate', {
-      method: 'POST',
-      headers: jsonHeaders(cookie),
-    });
-    expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({ error: 'not_scheduled' });
-  });
+      const response = await fetchApi('/api/billing/reactivate', {
+        method: 'POST',
+        headers: jsonHeaders(cookie),
+      });
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({ error: 'not_scheduled' });
+    },
+  );
 });
 
 describe('ENTITLEMENT_ENFORCED gating on GET /api/org/feed', () => {
@@ -586,6 +665,20 @@ describe('ENTITLEMENT_ENFORCED gating on GET /api/org/feed', () => {
     });
   });
 
+  it('flag on + paused subscription: 402 with reason paused', async () => {
+    const { cookie, orgId } = await setUpOrg('FeedGateOnPaused');
+    const db = createDb(env.DB);
+    await setFeatureFlag(db, {
+      key: 'entitlement_enforced',
+      valueJson: 'true',
+      description: 'test: enforce entitlement',
+    });
+    await seedSubscription(db, orgId, { status: 'paused' });
+    const response = await fetchApi('/api/org/feed?tab=today', { headers: { cookie } });
+    expect(response.status).toBe(402);
+    expect(await response.json()).toEqual({ error: 'subscription_required', reason: 'paused' });
+  });
+
   it('flag on + active subscription: feed is reachable', async () => {
     const { cookie, orgId } = await setUpOrg('FeedGateOnActive');
     const db = createDb(env.DB);
@@ -606,48 +699,75 @@ describe('ENTITLEMENT_ENFORCED gating on GET /api/org/feed', () => {
 // ---------------------------------------------------------------------------
 
 async function signedWebhookRequest(payload: string, secret: string = TEST_WEBHOOK_SECRET) {
-  const stripe = createStripeClient('sk_test_fake_for_worker_tests_only');
-  const signature = await stripe.webhooks.generateTestHeaderStringAsync({ payload, secret });
-  return fetchApi('/api/webhooks/stripe', {
+  const signature = await signPaddleWebhook(secret, payload);
+  return fetchApi('/api/webhooks/paddle', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'stripe-signature': signature },
+    headers: { 'content-type': 'application/json', 'paddle-signature': signature },
     body: payload,
   });
 }
 
 function unhandledEventPayload(id: string): string {
-  // A real Stripe event shape, but a type deliberately OUTSIDE the
-  // recommended/handled set (`isHandledEvent`) — proves the endpoint
-  // records + ack's it without ever needing a `subscriptions.retrieve`
+  // A real Paddle event shape, but a type deliberately OUTSIDE the
+  // subscribed/handled set (`isHandledEvent`) — proves the endpoint
+  // records + ack's it without ever needing a `subscriptions.get`
   // network call (which this test tier cannot make — see file header).
   return JSON.stringify({
-    id,
-    object: 'event',
-    type: 'payment_intent.succeeded',
-    data: { object: { id: 'pi_test', object: 'payment_intent' } },
+    event_id: id,
+    event_type: 'transaction.completed',
+    occurred_at: '2026-08-25T12:00:00.000Z',
+    notification_id: `ntf_${id}`,
+    data: { id: 'txn_01h1vjes1y163xfj1rh1tkfb65', status: 'completed' },
   });
 }
 
-describe('POST /api/webhooks/stripe', () => {
+describe('POST /api/webhooks/paddle', () => {
   it('400s with no row when the signature header is missing', async () => {
     const payload = unhandledEventPayload('evt_missing_sig');
-    const response = await fetchApi('/api/webhooks/stripe', {
+    const response = await fetchApi('/api/webhooks/paddle', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: payload,
     });
     expect(response.status).toBe(400);
     const db = createDb(env.DB);
-    expect(await getBillingEventByStripeId(db, 'evt_missing_sig')).toBeNull();
+    expect(await getBillingEventByProviderId(db, 'evt_missing_sig')).toBeNull();
   });
 
-  it('400s with no row when the signature is invalid', async () => {
+  it('400s with no row when the signature was made with a different secret', async () => {
     const payload = unhandledEventPayload('evt_bad_sig');
-    const response = await signedWebhookRequest(payload, 'whsec_totally_wrong_secret');
+    const response = await signedWebhookRequest(payload, 'pdl_ntfset_totally_wrong_secret');
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: 'invalid_signature' });
     const db = createDb(env.DB);
-    expect(await getBillingEventByStripeId(db, 'evt_bad_sig')).toBeNull();
+    expect(await getBillingEventByProviderId(db, 'evt_bad_sig')).toBeNull();
+  });
+
+  it('400s with no row when the body was tampered with after signing', async () => {
+    const payload = unhandledEventPayload('evt_tampered');
+    const signature = await signPaddleWebhook(TEST_WEBHOOK_SECRET, payload);
+    const response = await fetchApi('/api/webhooks/paddle', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'paddle-signature': signature },
+      body: payload.replace('"completed"', '"paid"'),
+    });
+    expect(response.status).toBe(400);
+    const db = createDb(env.DB);
+    expect(await getBillingEventByProviderId(db, 'evt_tampered')).toBeNull();
+  });
+
+  it('400s with no row when the signature timestamp is outside the tolerance window (replay)', async () => {
+    const payload = unhandledEventPayload('evt_stale_ts');
+    const staleTs = Math.floor(Date.now() / 1000) - 60 * 60;
+    const signature = await signPaddleWebhook(TEST_WEBHOOK_SECRET, payload, staleTs);
+    const response = await fetchApi('/api/webhooks/paddle', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'paddle-signature': signature },
+      body: payload,
+    });
+    expect(response.status).toBe(400);
+    const db = createDb(env.DB);
+    expect(await getBillingEventByProviderId(db, 'evt_stale_ts')).toBeNull();
   });
 
   it('a valid signature processes an unhandled-type event: 200 + exactly one ignored row', async () => {
@@ -657,9 +777,9 @@ describe('POST /api/webhooks/stripe', () => {
     expect(await response.json()).toEqual({ received: true });
 
     const db = createDb(env.DB);
-    const row = await getBillingEventByStripeId(db, 'evt_valid_unhandled');
+    const row = await getBillingEventByProviderId(db, 'evt_valid_unhandled');
     expect(row?.status).toBe('ignored');
-    expect(row?.type).toBe('payment_intent.succeeded');
+    expect(row?.type).toBe('transaction.completed');
   });
 
   it('replaying the same event id is idempotent: 200 + single row, no duplicate insert', async () => {
@@ -668,145 +788,131 @@ describe('POST /api/webhooks/stripe', () => {
     expect(first.status).toBe(200);
     const second = await signedWebhookRequest(payload);
     expect(second.status).toBe(200);
-
-    const count = await env.DB.prepare(
-      'SELECT COUNT(*) as n FROM billing_events WHERE stripe_event_id = ?',
-    )
-      .bind('evt_replay')
-      .first<{ n: number }>();
-    expect(count?.n).toBe(1);
+    expect(await billingEventCount('evt_replay')).toBe(1);
   });
 });
 
 // ---------------------------------------------------------------------------
-// Tier 2: direct `processStripeEvent` calls with a FAKE injected Stripe
+// Tier 2: direct `processPaddleEvent` calls with a FAKE injected Paddle
 // client (real local D1, zero network) — idempotency, out-of-order
 // (re-fetch, never payload), unknown type, failure-then-retry, tenant
-// guard.
+// guard, SEC-P9-03 reconciliation.
 // ---------------------------------------------------------------------------
 
-interface FakeSubscription {
-  id: string;
-  customer: string;
-  status: Stripe.Subscription.Status;
-  cancel_at_period_end: boolean;
-  items: { data: [{ price: { id: string }; current_period_end: number }] };
-}
-
 function fakeSubscription(
-  overrides: Partial<FakeSubscription> & { id: string; customer: string },
-): Stripe.Subscription {
+  overrides: Partial<PaddleSubscription> & { id: string; customer_id: string },
+): PaddleSubscription {
   return {
-    id: overrides.id,
-    customer: overrides.customer,
-    status: overrides.status ?? 'active',
-    cancel_at_period_end: overrides.cancel_at_period_end ?? false,
-    items: overrides.items ?? {
-      data: [
-        {
-          price: { id: TEST_STANDARD_PRICE },
-          current_period_end: Math.floor(Date.now() / 1000) + 2_592_000,
-        },
-      ],
+    status: 'active',
+    custom_data: null,
+    current_billing_period: {
+      starts_at: '2026-08-01T00:00:00.000Z',
+      ends_at: '2026-09-01T00:00:00.000Z',
     },
-  } as unknown as Stripe.Subscription;
+    next_billed_at: '2026-09-01T00:00:00.000Z',
+    scheduled_change: null,
+    items: [{ price: { id: TEST_STANDARD_PRICE } }],
+    ...overrides,
+  };
 }
 
 /**
- * A fake `WebhookStripeClient` whose `retrieve` is scriptable per-call, so
+ * A fake `SubscriptionsReadClient` whose `get` is scriptable per-call, so
  * tests can prove re-fetch (never payload) drives the stored state.
- * `cancel` calls are recorded (never actually reach Stripe — this tier is
- * zero-network) so SEC-P9-03 reconciliation tests can assert exactly which
- * subscription id got canceled without a real Stripe key.
+ * `cancel` calls are recorded (never reach Paddle — zero-network) so
+ * SEC-P9-03 reconciliation tests can assert exactly which subscription id
+ * got canceled and how.
  */
-function makeFakeStripeClient(
-  retrieveImpl: (id: string) => Promise<Stripe.Subscription>,
-): WebhookStripeClient & {
-  retrieveCallCount: number;
-  cancelCalls: { id: string; params: Stripe.SubscriptionCancelParams }[];
+function makeFakePaddle(getImpl: (id: string) => Promise<PaddleSubscription>): {
+  subscriptions: SubscriptionsReadClient;
+  getCallCount: number;
+  cancelCalls: { id: string; body: { effective_from: string } }[];
 } {
   const fake = {
-    retrieveCallCount: 0,
-    cancelCalls: [] as { id: string; params: Stripe.SubscriptionCancelParams }[],
+    getCallCount: 0,
+    cancelCalls: [] as { id: string; body: { effective_from: string } }[],
     subscriptions: {
-      async retrieve(id: string) {
-        fake.retrieveCallCount += 1;
-        return retrieveImpl(id);
+      async get(id: string) {
+        fake.getCallCount += 1;
+        return getImpl(id);
       },
-      async cancel(id: string, params: Stripe.SubscriptionCancelParams) {
-        fake.cancelCalls.push({ id, params });
-        return { id, status: 'canceled' } as unknown as Stripe.Subscription;
+      async cancel(id: string, body: { effective_from: 'next_billing_period' | 'immediately' }) {
+        fake.cancelCalls.push({ id, body });
+        return fakeSubscription({ id, customer_id: 'ctm_canceled', status: 'canceled' });
       },
     },
   };
   return fake;
 }
 
-function checkoutCompletedEvent(args: {
+async function subscriptionEvent(args: {
   id: string;
-  organizationId: string;
-  subscriptionId: string;
-}): Stripe.Event {
-  return {
-    id: args.id,
-    object: 'event',
-    type: 'checkout.session.completed',
-    data: {
-      object: {
-        object: 'checkout.session',
-        client_reference_id: args.organizationId,
-        metadata: { organizationId: args.organizationId },
-        subscription: args.subscriptionId,
-      },
-    },
-  } as unknown as Stripe.Event;
-}
-
-function subscriptionUpdatedEvent(args: {
-  id: string;
-  organizationId: string;
+  type: string;
+  organizationId: string | null;
   subscriptionId: string;
   /** Deliberately possibly-stale payload status — the processor must ignore this and re-fetch. */
-  payloadStatus: string;
-}): Stripe.Event {
+  payloadStatus?: string;
+  /** Omit the provenance signature (SEC-PDL-01 forgery case). Default: signed like checkout.ts writes it. */
+  unsigned?: boolean;
+}): Promise<PaddleEvent> {
+  const customData =
+    args.organizationId === null
+      ? null
+      : args.unsigned === true
+        ? { organization_id: args.organizationId, plan: 'standard' }
+        : {
+            organization_id: args.organizationId,
+            organization_sig: await signOrganizationProvenance(
+              TEST_WEBHOOK_SECRET,
+              args.organizationId,
+            ),
+            plan: 'standard',
+          };
   return {
-    id: args.id,
-    object: 'event',
-    type: 'customer.subscription.updated',
+    event_id: args.id,
+    event_type: args.type,
+    occurred_at: '2026-08-25T12:00:00.000Z',
+    notification_id: `ntf_${args.id}`,
     data: {
-      object: {
-        object: 'subscription',
-        id: args.subscriptionId,
-        status: args.payloadStatus,
-        metadata: { organizationId: args.organizationId },
-      },
+      id: args.subscriptionId,
+      status: args.payloadStatus ?? 'active',
+      customer_id: 'ctm_payload_never_trusted',
+      custom_data: customData,
+      items: [{ price: { id: TEST_STANDARD_PRICE } }],
+      current_billing_period: null,
+      scheduled_change: null,
     },
-  } as unknown as Stripe.Event;
+  };
 }
 
 const PRICE_IDS = { founding: TEST_FOUNDING_PRICE, standard: TEST_STANDARD_PRICE };
+const DEPS_BASE = { priceIds: PRICE_IDS, provenanceSecret: TEST_WEBHOOK_SECRET };
 
-describe('processStripeEvent (fake Stripe client, real D1)', () => {
-  it('checkout.session.completed re-fetches and upserts, firing subscription_started once', async () => {
-    const { orgId } = await setUpOrg('WebhookCheckout');
+describe('processPaddleEvent (fake Paddle client, real D1)', () => {
+  it('subscription.created re-fetches and upserts, firing subscription_started once', async () => {
+    const { orgId } = await setUpOrg('WebhookCreated');
     const db = createDb(env.DB);
-    const stripe = makeFakeStripeClient(async (id) =>
-      fakeSubscription({ id, customer: 'cus_checkout_1', status: 'active' }),
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({ id, customer_id: 'ctm_created_1', status: 'active' }),
     );
-    const event = checkoutCompletedEvent({
-      id: 'evt_checkout_completed_1',
+    const event = await subscriptionEvent({
+      id: 'evt_created_1',
+      type: 'subscription.created',
       organizationId: orgId,
-      subscriptionId: 'sub_checkout_1',
+      subscriptionId: 'sub_created_1',
     });
 
-    const outcome = await processStripeEvent({ db, stripe, priceIds: PRICE_IDS }, event);
+    const outcome = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
     expect(outcome).toBe('processed');
 
     const subscription = await getSubscription(db, toOrganizationId(orgId));
     expect(subscription).toMatchObject({
       status: 'active',
       plan: 'standard',
-      stripeCustomerId: 'cus_checkout_1',
+      billingCustomerId: 'ctm_created_1',
+      billingSubscriptionId: 'sub_created_1',
+      currentPeriodEndAt: Date.parse('2026-09-01T00:00:00.000Z'),
+      cancelAtPeriodEnd: 0,
     });
 
     const started = await env.DB.prepare(
@@ -817,60 +923,82 @@ describe('processStripeEvent (fake Stripe client, real D1)', () => {
     expect(started?.n).toBe(1);
   });
 
-  it('idempotent duplicate delivery: single processing, single retrieve call', async () => {
+  it('a scheduled cancel on the re-fetched entity is mirrored as cancelAtPeriodEnd', async () => {
+    const { orgId } = await setUpOrg('WebhookScheduledCancel');
+    const db = createDb(env.DB);
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({
+        id,
+        customer_id: 'ctm_sched_1',
+        status: 'active',
+        scheduled_change: {
+          action: 'cancel',
+          effective_at: '2026-09-01T00:00:00.000Z',
+          resume_at: null,
+        },
+      }),
+    );
+    const outcome = await processPaddleEvent(
+      { db, paddle, ...DEPS_BASE },
+      await subscriptionEvent({
+        id: 'evt_sched_1',
+        type: 'subscription.updated',
+        organizationId: orgId,
+        subscriptionId: 'sub_sched_1',
+      }),
+    );
+    expect(outcome).toBe('processed');
+    const row = await getSubscription(db, toOrganizationId(orgId));
+    expect(row).toMatchObject({ status: 'active', cancelAtPeriodEnd: 1 });
+  });
+
+  it('idempotent duplicate delivery: single processing, single re-fetch call', async () => {
     const { orgId } = await setUpOrg('WebhookDuplicate');
     const db = createDb(env.DB);
-    const stripe = makeFakeStripeClient(async (id) =>
-      fakeSubscription({ id, customer: 'cus_dup_1', status: 'active' }),
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({ id, customer_id: 'ctm_dup_1', status: 'active' }),
     );
-    const event = checkoutCompletedEvent({
+    const event = await subscriptionEvent({
       id: 'evt_duplicate_1',
+      type: 'subscription.activated',
       organizationId: orgId,
       subscriptionId: 'sub_dup_1',
     });
 
-    const first = await processStripeEvent({ db, stripe, priceIds: PRICE_IDS }, event);
-    const second = await processStripeEvent({ db, stripe, priceIds: PRICE_IDS }, event);
+    const first = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
+    const second = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
     expect(first).toBe('processed');
     expect(second).toBe('duplicate');
-    expect(stripe.retrieveCallCount).toBe(1);
-
-    const count = await env.DB.prepare(
-      'SELECT COUNT(*) as n FROM billing_events WHERE stripe_event_id = ?',
-    )
-      .bind('evt_duplicate_1')
-      .first<{ n: number }>();
-    expect(count?.n).toBe(1);
+    expect(paddle.getCallCount).toBe(1);
+    expect(await billingEventCount('evt_duplicate_1')).toBe(1);
   });
 
   it('out-of-order delivery: stored state always comes from the re-fetch, never the payload', async () => {
     const { orgId } = await setUpOrg('WebhookOutOfOrder');
     const db = createDb(env.DB);
-    // Seed an existing active subscription (as if an earlier, "newer" event
-    // already synced live state to active) via a first processed event.
-    const seedStripe = makeFakeStripeClient(async (id) =>
-      fakeSubscription({ id, customer: 'cus_ooo_1', status: 'active' }),
+    const seedPaddle = makeFakePaddle(async (id) =>
+      fakeSubscription({ id, customer_id: 'ctm_ooo_1', status: 'active' }),
     );
-    await processStripeEvent(
-      { db, stripe: seedStripe, priceIds: PRICE_IDS },
-      checkoutCompletedEvent({
+    await processPaddleEvent(
+      { db, paddle: seedPaddle, ...DEPS_BASE },
+      await subscriptionEvent({
         id: 'evt_ooo_newer',
+        type: 'subscription.created',
         organizationId: orgId,
         subscriptionId: 'sub_ooo_1',
       }),
     );
 
-    // An "older" event arrives AFTER, with a payload claiming `canceled` —
-    // but the live re-fetch (what actually happens on Stripe's servers
-    // right now) still reports `active`. The processor must trust the
-    // re-fetch, not the payload's own status field.
-    const staleStripe = makeFakeStripeClient(async (id) =>
-      fakeSubscription({ id, customer: 'cus_ooo_1', status: 'active' }),
+    // An "older" `subscription.canceled` arrives AFTER, with a payload
+    // claiming `canceled` — but the live re-fetch still reports `active`.
+    const stalePaddle = makeFakePaddle(async (id) =>
+      fakeSubscription({ id, customer_id: 'ctm_ooo_1', status: 'active' }),
     );
-    const outcome = await processStripeEvent(
-      { db, stripe: staleStripe, priceIds: PRICE_IDS },
-      subscriptionUpdatedEvent({
+    const outcome = await processPaddleEvent(
+      { db, paddle: stalePaddle, ...DEPS_BASE },
+      await subscriptionEvent({
         id: 'evt_ooo_older',
+        type: 'subscription.canceled',
         organizationId: orgId,
         subscriptionId: 'sub_ooo_1',
         payloadStatus: 'canceled',
@@ -879,199 +1007,307 @@ describe('processStripeEvent (fake Stripe client, real D1)', () => {
     expect(outcome).toBe('processed');
 
     const subscription = await getSubscription(db, toOrganizationId(orgId));
-    // NOT canceled — the payload's claim was never trusted.
     expect(subscription?.status).toBe('active');
   });
 
-  it('unknown event type: ack without ever calling Stripe', async () => {
-    const { orgId } = await setUpOrg('WebhookUnknown');
+  it('unknown event type: ack without ever calling Paddle', async () => {
+    await setUpOrg('WebhookUnknown');
     const db = createDb(env.DB);
-    const stripe = makeFakeStripeClient(async () => {
+    const paddle = makeFakePaddle(async () => {
       throw new Error('must never be called for an unhandled event type');
     });
-    const event = {
-      id: 'evt_unknown_type',
-      object: 'event',
-      type: 'payment_intent.succeeded',
-      data: { object: { id: 'pi_test' } },
-    } as unknown as Stripe.Event;
+    const event: PaddleEvent = {
+      event_id: 'evt_unknown_type',
+      event_type: 'transaction.paid',
+      occurred_at: '2026-08-25T12:00:00.000Z',
+      data: { id: 'txn_01h1vjes1y163xfj1rh1tkfb65' },
+    };
 
-    const outcome = await processStripeEvent({ db, stripe, priceIds: PRICE_IDS }, event);
+    const outcome = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
     expect(outcome).toBe('ignored');
-    expect(stripe.retrieveCallCount).toBe(0);
+    expect(paddle.getCallCount).toBe(0);
 
-    const row = await getBillingEventByStripeId(db, 'evt_unknown_type');
+    const row = await getBillingEventByProviderId(db, 'evt_unknown_type');
     expect(row?.status).toBe('ignored');
-    void orgId; // unused beyond documenting intent — org resolution never happens for this event type
+  });
+
+  it('SEC-PDL-01: a forged UNSIGNED organization_id is ignored — one ignored row with organization null, no subscription', async () => {
+    const { orgId } = await setUpOrg('WebhookForgedUnsigned');
+    const db = createDb(env.DB);
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({
+        id,
+        customer_id: 'ctm_forged',
+        status: 'active',
+        custom_data: { organization_id: orgId, plan: 'standard' },
+      }),
+    );
+    const outcome = await processPaddleEvent(
+      { db, paddle, ...DEPS_BASE },
+      await subscriptionEvent({
+        id: 'evt_forged_unsigned',
+        type: 'subscription.created',
+        organizationId: orgId,
+        subscriptionId: 'sub_forged_unsigned',
+        unsigned: true,
+      }),
+    );
+    expect(outcome).toBe('ignored');
+    expect(await billingEventCount('evt_forged_unsigned')).toBe(1);
+    const row = await getBillingEventByProviderId(db, 'evt_forged_unsigned');
+    expect(row?.status).toBe('ignored');
+    expect(row?.organizationId).toBeNull();
+    expect(await getSubscription(db, toOrganizationId(orgId))).toBeNull();
+  });
+
+  it('SEC-PDL-01: an unsigned custom_data naming a NON-EXISTENT org never becomes an FK write (no throw)', async () => {
+    await setUpOrg('WebhookForgedGhost');
+    const db = createDb(env.DB);
+    const ghost = 'org_does_not_exist_01J0GHOST';
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({
+        id,
+        customer_id: 'ctm_ghost',
+        status: 'active',
+        custom_data: { organization_id: ghost, plan: 'standard' },
+      }),
+    );
+    const outcome = await processPaddleEvent(
+      { db, paddle, ...DEPS_BASE },
+      await subscriptionEvent({
+        id: 'evt_forged_ghost',
+        type: 'subscription.created',
+        organizationId: ghost,
+        subscriptionId: 'sub_forged_ghost',
+        unsigned: true,
+      }),
+    );
+    expect(outcome).toBe('ignored');
+    const row = await getBillingEventByProviderId(db, 'evt_forged_ghost');
+    expect(row?.status).toBe('ignored');
+    expect(row?.organizationId).toBeNull();
+  });
+
+  it('handled type with no resolvable organization (no custom_data anywhere): ignored, nothing written', async () => {
+    await setUpOrg('WebhookUnresolvable');
+    const db = createDb(env.DB);
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({ id, customer_id: 'ctm_orphan', status: 'active', custom_data: null }),
+    );
+    const outcome = await processPaddleEvent(
+      { db, paddle, ...DEPS_BASE },
+      await subscriptionEvent({
+        id: 'evt_orphan',
+        type: 'subscription.created',
+        organizationId: null,
+        subscriptionId: 'sub_orphan',
+      }),
+    );
+    expect(outcome).toBe('ignored');
+    const row = await getBillingEventByProviderId(db, 'evt_orphan');
+    expect(row?.status).toBe('ignored');
+    expect(row?.organizationId).toBeNull();
+  });
+
+  it('unknown price id (our env misconfigured): fails loudly so Paddle retries, never acks silently', async () => {
+    const { orgId } = await setUpOrg('WebhookUnknownPrice');
+    const db = createDb(env.DB);
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({
+        id,
+        customer_id: 'ctm_badprice',
+        items: [{ price: { id: 'pri_not_ours' } }],
+      }),
+    );
+    await expect(
+      processPaddleEvent(
+        { db, paddle, ...DEPS_BASE },
+        await subscriptionEvent({
+          id: 'evt_badprice',
+          type: 'subscription.created',
+          organizationId: orgId,
+          subscriptionId: 'sub_badprice',
+        }),
+      ),
+    ).rejects.toThrow(/unknown Paddle price id/);
+    const row = await getBillingEventByProviderId(db, 'evt_badprice');
+    expect(row?.status).toBe('failed');
+    expect(await getSubscription(db, toOrganizationId(orgId))).toBeNull();
   });
 
   it('failure-then-retry: a failed attempt is retried (not treated as a duplicate) and can succeed', async () => {
     const { orgId } = await setUpOrg('WebhookRetry');
     const db = createDb(env.DB);
-    const event = checkoutCompletedEvent({
+    const event = await subscriptionEvent({
       id: 'evt_retry_1',
+      type: 'subscription.created',
       organizationId: orgId,
       subscriptionId: 'sub_retry_1',
     });
 
-    const failingStripe = makeFakeStripeClient(async () => {
-      throw new Error('simulated transient Stripe API failure');
+    const failingPaddle = makeFakePaddle(async () => {
+      throw new Error('simulated transient Paddle API failure');
     });
     await expect(
-      processStripeEvent({ db, stripe: failingStripe, priceIds: PRICE_IDS }, event),
-    ).rejects.toThrow('simulated transient Stripe API failure');
-    const failedRow = await getBillingEventByStripeId(db, 'evt_retry_1');
+      processPaddleEvent({ db, paddle: failingPaddle, ...DEPS_BASE }, event),
+    ).rejects.toThrow('simulated transient Paddle API failure');
+    const failedRow = await getBillingEventByProviderId(db, 'evt_retry_1');
     expect(failedRow?.status).toBe('failed');
 
-    const succeedingStripe = makeFakeStripeClient(async (id) =>
-      fakeSubscription({ id, customer: 'cus_retry_1', status: 'active' }),
+    const succeedingPaddle = makeFakePaddle(async (id) =>
+      fakeSubscription({ id, customer_id: 'ctm_retry_1', status: 'active' }),
     );
-    const outcome = await processStripeEvent(
-      { db, stripe: succeedingStripe, priceIds: PRICE_IDS },
-      event,
-    );
+    const outcome = await processPaddleEvent({ db, paddle: succeedingPaddle, ...DEPS_BASE }, event);
     expect(outcome).toBe('processed');
 
-    const finalRow = await getBillingEventByStripeId(db, 'evt_retry_1');
+    const finalRow = await getBillingEventByProviderId(db, 'evt_retry_1');
     expect(finalRow?.status).toBe('processed');
-    const count = await env.DB.prepare(
-      'SELECT COUNT(*) as n FROM billing_events WHERE stripe_event_id = ?',
-    )
-      .bind('evt_retry_1')
-      .first<{ n: number }>();
-    expect(count?.n).toBe(1);
+    expect(await billingEventCount('evt_retry_1')).toBe(1);
   });
 
-  it('tenant guard: an event resolving to org A never mutates a stripe_customer_id already owned by org B', async () => {
+  it('tenant guard: an event resolving to org A never mutates a billing_customer_id already owned by org B', async () => {
     const orgA = await setUpOrg('WebhookTenantA');
     const orgB = await setUpOrg('WebhookTenantB');
     const db = createDb(env.DB);
-    // org B already owns this Stripe customer id.
     await seedSubscription(db, orgB.orgId, { status: 'active' });
     const existingB = await getSubscription(db, toOrganizationId(orgB.orgId));
     if (existingB === null) throw new Error('test setup: org B subscription missing');
 
-    const stripe = makeFakeStripeClient(async (id) =>
-      fakeSubscription({ id, customer: existingB.stripeCustomerId, status: 'active' }),
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({ id, customer_id: existingB.billingCustomerId, status: 'active' }),
     );
-    const event = checkoutCompletedEvent({
+    const event = await subscriptionEvent({
       id: 'evt_tenant_mismatch',
+      type: 'subscription.created',
       organizationId: orgA.orgId,
       subscriptionId: 'sub_tenant_mismatch',
     });
 
-    await expect(processStripeEvent({ db, stripe, priceIds: PRICE_IDS }, event)).rejects.toThrow();
+    await expect(processPaddleEvent({ db, paddle, ...DEPS_BASE }, event)).rejects.toThrow();
 
-    const row = await getBillingEventByStripeId(db, 'evt_tenant_mismatch');
+    const row = await getBillingEventByProviderId(db, 'evt_tenant_mismatch');
     expect(row?.status).toBe('failed');
-    // org A never gained a subscription; org B's row is untouched.
     expect(await getSubscription(db, toOrganizationId(orgA.orgId))).toBeNull();
     const untouchedB = await getSubscription(db, toOrganizationId(orgB.orgId));
     expect(untouchedB?.organizationId).toBe(orgB.orgId);
+    expect(untouchedB?.billingSubscriptionId).toBe(existingB.billingSubscriptionId);
   });
 
-  // -------------------------------------------------------------------------
-  // SEC-P9-03: concurrent double-checkout reconciliation. A duplicate
-  // Checkout completion mints a SECOND Stripe customer/subscription for an
-  // organization that already has a non-canceled one on file
-  // (`uq_subscriptions__organization_id` is 1:1, docs/data-model.md §9) —
-  // the webhook for that second one must cancel it and reconcile, not
-  // throw/wedge Stripe's retry loop.
-  // -------------------------------------------------------------------------
-
-  it('duplicate non-canceled customer: cancels the duplicate subscription, records the event, keeps the existing row untouched', async () => {
+  // SEC-P9-03: concurrent double-checkout reconciliation.
+  it('duplicate non-canceled customer: cancels the duplicate immediately, records the event, keeps the existing row untouched', async () => {
     const { orgId } = await setUpOrg('WebhookDupNonCanceled');
     const db = createDb(env.DB);
     const kept = await seedSubscription(db, orgId, { status: 'active' });
 
-    const stripe = makeFakeStripeClient(async (id) =>
-      fakeSubscription({ id, customer: 'cus_double_checkout', status: 'active' }),
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({ id, customer_id: 'ctm_double_checkout', status: 'active' }),
     );
-    const event = checkoutCompletedEvent({
+    const event = await subscriptionEvent({
       id: 'evt_double_checkout',
+      type: 'subscription.created',
       organizationId: orgId,
       subscriptionId: 'sub_double_checkout',
     });
 
-    const outcome = await processStripeEvent({ db, stripe, priceIds: PRICE_IDS }, event);
+    const outcome = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
     expect(outcome).toBe('duplicate_reconciled');
 
-    // The duplicate subscription — not the kept one — was canceled.
-    expect(stripe.cancelCalls).toEqual([expect.objectContaining({ id: 'sub_double_checkout' })]);
+    expect(paddle.cancelCalls).toEqual([
+      { id: 'sub_double_checkout', body: { effective_from: 'immediately' } },
+    ]);
 
-    // The event is recorded as handled (not left `failed`/`received` to
-    // wedge Stripe's retry loop).
-    const row = await getBillingEventByStripeId(db, 'evt_double_checkout');
+    const row = await getBillingEventByProviderId(db, 'evt_double_checkout');
     expect(row?.status).toBe('processed');
 
-    // The org's one-and-only row is exactly what it was before — the
-    // duplicate never got written.
     const after = await getSubscription(db, toOrganizationId(orgId));
     expect(after).toMatchObject({
-      stripeCustomerId: kept.stripeCustomerId,
-      stripeSubscriptionId: kept.stripeSubscriptionId,
+      billingCustomerId: kept.billingCustomerId,
+      billingSubscriptionId: kept.billingSubscriptionId,
       status: 'active',
     });
   });
 
-  it('same-customer re-delivery (a different event id for the SAME Stripe customer) still updates the existing row normally, no reconciliation', async () => {
+  it('same-customer re-delivery (a different event id for the SAME customer) updates the existing row normally, no reconciliation', async () => {
     const { orgId } = await setUpOrg('WebhookSameCustomer');
     const db = createDb(env.DB);
     const seeded = await seedSubscription(db, orgId, { status: 'active' });
 
-    const stripe = makeFakeStripeClient(async (id) =>
-      fakeSubscription({ id, customer: seeded.stripeCustomerId, status: 'past_due' }),
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({ id, customer_id: seeded.billingCustomerId, status: 'past_due' }),
     );
-    const event = subscriptionUpdatedEvent({
+    const event = await subscriptionEvent({
       id: 'evt_same_customer_update',
+      type: 'subscription.past_due',
       organizationId: orgId,
-      subscriptionId: seeded.stripeSubscriptionId ?? 'sub_missing',
+      subscriptionId: seeded.billingSubscriptionId ?? 'sub_missing',
       payloadStatus: 'past_due',
     });
 
-    const outcome = await processStripeEvent({ db, stripe, priceIds: PRICE_IDS }, event);
+    const outcome = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
     expect(outcome).toBe('processed');
-    expect(stripe.cancelCalls).toEqual([]);
+    expect(paddle.cancelCalls).toEqual([]);
 
     const after = await getSubscription(db, toOrganizationId(orgId));
     expect(after).toMatchObject({
-      stripeCustomerId: seeded.stripeCustomerId,
+      billingCustomerId: seeded.billingCustomerId,
       status: 'past_due',
     });
   });
 
-  it('canceled-row reactivation is unchanged: a new subscription on the SAME (reused) customer updates the row, no reconciliation', async () => {
+  it('canceled-row reactivation: a new subscription on the SAME (reused) customer updates the row, no reconciliation', async () => {
     const { orgId } = await setUpOrg('WebhookReactivate');
     const db = createDb(env.DB);
     const canceled = await seedSubscription(db, orgId, { status: 'canceled' });
 
     // Mirrors checkout.ts's real reactivation flow: a canceled row's
-    // `stripe_customer_id` is always passed back as Checkout's `customer`
-    // param, so the reactivating subscription is a NEW subscription id on
-    // the SAME (reused) customer — never a brand-new customer.
-    const stripe = makeFakeStripeClient(async (id) =>
-      fakeSubscription({ id, customer: canceled.stripeCustomerId, status: 'active' }),
+    // customer id is passed as the transaction's `customer_id`, so the
+    // reactivating subscription is a NEW subscription id on the SAME
+    // customer — never a brand-new customer.
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({ id, customer_id: canceled.billingCustomerId, status: 'active' }),
     );
-    const event = checkoutCompletedEvent({
+    const event = await subscriptionEvent({
       id: 'evt_reactivate',
+      type: 'subscription.created',
       organizationId: orgId,
       subscriptionId: 'sub_reactivated',
     });
 
-    const outcome = await processStripeEvent({ db, stripe, priceIds: PRICE_IDS }, event);
+    const outcome = await processPaddleEvent({ db, paddle, ...DEPS_BASE }, event);
     expect(outcome).toBe('processed');
-    expect(stripe.cancelCalls).toEqual([]);
+    expect(paddle.cancelCalls).toEqual([]);
 
     const after = await getSubscription(db, toOrganizationId(orgId));
     expect(after).toMatchObject({
-      stripeCustomerId: canceled.stripeCustomerId,
-      stripeSubscriptionId: 'sub_reactivated',
+      billingCustomerId: canceled.billingCustomerId,
+      billingSubscriptionId: 'sub_reactivated',
       status: 'active',
     });
   });
-});
 
-// Referenced only to keep the audit-events import used honestly (checkout/
-// portal route tests above assert status codes, not audit rows directly —
-// this smoke-checks the writer function itself stays callable/typed).
-void insertAuditEvent;
+  it('transition to canceled fires subscription_canceled once', async () => {
+    const { orgId } = await setUpOrg('WebhookCanceledEvent');
+    const db = createDb(env.DB);
+    const seeded = await seedSubscription(db, orgId, { status: 'active' });
+    const paddle = makeFakePaddle(async (id) =>
+      fakeSubscription({ id, customer_id: seeded.billingCustomerId, status: 'canceled' }),
+    );
+    const outcome = await processPaddleEvent(
+      { db, paddle, ...DEPS_BASE },
+      await subscriptionEvent({
+        id: 'evt_canceled_transition',
+        type: 'subscription.canceled',
+        organizationId: orgId,
+        subscriptionId: seeded.billingSubscriptionId ?? 'sub_missing',
+        payloadStatus: 'canceled',
+      }),
+    );
+    expect(outcome).toBe('processed');
+    const canceled = await env.DB.prepare(
+      "SELECT COUNT(*) as n FROM product_events WHERE organization_id = ? AND name = 'subscription_canceled'",
+    )
+      .bind(orgId)
+      .first<{ n: number }>();
+    expect(canceled?.n).toBe(1);
+  });
+});

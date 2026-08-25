@@ -2,10 +2,10 @@
 
 Status: **canonical / single source of truth** for the marketing Pricing
 page (`apps/web/src/pages/marketing/Pricing.tsx`), the Pilot page
-(`apps/web/src/pages/marketing/Pilot.tsx`), and Stripe product/price
-configuration. Written 2026-08-17 by the `billing` implementer per the
+(`apps/web/src/pages/marketing/Pilot.tsx`), and Paddle product/price
+configuration (ADR-0011; this section was rewritten 2026-08-25). Written 2026-08-17 by the `billing` implementer per the
 owner's product-policy lock. This document specifies pricing; it does not
-implement it — no product code, Stripe object, or env var is created or
+implement it — no product code, Paddle object, or env var is created or
 modified here.
 
 Authority chain (do not re-derive, cite instead):
@@ -15,8 +15,9 @@ Authority chain (do not re-derive, cite instead):
   revision, no-free-tier/no-trial policy.
 - `docs/product-scope.md` §Pricing and §Product policy lock (owner decision
   2026-08-17) — plan substance, VAT posture, grandfathering rule.
-- `HUMAN_DECISION_BLOCKERS.md` item 4 — Stripe Price IDs are human-provided,
-  never invented.
+- `HUMAN_DECISION_BLOCKERS.md` item 4 — Paddle price ids are human-provided
+  (sandbox ones created 2026-08-25 and recorded in docs/setup-guide.md §4b),
+  never invented in code.
 
 ---
 
@@ -30,10 +31,10 @@ annual contract.
 |                  | **Founding**                                                                                                                     | **Standard**                                                |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | Price            | **€29 / month**                                                                                                                  | **€49 / month**                                             |
-| Currency         | EUR, flat, no VAT line (see §6)                                                                                                  | EUR, flat, no VAT line (see §6)                             |
+| Currency         | EUR, flat, VAT included (see §6)                                                                                                 | EUR, flat, VAT included (see §6)                            |
 | Billing interval | Monthly, no annual contract                                                                                                      | Monthly, no annual contract                                 |
 | Usage fees       | None                                                                                                                             | None                                                        |
-| Availability     | Limited to the first 50 customers, feature-flag controlled (`founding_plan_open`) — see §2                                       | Unlimited; open once the founding plan is full, or any time |
+| Availability     | Limited to the first 100 customers, feature-flag controlled (`founding_plan_open`) — see §2                                      | Unlimited; open once the founding plan is full, or any time |
 | Price stability  | Locked for the life of the subscription while continuously subscribed (grandfathering — see §2); never auto-migrates to Standard | Standard price at signup                                    |
 | **Feature set**  | **Identical to Standard**                                                                                                        | **Identical to Founding**                                   |
 
@@ -190,94 +191,52 @@ cheapest-price race:**
 
 ---
 
-## 5. Stripe mapping
+## 5. Paddle mapping (ADR-0011)
 
 ### Env var → plan mapping
 
-| Env var (`apps/worker/src/env.ts`) | Plan                                    | Amount | Interval |
-| ---------------------------------- | --------------------------------------- | ------ | -------- |
-| `STRIPE_PRICE_FOUNDING_MONTHLY`    | `BIDMORROW_FOUNDING_MONTHLY` (Founding) | €29    | month    |
-| `STRIPE_PRICE_STANDARD_MONTHLY`    | `BIDMORROW_STANDARD_MONTHLY` (Standard) | €49    | month    |
+| Env var (`apps/worker/src/env.ts`) | Plan                          | Amount (incl. VAT) | Interval |
+| ---------------------------------- | ----------------------------- | ------------------ | -------- |
+| `PADDLE_PRICE_FOUNDING_MONTHLY`    | BidMorrow Founding (Founding) | €29                | month    |
+| `PADDLE_PRICE_STANDARD_MONTHLY`    | BidMorrow Standard (Standard) | €49                | month    |
 
-Both are Stripe **Price** object IDs, required (non-optional) in
+Both are Paddle **price** ids (`pri_…`), required (non-optional) in
 staging/production, human-provided per `HUMAN_DECISION_BLOCKERS.md` item
-4 — **never invented, never hardcoded in this document or in code.**
-`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are the companion
-required env vars for the billing package; test-mode credentials outside
-production, live-mode only in the `production` GitHub environment, never
-mixed (`HUMAN_DECISION_BLOCKERS.md` item 4).
+4 — **never hardcoded in code.** Sandbox ids are recorded in
+`docs/setup-guide.md` §4b; live ids will differ (separate account).
+Companion required names: `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`
+(secrets), `PADDLE_CLIENT_TOKEN`, `PADDLE_ENVIRONMENT` (variables) —
+sandbox outside production, live only in the `production` GitHub
+environment, never mixed.
 
-### Requirement on the underlying Stripe Price objects
+### Requirement on the underlying Paddle prices
 
-Both `BIDMORROW_FOUNDING_MONTHLY` and `BIDMORROW_STANDARD_MONTHLY`
-**MUST be created as EUR, monthly-recurring Price objects** in the Stripe
-Dashboard/API (test mode for staging, live mode for production, per
-`HUMAN_DECISION_BLOCKERS.md` item 4's existing instructions). This
-document does not create or reference a specific Price ID — only the
-currency/interval requirement the Price objects must satisfy.
+Both prices **MUST be EUR, `billing_cycle: { interval: month, frequency:
+1 }`, `tax_mode: external`** (tax-exclusive — owner decision 2026-08-25),
+on a product with `tax_category: saas`. Quantity is locked to 1
+(`quantity: { minimum: 1, maximum: 1 }`) — one subscription per
+organization. Verified against the Paddle API reference via the
+paddle-docs MCP on 2026-08-25 (`unit_price.amount` is a lowest-unit string,
+`"2900"`; `unit_price.currency_code: EUR`); the sandbox prices were created
+with exactly these parameters and read back.
 
-### Stripe API verification (verify-current-docs skill)
+### What the customer sees
 
-Direct `WebFetch` to `docs.stripe.com` is **blocked by this sandbox's
-network egress proxy** (same class of constraint already recorded in
-`docs/redesign/competitive-risk-assessment.md` §0 for competitor domains —
-not specific to Stripe). Verification below is therefore
-**search-snippet grade** against the official Stripe API reference pages
-(not model memory), retrieved 2026-08-17:
-
-- **Currency is fixed at Price creation.** The `currency` parameter on
-  `POST /v1/prices` is required and must be a three-letter ISO currency
-  code (lowercase) that Stripe supports. A Price object has one default
-  currency; Stripe's multi-currency mechanism (`currency_options`) adds
-  _additional_ currencies onto an existing Price's default currency
-  rather than letting a single Price float across currencies
-  arbitrarily — "Make sure all of your prices have the same default
-  currency." BidMorrow does not use `currency_options` or Adaptive
-  Pricing: each Price object (Founding, Standard) is created directly
-  with `currency: eur` and no other currency is offered, consistent with
-  the owner's EUR-only decision (`docs/product-scope.md` §Pricing,
-  owner decision 2026-08-16).
-  Sources: <https://docs.stripe.com/api/prices/create>,
-  <https://docs.stripe.com/api/prices/object>,
-  <https://docs.stripe.com/products-prices/manage-prices> (search-snippet
-  grade, retrieved 2026-08-17).
-- **Recurring monthly interval.** The `recurring` parameter is a map of
-  the price's recurring components; `recurring.interval` accepts one of
-  `day`, `week`, `month`, `year`. Both BidMorrow Price objects use
-  `recurring.interval: month` (`recurring.interval_count` defaults to 1 —
-  not verified in this session; standard SDK examples show
-  `Interval: month` with no explicit count for a plain monthly price).
-  Source: <https://docs.stripe.com/api/prices/create> (search-snippet
-  grade, retrieved 2026-08-17).
-- **Current API version already on record**: `2026-07-29.dahlia`
-  (`docs/dependency-versions.md` §Stripe facts, verified in Phase 9).
-  Not re-verified in this session; carried forward from the existing
-  record.
-
-**Caveat, stated per the verify-current-docs skill's rule 5:** because
-direct WebFetch of `docs.stripe.com` was unavailable in this sandbox
-session, the currency/interval facts above are corroborated via web-search
-snippets of the official API reference pages rather than a full page
-fetch. They are treated as verified-but-lower-confidence-than-a-direct-
-fetch, not as memory, and should be re-confirmed with a direct fetch the
-next time `docs.stripe.com` is reachable (mirrors the standing caution
-already recorded for `Stripe webhook-set page wording` in
-`docs/dependency-versions.md` §Unverified / to re-check when network
-allows — add this currency/interval line to that same list at the next
-docs.stripe.com-reachable session).
+Paddle, as Merchant of Record, computes VAT for the customer's country in
+the checkout overlay and on the invoice. Prices are VAT-inclusive (owner
+decision 2026-08-26): everyone pays exactly €29/€49 — an EU business with
+a valid VAT ID under reverse charge, a Cyprus consumer with 19% VAT shown
+as a share of the same €29. Marketing/app copy therefore states amounts as
+"€29 / month incl. VAT".
 
 ### Webhook event set and idempotency (existing, cited for completeness)
 
-Already verified and recorded (`docs/dependency-versions.md` §Stripe
-facts, Phase 9): `checkout.session.completed`,
-`customer.subscription.created`, `customer.subscription.updated`,
-`customer.subscription.deleted`, `invoice.paid`,
-`invoice.payment_failed`. Ordering is not guaranteed (at-least-once
-delivery) — dedupe on Stripe event ID with a unique DB constraint and
-re-fetch current subscription state from the API rather than trusting
-payload order, per the standing rule in `docs/project-guide.md`/billing agent
-instructions. This pricing document does not change that contract; it is
-cited so the pricing/Stripe-mapping section is self-contained.
+`subscription.created|activated|trialing|updated|past_due|paused|resumed|canceled`
+(docs/dependency-versions.md § Paddle facts). Ordering is not guaranteed
+(at-least-once delivery) — dedupe on the Paddle event id with a unique DB
+constraint (`provider_event_id`) and re-fetch current subscription state
+from the API rather than trusting payload order. This pricing document
+does not change that contract.
 
 ---
 
@@ -295,18 +254,19 @@ verified 2026-08-14; hard constraint **< $100/month**, target
 | 100       | ~$26/mo                                                                                                             |
 | 1,000     | ~$30–105/mo (crosses the alert band only via email volume + matching-write scale; both have identified mitigations) |
 
-**Variable cost:** Stripe payment processing, ~2.9% + $0.30/transaction
-(EU-card rates vary — `docs/cost-model.md` §Variable / revenue-linked
-costs; not re-verified against current Stripe fee pages in this session,
-carried forward as the existing modeled figure). Approximated in EUR as
-~2.9% + ~€0.28 for this margin sketch.
+**Variable cost:** Paddle's Merchant-of-Record fee, **5% + 50¢ per
+transaction** (Paddle's published rate, verified 2026-08-25 —
+`docs/cost-model.md` §Variable / revenue-linked costs). Approximated in
+EUR as 5% + ~€0.45 for this margin sketch. In exchange Paddle carries VAT
+calculation, collection, remittance and invoicing. Net per subscription:
+**≈ €27.10 on €29** (Founding), **≈ €46.10 on €49** (Standard).
 
 **Headline margin conclusion:** at 50 founding customers
 (25–50 per the owner's range) paying €29/month, monthly revenue is
 €725–€1,450 against fixed infrastructure of **~$6/month** (well under the
 10-customer cost-model row) — **gross margin comfortably above 99% before
-Stripe fees**, and still above ~95% net of Stripe's ~2.9%+€0.30 per
-transaction. At 100 mixed customers (a blend of grandfathered €29
+Paddle fees**, and still above ~93% net of Paddle's 5% + €0.45 per
+transaction (€27.10 net × 50 = €1,355/month against ~$6 of infrastructure). At 100 mixed customers (a blend of grandfathered €29
 founding and €49 standard), revenue is in the €2,900–€4,900/month range
 against ~$26/month fixed infrastructure — margin remains above ~99%
 before payment fees. The cost model's own conclusion
@@ -323,11 +283,11 @@ constraint on this pricing.**
 
 ## 7. Owner decisions / open questions
 
-| #   | Question                                                                                                                                                                                                                                                  | Status                                                                                               | Recommendation                                                                                                                                                                                                                                                                                                                                                          |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Founding cap — the exact number in 25–50.** Governed shipping founding-cap copy, the `DEFAULT_FOUNDING_CAP` default behind the `founding_cap` flag, and the numeric lock in `plans.test.ts`.                                                            | **DECIDED — owner selected `50` on 2026-08-17.** Applied across all surfaces in this change; see §2. | 50 — owner's decision (top of the approved 25–50 band; the billing agent's non-binding recommendation had been 30). See §2.                                                                                                                                                                                                                                             |
-| 2   | **Public pilot-waitlist once the cap fills.** Once 50 founding slots are taken, should the marketing site show a waitlist/"join the standard plan now" state, or simply stop advertising founding availability and route new pilots straight to Standard? | **OPEN — not decided in any reviewed doc.**                                                          | Recommend: once the cap fills, `Pricing.tsx`/`Pilot.tsx` should route new pilot requests straight to the €49 Standard plan with honest copy ("the founding plan is full — you'll start on the standard plan"), rather than a waitlist, because a waitlist implies future founding slots may reopen, which is not a stated policy and would need its own owner decision. |
-| 3   | **Whether Stripe Tax / VAT activation changes this doc.** Currently no VAT is collected (owner decision 2026-08-16, `docs/product-scope.md` §Pricing: sole trader, no VAT registration, flat prices, `stripe_tax_enabled` flag OFF everywhere).           | **Not open — settled, but has a documented revisit trigger.**                                        | No action for this doc; when the owner registers for VAT, this doc's €29/€49 headline prices and the "no VAT line" language in §1/§5 need a follow-up revision alongside the code-side flag flip (`docs/product-scope.md` §Pricing already documents the mechanical steps). Recorded here only so a future editor of this pricing doc doesn't miss it.                  |
+| #   | Question                                                                                                                                                                                                                                                     | Status                                                                                               | Recommendation                                                                                                                                                                                                                                                                                                                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Founding cap — the exact number in 25–50.** Governed shipping founding-cap copy, the `DEFAULT_FOUNDING_CAP` default behind the `founding_cap` flag, and the numeric lock in `plans.test.ts`.                                                               | **DECIDED — owner selected `50` on 2026-08-17.** Applied across all surfaces in this change; see §2. | 50 — owner's decision (top of the approved 25–50 band; the billing agent's non-binding recommendation had been 30). See §2.                                                                                                                                                                                                                                             |
+| 2   | **Public pilot-waitlist once the cap fills.** Once 50 founding slots are taken, should the marketing site show a waitlist/"join the standard plan now" state, or simply stop advertising founding availability and route new pilots straight to Standard?    | **OPEN — not decided in any reviewed doc.**                                                          | Recommend: once the cap fills, `Pricing.tsx`/`Pilot.tsx` should route new pilot requests straight to the €49 Standard plan with honest copy ("the founding plan is full — you'll start on the standard plan"), rather than a waitlist, because a waitlist implies future founding slots may reopen, which is not a stated policy and would need its own owner decision. |
+| 3   | **VAT.** SETTLED 2026-08-25 (ADR-0011): Paddle is Merchant of Record and charges VAT itself; prices are tax-exclusive (`tax_mode: external`) — the customer pays €29/€49 **+ VAT**. The earlier "no VAT at launch / dormant Stripe Tax" arrangement is gone. | **Closed.**                                                                                          | Customer-facing copy states "+ VAT"; the headline amounts are unchanged. No revisit trigger — VAT registration is Paddle's, not the owner's.                                                                                                                                                                                                                            |
 
 ---
 

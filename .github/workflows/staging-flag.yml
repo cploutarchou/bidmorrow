@@ -15,7 +15,6 @@ on:
         options:
           - ingestion_paused
           - digest_paused
-          - stripe_tax_enabled
       value:
         description: 'Boolean value'
         required: true
@@ -55,7 +54,7 @@ jobs:
 
       - name: Validate inputs (defense in depth)
         run: |
-          case "$FLAG_KEY" in ingestion_paused|digest_paused|stripe_tax_enabled) ;; *) echo "bad key"; exit 1;; esac
+          case "$FLAG_KEY" in ingestion_paused|digest_paused) ;; *) echo "bad key"; exit 1;; esac
           case "$FLAG_VALUE" in true|false) ;; *) echo "bad value"; exit 1;; esac
 
       - name: Set flag

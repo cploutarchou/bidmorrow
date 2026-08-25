@@ -1,44 +1,43 @@
 /**
- * P11-R-03: unit tests for `cancelSubscriptionForOrgDeletion` against a
- * stubbed Stripe client (no network) and a mocked `@bidmorrow/db` repository
- * layer (no D1 — pure orchestration logic, mirroring `webhook.test.ts`'s
- * "packages/billing runs logic-only tests, D1-coupled paths are tested at
- * apps/worker level" split, except here the function under test IS the
- * orchestration, so the repository calls themselves are mocked rather than
- * exercised against real D1).
+ * Unit tests for `cancelSubscriptionForOrgDeletion` and
+ * `cancelSubscriptionAtPeriodEnd` against a stubbed Paddle subscriptions
+ * client (no network) and a mocked `@bidmorrow/db` repository layer (no D1
+ * — pure orchestration logic; DB-coupled paths are tested at the
+ * apps/worker level).
  *
- * Contract under test (from cancellation.ts's own doc comment): this
- * function is "best-effort" from the CALLER's perspective — `routes/org.ts`
- * wraps the call in try/catch and never blocks the deletion on it — but the
- * function itself does NOT swallow a Stripe error; it lets it propagate so
- * the caller's catch block can record the failure in the audit row. That
- * contract is exactly what the "Stripe error path" test below asserts.
+ * Contract under test: the org-deletion variant is "best-effort" from the
+ * CALLER's perspective (`routes/org.ts` wraps it in try/catch) but the
+ * function itself does NOT swallow a Paddle error — it propagates so the
+ * caller can record the failure in the audit row.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Subscription } from '@bidmorrow/db';
 import type { OrganizationId } from '@bidmorrow/domain';
 
+import type { PaddleSubscription } from './paddle-client';
+
 const getSubscription = vi.fn();
-const upsertSubscriptionByStripeCustomerId = vi.fn();
+const upsertSubscriptionByBillingCustomerId = vi.fn();
 
 vi.mock('@bidmorrow/db', () => ({
   getSubscription: (...args: unknown[]) => getSubscription(...args),
-  upsertSubscriptionByStripeCustomerId: (...args: unknown[]) =>
-    upsertSubscriptionByStripeCustomerId(...args),
+  upsertSubscriptionByBillingCustomerId: (...args: unknown[]) =>
+    upsertSubscriptionByBillingCustomerId(...args),
 }));
 
-const { cancelSubscriptionForOrgDeletion, cancelSubscriptionAtPeriodEnd } =
+const { cancelSubscriptionForOrgDeletion, cancelSubscriptionAtPeriodEnd, hasScheduledCancel } =
   await import('./cancellation');
 
 const ORG_ID = 'org_test_01J0CANCEL' as OrganizationId;
 const FAKE_DB = {} as never;
+const PERIOD_END = '2026-09-15T00:00:00.000Z';
 
 function activeSubscription(overrides: Partial<Subscription> = {}): Subscription {
   return {
     id: 'sub_row_1',
     organizationId: ORG_ID,
-    stripeCustomerId: 'cus_test',
-    stripeSubscriptionId: 'sub_test',
+    billingCustomerId: 'ctm_test',
+    billingSubscriptionId: 'sub_test',
     status: 'active',
     plan: 'standard',
     currentPeriodEndAt: 1_700_000_000_000,
@@ -49,196 +48,197 @@ function activeSubscription(overrides: Partial<Subscription> = {}): Subscription
   } as Subscription;
 }
 
-describe('cancelSubscriptionForOrgDeletion', () => {
-  beforeEach(() => {
-    getSubscription.mockReset();
-    upsertSubscriptionByStripeCustomerId.mockReset();
+function liveSubscription(overrides: Partial<PaddleSubscription> = {}): PaddleSubscription {
+  return {
+    id: 'sub_test',
+    status: 'active',
+    customer_id: 'ctm_test',
+    custom_data: { organization_id: ORG_ID },
+    current_billing_period: { starts_at: '2026-08-15T00:00:00.000Z', ends_at: PERIOD_END },
+    next_billed_at: PERIOD_END,
+    scheduled_change: { action: 'cancel', effective_at: PERIOD_END, resume_at: null },
+    items: [{ price: { id: 'pri_standard_test' } }],
+    ...overrides,
+  };
+}
+
+function fakePaddle(cancelResult: PaddleSubscription | Error = liveSubscription()) {
+  const cancel = vi.fn(async () => {
+    if (cancelResult instanceof Error) throw cancelResult;
+    return cancelResult;
   });
+  const update = vi.fn();
+  return { paddle: { subscriptions: { cancel, update } }, cancel, update };
+}
 
-  it('returns no_subscription when the org has no subscription row', async () => {
-    getSubscription.mockResolvedValue(null);
-    const stripe = { subscriptions: { update: vi.fn() } };
-
-    const outcome = await cancelSubscriptionForOrgDeletion(
-      { db: FAKE_DB, stripe },
-      { organizationId: ORG_ID },
-    );
-
-    expect(outcome).toEqual({ kind: 'no_subscription' });
-    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
-  });
-
-  it('returns no_subscription when the row has no stripeSubscriptionId yet', async () => {
-    getSubscription.mockResolvedValue(activeSubscription({ stripeSubscriptionId: null }));
-    const stripe = { subscriptions: { update: vi.fn() } };
-
-    const outcome = await cancelSubscriptionForOrgDeletion(
-      { db: FAKE_DB, stripe },
-      { organizationId: ORG_ID },
-    );
-
-    expect(outcome).toEqual({ kind: 'no_subscription' });
-    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
-  });
-
-  it('short-circuits on an already-canceled subscription without calling Stripe', async () => {
-    getSubscription.mockResolvedValue(activeSubscription({ status: 'canceled' }));
-    const stripe = { subscriptions: { update: vi.fn() } };
-
-    const outcome = await cancelSubscriptionForOrgDeletion(
-      { db: FAKE_DB, stripe },
-      { organizationId: ORG_ID },
-    );
-
-    expect(outcome).toEqual({ kind: 'already_canceled' });
-    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
-    expect(upsertSubscriptionByStripeCustomerId).not.toHaveBeenCalled();
-  });
-
-  it('calls Stripe cancel_at_period_end and mirrors the result into the local row', async () => {
-    const row = activeSubscription();
-    getSubscription.mockResolvedValue(row);
-    upsertSubscriptionByStripeCustomerId.mockResolvedValue(row);
-    const stripe = {
-      subscriptions: {
-        update: vi.fn().mockResolvedValue({ id: 'sub_test', cancel_at_period_end: true }),
-      },
-    };
-
-    const outcome = await cancelSubscriptionForOrgDeletion(
-      { db: FAKE_DB, stripe },
-      { organizationId: ORG_ID },
-    );
-
-    expect(outcome).toEqual({ kind: 'canceled_at_period_end', stripeSubscriptionId: 'sub_test' });
-    expect(stripe.subscriptions.update).toHaveBeenCalledWith('sub_test', {
-      cancel_at_period_end: true,
-    });
-    expect(upsertSubscriptionByStripeCustomerId).toHaveBeenCalledTimes(1);
-    const [dbArg, orgIdArg, upsertArgs] = upsertSubscriptionByStripeCustomerId.mock.calls[0] as [
-      unknown,
-      OrganizationId,
-      { stripeSubscriptionId: string; cancelAtPeriodEnd: boolean },
-    ];
-    expect(dbArg).toBe(FAKE_DB);
-    expect(orgIdArg).toBe(ORG_ID);
-    expect(upsertArgs.stripeSubscriptionId).toBe('sub_test');
-    expect(upsertArgs.cancelAtPeriodEnd).toBe(true);
-  });
-
-  it('propagates a Stripe API error to the caller rather than swallowing it', async () => {
-    getSubscription.mockResolvedValue(activeSubscription());
-    const stripeError = new Error('stripe: rate limited');
-    const stripe = { subscriptions: { update: vi.fn().mockRejectedValue(stripeError) } };
-
-    await expect(
-      cancelSubscriptionForOrgDeletion({ db: FAKE_DB, stripe }, { organizationId: ORG_ID }),
-    ).rejects.toThrow('stripe: rate limited');
-
-    // The failed attempt is never mirrored into the local row — only a
-    // successful Stripe response is trusted as "live state" (cancellation.ts
-    // doc comment).
-    expect(upsertSubscriptionByStripeCustomerId).not.toHaveBeenCalled();
+describe('hasScheduledCancel', () => {
+  it('is true only for a pending cancel', () => {
+    expect(hasScheduledCancel(liveSubscription())).toBe(true);
+    expect(hasScheduledCancel(liveSubscription({ scheduled_change: null }))).toBe(false);
+    expect(
+      hasScheduledCancel(
+        liveSubscription({
+          scheduled_change: { action: 'pause', effective_at: PERIOD_END, resume_at: null },
+        }),
+      ),
+    ).toBe(false);
   });
 });
 
-describe('cancelSubscriptionAtPeriodEnd (user-initiated, POST /api/billing/cancel)', () => {
+describe('cancelSubscriptionForOrgDeletion', () => {
   beforeEach(() => {
     getSubscription.mockReset();
-    upsertSubscriptionByStripeCustomerId.mockReset();
+    upsertSubscriptionByBillingCustomerId.mockReset();
   });
 
-  it('returns no_subscription when the org has no subscription row', async () => {
+  it('returns no_subscription when the org has no row, without calling Paddle', async () => {
     getSubscription.mockResolvedValue(null);
-    const stripe = { subscriptions: { update: vi.fn() } };
-
-    const outcome = await cancelSubscriptionAtPeriodEnd(
-      { db: FAKE_DB, stripe },
+    const { paddle, cancel } = fakePaddle();
+    const outcome = await cancelSubscriptionForOrgDeletion(
+      { db: FAKE_DB, paddle },
       { organizationId: ORG_ID },
     );
-
     expect(outcome).toEqual({ kind: 'no_subscription' });
-    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
+    expect(cancel).not.toHaveBeenCalled();
   });
 
-  it('returns no_subscription when the row has no stripeSubscriptionId yet', async () => {
-    getSubscription.mockResolvedValue(activeSubscription({ stripeSubscriptionId: null }));
-    const stripe = { subscriptions: { update: vi.fn() } };
-
-    const outcome = await cancelSubscriptionAtPeriodEnd(
-      { db: FAKE_DB, stripe },
+  it('returns no_subscription when the row has no provider subscription id yet', async () => {
+    getSubscription.mockResolvedValue(activeSubscription({ billingSubscriptionId: null }));
+    const { paddle, cancel } = fakePaddle();
+    const outcome = await cancelSubscriptionForOrgDeletion(
+      { db: FAKE_DB, paddle },
       { organizationId: ORG_ID },
     );
-
     expect(outcome).toEqual({ kind: 'no_subscription' });
-    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
+    expect(cancel).not.toHaveBeenCalled();
   });
 
-  it('returns already_canceled without calling Stripe', async () => {
+  it('returns already_canceled without calling Paddle', async () => {
     getSubscription.mockResolvedValue(activeSubscription({ status: 'canceled' }));
-    const stripe = { subscriptions: { update: vi.fn() } };
-
-    const outcome = await cancelSubscriptionAtPeriodEnd(
-      { db: FAKE_DB, stripe },
+    const { paddle, cancel } = fakePaddle();
+    const outcome = await cancelSubscriptionForOrgDeletion(
+      { db: FAKE_DB, paddle },
       { organizationId: ORG_ID },
     );
-
     expect(outcome).toEqual({ kind: 'already_canceled' });
-    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
-    expect(upsertSubscriptionByStripeCustomerId).not.toHaveBeenCalled();
+    expect(cancel).not.toHaveBeenCalled();
   });
 
-  it('returns already_scheduled (idempotent) without calling Stripe when cancelAtPeriodEnd is already set', async () => {
+  it('schedules a cancel at next_billing_period and mirrors the live response into the row', async () => {
+    getSubscription.mockResolvedValue(activeSubscription());
+    const { paddle, cancel } = fakePaddle();
+    const outcome = await cancelSubscriptionForOrgDeletion(
+      { db: FAKE_DB, paddle },
+      { organizationId: ORG_ID },
+    );
+    expect(outcome).toEqual({ kind: 'canceled_at_period_end', billingSubscriptionId: 'sub_test' });
+    expect(cancel).toHaveBeenCalledWith('sub_test', { effective_from: 'next_billing_period' });
+    expect(upsertSubscriptionByBillingCustomerId).toHaveBeenCalledWith(FAKE_DB, ORG_ID, {
+      billingCustomerId: 'ctm_test',
+      billingSubscriptionId: 'sub_test',
+      status: 'active',
+      plan: 'standard',
+      currentPeriodEndAt: Date.parse(PERIOD_END),
+      cancelAtPeriodEnd: true,
+    });
+  });
+
+  it('keeps the local period end when the live entity has no billing period', async () => {
+    getSubscription.mockResolvedValue(activeSubscription({ currentPeriodEndAt: 123 }));
+    const { paddle } = fakePaddle(liveSubscription({ current_billing_period: null }));
+    await cancelSubscriptionForOrgDeletion({ db: FAKE_DB, paddle }, { organizationId: ORG_ID });
+    expect(upsertSubscriptionByBillingCustomerId.mock.calls[0]?.[2]).toMatchObject({
+      currentPeriodEndAt: 123,
+    });
+  });
+
+  it('propagates a Paddle API error instead of swallowing it, writing nothing', async () => {
+    getSubscription.mockResolvedValue(activeSubscription());
+    const { paddle } = fakePaddle(new Error('paddle unreachable'));
+    await expect(
+      cancelSubscriptionForOrgDeletion({ db: FAKE_DB, paddle }, { organizationId: ORG_ID }),
+    ).rejects.toThrow('paddle unreachable');
+    expect(upsertSubscriptionByBillingCustomerId).not.toHaveBeenCalled();
+  });
+});
+
+describe('cancelSubscriptionAtPeriodEnd (user-initiated)', () => {
+  beforeEach(() => {
+    getSubscription.mockReset();
+    upsertSubscriptionByBillingCustomerId.mockReset();
+  });
+
+  it('returns no_subscription for a missing row or missing provider id', async () => {
+    const { paddle, cancel } = fakePaddle();
+    getSubscription.mockResolvedValueOnce(null);
+    expect(
+      await cancelSubscriptionAtPeriodEnd({ db: FAKE_DB, paddle }, { organizationId: ORG_ID }),
+    ).toEqual({ kind: 'no_subscription' });
+    getSubscription.mockResolvedValueOnce(activeSubscription({ billingSubscriptionId: null }));
+    expect(
+      await cancelSubscriptionAtPeriodEnd({ db: FAKE_DB, paddle }, { organizationId: ORG_ID }),
+    ).toEqual({ kind: 'no_subscription' });
+    expect(cancel).not.toHaveBeenCalled();
+  });
+
+  it('returns already_canceled without calling Paddle', async () => {
+    getSubscription.mockResolvedValue(activeSubscription({ status: 'canceled' }));
+    const { paddle, cancel } = fakePaddle();
+    expect(
+      await cancelSubscriptionAtPeriodEnd({ db: FAKE_DB, paddle }, { organizationId: ORG_ID }),
+    ).toEqual({ kind: 'already_canceled' });
+    expect(cancel).not.toHaveBeenCalled();
+  });
+
+  it('is idempotent: already_scheduled makes no Paddle call and no write', async () => {
     getSubscription.mockResolvedValue(
-      activeSubscription({ cancelAtPeriodEnd: 1, currentPeriodEndAt: 1_700_000_000_000 }),
+      activeSubscription({ cancelAtPeriodEnd: 1, currentPeriodEndAt: 42 }),
     );
-    const stripe = { subscriptions: { update: vi.fn() } };
-
-    const outcome = await cancelSubscriptionAtPeriodEnd(
-      { db: FAKE_DB, stripe },
-      { organizationId: ORG_ID },
-    );
-
-    expect(outcome).toEqual({ kind: 'already_scheduled', currentPeriodEndAt: 1_700_000_000_000 });
-    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
-    expect(upsertSubscriptionByStripeCustomerId).not.toHaveBeenCalled();
+    const { paddle, cancel } = fakePaddle();
+    expect(
+      await cancelSubscriptionAtPeriodEnd({ db: FAKE_DB, paddle }, { organizationId: ORG_ID }),
+    ).toEqual({ kind: 'already_scheduled', currentPeriodEndAt: 42 });
+    expect(cancel).not.toHaveBeenCalled();
+    expect(upsertSubscriptionByBillingCustomerId).not.toHaveBeenCalled();
   });
 
-  it('schedules cancel_at_period_end and mirrors the result into the local row', async () => {
-    const row = activeSubscription({ currentPeriodEndAt: 1_700_000_000_000 });
-    getSubscription.mockResolvedValue(row);
-    upsertSubscriptionByStripeCustomerId.mockResolvedValue(row);
-    const stripe = {
-      subscriptions: {
-        update: vi.fn().mockResolvedValue({ id: 'sub_test', cancel_at_period_end: true }),
-      },
-    };
-
+  it('schedules the cancel and returns the live period end', async () => {
+    getSubscription.mockResolvedValue(activeSubscription());
+    const { paddle, cancel } = fakePaddle();
     const outcome = await cancelSubscriptionAtPeriodEnd(
-      { db: FAKE_DB, stripe },
+      { db: FAKE_DB, paddle },
       { organizationId: ORG_ID },
     );
-
     expect(outcome).toEqual({
       kind: 'canceled_at_period_end',
-      stripeSubscriptionId: 'sub_test',
-      currentPeriodEndAt: 1_700_000_000_000,
+      billingSubscriptionId: 'sub_test',
+      currentPeriodEndAt: Date.parse(PERIOD_END),
     });
-    expect(stripe.subscriptions.update).toHaveBeenCalledWith('sub_test', {
-      cancel_at_period_end: true,
+    expect(cancel).toHaveBeenCalledWith('sub_test', { effective_from: 'next_billing_period' });
+    expect(upsertSubscriptionByBillingCustomerId.mock.calls[0]?.[2]).toMatchObject({
+      cancelAtPeriodEnd: true,
     });
-    expect(upsertSubscriptionByStripeCustomerId).toHaveBeenCalledTimes(1);
   });
 
-  it('propagates a Stripe API error to the caller rather than swallowing it', async () => {
+  it('also works for a trialing subscription', async () => {
+    getSubscription.mockResolvedValue(activeSubscription({ status: 'trialing' }));
+    const { paddle } = fakePaddle(liveSubscription({ status: 'trialing' }));
+    const outcome = await cancelSubscriptionAtPeriodEnd(
+      { db: FAKE_DB, paddle },
+      { organizationId: ORG_ID },
+    );
+    expect(outcome.kind).toBe('canceled_at_period_end');
+    expect(upsertSubscriptionByBillingCustomerId.mock.calls[0]?.[2]).toMatchObject({
+      status: 'trialing',
+      cancelAtPeriodEnd: true,
+    });
+  });
+
+  it('propagates a Paddle API error', async () => {
     getSubscription.mockResolvedValue(activeSubscription());
-    const stripeError = new Error('stripe: rate limited');
-    const stripe = { subscriptions: { update: vi.fn().mockRejectedValue(stripeError) } };
-
+    const { paddle } = fakePaddle(new Error('boom'));
     await expect(
-      cancelSubscriptionAtPeriodEnd({ db: FAKE_DB, stripe }, { organizationId: ORG_ID }),
-    ).rejects.toThrow('stripe: rate limited');
-
-    expect(upsertSubscriptionByStripeCustomerId).not.toHaveBeenCalled();
+      cancelSubscriptionAtPeriodEnd({ db: FAKE_DB, paddle }, { organizationId: ORG_ID }),
+    ).rejects.toThrow('boom');
   });
 });

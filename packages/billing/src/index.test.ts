@@ -3,13 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { PACKAGE, SUBSCRIPTION_STATUSES } from './index';
 import type { SubscriptionStatus } from './index';
 
-describe('@bidmorrow/billing skeleton', () => {
+describe('@bidmorrow/billing', () => {
   it('exports its package name', () => {
     expect(PACKAGE).toBe('@bidmorrow/billing');
   });
 
-  it('mirrors the Stripe-derived subscriptions.status vocabulary', () => {
-    expect(SUBSCRIPTION_STATUSES).toEqual(['trialing', 'active', 'past_due', 'canceled', 'unpaid']);
+  it("mirrors Paddle's subscription.status vocabulary (docs/data-model.md §9 CHECK)", () => {
+    expect(SUBSCRIPTION_STATUSES).toEqual(['trialing', 'active', 'past_due', 'paused', 'canceled']);
     expect(new Set(SUBSCRIPTION_STATUSES).size).toBe(SUBSCRIPTION_STATUSES.length);
 
     const entitled: readonly SubscriptionStatus[] = ['trialing', 'active'];

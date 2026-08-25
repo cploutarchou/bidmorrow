@@ -6,7 +6,7 @@ import { Pager } from '../../components/admin/Pager';
 import { AdminPage } from '../../components/admin/AdminPage';
 import type { AdminSubscription } from '../../lib/admin-types';
 
-const STATUSES = ['', 'trialing', 'active', 'past_due', 'canceled', 'unpaid'] as const;
+const STATUSES = ['', 'trialing', 'active', 'past_due', 'paused', 'canceled'] as const;
 
 export function Subscriptions(): ReactElement {
   const [status, setStatus] = useState<string>('');
@@ -54,7 +54,7 @@ export function Subscriptions(): ReactElement {
     <AdminPage
       documentTitle="Subscriptions — Admin"
       heading="Subscriptions"
-      note="Billing state as written by the Stripe webhook. Stripe remains the source of truth — a row here can lag a very recent change until its webhook is delivered."
+      note="Billing state as written by the Paddle webhook. Paddle remains the source of truth — a row here can lag a very recent change until its webhook is delivered."
     >
       <div className="admin-pills" role="group" aria-label="Filter by status">
         {STATUSES.map((s) => (

@@ -54,7 +54,13 @@ describe('pre-launch gates (workerd + local D1)', () => {
   it('GET /api/public-config returns the open state with the default launch date', async () => {
     const response = await exports.default.fetch('https://bidmorrow.local/api/public-config');
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ prelaunch: false, launchDate: DEFAULT_LAUNCH_DATE });
+    // `paddle` carries the PUBLIC Paddle.js token/environment (ADR-0011);
+    // the sentinel values come from vitest.config.ts.
+    expect(await response.json()).toEqual({
+      prelaunch: false,
+      launchDate: DEFAULT_LAUNCH_DATE,
+      paddle: { clientToken: 'test_fake_client_token', environment: 'sandbox' },
+    });
   });
 
   it('POST /api/auth/sign-up/email is refused with 403 signups_closed while prelaunch is on', async () => {

@@ -158,12 +158,12 @@ const TENANT_EXEMPT: Record<string, { name: string; reason: string }[]> = {
   'billing.ts': [
     {
       name: 'insertBillingEventIfNew',
-      reason: 'Stripe webhook ledger; organizationId is nullable but EXPLICIT in args',
+      reason: 'billing-provider webhook ledger; organizationId is nullable but EXPLICIT in args',
     },
     {
-      name: 'getBillingEventByStripeId',
+      name: 'getBillingEventByProviderId',
       reason:
-        'idempotency/retry read on the same unique stripe_event_id ledger as insertBillingEventIfNew ' +
+        'idempotency/retry read on the same unique provider_event_id ledger as insertBillingEventIfNew ' +
         '— distinguishes a true duplicate from a retryable failed/stuck row; organization_id is ' +
         'nullable on this table by design (see file header) and is not a lookup key here.',
     },
@@ -171,7 +171,7 @@ const TENANT_EXEMPT: Record<string, { name: string; reason: string }[]> = {
       name: 'markBillingEventStatus',
       reason:
         'terminal-status transition on an already-recorded billing_events row, keyed on the ' +
-        'unique stripe_event_id (which may itself be organization_id: null — unresolvable at ' +
+        'unique provider_event_id (which may itself be organization_id: null — unresolvable at ' +
         'insert time); never touches tenant-owned data.',
     },
     {

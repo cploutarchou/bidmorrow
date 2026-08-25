@@ -902,8 +902,8 @@ orgRoutes.post('/onboarding/complete', requireRole('ORGANIZATION_OWNER'), async 
  * grace period (docs/privacy.md commitment 3), giving support a window to
  * reverse an accidental deletion before it becomes unrecoverable.
  *
- * Stripe: best-effort `cancel_at_period_end` cancellation. Never blocks the
- * deletion itself — Stripe being unreachable/misconfigured must not prevent
+ * Billing: best-effort cancel-at-period-end via Paddle. Never blocks the
+ * deletion itself — Paddle being unreachable/misconfigured must not prevent
  * a privacy-motivated deletion. Every outcome (canceled / no subscription /
  * already canceled / not configured / API error) is written into the audit
  * row's `afterSummary` so an unconfigured or failed cancellation is always
@@ -939,18 +939,20 @@ orgRoutes.delete(
     let billingSummary: string;
     const billingConfig = resolveBillingConfig(c.env);
     if (billingConfig === null) {
-      billingSummary = 'stripe_not_configured; manual cancellation required';
-      c.get('logger').warn('org.delete.stripe_not_configured', { organization_id: organizationId });
+      billingSummary = 'billing_not_configured; manual cancellation required';
+      c.get('logger').warn('org.delete.billing_not_configured', {
+        organization_id: organizationId,
+      });
     } else {
       try {
         const outcome = await cancelSubscriptionForOrgDeletion(
-          { db, stripe: billingConfig.stripe },
+          { db, paddle: billingConfig.paddle },
           { organizationId },
         );
-        billingSummary = `stripe:${outcome.kind}`;
+        billingSummary = `billing:${outcome.kind}`;
       } catch (cause) {
-        billingSummary = 'stripe_cancellation_failed; manual cancellation required';
-        c.get('logger').error('org.delete.stripe_cancellation_failed', {
+        billingSummary = 'billing_cancellation_failed; manual cancellation required';
+        c.get('logger').error('org.delete.billing_cancellation_failed', {
           organization_id: organizationId,
           error: cause instanceof Error ? cause.message : String(cause),
         });

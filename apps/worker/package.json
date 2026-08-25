@@ -23,7 +23,6 @@
     "@bidmorrow/ted": "workspace:*",
     "@hono/zod-validator": "^0.9.0",
     "hono": "^4.13.0",
-    "stripe": "^22.5.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

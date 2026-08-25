@@ -27,7 +27,7 @@ once implemented, and any divergence must be reconciled back into this doc.
   where the payload is opaque to queries (event properties, raw webhook
   payloads, structured reason lists).
 - **Money**: `INTEGER` amounts in minor units where exactness matters
-  (Stripe), `REAL` for tender estimated values (source data is already
+  (billing — Paddle amounts are lowest-unit strings, parsed once at the boundary), `REAL` for tender estimated values (source data is already
   approximate; EUR-converted values are derived).
 - **Tenant ownership**: every table owned by a customer organization carries
   `organization_id TEXT NOT NULL REFERENCES organizations(id)` and an index
@@ -580,33 +580,36 @@ checkout). Server-side entitlements read this row.
 
 - `id TEXT PK` · `organization_id TEXT NOT NULL FK → organizations` —
   **unique** (1:1).
-- `stripe_customer_id TEXT NOT NULL` — **unique**.
-- `stripe_subscription_id TEXT NULL` — **unique**; null between customer
-  creation and checkout completion.
+- `billing_customer_id TEXT NOT NULL` — **unique** (Paddle `ctm_…`;
+  provider-neutral name since migration 0011, ADR-0011).
+- `billing_subscription_id TEXT NULL` — **unique** (`sub_…`); null between
+  customer creation and checkout completion.
 - `status TEXT NOT NULL` — `trialing` \| `active` \| `past_due` \|
-  `canceled` \| `unpaid` (CHECK) — mirrors Stripe.
+  `paused` \| `canceled` (CHECK) — identical to Paddle's set; `paused` is
+  non-entitled.
 - `plan TEXT NOT NULL` — `founding` \| `standard` (CHECK).
 - `current_period_end_at INTEGER NULL` — entitlement grace boundary.
 - `cancel_at_period_end INTEGER NOT NULL` — default 0.
-- **Unique** `(organization_id)`, `(stripe_customer_id)`,
-  `(stripe_subscription_id)` — the two Stripe uniques are the webhook →
+- **Unique** `(organization_id)`, `(billing_customer_id)`,
+  `(billing_subscription_id)` — the two provider uniques are the webhook →
   organization resolution path.
 
 ### billing_events
 
-Raw Stripe webhook ledger. **Unique `stripe_event_id` is the DB-enforced
+Raw Paddle webhook ledger. **Unique `provider_event_id` is the DB-enforced
 idempotency guard**: handlers insert first; a conflict means the event was
 already processed (or is in flight) and the webhook returns 200 without
 side effects.
 
-- `id TEXT PK` · `stripe_event_id TEXT NOT NULL` — **unique**.
-- `type TEXT NOT NULL` — e.g. `customer.subscription.updated`.
-- `organization_id TEXT NULL FK → organizations` — resolved via customer id,
+- `id TEXT PK` · `provider_event_id TEXT NOT NULL` — **unique** (`evt_…`).
+- `type TEXT NOT NULL` — e.g. `subscription.updated`.
+- `organization_id TEXT NULL FK → organizations` — resolved via
+  `custom_data.organization_id`,
   null when unresolvable.
 - `payload_json TEXT NOT NULL` — full event payload.
 - `status TEXT NOT NULL` — `received` \| `processed` \| `failed` \| `ignored`
   (CHECK) · `processed_at INTEGER NULL`.
-- **Unique** `(stripe_event_id)` · **Index** `(organization_id, created_at)`
+- **Unique** `(provider_event_id)` · **Index** `(organization_id, created_at)`
   — admin billing debugging.
 
 ## 10. Ops, analytics & admin
@@ -660,10 +663,11 @@ booleans, numbers and structured config.
   list is `FEATURE_FLAG_KEYS` in `packages/config/src/feature-flags.ts`
   (each constant carries its value shape and absent-default in a doc
   comment); `packages/config/src/env.test.ts` asserts the exact list, so a
-  new flag cannot land without updating it. As of 2026-08-21:
+  new flag cannot land without updating it. As of 2026-08-25:
   `founding_plan_open`, `founding_cap`, `ingestion_paused`, `digest_paused`,
-  `ingestion_cpv_scope`, `entitlement_enforced`, `stripe_tax_enabled`,
-  `prelaunch`, `launch_date`, `fetch_retry_attempts_suspended`.
+  `ingestion_cpv_scope`, `entitlement_enforced`, `prelaunch`, `launch_date`,
+  `fetch_retry_attempts_suspended` (`stripe_tax_enabled` removed by
+  ADR-0011 — Paddle handles tax as Merchant of Record).
 - `value_json TEXT NOT NULL` — e.g. `true`, `20`,
   `{"divisions":["72","79"],"extra_codes":[...]}`.
 - `description TEXT NOT NULL` — what the flag does and safe values.
@@ -734,8 +738,8 @@ erDiagram
 | 8   | Version insert idempotency                                                                                    | tender_notice_versions                             | `(notice_id, version_number)` unique                                         |
 | 9   | Scoring idempotency / recompute                                                                               | tender_matches                                     | `(organization_id, lot_id, engine_version)` unique                           |
 | 10  | Digest dedupe (one per org per day)                                                                           | digest_runs                                        | `(organization_id, digest_date)` unique                                      |
-| 11  | Stripe webhook idempotency                                                                                    | billing_events                                     | `(stripe_event_id)` unique                                                   |
-| 12  | Stripe webhook → org resolution                                                                               | subscriptions                                      | `(stripe_customer_id)` / `(stripe_subscription_id)` unique                   |
+| 11  | Paddle webhook idempotency                                                                                    | billing_events                                     | `(provider_event_id)` unique                                                 |
+| 12  | Paddle webhook → org resolution                                                                               | subscriptions                                      | `(billing_customer_id)` / `(billing_subscription_id)` unique                 |
 | 13  | Email provider status webhook → row                                                                           | email_deliveries                                   | partial unique `(provider, provider_message_id)`                             |
 | 14  | Purge scan: expired lots, then owned rows                                                                     | tender_lots / tender_matches / saved_tenders       | `(deadline_at)` / `(lot_id)` / `(lot_id)`                                    |
 | 15  | Admin: notices per window, run history, notice errors                                                         | tender_notices / ingestion_runs / ingestion_errors | `(publication_date)` / `(source, started_at)` / `(source, source_notice_id)` |

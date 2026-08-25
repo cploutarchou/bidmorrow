@@ -13,16 +13,18 @@ prerequisites live in HUMAN_DECISION_BLOCKERS.md.
 
 ## Environments
 
-| Env        | Purpose                           | D1 / Queues / R2              | Stripe mode          | Secrets                                |
-| ---------- | --------------------------------- | ----------------------------- | -------------------- | -------------------------------------- |
-| local      | dev on `wrangler dev` (Miniflare) | local simulators              | test keys (or mocks) | `.dev.vars` (git-ignored)              |
-| test       | CI (vitest-pool-workers)          | ephemeral, per-file isolation | mocked               | injected by test config                |
-| staging    | pre-prod verification             | dedicated staging resources   | **test mode**        | `wrangler secret put --env staging`    |
-| production | customers                         | dedicated prod resources      | **live mode**        | `wrangler secret put --env production` |
+| Env        | Purpose                           | D1 / Queues / R2              | Paddle environment     | Secrets                                |
+| ---------- | --------------------------------- | ----------------------------- | ---------------------- | -------------------------------------- |
+| local      | dev on `wrangler dev` (Miniflare) | local simulators              | sandbox keys (or none) | `.dev.vars` (git-ignored)              |
+| test       | CI (vitest-pool-workers)          | ephemeral, per-file isolation | mocked                 | injected by test config                |
+| staging    | pre-prod verification             | dedicated staging resources   | **sandbox**            | `wrangler secret put --env staging`    |
+| production | customers                         | dedicated prod resources      | **production (live)**  | `wrangler secret put --env production` |
 
 Rules: environments **never** share databases, queues, buckets, secrets, or
-Stripe modes. Staging always uses Stripe test keys; production always live —
-never mixed (blocker 4).
+Paddle environments. Staging always uses Paddle **sandbox** credentials
+(`pdl_sdbx_…` key, `test_…` client token, `PADDLE_ENVIRONMENT=sandbox`);
+production always live (`pdl_live_…`, `live_…`,
+`PADDLE_ENVIRONMENT=production`) — never mixed (blocker 4, ADR-0011).
 
 ## wrangler.jsonc structure (apps/worker) [validate: Phase 13]
 
@@ -56,8 +58,11 @@ env-specific resource names/ids — wrangler does not inherit bindings.
 ## Secrets management
 
 - Set per environment: `wrangler secret put BETTER_AUTH_SECRET --env production`
-  (repeat for `RESEND_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
-  price IDs, `ADMIN_EMAILS`). Same command with `--env staging`.
+  (repeat for `RESEND_API_KEY`, `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`,
+  `PADDLE_PRICE_FOUNDING_MONTHLY`, `PADDLE_PRICE_STANDARD_MONTHLY`,
+  `ADMIN_EMAILS`; `PADDLE_CLIENT_TOKEN` and `PADDLE_ENVIRONMENT` are
+  GitHub environment _variables_ pushed the same way). Same command with
+  `--env staging`.
 - CI holds only `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (blocker 1),
   stored as **GitHub environment secrets** on `staging` and `production`
   GitHub environments — production environment requires reviewers (blocker 8).
@@ -142,8 +147,8 @@ emergency path only.
   itself; there are no dashboard steps. Until that deploy, the zone
   Overview showing **"No Workers connected" is expected**, not an error.
   Never use the dashboard's "Connect Worker" button to attach the staging
-  worker to the zone — that would serve the staging environment (test
-  Stripe, staging DB) on the production domain.
+  worker to the zone — that would serve the staging environment (Paddle
+  sandbox, staging DB) on the production domain.
 - `www.bidmorrow.com` → apex: one Cloudflare **Redirect Rule**
   (Dashboard → Rules → Redirect Rules), owner action at production
   cutover. Recorded on the production cutover checklist.
@@ -153,25 +158,38 @@ emergency path only.
   certificate at deploy; error 100117 means a conflicting pre-existing
   `staging` record must be deleted from the zone first. The old
   workers.dev origin stops serving once `workers_dev: false` deploys —
-  update the test-mode Stripe webhook endpoint URL accordingly
-  (see "Stripe webhook registration").
+  update the sandbox notification destination URL accordingly
+  (see "Paddle webhook registration").
 - HSTS and CSP come from the Worker (security.md C3/C4), not DNS.
 
-## Stripe webhook registration [validate: Phase 13]
+## Paddle webhook registration (ADR-0011)
 
-After first production deploy, register in the Stripe Dashboard (live mode):
-endpoint `https://bidmorrow.com/api/webhooks/stripe` (the implemented
-route — see apps/worker/src/routes/webhooks.ts), API version
-`2026-07-29.dahlia`, events per docs/dependency-versions.md Stripe set;
-copy the signing secret into the GitHub `production` environment secret
-`STRIPE_WEBHOOK_SECRET` (the deploy workflow pushes it to the Worker).
-Repeat in test mode against
-`https://staging.bidmorrow.com/api/webhooks/stripe` with the staging
-secret. The test-mode webhook was originally registered against the
-staging workers.dev URL — after the 2026-08-16 custom-domain switch the
-owner must EDIT that endpoint's URL in the Stripe Dashboard (test mode);
-editing the URL keeps the same signing secret, so no secret rotation is
-needed. (Blocker 4.)
+Paddle calls these "notification destinations" (dashboard: Developer
+tools → Notifications). Each destination has its OWN secret
+(`pdl_ntfset_…`) — sandbox and live are separate accounts with separate
+destinations and secrets, never shared.
+
+- **Sandbox → staging (DONE 2026-08-25, created via the Paddle MCP):**
+  destination `ntfset_01m0wx39g6qmk4m1bmf39mpa4d` →
+  `https://staging.bidmorrow.com/api/webhooks/paddle`, `traffic_source:
+all` (so simulator runs reach staging too). The owner copies its secret
+  into the GitHub `staging` environment secret `PADDLE_WEBHOOK_SECRET`
+  (blocker 4); the deploy workflow pushes it to the Worker.
+- **Live → production (owner, before the first real charge):** in the
+  LIVE dashboard create a destination for
+  `https://bidmorrow.com/api/webhooks/paddle` with the same event set and
+  copy its secret into the `production` environment secret.
+
+Subscribed events (the implemented handler, `packages/billing/src/webhook.ts`):
+`subscription.created`, `subscription.activated`, `subscription.trialing`,
+`subscription.updated`, `subscription.past_due`, `subscription.paused`,
+`subscription.resumed`, `subscription.canceled`. Every event is processed the
+same way (re-fetch the subscription, upsert) so adding an event never needs
+code. Signature: `Paddle-Signature: ts=…;h1=…`, HMAC-SHA256 over
+`${ts}:${rawBody}`; verified before parsing (docs/security.md C9).
+
+Editing a destination's URL keeps its secret; deleting and recreating one
+rotates it (then update the GitHub secret + redeploy).
 
 ## Resend domain authentication (blocker 2/3)
 

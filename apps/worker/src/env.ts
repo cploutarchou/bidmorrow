@@ -66,20 +66,25 @@ export interface Env {
   /** Verified Resend sender, e.g. `BidMorrow <digest@bidmorrow.com>`. */
   EMAIL_FROM?: string;
   /**
-   * Stripe secret key (test-mode only outside production — never real
-   * credentials in this repo, HUMAN_DECISION_BLOCKERS.md item 4). Optional
-   * in local/test: absent means `/api/billing/*` and the webhook endpoint
-   * respond `not_configured` rather than construct a client with an empty
-   * key. REQUIRED in staging/production (`@bidmorrow/config`
-   * `DEPLOYED_REQUIRED_NAMES`).
+   * Paddle Billing (ADR-0011). Sandbox credentials only outside production
+   * — never real credentials in this repo, HUMAN_DECISION_BLOCKERS.md item
+   * 4. All optional in local/test: absent means `/api/billing/*` and the
+   * webhook endpoint respond `not_configured` rather than construct a
+   * client with an empty key. REQUIRED in staging/production
+   * (`@bidmorrow/config` `DEPLOYED_REQUIRED_NAMES`).
    */
-  STRIPE_SECRET_KEY?: string;
-  /** Stripe webhook signing secret (`whsec_...`) — verifies `stripe-signature`. */
-  STRIPE_WEBHOOK_SECRET?: string;
-  /** Stripe Price id for `BIDMORROW_FOUNDING_MONTHLY` (€29/mo, capped). Never invented (HUMAN_DECISION_BLOCKERS.md item 4). */
-  STRIPE_PRICE_FOUNDING_MONTHLY?: string;
-  /** Stripe Price id for `BIDMORROW_STANDARD_MONTHLY` (€49/mo). Never invented (HUMAN_DECISION_BLOCKERS.md item 4). */
-  STRIPE_PRICE_STANDARD_MONTHLY?: string;
+  /** Server-side API key (`pdl_sdbx_apikey_…` / `pdl_live_apikey_…`) — secret. */
+  PADDLE_API_KEY?: string;
+  /** Notification-destination secret (`pdl_ntfset_…`) — verifies `paddle-signature`. Secret. */
+  PADDLE_WEBHOOK_SECRET?: string;
+  /** Client-side token for Paddle.js (`test_…` / `live_…`) — public by design, still env-scoped. */
+  PADDLE_CLIENT_TOKEN?: string;
+  /** `sandbox` | `production` — selects the API base and what Paddle.js targets. Never derived from APP_ENV. */
+  PADDLE_ENVIRONMENT?: string;
+  /** Paddle price id (`pri_…`) for BidMorrow Founding monthly (€29 incl. VAT, capped). Never invented. */
+  PADDLE_PRICE_FOUNDING_MONTHLY?: string;
+  /** Paddle price id (`pri_…`) for BidMorrow Standard monthly (€49 incl. VAT). Never invented. */
+  PADDLE_PRICE_STANDARD_MONTHLY?: string;
   /**
    * Phase 12 stage A: second half of the double-gate (alongside `APP_ENV ===
    * 'local' | 'test'`) that activates the test-only auth-email mailbox

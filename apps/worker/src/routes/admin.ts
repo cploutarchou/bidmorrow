@@ -33,7 +33,6 @@ import {
   FLAG_FOUNDING_PLAN_OPEN,
   FLAG_INGESTION_CPV_SCOPE,
   FLAG_INGESTION_PAUSED,
-  FLAG_STRIPE_TAX,
   FLAG_PRELAUNCH,
   FLAG_LAUNCH_DATE,
 } from '@bidmorrow/config';
@@ -854,7 +853,6 @@ function validateFlagValue(key: FeatureFlagKey, value: unknown): string | null {
     case FLAG_INGESTION_PAUSED:
     case FLAG_DIGEST_PAUSED:
     case FLAG_ENTITLEMENT_ENFORCED:
-    case FLAG_STRIPE_TAX:
     case FLAG_PRELAUNCH:
     case FLAG_FETCH_RETRY_ATTEMPTS_SUSPENDED:
       return typeof value === 'boolean' ? valueJson : null;
