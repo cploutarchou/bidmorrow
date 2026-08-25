@@ -20,7 +20,7 @@ skill before relying on any entry older than ~1 month.
 | drizzle-orm / drizzle-kit       | 0.45.2 / 0.31.10        | 1.0 at rc.4 — pin 0.45.x, revisit after 1.0 stable                                                                                                           |
 | better-auth                     | 1.6.29                  | 1.7 at rc — pin stable; no beta/RC auth (project rule)                                                                                                       |
 | @better-auth/drizzle-adapter    | 1.6.x                   | official adapter package (moved out of better-auth core path); peer drizzle-orm ^0.45.2                                                                      |
-| stripe                          | 22.x                    | pinned API version 2026-07-29.dahlia; Workers requires `constructEventAsync` (SubtleCrypto)                                                                  |
+| @paddle/paddle-js               | 1.6.x                   | SPA-only loader for Paddle.js (fetched from cdn.paddle.com at runtime); NO server SDK — Worker uses a fetch client + Web Crypto HMAC (ADR-0011)              |
 | resend                          | 6.x                     | fetch-based; Workers-compatible; batch ≤100/call; default rate limit 2 req/s                                                                                 |
 | zod                             | 4.x (verify at install) | validation at API boundary                                                                                                                                   |
 
@@ -54,28 +54,42 @@ skill before relying on any entry older than ~1 month.
 - **R2**: free tier 10 GB + 1M Class A + 10M Class B per month; lifecycle
   rules supported (age-based deletion / IA transition).
 
-## Stripe facts
+## Paddle facts (ADR-0011, verified 2026-08-25 via the paddle-docs MCP / API reference)
 
-- Current API version: `2026-07-29.dahlia`; monthly dated versions,
-  biannual named majors.
-- Subscription webhook set (verify wording again in Phase 9):
-  `checkout.session.completed`, `customer.subscription.created`,
-  `customer.subscription.updated`, `customer.subscription.deleted`,
-  `invoice.paid`, `invoice.payment_failed`.
-- Ordering NOT guaranteed; at-least-once delivery → dedupe on event ID +
-  re-fetch object state from the API instead of trusting payload order.
-- Client billing surface (2026-08-18, verified against the installed
-  `stripe@22.5.0` SDK types — inline citations in
-  `packages/billing/src/{stripe-types,invoices}.ts`):
-  `invoices.list({customer, limit})` (`InvoiceListParams` extends
-  `PaginationParams`, limit 1–100); `Invoice.period_start`/`period_end`/
-  `hosted_invoice_url`/`invoice_pdf`/`amount_due`/`amount_paid`/`number`/
-  `status`/`currency`/`created` are top-level fields;
-  `SubscriptionUpdateParams.cancel_at_period_end?: boolean` serves both
-  user cancel (true) and reactivate (false). Invoice list ordering
-  (reverse-chronological default) was cross-checked via WebSearch only —
-  docs.stripe.com is egress-blocked from this sandbox; the UI re-sorts
-  nothing and displays what the API returns.
+- API bases: sandbox `https://sandbox-api.paddle.com`, live
+  `https://api.paddle.com`. Auth: `Authorization: Bearer <api key>`
+  (`pdl_sdbx_apikey_…` / `pdl_live_apikey_…`). Bodies/responses snake_case;
+  amounts are lowest-unit **strings** (`"2900"` = €29.00); timestamps RFC 3339.
+- Endpoints used (`packages/billing/src/paddle-client.ts`):
+  `POST /transactions` (items + `custom_data` + optional `customer_id`;
+  `custom_data` is copied onto the subscription Paddle creates),
+  `GET /subscriptions/{id}`, `POST /subscriptions/{id}/cancel`
+  (`effective_from: next_billing_period` default → `scheduled_change`),
+  `PATCH /subscriptions/{id} { scheduled_change: null }` (the only allowed
+  value — removes a pending change), `GET /transactions?customer_id=&status=&order_by=billed_at[DESC]&per_page=`
+  (**per_page max 30**, silently capped), `GET /transactions/{id}`,
+  `GET /transactions/{id}/invoice` (temporary PDF URL),
+  `POST /customers/{id}/portal-sessions` (temporary authenticated links —
+  never cache; `urls.general.overview`, per-subscription cancel/update
+  links when `subscription_ids` passed).
+- Subscription statuses: `active | canceled | past_due | paused | trialing`
+  (`canceled` is terminal — cannot be reinstated). Transaction statuses:
+  `draft | ready | billed | paid | completed | canceled | past_due`.
+- Webhooks: header `Paddle-Signature: ts=<unix s>;h1=<hex>`; signed payload
+  `${ts}:${rawBody}`; HMAC-SHA256 with the destination's secret
+  (`pdl_ntfset_…`, one per destination); SDK default tolerance 5 s (we use
+  5 min). Only a 2xx within 5 s counts as delivered; retries: sandbox 3
+  attempts over ~15 min, live 60 attempts over ~3 days, same `event_id`
+  every time; no ordering guarantee; no redirect following. Event envelope:
+  `{ event_id, event_type, occurred_at, notification_id, data }`.
+- Paddle.js: must be loaded from `https://cdn.paddle.com/paddle/v2/paddle.js`
+  (the npm package only wraps that loader); `initializePaddle({ token,
+environment: 'sandbox' | omitted })`; `Checkout.open({ transactionId,
+customer: { email }, settings: { successUrl } })`. Requires a default
+  payment link and an approved domain in the dashboard (sandbox auto-approves).
+- Fees: 5% + 50¢ per transaction (Paddle's published MoR rate).
+- Sandbox test card `4242 4242 4242 4242`, any future expiry, any CVC;
+  `4000 0000 0000 0002` declines.
 
 ## Better Auth facts
 
@@ -265,7 +279,6 @@ table above.)
 ## Unverified / to re-check when network allows
 
 - Resend pricing tiers (free 3k/mo, $20/50k figures from secondary sources).
-- Stripe webhook-set page wording (verified via snippets + stripe-node source).
 
 ## TED notice-XML download route (2026-08-18)
 

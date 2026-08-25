@@ -510,7 +510,7 @@ to a scoring-ready profile in minutes.
 
 ## 8. Backend/API needs (deliberately minimal)
 
-- **None required for M0–M1.** The Stripe return URL for the new
+- **None required for M0–M1.** The checkout return URL for the new
   `/app/billing/success` route is config-side (M2).
 - Optional, each behind an owner decision: public founding-availability
   endpoint for a live "spots remaining" counter (D6 — must be wired to
@@ -569,7 +569,7 @@ to a scoring-ready profile in minutes.
   keep per-page canonicals. `noindex` meta on app/admin shells.
 
 **Analytics**: none added (product rule). Conversion insight limited to
-what Stripe/signup funnel already shows unless D7 approved.
+what the billing-provider/signup funnel already shows unless D7 approved.
 
 **Testing**:
 
@@ -674,7 +674,7 @@ specialist agent and treated as a senior reviewer of its own lane:
 5. **Frontend engineering** — `frontend` agent, implementation in the
    existing stack.
 6. **Backend & integration engineering** — `backend` agent; only the
-   Stripe success-URL config and any owner-approved D6/D7 endpoints.
+   checkout success-URL config and any owner-approved D6/D7 endpoints.
 7. **Security & privacy** — `security` agent, read-only reviews at
    M0/M1/M2 (CSP, escaping, no client-side authz, no trackers).
 8. **Accessibility, SEO & performance** — budgets set in M0, enforced

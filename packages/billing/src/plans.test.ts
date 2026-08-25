@@ -2,28 +2,29 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_FOUNDING_CAP,
-  mapStripeSubscriptionStatus,
+  PLAN_PRICES,
+  mapPaddleSubscriptionStatus,
   planFromPriceId,
   priceIdForPlan,
   type PriceIds,
 } from './plans';
 
 const PRICE_IDS: PriceIds = {
-  founding: 'price_founding_test',
-  standard: 'price_standard_test',
+  founding: 'pri_founding_test',
+  standard: 'pri_standard_test',
 };
 
 describe('planFromPriceId / priceIdForPlan', () => {
   it('maps a known founding price id to the founding plan', () => {
-    expect(planFromPriceId(PRICE_IDS, 'price_founding_test')).toBe('founding');
+    expect(planFromPriceId(PRICE_IDS, 'pri_founding_test')).toBe('founding');
   });
 
   it('maps a known standard price id to the standard plan', () => {
-    expect(planFromPriceId(PRICE_IDS, 'price_standard_test')).toBe('standard');
+    expect(planFromPriceId(PRICE_IDS, 'pri_standard_test')).toBe('standard');
   });
 
   it('never fabricates a plan for an unrecognized price id', () => {
-    expect(planFromPriceId(PRICE_IDS, 'price_unknown')).toBeNull();
+    expect(planFromPriceId(PRICE_IDS, 'pri_unknown')).toBeNull();
   });
 
   it('round-trips plan -> price id -> plan', () => {
@@ -32,24 +33,34 @@ describe('planFromPriceId / priceIdForPlan', () => {
   });
 });
 
-describe('mapStripeSubscriptionStatus', () => {
-  it('passes through the five statuses that exist in both vocabularies unchanged', () => {
-    for (const status of ['trialing', 'active', 'past_due', 'canceled', 'unpaid'] as const) {
-      expect(mapStripeSubscriptionStatus(status)).toBe(status);
+describe('mapPaddleSubscriptionStatus', () => {
+  it('passes through all five Paddle statuses unchanged', () => {
+    for (const status of ['trialing', 'active', 'past_due', 'paused', 'canceled'] as const) {
+      expect(mapPaddleSubscriptionStatus(status)).toBe(status);
     }
   });
 
-  it('maps incomplete to unpaid (payment not yet completed, not entitled)', () => {
-    expect(mapStripeSubscriptionStatus('incomplete')).toBe('unpaid');
+  it('fails safe (canceled) for an unrecognized future Paddle status', () => {
+    expect(mapPaddleSubscriptionStatus('some_future_status')).toBe('canceled');
+    expect(mapPaddleSubscriptionStatus('unpaid')).toBe('canceled');
+    expect(mapPaddleSubscriptionStatus('')).toBe('canceled');
   });
+});
 
-  it('maps incomplete_expired and paused to canceled (no active subscription)', () => {
-    expect(mapStripeSubscriptionStatus('incomplete_expired')).toBe('canceled');
-    expect(mapStripeSubscriptionStatus('paused')).toBe('canceled');
-  });
-
-  it('fails safe (canceled) for an unrecognized future Stripe status', () => {
-    expect(mapStripeSubscriptionStatus('some_future_status')).toBe('canceled');
+describe('PLAN_PRICES', () => {
+  it('are the owner-decided flat EUR monthly prices, tax-exclusive', () => {
+    expect(PLAN_PRICES.founding).toEqual({
+      amountMinorUnits: 2900,
+      currency: 'eur',
+      interval: 'month',
+      taxExclusive: true,
+    });
+    expect(PLAN_PRICES.standard).toEqual({
+      amountMinorUnits: 4900,
+      currency: 'eur',
+      interval: 'month',
+      taxExclusive: true,
+    });
   });
 });
 

@@ -1,6 +1,6 @@
 ---
 name: backend
-description: Invoke to implement or modify server-side application code - Hono API routes, domain services, queue consumers, cron jobs, ingestion pipeline wiring, matching engine execution, digest generation logic. Not for schema changes (database agent) or Stripe (billing agent).
+description: Invoke to implement or modify server-side application code - Hono API routes, domain services, queue consumers, cron jobs, ingestion pipeline wiring, matching engine execution, digest generation logic. Not for schema changes (database agent) or Paddle billing (billing agent).
 model: sonnet
 effort: medium
 tools: Read, Grep, Glob, Write, Edit, Bash

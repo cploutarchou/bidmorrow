@@ -74,7 +74,7 @@ const entitlementEnforcedSchema = z.object({ enabled: z.boolean() }).strict();
 // Deliberately narrow (one named flag, boolean only) rather than a generic
 // set-any-flag hook — the smallest surface that lets E2E exercise the 402
 // paywall state, which is unreachable otherwise (the local stack has no
-// Stripe, so no subscription can ever exist to satisfy enforcement).
+// Paddle, so no subscription can ever exist to satisfy enforcement).
 // Session-gated like score-now; the double-gate above already 404s outside
 // local/test with E2E_TEST_HOOKS.
 testHookRoutes.post(

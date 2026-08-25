@@ -5,12 +5,12 @@ import { api } from './api';
  * state: Settings → Billing and the post-checkout confirmation page.
  *
  * These mirror `packages/billing/src/plans.ts` as string literals rather than
- * importing `@bidmorrow/billing`, which would pull the Stripe SDK into the web
- * bundle for a handful of enum values. The shape is `GET /api/billing/status`
+ * importing `@bidmorrow/billing`, which would pull server-side billing code into
+ * the web bundle for a handful of enum values. The shape is `GET /api/billing/status`
  * (apps/worker/src/routes/billing.ts).
  */
 export type SubscriptionPlan = 'founding' | 'standard';
-export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid';
+export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
 
 export interface BillingStatus {
   entitlement: {
@@ -24,7 +24,8 @@ export interface BillingStatus {
     status: SubscriptionStatus;
     cancelAtPeriodEnd: boolean;
     currentPeriodEndAt: number | null;
-    price: { amountMinorUnits: number; currency: string; interval: string };
+    /** `taxExclusive`: VAT is added by Paddle at checkout for the customer's country. */
+    price: { amountMinorUnits: number; currency: string; interval: string; taxExclusive: boolean };
     paymentState: SubscriptionStatus;
   } | null;
   foundingAvailable: boolean;
@@ -35,7 +36,7 @@ export function fetchBillingStatus(): Promise<BillingStatus> {
 }
 
 /**
- * Delays between polls (ms) while waiting for the Stripe webhook to write the
+ * Delays between polls (ms) while waiting for the Paddle webhook to write the
  * subscription row. Roughly 15 s in total, then the caller stops and says so.
  */
 export const SUBSCRIPTION_POLL_DELAYS_MS = [1000, 2000, 3000, 4000, 5000] as const;
@@ -60,7 +61,7 @@ export interface PollDeps {
  *   client's side the two are indistinguishable, and neither is evidence that
  *   the payment failed, so a transient error must not surface as one.
  * - Running out of attempts returns `not-yet`, never a failure. The webhook
- *   can legitimately be slow (it does a Stripe round trip first, and delivery
+ *   can legitimately be slow (it does a Paddle round trip first, and delivery
  *   is at-least-once with no ordering guarantee).
  */
 export async function pollForSubscription(

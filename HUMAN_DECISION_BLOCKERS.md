@@ -15,10 +15,12 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
 
 1. **`production` GitHub environment secrets** (repo → Settings →
    Environments → production): `CLOUDFLARE_API_TOKEN` +
-   `CLOUDFLARE_ACCOUNT_ID` (item 1), live-mode `STRIPE_SECRET_KEY` +
-   `STRIPE_PRICE_FOUNDING_MONTHLY` + `STRIPE_PRICE_STANDARD_MONTHLY` +
-   `STRIPE_WEBHOOK_SECRET` (item 4), production `RESEND_API_KEY`
-   (item 3.2). Variables: `ADMIN_EMAILS`; `EMAIL_FROM` after item 2.3.
+   `CLOUDFLARE_ACCOUNT_ID` (item 1), LIVE `PADDLE_API_KEY` +
+   `PADDLE_WEBHOOK_SECRET` + `PADDLE_PRICE_FOUNDING_MONTHLY` +
+   `PADDLE_PRICE_STANDARD_MONTHLY` (item 4, Paddle since 2026-08-25),
+   production `RESEND_API_KEY` (item 3.2). Variables: `ADMIN_EMAILS`;
+   `EMAIL_FROM` after item 2.3; `PADDLE_CLIENT_TOKEN` (`live_…`) +
+   `PADDLE_ENVIRONMENT=production` (item 4).
    (`BETTER_AUTH_SECRET` already set ✓.)
 2. **Production deploy gating — RESOLVED 2026-08-16 (with a plan-limit
    discovery)**: the owner HAS GitHub Pro, which enforces the `main`
@@ -44,20 +46,24 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
    set in BOTH `staging` and `production` environments. Both
    environments redeployed the same evening to push the new values —
    real signup-verification + digest email is LIVE.
-5. **Stripe live mode** (item 4): activate as Individual, recreate
-   products/prices, register the live webhook for
-   `https://bidmorrow.com/api/webhooks/stripe` (can be done BEFORE the
-   first deploy — the URL is fixed), enable Customer Portal (both modes).
+5. **Paddle live account** (detailed in item 4 below — REPLACES the former Stripe item —
+   ADR-0011, 2026-08-25): get the live Paddle seller account approved,
+   website approval for `bidmorrow.com`, live catalog, live notification
+   destination for `https://bidmorrow.com/api/webhooks/paddle` (can be
+   done BEFORE the first deploy — the URL is fixed), live client token,
+   default payment link. **Paddle's approval takes days — start now.**
+   Plus, for staging: copy the sandbox API key + webhook secret into the
+   `staging` GitHub environment (item 4a).
 6. **Legal inputs** (item 7): ~~postal address + privacy email~~ DECIDED
-   2026-08-16 (email-only contact, implemented). ~~VAT approach~~ FINAL
-   2026-08-16: **no VAT at launch** — owner has no VAT registration, so
-   flat prices, no tax line, no VAT ID field; the flag-gated Stripe Tax
-   integration stays dormant until VAT registration (details in item 7).
-   No owner action needed.
-7. ~~**Test-mode Stripe webhook URL update**~~ **DONE 2026-08-16**
-   (owner confirmed): the test-mode endpoint now targets
-   `https://staging.bidmorrow.com/api/webhooks/stripe`; signing secret
-   unchanged.
+   2026-08-16 (email-only contact, implemented). ~~VAT approach~~
+   RE-DECIDED 2026-08-25 (ADR-0011): Paddle is Merchant of Record and
+   collects VAT itself; prices are **tax-exclusive** (customer pays
+   €29/€49 + VAT). Owner still needs no VAT registration. Terms/privacy
+   copy names Paddle as the seller — owner to review the wording once.
+7. ~~**Test-mode Stripe webhook URL update**~~ DONE 2026-08-16 — now
+   OBSOLETE: after the Paddle PR merges, **delete** the Stripe test-mode
+   webhook endpoint, the Stripe products/prices and the four `STRIPE_*`
+   GitHub secrets in both environments (item 4d).
 
 Then launch = dispatch the **Deploy production** workflow (Actions tab)
 and approve it; it bootstraps prod D1/queues/R2, migrates, deploys,
@@ -98,7 +104,7 @@ Needed for: production URLs and email deliverability (Phases 8/13).
 to Claude via the MCP connector. Staging serves on the
 `staging.bidmorrow.com` custom domain since 2026-08-16 (owner request;
 attached automatically at deploy, no console action — but see snapshot
-item 7 for the test-mode Stripe webhook URL update it requires).
+item 7 — historical; that endpoint is now the Paddle destination, item 4).
 
 Still human-required / deferred to Phase 13:
 
@@ -118,7 +124,7 @@ Still human-required / deferred to Phase 13:
    finding kept for the record: the zone served a **Managed Challenge**
    (`cf-mitigated:
 challenge`, "Just a moment…" interstitial) on EVERY request — this
-   blocks health checks, the Stripe webhook endpoint, and the SPA's own
+   blocks health checks, the billing webhook endpoint, and the SPA's own
    API fetches. Dashboard → bidmorrow.com → **Security**: turn **Bot
    Fight Mode OFF** (it challenges all non-browser clients and cannot
    be scoped/bypassed on Free), ensure **Security Level is not "I'm
@@ -150,48 +156,66 @@ Still human-required:
 3. Confirm sending addresses (suggested): `verify@bidmorrow.com` /
    `digest@bidmorrow.com`, support inbox `support@bidmorrow.com`.
 
-## 4. Stripe account & prices — PARTIALLY PROVIDED (2026-08-15)
+## 4. Paddle account & catalog — SANDBOX DONE, OWNER STEPS OPEN (2026-08-25)
 
-Needed for: Phase 9 billing. All Phase 9 development uses Stripe **test mode**;
-test-mode keys are still human-provided (never invented).
+**Decision 2026-08-25 (ADR-0011): Paddle Billing replaces Stripe.** Paddle
+is Merchant of Record — the legal seller that charges and remits EU VAT and
+issues invoices — which removes the sole-trader VAT problem that item 7
+had parked. The earlier note here recommending "stay on Stripe as
+Individual" is superseded; the billing package was rewritten for Paddle
+(sandbox now, live later — owner decision the same day). Prices are
+**tax-exclusive**: €29/€49 + VAT.
 
-**Provided**: Stripe account created (test mode); Founding/Standard
-products+prices created; `STRIPE_SECRET_KEY`,
-`STRIPE_PRICE_FOUNDING_MONTHLY`, `STRIPE_PRICE_STANDARD_MONTHLY` stored in
-the GitHub `staging` environment secrets. **Test-mode webhook +
-`STRIPE_WEBHOOK_SECRET` PROVIDED 2026-08-16** (registered against the
-staging workers.dev URL, API version `2026-07-29.dahlia`, 6-event set;
-secret pushed to the staging Worker). Remaining for launch: **live-mode
-repeat** — activate the account (business type Individual), recreate the
-two products/prices in live mode, live webhook against
-`https://bidmorrow.com/api/webhooks/stripe`, live keys into the
-`production` environment secrets — and Customer Portal activation in
-BOTH modes (unconfirmed).
+**DONE (Claude, via the Paddle MCP, sandbox account):**
 
-**No registered company needed** (owner question 2026-08-15): Stripe supports
-signing up as an **Individual / sole trader** — during activation pick
-business type "Individual" and use your personal tax ID instead of a company
-registration. Test mode requires no activation at all, so nothing blocks
-Phase 13 staging. Alternative for launch: a Merchant-of-Record platform
-(Paddle / Lemon Squeezy / Polar) that acts as the legal seller and handles
-EU VAT for you — but the billing package is built on Stripe, so switching
-is a Phase-9-sized rewrite; decide only if the tax burden of selling as an
-individual proves unacceptable. Default recommendation: stay on Stripe as
-Individual.
+- Products `pro_01m0wx38mqz3gm6r2ytx6qakq4` (BidMorrow Founding) /
+  `pro_01m0wx38tjejcm7tvx35paz8rp` (BidMorrow Standard), tax category
+  `saas`.
+- Prices `pri_01m0wx38ymack0vxmqvtadddg9` (€29/month) /
+  `pri_01m0wx39a5dkx4fpr7pexbwv6b` (€49/month), EUR, `tax_mode: external`,
+  quantity locked to 1.
+- Notification destination `ntfset_01m0wx39g6qmk4m1bmf39mpa4d` →
+  `https://staging.bidmorrow.com/api/webhooks/paddle`, the eight
+  `subscription.*` events, simulator traffic allowed.
+- Client-side token `ctkn_01m0wx39m4rv1qen7ez4bk08vx` =
+  `test_71e5894f9d1a1e0d7f52b651ba5` (public by design).
 
-Human actions:
+**OPEN — owner actions (docs/setup-guide.md §4 has the click paths):**
 
-1. Create a Stripe account (or use existing). Activate test mode first.
-2. Create Products/Prices in test mode (repeat in live mode before launch):
-   - `BIDMORROW_FOUNDING_MONTHLY` — €29/month recurring
-   - `BIDMORROW_STANDARD_MONTHLY` — €49/month recurring (currency EUR
-     per the owner's live-mode products, 2026-08-16)
-3. Provide secrets per environment (test keys for staging, live for production —
-   never mixed): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
-   `STRIPE_PRICE_FOUNDING_MONTHLY`, `STRIPE_PRICE_STANDARD_MONTHLY`.
-4. Configure the webhook endpoint (URL will be documented in docs/deployment.md
-   once deployed) and enable the event set listed in docs/architecture.md § billing.
-5. Enable the Stripe Customer Portal in Dashboard settings (test + live).
+- **4a. Staging secrets/vars** (GitHub → Settings → Environments →
+  `staging`): secrets `PADDLE_API_KEY` (sandbox dashboard → Developer
+  tools → Authentication → new API key, `pdl_sdbx_apikey_…`),
+  `PADDLE_WEBHOOK_SECRET` (Developer tools → Notifications → "BidMorrow
+  staging" → secret key, `pdl_ntfset_…`), `PADDLE_PRICE_FOUNDING_MONTHLY`
+  = `pri_01m0wx38ymack0vxmqvtadddg9`, `PADDLE_PRICE_STANDARD_MONTHLY` =
+  `pri_01m0wx39a5dkx4fpr7pexbwv6b`; **variables** `PADDLE_CLIENT_TOKEN` =
+  `test_71e5894f9d1a1e0d7f52b651ba5`, `PADDLE_ENVIRONMENT` = `sandbox`.
+  Then redeploy staging. Claude never sees the API key or the webhook
+  secret — copy them straight from the dashboard.
+- **4b. Sandbox dashboard settings** (not settable by API): Checkout →
+  Checkout settings → **Default payment link** =
+  `https://staging.bidmorrow.com/app/settings`; Checkout → Website
+  approval → add `staging.bidmorrow.com` (auto-approved in sandbox).
+  Without the default payment link Paddle.js shows "Something went wrong".
+- **4c. LIVE account — start immediately, approval takes DAYS** (launch is
+  2026-08-31): sign up at https://vendors.paddle.com and complete seller
+  verification (individual seller is fine); website approval for
+  `bidmorrow.com` (Paddle reviews for public pricing, terms naming Paddle
+  as Merchant of Record, privacy and refund policy — the redesigned pages
+  cover this); recreate the two products/prices exactly (EUR, monthly,
+  tax-exclusive); live notification destination for
+  `https://bidmorrow.com/api/webhooks/paddle` with the same event set;
+  live client token; default payment link
+  `https://bidmorrow.com/app/settings`. Then the `production` GitHub
+  environment: the four secrets with live values, `PADDLE_CLIENT_TOKEN` =
+  `live_…`, `PADDLE_ENVIRONMENT` = `production`. Sandbox and live are
+  never mixed. Claude can create the live catalog/destination through the
+  `paddle-live` MCP once the owner authorises it with write scope.
+- **4d. Decommission Stripe** once the Paddle PR is merged: delete the
+  test-mode webhook endpoint and products in the Stripe dashboard, revoke
+  the test key, and remove `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+  `STRIPE_PRICE_FOUNDING_MONTHLY`, `STRIPE_PRICE_STANDARD_MONTHLY` from
+  both GitHub environments. Nothing in code reads them any more.
 
 ## 5. Auth secret — PROVIDED (2026-08-15)
 
@@ -208,10 +232,11 @@ at production-deploy time.
 
 ## 7. Business / legal information — PARTIALLY PROVIDED (2026-08-15)
 
-Needed for: terms, privacy policy, Stripe account, invoices.
+Needed for: terms, privacy policy, Paddle seller account, invoices.
 
 **Decided by owner**: operate as an **Individual / sole trader** using a
-personal tax ID (no registered company) — Stripe business type "Individual".
+personal tax ID (no registered company) — Paddle accepts individual
+sellers; Paddle itself is the Merchant of Record on every invoice.
 
 **Decided by owner 2026-08-16**: the terms/privacy pages publish **no
 postal address** — contact is **email-only** (`support@bidmorrow.com` for
@@ -226,19 +251,18 @@ MX records installed (Resend's send/DKIM records unaffected). **The
 owner-side launch checklist is now EMPTY** — every numbered item in the
 snapshot above is closed.
 
-**FINAL owner decision 2026-08-16 — NO VAT at launch**: the owner has
-**no VAT registration** (Cyprus sole trader), so VAT cannot legally be
-collected; Stripe Tax activation stalled on exactly that ("Cyprus —
-Needs attention" wants a registration number that doesn't exist). This
-supersedes the same-day "use Stripe Tax" decision. Current state:
-flat prices (€29/€49), no VAT line, no VAT ID field, plain-price copy;
-`stripe_tax_enabled` flag OFF in every environment (staging was briefly
-ON for testing, flipped back the same evening). The Stripe Tax
-integration stays built and dormant. **Revisit trigger**: when the
-owner registers for VAT (threshold or voluntary) — then: add the
-registration in Stripe (both modes) + set price tax_behavior + flip
-the flag + restore "excl. VAT" copy. Owner informed that monitoring
-the registration threshold is their/their accountant's responsibility.
+**VAT — SUPERSEDED 2026-08-25 by ADR-0011 (Paddle as Merchant of
+Record)**. History: on 2026-08-16 the owner decided "no VAT at launch"
+because a Cyprus sole trader with no VAT registration cannot collect it
+(Stripe Tax stalled on exactly that). With Paddle the question dissolves:
+Paddle is the seller, computes VAT for the buyer's country at checkout,
+collects and remits it, and issues the invoice — the owner needs no VAT
+registration and no threshold monitoring for subscription revenue.
+Owner decision 2026-08-25: prices are **tax-exclusive** (`tax_mode:
+external`) — customers pay €29/€49 **+ VAT** (EU B2B with a valid VAT ID:
+reverse charge, i.e. €29/€49 flat). Copy on pricing/terms says "+ VAT"
+and names Paddle as Merchant of Record. Owner's own income tax on Paddle
+payouts remains their/their accountant's matter.
 
 ## 8. GitHub settings — PARTIALLY PROVIDED (2026-08-15)
 

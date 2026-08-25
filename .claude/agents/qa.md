@@ -19,7 +19,7 @@ Rules:
   malformed, unexpected optional fields, and a second schema version.
 - Security tests are first-class: cross-tenant access attempts (A reads/writes
   B's profile/matches/preferences/saved tenders/billing), privilege
-  escalation, admin endpoints as normal user, invalid Stripe signatures,
+  escalation, admin endpoints as normal user, invalid Paddle webhook signatures,
   webhook replay, XSS strings from source notices, rate limits.
 - Never delete or weaken a failing test to make CI pass — failing tests are
   findings. Never claim a test executed unless it actually ran; paste the

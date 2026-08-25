@@ -19,7 +19,6 @@
     "@bidmorrow/config": "workspace:*",
     "@bidmorrow/db": "workspace:*",
     "@bidmorrow/domain": "workspace:*",
-    "@bidmorrow/observability": "workspace:*",
-    "stripe": "^22.5.0"
+    "@bidmorrow/observability": "workspace:*"
   }
 }

@@ -17,8 +17,8 @@ Open the admin health page (INTERNAL_ADMIN) and confirm:
       rate < 2%.
 - [ ] Queue depth ~0 between runs; **DLQ count = 0** for all three DLQs.
 - [ ] D1 size vs 10 GB limit — below the 60% alert line.
-- [ ] Stripe webhook: no unprocessed/failed events (Stripe Dashboard →
-      Webhooks shows delivery status).
+- [ ] Paddle webhook: no unprocessed/failed events (Paddle dashboard →
+      Developer tools → Notifications → destination → Logs).
 - [ ] Retention purge ran and recorded counts.
 - [ ] Pause flags (`ingestion_paused`, `digest_paused`) and
       `fetch_retry_attempts_suspended` are OFF unless deliberately set — a
@@ -106,20 +106,35 @@ Symptoms: watchdog cron flags no successful run in >36 h, or health page red.
 4. Backlog without errors → throughput; check for an unbounded enqueue
    (backfill without budget?) — pause the producing pipeline if so.
 
-### Stripe webhook failures
+### Paddle webhook failures
 
 Distinguish the two failure classes:
 
-- **Signature errors** (400 at our endpoint): wrong `STRIPE_WEBHOOK_SECRET`
-  (env mixup, secret rotated on one side only) or wrong endpoint URL. Fix
-  the secret via `wrangler secret put STRIPE_WEBHOOK_SECRET --env production`.
-- **Processing errors** (our handler 5xx): check logs by event ID; state is
-  re-fetched from Stripe so ordering issues shouldn't occur — a repeated
-  failure is a code bug.
-  Remediation: after the fix, **replay from the Stripe Dashboard** (Webhooks →
-  endpoint → failed events → Resend). Event-ID idempotency makes replays safe.
-  Meanwhile entitlement drift is possible — reconcile affected orgs against
-  Stripe subscription state (admin tool, Phase 10).
+- **Signature errors** (400 at our endpoint): wrong `PADDLE_WEBHOOK_SECRET`
+  (each notification destination has its own `pdl_ntfset_…` secret —
+  sandbox vs live mixup, or the destination was recreated) or wrong
+  destination URL (`/api/webhooks/paddle`). Fix via the GitHub environment
+  secret + redeploy, or `wrangler secret put PADDLE_WEBHOOK_SECRET --env
+production`. A clock more than 5 minutes off also 400s (tolerance).
+- **Processing errors** (our handler 5xx): check logs by `billing_event_id`;
+  state is re-fetched from Paddle so ordering issues shouldn't occur — a
+  repeated failure is a code bug or an unknown price id
+  (`billing.webhook.unknown_price_id` → `PADDLE_PRICE_*` misconfigured).
+  Paddle retries non-2xx (sandbox: 3 attempts/~15 min; live: 60 attempts
+  over ~3 days). Remediation: after the fix, **replay from the Paddle
+  dashboard** (Developer tools → Notifications → destination → Logs →
+  Replay). Event-ID idempotency makes replays safe. Meanwhile entitlement
+  drift is possible — reconcile affected orgs against Paddle subscription
+  state (admin tool, Phase 10).
+
+**`billing.webhook.duplicate_checkout_reconciled` in the logs** means an
+organization completed two concurrent checkouts; the processor cancelled
+the second Paddle subscription immediately, but Paddle does NOT refund it
+automatically. Action: open the duplicate subscription's transaction in
+the Paddle dashboard and issue a full refund (sandbox auto-approves;
+live refunds may need Paddle approval). Later `subscription.updated`/
+`canceled` events for that duplicate are acknowledged as
+`duplicate_reconciled` without further calls.
 
 ### D1 size approaching limit (60% alert)
 

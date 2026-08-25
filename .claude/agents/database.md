@@ -19,7 +19,7 @@ Rules:
   tested against the prior schema where relevant. Follow the migration-safety
   skill checklist for every migration.
 - Explicit foreign keys, unique constraints for real invariants (e.g. one
-  digest per org per date, one Stripe event ID), indexes matched to actual
+  digest per org per date, one billing-provider event ID), indexes matched to actual
   query patterns — no speculative indexes, no full-table scans where an index
   avoids one.
 - Every organization-owned table carries organization_id with an index;

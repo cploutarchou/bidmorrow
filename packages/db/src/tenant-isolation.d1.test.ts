@@ -19,7 +19,7 @@ import { newId } from './id';
 import {
   getSubscription,
   insertBillingEventIfNew,
-  upsertSubscriptionByStripeCustomerId,
+  upsertSubscriptionByBillingCustomerId,
 } from './repositories/billing';
 import {
   getCompanyProfile,
@@ -404,9 +404,9 @@ describe('foreign-key enforcement sentinel (SEC-P3-02)', () => {
 describe('billing isolation', () => {
   it("getSubscription scoped to A never returns B's subscription", async () => {
     const [orgA, orgB] = [await seedOrg(db, 'Org A'), await seedOrg(db, 'Org B')];
-    await upsertSubscriptionByStripeCustomerId(db, orgB.orgId, {
-      stripeCustomerId: `cus_B_${orgB.orgId}`,
-      stripeSubscriptionId: `sub_B_${orgB.orgId}`,
+    await upsertSubscriptionByBillingCustomerId(db, orgB.orgId, {
+      billingCustomerId: `cus_B_${orgB.orgId}`,
+      billingSubscriptionId: `sub_B_${orgB.orgId}`,
       status: 'active',
       plan: 'founding',
       currentPeriodEndAt: null,
@@ -418,13 +418,13 @@ describe('billing isolation', () => {
     expect(subB?.organizationId).toBe(orgB.orgId);
   });
 
-  it("A upserting with B's stripe customer id throws TenantMismatchError and leaves B's row unchanged", async () => {
+  it("A upserting with B's billing customer id throws TenantMismatchError and leaves B's row unchanged", async () => {
     const [orgA, orgB] = [await seedOrg(db, 'Org A'), await seedOrg(db, 'Org B')];
-    const stripeCustomerId = `cus_B_${orgB.orgId}`;
-    const stripeSubscriptionId = `sub_B_${orgB.orgId}`;
-    await upsertSubscriptionByStripeCustomerId(db, orgB.orgId, {
-      stripeCustomerId,
-      stripeSubscriptionId,
+    const billingCustomerId = `cus_B_${orgB.orgId}`;
+    const billingSubscriptionId = `sub_B_${orgB.orgId}`;
+    await upsertSubscriptionByBillingCustomerId(db, orgB.orgId, {
+      billingCustomerId,
+      billingSubscriptionId,
       status: 'active',
       plan: 'founding',
       currentPeriodEndAt: null,
@@ -432,9 +432,9 @@ describe('billing isolation', () => {
     });
 
     await expect(
-      upsertSubscriptionByStripeCustomerId(db, orgA.orgId, {
-        stripeCustomerId,
-        stripeSubscriptionId: `sub_A_hijack_${orgA.orgId}`,
+      upsertSubscriptionByBillingCustomerId(db, orgA.orgId, {
+        billingCustomerId,
+        billingSubscriptionId: `sub_A_hijack_${orgA.orgId}`,
         status: 'canceled',
         plan: 'standard',
         currentPeriodEndAt: null,
@@ -445,7 +445,7 @@ describe('billing isolation', () => {
     const subB = await getSubscription(db, orgB.orgId);
     expect(subB?.status).toBe('active');
     expect(subB?.plan).toBe('founding');
-    expect(subB?.stripeSubscriptionId).toBe(stripeSubscriptionId);
+    expect(subB?.billingSubscriptionId).toBe(billingSubscriptionId);
     // And A gained no subscription out of the attempt.
     expect(await getSubscription(db, orgA.orgId)).toBeNull();
   });
@@ -454,7 +454,7 @@ describe('billing isolation', () => {
     const [orgA, orgB] = [await seedOrg(db, 'Org A'), await seedOrg(db, 'Org B')];
     expect(
       await insertBillingEventIfNew(db, {
-        stripeEventId: `evt_B_${orgB.orgId}`,
+        providerEventId: `evt_B_${orgB.orgId}`,
         type: 'customer.subscription.updated',
         organizationId: orgB.orgId,
         payloadJson: '{"secret":"b-payload"}',

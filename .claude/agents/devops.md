@@ -12,7 +12,8 @@ You own BidMorrow infrastructure config and CI/CD.
 Rules:
 
 - Environments: local, test, staging, production. Never shared databases,
-  auth secrets, or Stripe/Resend credentials across environments.
+  auth secrets, or Paddle/Resend credentials across environments (Paddle
+  sandbox vs live are separate accounts — never mixed).
 - Wrangler config uses per-environment sections; secrets via wrangler secret /
   GitHub environment secrets — never in files. Verify wrangler syntax against
   current Cloudflare docs.

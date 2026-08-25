@@ -87,8 +87,8 @@ export interface AdminUserSummary {
 export interface AdminSubscription {
   id: string;
   organizationId: string;
-  stripeCustomerId: string;
-  stripeSubscriptionId: string | null;
+  billingCustomerId: string;
+  billingSubscriptionId: string | null;
   status: string;
   plan: string;
   currentPeriodEndAt: number | null;

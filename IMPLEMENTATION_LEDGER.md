@@ -4351,6 +4351,104 @@ Next: read the `wrangler-logs` artifact from the first red nightly after
 #104 merges. Working hypothesis is workerd being OOM-killed on the runner
 (empty error, no stack, time-of-day dependent) — confirm before acting.
 
+## Stripe → Paddle Billing (Merchant of Record) — ADR-0011 (2026-08-25)
+
+Owner instruction: leave Stripe, use Paddle
+(https://sandbox-vendors.paddle.com). Owner decisions taken at the
+start: prices are TAX-EXCLUSIVE (€29/€49 + VAT added by Paddle at
+checkout); target SANDBOX now, live later. Verified before touching the
+schema: production has 0 subscriptions / 0 billing_events (live D1 read),
+so this is a code + schema swap with no customer migration.
+
+What shipped (single branch `feat/paddle-billing`):
+
+- `packages/billing` rewritten. No Paddle Node SDK: a ~250-line fetch
+  client (`paddle-client.ts`) over the five endpoints we use, plus Web
+  Crypto HMAC-SHA256 signature verification (`webhook-signature.ts`,
+  `ts:rawBody`, 5-minute tolerance + unique `provider_event_id` dedup).
+  Checkout is a SERVER-created transaction (`items` from env price ids,
+  `custom_data.organization_id`) that the SPA opens with Paddle.js
+  (`Checkout.open({ transactionId })`) — the client never chooses what is
+  bought or for whom. Cancel = `POST /subscriptions/{id}/cancel`
+  (next_billing_period); reactivate = `PATCH { scheduled_change: null }`;
+  portal = `POST /customers/{id}/portal-sessions`; invoices = transactions
+  list + on-demand `GET /transactions/{id}/invoice` behind a new
+  owner-only `GET /api/billing/invoices/:txn/pdf` that re-proves
+  ownership server-side. Webhook processor keeps the Stripe-era
+  invariants: record-first idempotency, live re-fetch (never trust the
+  payload), unknown price id → failed → retry, SEC-P9-03 duplicate-customer
+  reconciliation (now `effective_from: immediately`).
+- Status vocabulary is Paddle's: `trialing|active|past_due|paused|
+canceled` (`paused` is a first-class non-entitled state; `unpaid` gone).
+  `stripe_tax_enabled` flag removed everywhere — Paddle handles VAT.
+- Migration `0011_paddle_billing.sql`: provider-neutral columns
+  (`billing_customer_id`, `billing_subscription_id`, `provider_event_id`),
+  table rebuilds for the CHECK change, line comments only. Verified: full
+  chain from empty (db suite, new migrations test), AND upgrade on a local
+  D1 already at 0010; CHECK rejects `unpaid`, accepts `paused`.
+  `packages/db/drizzle/` not regenerated (drizzle-kit prompts on renames;
+  0007–0010 set the same precedent).
+- Worker: `/api/webhooks/paddle` (rate-limited before verification),
+  `resolveBillingConfig` on `PADDLE_API_KEY` / `PADDLE_WEBHOOK_SECRET` /
+  `PADDLE_CLIENT_TOKEN` / `PADDLE_ENVIRONMENT` / `PADDLE_PRICE_*`,
+  `/api/public-config` exposes the public client token + environment,
+  `DELETE /api/org` billing summary strings are now `billing:*`
+  (API-visible rename). CSP gains exactly Paddle's origins.
+- Web: `lib/paddle.ts` lazy `initializePaddle` singleton + overlay open;
+  Settings opens the overlay, invoice rows get a "Download PDF" action,
+  "+ VAT" wherever a price renders; Terms/Pricing/Home/SEO/admin copy →
+  Paddle as Merchant of Record.
+- Sandbox set up via the Paddle MCP: products
+  `pro_01m0wx38mqz3gm6r2ytx6qakq4` (Founding) /
+  `pro_01m0wx38tjejcm7tvx35paz8rp` (Standard); prices
+  `pri_01m0wx38ymack0vxmqvtadddg9` (€29, external tax) /
+  `pri_01m0wx39a5dkx4fpr7pexbwv6b` (€49); notification destination
+  `ntfset_01m0wx39g6qmk4m1bmf39mpa4d` →
+  https://staging.bidmorrow.com/api/webhooks/paddle (8 subscription.*
+  events, traffic_source all); client token
+  `ctkn_01m0wx39m4rv1qen7ez4bk08vx` (public value in docs/setup-guide).
+  Secrets were never printed into the repo — owner copies them from the
+  dashboard (blockers item 4a).
+
+CSP finding worth recording: a headless-Chrome probe of the real overlay
+under our exact policy showed Paddle.js loading its stylesheet from
+`(sandbox-)cdn.paddle.com` and setting inline styles on the overlay
+container — neither is in Paddle's docs. `style-src` therefore allows the
+two CDNs + `'unsafe-inline'` (styles only; `script-src` stays strict and
+both CSP tests now assert that split). The same probe hit a 400 from the
+checkout service: sandbox still needs the domain added under Website
+approval and a default payment link (owner 4b) — so the real
+end-to-end sandbox checkout is deferred to staging once 4a/4b are done.
+
+Independent reviews (same day, read-only, both re-ran the gates):
+
+- security: no Critical/High. SEC-PDL-01 (Medium) — a Paddle signature
+  proves the sender, not that WE created the transaction; the public
+  Paddle.js token lets anyone open `Checkout.open({ items, customData })`
+  with a forged `organization_id`, bypassing every server gate and able
+  to grief another org (and a non-existent id would FK-fail → 500 → 3-day
+  retry loop). FIXED: checkout signs `custom_data.organization_sig`
+  (HMAC, keyed with the notification secret, `provenance.ts`); the
+  webhook trusts the id only when it verifies, else `ignored` with a
+  null org — no schema, no extra API call. SEC-PDL-02 — the threat model
+  claimed a reconciliation job that never existed: struck, residual risk
+  reworded; C3 line corrected. SEC-PDL-03 — a missing invoice id was a
+  502 while a foreign one was a 404: Paddle 404 now maps to not_found.
+  SEC-PDL-05 — multiple `h1` values (secret rotation) now accepted.
+- production-reviewer: PASS with one should-fix. F1 — after a SEC-P9-03
+  reconciliation, later events for the (now canceled) duplicate would
+  re-call cancel, fail, and retry for 3 days: FIXED (canceled duplicate
+  acknowledged without a Paddle call). Nits: runbook refund line for
+  reconciled duplicates (added), `font-src` parity in `_headers` (added),
+  `loadPaddle` no longer memoises a transient load failure, blockers
+  numbering clarified.
+
+Verified: format/lint/typecheck; root vitest 660 (3 skipped), worker 260,
+db 68, security 13; web build; e2e billing.spec 5 passed / 3 expected
+skips. Owner-side remaining in HUMAN_DECISION_BLOCKERS.md item 4
+(staging secrets/vars, sandbox dashboard steps, live account against the
+08-31 launch, Stripe decommission).
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

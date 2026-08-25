@@ -2,7 +2,7 @@
 
 Step-by-step instructions for every account, credential, and connection a
 human must provide before/around Phase 13 (Deployment). Written for the
-account owner; assumes no prior Cloudflare/Stripe/Resend experience.
+account owner; assumes no prior Cloudflare/Paddle/Resend experience.
 
 Companion to `HUMAN_DECISION_BLOCKERS.md` (which tracks _status_); this file
 is the _how_.
@@ -26,7 +26,7 @@ You enter each value once; the deploy workflow pushes runtime secrets to the
 Worker. You never manage two copies.
 
 3. Rotation: if a secret ever leaks (or you merely suspect it), revoke it at
-   the issuer (Cloudflare/Stripe/Resend), create a new one, update the GitHub
+   the issuer (Cloudflare/Paddle/Resend), create a new one, update the GitHub
    secret, re-run the deploy workflow. Nothing in the repo changes.
 
 ---
@@ -113,54 +113,79 @@ Done when: both names appear in the Actions secrets list.
 
 ---
 
-## 4. Stripe — account, products, keys (~15 min, test mode first)
+## 4. Paddle — account, catalog, keys (~15 min, sandbox first)
 
-All development and staging use **test mode**. Live mode is repeated only
-before real launch.
+Paddle Billing is the **Merchant of Record** (ADR-0011): Paddle is the
+legal seller, charges VAT for the customer's country, remits it and issues
+the invoices. You need no VAT registration. Sandbox and live are two
+completely separate accounts (different dashboards, keys, catalogs,
+webhook destinations); nothing crosses between them.
 
-### 4a. Account + test mode
+### 4a. Sandbox account
 
-1. https://dashboard.stripe.com → create/sign in to your account.
-2. Toggle **Test mode** ON (top-right switch) for everything below.
+1. https://sandbox-vendors.paddle.com → create/sign in (the sandbox signup
+   is separate from live; no approval needed).
+2. Everything below is in the SANDBOX dashboard until §4f.
 
-### 4b. Products and prices (test mode)
+### 4b. Catalog — ALREADY CREATED (2026-08-25, via the Paddle MCP)
 
-Create two products (Product catalog → Add product):
+Two products with one EUR monthly price each, tax category `saas`,
+**tax-exclusive** (`tax_mode: external` — the customer pays the price +
+VAT):
 
-| Product            | Price  | Billing period |
-| ------------------ | ------ | -------------- |
-| BidMorrow Founding | €29.00 | Monthly        |
-| BidMorrow Standard | €49.00 | Monthly        |
+| Product            | Product id                       | Price id (monthly, EUR)          | Amount |
+| ------------------ | -------------------------------- | -------------------------------- | ------ |
+| BidMorrow Founding | `pro_01m0wx38mqz3gm6r2ytx6qakq4` | `pri_01m0wx38ymack0vxmqvtadddg9` | €29.00 |
+| BidMorrow Standard | `pro_01m0wx38tjejcm7tvx35paz8rp` | `pri_01m0wx39a5dkx4fpr7pexbwv6b` | €49.00 |
 
-After creating each, open the price and copy its **Price ID**
-(`price_...`). Price IDs are configuration, not secrets, but we store them
-alongside the other Stripe values.
+Verify under **Catalog → Products**. Price ids are configuration, not
+secrets, but they are stored alongside the other Paddle values.
 
-### 4c. Keys and secrets → GitHub Actions secrets
+### 4c. Keys → GitHub `staging` environment
 
-| GitHub secret name              | Where to find it (test mode)                                |
-| ------------------------------- | ----------------------------------------------------------- |
-| `STRIPE_SECRET_KEY`             | Developers → API keys → **Secret key** (`sk_test_...`)      |
-| `STRIPE_PRICE_FOUNDING_MONTHLY` | Product catalog → Founding product → price → Price ID       |
-| `STRIPE_PRICE_STANDARD_MONTHLY` | Product catalog → Standard product → price → Price ID       |
-| `STRIPE_WEBHOOK_SECRET`         | **Not yet** — created in 4d, AFTER the first staging deploy |
+| GitHub name                     | Kind     | Where to get it (sandbox dashboard)                                                                        |
+| ------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| `PADDLE_API_KEY`                | secret   | Developer tools → Authentication → **API keys** → New (`pdl_sdbx_apikey_…`); copy once                     |
+| `PADDLE_WEBHOOK_SECRET`         | secret   | Developer tools → Notifications → **BidMorrow staging** destination → secret key (`pdl_ntfset_…`)          |
+| `PADDLE_PRICE_FOUNDING_MONTHLY` | secret   | `pri_01m0wx38ymack0vxmqvtadddg9` (table above)                                                             |
+| `PADDLE_PRICE_STANDARD_MONTHLY` | secret   | `pri_01m0wx39a5dkx4fpr7pexbwv6b` (table above)                                                             |
+| `PADDLE_CLIENT_TOKEN`           | variable | `test_71e5894f9d1a1e0d7f52b651ba5` — client-side token `ctkn_01m0wx39m4rv1qen7ez4bk08vx`, public by design |
+| `PADDLE_ENVIRONMENT`            | variable | `sandbox`                                                                                                  |
 
-### 4d. Webhook endpoint (after Phase 13 staging deploy)
+The API key needs read/write on transactions, subscriptions, customers,
+customer portal sessions, and read on products/prices. The client token
+is safe to expose (it only opens checkouts); the API key never leaves the
+Worker.
 
-The endpoint URL only exists once the Worker is deployed. When Claude
-reports the staging URL:
+### 4d. Webhook destination — ALREADY CREATED
 
-1. Developers → **Webhooks** → Add endpoint.
-2. Endpoint URL: `https://<staging-worker-url>/api/webhooks/stripe`.
-3. Events: select the set listed in `docs/architecture.md` § billing
-   (checkout/session, customer.subscription, invoice events).
-4. Copy the **Signing secret** (`whsec_...`) → GitHub secret
-   `STRIPE_WEBHOOK_SECRET`.
+`ntfset_01m0wx39g6qmk4m1bmf39mpa4d` → `https://staging.bidmorrow.com/api/webhooks/paddle`,
+subscribed to the eight `subscription.*` events (docs/deployment.md § Paddle
+webhook registration). Only the secret copy in 4c is left to do.
 
-### 4e. Customer Portal
+### 4e. Dashboard-only settings (cannot be set by API)
 
-Settings → Billing → **Customer portal** → activate (test mode; repeat in
-live mode later). Enable "Cancel subscription" and payment-method updates.
+1. **Checkout → Checkout settings → Default payment link** =
+   `https://staging.bidmorrow.com/app/settings`. Paddle.js refuses to open
+   a checkout ("Something went wrong") until this is set.
+2. **Checkout → Website approval**: add `staging.bidmorrow.com` (sandbox
+   approves instantly).
+
+### 4f. Live (before the first real charge — allow DAYS for approval)
+
+1. https://vendors.paddle.com → sign up for a LIVE account and complete
+   Paddle's seller verification (identity/business review — Paddle
+   approves asynchronously).
+2. **Website approval** for `bidmorrow.com` (manual review: public pricing,
+   terms with Paddle named as Merchant of Record, privacy, refund policy).
+3. Recreate the catalog exactly as 4b (EUR, monthly, tax-exclusive) and
+   note the new `pri_…` ids.
+4. Notification destination → `https://bidmorrow.com/api/webhooks/paddle`,
+   same event set; copy its secret.
+5. Client-side token (`live_…`); default payment link
+   `https://bidmorrow.com/app/settings`.
+6. GitHub `production` environment: the four secrets above with live
+   values, `PADDLE_CLIENT_TOKEN=live_…`, `PADDLE_ENVIRONMENT=production`.
 
 ---
 
@@ -215,10 +240,10 @@ Also confirm the admin allowlist (a variable, not a secret):
 
 ## 8. What you can OPTIONALLY connect to automate more
 
-| Connector                                           | How                                                                                               | What it automates                                                                                      | Worth it?                                                    |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| **Stripe MCP** (official, `https://mcp.stripe.com`) | claude.ai → Settings → Connectors → Add custom connector → paste URL → authorize via Stripe OAuth | Claude creates the test-mode products/prices itself and reads the price IDs — removes step 4b entirely | Yes, if you'd rather not click through the Stripe catalog UI |
-| Resend MCP                                          | Resend publishes an MCP server for _sending_ email only                                           | Nothing in this guide — account, domain, API key stay manual                                           | No                                                           |
+| Connector                                                                  | How                                                     | What it automates                                                                                              | Worth it?      |
+| -------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | -------------- |
+| **Paddle MCP** (official plugin: `paddle-sandbox` / `paddle-live` servers) | Claude Code plugin, already connected for sandbox       | Created the sandbox catalog, webhook destination and client token (4b/4d); can repeat for live once authorised | Already in use |
+| Resend MCP                                                                 | Resend publishes an MCP server for _sending_ email only | Nothing in this guide — account, domain, API key stay manual                                                   | No             |
 
 Everything else is **deliberately not automatable**: plan/billing approvals,
 API-token creation, and secret entry must stay in your hands — Claude never
@@ -231,14 +256,14 @@ secrets, and automation handles all distribution from there.
 ```
 1. Workers Paid plan          ──┐
 2. CF token + account ID → GH  ─┴─► Phase 13: staging deploy (workers.dev)
-3. Stripe test keys/prices → GH ──► billing works on staging
-   4d. webhook secret (needs staging URL, done after deploy)
+3. Paddle sandbox keys/prices → GH ─► billing works on staging
+   4c. webhook secret (destination already exists)
 5. Resend key + DNS records   ──► real emails on staging
 6. BETTER_AUTH_SECRET → GH    ──► required for staging deploy (with #1/#2)
 3 (GitHub protection)         ──► anytime; required before production
-Live-mode Stripe + prod keys  ──► production launch only
+Live Paddle account + prod keys ─► production launch only
 ```
 
 Minimum to let Claude deploy staging end-to-end: **items 1, 2, and 6**.
-Stripe/Resend can be added afterwards without redeploying code — they are
+Paddle/Resend can be added afterwards without redeploying code — they are
 secrets-only changes.

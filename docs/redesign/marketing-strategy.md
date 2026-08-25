@@ -312,8 +312,8 @@ advice; owner should confirm with counsel before any outbound program**):
 
 ```
 Awareness ─▶ Interest ─▶ Sample-verdict demo ─▶ Pilot request ─▶ 5-day pilot ─▶ Paid
-(LinkedIn,   (profile    (no-signup public    (contact/       (no-card,     (Stripe
- community,   visit,      demo, real          pilot form)     personally    Checkout)
+(LinkedIn,   (profile    (no-signup public    (contact/       (no-card,     (Paddle
+ community,   visit,      demo, real          pilot form)     personally    checkout)
  referral,    OG share)   attributed TED)                     onboarded)
  content)
 ```
@@ -341,10 +341,10 @@ Fully aligned with `seo-content-strategy.md` §9; nothing here adds a tracker.
 
 1. **Server-side funnel from data that already exists** (zero client
    beacons): pilot-request form submissions, signup started/completed,
-   email verified, onboarding completed/preset chosen, Stripe
+   email verified, onboarding completed/preset chosen, Paddle
    checkout/subscription events. Report as a read-only admin query. This is
    the spine of acquisition measurement.
-2. **Stripe** is the source of truth for conversion, MRR, churn — no site
+2. **Paddle** is the source of truth for conversion, MRR, churn — no site
    script needed.
 3. **Cloudflare zone/HTTP analytics** (server-side, aggregate, no beacon)
    for marketing-site traffic per path. **Do NOT enable Cloudflare Web

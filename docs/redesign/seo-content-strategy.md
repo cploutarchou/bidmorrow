@@ -235,7 +235,7 @@ revisit post-launch (a Methodology-specific card is the first candidate).
 **`/terms`** — canonical `https://bidmorrow.com/terms`
 
 - Title (17): `Terms — BidMorrow`
-- Description (133): `BidMorrow terms summary: decision support only, scoped TED coverage, monthly billing via Stripe, cancel any time. Full legal text pending.`
+- Description (145): `BidMorrow terms summary: decision support only, scoped TED coverage, monthly billing via Paddle (Merchant of Record), cancel any time. Full legal text pending.`
 
 **Auth pages (`/login`, `/signup`, `/verify-email`, `/forgot-password`,
 `/reset-password`)** — keep existing `AuthLayout` titles; add
@@ -290,7 +290,7 @@ preserved by the proposed text).
   1. `Does BidMorrow cover all EU tenders?` → No — scoped-coverage answer (reuse the statement's substance, link Methodology).
   2. `Is this AI?` → `No. The scoring engine is deterministic and LLM-free — every point is traceable to a rule you can read on our methodology page.`
   3. `What happens if a data point is missing from a notice?` → Unknown-policy summary.
-  4. `Can I cancel any time?` → `Yes — monthly billing via Stripe, cancel from settings, no annual contract.`
+  4. `Can I cancel any time?` → `Yes — monthly billing via Paddle, cancel from settings, no annual contract.`
   5. `What does the founding pilot involve?` → honest first-20 answer, link `/pilot`.
 - Footer (site-wide): `TED_ATTRIBUTION` + `DECISION_SUPPORT_DISCLAIMER` verbatim.
 
@@ -629,8 +629,8 @@ counter = default NO this cycle. Within that:
    - Signup started/completed — auth tables.
    - Email verified — auth tables.
    - Onboarding completed / preset chosen — org profile rows (+ timestamps).
-   - Checkout started/completed, plan chosen — Stripe (source of truth;
-     Stripe dashboard gives conversion, MRR, churn without any site script).
+   - Checkout started/completed, plan chosen — Paddle (source of truth;
+     the Paddle dashboard gives conversion, MRR, churn without any site script).
    - Activation: first save/ignore action; digest opens are NOT trackable
      (no pixel — consistent with the privacy stance; use digest-driven
      logins as the proxy if needed later).

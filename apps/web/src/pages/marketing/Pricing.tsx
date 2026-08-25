@@ -8,7 +8,7 @@ import { MARKETING_META } from '../../lib/seo';
  * page="pricing"): founding €29 highlighted against standard €49, a
  * twelve-month price-hold comparison (€348 vs €588), and a billing-facts
  * strip. Facts follow the source: founding price retained for the life of
- * the subscription, same product on both plans, monthly Stripe billing,
+ * the subscription, same product on both plans, monthly billing via Paddle,
  * cancel from settings.
  */
 
@@ -20,7 +20,7 @@ const FOUNDING_POINTS = [
 
 const STANDARD_POINTS = [
   'The same feed, engine, daily digest and support',
-  'Billed monthly through Stripe',
+  'Billed monthly through Paddle, our Merchant of Record — VAT added at checkout',
   'Cancel from settings whenever you like',
 ];
 

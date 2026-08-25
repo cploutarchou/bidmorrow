@@ -78,7 +78,7 @@ describe('migrations apply from an empty database', () => {
     expect(tables.has('_bootstrap')).toBe(false);
   });
 
-  it('records all ten migrations in d1_migrations', async () => {
+  it('records all eleven migrations in d1_migrations', async () => {
     const result = await env.DB.prepare('SELECT name FROM d1_migrations ORDER BY name').all<{
       name: string;
     }>();
@@ -93,6 +93,7 @@ describe('migrations apply from an empty database', () => {
       '0008_ingestion_fetch_retries.sql',
       '0009_ingestion_render_pending.sql',
       '0010_saved_searches.sql',
+      '0011_paddle_billing.sql',
     ]);
   });
 
@@ -126,6 +127,52 @@ describe('migrations apply from an empty database', () => {
     }>();
     const info = columns.results.find((c) => c.name === 'created_by_user_id');
     expect(info?.notnull).toBe(0);
+  });
+
+  it('0011 rebuilds the billing tables with provider-neutral columns and the paused status (ADR-0011)', async () => {
+    const subscriptionColumns = await env.DB.prepare('PRAGMA table_info(subscriptions)').all<{
+      name: string;
+    }>();
+    const names = subscriptionColumns.results.map((row) => row.name);
+    expect(names).toContain('billing_customer_id');
+    expect(names).toContain('billing_subscription_id');
+    expect(names).not.toContain('stripe_customer_id');
+
+    const eventColumns = await env.DB.prepare('PRAGMA table_info(billing_events)').all<{
+      name: string;
+    }>();
+    const eventNames = eventColumns.results.map((row) => row.name);
+    expect(eventNames).toContain('provider_event_id');
+    expect(eventNames).not.toContain('stripe_event_id');
+
+    const indexes = await env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name IN ('subscriptions', 'billing_events') AND name NOT LIKE 'sqlite_%' ORDER BY name",
+    ).all<{ name: string }>();
+    expect(indexes.results.map((row) => row.name)).toEqual([
+      'idx_billing_events__organization_id_created_at',
+      'uq_billing_events__provider_event_id',
+      'uq_subscriptions__billing_customer_id',
+      'uq_subscriptions__billing_subscription_id',
+      'uq_subscriptions__organization_id',
+    ]);
+
+    // The CHECK admits `paused` and rejects the retired Stripe-only `unpaid`.
+    const now = Date.now();
+    const insert = (status: string) =>
+      env.DB.prepare(
+        "INSERT INTO organizations (id, name, status, created_at, updated_at) VALUES (?, ?, 'active', ?, ?)",
+      )
+        .bind(`org_m11_${status}`, `M11 ${status}`, now, now)
+        .run()
+        .then(() =>
+          env.DB.prepare(
+            "INSERT INTO subscriptions (id, organization_id, billing_customer_id, status, plan, created_at, updated_at) VALUES (?, ?, ?, ?, 'standard', ?, ?)",
+          )
+            .bind(`sub_m11_${status}`, `org_m11_${status}`, `ctm_m11_${status}`, status, now, now)
+            .run(),
+        );
+    await expect(insert('paused')).resolves.toBeDefined();
+    await expect(insert('unpaid')).rejects.toThrow();
   });
 
   it('0007 adds idx_tender_matches__org_engine_score_id (Phase 12 stage B fix P-1)', async () => {

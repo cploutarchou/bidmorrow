@@ -49,7 +49,7 @@ import {
   upsertMatchingPreferences,
   upsertFetchRetry,
   upsertNoticeWithVersion,
-  upsertSubscriptionByStripeCustomerId,
+  upsertSubscriptionByBillingCustomerId,
   type Db,
   type TenderMatchInput,
 } from '@bidmorrow/db';
@@ -265,7 +265,7 @@ describe('DELETE /api/org — organization deletion', () => {
     expect(deleted.status).toBe(200);
     const deletedBody = (await deleted.json()) as { status: string; billing: string };
     expect(deletedBody.status).toBe('deleted');
-    expect(deletedBody.billing).toBe('stripe:no_subscription');
+    expect(deletedBody.billing).toBe('billing:no_subscription');
 
     // Every member's org context is now blocked, distinctly from "never onboarded".
     const ownerAfter = await fetchApi('/api/org/profile', { headers: { cookie: ownerCookie } });
@@ -493,9 +493,9 @@ describe('runOrgPurge — deleted-organization hard purge', () => {
     // Support note, product event, subscription, one manual audit row.
     await insertSupportNote(db, organizationId, { authorUserId: ownerId, body: 'test note' });
     await insertProductEvent(db, { organizationId, userId: ownerId, name: 'feed_viewed' });
-    await upsertSubscriptionByStripeCustomerId(db, organizationId, {
-      stripeCustomerId: `cus_full_purge_${organization.id}`,
-      stripeSubscriptionId: `sub_full_purge_${organization.id}`,
+    await upsertSubscriptionByBillingCustomerId(db, organizationId, {
+      billingCustomerId: `ctm_full_purge_${organization.id}`,
+      billingSubscriptionId: `sub_full_purge_${organization.id}`,
       status: 'canceled',
       plan: 'standard',
       currentPeriodEndAt: null,

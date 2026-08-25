@@ -6,6 +6,7 @@ import { ConfirmAction } from '../../components/ConfirmAction';
 import { CPV_SUGGESTIONS } from '../../data/cpv-suggestions';
 import { api, ApiError } from '../../lib/api';
 import { fetchBillingStatus, type BillingStatus } from '../../lib/billing';
+import { openCheckout } from '../../lib/paddle';
 import { usePublicConfig } from '../../lib/public-config';
 import { useAuth } from '../../lib/auth-context';
 import { localComboboxSource, type ComboboxOption } from '../../lib/combobox-filter';
@@ -96,15 +97,16 @@ function describeSaveError(cause: unknown): string {
 interface Invoice {
   readonly id: string;
   readonly number: string | null;
-  readonly status: string | null;
+  /** Paddle transaction status: `billed | paid | completed | past_due`. */
+  readonly status: string;
   readonly currency: string;
   readonly amountDue: number;
   readonly amountPaid: number;
   readonly createdAt: number;
-  readonly periodStartAt: number;
-  readonly periodEndAt: number;
-  readonly hostedInvoiceUrl: string | null;
-  readonly invoicePdf: string | null;
+  readonly periodStartAt: number | null;
+  readonly periodEndAt: number | null;
+  /** `true` once Paddle has issued an invoice — the PDF endpoint will work. */
+  readonly hasInvoice: boolean;
 }
 
 type InvoicesState =
@@ -512,12 +514,31 @@ export function Settings(): ReactElement {
     }
   }
 
+  /**
+   * The server creates the Paddle transaction (items + org binding are
+   * server-authoritative); the SPA only opens the Paddle overlay for it.
+   * `billingBusy` is released when the customer dismisses the overlay;
+   * a completed payment navigates away to the success page.
+   */
   async function startCheckout(plan: 'founding' | 'standard'): Promise<void> {
     setBillingError(null);
     setBillingBusy(true);
     try {
-      const { url } = await api.post<{ url: string }>('/api/billing/checkout', { plan });
-      window.location.href = url;
+      const { transactionId, customerEmail, successPath } = await api.post<{
+        transactionId: string;
+        customerEmail: string;
+        successPath: string;
+      }>('/api/billing/checkout', { plan });
+      const opened = await openCheckout({
+        transactionId,
+        customerEmail,
+        successUrl: window.location.origin + successPath,
+        onClosed: () => setBillingBusy(false),
+      });
+      if (!opened) {
+        setBillingError('Billing is not available right now — please try again shortly.');
+        setBillingBusy(false);
+      }
     } catch (cause) {
       setBillingError(describeBillingError(cause));
       setBillingBusy(false);
@@ -671,7 +692,9 @@ export function Settings(): ReactElement {
                   <p>No active subscription.</p>
                   <p className="hint">
                     Founding price is locked in for the life of your subscription — it never
-                    migrates to the standard price later.
+                    migrates to the standard price later. Prices exclude VAT, which is added at
+                    checkout for your country. Payments and invoices are handled by Paddle, our
+                    Merchant of Record.
                   </p>
                   {publicConfig?.prelaunch === true ? (
                     /* Pre-launch: new checkouts are refused server-side
@@ -690,7 +713,7 @@ export function Settings(): ReactElement {
                           disabled={billingBusy}
                           onClick={() => void startCheckout('founding')}
                         >
-                          Subscribe — Founding (€29/mo, limited spots)
+                          Subscribe — Founding (€29/mo + VAT, limited spots)
                         </button>
                       )}
                       <button
@@ -699,7 +722,7 @@ export function Settings(): ReactElement {
                         disabled={billingBusy}
                         onClick={() => void startCheckout('standard')}
                       >
-                        Subscribe — Standard (€49/mo)
+                        Subscribe — Standard (€49/mo + VAT)
                       </button>
                     </div>
                   )}
@@ -1457,8 +1480,8 @@ function BillingActiveSubscription({
   onReactivate: () => void;
   onStartCheckout: () => void;
 }): ReactElement {
-  const overdue =
-    subscription.paymentState === 'past_due' || subscription.paymentState === 'unpaid';
+  const overdue = subscription.paymentState === 'past_due';
+  const paused = subscription.paymentState === 'paused';
   const planLabel = subscription.plan === 'founding' ? 'Founding' : 'Standard';
   const tone = paymentStateTone(subscription.paymentState);
 
@@ -1473,6 +1496,7 @@ function BillingActiveSubscription({
               subscription.price.currency,
             )}{' '}
             / {subscription.price.interval}
+            {subscription.price.taxExclusive ? ' + VAT' : ''}
           </span>
           <span className={`billing-status-badge billing-status-badge--${tone}`}>
             {paymentStateLabel(subscription.paymentState)}
@@ -1491,11 +1515,8 @@ function BillingActiveSubscription({
         {overdue && (
           <div className="billing-overdue-notice" role="alert">
             <p>
-              We couldn't process your last payment
-              {subscription.paymentState === 'past_due'
-                ? ' — your subscription is past due.'
-                : '.'}{' '}
-              Update your payment details to keep your feed and digest active.
+              We couldn't process your last payment — your subscription is past due. Update your
+              payment details to keep your feed and digest active.
             </p>
             {!knownNonOwner && (
               <button
@@ -1510,6 +1531,13 @@ function BillingActiveSubscription({
           </div>
         )}
       </div>
+
+      {paused && (
+        <p className="hint" role="status">
+          Your subscription is paused — nothing is billed and the feed is off. Resume it from Manage
+          payment details.
+        </p>
+      )}
 
       {!subscription.cancelAtPeriodEnd ? (
         <div className="billing-cancel-panel">
@@ -1592,12 +1620,54 @@ function BillingActiveSubscription({
 }
 
 /**
- * Invoice history table (Task 1 §2): loading/empty/error/forbidden states,
- * per-invoice "View" (hosted Stripe invoice page) and "PDF" (Stripe-hosted
- * download — never a client-fabricated PDF) links. `hasBillingCustomer:
- * false` with zero invoices is a normal "never checked out" state, not an
- * error (mirrors `packages/billing/src/invoices.ts`'s own framing).
+ * Invoice history table: loading/empty/error/forbidden states and a
+ * per-invoice "Download PDF" action that resolves the Paddle-hosted PDF on
+ * demand (`GET /api/billing/invoices/:id/pdf` — never a client-fabricated
+ * PDF; the URL is temporary so it is fetched at click time, not listed).
+ * `hasBillingCustomer: false` with zero invoices is a normal "never
+ * checked out" state, not an error (mirrors
+ * `packages/billing/src/invoices.ts`'s own framing).
  */
+function InvoicePdfButton({ transactionId }: { transactionId: string }): ReactElement {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function download(): Promise<void> {
+    setBusy(true);
+    setError(null);
+    try {
+      const { url } = await api.get<{ url: string }>(
+        `/api/billing/invoices/${encodeURIComponent(transactionId)}/pdf`,
+      );
+      window.open(url, '_blank', 'noopener');
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError && cause.status === 404
+          ? 'No PDF available for this invoice yet.'
+          : 'Could not fetch the invoice PDF — please try again shortly.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <span className="billing-invoice-actions">
+      <button
+        type="button"
+        className="btn-quiet btn-sm"
+        disabled={busy}
+        onClick={() => void download()}
+      >
+        {busy ? 'Fetching…' : 'Download PDF'}
+      </button>
+      {error !== null && (
+        <span role="alert" className="form-error">
+          {error}
+        </span>
+      )}
+    </span>
+  );
+}
+
 function BillingInvoiceHistory({ state }: { state: InvoicesState }): ReactElement {
   return (
     <section className="settings-subsection" aria-labelledby="billing-invoices-heading">
@@ -1652,34 +1722,15 @@ function BillingInvoiceHistory({ state }: { state: InvoicesState }): ReactElemen
                         what is owed (PR-M6-01 — a €0.00 "amount" on an unpaid
                         invoice reads as ambiguous next to its status). */}
                     {formatMinorUnitsAsCurrency(
-                      invoice.status === 'paid' ? invoice.amountPaid : invoice.amountDue,
+                      invoice.status === 'paid' || invoice.status === 'completed'
+                        ? invoice.amountPaid
+                        : invoice.amountDue,
                       invoice.currency,
                     )}
                   </td>
                   <td>{invoiceStatusLabel(invoice.status)}</td>
                   <td className="no-print">
-                    <span className="billing-invoice-actions">
-                      {invoice.hostedInvoiceUrl !== null && (
-                        <a
-                          href={invoice.hostedInvoiceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn-quiet btn-sm"
-                        >
-                          View
-                        </a>
-                      )}
-                      {invoice.invoicePdf !== null && (
-                        <a
-                          href={invoice.invoicePdf}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn-quiet btn-sm"
-                        >
-                          PDF
-                        </a>
-                      )}
-                    </span>
+                    {invoice.hasInvoice && <InvoicePdfButton transactionId={invoice.id} />}
                   </td>
                 </tr>
               ))}

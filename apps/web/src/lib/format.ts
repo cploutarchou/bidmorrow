@@ -147,11 +147,11 @@ export function formatCalendarDate(epochMs: number | null): string {
 }
 
 /**
- * Formats a Stripe-style minor-units amount (e.g. cents) as a currency
+ * Formats a lowest-unit amount (e.g. cents) as a currency
  * string, same `Intl.NumberFormat` idiom as `formatOriginalValue`. Unlike
  * `formatOriginalValue`, `amountMinorUnits`/`currency` here are never
  * user/notice-supplied — they come from `packages/billing`'s own
- * `planPrice()`/Stripe invoice fields, so there is no "value not published"
+ * `planPrice()`/Paddle transaction totals, so there is no "value not published"
  * case to report.
  */
 export function formatMinorUnitsAsCurrency(amountMinorUnits: number, currency: string): string {
@@ -177,8 +177,8 @@ const PAYMENT_STATE_LABEL: Record<string, string> = {
   trialing: 'Trialing',
   active: 'Active',
   past_due: 'Past due',
+  paused: 'Paused',
   canceled: 'Canceled',
-  unpaid: 'Unpaid',
 };
 
 export function paymentStateLabel(state: string): string {
@@ -191,7 +191,7 @@ const PAYMENT_STATE_TONE: Record<string, PaymentStateTone> = {
   trialing: 'info',
   active: 'ok',
   past_due: 'danger',
-  unpaid: 'danger',
+  paused: 'warn',
   canceled: 'muted',
 };
 
@@ -201,15 +201,17 @@ export function paymentStateTone(state: string): PaymentStateTone {
   return PAYMENT_STATE_TONE[state] ?? 'muted';
 }
 
-/** Stripe `Invoice.status` (`draft | open | paid | uncollectible | void`,
- * or `null` for a not-yet-finalized invoice — verified from the installed
- * SDK, same source as `packages/billing/src/invoices.ts`). */
+/** Paddle transaction status as surfaced by `GET /api/billing/invoices`
+ * (`billed | paid | completed | past_due | canceled`, see
+ * `packages/billing/src/invoices.ts`). `completed` is a paid transaction
+ * whose invoice has been finalised — the customer-facing meaning is the
+ * same as `paid`. */
 const INVOICE_STATUS_LABEL: Record<string, string> = {
-  draft: 'Draft',
-  open: 'Open',
+  billed: 'Issued',
   paid: 'Paid',
-  uncollectible: 'Uncollectible',
-  void: 'Void',
+  completed: 'Paid',
+  past_due: 'Past due',
+  canceled: 'Canceled',
 };
 
 export function invoiceStatusLabel(status: string | null): string {

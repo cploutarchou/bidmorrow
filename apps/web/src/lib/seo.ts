@@ -105,7 +105,7 @@ export const MARKETING_META = {
   terms: {
     title: 'Terms — BidMorrow',
     description:
-      'BidMorrow terms summary: decision support only, scoped TED coverage, monthly billing via Stripe, cancel any time. Full legal text pending.',
+      'BidMorrow terms summary: decision support only, scoped TED coverage, monthly billing via Paddle (Merchant of Record), cancel any time.',
     canonical: `${SITE_ORIGIN}/terms`,
   },
 } as const satisfies Record<string, PageMetadata>;

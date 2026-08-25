@@ -140,19 +140,23 @@ jobs:
         env:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          STRIPE_PRICE_FOUNDING_MONTHLY: ${{ secrets.STRIPE_PRICE_FOUNDING_MONTHLY }}
-          STRIPE_PRICE_STANDARD_MONTHLY: ${{ secrets.STRIPE_PRICE_STANDARD_MONTHLY }}
+          PADDLE_API_KEY: ${{ secrets.PADDLE_API_KEY }}
+          PADDLE_WEBHOOK_SECRET: ${{ secrets.PADDLE_WEBHOOK_SECRET }}
+          PADDLE_PRICE_FOUNDING_MONTHLY: ${{ secrets.PADDLE_PRICE_FOUNDING_MONTHLY }}
+          PADDLE_PRICE_STANDARD_MONTHLY: ${{ secrets.PADDLE_PRICE_STANDARD_MONTHLY }}
+          # Public by design (Paddle.js client token) but environment-scoped
+          # like every other billing name, so they travel with the secrets.
+          PADDLE_CLIENT_TOKEN: ${{ vars.PADDLE_CLIENT_TOKEN }}
+          PADDLE_ENVIRONMENT: ${{ vars.PADDLE_ENVIRONMENT }}
           ADMIN_EMAILS: ${{ vars.ADMIN_EMAILS }}
           EMAIL_FROM: ${{ vars.EMAIL_FROM }}
         run: |
           # Only non-empty values are pushed; absent optionals (e.g.
-          # STRIPE_WEBHOOK_SECRET before the webhook exists, EMAIL_FROM before
+          # PADDLE_WEBHOOK_SECRET before the webhook exists, EMAIL_FROM before
           # Resend domain verification) stay unset so the app's documented
           # fallbacks engage instead of receiving empty strings.
           node -e '
-            const keys = ["BETTER_AUTH_SECRET","RESEND_API_KEY","STRIPE_SECRET_KEY","STRIPE_WEBHOOK_SECRET","STRIPE_PRICE_FOUNDING_MONTHLY","STRIPE_PRICE_STANDARD_MONTHLY","ADMIN_EMAILS","EMAIL_FROM"];
+            const keys = ["BETTER_AUTH_SECRET","RESEND_API_KEY","PADDLE_API_KEY","PADDLE_WEBHOOK_SECRET","PADDLE_PRICE_FOUNDING_MONTHLY","PADDLE_PRICE_STANDARD_MONTHLY","PADDLE_CLIENT_TOKEN","PADDLE_ENVIRONMENT","ADMIN_EMAILS","EMAIL_FROM"];
             const out = {};
             for (const k of keys) { const v = process.env[k]; if (v !== undefined && v !== "") out[k] = v; }
             if (out.BETTER_AUTH_SECRET === undefined) { console.error("BETTER_AUTH_SECRET missing in the staging environment secrets"); process.exit(1); }
