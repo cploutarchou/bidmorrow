@@ -60,8 +60,8 @@ export default defineConfig({
             PADDLE_WEBHOOK_SECRET: 'pdl_ntfset_fake_for_worker_tests_only',
             PADDLE_CLIENT_TOKEN: 'test_fake_client_token',
             PADDLE_ENVIRONMENT: 'sandbox',
-            PADDLE_PRICE_FOUNDING_MONTHLY: 'pri_fake_founding_test',
-            PADDLE_PRICE_STANDARD_MONTHLY: 'pri_fake_standard_test',
+            PADDLE_PRICE_FOUNDING_MONTHLY: 'pri_01fakefoundingtest00000000',
+            PADDLE_PRICE_STANDARD_MONTHLY: 'pri_01fakestandardtest00000000',
           },
         },
       };

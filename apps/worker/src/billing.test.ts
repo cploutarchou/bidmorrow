@@ -9,17 +9,17 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { resolveBillingConfig, resolvePaddleEnvironment } from './billing';
+import { normalizeSecret, resolveBillingConfig, resolvePaddleEnvironment } from './billing';
 import type { Env } from './env';
 
 const FULL = {
   APP_BASE_URL: 'https://bidmorrow.local',
-  PADDLE_API_KEY: 'pdl_sdbx_apikey_fake',
+  PADDLE_API_KEY: 'pdl_sdbx_apikey_fake_not_real',
   PADDLE_WEBHOOK_SECRET: 'pdl_ntfset_fake',
   PADDLE_CLIENT_TOKEN: 'test_fake_token',
   PADDLE_ENVIRONMENT: 'sandbox',
-  PADDLE_PRICE_FOUNDING_MONTHLY: 'pri_fake_founding',
-  PADDLE_PRICE_STANDARD_MONTHLY: 'pri_fake_standard',
+  PADDLE_PRICE_FOUNDING_MONTHLY: 'pri_01m0wx38ymack0vxmqvtadddg9',
+  PADDLE_PRICE_STANDARD_MONTHLY: 'pri_01m0wx39a5dkx4fpr7pexbwv6b',
 };
 
 function envWithout(name: keyof typeof FULL): Env {
@@ -63,13 +63,54 @@ describe('resolveBillingConfig', () => {
     const config = resolveBillingConfig(FULL as unknown as Env);
     expect(config).not.toBeNull();
     expect(config?.priceIds).toEqual({
-      founding: 'pri_fake_founding',
-      standard: 'pri_fake_standard',
+      founding: 'pri_01m0wx38ymack0vxmqvtadddg9',
+      standard: 'pri_01m0wx39a5dkx4fpr7pexbwv6b',
     });
     expect(config?.environment).toBe('sandbox');
     expect(config?.clientToken).toBe('test_fake_token');
     expect(config?.webhookSecret).toBe('pdl_ntfset_fake');
     expect(config?.appBaseUrl).toBe('https://bidmorrow.local');
     expect(config?.paddle.subscriptions).toBeDefined();
+  });
+
+  it('tolerates pasted whitespace, newlines and wrapping quotes around secrets', () => {
+    const env = {
+      ...FULL,
+      PADDLE_API_KEY: '  pdl_sdbx_apikey_fake_not_real\n',
+      PADDLE_PRICE_FOUNDING_MONTHLY: '"pri_01m0wx38ymack0vxmqvtadddg9"',
+      PADDLE_ENVIRONMENT: 'sandbox\n',
+      PADDLE_WEBHOOK_SECRET: ' pdl_ntfset_fake ',
+    } as unknown as Env;
+    const config = resolveBillingConfig(env);
+    expect(config?.priceIds.founding).toBe('pri_01m0wx38ymack0vxmqvtadddg9');
+    expect(config?.webhookSecret).toBe('pdl_ntfset_fake');
+    expect(config?.environment).toBe('sandbox');
+  });
+
+  it.each([
+    ['a client token in PADDLE_API_KEY', { PADDLE_API_KEY: 'test_clienttoken_placeholder' }],
+    [
+      'a Bearer prefix in PADDLE_API_KEY',
+      { PADDLE_API_KEY: 'Bearer pdl_sdbx_apikey_fake_not_real' },
+    ],
+    [
+      'a product id where a price id belongs',
+      { PADDLE_PRICE_STANDARD_MONTHLY: 'pro_01m0wx38tjejcm7tvx35paz8rp' },
+    ],
+    ['an empty (whitespace-only) PADDLE_API_KEY', { PADDLE_API_KEY: '   ' }],
+  ])('returns null (not_configured) for %s instead of a 500 per request', (_label, patch) => {
+    expect(resolveBillingConfig({ ...FULL, ...patch } as unknown as Env)).toBeNull();
+  });
+});
+
+describe('normalizeSecret', () => {
+  it('trims, unquotes and treats empty as unset', () => {
+    expect(normalizeSecret(undefined)).toBeUndefined();
+    expect(normalizeSecret('')).toBeUndefined();
+    expect(normalizeSecret('\n')).toBeUndefined();
+    expect(normalizeSecret(' x ')).toBe('x');
+    expect(normalizeSecret('"x"')).toBe('x');
+    expect(normalizeSecret("' x '")).toBe('x');
+    expect(normalizeSecret('"')).toBe('"');
   });
 });
