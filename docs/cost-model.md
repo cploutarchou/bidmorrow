@@ -116,8 +116,12 @@ with margin; no scope tightening needed (ADR-0003 trigger is >600/day).
 
 ## Variable / revenue-linked costs (separate)
 
-- Stripe: ~2.9% + $0.30 per transaction (EU cards vary) — scales with
-  revenue, not infrastructure.
+- Paddle (Merchant of Record, ADR-0011): **5% + 50¢ per transaction**
+  (Paddle's published rate — developer.paddle.com "How does Paddle
+  compare?" table, verified 2026-08-25; the API's `fee_rate` example is
+  `0.05`). Paddle collects and remits VAT itself, so no tax-compliance
+  cost sits on this line. Scales with revenue, not infrastructure. Net per
+  subscription ≈ €27.10 (Founding €29) / €46.10 (Standard €49).
 - No LLM inference costs: V1 has no production LLM usage by design.
 - No paid analytics, no paid monitoring, no paid procurement data.
 

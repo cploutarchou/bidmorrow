@@ -49,7 +49,7 @@
 # .github/workflows/deploy-staging.yml ("Mark staging assets noindex") for
 # why the Worker's robots.txt is not sufficient on its own.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.paddle.com; style-src 'self' https://cdn.paddle.com https://sandbox-cdn.paddle.com 'unsafe-inline'; img-src 'self' data: https://*.paddle.com; connect-src 'self' https://*.paddle.com; frame-src https://buy.paddle.com https://sandbox-buy.paddle.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin

@@ -6,11 +6,11 @@
  *
  * One shared limiter binding covers every rate-limited route group
  * (`/api/org/*`, `/api/admin/*`, `/api/billing/*`, `/api/account/*`,
- * `POST /api/webhooks/stripe`), so a client IP has a single budget across
+ * `POST /api/webhooks/paddle`), so a client IP has a single budget across
  * the whole API surface. The webhook route is the SEC-P9-02 closure: it is
  * unauthenticated, so limiting must happen before signature verification
- * spends CPU on attacker-supplied bodies; Stripe's own delivery volume for
- * this app is far below the limit, and Stripe retries on 429.
+ * spends CPU on attacker-supplied bodies; Paddle's own delivery volume for
+ * this app is far below the limit, and Paddle retries on 429.
  *
  * The binding is OPTIONAL: some runtimes (verify per-environment before
  * relying on this in staging/production) may not provision

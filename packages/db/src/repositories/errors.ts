@@ -62,7 +62,7 @@ export class DuplicateDigestError extends Error {
 }
 
 /**
- * An upsert keyed on an external id (e.g. a Stripe customer id) collided
+ * An upsert keyed on an external id (e.g. a billing-provider customer id) collided
  * with a row owned by a DIFFERENT organization. Never handled silently —
  * this is either a caller bug or a cross-tenant attack attempt and must
  * surface loudly (docs/security.md C6).

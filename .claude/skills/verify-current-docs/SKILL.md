@@ -1,6 +1,6 @@
 ---
 name: verify-current-docs
-description: Verify an API surface, config syntax, or platform limit against CURRENT official documentation before implementing against it. Use before adopting any external API call, wrangler/Stripe/Better Auth/TED syntax, or quoting a platform limit in docs or the cost model.
+description: Verify an API surface, config syntax, or platform limit against CURRENT official documentation before implementing against it. Use before adopting any external API call, wrangler/Paddle/Better Auth/TED syntax, or quoting a platform limit in docs or the cost model.
 ---
 
 # Verify current docs
@@ -14,7 +14,7 @@ do not count when authoritative docs exist.
    - Cloudflare → developers.cloudflare.com (or the Cloudflare docs MCP search tool)
    - TED / eForms → docs.ted.europa.eu, github.com/OP-TED (eForms SDK)
    - CPV/NUTS → EU Publications Office / Eurostat (ec.europa.eu, op.europa.eu)
-   - Stripe → docs.stripe.com
+   - Paddle → developer.paddle.com (prefer the `paddle-docs` MCP search/get tools; API shapes via the `paddle-sandbox` MCP `search` tool)
    - Better Auth → better-auth.com/docs
    - Hono → hono.dev · Drizzle → orm.drizzle.team · Resend → resend.com/docs
    - Vitest/Playwright/Vite/React → their official docs sites

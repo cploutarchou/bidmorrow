@@ -1,30 +1,28 @@
 /**
- * `POST /api/webhooks/stripe` — the only unauthenticated (no session, no
- * org context) route in this Worker's `/api/*` surface: Stripe itself is
+ * `POST /api/webhooks/paddle` — the only unauthenticated (no session, no
+ * org context) route in this Worker's `/api/*` surface: Paddle itself is
  * the caller, authenticated by its own signed payload instead of a
  * session cookie. Deliberately NOT under `/api/org` or any
  * `requireSession`/`requireOrganization` chain.
  *
  * Signature verification is mandatory and happens BEFORE anything else
- * touches the payload (`verifyStripeWebhookEvent`,
- * `stripe.webhooks.constructEventAsync` — Workers-compatible async
- * verification, docs/dependency-versions.md). The raw body is read via
- * `c.req.text()` exactly once, before any JSON parsing — there is no JSON
- * parsing in this handler at all, so the global `/api/*` `bodyLimit`
- * middleware (`index.ts`, registered ahead of every route mount) never
- * conflicts with it: `bodyLimit` only caps size while streaming through,
- * it does not consume the body itself.
+ * touches the payload (`verifyPaddleWebhook`: HMAC-SHA256 over
+ * `ts:rawBody` with the notification destination's secret, Web Crypto,
+ * docs/security.md C9). The raw body is read via `c.req.text()` exactly
+ * once, before any JSON parsing — the global `/api/*` `bodyLimit`
+ * middleware only caps size while streaming through; it never consumes
+ * the body itself.
  *
  * Responses: 400 with NO detail on a missing/invalid signature (never echo
- * Stripe's own verification error back to the caller — it could leak
- * timing/format information useful to an attacker probing the endpoint);
- * 200 on success OR a duplicate/ignored event (Stripe must not retry
- * those); 500 on a genuine processing failure AFTER the event was recorded
- * (Stripe retries — safe, because `processStripeEvent` re-fetches current
- * state rather than trusting anything about the failed attempt).
+ * the verification reason — it could leak timing/format information to
+ * someone probing the endpoint); 200 on success OR a duplicate/ignored
+ * event (Paddle must not retry those); 500 on a genuine processing failure
+ * AFTER the event was recorded (Paddle retries the same event_id — safe,
+ * because `processPaddleEvent` re-fetches current state rather than
+ * trusting anything about the failed attempt).
  */
 import { Hono } from 'hono';
-import { processStripeEvent, verifyStripeWebhookEvent } from '@bidmorrow/billing';
+import { processPaddleEvent, verifyPaddleWebhook } from '@bidmorrow/billing';
 import { createDb } from '@bidmorrow/db';
 
 import { resolveBillingConfig } from '../billing';
@@ -35,19 +33,19 @@ export const webhookRoutes = new Hono<AppBindings>();
 
 // SEC-P9-02: throttle the unauthenticated webhook endpoint BEFORE signature
 // verification spends CPU on attacker-supplied bodies. Keyed per client IP;
-// Stripe's real delivery volume for this app is far below the limit, and
-// Stripe retries deliveries that hit a 429.
-webhookRoutes.use('*', createIpRateLimit('/api/webhooks/stripe'));
+// Paddle's real delivery volume for this app is far below the limit, and
+// Paddle retries deliveries that hit a 429.
+webhookRoutes.use('*', createIpRateLimit('/api/webhooks/paddle'));
 
-webhookRoutes.post('/stripe', async (c) => {
+webhookRoutes.post('/paddle', async (c) => {
   const config = resolveBillingConfig(c.env);
-  const webhookSecret = c.env.STRIPE_WEBHOOK_SECRET;
+  const webhookSecret = c.env.PADDLE_WEBHOOK_SECRET;
   if (config === null || webhookSecret === undefined) {
     c.get('logger').error('billing.webhook.not_configured', {});
     return c.json({ error: 'not_configured' }, 503);
   }
 
-  const signature = c.req.header('stripe-signature');
+  const signature = c.req.header('paddle-signature');
   const rawBody = await c.req.text();
   if (signature === undefined) {
     return c.json({ error: 'invalid_signature' }, 400);
@@ -55,24 +53,24 @@ webhookRoutes.post('/stripe', async (c) => {
 
   let event;
   try {
-    event = await verifyStripeWebhookEvent(config.stripe, rawBody, signature, webhookSecret);
+    event = await verifyPaddleWebhook(rawBody, signature, webhookSecret);
   } catch {
-    // Never leak the verification error's own message/detail.
+    // Never leak the verification reason.
     c.get('logger').warn('billing.webhook.invalid_signature', {});
     return c.json({ error: 'invalid_signature' }, 400);
   }
 
   const db = createDb(c.env.DB);
-  const logger = c.get('logger').child({ billing_event_id: event.id });
+  const logger = c.get('logger').child({ billing_event_id: event.event_id });
   try {
-    const outcome = await processStripeEvent(
-      { db, stripe: config.stripe, priceIds: config.priceIds, logger },
+    const outcome = await processPaddleEvent(
+      { db, paddle: config.paddle, priceIds: config.priceIds, logger },
       event,
     );
-    logger.info('billing.webhook.processed', { type: event.type, outcome });
+    logger.info('billing.webhook.processed', { type: event.event_type, outcome });
   } catch (cause) {
     logger.error('billing.webhook.processing_failed', {
-      type: event.type,
+      type: event.event_type,
       error: cause instanceof Error ? cause.message : String(cause),
     });
     return c.json({ error: 'processing_failed' }, 500);

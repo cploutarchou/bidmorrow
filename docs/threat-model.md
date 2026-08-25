@@ -6,7 +6,7 @@ bid/no-bid SaaS. Companion to docs/product-scope.md and docs/architecture.md.
 **Stack assumptions**: modular monolith on Cloudflare Workers; Hono API;
 React/Vite SPA (Workers Static Assets); Cloudflare D1 via Drizzle ORM; Better
 Auth cookie sessions; Cloudflare Queues + Cron Triggers; R2 (private) for raw
-TED snapshots; Stripe Checkout/Portal/webhooks; Resend for email. Multi-tenant:
+TED snapshots; Paddle Billing (Merchant of Record: checkout overlay, customer portal, webhooks — ADR-0011); Resend for email. Multi-tenant:
 organizations own all customer data. Roles: ORGANIZATION_OWNER, MEMBER,
 INTERNAL_ADMIN. **No LLM in the production path.** All TED procurement content
 is untrusted external input rendered in the customer UI.
@@ -26,8 +26,8 @@ what tenders a company pursues) and account/billing integrity.
 | A3  | Match results, feedback, saved/ignored state                                              | D1                                           | High — same competitive signal as A2                                                                     | Info disclosure                                    |
 | A4  | TED notices & lots (parsed)                                                               | D1                                           | Low (public data) but integrity-critical: it drives scores and is rendered in UI                         | Tampering, DoS                                     |
 | A5  | Raw TED snapshots                                                                         | R2 private bucket                            | Low/Medium (audit trail for score reproducibility)                                                       | Tampering, Info disclosure                         |
-| A6  | Billing state & entitlements                                                              | D1 (subscriptions), Stripe (source of truth) | High                                                                                                     | Tampering, Spoofing, Repudiation                   |
-| A7  | Secrets (Stripe keys, webhook secret, Resend key, BETTER_AUTH_SECRET, CF API token)       | Wrangler secrets / CI secrets                | Critical                                                                                                 | Info disclosure, Elevation                         |
+| A6  | Billing state & entitlements                                                              | D1 (subscriptions), Paddle (source of truth) | High                                                                                                     | Tampering, Spoofing, Repudiation                   |
+| A7  | Secrets (Paddle API key, webhook secret, Resend key, BETTER_AUTH_SECRET, CF API token)    | Wrangler secrets / CI secrets                | Critical                                                                                                 | Info disclosure, Elevation                         |
 | A8  | Internal admin surface (flags, ingestion scope, match trace, pause switches)              | Worker routes gated by INTERNAL_ADMIN        | Critical                                                                                                 | Elevation, Tampering, Repudiation                  |
 | A9  | Email sending capability (verification, reset, digests)                                   | Resend + Queues                              | Medium — abuse burns domain reputation                                                                   | Spoofing, DoS                                      |
 | A10 | Availability of ingestion/scoring/digest pipeline                                         | Queues, Cron, Worker CPU/D1 quotas           | Medium                                                                                                   | DoS                                                |
@@ -39,7 +39,7 @@ what tenders a company pursues) and account/billing integrity.
 ```
                  UNTRUSTED INTERNET
  ┌────────────┐  ┌────────────┐  ┌──────────────────────────┐
- │  Browsers  │  │ TED OJ API │  │ Stripe / Resend webhooks │
+ │  Browsers  │  │ TED OJ API │  │ Paddle / Resend webhooks │
  │ (customers,│  │ (public,   │  │ & callbacks              │
  │ attackers) │  │ untrusted  │  └──────────┬───────────────┘
  └─────┬──────┘  │  content)  │             │
@@ -63,7 +63,7 @@ what tenders a company pursues) and account/billing integrity.
          ▼               ▼              ▼         ▼
  ┌────────────┐  ┌──────────────┐  ┌────────┐  ┌────────────┐
  │ D1 (multi- │  │ R2 (private  │  │ Queues │  │  outbound: │
- │ tenant DB) │  │ snapshots)   │  │ + Cron │  │ Stripe API,│
+ │ tenant DB) │  │ snapshots)   │  │ + Cron │  │ Paddle API,│
  └────────────┘  └──────────────┘  └────────┘  │ Resend API │
                                                └────────────┘
 ```
@@ -71,8 +71,9 @@ what tenders a company pursues) and account/billing integrity.
 - **TB1** Browser → API: authenticated, rate-limited, zod-validated.
 - **TB2** TED → ingestion: public data, adversarial by assumption. Content is
   data, never code; parsed with strict schemas, stored as text, rendered escaped.
-- **TB3** Stripe/Resend → webhooks: unauthenticated internet endpoints; trust is
-  established solely by signature verification.
+- **TB3** Paddle/Resend → webhooks: unauthenticated internet endpoints; trust is
+  established solely by signature verification (Paddle: HMAC-SHA256 over
+  `ts:rawBody` with the notification destination's secret, C9).
 - **TB4** Customer plane vs admin plane inside one Worker: enforced by role
   checks + email allowlist (`ADMIN_EMAILS`), not by URL obscurity.
 - **TB5** Worker → D1/R2/Queues via Workers bindings only; no credentialed
@@ -90,7 +91,7 @@ what tenders a company pursues) and account/billing integrity.
 | C6  | Server-side authorization: repository layer where every tenant-scoped query **requires** `organizationId` from the session (not from the request); role checks per route                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | C7  | Rate/abuse protection: per-IP and per-account limits on auth endpoints, API write endpoints, and email-triggering endpoints; Cloudflare WAF/bot rules in front                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | C8  | Audit logs: append-only records for auth events, admin actions, billing transitions, profile changes (actor, org, action, timestamp)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| C9  | Stripe webhook signature verification + event-ID idempotency table                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| C9  | Paddle webhook signature verification + event-ID idempotency table                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | C10 | Secret isolation: wrangler secrets per environment, never in code/vars/logs; test vs live keys never mixed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | C11 | Least privilege: scoped CF API token for CI (no Global API Key), read-only credentials for reviewer agents, `ADMIN_EMAILS` allowlist, R2 bucket private with no public access                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
@@ -172,8 +173,8 @@ explicitly (not a security bug, but prevents filter-bypass surprises). Residual
 raw-SQL need (e.g. a migration) goes through reviewed migration files only.
 
 **T8. IDOR.** Requesting another org's objects by ID: `/api/matches/:id`,
-`/api/tenders/:id/feedback`, saved lists, digest previews, Stripe portal
-session creation. IDs are practically guessable (or leak via digests/URLs).
+`/api/tenders/:id/feedback`, saved lists, digest previews, Paddle portal
+session creation, invoice PDF lookup by transaction id. IDs are practically guessable (or leak via digests/URLs).
 **L: H (classic SaaS bug) / I: H.** Mitigations: C6 is the primary control —
 the repository layer's tenant-scoped methods take `organizationId` from the
 authenticated session and include it in **every** WHERE clause; no repository
@@ -221,22 +222,26 @@ deletion is still fully idempotent.
 
 ### 4.3 Billing (A6) — Spoofing / Tampering / Repudiation
 
-**T11. Webhook replay.** Re-sending a captured legitimate Stripe event (e.g.
-`checkout.session.completed`) to re-trigger entitlement grants or confuse
+**T11. Webhook replay.** Re-sending a captured legitimate Paddle event (e.g.
+`subscription.activated`) to re-trigger entitlement grants or confuse
 subscription state. Entry point: the public webhook route. **L: M / I: M.**
-Mitigations: C9 — signature verification with `STRIPE_WEBHOOK_SECRET`
-including Stripe's timestamp tolerance (rejects stale replays), plus a
-processed-`event.id` idempotency table in D1 so an event applies exactly once;
+Mitigations: C9 — HMAC signature verification with `PADDLE_WEBHOOK_SECRET`
+including a 5-minute timestamp tolerance (rejects stale replays; wider than
+the SDKs' 5 s for clock skew, safe because of the next control), plus a
+processed-`event_id` idempotency table in D1 (`provider_event_id` unique)
+so an event applies exactly once;
 handlers are idempotent by design (state machine transitions, not increments).
 
 **T12. Fake billing events.** Forged webhook bodies claiming an org paid, or a
 user invoking checkout-success URLs directly to self-grant entitlements.
 **L: M / I: H** (free service, revenue loss, founding-cap abuse). Mitigations:
 C9 — unverifiable signatures are rejected before parsing; **entitlements are
-derived only from webhook-verified Stripe state, never from client redirects or
-query params**; success/cancel pages are display-only; the founding-price cap
-is enforced server-side against Stripe-confirmed subscriptions, not signups;
-periodic reconciliation job compares D1 subscription state to the Stripe API
+derived only from webhook-verified Paddle state, never from client redirects or
+query params**; success/cancel pages are display-only; the checkout transaction
+itself is created server-side (items + organization binding), so the browser
+never chooses what it buys; the founding-price cap is enforced server-side
+against Paddle-confirmed subscriptions, not signups; periodic reconciliation
+job compares D1 subscription state to the Paddle API
 (detects drift and missed events); C10 keeps test/live keys separate so
 test-mode events can never touch production entitlements; C8 logs every
 entitlement transition with the causing event ID (repudiation defense).
@@ -246,28 +251,28 @@ after C9's signature check passes, the webhook handler trusts the EVENT
 that part of the payload is not re-fetched, only its signature-verified
 delivery is trusted — but every mutable **STATE** field it writes
 (`status`, `plan`, `cancel_at_period_end`, `current_period_end_at`) is taken
-from the Stripe API's own live response to a follow-up read
-(`subscriptions.retrieve`/the update call's own response, never copied
+from the Paddle API's own live response to a follow-up read
+(`GET /subscriptions/{id}`/the mutation's own response, never copied
 verbatim off the webhook body's mutable fields), so a webhook body crafted
 with a real, currently-valid signature but stale/tampered mutable fields
-still cannot write state Stripe itself doesn't currently hold.
+still cannot write state Paddle itself doesn't currently hold.
 `cancelSubscriptionForOrgDeletion` (Phase 11, org-deletion cancellation)
 follows the identical "trust identity, re-fetch state" shape. **Phase 9
 residuals, CLOSED 2026-08-16 (Phase 13 hardening)**: SEC-P9-02 — the
-unauthenticated `POST /api/webhooks/stripe` endpoint is now gated by the
+unauthenticated `POST /api/webhooks/paddle` endpoint is now gated by the
 same IP-keyed native rate-limit binding as the rest of the API surface
 (`createIpRateLimit`, applied BEFORE signature verification spends CPU on
-attacker-supplied bodies; Stripe retries deliveries that hit a 429), in
+attacker-supplied bodies; Paddle retries deliveries that hit a 429), in
 addition to the global body-size limit (SEC-P4-09 below) and cheap pre-DB
 400s on an invalid signature — an in-worker control, so it needs no
 per-zone WAF console configuration and cannot drift from the deploy.
-SEC-P9-03 — a user who double-submits Stripe Checkout (e.g. a slow network
-retry) could create two Stripe customers for the same organization and
+SEC-P9-03 — a user who double-submits checkout (e.g. a slow network
+retry) could create two Paddle customers for the same organization and
 wedge the second webhook on the org-unique subscription row: the webhook
 processor now catch-and-reconciles (detects a subscription-bearing event
-for an org whose non-canceled row holds a DIFFERENT `stripe_customer_id`,
-cancels the duplicate Stripe subscription so the owner is not
-double-charged, records the event, and acks 200 so Stripe stops retrying —
+for an org whose non-canceled row holds a DIFFERENT `billing_customer_id`,
+cancels the duplicate Paddle subscription immediately so the owner is not
+double-charged, records the event, and acks 200 so Paddle stops retrying —
 logged loudly; see `packages/billing/src/webhook.ts`).
 
 ### 4.4 TED ingestion & matching (A4, A5, and the engine) — Tampering / DoS
@@ -347,7 +352,7 @@ state-corruption DoS class; budget alerts on CF spend. **SEC-P4-09 delta,
 concretized**: every `/api/*` route (not just specific endpoints) sits behind
 a single global body-size limit — `bodyLimit({ maxSize: 128 * 1024 })` in
 `apps/worker/src/index.ts` — that 413s an oversized request BEFORE it reaches
-any handler or touches D1, applying uniformly to the unauthenticated Stripe
+any handler or touches D1, applying uniformly to the unauthenticated Paddle
 webhook route (T11/T12) as much as to authenticated customer routes; the cap
 (128 KB) comfortably exceeds every legitimate request shape in the API
 surface (profile/preference updates, webhook payloads) while bounding
@@ -452,7 +457,7 @@ being retained forever by omission.
 **T20. Secret exposure.** Leaking A7: secrets committed to git, echoed in
 Worker logs, pasted into error messages, present in `wrangler.toml` `[vars]`,
 bundled into the SPA, or exfiltrated via a compromised CI. **L: M /
-I: Critical** (Stripe live key = money; CF token = whole platform).
+I: Critical** (Paddle live API key = money; CF token = whole platform).
 Mitigations: C10 — all secrets via `wrangler secret put` / GitHub environment
 secrets, per-environment, never in code or plain vars; `.env` gitignored +
 secret-scanning (gitleaks or GitHub push protection) in CI; client bundle
@@ -470,9 +475,13 @@ human, see §5); rotation runbook documented (rotate first, investigate
 second).
 
 **T21. Dependency compromise.** Malicious or vulnerable npm packages (Hono,
-Drizzle, Better Auth, Stripe SDK, React, transitive deps) or a compromised
+Drizzle, Better Auth, React, `@paddle/paddle-js`, transitive deps) or a compromised
 GitHub Action exfiltrating CI secrets — currently the most active real-world
-attack class. **L: M / I: H.** Mitigations: lockfile committed and CI installs
+attack class. **L: M / I: H.** Note (ADR-0011): there is no Paddle server SDK —
+the Worker talks to Paddle over plain `fetch`; the SPA's `@paddle/paddle-js`
+is only a loader that fetches Paddle.js from `cdn.paddle.com` at runtime
+(Paddle mandates its CDN), so that script is a standing trust in Paddle's
+supply chain, bounded by the CSP allowlist (C3). Mitigations: lockfile committed and CI installs
 with frozen lockfile; Dependabot/`npm audit` gating with prompt patching of
 critical advisories; minimal dependency posture (V1 explicitly avoids
 analytics SDKs, LLM SDKs, session replay — see product scope); **GitHub
@@ -497,7 +506,7 @@ no postinstall-heavy packages without review.
 | Admin plane shares the single Worker with the customer app (monolith)                                                                                                                                                                                                                                  | Separate admin deployment is disproportionate at this scale; role + allowlist + audit compensate                                                                                                                                                                                          | Team grows beyond founder, or SOC2-type requirements appear                                                                                                                                                                |
 | D1 has no row-level security; tenant isolation is application-layer (C6)                                                                                                                                                                                                                               | D1/SQLite offers no native RLS; the typed repository requirement + CI isolation tests are the enforcement                                                                                                                                                                                 | Any C6 bypass found in review, or migration off D1                                                                                                                                                                         |
 | TED upstream integrity is trusted after TLS (no content signing exists)                                                                                                                                                                                                                                | No signed feed available; quarantine + versioning + R2 snapshots bound the damage                                                                                                                                                                                                         | TED offers integrity mechanisms, or a poisoning incident                                                                                                                                                                   |
-| Stripe reconciliation is periodic, not real-time — short entitlement-drift windows possible                                                                                                                                                                                                            | Webhooks + idempotency make drift rare; daily reconciliation bounds it to ≤24h                                                                                                                                                                                                            | Chargeback/abuse patterns, or plan complexity grows                                                                                                                                                                        |
+| Paddle reconciliation is periodic, not real-time — short entitlement-drift windows possible                                                                                                                                                                                                            | Webhooks + idempotency make drift rare; daily reconciliation bounds it to ≤24h                                                                                                                                                                                                            | Chargeback/abuse patterns, or plan complexity grows                                                                                                                                                                        |
 | No dedicated SIEM/alerting stack; audit logs reviewed manually                                                                                                                                                                                                                                         | V1 has no analytics/monitoring SaaS by design; CF dashboards + email alerts suffice at pilot scale                                                                                                                                                                                        | >50 orgs, or first security incident                                                                                                                                                                                       |
 | Single-region single-DB (D1) availability profile                                                                                                                                                                                                                                                      | Accepted for a daily-digest product; RPO = D1 backup cadence                                                                                                                                                                                                                              | Paying customers demand SLA                                                                                                                                                                                                |
 | `API_RATE_LIMITER` fails OPEN, not closed, when the Workers binding is absent (`middleware/rate-limit.ts`, verified from source: `if (limiter === undefined) { ...; await next(); return; }`) — `/api/org/*` gets zero rate limiting for the rest of that isolate's life, logged once, not per-request | Deliberate: failing closed would take the entire customer-facing API down on a binding misconfiguration, which is a worse outcome than temporarily uncapped write volume at pilot scale; the gap is visible in structured logs (`API_RATE_LIMITER binding is not configured`), not silent | Any staging/production deploy where the binding is confirmed missing (this should never happen post-deploy-checklist, but the code does not enforce it); or first real abuse incident that a rate limit would have stopped |
@@ -521,7 +530,7 @@ following happens:
    webhook, callback, or public API).
 6. **Auth changes**: 2FA/passkeys/OAuth providers added, session model changed,
    or Better Auth major-version upgrade.
-7. **Billing changes**: new plans, usage billing, Stripe Tax, or any flow that
+7. **Billing changes**: new plans, usage billing, a billing-provider change, or any flow that
    grants entitlements outside the webhook path.
 8. **Any security incident or near-miss**, including a tenant-isolation test
    failure in CI or a dependency-advisory affecting an internet-facing path.
@@ -543,7 +552,7 @@ admin surface updated + C5's `SameSite=Strict` claim corrected to reality
 Actions claim corrected from SHA-pinned to tag-pinned + ledger follow-up
 recorded; SEC-P4-09 deltas closed out (cf-connecting-ip keying, global body
 limit, account-deletion compensation)). 2026-08-16 (Phase 13 hardening):
-SEC-P9-02 closed (in-worker IP rate limit on the Stripe webhook route,
+SEC-P9-02 closed (in-worker IP rate limit on the billing webhook route,
 before signature verification), SEC-P9-03 closed (webhook double-checkout
 catch-and-reconcile), T21 GitHub Actions now genuinely SHA-pinned, T12/T16
 rate-limit coverage extended to `/api/admin/*` and `/api/account/*`

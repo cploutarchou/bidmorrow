@@ -48,21 +48,20 @@ export default defineConfig({
             // exact-match case. Admin-gate tests sign in with the lowercase
             // form of this same address.
             ADMIN_EMAILS: 'Admin@Example.test',
-            // Clearly-fake Stripe test-mode sentinels (never real
-            // credentials — HUMAN_DECISION_BLOCKERS.md item 4). Enables
-            // `/api/billing/*`/`/api/webhooks/stripe` to construct a Stripe
-            // client so signature verification (pure local HMAC, no network)
-            // and pre-network guard paths (409s, role/auth gates) are
-            // D1-testable; any code path that would actually reach Stripe's
-            // network API (e.g. a successful checkout session creation) is
-            // deliberately NOT exercised here — that boundary is
-            // unit-tested in packages/billing with an injected fake Stripe
-            // client instead (see apps/worker/src/billing.d1.test.ts's file
-            // header for the full split).
-            STRIPE_SECRET_KEY: 'sk_test_fake_for_worker_tests_only',
-            STRIPE_WEBHOOK_SECRET: 'whsec_fake_for_worker_tests_only',
-            STRIPE_PRICE_FOUNDING_MONTHLY: 'price_fake_founding_test',
-            STRIPE_PRICE_STANDARD_MONTHLY: 'price_fake_standard_test',
+            // Clearly-fake Paddle sandbox sentinels (never real credentials
+            // — HUMAN_DECISION_BLOCKERS.md item 4). Enables `/api/billing/*`
+            // and `/api/webhooks/paddle` to construct a client so signature
+            // verification (pure local HMAC, no network) and pre-network
+            // guard paths (409s, role/auth gates) are D1-testable; any code
+            // path that would actually reach Paddle's network API is
+            // deliberately NOT exercised here — that boundary is unit-tested
+            // in packages/billing with an injected fake client instead.
+            PADDLE_API_KEY: 'pdl_sdbx_apikey_fake_for_worker_tests_only',
+            PADDLE_WEBHOOK_SECRET: 'pdl_ntfset_fake_for_worker_tests_only',
+            PADDLE_CLIENT_TOKEN: 'test_fake_client_token',
+            PADDLE_ENVIRONMENT: 'sandbox',
+            PADDLE_PRICE_FOUNDING_MONTHLY: 'pri_fake_founding_test',
+            PADDLE_PRICE_STANDARD_MONTHLY: 'pri_fake_standard_test',
           },
         },
       };

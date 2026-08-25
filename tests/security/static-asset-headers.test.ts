@@ -29,11 +29,13 @@ describe('_headers (SEC-P7-01)', () => {
     expect(source).toMatch(/^\/\*$/m);
   });
 
-  it('sets a self-only CSP with no unsafe-inline/unsafe-eval, matching a script-less/inline-style-less build', () => {
+  it('sets the strict CSP (Paddle origins only, no inline/eval scripts)', () => {
     expect(source).toContain(
-      "Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+      "Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.paddle.com; style-src 'self' https://cdn.paddle.com https://sandbox-cdn.paddle.com 'unsafe-inline'; img-src 'self' data: https://*.paddle.com; connect-src 'self' https://*.paddle.com; frame-src https://buy.paddle.com https://sandbox-buy.paddle.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
     );
-    expect(source).not.toContain('unsafe-inline');
+    // Styles may be inline (Paddle.js overlay); scripts never.
+    const scriptSrc = source.split(';').find((d) => d.trim().startsWith('script-src')) ?? '';
+    expect(scriptSrc).not.toContain('unsafe-inline');
     expect(source).not.toContain('unsafe-eval');
   });
 

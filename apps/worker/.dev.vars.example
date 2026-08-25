@@ -26,16 +26,19 @@ ADMIN_EMAILS=
 RESEND_API_KEY=
 EMAIL_FROM=
 
-# Stripe (billing — Phase 9). Test-mode keys only outside production, never
-# mixed with live keys. All four optional in local/test: absent means
+# Paddle Billing (ADR-0011). SANDBOX credentials only outside production,
+# never mixed with live ones. All optional in local/test: absent means
 # /api/billing/* and the webhook endpoint respond `not_configured` instead
 # of constructing a client with an empty key. REQUIRED in staging/production
-# (HUMAN_DECISION_BLOCKERS.md item 4 — Stripe account/prices are a human
-# blocker; never invent a key or price id here).
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-STRIPE_PRICE_FOUNDING_MONTHLY=
-STRIPE_PRICE_STANDARD_MONTHLY=
+# (HUMAN_DECISION_BLOCKERS.md item 4 — the Paddle account/catalog is a human
+# blocker; never invent a key or price id here). PADDLE_CLIENT_TOKEN is a
+# PUBLIC Paddle.js token (test_…), PADDLE_API_KEY is the SECRET server key.
+PADDLE_API_KEY=
+PADDLE_WEBHOOK_SECRET=
+PADDLE_CLIENT_TOKEN=
+PADDLE_ENVIRONMENT=sandbox
+PADDLE_PRICE_FOUNDING_MONTHLY=
+PADDLE_PRICE_STANDARD_MONTHLY=
 
 # Phase 12 stage A: E2E test-only hooks (routes/test-hooks.ts). Double-gated
 # with APP_ENV=local — set to exactly `true` ONLY in a local .dev.vars used

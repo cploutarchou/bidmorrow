@@ -24,7 +24,7 @@ export class FoundingPlanUnavailableError extends Error {
   }
 }
 
-/** Portal requested for an organization with no Stripe customer on file yet. */
+/** Portal/invoice requested for an organization with no Paddle customer on file yet. */
 export class NoBillingCustomerError extends Error {
   readonly code = 'NO_BILLING_CUSTOMER' as const;
 

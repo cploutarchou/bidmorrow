@@ -424,7 +424,7 @@ const FOUNDING_POINTS = [
 
 const STANDARD_POINTS = [
   'Same feed, matching engine, daily digest and support',
-  'Monthly subscription via Stripe',
+  'Monthly subscription via Paddle',
   'Cancel any time from account settings',
 ];
 

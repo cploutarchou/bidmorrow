@@ -51,7 +51,7 @@
  *    (docs/data-model.md §9 "D1 rows: life of org + accounting
  *    obligations").
  *  - `audit_events` / `billing_events` — append-only ledgers (security
- *    forensics, docs/security.md C8; Stripe webhook idempotency ledger);
+ *    forensics, docs/security.md C8; provider webhook idempotency ledger);
  *    `organization_id` is retained on these rows even after the org is
  *    gone, exactly like `audit_events.actor_id` survives account deletion.
  *  - The `organizations` row itself — kept as a tombstone (name replaced,

@@ -46,10 +46,16 @@ export function Terms(): ReactElement {
 
         <h2>Billing</h2>
         <p>
-          Monthly subscription via Stripe, cancel any time from account settings. Founding pricing
-          is limited to the first 50 customers and may not be available when you sign up. Once
-          you're on the founding price, it's retained for the life of your subscription — it never
-          auto-migrates to the standard price.
+          Orders are processed by our online reseller and Merchant of Record, Paddle.com, who
+          handles payment, VAT/sales tax, invoicing and refunds. Purchases are subject to{' '}
+          <a href="https://www.paddle.com/legal/checkout-buyer-terms" rel="noopener noreferrer">
+            Paddle's buyer terms
+          </a>
+          . Prices are shown exclusive of VAT, which is added at checkout for your country.
+          Subscriptions are monthly; cancel any time from account settings and access continues
+          until the end of the paid period. Founding pricing is limited to the first 50 customers
+          and may not be available when you sign up. Once you're on the founding price, it's
+          retained for the life of your subscription — it never auto-migrates to the standard price.
         </p>
 
         <h2>Contact</h2>

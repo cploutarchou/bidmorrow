@@ -44,8 +44,10 @@ generic tender search.
    automatic opaque score adjustment.
 7. **Daily digest email**: one per org per day, only when meaningful matches
    exist (unless the org opts into empty digests), DB-enforced dedupe.
-8. **Billing**: Stripe Checkout + Customer Portal. Founding €29/mo (first 50,
-   flag-controlled) and Standard €49/mo. Server-side entitlements.
+8. **Billing**: Paddle Billing as Merchant of Record (ADR-0011) — Paddle.js
+   checkout overlay + Paddle customer portal. Founding €29/mo (first 50,
+   flag-controlled) and Standard €49/mo, **excluding VAT** (Paddle adds and
+   collects it). Server-side entitlements.
 9. **Internal admin**: org/user/subscription search, ingestion & digest
    debugging, match trace, feature flags, ingestion scope config, pause
    switches, audit log.
@@ -92,18 +94,18 @@ generic tender search.
 - Founding: €29/month, limited to first 50 customers (feature flag
   `founding_plan_open`, configurable cap; `DEFAULT_FOUNDING_CAP = 50`).
 - Standard: €49/month.
-- Currency is **EUR** — decided by the owner 2026-08-16 when creating the
-  live-mode Stripe prices (natural fit for an EU procurement product);
-  all customer-facing copy must state EUR amounts.
-- **No VAT collected at launch** — final owner decision 2026-08-16
-  (superseding a brief same-day Stripe Tax decision): the owner is a
-  sole trader with **no VAT registration**, so no VAT may legally be
-  collected. Prices are flat (€29/€49, no tax line, no VAT ID field)
-  and customer-facing copy shows plain prices. The flag-gated Stripe
-  Tax integration (`stripe_tax_enabled`, OFF in every environment)
-  stays dormant: when the owner registers for VAT (e.g. on crossing
-  the threshold), the switch is add-registration-in-Stripe + flip the
-  flag + restore "excl. VAT" copy — no rebuild.
+- Currency is **EUR** — decided by the owner 2026-08-16 (natural fit for
+  an EU procurement product); the Paddle prices are EUR and all
+  customer-facing copy must state EUR amounts.
+- **VAT is handled by Paddle as Merchant of Record** (ADR-0011, owner
+  decision 2026-08-25, superseding the 2026-08-16 "no VAT at launch"
+  decision): the owner has no VAT registration and needs none — Paddle is
+  the seller, computes VAT for the customer's country at checkout,
+  collects it, remits it and issues the invoice. Prices are
+  **tax-exclusive** (`tax_mode: external`): the customer pays €29/€49
+  **+ VAT**; customer-facing copy says so. B2B customers enter their VAT
+  ID in the Paddle checkout for reverse charge where applicable. Nothing
+  tax-related is configurable in BidMorrow code.
 - The founding price is retained for the life of the subscription — a
   founding customer's plan never auto-migrates to the standard price
   (PROD-P7-01, Phase 7 review). Any future price change to an existing
@@ -119,7 +121,7 @@ each is an owner decision, not to be re-litigated by implementation work.
 - **Pricing: NO CHANGE.** €29 Founding / €49 Standard, flat **EUR**,
   retained. (The owner wrote the amounts with "$" in the directive; this
   is shorthand for the existing euro pricing — currency was deliberately
-  set to EUR in live-mode Stripe on 2026-08-16, and a currency switch
+  set to EUR on 2026-08-16, and a currency switch
   would itself be a pricing change, which the directive forbids.) No
   pricing experiments until at least ~10 serious sales conversations and
   preferably the first 3–5 payments. Never discount below €29 to

@@ -134,12 +134,12 @@ describe('route-group wiring (SEC-P9-02 / P10-R-04)', () => {
     return app;
   }
 
-  it('SEC-P9-02: the Stripe webhook route is limiter-gated BEFORE signature handling', async () => {
+  it('SEC-P9-02: the Paddle webhook route is limiter-gated BEFORE signature handling', async () => {
     const app = mountApp(webhookRoutes, '/api/webhooks');
-    // No Stripe env config at all: if the request reached the handler it
+    // No Paddle env config at all: if the request reached the handler it
     // would 503 (not_configured); a 429 proves the limiter rejected first.
     const response = await app.request(
-      '/api/webhooks/stripe',
+      '/api/webhooks/paddle',
       { method: 'POST', body: '{}' },
       { API_RATE_LIMITER: stubLimiter(false) },
     );

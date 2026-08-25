@@ -6,16 +6,16 @@ import { fetchBillingStatus, pollForSubscription, type BillingStatus } from '../
 /**
  * Post-checkout confirmation (`/app/billing/success`).
  *
- * Stripe's `success_url` points here (packages/billing/src/checkout.ts).
+ * The Paddle checkout overlay's `successUrl` points here (lib/paddle.ts).
  * Before this page existed the redirect landed on Settings with an unread
  * `?checkout=success`, where a cold `GET /api/billing/status` could render
  * "No active subscription." to someone who had just paid.
  *
  * Why this polls instead of just saying "thanks":
  *
- * The subscription row is written ONLY by the Stripe webhook
- * (packages/billing/src/webhook.ts), which does a `subscriptions.retrieve`
- * round trip before its D1 upsert. Stripe redirects the browser in parallel
+ * The subscription row is written ONLY by the Paddle webhook
+ * (packages/billing/src/webhook.ts), which re-fetches the subscription
+ * before its D1 upsert. Paddle redirects the browser in parallel
  * with delivering that webhook, and delivery is at-least-once with no ordering
  * guarantee — so on first paint the row legitimately may not exist yet.
  *
@@ -90,7 +90,7 @@ function Confirmed({ status }: { status: BillingStatus }): ReactElement {
   const price = `${formatMinorUnitsAsCurrency(
     subscription.price.amountMinorUnits,
     subscription.price.currency,
-  )} / ${subscription.price.interval}`;
+  )} / ${subscription.price.interval}${subscription.price.taxExclusive ? ' + VAT' : ''}`;
 
   return (
     <>

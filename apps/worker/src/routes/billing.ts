@@ -1,19 +1,21 @@
 /**
- * `/api/billing/*` — Checkout, Customer Portal, and status (Phase 9).
- * Every handler reads `organizationId`/`role`/`session` from `c.var` (set
- * by session/organization-context middleware — never from client input),
- * per docs/security.md C6. Stripe-hosted Checkout and Customer Portal
- * only — no card data ever reaches this Worker.
+ * `/api/billing/*` — checkout, customer portal, invoices and status
+ * (ADR-0011: Paddle Billing). Every handler reads `organizationId`/`role`/
+ * `session` from `c.var` (set by session/organization-context middleware —
+ * never from client input), per docs/security.md C6. Paddle-hosted
+ * checkout overlay and customer portal only — no card data ever reaches
+ * this Worker.
  */
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import {
   cancelSubscriptionAtPeriodEnd,
-  createCheckoutSession,
+  createCheckoutTransaction,
   createPortalSession,
   FoundingPlanUnavailableError,
   getEntitlement,
+  getInvoicePdfForOrganization,
   isFoundingPlanAvailable,
   listInvoicesForOrganization,
   NoBillingCustomerError,
@@ -35,6 +37,8 @@ import { requireSession } from '../middleware/session';
 
 const checkoutSchema = z.object({ plan: z.enum(['founding', 'standard']) }).strict();
 const cancelSchema = z.object({ confirm: z.literal('CANCEL_SUBSCRIPTION') }).strict();
+/** Paddle transaction ids: `txn_` + 26 lowercase base32 chars (API reference). */
+const transactionIdSchema = z.object({ transactionId: z.string().regex(/^txn_[a-z0-9]{26}$/) });
 
 export const billingRoutes = new Hono<AppBindings>();
 
@@ -71,8 +75,8 @@ billingRoutes.post(
     const { plan } = c.req.valid('json');
     let result;
     try {
-      result = await createCheckoutSession(
-        { db, stripe: config.stripe, priceIds: config.priceIds, appBaseUrl: config.appBaseUrl },
+      result = await createCheckoutTransaction(
+        { db, paddle: config.paddle, priceIds: config.priceIds },
         { organizationId, plan },
       );
     } catch (cause) {
@@ -91,7 +95,7 @@ billingRoutes.post(
       action: 'billing.checkout_started',
       targetType: 'subscription',
       targetId: null,
-      afterSummary: `plan=${plan}`,
+      afterSummary: `plan=${plan} transaction=${result.transactionId}`,
       occurredAt: Date.now(),
     });
     await insertProductEvent(db, {
@@ -100,7 +104,17 @@ billingRoutes.post(
       name: 'checkout_started',
       propertiesJson: JSON.stringify({ plan }),
     });
-    return c.json({ url: result.url }, 200);
+    // The SPA opens the Paddle.js overlay for this transaction. The
+    // session email is a prefill convenience only — Paddle collects and
+    // verifies the billing email itself.
+    return c.json(
+      {
+        transactionId: result.transactionId,
+        customerEmail: session.user.email,
+        successPath: '/app/billing/success',
+      },
+      200,
+    );
   },
 );
 
@@ -118,10 +132,7 @@ billingRoutes.post('/portal', requireRole('ORGANIZATION_OWNER'), async (c) => {
   const db = createDb(c.env.DB);
   let result;
   try {
-    result = await createPortalSession(
-      { db, stripe: config.stripe, appBaseUrl: config.appBaseUrl },
-      { organizationId },
-    );
+    result = await createPortalSession({ db, paddle: config.paddle }, { organizationId });
   } catch (cause) {
     if (cause instanceof NoBillingCustomerError) {
       return c.json({ error: 'no_billing_customer' }, 404);
@@ -154,12 +165,12 @@ billingRoutes.get('/invoices', requireRole('ORGANIZATION_OWNER'), async (c) => {
   const db = createDb(c.env.DB);
   let result;
   try {
-    result = await listInvoicesForOrganization({ db, stripe: config.stripe }, { organizationId });
+    result = await listInvoicesForOrganization({ db, paddle: config.paddle }, { organizationId });
   } catch (cause) {
-    // Never leak Stripe internals (error message/type/request id) to the
+    // Never leak provider internals (error message/type/request id) to the
     // client — logged server-side only, matching webhook.ts's "signature
     // errors never echoed back" posture for the same reason.
-    c.get('logger').error('billing.invoices.stripe_error', {
+    c.get('logger').error('billing.invoices.provider_error', {
       organizationId,
       cause: cause instanceof Error ? cause.message : 'unknown',
     });
@@ -176,6 +187,52 @@ billingRoutes.get('/invoices', requireRole('ORGANIZATION_OWNER'), async (c) => {
   });
   return c.json({ invoices: result.invoices, hasBillingCustomer: result.hasBillingCustomer }, 200);
 });
+
+/**
+ * Resolves the Paddle-hosted PDF for ONE invoice on demand. The transaction
+ * id is client-supplied, so ownership is re-proved server-side against the
+ * org's own customer id (`getInvoicePdfForOrganization`); a foreign or
+ * unknown id is a plain 404. Returns JSON (`{ url }`) rather than a 302 so
+ * the endpoint can never act as an open redirect.
+ */
+billingRoutes.get(
+  '/invoices/:transactionId/pdf',
+  requireRole('ORGANIZATION_OWNER'),
+  zValidator('param', transactionIdSchema),
+  async (c) => {
+    const organizationId = c.get('organizationId');
+    const session = c.get('session');
+    if (organizationId === undefined || session === undefined) {
+      return c.json({ error: 'no_organization' }, 403);
+    }
+    const config = resolveBillingConfig(c.env);
+    if (config === null) {
+      c.get('logger').error('billing.invoice_pdf.not_configured', {});
+      return c.json({ error: 'not_configured' }, 503);
+    }
+    const db = createDb(c.env.DB);
+    const { transactionId } = c.req.valid('param');
+    let outcome;
+    try {
+      outcome = await getInvoicePdfForOrganization(
+        { db, paddle: config.paddle },
+        { organizationId, transactionId },
+      );
+    } catch (cause) {
+      if (cause instanceof NoBillingCustomerError) {
+        return c.json({ error: 'not_found' }, 404);
+      }
+      c.get('logger').error('billing.invoice_pdf.provider_error', {
+        organizationId,
+        cause: cause instanceof Error ? cause.message : 'unknown',
+      });
+      return c.json({ error: 'billing_provider_error' }, 502);
+    }
+    if (outcome.kind === 'not_found') return c.json({ error: 'not_found' }, 404);
+    if (outcome.kind === 'no_invoice') return c.json({ error: 'no_invoice' }, 404);
+    return c.json({ url: outcome.url }, 200);
+  },
+);
 
 billingRoutes.post(
   '/cancel',
@@ -194,7 +251,7 @@ billingRoutes.post(
     }
     const db = createDb(c.env.DB);
     const outcome = await cancelSubscriptionAtPeriodEnd(
-      { db, stripe: config.stripe },
+      { db, paddle: config.paddle },
       { organizationId },
     );
     switch (outcome.kind) {
@@ -222,7 +279,7 @@ billingRoutes.post(
           action: 'billing.subscription_cancel_scheduled',
           targetType: 'subscription',
           targetId: null,
-          afterSummary: `stripeSubscriptionId=${outcome.stripeSubscriptionId}`,
+          afterSummary: `billingSubscriptionId=${outcome.billingSubscriptionId}`,
           occurredAt: Date.now(),
         });
         return c.json(
@@ -249,7 +306,7 @@ billingRoutes.post('/reactivate', requireRole('ORGANIZATION_OWNER'), async (c) =
     return c.json({ error: 'not_configured' }, 503);
   }
   const db = createDb(c.env.DB);
-  const outcome = await reactivateSubscription({ db, stripe: config.stripe }, { organizationId });
+  const outcome = await reactivateSubscription({ db, paddle: config.paddle }, { organizationId });
   switch (outcome.kind) {
     case 'no_subscription':
       return c.json({ error: 'no_subscription', requiresCheckout: true }, 409);
@@ -265,7 +322,7 @@ billingRoutes.post('/reactivate', requireRole('ORGANIZATION_OWNER'), async (c) =
         action: 'billing.subscription_reactivated',
         targetType: 'subscription',
         targetId: null,
-        afterSummary: `stripeSubscriptionId=${outcome.stripeSubscriptionId}`,
+        afterSummary: `billingSubscriptionId=${outcome.billingSubscriptionId}`,
         occurredAt: Date.now(),
       });
       return c.json(

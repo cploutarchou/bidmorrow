@@ -202,7 +202,7 @@ down` does this correctly; be careful if you improvise.
 - **`up` destroys local D1.** `scripts/e2e-webserver.sh` does `rm -rf
 apps/worker/.wrangler/state` for a deterministic seed. Never point any of this
   at staging/production; `scripts/seed-demo.sql` is local-only fake data.
-- **Settings/billing looks broken locally but isn't.** With no Stripe keys in
+- **Settings/billing looks broken locally but isn't.** With no `PADDLE_*` values in
   `.dev.vars`, `/app/settings` honestly renders "No active subscription." and
   "Billing is not available right now". That is the designed unconfigured
   state, not a bug to chase.

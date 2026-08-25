@@ -1,167 +1,114 @@
 /**
- * Stripe webhook processing — signature verification + idempotent,
- * order-independent event handling.
+ * Paddle webhook processing — idempotent, order-independent event handling.
+ * (Signature verification lives in webhook-signature.ts and runs in the
+ * route BEFORE this module ever sees a payload.)
  *
- * Recommended event set (docs/dependency-versions.md § Stripe facts, itself
- * cross-checked this session against the installed SDK's
- * `esm/resources/Events.d.ts` discriminated `Event` union — every type
- * below is a real member of it): `checkout.session.completed`,
- * `customer.subscription.created/updated/deleted`, `invoice.paid`,
- * `invoice.payment_failed`. docs.stripe.com itself was unreachable (egress
- * blocked) this session; a WebSearch cross-check independently confirmed
- * the same minimum set for Checkout + subscriptions (see the Phase 9
- * session notes in IMPLEMENTATION_LEDGER.md).
+ * Subscribed events (docs/dependency-versions.md § Paddle facts; the
+ * staging notification destination was created with exactly this set):
+ * `subscription.created|activated|trialing|updated|past_due|paused|
+ * resumed|canceled`. Every one of them carries the full subscription
+ * entity as `data`, and every one is handled the same way.
  *
- * ORDERING IS NOT GUARANTEED (Stripe: at-least-once, no ordering
- * guarantee). This processor never trusts a webhook payload's `status` (or
- * any other mutable subscription field) as current truth — every handled
- * event triggers a live `subscriptions.retrieve` re-fetch, and the re-fetch
- * result is what gets written. Whichever event a `MessageBatch`-style
- * at-least-once delivery happens to process last, the STORED state is
- * always whatever Stripe says RIGHT NOW, never whatever an individual
- * event's payload said at send time — so out-of-order delivery can produce
- * extra redundant writes but never a wrong final state.
+ * ORDERING IS NOT GUARANTEED (Paddle: at-least-once, retries re-send the
+ * same `event_id`). This processor never trusts a payload's `status` (or
+ * any other mutable field) as current truth — every handled event triggers
+ * a live `GET /subscriptions/{id}` re-fetch, and the re-fetch result is
+ * what gets written. Out-of-order delivery can produce redundant writes but
+ * never a wrong final state.
  *
  * Organization resolution is different from state: it is read from
- * `metadata.organizationId`, which we set ourselves at checkout (see
- * checkout.ts's header comment for exactly where) and which Stripe echoes
- * back unchanged — an identity label, not mutable payment state, so trusting
- * the (signature-verified) payload for it is safe and avoids an extra API
- * call on every event.
+ * `custom_data.organization_id`, which we set ourselves on the checkout
+ * transaction (checkout.ts) and Paddle copies onto the subscription — an
+ * identity label, not mutable payment state, so trusting the
+ * (signature-verified) payload for it is safe. If the payload lacks it the
+ * re-fetched entity is consulted before giving up.
  *
- * Idempotency: `insertBillingEventIfNew` (unique `stripe_event_id`) runs
- * FIRST, before any other DB write or Stripe API call — a duplicate
- * delivery is acknowledged with zero side effects and zero extra network
- * calls. Errors that happen AFTER that insert mark the row `failed` and
- * rethrow (the caller — the Worker route — turns that into a 500 so Stripe
- * retries); reprocessing is always safe because the write path re-fetches
- * current state rather than trusting anything about the failed attempt.
+ * Idempotency: `insertBillingEventIfNew` (unique `provider_event_id`) runs
+ * FIRST, before any other DB write or Paddle API call — a duplicate
+ * delivery is acknowledged with zero side effects. Errors AFTER that insert
+ * mark the row `failed` and rethrow (the route turns that into a 500 so
+ * Paddle retries); reprocessing is always safe because the write path
+ * re-fetches current state.
  */
-import Stripe from 'stripe';
 import {
-  getBillingEventByStripeId,
+  getBillingEventByProviderId,
   getSubscription,
   insertBillingEventIfNew,
   insertProductEvent,
   markBillingEventStatus,
-  upsertSubscriptionByStripeCustomerId,
+  upsertSubscriptionByBillingCustomerId,
   type Db,
 } from '@bidmorrow/db';
 import { organizationId as toOrganizationId, type OrganizationId } from '@bidmorrow/domain';
 import type { Logger } from '@bidmorrow/observability';
 
 import { blocksNewCheckout } from './checkout';
-import { mapStripeSubscriptionStatus, planFromPriceId, type PriceIds } from './plans';
-import type { WebhookStripeClient, WebhookVerifierClient } from './stripe-types';
+import { hasScheduledCancel } from './cancellation';
+import {
+  paddleTimestampToMillis,
+  type PaddleSubscription,
+  type SubscriptionsReadClient,
+} from './paddle-client';
+import { mapPaddleSubscriptionStatus, planFromPriceId, type PriceIds } from './plans';
+import type { PaddleEvent } from './webhook-signature';
 
-export const RECOMMENDED_WEBHOOK_EVENT_TYPES = [
-  'checkout.session.completed',
-  'customer.subscription.created',
-  'customer.subscription.updated',
-  'customer.subscription.deleted',
-  'invoice.paid',
-  'invoice.payment_failed',
+export const SUBSCRIBED_WEBHOOK_EVENT_TYPES = [
+  'subscription.created',
+  'subscription.activated',
+  'subscription.trialing',
+  'subscription.updated',
+  'subscription.past_due',
+  'subscription.paused',
+  'subscription.resumed',
+  'subscription.canceled',
 ] as const;
 
-export type HandledEvent =
-  | Stripe.CheckoutSessionCompletedEvent
-  | Stripe.CustomerSubscriptionCreatedEvent
-  | Stripe.CustomerSubscriptionUpdatedEvent
-  | Stripe.CustomerSubscriptionDeletedEvent
-  | Stripe.InvoicePaidEvent
-  | Stripe.InvoicePaymentFailedEvent;
+export type HandledEventType = (typeof SUBSCRIBED_WEBHOOK_EVENT_TYPES)[number];
 
-/** Pure, no DB/network — unit-tested directly against real `Stripe.Event`-shaped fixtures. */
-export function isHandledEvent(event: Stripe.Event): event is HandledEvent {
-  return (RECOMMENDED_WEBHOOK_EVENT_TYPES as readonly string[]).includes(event.type);
+export interface SubscriptionEventData {
+  readonly id: string;
+  readonly custom_data?: Readonly<Record<string, unknown>> | null;
 }
 
-/**
- * Verifies a webhook's `Stripe-Signature` header asynchronously (Workers
- * has no Node `crypto` module — `SubtleCryptoProvider` is Web Crypto-only,
- * verified from the installed SDK's `esm/crypto/SubtleCryptoProvider.d.ts`;
- * see stripe-client.ts's header comment for the full citation). Throws
- * `Stripe.errors.StripeSignatureVerificationError` on a missing/invalid
- * signature — callers must respond 400 with NO detail (never echo the
- * verification error back to the caller).
- */
-export async function verifyStripeWebhookEvent(
-  stripe: WebhookVerifierClient,
-  rawBody: string,
-  signatureHeader: string,
-  webhookSecret: string,
-  cryptoProvider?: Parameters<Stripe.Webhooks['constructEventAsync']>[4],
-): Promise<Stripe.Event> {
-  return stripe.webhooks.constructEventAsync(
-    rawBody,
-    signatureHeader,
-    webhookSecret,
-    undefined,
-    // SEC-P9-01: default the Web Crypto provider explicitly so verification
-    // is deterministic under every module-resolution condition (plain Node
-    // for unit tests, `workerd` for the real Worker) instead of relying on
-    // the SDK's export-condition default.
-    cryptoProvider ?? Stripe.createSubtleCryptoProvider(),
+export type HandledEvent = PaddleEvent<SubscriptionEventData> & {
+  readonly event_type: HandledEventType;
+};
+
+/** Pure, no DB/network — also checks the `data` shape so a handled type with a bogus body is `ignored`, not a crash. */
+export function isHandledEvent(event: PaddleEvent): event is HandledEvent {
+  if (!(SUBSCRIBED_WEBHOOK_EVENT_TYPES as readonly string[]).includes(event.event_type)) {
+    return false;
+  }
+  const data = event.data;
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    typeof (data as { id?: unknown }).id === 'string' &&
+    (data as { id: string }).id.length > 0
   );
 }
 
-/** Safe wrapper: empty/whitespace-only metadata never throws, just resolves to null. */
-function safeOrganizationId(raw: string | null | undefined): OrganizationId | null {
-  if (raw === null || raw === undefined || raw.trim().length === 0) return null;
+/** Safe wrapper: absent/blank/non-string custom_data never throws, just resolves to null. */
+export function organizationIdFromCustomData(
+  customData: Readonly<Record<string, unknown>> | null | undefined,
+): OrganizationId | null {
+  const raw = customData?.['organization_id'];
+  if (typeof raw !== 'string' || raw.trim().length === 0) return null;
   return toOrganizationId(raw);
 }
 
-/**
- * Cheap, synchronous, no-network organization resolution straight from the
- * (signature-verified) event payload — see file header for why this is
- * safe to trust for IDENTITY even though subscription STATE never is.
- */
+/** Cheap, synchronous, no-network organization resolution from the (signature-verified) payload. */
 export function resolveOrganizationIdFromPayload(event: HandledEvent): OrganizationId | null {
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const session = event.data.object;
-      return safeOrganizationId(
-        session.client_reference_id ?? session.metadata?.['organizationId'],
-      );
-    }
-    case 'customer.subscription.created':
-    case 'customer.subscription.updated':
-    case 'customer.subscription.deleted':
-      return safeOrganizationId(event.data.object.metadata['organizationId']);
-    case 'invoice.paid':
-    case 'invoice.payment_failed': {
-      const details = event.data.object.parent?.subscription_details;
-      return safeOrganizationId(details?.metadata?.['organizationId']);
-    }
-  }
+  return organizationIdFromCustomData(event.data.custom_data);
 }
 
-/** Subscription id relevant to the event, or null when there is none to re-fetch (e.g. a non-subscription checkout). */
-export function resolveSubscriptionId(event: HandledEvent): string | null {
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const { subscription } = event.data.object;
-      if (subscription === null) return null;
-      return typeof subscription === 'string' ? subscription : subscription.id;
-    }
-    case 'customer.subscription.created':
-    case 'customer.subscription.updated':
-    case 'customer.subscription.deleted':
-      return event.data.object.id;
-    case 'invoice.paid':
-    case 'invoice.payment_failed': {
-      const details = event.data.object.parent?.subscription_details;
-      if (details === undefined || details === null) return null;
-      return typeof details.subscription === 'string'
-        ? details.subscription
-        : details.subscription.id;
-    }
-  }
+export function resolveSubscriptionId(event: HandledEvent): string {
+  return event.data.id;
 }
 
 export interface WebhookDeps {
   readonly db: Db;
-  readonly stripe: WebhookStripeClient;
+  readonly paddle: { readonly subscriptions: SubscriptionsReadClient };
   readonly priceIds: PriceIds;
   readonly logger?: Logger;
 }
@@ -170,120 +117,88 @@ export type ProcessOutcome = 'processed' | 'duplicate' | 'ignored' | 'duplicate_
 
 /**
  * SEC-P9-03: an organization with no subscription row yet can open two
- * concurrent Checkout sessions — both pass `createCheckoutSession`'s
- * `getSubscription` guard (see checkout.ts's residual-race comment there)
- * because neither sees the other's not-yet-committed row, and BOTH create
- * their session without a `customer` param (Stripe then mints a brand-new
- * Customer per session). If the owner completes both, Stripe ends up with
- * two live Customers + two live Subscriptions for one organization, but our
- * `subscriptions` table has room for exactly one row per org
- * (`uq_subscriptions__organization_id`, docs/data-model.md §9, 1:1).
- *
- * Whichever webhook is processed SECOND (for the subscription that lost the
- * race to already be the org's on-file row) hits this function with a
- * `stripe_customer_id` that differs from the existing row's. If the
- * existing row is still non-canceled (`blocksNewCheckout`), the existing
- * row is authoritative and untouched, and the INCOMING subscription is
- * treated as the duplicate: cancel it via the Stripe API, log loudly (both
- * customer/subscription ids, for manual Stripe-dashboard/billing follow-up
- * — this is an owner-self-inflicted double-charge, not a security breach,
- * but it IS a live Stripe subscription nobody asked us to keep), and return
- * `'duplicate_reconciled'` so the caller acks 200 instead of throwing (a
- * constraint violation) and stranding the event in Stripe's forever-retry
- * loop. When the existing row IS canceled, `blocksNewCheckout` is false and
- * this function falls through to the normal reactivation path unchanged
- * (see checkout.ts's header: reactivation always reuses the existing
- * `stripe_customer_id` in the Checkout `customer` param, so a genuinely
- * differing customer id on a canceled row should not occur in practice —
- * this guard only ever fires for the non-canceled duplicate-checkout case).
+ * concurrent checkouts; if the owner completes both, Paddle ends up with
+ * two live customers + subscriptions for one organization, but our table
+ * has room for exactly one row per org. Whichever webhook is processed
+ * SECOND hits this with a customer id that differs from the on-file row.
+ * If that row is still non-canceled it is authoritative: the INCOMING
+ * subscription is the duplicate — cancel it immediately via the API, log
+ * loudly for follow-up, and ack (never strand the event in Paddle's retry
+ * loop behind a unique-constraint violation).
  */
 async function reconcileDuplicateCustomer(
   deps: WebhookDeps,
   organizationId: OrganizationId,
-  before: { readonly stripeCustomerId: string; readonly status: string },
-  duplicateSubscription: Stripe.Subscription,
-  duplicateCustomerId: string,
+  before: { readonly billingCustomerId: string; readonly status: string },
+  duplicate: PaddleSubscription,
 ): Promise<void> {
   deps.logger?.error('billing.webhook.duplicate_checkout_reconciled', {
     organizationId,
-    keptStripeCustomerId: before.stripeCustomerId,
-    duplicateStripeCustomerId: duplicateCustomerId,
-    duplicateStripeSubscriptionId: duplicateSubscription.id,
+    keptBillingCustomerId: before.billingCustomerId,
+    duplicateBillingCustomerId: duplicate.customer_id,
+    duplicateBillingSubscriptionId: duplicate.id,
   });
-  await deps.stripe.subscriptions.cancel(duplicateSubscription.id, {
-    cancellation_details: {
-      comment:
-        'BidMorrow SEC-P9-03: auto-canceled duplicate subscription from a concurrent double-checkout; see billing_events for the reconciling event.',
-    },
-  });
+  await deps.paddle.subscriptions.cancel(duplicate.id, { effective_from: 'immediately' });
 }
 
 /**
- * Re-fetches the subscription's CURRENT state from Stripe (never the event
+ * Re-fetches the subscription's CURRENT state from Paddle (never the event
  * payload) and upserts it. Fires `subscription_started`/
  * `subscription_canceled` product events on the relevant transitions,
- * computed from the PRE-upsert row's status vs. the newly-fetched one — the
- * single place that comparison happens, so both packages/billing's own
- * tests and the Worker's D1 integration tests exercise the same logic.
- *
- * SEC-P9-03: before writing anything, checks whether the PRE-fetch row
- * already belongs to a DIFFERENT, still-live Stripe customer — see
- * {@link reconcileDuplicateCustomer}'s doc comment for the full scenario.
- * That check happens here (after the live re-fetch, so the duplicate
- * subscription's own id/customer are known) rather than in `handleEvent`,
- * keeping the "never trust the payload, always re-fetch" invariant intact.
+ * computed from the PRE-upsert row's status vs. the newly-fetched one.
  */
 async function syncSubscriptionState(
   deps: WebhookDeps,
-  organizationId: OrganizationId,
+  payloadOrganizationId: OrganizationId | null,
   subscriptionId: string,
+  event: HandledEvent,
 ): Promise<ProcessOutcome> {
+  const subscription = await deps.paddle.subscriptions.get(subscriptionId);
+
+  const organizationId =
+    payloadOrganizationId ?? organizationIdFromCustomData(subscription.custom_data);
+  if (organizationId === null) {
+    deps.logger?.warn('billing.webhook.unresolvable', {
+      provider_event_id: event.event_id,
+      type: event.event_type,
+      subscription_id: subscriptionId,
+    });
+    return 'ignored';
+  }
+
   const before = await getSubscription(deps.db, organizationId);
 
-  const subscription = await deps.stripe.subscriptions.retrieve(subscriptionId);
-  const item = subscription.items.data[0];
-  const priceId = item?.price.id;
+  const priceId = subscription.items[0]?.price.id;
   const plan = priceId !== undefined ? planFromPriceId(deps.priceIds, priceId) : null;
   if (plan === null) {
     // P9-R-01: an unknown price id means OUR env price-id config is wrong.
     // Throwing marks the billing_events row `failed` and returns 500 so
-    // Stripe keeps retrying — once the config is fixed, the retry (or the
-    // failed-row reprocess path) syncs the subscription. Returning quietly
-    // here would ack the event as processed and silently never write the
-    // subscription.
+    // Paddle keeps retrying — once the config is fixed, the retry syncs the
+    // subscription. Acking quietly would silently never write the row.
     deps.logger?.error('billing.webhook.unknown_price_id', {
       subscriptionId,
       priceId: priceId ?? null,
     });
-    throw new Error(`unknown Stripe price id for subscription ${subscriptionId}`);
+    throw new Error(`unknown Paddle price id for subscription ${subscriptionId}`);
   }
-  const status = mapStripeSubscriptionStatus(subscription.status);
-  const customerId =
-    typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
+  const status = mapPaddleSubscriptionStatus(subscription.status);
 
   if (
     before !== null &&
-    before.stripeCustomerId !== customerId &&
+    before.billingCustomerId !== subscription.customer_id &&
     blocksNewCheckout(before.status)
   ) {
-    await reconcileDuplicateCustomer(deps, organizationId, before, subscription, customerId);
+    await reconcileDuplicateCustomer(deps, organizationId, before, subscription);
     return 'duplicate_reconciled';
   }
 
-  await upsertSubscriptionByStripeCustomerId(deps.db, organizationId, {
-    stripeCustomerId: customerId,
-    stripeSubscriptionId: subscription.id,
+  await upsertSubscriptionByBillingCustomerId(deps.db, organizationId, {
+    billingCustomerId: subscription.customer_id,
+    billingSubscriptionId: subscription.id,
     status,
     plan,
-    // `current_period_end` moved from the Subscription object to each
-    // SubscriptionItem as of this API version (verified from the installed
-    // SDK: `esm/resources/Subscriptions.d.ts` has no top-level
-    // `current_period_end`; `esm/resources/SubscriptionItems.d.ts` does) —
-    // we sell exactly one price per subscription, so the first item's value
-    // is the whole subscription's period end. Stripe timestamps are Unix
-    // seconds; the column is epoch millis.
-    currentPeriodEndAt: item !== undefined ? item.current_period_end * 1000 : null,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    currentPeriodEndAt: paddleTimestampToMillis(subscription.current_billing_period?.ends_at),
+    cancelAtPeriodEnd: hasScheduledCancel(subscription),
   });
 
   const wasActiveLike =
@@ -305,81 +220,58 @@ async function syncSubscriptionState(
   return 'processed';
 }
 
-async function handleEvent(deps: WebhookDeps, event: HandledEvent): Promise<ProcessOutcome> {
-  const organizationId = resolveOrganizationIdFromPayload(event);
-  const subscriptionId = resolveSubscriptionId(event);
-  if (organizationId === null || subscriptionId === null) {
-    deps.logger?.warn('billing.webhook.unresolvable', {
-      stripe_event_id: event.id,
-      type: event.type,
-      has_org: organizationId !== null,
-      has_subscription: subscriptionId !== null,
-    });
-    return 'ignored';
-  }
-  return syncSubscriptionState(deps, organizationId, subscriptionId);
-}
-
 /**
- * Processes one already signature-verified Stripe event. Idempotent: a
+ * Processes one already signature-verified Paddle event. Idempotent: a
  * duplicate delivery of an event already `processed`/`ignored` is a
- * guaranteed no-op — ack with zero side effects, zero extra Stripe API
- * calls. A RETRY of an event that previously ended in `failed` (or was
- * stuck at `received` by a crash between the insert and its terminal
- * status write — the at-least-once-delivery edge case, same acceptance as
- * SEC-P8-02's digest-send equivalent) is NOT treated as a duplicate: it is
- * reprocessed, because Stripe's own retry behavior for a non-2xx response
- * is to redeliver the SAME `event.id` — if we ack'd that redelivery as a
- * plain duplicate, a transient failure (e.g. a momentary Stripe API
- * outage) would wedge the row at `failed` forever with no path to
- * `processed`. Never throws for an unknown/duplicate/unresolvable event —
- * only for a genuine processing failure (network error,
- * {@link TenantMismatchError}) AFTER the event was recorded, so the caller
- * can turn that into a 500 for Stripe to retry.
+ * guaranteed no-op. A RETRY of an event that previously ended in `failed`
+ * (or was stuck at `received` by a crash) is NOT a duplicate: it is
+ * reprocessed, because Paddle redelivers the SAME `event_id` after a
+ * non-2xx — acking that as a duplicate would wedge the row at `failed`
+ * forever. Never throws for an unknown/duplicate/unresolvable event — only
+ * for a genuine processing failure AFTER the event was recorded, so the
+ * caller can turn that into a 500 for Paddle to retry.
  */
-export async function processStripeEvent(
+export async function processPaddleEvent(
   deps: WebhookDeps,
-  event: Stripe.Event,
+  event: PaddleEvent,
 ): Promise<ProcessOutcome> {
-  const cheapOrganizationId = isHandledEvent(event)
-    ? resolveOrganizationIdFromPayload(event)
-    : null;
+  const handled = isHandledEvent(event);
+  const cheapOrganizationId = handled ? resolveOrganizationIdFromPayload(event) : null;
   const isNew = await insertBillingEventIfNew(deps.db, {
-    stripeEventId: event.id,
-    type: event.type,
+    providerEventId: event.event_id,
+    type: event.event_type,
     organizationId: cheapOrganizationId,
     payloadJson: JSON.stringify(event),
   });
   if (!isNew) {
-    const existing = await getBillingEventByStripeId(deps.db, event.id);
+    const existing = await getBillingEventByProviderId(deps.db, event.event_id);
     const terminal = existing?.status === 'processed' || existing?.status === 'ignored';
     if (terminal) {
       return 'duplicate';
     }
-    // status is `failed` or a crash-stuck `received` — fall through and
-    // reprocess exactly as a first attempt would.
+    // `failed` or a crash-stuck `received` — fall through and reprocess.
   }
 
-  if (!isHandledEvent(event)) {
-    await markBillingEventStatus(deps.db, event.id, 'ignored');
+  if (!handled) {
+    await markBillingEventStatus(deps.db, event.event_id, 'ignored');
     return 'ignored';
   }
 
   try {
-    const outcome = await handleEvent(deps, event);
-    // `billing_events.status` (docs/data-model.md §9 CHECK) has no
-    // dedicated value for `duplicate_reconciled` — it is a `processed`
-    // outcome (the event WAS successfully handled; the side effect taken
-    // was canceling the duplicate rather than upserting a row) rather than
-    // a schema change, per this fix's no-migration constraint.
+    const outcome = await syncSubscriptionState(
+      deps,
+      cheapOrganizationId,
+      resolveSubscriptionId(event),
+      event,
+    );
     await markBillingEventStatus(
       deps.db,
-      event.id,
+      event.event_id,
       outcome === 'ignored' ? 'ignored' : 'processed',
     );
     return outcome;
   } catch (cause) {
-    await markBillingEventStatus(deps.db, event.id, 'failed');
+    await markBillingEventStatus(deps.db, event.event_id, 'failed');
     throw cause;
   }
 }

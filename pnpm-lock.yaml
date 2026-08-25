@@ -41,6 +41,9 @@ importers:
       '@bidmorrow/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@paddle/paddle-js':
+        specifier: ^1.6.5
+        version: 1.6.5
       lucide-react:
         specifier: ^1.31.0
         version: 1.31.0(react@19.2.8)
@@ -111,9 +114,6 @@ importers:
       hono:
         specifier: ^4.13.0
         version: 4.13.2
-      stripe:
-        specifier: ^22.5.0
-        version: 22.5.0
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -194,9 +194,6 @@ importers:
       '@bidmorrow/observability':
         specifier: workspace:*
         version: link:../observability
-      stripe:
-        specifier: ^22.5.0
-        version: 22.5.0
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^5.20260814.1
@@ -1229,6 +1226,9 @@ packages:
   '@oxc-project/types@0.144.0':
     resolution: {integrity: sha512-nuhZIOLuI6TFQ32I/WnUx+SCPY7SdSKwgnFHydAuoS1+Z4BRcaP+RRJmGzl9lw+0OFF7UmaESf7KQRXaNLHypg==}
 
+  '@paddle/paddle-js@1.6.5':
+    resolution: {integrity: sha512-uFRvptUzYRqRlqTU5XmfcZWC9BGVYpZNdANd3giJjZbJlHesnE4gn8PyjtYpesU1ar2ZGPuJxHvrrSIV9jjdVw==}
+
   '@playwright/test@1.62.1':
     resolution: {integrity: sha512-DTcUc8qii+cpHvtOwggMtBRMjKZHXYWdw8syRYu2vtzuq4Wxphqq4NfCs5Zt44L6mA8rfDfj+PHnxFc/FeK6mQ==}
     engines: {node: '>=20'}
@@ -2227,15 +2227,6 @@ packages:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
 
-  stripe@22.5.0:
-    resolution: {integrity: sha512-QVwMwriC0bbySx6R4dpsvJ0W//GojC1kwWVS6rPSoVqDUIZX4Hy3TaUrd2AZeXEAaKbfWIjQjvo3vKAReHZ0vQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      '@types/node': '>=18'
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
-
   strnum@2.4.2:
     resolution: {integrity: sha512-rDG3Ah4TV0k1hWvLSzkZtMmLN9+eS+h3knq4MP6A42Y3Yh5qGNnOUs1jJkoSr8FG5dsL28c7KgkIBzSEykqtuw==}
 
@@ -2984,6 +2975,8 @@ snapshots:
   '@opentelemetry/semantic-conventions@1.43.0': {}
 
   '@oxc-project/types@0.144.0': {}
+
+  '@paddle/paddle-js@1.6.5': {}
 
   '@playwright/test@1.62.1':
     dependencies:
@@ -3864,8 +3857,6 @@ snapshots:
   std-env@4.2.0: {}
 
   strip-json-comments@3.1.1: {}
-
-  stripe@22.5.0: {}
 
   strnum@2.4.2:
     dependencies:

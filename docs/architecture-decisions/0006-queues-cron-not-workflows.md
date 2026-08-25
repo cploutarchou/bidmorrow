@@ -20,7 +20,7 @@ first-class, queryable, admin-visible domain data anyway.
 
 - Delivery is at-least-once → every consumer is idempotent by construction
   (DB unique constraints: notice source-ID+version, (org,lot,engine_version)
-  matches, (org,digest_date) digests, Stripe event IDs).
+  matches, (org,digest_date) digests, billing-provider event IDs).
 - Bounded: batch ≤ configured cap, max retries small, DLQ per queue,
   emergency pause flags checked by every consumer.
 - A stale-ingestion watchdog cron alerts when no successful run lands within

@@ -16,6 +16,7 @@ import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
 import { createDb } from '@bidmorrow/db';
 import { robotsTxt } from './robots';
+import { resolveBillingConfig } from './billing';
 import { readPrelaunchState } from './prelaunch';
 import { createLogger } from '@bidmorrow/observability';
 import {
@@ -66,23 +67,39 @@ app.use('*', async (c, next) => {
 });
 
 // Security headers per docs/security.md C3 (strict CSP: default-src 'self',
-// no unsafe-inline scripts, frame-ancestors 'none') and C4 (HSTS,
+// no unsafe-inline SCRIPTS, frame-ancestors 'none') and C4 (HSTS,
 // X-Content-Type-Options, Referrer-Policy, Permissions-Policy — HSTS/XCTO/
 // Referrer-Policy come from secureHeaders defaults).
+//
+// The ONLY third-party origins allowed are Paddle's (ADR-0011): Paddle.js
+// is loaded from cdn.paddle.com, the checkout overlay is an iframe on
+// (sandbox-)buy.paddle.com, and Paddle.js talks to *.paddle.com service
+// endpoints. Keep this list byte-identical to apps/web/public/_headers.
 app.use(
   '*',
   secureHeaders({
     contentSecurityPolicy: {
       defaultSrc: ["'self'"],
       baseUri: ["'self'"],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", 'https://*.paddle.com'],
       fontSrc: ["'self'"],
       formAction: ["'self'"],
       frameAncestors: ["'none'"],
-      imgSrc: ["'self'", 'data:'],
+      frameSrc: ['https://buy.paddle.com', 'https://sandbox-buy.paddle.com'],
+      imgSrc: ["'self'", 'data:', 'https://*.paddle.com'],
       objectSrc: ["'none'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'"],
+      scriptSrc: ["'self'", 'https://cdn.paddle.com'],
+      // Paddle.js loads its overlay stylesheet from (sandbox-)cdn.paddle.com
+      // and sets inline styles on the overlay container (verified with a
+      // CSP probe against the sandbox, 2026-08-25). 'unsafe-inline' applies
+      // to STYLES only — script-src stays 'self' + cdn.paddle.com, and
+      // inline scripts remain blocked.
+      styleSrc: [
+        "'self'",
+        'https://cdn.paddle.com',
+        'https://sandbox-cdn.paddle.com',
+        "'unsafe-inline'",
+      ],
     },
     xFrameOptions: 'DENY',
     permissionsPolicy: {
@@ -143,13 +160,24 @@ app.get('/robots.txt', (c) =>
 );
 
 // Public runtime config for the SPA — unauthenticated by design and
-// secret-free: only the pre-launch gate state and the countdown target
-// (apps/web lib/public-config.ts). Cached briefly so marketing traffic
-// doesn't turn into a D1 read per pageview.
+// secret-free: the pre-launch gate state, the countdown target, and the
+// Paddle.js client-side token + environment (a client token is public by
+// Paddle's design; the server-side API key never leaves the Worker).
+// `paddle: null` when billing is not configured (local/test) so the SPA
+// renders the honest not-configured state instead of loading Paddle.js.
+// Cached briefly so marketing traffic doesn't turn into a D1 read per
+// pageview.
 app.get('/api/public-config', async (c) => {
   const state = await readPrelaunchState(createDb(c.env.DB), c.env.APP_ENV);
+  const billing = resolveBillingConfig(c.env);
   c.header('cache-control', 'public, max-age=60');
-  return c.json(state);
+  return c.json({
+    ...state,
+    paddle:
+      billing === null
+        ? null
+        : { clientToken: billing.clientToken, environment: billing.environment },
+  });
 });
 
 // Pre-launch gate (prelaunch.ts): NEW account creation is closed while
@@ -189,7 +217,7 @@ app.route('/api/org', feedRoutes);
 app.route('/api/org', tendersRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api/account', accountRoutes);
-// Phase 9: billing (session/org-scoped) and the Stripe webhook (the one
+// Billing (session/org-scoped) and the Paddle webhook (the one
 // deliberately unauthenticated-by-session route — see routes/webhooks.ts).
 app.route('/api/billing', billingRoutes);
 app.route('/api/webhooks', webhookRoutes);
