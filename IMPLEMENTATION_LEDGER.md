@@ -4316,6 +4316,41 @@ migrations. Verified: the db suite re-applies the full chain from empty
 (vitest-pool-workers) and passes 67/67, including the saved-searches
 repository tests.
 
+## Nightly E2E has been red since 2026-08-19 — diagnostics landed, cause open (2026-08-25)
+
+Found while merging #103: `E2E (nightly)` (schedule-only, so never on a
+PR) has failed every night since 08-19. Two distinct phases:
+
+- 08-19 → 08-22: exactly one test failed per run (41 passed) — a
+  keyword-cap timing test, then an auth redirect test; ordinary flakes.
+- 08-24 and 08-25: workerd DIED mid-suite. wrangler prints a single
+  empty `✘ [ERROR]` line (no message — the signature of the process being
+  killed rather than throwing) and every later test fails with
+  `ERR_CONNECTION_REFUSED` (34/84, then 43/90 failures). The crash point
+  differs between runs (after 5 scoring runs on 08-24, after 1 on 08-25),
+  so it is not a specific test. The `kj … Broken pipe` lines that precede
+  it on some runs are benign — the local wrangler logs show 26 of them
+  across today's green runs. (08-23 was a 4-second runner abort, unrelated.)
+
+Not reproducible on demand: two `workflow_dispatch` runs of the same
+workflow at ~16:15 UTC on the same code passed 87/87 (4.5 min each), on
+the identical runner image, Chrome 151 and Playwright cache state as the
+failing 03:00 UTC runs. wrangler/workerd versions have not changed since
+before the failures began.
+
+What #104 adds so the next scheduled failure is diagnosable: the
+`~/.config/.wrangler/logs/` directory is uploaded as a `wrangler-logs`
+artifact on failure (it was never captured — the job log only ever had the
+empty error line), and the nightly step runs with `WRANGLER_LOG=debug`
+(file only; Playwright ignores the webServer's stdout). Also noted: the
+Playwright browser cache never hits because actions/cache only saves on a
+green job, so every red nightly re-downloads ~120 MB; today's green
+dispatch should have seeded it.
+
+Next: read the `wrangler-logs` artifact from the first red nightly after
+#104 merges. Working hypothesis is workerd being OOM-killed on the runner
+(empty error, no stack, time-of-day dependent) — confirm before acting.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
