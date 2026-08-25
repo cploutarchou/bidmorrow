@@ -4489,6 +4489,48 @@ choice and the 2026-08-17 cap of 50:
   adopted (product-scope excludes tiers/annual); the owner chose to keep
   two plans.
 
+## Navigation + operator entry + admin shell (2026-08-26)
+
+Owner request: navigation buttons missing; an administrator must see an
+Admin button after login; improve the UI and the admin area. Spec:
+`docs/redesign/navigation-and-admin-entry.md` (UX audit N1–N7, nav model,
+server contract, UI notes).
+
+- **Server**: `GET /api/account/me` → `{ user, isAdmin }`; `isAdmin` via
+  `isInternalAdminEmail` (exported from `middleware/admin.ts`, same parser
+  as `requireInternalAdmin`). Plain boolean, not cloaked, not audited —
+  the admin routes keep their 404 cloak and per-request authorization.
+  Tests in `admin.d1.test.ts`.
+- **Client**: `useAuth().isAdmin` (fetched after a session resolves; any
+  failure → false). `AppShell` nav is Feed · Saved · Settings · Billing ·
+  **Admin (operators only, caution-toned shield link)**; account cluster =
+  theme, initials chip with "Signed in as …" name, Log out; sign-out error
+  now a live region inside the header. Mobile bar tightened so wordmark +
+  cluster share row 1 at 390px; the strip scrolls sideways if it overflows.
+- **Feed `?view=`**: the active tab is derived from the URL
+  (`lib/feed-view.ts`, `parseFeedView`/`feedPathForView`) and written back
+  with `replace`; shelves are linkable and survive reload. First attempt
+  mirrored URL↔state with two effects and ping-ponged (both fired in the
+  same commit on an external navigation) — URL-as-truth is the fix.
+- **Settings**: scrolls to `#billing`/other section hashes once loaded
+  (sections mount after the profile fetch, so the browser's own jump had
+  nothing to hit). Header "Billing" link uses it.
+- **Marketing header**: signed-in visitor sees one "Open app" CTA instead
+  of Log in / Sign up (desktop + menu panel).
+- **Admin shell**: header escapes base.css's bare `header { max-width }`
+  box (was a 44rem-wide strip inside a 1560px layout), shows the signed-in
+  email, "← Open app" and Log out; rail grouped Overview / Customers /
+  Pipeline / Governance with captions; mobile: actions wrap (no sideways
+  scroll), captions collapse, and `.admin-split { align-content: start }`
+  removes the ~75px gap the stretched grid row opened above the main column.
+- **E2E**: `tests/e2e/navigation.spec.ts` — customer nav (links, Saved
+  URL, reload keeps `?view=`, Billing deep link, no Admin link, marketing
+  "Open app") and operator nav (Admin link → dashboard → Open app → Log out
+  → cloak back). `scripts/e2e-write-dev-vars.mjs` now writes a per-run
+  `ADMIN_EMAILS=e2e-admin-<ts>@example.test` (local-only); the spec reads it
+  from `.dev.vars` and onboards that account. `bootstrapOnboardedUserWith
+Matches` accepts `{ email }`.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

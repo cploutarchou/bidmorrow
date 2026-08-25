@@ -1,16 +1,27 @@
 import '../styles/app.css';
+import { ShieldCheck } from 'lucide-react';
 import { useState, type ReactElement, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { PRODUCT_NAME } from '../copy';
 import { useAuth } from '../lib/auth-context';
+import { feedPathForView, parseFeedView } from '../lib/feed-view';
 import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
 import { NoIndex } from './NoIndex';
 
+/**
+ * Customer app chrome — navigation model per
+ * docs/redesign/navigation-and-admin-entry.md §2: one primary nav (Feed,
+ * Saved, Settings, Billing) plus an "Admin" entry that renders ONLY when
+ * `useAuth().isAdmin` is true. The Admin link is a discoverability
+ * affordance, never a security boundary: the server 404-cloaks and
+ * authorizes every `/api/admin/*` request on its own, and `AdminGate`
+ * re-probes before rendering anything.
+ */
 export function AppShell({ children }: { children: ReactNode }): ReactElement {
   const navigate = useNavigate();
   const location = useLocation();
-  const { refresh, user } = useAuth();
+  const { refresh, user, isAdmin } = useAuth();
   // Avatar initials from the signed-in account (handoff header) — falls
   // back to the email's first letter, then a generic mark.
   const initials = (() => {
@@ -25,8 +36,15 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
     return email.length > 0 ? (email[0]?.toUpperCase() ?? '·') : '·';
   })();
   const [signOutError, setSignOutError] = useState<string | null>(null);
-  const isFeed = location.pathname === '/app' || location.pathname.startsWith('/app/tenders/');
-  const isSettings = location.pathname.startsWith('/app/settings');
+
+  const onFeed = location.pathname === '/app' || location.pathname.startsWith('/app/tenders/');
+  const feedView = parseFeedView(new URLSearchParams(location.search).get('view'));
+  const isSaved = onFeed && feedView === 'saved';
+  const isFeed = onFeed && !isSaved;
+  const onSettings = location.pathname.startsWith('/app/settings');
+  const isBilling = onSettings && location.hash === '#billing';
+  const isSettings = onSettings && !isBilling;
+  const signedInAs = user?.email ?? 'your account';
 
   async function signOut(): Promise<void> {
     setSignOutError(null);
@@ -66,27 +84,47 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
               </Link>
             </li>
             <li>
+              <Link to={feedPathForView('saved')} aria-current={isSaved ? 'page' : undefined}>
+                Saved
+              </Link>
+            </li>
+            <li>
               <Link to="/app/settings" aria-current={isSettings ? 'page' : undefined}>
                 Settings
               </Link>
             </li>
+            <li>
+              <Link to="/app/settings#billing" aria-current={isBilling ? 'page' : undefined}>
+                Billing
+              </Link>
+            </li>
+            {isAdmin && (
+              <li>
+                <Link
+                  className="app-nav-admin"
+                  to="/admin"
+                  aria-current={location.pathname.startsWith('/admin') ? 'page' : undefined}
+                >
+                  <ShieldCheck aria-hidden="true" size={15} strokeWidth={2.2} />
+                  Admin
+                </Link>
+              </li>
+            )}
           </ul>
           <div className="app-nav-actions">
             <ThemeToggle />
+            <span className="app-avatar" role="img" aria-label={`Signed in as ${signedInAs}`}>
+              {initials}
+            </span>
             <button className="btn-quiet btn-sm" type="button" onClick={() => void signOut()}>
               Log out
             </button>
-            <span className="app-avatar" aria-hidden="true">
-              {initials}
-            </span>
+          </div>
+          <div className="app-nav-status" role="alert" aria-live="assertive">
+            {signOutError !== null && <p className="form-error">{signOutError}</p>}
           </div>
         </nav>
       </header>
-      {signOutError !== null && (
-        <p role="alert" className="form-error">
-          {signOutError}
-        </p>
-      )}
       <main id="main-content" className="app-main">
         {children}
       </main>

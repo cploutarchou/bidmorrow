@@ -28,8 +28,19 @@ interface GetSessionResponse {
   } | null;
 }
 
+interface MeResponse {
+  isAdmin: boolean;
+}
+
 interface AuthContextValue {
   user: SessionUser | null;
+  /**
+   * INTERNAL_ADMIN navigation hint from `GET /api/account/me` — shows the
+   * "Admin" header link (docs/redesign/navigation-and-admin-entry.md). UX
+   * only: the server 404-cloaks and authorizes every `/api/admin/*` call
+   * itself. `false` until known, and on any failure.
+   */
+  isAdmin: boolean;
   loading: boolean;
   /** Re-fetches `/api/auth/get-session` (call after sign-in/out or profile changes). */
   refresh: () => Promise<void>;
@@ -54,8 +65,21 @@ async function fetchSession(): Promise<SessionUser | null> {
   };
 }
 
+/** Never throws — a missing/failed capability answer is simply "not admin". */
+async function fetchIsAdmin(): Promise<boolean> {
+  try {
+    const response = await fetch('/api/account/me', { credentials: 'include' });
+    if (!response.ok) return false;
+    const body = (await response.json()) as Partial<MeResponse> | null;
+    return body?.isAdmin === true;
+  } catch {
+    return false;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }): ReactElement {
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   // Always holds the latest `user` for the 401 handler below, which is
   // registered once (empty dep array beyond `refresh`) and must not close
@@ -75,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactElemen
       try {
         const nextUser = await fetchSession();
         setUser(nextUser);
+        setIsAdmin(nextUser === null ? false : await fetchIsAdmin());
       } finally {
         setLoading(false);
         inFlightRef.current = null;
@@ -105,8 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactElemen
   }, [refresh]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, loading, refresh }),
-    [user, loading, refresh],
+    () => ({ user, isAdmin, loading, refresh }),
+    [user, isAdmin, loading, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
