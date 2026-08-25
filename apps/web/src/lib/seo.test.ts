@@ -4,7 +4,7 @@
  * absolute on the production origin, em dash as the brand separator.
  *
  * The founding-cap assertion is the important one: the spec draft said "First
- * 20 Customers" on the pilot page while every product surface says 50. This
+ * 20 Customers" on the pilot page while every product surface says 100. This
  * test fails if that false number is ever reintroduced.
  */
 import { describe, expect, it } from 'vitest';
@@ -39,9 +39,9 @@ describe('marketing page metadata', () => {
     }
   });
 
-  it('states the real founding cap (50) and never the spec draft’s 20', () => {
+  it('states the real founding cap (100) and never the spec draft’s 20', () => {
     const pricingAndPilot = `${MARKETING_META.pricing.description} ${MARKETING_META.pilot.title} ${MARKETING_META.pilot.description}`;
-    expect(pricingAndPilot).toContain('50');
+    expect(pricingAndPilot).toContain('100');
     expect(pricingAndPilot).not.toMatch(/\b20\b/);
   });
 });

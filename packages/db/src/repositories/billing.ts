@@ -185,7 +185,7 @@ export async function markBillingEventStatus(
 /**
  * Cross-tenant count of non-canceled subscriptions on a given plan — used
  * ONLY to enforce the founding-plan seat cap (docs/product-scope.md: "first
- * 50 customers") at checkout time. A global count across every tenant,
+ * 100 customers") at checkout time. A global count across every tenant,
  * never reachable from a per-tenant request path, returning a bare number
  * — no tenant-owned row data. A canceled subscription frees its seat;
  * every other status (`trialing`/`active`/`past_due`/`paused`) still

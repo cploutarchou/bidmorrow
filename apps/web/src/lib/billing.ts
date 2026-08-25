@@ -24,8 +24,8 @@ export interface BillingStatus {
     status: SubscriptionStatus;
     cancelAtPeriodEnd: boolean;
     currentPeriodEndAt: number | null;
-    /** `taxExclusive`: VAT is added by Paddle at checkout for the customer's country. */
-    price: { amountMinorUnits: number; currency: string; interval: string; taxExclusive: boolean };
+    /** `taxInclusive`: the amount is what the customer pays; Paddle carves the VAT out of it. */
+    price: { amountMinorUnits: number; currency: string; interval: string; taxInclusive: boolean };
     paymentState: SubscriptionStatus;
   } | null;
   foundingAvailable: boolean;

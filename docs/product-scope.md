@@ -45,9 +45,9 @@ generic tender search.
 7. **Daily digest email**: one per org per day, only when meaningful matches
    exist (unless the org opts into empty digests), DB-enforced dedupe.
 8. **Billing**: Paddle Billing as Merchant of Record (ADR-0011) — Paddle.js
-   checkout overlay + Paddle customer portal. Founding €29/mo (first 50,
-   flag-controlled) and Standard €49/mo, **excluding VAT** (Paddle adds and
-   collects it). Server-side entitlements.
+   checkout overlay + Paddle customer portal. Founding €29/mo (first 100,
+   flag-controlled) and Standard €49/mo, **VAT included** (Paddle computes
+   and collects the VAT share). Server-side entitlements.
 9. **Internal admin**: org/user/subscription search, ingestion & digest
    debugging, match trace, feature flags, ingestion scope config, pause
    switches, audit log.
@@ -91,8 +91,9 @@ generic tender search.
 
 ## Pricing
 
-- Founding: €29/month, limited to first 50 customers (feature flag
-  `founding_plan_open`, configurable cap; `DEFAULT_FOUNDING_CAP = 50`).
+- Founding: €29/month, limited to first 100 customers (feature flag
+  `founding_plan_open`, configurable cap; `DEFAULT_FOUNDING_CAP = 100` —
+  owner decision 2026-08-26, raised from 50).
 - Standard: €49/month.
 - Currency is **EUR** — decided by the owner 2026-08-16 (natural fit for
   an EU procurement product); the Paddle prices are EUR and all
@@ -102,10 +103,13 @@ generic tender search.
   decision): the owner has no VAT registration and needs none — Paddle is
   the seller, computes VAT for the customer's country at checkout,
   collects it, remits it and issues the invoice. Prices are
-  **tax-exclusive** (`tax_mode: external`): the customer pays €29/€49
-  **+ VAT**; customer-facing copy says so. B2B customers enter their VAT
-  ID in the Paddle checkout for reverse charge where applicable. Nothing
-  tax-related is configurable in BidMorrow code.
+  **tax-INCLUSIVE** (`tax_mode: internal`, owner decision 2026-08-26,
+  superseding the 2026-08-25 tax-exclusive choice): the customer pays
+  exactly €29/€49 and Paddle carves the VAT for their country out of that
+  amount; customer-facing copy says "incl. VAT". B2B customers enter their
+  VAT ID in the Paddle checkout for reverse charge where applicable (they
+  then pay the same €29/€49 with no VAT share). Nothing tax-related is
+  configurable in BidMorrow code.
 - The founding price is retained for the life of the subscription — a
   founding customer's plan never auto-migrates to the standard price
   (PROD-P7-01, Phase 7 review). Any future price change to an existing

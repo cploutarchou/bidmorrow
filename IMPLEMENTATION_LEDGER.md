@@ -4466,6 +4466,29 @@ checkout on staging (owner blocker 4b), after which a
 `subscription_cancellation` simulation with `entities.subscription_id`
 set to the real subscription covers cancel/resume.
 
+## Pricing amendments: VAT-inclusive, founding cap 100, light checkout (2026-08-26)
+
+Owner decisions (chat, 2026-08-26), superseding the 2026-08-25 tax-exclusive
+choice and the 2026-08-17 cap of 50:
+
+- **Prices include VAT**: €29 / €49 is what the customer pays. Paddle
+  prices must be `tax_mode: internal` (sandbox switch is an owner step —
+  blockers 4b — because the MCP's key stopped authenticating after the
+  rotation). Code: `PlanPrice.taxInclusive: true` (was `taxExclusive`),
+  copy "incl. VAT" in Settings, BillingSuccess, SubscriptionRequiredNotice,
+  Pricing, Terms; ADR-0011 §2 amended in place; product-scope, cost-model
+  (net now depends on the customer's VAT share) and redesign/pricing
+  updated; e2e regex updated.
+- **Founding cap 100**: `DEFAULT_FOUNDING_CAP = 100`; every "first 50 /
+  fifty" in marketing copy, SEO titles/descriptions, Terms, CSS comments
+  and doc comments now says 100. An explicitly set `founding_cap` flag
+  overrides the default — check staging/production flags.
+- **Checkout matches the site**: overlay opens with `theme: 'light'`,
+  `locale: 'en'`; logo/brand colour are dashboard-only (blockers 4b/4c).
+- Paddle's onboarding "3-tier pricing page" prompt was reviewed and NOT
+  adopted (product-scope excludes tiers/annual); the owner chose to keep
+  two plans.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

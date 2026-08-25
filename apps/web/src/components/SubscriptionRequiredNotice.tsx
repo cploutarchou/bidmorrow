@@ -36,9 +36,11 @@ export function SubscriptionRequiredNotice({
       </p>
       <div className="subscribe-required__price-row">
         {!isLapsed && foundingAvailable === true && (
-          <span className="subscribe-required__price">Founding — €29/mo + VAT, limited spots</span>
+          <span className="subscribe-required__price">
+            Founding — €29/mo incl. VAT, limited spots
+          </span>
         )}
-        <span className="subscribe-required__price">Standard — €49/mo + VAT</span>
+        <span className="subscribe-required__price">Standard — €49/mo incl. VAT</span>
       </div>
       <div className="subscribe-required__actions">
         <Link className="btn-solar" to="/app/settings#billing">

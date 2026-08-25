@@ -90,7 +90,7 @@ function Confirmed({ status }: { status: BillingStatus }): ReactElement {
   const price = `${formatMinorUnitsAsCurrency(
     subscription.price.amountMinorUnits,
     subscription.price.currency,
-  )} / ${subscription.price.interval}${subscription.price.taxExclusive ? ' + VAT' : ''}`;
+  )} / ${subscription.price.interval}${subscription.price.taxInclusive ? ' incl. VAT' : ''}`;
 
   return (
     <>

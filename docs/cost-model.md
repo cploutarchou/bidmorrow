@@ -120,8 +120,10 @@ with margin; no scope tightening needed (ADR-0003 trigger is >600/day).
   (Paddle's published rate — developer.paddle.com "How does Paddle
   compare?" table, verified 2026-08-25; the API's `fee_rate` example is
   `0.05`). Paddle collects and remits VAT itself, so no tax-compliance
-  cost sits on this line. Scales with revenue, not infrastructure. Net per
-  subscription ≈ €27.10 (Founding €29) / €46.10 (Standard €49).
+  cost sits on this line. Scales with revenue, not infrastructure. Prices
+  are VAT-inclusive (owner decision 2026-08-26), so the net depends on the
+  customer's VAT share: reverse-charge B2B ≈ €27.05 (Founding €29) /
+  €46.05 (Standard €49); a 19% VAT consumer ≈ €22.42 / €38.23.
 - No LLM inference costs: V1 has no production LLM usage by design.
 - No paid analytics, no paid monitoring, no paid procurement data.
 

@@ -181,7 +181,7 @@ describe('GET /api/billing/status', () => {
         status: 'active',
         cancelAtPeriodEnd: false,
         paymentState: 'active',
-        price: { amountMinorUnits: 2900, currency: 'eur', interval: 'month', taxExclusive: true },
+        price: { amountMinorUnits: 2900, currency: 'eur', interval: 'month', taxInclusive: true },
       },
     });
   });

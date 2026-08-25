@@ -358,7 +358,7 @@
 }
 
 /* --- Pricing teaser (substance frozen — see copy.ts/Pricing.tsx: €29
-   founding for the first 50 customers, €49 standard) --- */
+   founding for the first 100 customers, €49 standard) --- */
 .mkt-plan-row {
   display: flex;
   flex-wrap: wrap;
@@ -1138,7 +1138,7 @@
   color: var(--text-3);
 }
 
-/* CTA row note ("€29/month · first 50 customers") */
+/* CTA row note ("€29/month · first 100 customers") */
 .mkt-cta-note {
   font-family: var(--font-mono);
   font-size: 0.8125rem;

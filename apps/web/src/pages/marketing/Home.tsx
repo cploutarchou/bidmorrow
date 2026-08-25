@@ -507,7 +507,7 @@ export function Home(): ReactElement {
             <a className="mkt-btn-quiet" href="#how">
               See how it works
             </a>
-            <span className="mkt-cta-note">€29/month · first 50 customers</span>
+            <span className="mkt-cta-note">€29/month · first 100 customers</span>
           </div>
         </section>
       </div>
@@ -1022,7 +1022,7 @@ export function Home(): ReactElement {
         </p>
         <div className="hp-plans">
           <article className="hp-plan hp-plan--founding">
-            <p className="hp-plan__cap hp-plan__cap--accent">Founding — first 50 customers</p>
+            <p className="hp-plan__cap hp-plan__cap--accent">Founding — first 100 customers</p>
             <p className="hp-plan__price">
               €29<span className="hp-plan__per"> /month</span>
             </p>

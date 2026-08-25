@@ -51,9 +51,9 @@ export function Terms(): ReactElement {
           <a href="https://www.paddle.com/legal/checkout-buyer-terms" rel="noopener noreferrer">
             Paddle's buyer terms
           </a>
-          . Prices are shown exclusive of VAT, which is added at checkout for your country.
+          . Prices include VAT; the applicable VAT for your country is shown on the Paddle invoice.
           Subscriptions are monthly; cancel any time from account settings and access continues
-          until the end of the paid period. Founding pricing is limited to the first 50 customers
+          until the end of the paid period. Founding pricing is limited to the first 100 customers
           and may not be available when you sign up. Once you're on the founding price, it's
           retained for the life of your subscription — it never auto-migrates to the standard price.
         </p>

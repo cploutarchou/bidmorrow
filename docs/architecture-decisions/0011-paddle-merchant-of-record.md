@@ -35,10 +35,13 @@ the mechanism is unchanged.
    Paddle is the seller on the invoice; it computes and collects VAT for
    the customer's country and remits it. BidMorrow keeps a mirror of
    subscription state for entitlements only.
-2. **Prices are tax-exclusive** (`tax_mode: external` on both Paddle
-   prices, owner decision 2026-08-25): the customer pays €29 / €49 plus
-   the VAT applicable to them; BidMorrow's net is the price minus
-   Paddle's fee. Customer-facing copy says "+ VAT". The
+2. **Prices are tax-INCLUSIVE** (`tax_mode: internal` on both Paddle
+   prices). _Amended 2026-08-26 by owner decision — the original
+   2026-08-25 decision was tax-exclusive (`external`, "+ VAT")._ The
+   customer pays exactly €29 / €49; Paddle computes the VAT share for
+   their country inside that amount and remits it, so BidMorrow's net is
+   the price minus that VAT share minus Paddle's fee (a reverse-charge B2B
+   customer has no VAT share). Customer-facing copy says "incl. VAT". The
    `stripe_tax_enabled` flag is removed — there is nothing left to
    toggle.
 3. **No Paddle server SDK.** `packages/billing` uses a small typed
