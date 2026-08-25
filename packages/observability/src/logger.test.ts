@@ -56,7 +56,7 @@ describe('createLogger', () => {
       Authorization: 'Bearer abc',
       nested: {
         STRIPE_SECRET_KEY: 'sk_live_123',
-        PADDLE_API_KEY: 'pdl_live_apikey_456',
+        PADDLE_API_KEY: 'not-a-real-key-redaction-fixture',
         PADDLE_WEBHOOK_SECRET: 'pdl_ntfset_789',
         api_key: 'k-123',
         safe: 'keep-me',
