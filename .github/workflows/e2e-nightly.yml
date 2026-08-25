@@ -61,3 +61,17 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+      - name: Upload wrangler logs on failure
+        # When workerd dies mid-suite the job log only shows an empty
+        # `✘ [ERROR]` line from wrangler; the actual crash reason lives in the
+        # wrangler log file it points at (2026-08-19..25 nightlies had every
+        # test after the crash fail with ERR_CONNECTION_REFUSED and nothing
+        # diagnosable in the job log).
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: wrangler-logs
+          path: ~/.config/.wrangler/logs/
+          retention-days: 7
+          if-no-files-found: warn
