@@ -10,9 +10,9 @@ import { Link } from 'react-router';
  */
 
 /** Mirrors the reasons `getEntitlement` can return while inactive (packages/billing/src/entitlement.ts). */
-export type InactiveReason = 'no_subscription' | 'past_due_expired' | 'canceled' | 'unpaid';
+export type InactiveReason = 'no_subscription' | 'past_due_expired' | 'paused' | 'canceled';
 
-const LAPSED_REASONS: ReadonlySet<string> = new Set(['past_due_expired', 'canceled', 'unpaid']);
+const LAPSED_REASONS: ReadonlySet<string> = new Set(['past_due_expired', 'paused', 'canceled']);
 
 export function SubscriptionRequiredNotice({
   reason,
@@ -36,9 +36,11 @@ export function SubscriptionRequiredNotice({
       </p>
       <div className="subscribe-required__price-row">
         {!isLapsed && foundingAvailable === true && (
-          <span className="subscribe-required__price">Founding — €29/mo, limited spots</span>
+          <span className="subscribe-required__price">
+            Founding — €29/mo incl. VAT, limited spots
+          </span>
         )}
-        <span className="subscribe-required__price">Standard — €49/mo</span>
+        <span className="subscribe-required__price">Standard — €49/mo incl. VAT</span>
       </div>
       <div className="subscribe-required__actions">
         <Link className="btn-solar" to="/app/settings#billing">

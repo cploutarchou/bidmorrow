@@ -1,15 +1,15 @@
 /**
  * E2E coverage for Settings' Billing section (apps/web/src/pages/app/
  * Settings.tsx). The local `wrangler dev` stack this suite runs against has
- * NO Stripe configuration (`scripts/e2e-write-dev-vars.mjs` deliberately
- * omits `STRIPE_*`, see its docblock) — `resolveBillingConfig` therefore
+ * NO Paddle configuration (`scripts/e2e-write-dev-vars.mjs` deliberately
+ * omits `PADDLE_*`, see its docblock) — `resolveBillingConfig` therefore
  * returns `null` for EVERY `/api/billing/*` route (apps/worker/src/
  * billing.ts), which responds `503 { error: 'not_configured' }` before it
  * ever looks at whether an organization has a subscription row.
  *
  * That has a real consequence for what this file can honestly test:
  * `billing.subscription` is ALWAYS `null` here (the only way it becomes
- * non-null is a completed Stripe Checkout webhook, which never fires
+ * non-null is a completed Paddle checkout webhook, which never fires
  * locally) — so the entire `BillingActiveSubscription` branch of
  * Settings.tsx (plan card, cancel/reactivate panel, past-due notice, print
  * button) can never render in this environment. See the skip blocks below
@@ -56,14 +56,14 @@ test.describe('billing: Settings', () => {
     test.skip(true, 'no invite/add-member seam exists anywhere in the app to create this state');
   });
 
-  test("cancel-subscription confirmation gate: SKIPPED — the Cancel panel never renders without Stripe, and the handoff's assumed 409 is pre-empted by 503 locally", () => {
+  test("cancel-subscription confirmation gate: SKIPPED — the Cancel panel never renders without Paddle, and the handoff's assumed 409 is pre-empted by 503 locally", () => {
     // Two independent reasons this scenario is unreachable here, both
     // verified by reading the code (not assumed):
     // 1. Settings.tsx only renders the `BillingActiveSubscription`
     //    component (which owns the `ConfirmAction`
     //    typed-CANCEL_SUBSCRIPTION gate) when `billing.subscription !==
     //    null`. Locally, a subscription row is only ever created by a
-    //    completed Stripe webhook — with no Stripe config and no seed data
+    //    completed Paddle webhook — with no Paddle config and no seed data
     //    (checked scripts/seed-demo.sql: no `subscriptions` INSERTs) and no
     //    test hook to fabricate one, `billing.subscription` is always
     //    `null`, so the Cancel panel + confirmation gate never render at
@@ -80,7 +80,7 @@ test.describe('billing: Settings', () => {
     // The underlying `cancelSubscriptionAtPeriodEnd` no_subscription/
     // already_canceled/already_scheduled outcomes ARE covered — see
     // packages/billing/src/cancellation.test.ts.
-    test.skip(true, 'Cancel panel is unreachable without a Stripe-backed subscription row locally');
+    test.skip(true, 'Cancel panel is unreachable without a Paddle-backed subscription row locally');
   });
 
   test('print: #billing-print-area is the only visible content under print media', async ({
@@ -106,7 +106,7 @@ test.describe('billing: Settings', () => {
     await page.emulateMedia({ media: 'screen' });
   });
 
-  test('past-due notice and reactivate flow: SKIPPED — unreachable without a Stripe-backed subscription; covered at the unit level instead', () => {
+  test('past-due notice and reactivate flow: SKIPPED — unreachable without a Paddle-backed subscription; covered at the unit level instead', () => {
     // `SubscriptionRequiredNotice` (apps/web/src/components/
     // SubscriptionRequiredNotice.tsx) and the `BillingActiveSubscription`
     // past-due banner/reactivate button both require
@@ -129,7 +129,7 @@ test.describe('billing: Settings', () => {
     //   branch on)
     test.skip(
       true,
-      'unreachable without a Stripe-backed subscription; see packages/billing unit tests',
+      'unreachable without a Paddle-backed subscription; see packages/billing unit tests',
     );
   });
 });
@@ -138,7 +138,7 @@ test.describe('billing: Settings', () => {
  * M2 leftover (template-conversion audit "402/success e2e assertions").
  *
  * The 402 paywall is normally unreachable locally: entitlement enforcement
- * defaults off, and with no Stripe there is no subscription to satisfy it
+ * defaults off, and with no Paddle there is no subscription to satisfy it
  * when on. The double-gated test hook POST /api/test/entitlement-enforced
  * (local-only, session-gated) flips the flag for exactly the window of the
  * first test — the flag is GLOBAL, so it is always reset in `finally`
@@ -182,7 +182,7 @@ test.describe('billing: 402 paywall and checkout-success page', () => {
     page,
   }) => {
     await bootstrapOnboardedUserWithMatches(page, 'Checkout Confirmed');
-    // Local stack has no Stripe, so a real subscription row can never exist.
+    // Local stack has no Paddle, so a real subscription row can never exist.
     // Stubbing GET /api/billing/status at the network layer tests the PAGE's
     // real rendering contract against the documented response shape — the
     // shape itself is pinned server-side by packages/billing tests.
@@ -197,8 +197,13 @@ test.describe('billing: 402 paywall and checkout-success page', () => {
             status: 'active',
             cancelAtPeriodEnd: false,
             currentPeriodEndAt: Date.now() + 30 * 86_400_000,
-            price: { amountMinorUnits: 4900, currency: 'EUR', interval: 'month' },
-            paymentState: 'ok',
+            price: {
+              amountMinorUnits: 4900,
+              currency: 'EUR',
+              interval: 'month',
+              taxInclusive: true,
+            },
+            paymentState: 'active',
           },
           foundingAvailable: false,
         }),
@@ -208,7 +213,7 @@ test.describe('billing: 402 paywall and checkout-success page', () => {
     await expect(page.getByRole('heading', { name: "You're subscribed" })).toBeVisible();
     // Plan and price come from the response, never the URL (the page's rule 1).
     await expect(page.getByText('Standard plan')).toBeVisible();
-    await expect(page.getByText(/€49(\.00)?\s*\/\s*month/)).toBeVisible();
+    await expect(page.getByText(/€49(\.00)?\s*\/\s*month incl\. VAT/)).toBeVisible();
     await expect(page.getByRole('link', { name: 'Go to your feed' })).toBeVisible();
   });
 

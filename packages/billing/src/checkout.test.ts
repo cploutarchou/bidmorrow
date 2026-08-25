@@ -1,18 +1,18 @@
 /**
  * Unit tests for `checkout.ts`'s pure flag-parsing helpers, and for
- * `createCheckoutSession`'s Stripe Checkout Session params against a stubbed
- * `CheckoutStripeClient` (no network) with `@bidmorrow/db` mocked (no D1) —
+ * `createCheckoutTransaction`'s Paddle transaction body against a stubbed
+ * transactions client (no network) with `@bidmorrow/db` mocked (no D1) —
  * same split as `cancellation.test.ts`: "packages/billing runs logic-only
  * tests, D1-coupled paths are tested at apps/worker level"
- * (`apps/worker/src/billing.d1.test.ts`), except the params passed to
- * `stripe.checkout.sessions.create` are exactly the orchestration this file
- * owns, so they're asserted here directly rather than through the HTTP
- * route (which never reaches Stripe's network at that test tier — see that
- * file's header).
+ * (`apps/worker/src/billing.d1.test.ts`), except the body passed to
+ * `POST /transactions` is exactly the orchestration this file owns, so it is
+ * asserted here directly.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OrganizationId } from '@bidmorrow/domain';
 import type { Subscription } from '@bidmorrow/db';
+
+import type { CreateTransactionBody } from './paddle-client';
 
 const getFeatureFlag = vi.fn();
 const getSubscription = vi.fn();
@@ -27,16 +27,18 @@ vi.mock('@bidmorrow/db', () => ({
 
 const {
   blocksNewCheckout,
-  createCheckoutSession,
+  createCheckoutTransaction,
+  isFoundingPlanAvailable,
   isFoundingPlanOpenFlag,
-  isStripeTaxEnabledFlag,
   resolveFoundingCap,
 } = await import('./checkout');
 const { DEFAULT_FOUNDING_CAP } = await import('./plans');
+const { signOrganizationProvenance } = await import('./provenance');
+const { FoundingPlanUnavailableError, SubscriptionAlreadyExistsError } = await import('./errors');
 
 describe('blocksNewCheckout (existing-subscription 409 guard)', () => {
-  it('blocks new checkout for every non-canceled status', () => {
-    for (const status of ['trialing', 'active', 'past_due', 'unpaid']) {
+  it('blocks new checkout for every non-canceled status, including paused', () => {
+    for (const status of ['trialing', 'active', 'past_due', 'paused']) {
       expect(blocksNewCheckout(status)).toBe(true);
     }
   });
@@ -74,51 +76,28 @@ describe('resolveFoundingCap', () => {
     expect(resolveFoundingCap({ valueJson: '5' })).toBe(5);
   });
 
+  it('accepts a zero cap (closes the plan without turning the flag off)', () => {
+    expect(resolveFoundingCap({ valueJson: '0' })).toBe(0);
+  });
+
   it('falls back to the default on a malformed/negative value rather than throwing', () => {
     expect(resolveFoundingCap({ valueJson: '-3' })).toBe(DEFAULT_FOUNDING_CAP);
     expect(resolveFoundingCap({ valueJson: '"not-a-number"' })).toBe(DEFAULT_FOUNDING_CAP);
   });
-
-  it('allows a zero cap (founding fully closed without touching the open flag)', () => {
-    expect(resolveFoundingCap({ valueJson: '0' })).toBe(0);
-  });
 });
-
-describe('isStripeTaxEnabledFlag', () => {
-  it('is off when the flag row is absent', () => {
-    expect(isStripeTaxEnabledFlag(null)).toBe(false);
-  });
-
-  it('is off when the flag value is explicitly false', () => {
-    expect(isStripeTaxEnabledFlag({ valueJson: 'false' })).toBe(false);
-  });
-
-  it('is on only when the flag value is exactly boolean true', () => {
-    expect(isStripeTaxEnabledFlag({ valueJson: 'true' })).toBe(true);
-  });
-
-  it('never treats a truthy-but-non-boolean value as on', () => {
-    expect(isStripeTaxEnabledFlag({ valueJson: '"true"' })).toBe(false);
-    expect(isStripeTaxEnabledFlag({ valueJson: '1' })).toBe(false);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// createCheckoutSession: Stripe Tax params (FLAG_STRIPE_TAX), stubbed
-// stripe.checkout.sessions.create (no network), @bidmorrow/db mocked above.
-// ---------------------------------------------------------------------------
 
 const ORG_ID = 'org_test_01J0CHECKOUT' as OrganizationId;
 const FAKE_DB = {} as never;
-const PRICE_IDS = { founding: 'price_founding_test', standard: 'price_standard_test' };
-const APP_BASE_URL = 'https://app.bidmorrow.test';
+const PRICE_IDS = { founding: 'pri_founding_test', standard: 'pri_standard_test' };
+const SECRET = 'pdl_ntfset_test_secret';
+const ORG_SIG = await signOrganizationProvenance(SECRET, ORG_ID);
 
 function subscriptionRow(overrides: Partial<Subscription> = {}): Subscription {
   return {
     id: 'sub_row_1',
     organizationId: ORG_ID,
-    stripeCustomerId: 'cus_existing',
-    stripeSubscriptionId: 'sub_existing',
+    billingCustomerId: 'ctm_existing',
+    billingSubscriptionId: 'sub_existing',
     status: 'canceled',
     plan: 'standard',
     currentPeriodEndAt: 1_700_000_000_000,
@@ -129,113 +108,176 @@ function subscriptionRow(overrides: Partial<Subscription> = {}): Subscription {
   } as Subscription;
 }
 
-function makeStripeStub() {
-  const create = vi
-    .fn()
-    .mockResolvedValue({ id: 'cs_test_1', url: 'https://checkout.stripe.com/test' });
-  return { checkout: { sessions: { create } }, billingPortal: { sessions: { create: vi.fn() } } };
+function fakeTransactions(id: string | null = 'txn_01test') {
+  const create = vi.fn(async (_body: CreateTransactionBody) => ({ id }) as never);
+  return { client: { transactions: { create } }, create };
 }
 
-/** Every flag lookup resolves `null` (absent) except the ones a test opts into via `overrides`. */
-function stubFeatureFlags(overrides: Record<string, { valueJson: string } | null> = {}) {
-  getFeatureFlag.mockImplementation((_db: unknown, key: string) =>
-    Promise.resolve(key in overrides ? overrides[key] : null),
-  );
+function openFoundingFlags(): void {
+  getFeatureFlag.mockImplementation(async (_db: unknown, key: string) => {
+    if (key === 'founding_plan_open') return { valueJson: 'true' };
+    return null;
+  });
+  countNonCanceledSubscriptionsByPlan.mockResolvedValue(0);
 }
 
-describe('createCheckoutSession — Stripe Tax params (FLAG_STRIPE_TAX)', () => {
+describe('isFoundingPlanAvailable', () => {
+  beforeEach(() => {
+    getFeatureFlag.mockReset();
+    countNonCanceledSubscriptionsByPlan.mockReset();
+  });
+
+  it('is false when the flag is closed, without counting seats', async () => {
+    getFeatureFlag.mockResolvedValue(null);
+    expect(await isFoundingPlanAvailable(FAKE_DB)).toBe(false);
+    expect(countNonCanceledSubscriptionsByPlan).not.toHaveBeenCalled();
+  });
+
+  it('is false once the seat cap is reached', async () => {
+    openFoundingFlags();
+    countNonCanceledSubscriptionsByPlan.mockResolvedValue(DEFAULT_FOUNDING_CAP);
+    expect(await isFoundingPlanAvailable(FAKE_DB)).toBe(false);
+  });
+
+  it('is true while seats remain', async () => {
+    openFoundingFlags();
+    expect(await isFoundingPlanAvailable(FAKE_DB)).toBe(true);
+  });
+});
+
+describe('createCheckoutTransaction', () => {
   beforeEach(() => {
     getFeatureFlag.mockReset();
     getSubscription.mockReset();
     countNonCanceledSubscriptionsByPlan.mockReset();
   });
 
-  it('flag off (row absent): params are byte-identical to pre-Stripe-Tax — no automatic_tax/tax_id_collection/customer_update key at all', async () => {
-    getSubscription.mockResolvedValue(null);
-    stubFeatureFlags();
-    const stripe = makeStripeStub();
+  it('throws SubscriptionAlreadyExistsError before any Paddle call when a live row exists', async () => {
+    getSubscription.mockResolvedValue(subscriptionRow({ status: 'active' }));
+    const { client, create } = fakeTransactions();
+    await expect(
+      createCheckoutTransaction(
+        { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
+        { organizationId: ORG_ID, plan: 'standard' },
+      ),
+    ).rejects.toBeInstanceOf(SubscriptionAlreadyExistsError);
+    expect(create).not.toHaveBeenCalled();
+  });
 
-    await createCheckoutSession(
-      { db: FAKE_DB, stripe, priceIds: PRICE_IDS, appBaseUrl: APP_BASE_URL },
+  it('throws FoundingPlanUnavailableError(flag_closed) before any Paddle call', async () => {
+    getSubscription.mockResolvedValue(null);
+    getFeatureFlag.mockResolvedValue(null);
+    const { client, create } = fakeTransactions();
+    await expect(
+      createCheckoutTransaction(
+        { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
+        { organizationId: ORG_ID, plan: 'founding' },
+      ),
+    ).rejects.toMatchObject({ name: 'FoundingPlanUnavailableError', reason: 'flag_closed' });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('throws FoundingPlanUnavailableError(cap_reached) before any Paddle call', async () => {
+    getSubscription.mockResolvedValue(null);
+    openFoundingFlags();
+    countNonCanceledSubscriptionsByPlan.mockResolvedValue(DEFAULT_FOUNDING_CAP);
+    const { client, create } = fakeTransactions();
+    const error = await createCheckoutTransaction(
+      { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
+      { organizationId: ORG_ID, plan: 'founding' },
+    ).catch((cause: unknown) => cause);
+    expect(error).toBeInstanceOf(FoundingPlanUnavailableError);
+    expect((error as InstanceType<typeof FoundingPlanUnavailableError>).reason).toBe('cap_reached');
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('creates a transaction for a brand-new customer: env price id, SIGNED org custom_data, EUR, no customer_id', async () => {
+    getSubscription.mockResolvedValue(null);
+    const { client, create } = fakeTransactions('txn_01new');
+    const result = await createCheckoutTransaction(
+      { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
       { organizationId: ORG_ID, plan: 'standard' },
     );
+    expect(result).toEqual({ transactionId: 'txn_01new' });
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledWith({
+      items: [{ price_id: 'pri_standard_test', quantity: 1 }],
+      custom_data: { organization_id: ORG_ID, organization_sig: ORG_SIG, plan: 'standard' },
+      currency_code: 'EUR',
+    });
+    expect(create.mock.calls[0]?.[0]).not.toHaveProperty('customer_id');
+    // No founding gate reads for the standard plan.
+    expect(countNonCanceledSubscriptionsByPlan).not.toHaveBeenCalled();
+  });
 
-    const params = stripe.checkout.sessions.create.mock.calls[0]![0] as Record<string, unknown>;
-    expect('automatic_tax' in params).toBe(false);
-    expect('tax_id_collection' in params).toBe(false);
-    expect('customer_update' in params).toBe(false);
-    expect(params).toEqual({
-      mode: 'subscription',
-      client_reference_id: ORG_ID,
-      line_items: [{ price: PRICE_IDS.standard, quantity: 1 }],
-      metadata: { organizationId: ORG_ID, plan: 'standard' },
-      subscription_data: { metadata: { organizationId: ORG_ID, plan: 'standard' } },
-      success_url: `${APP_BASE_URL}/app/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${APP_BASE_URL}/app/settings?checkout=cancelled`,
+  it('uses the founding price id when the founding plan is open', async () => {
+    getSubscription.mockResolvedValue(null);
+    openFoundingFlags();
+    const { client, create } = fakeTransactions();
+    await createCheckoutTransaction(
+      { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
+      { organizationId: ORG_ID, plan: 'founding' },
+    );
+    expect(create.mock.calls[0]?.[0]).toMatchObject({
+      items: [{ price_id: 'pri_founding_test', quantity: 1 }],
+      custom_data: { organization_id: ORG_ID, organization_sig: ORG_SIG, plan: 'founding' },
     });
   });
 
-  it('flag off (explicit false): still no tax params', async () => {
-    getSubscription.mockResolvedValue(null);
-    stubFeatureFlags({ stripe_tax_enabled: { valueJson: 'false' } });
-    const stripe = makeStripeStub();
-
-    await createCheckoutSession(
-      { db: FAKE_DB, stripe, priceIds: PRICE_IDS, appBaseUrl: APP_BASE_URL },
+  it('reuses the existing customer id on reactivation, read from the FRESHEST row', async () => {
+    // First read: nothing. Second (re-check) read: a canceled row appeared.
+    getSubscription
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(subscriptionRow({ status: 'canceled', billingCustomerId: 'ctm_x' }));
+    const { client, create } = fakeTransactions();
+    await createCheckoutTransaction(
+      { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
       { organizationId: ORG_ID, plan: 'standard' },
     );
-
-    const params = stripe.checkout.sessions.create.mock.calls[0]![0] as Record<string, unknown>;
-    expect('automatic_tax' in params).toBe(false);
+    expect(create.mock.calls[0]?.[0]).toMatchObject({ customer_id: 'ctm_x' });
   });
 
-  it('a malformed (truthy-but-non-boolean) flag value is treated as off, same as isStripeTaxEnabledFlag', async () => {
-    getSubscription.mockResolvedValue(null);
-    stubFeatureFlags({ stripe_tax_enabled: { valueJson: '"true"' } });
-    const stripe = makeStripeStub();
-
-    await createCheckoutSession(
-      { db: FAKE_DB, stripe, priceIds: PRICE_IDS, appBaseUrl: APP_BASE_URL },
-      { organizationId: ORG_ID, plan: 'standard' },
-    );
-
-    const params = stripe.checkout.sessions.create.mock.calls[0]![0] as Record<string, unknown>;
-    expect('automatic_tax' in params).toBe(false);
-    expect('tax_id_collection' in params).toBe(false);
+  it('re-checks the row before the network call (SEC-P9-03) and 409s if one appeared', async () => {
+    getSubscription
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(subscriptionRow({ status: 'active' }));
+    const { client, create } = fakeTransactions();
+    await expect(
+      createCheckoutTransaction(
+        { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
+        { organizationId: ORG_ID, plan: 'standard' },
+      ),
+    ).rejects.toBeInstanceOf(SubscriptionAlreadyExistsError);
+    expect(getSubscription).toHaveBeenCalledTimes(2);
+    expect(create).not.toHaveBeenCalled();
   });
 
-  it('flag on, brand-new customer (no existing subscription row): adds automatic_tax + tax_id_collection, no customer_update and no customer param', async () => {
+  it('throws loudly when Paddle returns a transaction with no id', async () => {
     getSubscription.mockResolvedValue(null);
-    stubFeatureFlags({ stripe_tax_enabled: { valueJson: 'true' } });
-    const stripe = makeStripeStub();
-
-    await createCheckoutSession(
-      { db: FAKE_DB, stripe, priceIds: PRICE_IDS, appBaseUrl: APP_BASE_URL },
-      { organizationId: ORG_ID, plan: 'standard' },
-    );
-
-    const params = stripe.checkout.sessions.create.mock.calls[0]![0] as Record<string, unknown>;
-    expect(params.automatic_tax).toEqual({ enabled: true });
-    expect(params.tax_id_collection).toEqual({ enabled: true });
-    expect('customer_update' in params).toBe(false);
-    expect('customer' in params).toBe(false);
+    const { client } = fakeTransactions(null);
+    await expect(
+      createCheckoutTransaction(
+        { db: FAKE_DB, paddle: client, priceIds: PRICE_IDS, provenanceSecret: SECRET },
+        { organizationId: ORG_ID, plan: 'standard' },
+      ),
+    ).rejects.toThrow(/no id/);
   });
 
-  it('flag on, reactivating an existing (canceled) customer: adds customer_update address/name auto alongside automatic_tax + tax_id_collection', async () => {
-    const canceled = subscriptionRow({ status: 'canceled', stripeCustomerId: 'cus_reactivate' });
-    getSubscription.mockResolvedValue(canceled);
-    stubFeatureFlags({ stripe_tax_enabled: { valueJson: 'true' } });
-    const stripe = makeStripeStub();
-
-    await createCheckoutSession(
-      { db: FAKE_DB, stripe, priceIds: PRICE_IDS, appBaseUrl: APP_BASE_URL },
-      { organizationId: ORG_ID, plan: 'standard' },
-    );
-
-    const params = stripe.checkout.sessions.create.mock.calls[0]![0] as Record<string, unknown>;
-    expect(params.customer).toBe('cus_reactivate');
-    expect(params.automatic_tax).toEqual({ enabled: true });
-    expect(params.tax_id_collection).toEqual({ enabled: true });
-    expect(params.customer_update).toEqual({ address: 'auto', name: 'auto' });
+  it('propagates a Paddle API error rather than swallowing it', async () => {
+    getSubscription.mockResolvedValue(null);
+    const create = vi.fn(async () => {
+      throw new Error('paddle down');
+    });
+    await expect(
+      createCheckoutTransaction(
+        {
+          db: FAKE_DB,
+          paddle: { transactions: { create } },
+          priceIds: PRICE_IDS,
+          provenanceSecret: SECRET,
+        },
+        { organizationId: ORG_ID, plan: 'standard' },
+      ),
+    ).rejects.toThrow('paddle down');
   });
 });

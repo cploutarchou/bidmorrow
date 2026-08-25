@@ -8,10 +8,12 @@ const DEPLOYED_SECRETS = {
   RESEND_API_KEY: 're_sentinel',
   EMAIL_FROM: 'BidMorrow <digest@example.com>',
   SUPPORT_EMAIL: 'support@example.com',
-  STRIPE_SECRET_KEY: 'sk_test_sentinel',
-  STRIPE_WEBHOOK_SECRET: 'whsec_sentinel',
-  STRIPE_PRICE_FOUNDING_MONTHLY: 'price_founding',
-  STRIPE_PRICE_STANDARD_MONTHLY: 'price_standard',
+  PADDLE_API_KEY: 'pdl_sdbx_apikey_sentinel',
+  PADDLE_WEBHOOK_SECRET: 'pdl_ntfset_sentinel',
+  PADDLE_CLIENT_TOKEN: 'test_sentinel',
+  PADDLE_ENVIRONMENT: 'sandbox',
+  PADDLE_PRICE_FOUNDING_MONTHLY: 'pri_founding',
+  PADDLE_PRICE_STANDARD_MONTHLY: 'pri_standard',
   ADMIN_EMAILS: 'admin@example.com',
   TED_API_BASE_URL: 'https://api.ted.europa.eu',
 };
@@ -24,7 +26,7 @@ describe('parseEnv', () => {
     });
     expect(config.APP_ENV).toBe('local');
     expect(config.APP_BASE_URL).toBe('http://localhost:8787');
-    expect(config.STRIPE_SECRET_KEY).toBeUndefined();
+    expect(config.PADDLE_API_KEY).toBeUndefined();
   });
 
   it('parses a fully populated production environment', () => {
@@ -52,11 +54,14 @@ describe('parseEnv', () => {
 
     expect(caught).toBeInstanceOf(EnvValidationError);
     const error = caught as EnvValidationError;
-    expect(error.missing).toContain('STRIPE_SECRET_KEY');
+    expect(error.missing).toContain('PADDLE_API_KEY');
+    expect(error.missing).toContain('PADDLE_WEBHOOK_SECRET');
+    expect(error.missing).toContain('PADDLE_CLIENT_TOKEN');
+    expect(error.missing).toContain('PADDLE_ENVIRONMENT');
     expect(error.missing).toContain('RESEND_API_KEY');
     expect(error.missing).toContain('TED_API_BASE_URL');
     expect(error.missing).not.toContain('BETTER_AUTH_SECRET');
-    expect(error.message).toContain('STRIPE_SECRET_KEY');
+    expect(error.message).toContain('PADDLE_API_KEY');
     // Never leak values — not even ones that were provided.
     expect(error.message).not.toContain('sentinel-auth-secret-value');
     expect(error.message).not.toContain('bidmorrow.com');
@@ -75,6 +80,23 @@ describe('parseEnv', () => {
     expect(error.invalid).toEqual(['APP_BASE_URL']);
     expect(error.missing).toEqual([]);
     expect(error.message).not.toContain('not a url');
+  });
+
+  it('rejects a PADDLE_ENVIRONMENT outside sandbox|production by name only', () => {
+    let caught: unknown;
+    try {
+      parseEnv({
+        APP_ENV: 'local',
+        APP_BASE_URL: 'http://localhost:8787',
+        PADDLE_ENVIRONMENT: 'live',
+      });
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(EnvValidationError);
+    const error = caught as EnvValidationError;
+    expect(error.invalid).toEqual(['PADDLE_ENVIRONMENT']);
+    expect(error.message).not.toContain('live');
   });
 
   it('treats empty strings as missing and rejects unknown APP_ENV', () => {
@@ -101,7 +123,6 @@ describe('feature flag keys', () => {
       'digest_paused',
       'ingestion_cpv_scope',
       'entitlement_enforced',
-      'stripe_tax_enabled',
       'prelaunch',
       'launch_date',
       'fetch_retry_attempts_suspended',

@@ -157,7 +157,7 @@ describe('paymentStateLabel', () => {
     expect(paymentStateLabel('active')).toBe('Active');
     expect(paymentStateLabel('past_due')).toBe('Past due');
     expect(paymentStateLabel('canceled')).toBe('Canceled');
-    expect(paymentStateLabel('unpaid')).toBe('Unpaid');
+    expect(paymentStateLabel('paused')).toBe('Paused');
   });
   it('falls back to the raw value for forward-compat', () => {
     expect(paymentStateLabel('something_new')).toBe('something_new');
@@ -167,7 +167,9 @@ describe('paymentStateLabel', () => {
 describe('paymentStateTone', () => {
   it('maps failed-payment states to the danger tone', () => {
     expect(paymentStateTone('past_due')).toBe('danger');
-    expect(paymentStateTone('unpaid')).toBe('danger');
+  });
+  it('maps a paused subscription to the warn tone', () => {
+    expect(paymentStateTone('paused')).toBe('warn');
   });
   it('maps a healthy subscription to the ok tone', () => {
     expect(paymentStateTone('active')).toBe('ok');
@@ -178,9 +180,11 @@ describe('paymentStateTone', () => {
 });
 
 describe('invoiceStatusLabel', () => {
-  it('labels every known Stripe invoice status', () => {
+  it('labels every known Paddle transaction status', () => {
     expect(invoiceStatusLabel('paid')).toBe('Paid');
-    expect(invoiceStatusLabel('open')).toBe('Open');
+    expect(invoiceStatusLabel('completed')).toBe('Paid');
+    expect(invoiceStatusLabel('billed')).toBe('Issued');
+    expect(invoiceStatusLabel('past_due')).toBe('Past due');
   });
   it('reports a null status honestly, never as blank', () => {
     expect(invoiceStatusLabel(null)).toBe('Unknown');

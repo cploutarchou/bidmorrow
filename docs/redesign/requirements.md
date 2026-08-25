@@ -183,7 +183,7 @@ skill — never from memory.
   single number from the 25–50 range; billing agent's non-binding rec had
   been 30). Canonical EUR pricing spec written
   (`docs/redesign/pricing.md`): €29/€49 frozen, feature-identical plans,
-  Stripe Prices required in EUR (currency fixed at Price creation),
+  Paddle prices required in EUR, monthly, tax-exclusive (ADR-0011),
   margin >99% at every modeled scale. Cap = 50 reconciled across every
   surface in one change: `Pricing.tsx`/`Pilot.tsx`/`Terms.tsx` copy +
   metas, `DEFAULT_FOUNDING_CAP = 50` (backs the `founding_cap` flag),

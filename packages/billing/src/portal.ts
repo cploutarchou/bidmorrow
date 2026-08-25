@@ -1,20 +1,20 @@
 /**
- * Stripe-hosted Customer Portal session creation
- * (`billingPortal.sessions.create`, verified from the installed SDK's
- * `esm/resources/BillingPortal/Sessions.d.ts` — `customer`/`return_url`
- * params, response carries `url: string`). No card data ever touches our
- * code.
+ * Paddle-hosted customer portal session
+ * (`POST /customers/{id}/portal-sessions` → `urls.general.overview`,
+ * Paddle API reference 2026-08-25). Links are temporary and must not be
+ * cached — a fresh session is created on every click. The portal handles
+ * payment-method updates, invoices and cancellation; no card data ever
+ * touches our code.
  */
 import { getSubscription, type Db } from '@bidmorrow/db';
 import type { OrganizationId } from '@bidmorrow/domain';
 
 import { NoBillingCustomerError } from './errors';
-import type { CheckoutStripeClient } from './stripe-types';
+import type { PortalSessionsClient } from './paddle-client';
 
 export interface PortalDeps {
   readonly db: Db;
-  readonly stripe: Pick<CheckoutStripeClient, 'billingPortal'>;
-  readonly appBaseUrl: string;
+  readonly paddle: { readonly customers: { readonly portalSessions: PortalSessionsClient } };
 }
 
 export interface CreatePortalSessionArgs {
@@ -26,7 +26,7 @@ export interface PortalSessionResult {
 }
 
 /**
- * Requires an existing `stripe_customer_id` (set by a prior checkout).
+ * Requires an existing `billing_customer_id` (set by a prior checkout).
  * Throws {@link NoBillingCustomerError} (404 at the route layer) rather
  * than silently creating one — the portal has nothing to manage before a
  * customer exists.
@@ -39,9 +39,15 @@ export async function createPortalSession(
   if (subscription === null) {
     throw new NoBillingCustomerError(args.organizationId);
   }
-  const session = await deps.stripe.billingPortal.sessions.create({
-    customer: subscription.stripeCustomerId,
-    return_url: `${deps.appBaseUrl}/app/settings`,
-  });
-  return { url: session.url };
+  const session = await deps.paddle.customers.portalSessions.create(
+    subscription.billingCustomerId,
+    subscription.billingSubscriptionId !== null
+      ? { subscription_ids: [subscription.billingSubscriptionId] }
+      : {},
+  );
+  const url = session.urls.general.overview;
+  if (typeof url !== 'string' || !url.startsWith('https://')) {
+    throw new Error('createPortalSession: Paddle returned no https portal url');
+  }
+  return { url };
 }

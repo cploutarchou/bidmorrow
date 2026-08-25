@@ -51,6 +51,14 @@ describe('reasonFor (entitlement grace-window logic, pure)', () => {
     expect(result.graceEndsAt).toBeNull();
   });
 
+  it('paused is never active (no billing, no service)', () => {
+    expect(reasonFor({ status: 'paused', currentPeriodEndAt: NOW + DAY_MS }, NOW)).toEqual({
+      active: false,
+      reason: 'paused',
+      graceEndsAt: null,
+    });
+  });
+
   it('canceled is never active', () => {
     expect(reasonFor({ status: 'canceled', currentPeriodEndAt: null }, NOW)).toEqual({
       active: false,
@@ -59,11 +67,12 @@ describe('reasonFor (entitlement grace-window logic, pure)', () => {
     });
   });
 
-  it('unpaid is never active', () => {
-    expect(reasonFor({ status: 'unpaid', currentPeriodEndAt: null }, NOW)).toEqual({
-      active: false,
-      reason: 'unpaid',
-      graceEndsAt: null,
-    });
+  it('an unexpected stored status fails closed rather than throwing', () => {
+    const result = reasonFor(
+      { status: 'unpaid' as unknown as 'canceled', currentPeriodEndAt: null },
+      NOW,
+    );
+    expect(result.active).toBe(false);
+    expect(result.reason).toBe('canceled');
   });
 });

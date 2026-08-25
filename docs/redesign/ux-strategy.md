@@ -698,7 +698,7 @@ returns 402 `{error:'subscription_required', reason}`:
 Ordered by (funnel severity × implementation cost). No analytics exist and
 none are being added (product rule), so "expected impact" is stated
 qualitatively with its reasoning, not invented percentages. Signals available
-for verification: Stripe funnel, signup counts, `product_events`
+for verification: Paddle funnel, signup counts, `product_events`
 (`onboarding_completed`), digest opens are NOT tracked — support mail and
 pilot feedback are the qualitative check.
 
@@ -831,7 +831,7 @@ acceptance criterion; the accessibility gate list.
   cycle; revisit if scope config actually changes.
 - **O3 (from C9)**: Hero primary CTA → /signup (recommended) or keep /pilot
   as the funnel gate.
-- **O4 (from §A6)**: A Stripe trial would let users see the feed before
+- **O4 (from §A6)**: A Paddle trial period would let users see the feed before
   paying — but a free trial changes the _substance_ of the frozen pricing,
   so it is strictly an owner call and is NOT recommended-by-default here;
   the honest no-trial journey above works without it.

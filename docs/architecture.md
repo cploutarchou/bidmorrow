@@ -14,7 +14,7 @@ enforced by pnpm workspace package boundaries, not by network boundaries.
    └── digest email ◄─┤                                              │
         (Resend)      └───────┬──────────────┬──────────────┬────────┘
                               │              │              │
-                            D1 (SQLite)     R2 (snapshots) Stripe/Resend/TED
+                            D1 (SQLite)     R2 (snapshots) Paddle/Resend/TED
 ```
 
 ## Repository structure
@@ -32,7 +32,7 @@ packages/
   procurement/  source-agnostic ingestion orchestration, checkpoints, retention
   matching/     deterministic scoring engine (versioned), risk flags
   notifications/ digest generation + email provider interface (Resend impl)
-  billing/      Stripe checkout/portal/webhooks/entitlements
+  billing/      Paddle checkout transactions/portal/webhooks/entitlements (ADR-0011)
   analytics/    first-party product events
   observability/ structured logging, correlation IDs, counters, health
   ui/           shared React components
@@ -103,7 +103,7 @@ Server-side authorization only; org context from session membership;
 repository layer requires organizationId (grep-auditable isolation); zod
 validation at every boundary; React default escaping + CSP + secure headers;
 Better Auth CSRF (origin validation) + secure cookies; built-in +
-binding-based rate limiting; Stripe webhook signature verification +
+binding-based rate limiting; Paddle webhook signature verification +
 event-ID idempotency; secrets via wrangler secrets per env; INTERNAL_ADMIN
 gated by allowlist + audited; all procurement content treated as hostile.
 

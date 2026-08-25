@@ -23,8 +23,9 @@ Pre-launch, under active implementation. Progress and state:
 
 Cloudflare Workers (modular monolith) · Hono · React + Vite (Workers Static
 Assets) · Cloudflare D1 + Drizzle ORM · Cloudflare Queues + Cron Triggers ·
-R2 (raw notice snapshots) · Better Auth · Stripe (Checkout + Customer
-Portal) · Resend · Vitest + Playwright · GitHub Actions + Wrangler.
+R2 (raw notice snapshots) · Better Auth · Paddle Billing (Merchant of
+Record: checkout overlay + customer portal) · Resend · Vitest + Playwright ·
+GitHub Actions + Wrangler.
 
 Rationale for every major choice: `docs/architecture.md` and
 `docs/architecture-decisions/`.

@@ -81,7 +81,31 @@ describe('security headers (docs/security.md C3/C4)', () => {
     const csp = response.headers.get('content-security-policy');
     expect(csp).toContain("default-src 'self'");
     expect(csp).toContain("frame-ancestors 'none'");
-    expect(csp).not.toContain('unsafe-inline');
+    // 'unsafe-inline' is permitted for STYLES only (Paddle.js overlay);
+    // never for scripts.
+    const scriptSrc = csp?.split(';').find((d) => d.trim().startsWith('script-src')) ?? '';
+    expect(scriptSrc).not.toContain('unsafe-inline');
+    expect(csp).toContain(
+      "style-src 'self' https://cdn.paddle.com https://sandbox-cdn.paddle.com 'unsafe-inline'",
+    );
+  });
+
+  it('allows exactly the Paddle origins Paddle.js needs (ADR-0011) and nothing else third-party', async () => {
+    const response = await exports.default.fetch('https://bidmorrow.local/api/health/live');
+    const csp = response.headers.get('content-security-policy') ?? '';
+    const directive = (name: string) =>
+      csp
+        .split(';')
+        .map((d) => d.trim())
+        .find((d) => d.startsWith(`${name} `)) ?? '';
+    expect(directive('script-src')).toBe("script-src 'self' https://cdn.paddle.com");
+    expect(directive('frame-src')).toBe(
+      'frame-src https://buy.paddle.com https://sandbox-buy.paddle.com',
+    );
+    expect(directive('connect-src')).toBe("connect-src 'self' https://*.paddle.com");
+    // No other third-party host anywhere in the policy.
+    const hosts = csp.match(/https:\/\/[^\s;]+/g) ?? [];
+    expect(hosts.every((h) => h.endsWith('.paddle.com'))).toBe(true);
   });
 
   it('sets the C4 header baseline', async () => {

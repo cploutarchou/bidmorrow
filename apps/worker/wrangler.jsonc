@@ -124,7 +124,7 @@
       // certificate itself — same mechanism as production's apex; error
       // 100117 means a pre-existing `staging` DNS record must be deleted
       // first). workers_dev off: one canonical origin per environment
-      // (auth cookies, Stripe webhook URL stability).
+      // (auth cookies, Paddle webhook URL stability).
       "workers_dev": false,
       "routes": [{ "pattern": "staging.bidmorrow.com", "custom_domain": true }],
       "d1_databases": [

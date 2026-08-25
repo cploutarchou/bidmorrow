@@ -1,6 +1,6 @@
 /**
  * billing_events integration tests against real D1 (workerd): the unique
- * `stripe_event_id` is the webhook idempotency guard (docs/data-model.md §9).
+ * `provider_event_id` is the webhook idempotency guard (docs/data-model.md §9).
  */
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -17,17 +17,17 @@ describe('insertBillingEventIfNew', () => {
     db = testDb();
   });
 
-  it('records an event once and returns false on the duplicate stripe_event_id', async () => {
+  it('records an event once and returns false on the duplicate provider_event_id', async () => {
     const { orgId } = await insertTestOrganization(db);
     const args = {
-      stripeEventId: 'evt_1QaTest000000000000000001',
+      providerEventId: 'evt_1QaTest000000000000000001',
       type: 'customer.subscription.updated',
       organizationId: orgId,
       payloadJson: JSON.stringify({ id: 'evt_1QaTest000000000000000001', livemode: false }),
     };
 
     expect(await insertBillingEventIfNew(db, args)).toBe(true);
-    // Redelivered webhook — same Stripe event id, even with a different payload.
+    // Redelivered webhook — same provider event id, even with a different payload.
     expect(
       await insertBillingEventIfNew(db, { ...args, payloadJson: JSON.stringify({ retry: true }) }),
     ).toBe(false);
@@ -35,10 +35,10 @@ describe('insertBillingEventIfNew', () => {
     const rows = await db
       .select()
       .from(billingEvents)
-      .where(eq(billingEvents.stripeEventId, args.stripeEventId));
+      .where(eq(billingEvents.providerEventId, args.providerEventId));
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
-      stripeEventId: args.stripeEventId,
+      providerEventId: args.providerEventId,
       type: args.type,
       organizationId: orgId,
       // The first delivery's payload wins; the duplicate changed nothing.
@@ -51,7 +51,7 @@ describe('insertBillingEventIfNew', () => {
   it('accepts events with an unresolvable (null) organization', async () => {
     expect(
       await insertBillingEventIfNew(db, {
-        stripeEventId: 'evt_1QaTest000000000000000002',
+        providerEventId: 'evt_1QaTest000000000000000002',
         type: 'charge.succeeded',
         organizationId: null,
         payloadJson: '{}',
@@ -61,7 +61,7 @@ describe('insertBillingEventIfNew', () => {
     const rows = await db
       .select()
       .from(billingEvents)
-      .where(eq(billingEvents.stripeEventId, 'evt_1QaTest000000000000000002'));
+      .where(eq(billingEvents.providerEventId, 'evt_1QaTest000000000000000002'));
     expect(rows).toHaveLength(1);
     expect(rows[0]?.organizationId).toBeNull();
   });

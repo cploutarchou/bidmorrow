@@ -32,7 +32,7 @@ localStorage ops-state) was excluded from the comparison by instruction.
 
 - **M1 onboarding overhaul — COMPLETE** (all 8 accept items verified;
   note this predates the design export's later onboarding redesign above).
-- **M2 app restyle — MOSTLY**: missing `/app/billing/success` (Stripe
+- **M2 app restyle — MOSTLY**: missing `/app/billing/success` (the checkout
   `success_url` still targets `/app/settings?checkout=success`, which
   nothing reads — paying customers get no confirmation), no keyboard model
   on `role=tab` feed tabs, no 402/success e2e assertions.
@@ -55,8 +55,8 @@ localStorage ops-state) was excluded from the comparison by instruction.
   touch targets, reduced-motion kill-switch, theme toggle (PR #67,
   reversing D5).
 - **Owner-gated (HUMAN_DECISION_BLOCKERS)**: #10 GA4 ID + CSP, #11 go-live
-  flip (launch_date 2026-08-31T21:00Z), #4 residue (Stripe live-mode
-  webhook + Customer Portal never individually confirmed), #12 www DNS.
+  flip (launch_date 2026-08-31T21:00Z), #4 (billing provider live-mode
+  wiring — now Paddle, ADR-0011), #12 www DNS.
 
 ## Consolidated pending list
 
@@ -317,7 +317,7 @@ localStorage ops-state) was excluded from the comparison by instruction.
   in `finally`; asserts the designed paywall state and that no feed
   content or KPI strip leaks behind it, then that the reset restores the
   feed), the checkout-success confirmed state (network-stubbed
-  `/api/billing/status` — the local stack has no Stripe, so this tests
+  `/api/billing/status` — the local stack has no billing provider, so this tests
   the page's rendering contract against the documented response shape,
   itself pinned by packages/billing tests), and the still-activating
   state via real poll exhaustion (~15s against the real server, no stub).
@@ -379,8 +379,8 @@ Everything else in the pending list below is untouched and still stands.
 - Ledger "M2 COMPLETE + MERGED" vs three verifiably absent M2 accept
   criteria (billing success route, keyboard model, e2e assertions).
 - HUMAN_DECISION_BLOCKERS: item 7 declares the owner checklist EMPTY while
-  item 4 still reads PARTIALLY PROVIDED (Stripe live-mode webhook +
-  Portal unconfirmed).
+  item 4 still reads PARTIALLY PROVIDED (provider live-mode wiring
+  unconfirmed; provider is Paddle since ADR-0011).
 - Ledger's "M4" ≠ plan's M4 (re-skin vs hardening) — plan-M4 never ran.
 - Ledger promise "final slice … after the re-skin lands" (ledger:241-242)
   never closed or descoped; code contains neither.

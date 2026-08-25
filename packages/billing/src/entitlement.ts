@@ -13,9 +13,9 @@ import type { SubscriptionPlan, SubscriptionStatus } from './plans';
 /**
  * A `past_due` subscription stays entitled for this many days past its
  * `current_period_end_at` — a short grace window for a payment retry to
- * succeed (Stripe's own default `smart retries` schedule runs over roughly
- * this span) before access is cut. Chosen as a product/ops trade-off for
- * V1, not derived from a specific Stripe-documented number — revisit once
+ * succeed (Paddle's dunning retries a failed renewal over roughly this
+ * span) before access is cut. Chosen as a product/ops trade-off for V1,
+ * not derived from a specific Paddle-documented number — revisit once
  * real dunning data exists.
  */
 export const PAST_DUE_GRACE_DAYS = 7;
@@ -27,8 +27,8 @@ export type EntitlementReason =
   | 'active'
   | 'past_due_grace'
   | 'past_due_expired'
-  | 'canceled'
-  | 'unpaid';
+  | 'paused'
+  | 'canceled';
 
 export interface Entitlement {
   readonly active: boolean;
@@ -76,15 +76,17 @@ export function reasonFor(
       }
       return { active: false, reason: 'past_due_expired', graceEndsAt };
     }
+    case 'paused':
+      // Paused = no billing, no service (Paddle semantics); the customer
+      // portal can resume it, which arrives as `subscription.resumed`.
+      return { active: false, reason: 'paused', graceEndsAt: null };
     case 'canceled':
       return { active: false, reason: 'canceled', graceEndsAt: null };
-    case 'unpaid':
-      return { active: false, reason: 'unpaid', graceEndsAt: null };
     default:
       // The `status` column is DB-CHECK-constrained to the five values
       // above; this branch exists only so an unexpected stored value fails
       // closed instead of throwing.
-      return { active: false, reason: 'unpaid', graceEndsAt: null };
+      return { active: false, reason: 'canceled', graceEndsAt: null };
   }
 }
 

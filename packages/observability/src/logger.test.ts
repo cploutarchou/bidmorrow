@@ -51,11 +51,13 @@ describe('createLogger', () => {
   it('redacts sensitive keys recursively, through nested objects and arrays', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    createLogger().info('stripe call', {
+    createLogger().info('provider call', {
       apiToken: 'top-secret-token',
       Authorization: 'Bearer abc',
       nested: {
         STRIPE_SECRET_KEY: 'sk_live_123',
+        PADDLE_API_KEY: 'not-a-real-key-redaction-fixture',
+        PADDLE_WEBHOOK_SECRET: 'pdl_ntfset_789',
         api_key: 'k-123',
         safe: 'keep-me',
         deeper: [{ cookie: 'session=abc' }, { PASSWORD: 'hunter2' }],
@@ -66,6 +68,8 @@ describe('createLogger', () => {
     expect(line).not.toContain('top-secret-token');
     expect(line).not.toContain('Bearer abc');
     expect(line).not.toContain('sk_live_123');
+    expect(line).not.toContain('pdl_live_apikey_456');
+    expect(line).not.toContain('pdl_ntfset_789');
     expect(line).not.toContain('k-123');
     expect(line).not.toContain('session=abc');
     expect(line).not.toContain('hunter2');
@@ -75,6 +79,8 @@ describe('createLogger', () => {
       Authorization: string;
       nested: {
         STRIPE_SECRET_KEY: string;
+        PADDLE_API_KEY: string;
+        PADDLE_WEBHOOK_SECRET: string;
         api_key: string;
         safe: string;
         deeper: [{ cookie: string }, { PASSWORD: string }];
@@ -83,6 +89,8 @@ describe('createLogger', () => {
     expect(record.apiToken).toBe('[REDACTED]');
     expect(record.Authorization).toBe('[REDACTED]');
     expect(record.nested.STRIPE_SECRET_KEY).toBe('[REDACTED]');
+    expect(record.nested.PADDLE_API_KEY).toBe('[REDACTED]');
+    expect(record.nested.PADDLE_WEBHOOK_SECRET).toBe('[REDACTED]');
     expect(record.nested.api_key).toBe('[REDACTED]');
     expect(record.nested.safe).toBe('keep-me');
     expect(record.nested.deeper[0].cookie).toBe('[REDACTED]');

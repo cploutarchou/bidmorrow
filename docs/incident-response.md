@@ -64,7 +64,8 @@ A secret exposed in logs, a commit, a paste, or a compromised machine:
 
 1. **Rotate immediately** — every leaked secret, no "it was only briefly":
    - Generate/obtain the new value at the provider:
-     Stripe Dashboard (roll API key; webhook secret via endpoint settings),
+     Paddle dashboard (Developer tools → Authentication: revoke + create API key;
+     Notifications → destination: regenerate the secret),
      Resend dashboard (new API key, revoke old), `openssl rand -base64 32`
      for `BETTER_AUTH_SECRET`, Cloudflare dashboard (roll the CI API token).
    - Install it: `wrangler secret put <NAME> --env production` (and
@@ -73,8 +74,8 @@ A secret exposed in logs, a commit, a paste, or a compromised machine:
    - Update the matching GitHub environment secret if CI holds it.
 2. **Revoke the old value** at the provider — rotation without revocation
    is theater.
-3. **Audit usage during the exposure window**: Stripe Dashboard logs (API
-   requests by key), Resend send logs (unexpected sends), Cloudflare audit
+3. **Audit usage during the exposure window**: Paddle dashboard (Developer
+   tools → Authentication shows last-used per key; Notifications → logs), Resend send logs (unexpected sends), Cloudflare audit
    log (API token usage), our audit_events. `BETTER_AUTH_SECRET` leak →
    assume session forgery possible → invalidate all sessions (users
    re-login).

@@ -4,3 +4,9 @@
 # (format: <commit>:<file>:<rule-id>:<line>). Only add entries for confirmed
 # false positives, with a brief justification comment above each. Never
 # allowlist a real secret — rotate it instead.
+
+# packages/observability logger redaction test: a fake `pdl_live_apikey_456`
+# fixture proving PADDLE_API_KEY is redacted. Never a real key; replaced by a
+# non-key-shaped fixture in the following commit, but the original commit
+# stays in history.
+eac1bf95f3b57e3e131918201e9b5fee82ff34f5:packages/observability/src/logger.test.ts:generic-api-key:59
