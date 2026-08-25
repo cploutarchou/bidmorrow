@@ -7,8 +7,9 @@
  *
  * Every factual claim below was checked against the surface it describes, not
  * against the spec draft:
- * - founding cap is **50** (apps/web/src/pages/marketing/Pricing.tsx,
- *   Pilot.tsx, Home.tsx, Terms.tsx all say "first 50 customers"). The spec
+ * - founding cap is **100** (apps/web/src/pages/marketing/Pricing.tsx,
+ *   Pilot.tsx, Home.tsx, Terms.tsx all say "first 100 customers"; owner
+ *   decision 2026-08-26, was 50). The spec
  *   draft's Pilot title said "First 20 Customers" — that number appears
  *   nowhere in the product and would have shipped a false claim.
  * - "life of your subscription" price hold: Pricing.tsx:32, Home.tsx:951.
@@ -81,11 +82,11 @@ export const MARKETING_META = {
   pricing: {
     title: 'Pricing — €29 or €49/Month Flat — BidMorrow',
     description:
-      'Two monthly plans, prices on the page: €29 founding (first 50 customers) and €49 standard. No annual contracts, no usage fees, no demo gate.',
+      'Two monthly plans, prices on the page: €29 founding (first 100 customers) and €49 standard, VAT included. No annual contracts, no usage fees, no demo gate.',
     canonical: `${SITE_ORIGIN}/pricing`,
   },
   pilot: {
-    title: 'Founding Pilot — First 50 Customers — BidMorrow',
+    title: 'Founding Pilot — First 100 Customers — BidMorrow',
     description:
       "Join BidMorrow's founding pilot: €29/month held for the life of your subscription, and a direct line to the team building the product.",
     canonical: `${SITE_ORIGIN}/pilot`,

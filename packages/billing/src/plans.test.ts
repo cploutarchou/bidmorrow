@@ -48,24 +48,24 @@ describe('mapPaddleSubscriptionStatus', () => {
 });
 
 describe('PLAN_PRICES', () => {
-  it('are the owner-decided flat EUR monthly prices, tax-exclusive', () => {
+  it('are the owner-decided flat EUR monthly prices, VAT included', () => {
     expect(PLAN_PRICES.founding).toEqual({
       amountMinorUnits: 2900,
       currency: 'eur',
       interval: 'month',
-      taxExclusive: true,
+      taxInclusive: true,
     });
     expect(PLAN_PRICES.standard).toEqual({
       amountMinorUnits: 4900,
       currency: 'eur',
       interval: 'month',
-      taxExclusive: true,
+      taxInclusive: true,
     });
   });
 });
 
 describe('DEFAULT_FOUNDING_CAP', () => {
-  it('matches docs/product-scope.md ("first 50 customers")', () => {
-    expect(DEFAULT_FOUNDING_CAP).toBe(50);
+  it('matches docs/product-scope.md ("first 100 customers")', () => {
+    expect(DEFAULT_FOUNDING_CAP).toBe(100);
   });
 });

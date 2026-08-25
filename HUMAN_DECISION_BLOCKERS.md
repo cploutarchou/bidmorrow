@@ -197,6 +197,19 @@ Individual" is superseded; the billing package was rewritten for Paddle
   `https://staging.bidmorrow.com/app/settings`; Checkout → Website
   approval → add `staging.bidmorrow.com` (auto-approved in sandbox).
   Without the default payment link Paddle.js shows "Something went wrong".
+  **Done 2026-08-26** (domain approved, payment link set).
+  Still open in the sandbox dashboard:
+  - **Tax mode → inclusive** on both prices (owner decision 2026-08-26:
+    €29/€49 include VAT). Catalog → Products → each price → edit → tax
+    mode "Inclusive" (API name `internal`). The MCP could not do it — its
+    API key stopped authenticating after the key rotation; reconnect the
+    `paddle-sandbox` MCP with the new key or do it in the dashboard.
+    Until this is done the overlay adds VAT on top of €29/€49 while the
+    site says "incl. VAT".
+  - **Checkout branding** to match the site: Checkout → Checkout settings
+    → upload the BidMorrow logo and set the brand colour (the site's teal
+    button colour); code already opens the overlay with the light theme.
+    Repeat both in the LIVE account under 4c.
 - **4c. LIVE account — start immediately, approval takes DAYS** (launch is
   2026-08-31): sign up at https://vendors.paddle.com and complete seller
   verification (individual seller is fine); website approval for

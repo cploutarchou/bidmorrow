@@ -31,10 +31,10 @@ annual contract.
 |                  | **Founding**                                                                                                                     | **Standard**                                                |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | Price            | **€29 / month**                                                                                                                  | **€49 / month**                                             |
-| Currency         | EUR, flat, no VAT line (see §6)                                                                                                  | EUR, flat, no VAT line (see §6)                             |
+| Currency         | EUR, flat, VAT included (see §6)                                                                                                 | EUR, flat, VAT included (see §6)                            |
 | Billing interval | Monthly, no annual contract                                                                                                      | Monthly, no annual contract                                 |
 | Usage fees       | None                                                                                                                             | None                                                        |
-| Availability     | Limited to the first 50 customers, feature-flag controlled (`founding_plan_open`) — see §2                                       | Unlimited; open once the founding plan is full, or any time |
+| Availability     | Limited to the first 100 customers, feature-flag controlled (`founding_plan_open`) — see §2                                      | Unlimited; open once the founding plan is full, or any time |
 | Price stability  | Locked for the life of the subscription while continuously subscribed (grandfathering — see §2); never auto-migrates to Standard | Standard price at signup                                    |
 | **Feature set**  | **Identical to Standard**                                                                                                        | **Identical to Founding**                                   |
 
@@ -195,7 +195,7 @@ cheapest-price race:**
 
 ### Env var → plan mapping
 
-| Env var (`apps/worker/src/env.ts`) | Plan                          | Amount (excl. VAT) | Interval |
+| Env var (`apps/worker/src/env.ts`) | Plan                          | Amount (incl. VAT) | Interval |
 | ---------------------------------- | ----------------------------- | ------------------ | -------- |
 | `PADDLE_PRICE_FOUNDING_MONTHLY`    | BidMorrow Founding (Founding) | €29                | month    |
 | `PADDLE_PRICE_STANDARD_MONTHLY`    | BidMorrow Standard (Standard) | €49                | month    |
@@ -223,9 +223,11 @@ with exactly these parameters and read back.
 ### What the customer sees
 
 Paddle, as Merchant of Record, computes VAT for the customer's country in
-the checkout overlay and on the invoice: an EU business with a valid VAT
-ID pays €29/€49 under reverse charge; a Cyprus consumer pays €29 + 19%.
-Marketing/app copy therefore states amounts as "€29 / month + VAT".
+the checkout overlay and on the invoice. Prices are VAT-inclusive (owner
+decision 2026-08-26): everyone pays exactly €29/€49 — an EU business with
+a valid VAT ID under reverse charge, a Cyprus consumer with 19% VAT shown
+as a share of the same €29. Marketing/app copy therefore states amounts as
+"€29 / month incl. VAT".
 
 ### Webhook event set and idempotency (existing, cited for completeness)
 

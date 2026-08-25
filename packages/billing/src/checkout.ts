@@ -21,9 +21,10 @@
  * the eventual webhook upsert resolves via the SAME unique customer id and
  * updates the same row rather than colliding on `organization_id`.
  *
- * Tax: Paddle is Merchant of Record. Prices are `tax_mode: external`
- * (tax-exclusive, owner decision 2026-08-25); VAT is computed and collected
- * by Paddle at checkout for the customer's country. Nothing tax-related is
+ * Tax: Paddle is Merchant of Record. Prices are `tax_mode: internal`
+ * (tax-INCLUSIVE, owner decision 2026-08-26 — €29/€49 is the amount the
+ * customer pays); Paddle computes the VAT share for the customer's country
+ * inside that amount, collects and remits it. Nothing tax-related is
  * configurable from this code path — the previous Stripe Tax flag is gone.
  */
 import { getFeatureFlag, getSubscription, type Db } from '@bidmorrow/db';

@@ -186,7 +186,7 @@ export function HowItWorks(): ReactElement {
         <Link className="mkt-btn-quiet" to="/pricing">
           What it costs
         </Link>
-        <span className="mkt-cta-note">€29/month · first 50 customers</span>
+        <span className="mkt-cta-note">€29/month · first 100 customers</span>
       </div>
     </>
   );

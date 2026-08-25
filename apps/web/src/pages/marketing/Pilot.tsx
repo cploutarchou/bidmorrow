@@ -11,13 +11,13 @@ export function Pilot(): ReactElement {
       <p className="mkt-eyebrow">Founding pilot</p>
       <h1>Founding pilot</h1>
       <p className="subheadline">
-        We're opening BidMorrow to a first cohort of up to 50 customers at the founding price of
+        We're opening BidMorrow to a first cohort of up to 100 customers at the founding price of
         €29/month. In exchange, we ask for your honest feedback — what's useful, what's noise, and
         what would make you actually rely on this every day.
       </p>
 
       <div className="mkt-plan-chip mkt-plan-chip--founding">
-        <span className="mkt-plan-chip__label">Founding — first 50 customers</span>
+        <span className="mkt-plan-chip__label">Founding — first 100 customers</span>
         <span className="mkt-plan-chip__price">
           €29<span className="mkt-plan-chip__per">/month</span>
         </span>

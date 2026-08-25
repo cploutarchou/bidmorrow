@@ -23,7 +23,7 @@ const SUBSCRIBED: BillingStatus = {
     status: 'active',
     cancelAtPeriodEnd: false,
     currentPeriodEndAt: 1_800_000_000_000,
-    price: { amountMinorUnits: 2900, currency: 'eur', interval: 'month', taxExclusive: true },
+    price: { amountMinorUnits: 2900, currency: 'eur', interval: 'month', taxInclusive: true },
     paymentState: 'active',
   },
   foundingAvailable: true,

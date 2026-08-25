@@ -201,7 +201,7 @@ test.describe('billing: 402 paywall and checkout-success page', () => {
               amountMinorUnits: 4900,
               currency: 'EUR',
               interval: 'month',
-              taxExclusive: true,
+              taxInclusive: true,
             },
             paymentState: 'active',
           },
@@ -213,7 +213,7 @@ test.describe('billing: 402 paywall and checkout-success page', () => {
     await expect(page.getByRole('heading', { name: "You're subscribed" })).toBeVisible();
     // Plan and price come from the response, never the URL (the page's rule 1).
     await expect(page.getByText('Standard plan')).toBeVisible();
-    await expect(page.getByText(/€49(\.00)?\s*\/\s*month \+ VAT/)).toBeVisible();
+    await expect(page.getByText(/€49(\.00)?\s*\/\s*month incl\. VAT/)).toBeVisible();
     await expect(page.getByRole('link', { name: 'Go to your feed' })).toBeVisible();
   });
 

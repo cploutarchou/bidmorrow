@@ -75,7 +75,10 @@ export async function openCheckout(args: OpenCheckoutArgs): Promise<boolean> {
     settings: {
       displayMode: 'overlay',
       variant: 'one-page',
-      theme: 'dark',
+      // Light to match the site; logo/brand colour come from the Paddle
+      // dashboard (Checkout → Checkout settings), not from code.
+      theme: 'light',
+      locale: 'en',
       successUrl: args.successUrl,
       allowLogout: false,
       showAddDiscounts: false,

@@ -81,9 +81,9 @@ export interface Env {
   PADDLE_CLIENT_TOKEN?: string;
   /** `sandbox` | `production` — selects the API base and what Paddle.js targets. Never derived from APP_ENV. */
   PADDLE_ENVIRONMENT?: string;
-  /** Paddle price id (`pri_…`) for BidMorrow Founding monthly (€29 + VAT, capped). Never invented. */
+  /** Paddle price id (`pri_…`) for BidMorrow Founding monthly (€29 incl. VAT, capped). Never invented. */
   PADDLE_PRICE_FOUNDING_MONTHLY?: string;
-  /** Paddle price id (`pri_…`) for BidMorrow Standard monthly (€49 + VAT). Never invented. */
+  /** Paddle price id (`pri_…`) for BidMorrow Standard monthly (€49 incl. VAT). Never invented. */
   PADDLE_PRICE_STANDARD_MONTHLY?: string;
   /**
    * Phase 12 stage A: second half of the double-gate (alongside `APP_ENV ===

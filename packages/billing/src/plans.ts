@@ -16,14 +16,15 @@ export interface PriceIds {
   readonly standard: string;
 }
 
-/** Founding-plan seat cap default (docs/product-scope.md: "first 50 customers", owner decision 2026-08-17), overridable via `FLAG_FOUNDING_CAP`. */
-export const DEFAULT_FOUNDING_CAP = 50;
+/** Founding-plan seat cap default (docs/product-scope.md: "first 100 customers", owner decision 2026-08-26, was 50), overridable via `FLAG_FOUNDING_CAP`. */
+export const DEFAULT_FOUNDING_CAP = 100;
 
 /**
- * Flat display price per plan, EXCLUDING tax (owner decision 2026-08-25:
- * Paddle prices are `tax_mode: external`, so a customer pays €29 + the VAT
- * Paddle — as Merchant of Record — is obliged to collect for their
- * country). Hardcoded rather than fetched from the Paddle price on every
+ * Flat display price per plan, INCLUDING tax (owner decision 2026-08-26,
+ * superseding the 2026-08-25 tax-exclusive choice: Paddle prices are
+ * `tax_mode: internal`, so a customer pays exactly €29 / €49 and Paddle —
+ * as Merchant of Record — carves the VAT for their country out of that
+ * amount). Hardcoded rather than fetched from the Paddle price on every
  * `GET /api/billing/status`: these are fixed, owner-decided prices
  * (docs/product-scope.md "never discount below €29"), not values the
  * provider is the source of truth for at read time. `amountMinorUnits` is
@@ -33,13 +34,13 @@ export interface PlanPrice {
   readonly amountMinorUnits: number;
   readonly currency: 'eur';
   readonly interval: 'month';
-  /** Always `true` on Paddle: VAT is added at checkout for the customer's country. */
-  readonly taxExclusive: true;
+  /** Always `true`: the displayed amount is what the customer pays; VAT is inside it. */
+  readonly taxInclusive: true;
 }
 
 export const PLAN_PRICES: Record<SubscriptionPlan, PlanPrice> = {
-  founding: { amountMinorUnits: 2900, currency: 'eur', interval: 'month', taxExclusive: true },
-  standard: { amountMinorUnits: 4900, currency: 'eur', interval: 'month', taxExclusive: true },
+  founding: { amountMinorUnits: 2900, currency: 'eur', interval: 'month', taxInclusive: true },
+  standard: { amountMinorUnits: 4900, currency: 'eur', interval: 'month', taxInclusive: true },
 };
 
 export function planPrice(plan: SubscriptionPlan): PlanPrice {

@@ -6,7 +6,7 @@ import { MARKETING_META } from '../../lib/seo';
 /**
  * Pricing — 2026-08-21 handoff redesign (`BidMorrow Marketing.dc.html`,
  * page="pricing"): founding €29 highlighted against standard €49, a
- * twelve-month price-hold comparison (€348 vs €588), and a billing-facts
+ * twelve-month price-hold comparison (€348 vs €588, VAT included), and a billing-facts
  * strip. Facts follow the source: founding price retained for the life of
  * the subscription, same product on both plans, monthly billing via Paddle,
  * cancel from settings.
@@ -20,14 +20,14 @@ const FOUNDING_POINTS = [
 
 const STANDARD_POINTS = [
   'The same feed, engine, daily digest and support',
-  'Billed monthly through Paddle, our Merchant of Record — VAT added at checkout',
+  'Billed monthly through Paddle, our Merchant of Record — VAT included in the price',
   'Cancel from settings whenever you like',
 ];
 
 const BILLING_FACTS: { label: string; text: string }[] = [
   {
     label: 'Currency',
-    text: 'Euro, charged monthly. Nothing is metered and nothing is bundled behind a higher tier.',
+    text: 'Euro, charged monthly, VAT included. Nothing is metered and nothing is bundled behind a higher tier.',
   },
   {
     label: 'Founding price',
@@ -55,11 +55,11 @@ export function Pricing(): ReactElement {
 
       <div className="mkt-plans">
         <article className="mkt-plan mkt-plan--founding" aria-labelledby="founding-plan-heading">
-          <p className="mkt-plan__cap">Founding — first 50 customers</p>
+          <p className="mkt-plan__cap">Founding — first 100 customers</p>
           <h2 id="founding-plan-heading">Founding plan</h2>
           <p className="mkt-plan__price">€29 / month</p>
           <p className="mkt-plan__desc">
-            For the first fifty companies through the door, while the pilot runs. Your price is
+            For the first hundred companies through the door, while the pilot runs. Your price is
             fixed for as long as the subscription lives — it never quietly becomes the standard
             price.
           </p>
@@ -78,7 +78,7 @@ export function Pricing(): ReactElement {
           <h2 id="standard-plan-heading">Standard plan</h2>
           <p className="mkt-plan__price">€49 / month</p>
           <p className="mkt-plan__desc">
-            Open once the founding fifty are taken, and any time after.
+            Open once the founding hundred are taken, and any time after.
           </p>
           <ul className="mkt-plan__list">
             {STANDARD_POINTS.map((point) => (

@@ -692,9 +692,8 @@ export function Settings(): ReactElement {
                   <p>No active subscription.</p>
                   <p className="hint">
                     Founding price is locked in for the life of your subscription — it never
-                    migrates to the standard price later. Prices exclude VAT, which is added at
-                    checkout for your country. Payments and invoices are handled by Paddle, our
-                    Merchant of Record.
+                    migrates to the standard price later. Prices include VAT — what you see is what
+                    you pay. Payments and invoices are handled by Paddle, our Merchant of Record.
                   </p>
                   {publicConfig?.prelaunch === true ? (
                     /* Pre-launch: new checkouts are refused server-side
@@ -713,7 +712,7 @@ export function Settings(): ReactElement {
                           disabled={billingBusy}
                           onClick={() => void startCheckout('founding')}
                         >
-                          Subscribe — Founding (€29/mo + VAT, limited spots)
+                          Subscribe — Founding (€29/mo incl. VAT, limited spots)
                         </button>
                       )}
                       <button
@@ -722,7 +721,7 @@ export function Settings(): ReactElement {
                         disabled={billingBusy}
                         onClick={() => void startCheckout('standard')}
                       >
-                        Subscribe — Standard (€49/mo + VAT)
+                        Subscribe — Standard (€49/mo incl. VAT)
                       </button>
                     </div>
                   )}
@@ -1496,7 +1495,7 @@ function BillingActiveSubscription({
               subscription.price.currency,
             )}{' '}
             / {subscription.price.interval}
-            {subscription.price.taxExclusive ? ' + VAT' : ''}
+            {subscription.price.taxInclusive ? ' incl. VAT' : ''}
           </span>
           <span className={`billing-status-badge billing-status-badge--${tone}`}>
             {paymentStateLabel(subscription.paymentState)}
