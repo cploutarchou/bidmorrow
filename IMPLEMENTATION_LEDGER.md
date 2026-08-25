@@ -4449,6 +4449,23 @@ skips. Owner-side remaining in HUMAN_DECISION_BLOCKERS.md item 4
 (staging secrets/vars, sandbox dashboard steps, live account against the
 08-31 launch, Stripe decommission).
 
+Staging verification (2026-08-26, after PR #105 merged as 036c276 and
+deploy run 32900314835 applied `0011_paddle_billing.sql` — 14 commands):
+`/api/public-config` exposes `paddle: {clientToken: test_…, environment:
+sandbox}`; an unsigned POST to `/api/webhooks/paddle` is a 400 with no
+detail; a `subscription_creation` scenario from the sandbox simulator
+(ntfsim_01m0xcr5c09nzatyc172vg9zdw against ntfset_01m0wx39g6qmk4m1bmf39mpa4d)
+was ACCEPTED by signature verification — the staging
+`PADDLE_WEBHOOK_SECRET` matches the destination — and answered 500
+`processing_failed` on `subscription.created`/`subscription.activated`.
+That is the designed path, not a fault: the simulator's demo `sub_…` does
+not exist in the sandbox, so the live re-fetch in `webhook.ts` 404s, the
+`billing_events` row is marked `failed` and Paddle retries. The simulator
+therefore cannot exercise the processed path; that needs a real sandbox
+checkout on staging (owner blocker 4b), after which a
+`subscription_cancellation` simulation with `entities.subscription_id`
+set to the real subscription covers cancel/resume.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
