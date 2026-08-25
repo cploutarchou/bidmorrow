@@ -133,3 +133,99 @@ test.describe('billing: Settings', () => {
     );
   });
 });
+
+/**
+ * M2 leftover (template-conversion audit "402/success e2e assertions").
+ *
+ * The 402 paywall is normally unreachable locally: entitlement enforcement
+ * defaults off, and with no Stripe there is no subscription to satisfy it
+ * when on. The double-gated test hook POST /api/test/entitlement-enforced
+ * (local-only, session-gated) flips the flag for exactly the window of the
+ * first test — the flag is GLOBAL, so it is always reset in `finally`
+ * before the test ends, and this file runs serially.
+ */
+test.describe('billing: 402 paywall and checkout-success page', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test('entitlement enforced without a subscription: the feed renders the designed paywall, not an error', async ({
+    page,
+  }) => {
+    await bootstrapOnboardedUserWithMatches(page, 'Paywall 402');
+    const enable = await page.request.post('/api/test/entitlement-enforced', {
+      data: { enabled: true },
+    });
+    expect(enable.ok()).toBe(true);
+    try {
+      await page.goto('/app');
+      await expect(
+        page.getByRole('heading', {
+          name: 'Your profile is ready — a subscription activates your feed.',
+        }),
+      ).toBeVisible();
+      // The designed paywall state (F17), never the generic failure copy —
+      // and no feed content or KPI strip behind it.
+      await expect(page.getByText('Could not load your feed.')).toHaveCount(0);
+      await expect(page.locator('article.tender-card')).toHaveCount(0);
+      await expect(page.locator('.feed-stats')).toHaveCount(0);
+    } finally {
+      const disable = await page.request.post('/api/test/entitlement-enforced', {
+        data: { enabled: false },
+      });
+      expect(disable.ok()).toBe(true);
+    }
+    // Flag reset: the same session's feed works again.
+    await page.goto('/app');
+    await expect(page.getByRole('tab', { name: "Today's matches" })).toBeVisible();
+  });
+
+  test('checkout success: confirmed state renders the plan and price from the API response (stubbed)', async ({
+    page,
+  }) => {
+    await bootstrapOnboardedUserWithMatches(page, 'Checkout Confirmed');
+    // Local stack has no Stripe, so a real subscription row can never exist.
+    // Stubbing GET /api/billing/status at the network layer tests the PAGE's
+    // real rendering contract against the documented response shape — the
+    // shape itself is pinned server-side by packages/billing tests.
+    await page.route('**/api/billing/status', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          entitlement: { active: true, reason: 'active' },
+          subscription: {
+            plan: 'standard',
+            status: 'active',
+            cancelAtPeriodEnd: false,
+            currentPeriodEndAt: Date.now() + 30 * 86_400_000,
+            price: { amountMinorUnits: 4900, currency: 'EUR', interval: 'month' },
+            paymentState: 'ok',
+          },
+          foundingAvailable: false,
+        }),
+      }),
+    );
+    await page.goto('/app/billing/success');
+    await expect(page.getByRole('heading', { name: "You're subscribed" })).toBeVisible();
+    // Plan and price come from the response, never the URL (the page's rule 1).
+    await expect(page.getByText('Standard plan')).toBeVisible();
+    await expect(page.getByText(/€49(\.00)?\s*\/\s*month/)).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Go to your feed' })).toBeVisible();
+  });
+
+  test('checkout success: with no subscription the poll exhausts into the honest still-activating state', async ({
+    page,
+  }) => {
+    // Real server, no stub: /api/billing/status returns subscription: null
+    // every attempt, so the page must land on "Still activating" — never a
+    // failure message, never a fabricated confirmation. The poll runs ~15s
+    // (SUBSCRIPTION_POLL_DELAYS_MS), so give the final assertion room.
+    test.slow();
+    await bootstrapOnboardedUserWithMatches(page, 'Checkout NotYet');
+    await page.goto('/app/billing/success');
+    await expect(page.getByRole('heading', { name: 'Completing your subscription' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Still activating' })).toBeVisible({
+      timeout: 25_000,
+    });
+    await expect(page.getByRole('link', { name: 'Check billing settings' })).toBeVisible();
+  });
+});

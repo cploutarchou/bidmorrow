@@ -24,7 +24,8 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { createDb, tenderLots } from '@bidmorrow/db';
+import { FLAG_ENTITLEMENT_ENFORCED } from '@bidmorrow/config';
+import { createDb, setFeatureFlag, tenderLots } from '@bidmorrow/db';
 import { getTestMailbox } from '@bidmorrow/notifications';
 import { scoreLotsForOrgs } from '@bidmorrow/procurement';
 
@@ -67,3 +68,27 @@ testHookRoutes.post('/score-now', requireSession, async (c) => {
     truncated: result.truncated,
   });
 });
+
+const entitlementEnforcedSchema = z.object({ enabled: z.boolean() }).strict();
+
+// Deliberately narrow (one named flag, boolean only) rather than a generic
+// set-any-flag hook — the smallest surface that lets E2E exercise the 402
+// paywall state, which is unreachable otherwise (the local stack has no
+// Stripe, so no subscription can ever exist to satisfy enforcement).
+// Session-gated like score-now; the double-gate above already 404s outside
+// local/test with E2E_TEST_HOOKS.
+testHookRoutes.post(
+  '/entitlement-enforced',
+  requireSession,
+  zValidator('json', entitlementEnforcedSchema),
+  async (c) => {
+    const { enabled } = c.req.valid('json');
+    const db = createDb(c.env.DB);
+    await setFeatureFlag(db, {
+      key: FLAG_ENTITLEMENT_ENFORCED,
+      valueJson: JSON.stringify(enabled),
+      description: 'E2E test hook toggle (local only)',
+    });
+    return c.json({ enabled });
+  },
+);

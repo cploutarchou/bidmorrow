@@ -112,12 +112,12 @@ syntax was confirmed empirically against the actual published package
 output rather than the docs site. Record superseded if a future session can
 cross-check against the live docs.
 
-| Package                               | Version | Role                                                                                                  | License |
-| ------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------- | ------- |
-| `lucide-react`                        | 1.31.0  | dependency — runtime UI icon components (not yet used in any component this chunk; available for M1+) | ISC     |
-| `@fontsource/sora`                    | 5.3.0   | devDependency — source of the vendored display-face woff2 (static 700 cut)                            | OFL-1.1 |
-| `@fontsource/hanken-grotesk`          | 5.3.0   | devDependency — source of the vendored body-face woff2s (static 400 + 700 cuts)                       | OFL-1.1 |
-| `@fontsource-variable/jetbrains-mono` | 5.3.0   | devDependency — source of the vendored mono-face woff2 (variable wght axis)                           | OFL-1.1 |
+| Package                               | Version | Role                                                                                                                                                          | License |
+| ------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `lucide-react`                        | 1.31.0  | dependency — runtime UI icon components (in use since PR #67: `Menu`/`X` in `MarketingLayout.tsx`'s mobile nav — the "not yet used" note below is historical) | ISC     |
+| `@fontsource/sora`                    | 5.3.0   | devDependency — source of the vendored display-face woff2 (static 700 cut)                                                                                    | OFL-1.1 |
+| `@fontsource/hanken-grotesk`          | 5.3.0   | devDependency — source of the vendored body-face woff2s (static 400 + 700 cuts)                                                                               | OFL-1.1 |
+| `@fontsource-variable/jetbrains-mono` | 5.3.0   | devDependency — source of the vendored mono-face woff2 (variable wght axis)                                                                                   | OFL-1.1 |
 
 Rationale: `lucide-react` — tree-shakable per-icon ESM, verified empirically
 (grepped the published dist) to contain zero runtime `<style>`-element
@@ -125,9 +125,11 @@ injection, so it is clean under `style-src 'self'`; ISC license; React 19
 peer range confirmed in its `package.json`
 (`"react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0"`); named-export
 pattern confirmed by reading `dist/esm/lucide-react.mjs` directly
-(`import { IconName } from 'lucide-react'`). No icon is wired into a
-component yet — M0.1 only installs and records it per
-`docs/redesign/dependency-evaluation.md` item 1.
+(`import { IconName } from 'lucide-react'`). At M0.1 time no icon was
+wired into a component — installed and recorded per
+`docs/redesign/dependency-evaluation.md` item 1. **Update 2026-08-24:**
+in use since the 2026-08-21 handoff implementation (PR #67) —
+`MarketingLayout.tsx` imports `Menu`/`X` for the mobile nav toggle.
 
 Fonts — the three `@fontsource*` packages are **devDependencies only**:
 none of their JS/CSS is imported at runtime (their wholesale per-weight CSS
@@ -215,6 +217,50 @@ Font payload after removal: **0 B** (system stacks ship nothing over the
 wire). The 80.89 KB budget analysis above is retained for the historical
 record but no longer applies — there is no font budget to track while the
 Control Room design ships zero custom fonts.
+
+## Fonts re-introduced — 2026-08-21 handoff design (recorded 2026-08-24)
+
+Superseding both font sections above (audit docs-hygiene item: the shipped
+reality had outrun this file). The owner-approved 2026-08-21 design
+handoff (PR #67) ships **Archivo** (display + body) and **Source Code
+Pro** (mono/data) as vendored woff2 subsets in `apps/web/public/fonts/`,
+declared in `apps/web/src/styles/base.css` with `unicode-range` per
+subset and `font-display: swap`. The old `@fontsource/*` devDependencies
+listed in the M0.1 table are gone from `package.json` — the files were
+vendored directly with the handoff.
+
+Measured 2026-08-24 (`du -b`, bytes on disk = bytes transferred; woff2 is
+pre-compressed):
+
+| Subset                             |       Bytes |
+| ---------------------------------- | ----------: |
+| archivo-latin.woff2                |      34,940 |
+| archivo-latin-ext.woff2            |      32,672 |
+| archivo-vietnamese.woff2           |      13,216 |
+| source-code-pro-latin.woff2        |      21,968 |
+| source-code-pro-latin-ext.woff2    |      33,604 |
+| source-code-pro-cyrillic.woff2     |      14,136 |
+| source-code-pro-cyrillic-ext.woff2 |       8,732 |
+| source-code-pro-greek.woff2        |      10,716 |
+| source-code-pro-greek-ext.woff2    |       3,104 |
+| source-code-pro-vietnamese.woff2   |       8,164 |
+| **Total on disk**                  | **362,504** |
+
+**Budget reconciliation.** The ≤90 KB figure in the redesign decisions log
+belonged to the superseded Strata approval ("Sora + Hanken + JetBrains,
+≤90KB total — measure at install"); it was written when total-on-disk and
+total-downloaded were the same number. With `unicode-range` subsetting
+they are not: a visitor downloads only the subsets their page's characters
+hit — for the English-only launch that is `archivo-latin` +
+`source-code-pro-latin` = **56,908 B ≈ 55.6 KB per visit**, inside even
+the old 90 KB figure read as a transfer budget. The on-disk total
+(**354 KB across ten subsets**) is the recorded, deliberate cost of
+covering latin-ext/Greek/Cyrillic/Vietnamese buyer and notice text
+without layout-shifting fallbacks — disk is free on Cloudflare static
+assets; transfer is the metric that costs visitors, and it is the one the
+budget now tracks. (An earlier audit note cited "181 KB shipped" — that
+figure matches no current on-disk measurement and is superseded by the
+table above.)
 
 ## Unverified / to re-check when network allows
 

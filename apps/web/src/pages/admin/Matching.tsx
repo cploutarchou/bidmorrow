@@ -253,6 +253,7 @@ export function Matching(): ReactElement {
           <ConfirmAction
             label="Enqueue recompute"
             confirmText="RECOMPUTE_MATCHES"
+            consequence="Produces new-version match rows for the selected organizations; the feed always reads the latest version per lot, so customers see updated scores after the recompute lands."
             busy={busy}
             onConfirm={() => void submitRecompute()}
           />

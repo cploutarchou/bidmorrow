@@ -178,7 +178,7 @@
 /* --- Preset picker cards --- */
 .ob-preset-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
   gap: 0.75rem;
 }
 
@@ -452,7 +452,7 @@
 /* --- Detail page --- */
 .detail-facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
   gap: 1rem;
   margin: 1.5rem 0;
 }
@@ -2163,7 +2163,7 @@ body.sheet-open {
 
 .ob-sector-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
   gap: var(--s2);
 }
 

@@ -18,6 +18,8 @@ dist/
 coverage/
 playwright-report/
 test-results/
+# run-bidmorrow driver state: server log/pid, saved browser session, screenshots
+.run-state/
 
 # OS / editor
 .DS_Store
