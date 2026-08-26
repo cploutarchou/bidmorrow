@@ -1,0 +1,160 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1200"
+  height="630"
+  viewBox="0 0 1200 630"
+  role="img"
+  aria-labelledby="og-title og-desc"
+>
+  <!--
+    Default Open Graph / Twitter share card (docs/redesign/brand-elevation-phase.md
+    §2/§4c). Source of record for /og/og-default.png, which is what every
+    social platform actually fetches (SVG og:image support is inconsistent,
+    so this file is the design source + a directly-viewable original, not
+    the shared artifact itself).
+
+    Self-hosted, self-contained: the @font-face below points at this
+    project's own /fonts/*.woff2 (same files apps/web/src/styles/base.css
+    already serves), so this SVG renders correctly even opened on its own,
+    same-origin, no CDN. Colors are the light-theme token values from
+    apps/web/src/styles/base.css's `[data-theme='light']` block, hard-coded
+    (a standalone /public SVG has no CSS custom property context to
+    inherit from) — kept in sync by hand; if those tokens move, update here.
+
+    Content: wordmark, the one-line brand promise, the actual meta
+    description sub-line, and a static (non-animated; this is a raster
+    source) version of the funnel motif from src/assets/FunnelHero.tsx.
+    The 3 / 2 / 1 verdict split sums to the 6 notice chips actually drawn
+    here — same "illustrative worked count, not a product metric" rule as
+    the hero, and labelled as such in the image.
+  -->
+  <title id="og-title">BidMorrow — Find the tenders worth pursuing. Skip the rest.</title>
+  <desc id="og-desc">
+    Bid/no-bid qualification for EU public procurement, TED. A stream of notice chips flows
+    through a matching lens and sorts into three illustrative verdict groups.
+  </desc>
+
+  <style>
+    @font-face {
+      font-family: 'Archivo';
+      src: url('/fonts/archivo-latin.woff2') format('woff2');
+      font-weight: 100 900;
+      font-display: block;
+    }
+    text {
+      font-family: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+    .mono {
+      font-family: 'Source Code Pro', ui-monospace, 'SF Mono', 'Cascadia Mono', Consolas,
+        monospace;
+    }
+  </style>
+
+  <rect width="1200" height="630" fill="#f7f8f9" />
+
+  <!-- brand -->
+  <g transform="translate(40, 78)">
+    <rect x="13" y="0" width="26" height="11" rx="5.5" fill="#14181d" opacity="0.28" />
+    <rect x="8" y="14" width="36" height="11" rx="5.5" fill="#14181d" opacity="0.5" />
+    <rect x="3" y="28" width="46" height="12" rx="6" fill="#0f7d6f" />
+    <text x="62" y="30" font-size="25" font-weight="600" fill="#14181d" letter-spacing="-0.01em">
+      BidMorrow
+    </text>
+  </g>
+
+  <!-- headline -->
+  <g font-weight="700" fill="#14181d" letter-spacing="-0.02em">
+    <text x="40" y="220" font-size="60">Find the tenders</text>
+    <text x="40" y="288" font-size="60">worth pursuing.</text>
+    <text x="40" y="356" font-size="60">Skip the rest.</text>
+  </g>
+
+  <!-- sub-line: real page copy, not invented for this image -->
+  <g font-size="22" fill="#4d5661">
+    <text x="40" y="404">Bid/no-bid qualification for EU public</text>
+    <text x="40" y="434">procurement &#183; TED</text>
+  </g>
+
+  <!-- funnel motif panel -->
+  <g>
+    <rect
+      x="720"
+      y="95"
+      width="440"
+      height="410"
+      rx="20"
+      fill="#ffffff"
+      stroke="#e6e9ec"
+      stroke-width="1.5"
+    />
+
+    <g stroke="#14181d" stroke-width="1.5">
+      <rect x="768" y="135" width="24" height="14" rx="3" stroke-opacity="0.45" fill="none" />
+      <rect x="916" y="135" width="24" height="14" rx="3" stroke-opacity="0.45" fill="none" />
+      <rect x="1064" y="135" width="24" height="14" rx="3" stroke-opacity="0.45" fill="none" />
+      <rect x="842" y="163" width="24" height="14" rx="3" stroke-opacity="0.45" fill="none" />
+      <rect x="990" y="163" width="24" height="14" rx="3" stroke-opacity="0.45" fill="none" />
+      <rect x="916" y="191" width="24" height="14" rx="3" stroke-opacity="0.45" fill="none" />
+    </g>
+
+    <g transform="translate(940, 270)">
+      <circle r="46" fill="none" stroke="#0f7d6f" stroke-width="1.5" />
+      <circle r="30" fill="none" stroke="#14181d" stroke-opacity="0.25" stroke-width="1.5" />
+      <circle r="3.5" fill="#0f7d6f" />
+      <g stroke="#14181d" stroke-opacity="0.4" stroke-width="1.5" stroke-linecap="round">
+        <line x1="0" y1="-58" x2="0" y2="-50" />
+        <line x1="0" y1="50" x2="0" y2="58" />
+        <line x1="-58" y1="0" x2="-50" y2="0" />
+        <line x1="50" y1="0" x2="58" y2="0" />
+      </g>
+    </g>
+
+    <g>
+      <rect x="728" y="356" width="132" height="64" rx="10" fill="#0f7d6f" />
+      <text x="742" y="380" font-size="12" font-weight="600" fill="#ffffff">Strong fit</text>
+      <text x="742" y="406" class="mono" font-size="18" font-weight="700" fill="#ffffff">3</text>
+
+      <rect x="874" y="356" width="132" height="64" rx="10" fill="rgba(15,125,111,0.1)" />
+      <rect
+        x="874"
+        y="356"
+        width="132"
+        height="64"
+        rx="10"
+        fill="none"
+        stroke="rgba(15,125,111,0.28)"
+        stroke-width="1.5"
+      />
+      <text x="888" y="380" font-size="12" font-weight="600" fill="#0b6a5e">Worth reviewing</text>
+      <text x="888" y="406" class="mono" font-size="18" font-weight="700" fill="#0b6a5e">2</text>
+
+      <rect x="1020" y="356" width="132" height="64" rx="10" fill="#ffffff" />
+      <rect
+        x="1020"
+        y="356"
+        width="132"
+        height="64"
+        rx="10"
+        fill="none"
+        stroke="#d5dae0"
+        stroke-width="1.5"
+      />
+      <text x="1034" y="380" font-size="12" font-weight="600" fill="#14181d" opacity="0.85">
+        Possible
+      </text>
+      <text x="1034" y="406" class="mono" font-size="18" font-weight="700" fill="#14181d">1</text>
+    </g>
+
+    <text
+      x="940"
+      y="458"
+      class="mono"
+      text-anchor="middle"
+      font-size="10"
+      letter-spacing="0.08em"
+      fill="#5f6875"
+    >
+      ILLUSTRATIVE EXAMPLE &#8212; NOT LIVE DATA
+    </text>
+  </g>
+</svg>

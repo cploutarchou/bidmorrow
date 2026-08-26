@@ -3,7 +3,9 @@ import { Menu, X } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
 import { DECISION_SUPPORT_DISCLAIMER, PRODUCT_NAME, TED_ATTRIBUTION } from '../copy';
+import { useAuth } from '../lib/auth-context';
 import { usePublicConfig } from '../lib/public-config';
+import { useReveal } from '../lib/use-reveal';
 import { CookieConsent, ConsentFooterControls } from './CookieConsent';
 import { LaunchCountdown } from './LaunchCountdown';
 import { Logo } from './Logo';
@@ -34,9 +36,11 @@ const NAV_LINKS: { to: string; label: string }[] = [
  * plus Log in / Sign up. The mockup only hides the nav links under its
  * equivalent breakpoint and leaves nothing in their place; that's the
  * "3 stacked rows" bug this component fixes, so this menu is a deliberate
- * improvement on the mockup rather than a literal port of it. Single-theme
- * dark only (2026-08-18 decision log) — there is no theme toggle anywhere
- * in this shell.
+ * improvement on the mockup rather than a literal port of it. Both header
+ * and panel carry the `ThemeToggle` (light theme landed after the
+ * 2026-08-18 dark-only note) and, for a visitor who already has a session,
+ * a single "Open app" action in place of Log in / Sign up
+ * (docs/redesign/navigation-and-admin-entry.md).
  */
 export function MarketingLayout({
   children,
@@ -46,6 +50,12 @@ export function MarketingLayout({
   fullBleed?: boolean;
 }): ReactElement {
   const [menuOpen, setMenuOpen] = useState(false);
+  // A visitor who already has a session (digest email → /pricing, a
+  // bookmark to /) gets one "Open app" action instead of Log in / Sign up
+  // (docs/redesign/navigation-and-admin-entry.md N4). Session-less and
+  // still-loading states render the public pair, so nothing flashes.
+  const { user } = useAuth();
+  const signedIn = user !== null;
   // Current-page indicator in the nav (audit minor: the marketing nav had
   // none). `aria-current` carries the styling too, so state and semantics
   // cannot drift apart.
@@ -53,35 +63,13 @@ export function MarketingLayout({
   const panelId = useId();
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const location = useLocation();
   const publicConfig = usePublicConfig();
 
-  // Scroll-triggered reveals (docs/redesign/app-interface-spec.md §8.4) —
-  // progressive enhancement: `.mkt-reveal` is only ever hidden under the
-  // `js-reveal` root class this effect adds, so content is fully visible if
-  // JS never runs. Re-observes on every route change (marketing pages are
-  // client-side navigated, so a fresh mount effect alone wouldn't re-run
-  // per page).
-  useEffect(() => {
-    document.documentElement.classList.add('js-reveal');
-    const targets = document.querySelectorAll<HTMLElement>('.mkt-reveal:not(.is-in)');
-    if (typeof IntersectionObserver === 'undefined') {
-      for (const el of targets) el.classList.add('is-in');
-      return;
-    }
-    const observer = new IntersectionObserver(
-      (entries, obs) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          entry.target.classList.add('is-in');
-          obs.unobserve(entry.target);
-        }
-      },
-      { rootMargin: '0px 0px -10%', threshold: 0.15 },
-    );
-    for (const el of targets) observer.observe(el);
-    return () => observer.disconnect();
-  }, [location.pathname]);
+  // Scroll-triggered reveals (docs/redesign/brand-elevation-phase.md §2
+  // "Scroll reveal") — one shared IntersectionObserver for every
+  // `[data-reveal]` element on the page; see lib/use-reveal.ts for the
+  // progressive-enhancement contract.
+  useReveal();
 
   function closeMenu(): void {
     setMenuOpen(false);
@@ -152,10 +140,18 @@ export function MarketingLayout({
           </ul>
           <div className="nav-actions">
             <ThemeToggle />
-            <Link to="/login">Log in</Link>
-            <Link className="cta cta-small" to="/signup">
-              Sign up
-            </Link>
+            {signedIn ? (
+              <Link className="cta cta-small" to="/app">
+                Open app
+              </Link>
+            ) : (
+              <>
+                <Link to="/login">Log in</Link>
+                <Link className="cta cta-small" to="/signup">
+                  Sign up
+                </Link>
+              </>
+            )}
           </div>
 
           <button
@@ -191,12 +187,20 @@ export function MarketingLayout({
             </ul>
             <div className="mkt-menu-panel__actions">
               <ThemeToggle />
-              <Link to="/login" onClick={closeMenu}>
-                Log in
-              </Link>
-              <Link className="cta" to="/signup" onClick={closeMenu}>
-                Sign up
-              </Link>
+              {signedIn ? (
+                <Link className="cta" to="/app" onClick={closeMenu}>
+                  Open app
+                </Link>
+              ) : (
+                <>
+                  <Link to="/login" onClick={closeMenu}>
+                    Log in
+                  </Link>
+                  <Link className="cta" to="/signup" onClick={closeMenu}>
+                    Sign up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </nav>
