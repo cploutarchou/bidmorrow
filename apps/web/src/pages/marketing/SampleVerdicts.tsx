@@ -54,7 +54,7 @@ export function SampleVerdicts(): ReactElement {
           </p>
 
           <div className="mkt-truth-grid sample-frame">
-            <div className="mkt-truth-card">
+            <div className="mkt-truth-card" data-reveal data-reveal-i={1}>
               <h2>What you are looking at</h2>
               <p>
                 Five notices, three supplier profiles, one engine run on {SCORED_AT_LABEL}. The
@@ -63,7 +63,7 @@ export function SampleVerdicts(): ReactElement {
                 lists on its own site, not in words lifted from any one notice.
               </p>
             </div>
-            <div className="mkt-truth-card">
+            <div className="mkt-truth-card" data-reveal data-reveal-i={2}>
               <h2>Why the date is pinned</h2>
               <p>
                 Deadline runway is one of the eight scored components, so a score is only true as of
@@ -72,7 +72,7 @@ export function SampleVerdicts(): ReactElement {
                 numbers and this page would stop matching them.
               </p>
             </div>
-            <div className="mkt-truth-card">
+            <div className="mkt-truth-card" data-reveal data-reveal-i={3}>
               <h2>What this is not</h2>
               <p>
                 It is not a trial and not a free tier. You cannot submit a tender here, build a
@@ -95,7 +95,7 @@ export function SampleVerdicts(): ReactElement {
         </div>
       </section>
 
-      <section className="mkt-section">
+      <section className="mkt-section" data-reveal>
         <div className="mkt-wrap">
           <h2 className="mkt-sec-title">Get verdicts matched to your company</h2>
           <p className="mkt-sec-lede">

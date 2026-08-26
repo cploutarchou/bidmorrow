@@ -183,14 +183,16 @@ Shared OG/Twitter block (values interpolated per page):
 ```
 
 **Share-image spec** (`/og/og-default.png`, self-hosted, in `apps/web/public/og/`):
-1200×630 PNG (≤ 300 KB; also export @2x-quality but keep single file), safe
-area 1120×550 centered (LinkedIn/WhatsApp crops edges). Content: wordmark
-top-left, headline "Find the tenders worth pursuing. Skip the rest." set large
-(≥ 56 px equivalent), and the score-breakdown card motif (the hero artifact —
-84.5/100 worked example) as the visual, on the Mac Modern light ground. No
-fake UI content — use the canonical fixture numbers from docs/matching-engine.md.
-Static designed asset per redesign plan §4c. Per-page OG images: not V1;
-revisit post-launch (a Methodology-specific card is the first candidate).
+1200×630 PNG (≤ 300 KB), safe area 1120×550 centered (LinkedIn/WhatsApp
+crops edges). Content (brand-elevation phase, 2026-08-26 — supersedes the
+score-card design shipped in PR #79): wordmark top-left, headline "Find the
+tenders worth pursuing. Skip the rest." set large (≥ 56 px equivalent),
+sub-line "Bid/no-bid qualification for EU public procurement · TED", and the
+funnel motif (notices → profile lens → three verdict cards, labelled
+"illustrative example — not live data") on the light ground. Source is
+`apps/web/public/og/og-default.svg`; regenerate the PNG with
+`node scripts/generate-og-image.mjs`. Per-page OG images: not V1; revisit
+post-launch (a Methodology-specific card is the first candidate).
 
 ### Page-by-page
 

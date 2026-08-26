@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
+import { StepSource } from '../../assets/steps/StepSource';
 import { PageMeta } from '../../components/PageMeta';
 import { MARKETING_META } from '../../lib/seo';
 
@@ -43,7 +44,7 @@ export function HowItWorks(): ReactElement {
       </p>
 
       <ol className="mkt-flow">
-        <li className="mkt-flow__step">
+        <li className="mkt-flow__step" data-reveal data-reveal-i={1}>
           <span className="mkt-flow__num" aria-hidden="true">
             1
           </span>
@@ -64,7 +65,7 @@ export function HowItWorks(): ReactElement {
           </span>
         </li>
 
-        <li className="mkt-flow__step">
+        <li className="mkt-flow__step" data-reveal data-reveal-i={2}>
           <span className="mkt-flow__num" aria-hidden="true">
             2
           </span>
@@ -79,18 +80,12 @@ export function HowItWorks(): ReactElement {
               See what the scope covers
             </Link>
           </span>
-          <span className="mkt-figure mkt-figure--scan" aria-hidden="true">
-            <span className="mkt-fig-line" />
-            <span className="mkt-fig-line" />
-            <span className="mkt-fig-line" />
-            <span className="mkt-fig-line" />
-            <span className="mkt-fig-line" />
-            <span className="mkt-fig-line" />
-            <span className="mkt-fig-scanline" />
+          <span className="mkt-figure mkt-figure--art" aria-hidden="true">
+            <StepSource className="mkt-figure__art" />
           </span>
         </li>
 
-        <li className="mkt-flow__step">
+        <li className="mkt-flow__step" data-reveal data-reveal-i={3}>
           <span className="mkt-flow__num" aria-hidden="true">
             3
           </span>
@@ -125,7 +120,7 @@ export function HowItWorks(): ReactElement {
           </span>
         </li>
 
-        <li className="mkt-flow__step">
+        <li className="mkt-flow__step" data-reveal data-reveal-i={4}>
           <span className="mkt-flow__num" aria-hidden="true">
             4
           </span>
@@ -153,7 +148,7 @@ export function HowItWorks(): ReactElement {
           </span>
         </li>
 
-        <li className="mkt-flow__step">
+        <li className="mkt-flow__step" data-reveal data-reveal-i={5}>
           <span className="mkt-flow__num" aria-hidden="true">
             5
           </span>
