@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { Link, useLocation } from 'react-router';
 import {
   componentLabel,
@@ -7,6 +7,7 @@ import {
   formatRelativeDeadline,
   riskConfidenceLabel,
 } from '../lib/format';
+import { usePrefersReducedMotion } from '../lib/motion';
 import type { FeedRow } from '../lib/types';
 import { ScoreBadge } from './ScoreBadge';
 
@@ -37,14 +38,37 @@ function deadlineTone(deadlineAt: number | null, now: number): 'risk' | 'caution
   return 'quiet';
 }
 
-/** r=16 circle circumference ≈ 100.5 — SVG attributes only (CSP-safe). */
-function ringDash(score: number): string {
-  return `${((score / 100) * 100.5).toFixed(1)} 100.5`;
+/** r=16 circle circumference ≈ 100.5. */
+const RING_CIRCUMFERENCE = 100.5;
+
+/** SVG attribute only (CSP-safe: `stroke-dasharray` is a presentation
+ *  attribute, not the `style=` attribute `style-src` restricts). */
+function ringDashLength(score: number): number {
+  return Number(((score / 100) * RING_CIRCUMFERENCE).toFixed(1));
 }
 
 /** Score ring from the 2026-08-21 handoff card anatomy — decorative
- *  (`aria-hidden`); the ScoreBadge text stays the accessible carrier. */
+ *  (`aria-hidden`); the ScoreBadge text stays the accessible carrier.
+ *
+ * Draws its arc on mount: `stroke-dashoffset` starts equal to the dash
+ * length itself (fully hidden) and animates to `0` (fully revealed) via
+ * the CSS transition on `.score-ring__fill`, exactly like the classic
+ * "SVG circle draw" technique — both values are plain SVG attributes, so
+ * nothing here touches the CSP-restricted `style=` attribute. Reduced
+ * motion (and non-browser environments) render already-drawn on the very
+ * first paint, never a flash of an empty ring. */
 function ScoreRing({ score }: { score: number }): ReactElement {
+  const reducedMotion = usePrefersReducedMotion();
+  const [drawn, setDrawn] = useState(reducedMotion);
+  useEffect(() => {
+    if (reducedMotion) {
+      setDrawn(true);
+      return;
+    }
+    const frame = requestAnimationFrame(() => setDrawn(true));
+    return () => cancelAnimationFrame(frame);
+  }, [reducedMotion]);
+  const dashLength = ringDashLength(score);
   return (
     <span className="score-ring" aria-hidden="true">
       <svg width="38" height="38" viewBox="0 0 38 38">
@@ -57,7 +81,8 @@ function ScoreRing({ score }: { score: number }): ReactElement {
           className="score-ring__fill"
           strokeWidth="3"
           strokeLinecap="round"
-          strokeDasharray={ringDash(score)}
+          strokeDasharray={`${dashLength} ${RING_CIRCUMFERENCE}`}
+          strokeDashoffset={drawn ? 0 : dashLength}
           transform="rotate(-90 19 19)"
         />
       </svg>

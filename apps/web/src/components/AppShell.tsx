@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { PRODUCT_NAME } from '../copy';
 import { useAuth } from '../lib/auth-context';
 import { feedPathForView, parseFeedView } from '../lib/feed-view';
+import { RouteTransition } from '../lib/lazy-page';
 import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
 import { NoIndex } from './NoIndex';
@@ -126,7 +127,17 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
         </nav>
       </header>
       <main id="main-content" className="app-main">
-        {children}
+        {/* Key off pathname+search, not `children` identity — see
+            `RouteTransition`'s own header comment (lib/lazy-page.tsx) for
+            why: `location` here already resolves to the tender slide-over's
+            `backgroundLocation` while the sheet is open (react-router scopes
+            `useLocation()` to whatever the enclosing `<Routes location>`
+            override was), so this key is unchanged across the sheet's
+            open/close and only changes on a real Feed/Settings/etc.
+            navigation. */}
+        <RouteTransition transitionKey={location.pathname + location.search}>
+          {children}
+        </RouteTransition>
       </main>
     </>
   );

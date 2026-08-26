@@ -681,6 +681,25 @@ td {
   margin: 0 0 1.25rem;
 }
 
+/* Tablet (≤ 56rem): five nav items + the account cluster overflowed 768px
+   by ~35px. Tighter gutters and link padding keep it on one row. */
+@media (max-width: 56rem) and (min-width: 40.01rem) {
+  .app-header-inner {
+    gap: 0.75rem;
+    padding-inline: 1rem;
+  }
+  .app-nav-list {
+    gap: 0.25rem;
+  }
+  .app-nav-list a {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.82rem;
+  }
+  .app-nav-actions {
+    gap: 0.375rem;
+  }
+}
+
 /* Mobile app bar (§4.2): the app nav has exactly three actions (Feed,
    Settings, Log out) — a hamburger would hide two links behind a tap for
    no benefit. A two-row bar instead: row 1 wordmark + Log out, row 2 a
@@ -802,20 +821,94 @@ td {
   gap: 0.5rem;
   flex-wrap: wrap;
 }
-.feed-stat dd span {
+/* Scoped to the description span specifically (`.feed-stat__note`), not a
+   bare `span` descendant selector — `dd`'s other span child is the
+   `KpiValue` count-up number (`.num`), which must keep the big/bold
+   figure styling above, not fall into this quiet, small-text rule. */
+.feed-stat dd .feed-stat__note {
   font-size: 0.8rem;
   font-weight: 400;
   color: var(--text-3);
 }
+/* Reserves the count-up number's FINAL width (Feed.tsx's `KpiValue`,
+   `--kpi-w` set before first paint) so the 0 -> value animation growing
+   the digit count never shoves `.feed-stat__note` sideways mid-flight —
+   CLS with no user input, since `dd` lays the two out in one flex row. */
+.kpi-num {
+  display: inline-block;
+  min-width: var(--kpi-w, auto);
+}
 .feed-stat--caution dd {
   color: var(--status-caution-text);
 }
-.feed-stat--caution dd span {
+.feed-stat--caution dd .feed-stat__note {
   color: var(--text-3);
 }
 @media (max-width: 48rem) {
   .feed-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* Brand elevation (docs/redesign/brand-elevation-phase.md §2 "App", B8):
+   below 40rem the 2x2 block of large tiles ate a full screen before the
+   first tender. Same `<dl>`/`<dt>`/`<dd>` markup — only the layout
+   changes — so accessible names, the "Feed overview" group label and the
+   `.feed-stats dt` E2E assertions are unaffected. Snap-scroll row of
+   compact chips; each chip's supplementary text (e.g. "scored in the last
+   24 hours") stays in the DOM and the accessible tree, just visually
+   clipped, so screen-reader users keep the same context sighted desktop
+   users get. */
+@media (max-width: 40rem) {
+  .feed-stats {
+    display: flex;
+    grid-template-columns: unset;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    padding: 0 0 0.35rem;
+    margin-bottom: 1rem;
+  }
+  .feed-stats:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: var(--r-m);
+  }
+  .feed-stat {
+    /* Containing block for the visually-hidden note below — without it the
+       absolutely positioned note lands at the page level at the chip's
+       scroll offset and widens the document (WCAG 1.4.10 regression). */
+    position: relative;
+    overflow: hidden;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    min-width: 8rem;
+    min-height: 44px;
+    border: 1px solid var(--stroke-faint);
+    border-radius: var(--r-m);
+    padding: 0.55rem 0.8rem;
+  }
+  .feed-stat dt {
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+  }
+  .feed-stat dd {
+    font-size: 1.15rem;
+    flex-wrap: nowrap;
+  }
+  /* Visually hidden (not `display: none` — stays in the accessible
+     tree), and scoped to `.feed-stat__note` specifically so the
+     `KpiValue` count-up number (also a `span`, via `.num`) stays
+     visible — the whole point of a compact chip is label + number. */
+  .feed-stat dd .feed-stat__note {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 }
 .feed-tabs {
@@ -1009,15 +1102,16 @@ td {
 }
 
 /* --- Feed: empty states + skeleton loading --- */
-/* Centered, designed composition (a pure-CSS radar motif, no asset) that
-   also solves the "vast empty ground below the fold" defect via a
-   generous min-height. */
+/* Centered, designed composition — original SVG illustration
+   (apps/web/src/assets/empty/, brand-elevation §4) above the copy, with a
+   generous min-height that also solves the "vast empty ground below the
+   fold" defect. */
 .feed-empty {
   border: 1px solid var(--stroke);
   border-radius: var(--r-l);
   background: var(--glass-solid);
   box-shadow: var(--shadow-s);
-  padding: 4rem 1.5rem;
+  padding: 3.25rem 1.5rem;
   min-height: 20rem;
   display: grid;
   gap: 0.6rem;
@@ -1026,47 +1120,11 @@ td {
   text-align: center;
   color: var(--text-2);
 }
-.feed-empty__glyph {
-  width: 72px;
-  height: 72px;
-  margin-bottom: 0.75rem;
-  border: 1px solid var(--stroke-strong);
-  border-radius: 50%;
-  position: relative;
-  background: radial-gradient(circle, rgba(53, 211, 192, 0.12), transparent 65%);
-}
-.feed-empty__glyph::before {
-  content: '';
-  position: absolute;
-  inset: 16px;
-  border: 1px dashed var(--stroke);
-  border-radius: 50%;
-}
-.feed-empty__glyph::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 6px;
-  height: 6px;
-  margin: -3px;
-  border-radius: 50%;
-  background: var(--sol-1);
-  box-shadow: 0 0 12px rgba(53, 211, 192, 0.6);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .feed-empty__glyph::after {
-    animation: empty-ping 3s ease-in-out infinite;
-  }
-  @keyframes empty-ping {
-    0%,
-    100% {
-      box-shadow: 0 0 8px rgba(53, 211, 192, 0.4);
-    }
-    50% {
-      box-shadow: 0 0 16px rgba(53, 211, 192, 0.75);
-    }
-  }
+.feed-empty__illust {
+  width: 108px;
+  height: auto;
+  margin-bottom: 0.5rem;
+  color: var(--text-3);
 }
 .feed-empty__title {
   margin: 0;
@@ -1086,11 +1144,13 @@ td {
   justify-content: center;
   gap: 0.75rem;
 }
-/* Tab switches / feed loads: the list and empty state are unmounted during
-   `loading` (skeleton shows), so a mount animation re-triggers on every
-   tab change with zero JS. */
+/* Tab switches / feed loads: the empty state is unmounted during `loading`
+   (skeleton shows), so a mount animation re-triggers on every tab change
+   with zero JS. `.tender-list` itself no longer carries this — its
+   `<li>` children now stagger in individually (`card-in`, above), and
+   layering the list's own rise-in on top read as two competing
+   directions of motion at once. */
 @media (prefers-reduced-motion: no-preference) {
-  .tender-list,
   .feed-empty {
     animation: rise-in 240ms var(--ease);
   }
@@ -1188,7 +1248,62 @@ td {
   gap: 0.55rem;
   transition:
     transform 200ms var(--ease),
-    border-color 200ms var(--ease);
+    border-color 200ms var(--ease),
+    box-shadow 200ms var(--ease);
+}
+/* Hover lift — pointer devices only (`hover: hover` + `pointer: fine`
+   excludes touch, where a "hover" state can otherwise get stuck after a
+   tap). Reduced motion is handled by base.css's global kill-switch
+   (`transition: none !important`), so this still lands at its final
+   position/shadow instantly rather than animating. */
+@media (hover: hover) and (pointer: fine) {
+  .tender-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--stroke-strong, var(--line-strong));
+    box-shadow: var(--shadow-s);
+  }
+}
+/* Staggered entrance (brand-elevation §2 "App"): opacity + 8px rise, 40ms
+   per card, capped at 8 — CSS-only via `:nth-child` buckets rather than a
+   JS-set custom property, so no inline `style` attribute is needed (CSP:
+   `style-src 'self'`, no `unsafe-inline` — same reasoning as the
+   `<progress>` score bars using native attributes instead of an inline
+   width; see TenderCard.tsx). Wrapped in its own reduced-motion query as
+   belt-and-suspenders alongside the global kill-switch. */
+@media (prefers-reduced-motion: no-preference) {
+  .tender-list > li {
+    animation: card-in 320ms var(--ease) both;
+  }
+  .tender-list > li:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .tender-list > li:nth-child(2) {
+    animation-delay: 40ms;
+  }
+  .tender-list > li:nth-child(3) {
+    animation-delay: 80ms;
+  }
+  .tender-list > li:nth-child(4) {
+    animation-delay: 120ms;
+  }
+  .tender-list > li:nth-child(5) {
+    animation-delay: 160ms;
+  }
+  .tender-list > li:nth-child(6) {
+    animation-delay: 200ms;
+  }
+  .tender-list > li:nth-child(7) {
+    animation-delay: 240ms;
+  }
+  .tender-list > li:nth-child(n + 8) {
+    animation-delay: 280ms;
+  }
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
 }
 .tender-card--strong {
   border-left-color: var(--accent);
@@ -1231,6 +1346,13 @@ td {
 }
 .score-ring__fill {
   stroke: var(--line-strong);
+  /* Draws the arc on mount: TenderCard.tsx sets `stroke-dashoffset` to the
+     dash length itself (fully hidden) on first paint, then to `0` a frame
+     later — this transition animates that reveal. Reduced motion (and the
+     Node test project's non-browser path) skip straight to the final `0`
+     offset in JS, and base.css's global kill-switch disables this
+     transition too, so there is no motion left to suppress twice over. */
+  transition: stroke-dashoffset 700ms var(--ease);
 }
 .tender-card--strong .score-ring__fill {
   stroke: var(--accent);
@@ -1564,16 +1686,45 @@ td {
   box-shadow: var(--shadow-s);
   scroll-margin-top: calc(var(--app-header-h) + 1rem);
 }
+/* Subtle card-in reveal on load, staggered by DOM position — works
+   whether or not the conditional Digest section is present, since each
+   section is timed by where it actually lands, not by a fixed count. */
+@media (prefers-reduced-motion: no-preference) {
+  .settings-content > .settings-group {
+    animation: rise-in 320ms var(--ease) both;
+  }
+  .settings-content > .settings-group:nth-child(2) {
+    animation-delay: 60ms;
+  }
+  .settings-content > .settings-group:nth-child(3) {
+    animation-delay: 120ms;
+  }
+  .settings-content > .settings-group:nth-child(4) {
+    animation-delay: 180ms;
+  }
+  .settings-content > .settings-group:nth-child(n + 5) {
+    animation-delay: 240ms;
+  }
+}
 .settings-group > h2 {
   margin: 0 0 1.25rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--stroke-faint);
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-2);
+}
+/* Section icon beside each h2 — decorative (`aria-hidden`), the heading
+   text stays the accessible name. */
+.settings-group__icon {
+  flex: none;
+  color: var(--accent, var(--sol-1));
 }
 .settings-subsection {
   margin-top: 1.5rem;
@@ -2500,4 +2651,25 @@ body.sheet-open {
   display: grid;
   gap: 0.375rem;
   color: var(--ink-2);
+}
+
+/* --- Route transitions (lib/lazy-page.tsx `RouteTransition`, used by
+   AppShell) --- Only ever created when `document.startViewTransition` is
+   available AND `prefers-reduced-motion` allows it (the JS guard), so
+   there is nothing to disable for the common case — but the pseudo-element
+   tree these rules target is NOT reached by base.css's global
+   `*, *::before, *::after` reduced-motion kill-switch (`::view-transition-*`
+   is its own pseudo-element tree, not `::before`/`::after`), so a second,
+   explicit override stays here as defense-in-depth. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 160ms;
+  animation-timing-function: var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }

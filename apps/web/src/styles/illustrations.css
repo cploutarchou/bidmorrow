@@ -1,0 +1,207 @@
+/* ============================================================
+   Illustration system — brand-elevation phase (2026-08-26).
+
+   Shared stylesheet for the original SVG assets in `src/assets/`
+   (FunnelHero, the four step illustrations, the three empty states).
+   Kept separate from base.css because these rules only ever target
+   inline SVG markup, not page chrome.
+
+   Why a stylesheet and not inline `<style>`/`style=` on the SVG
+   nodes: `style-src` carries `'unsafe-inline'` today, but only as a
+   documented, narrowly-scoped concession for the third-party Paddle
+   checkout overlay (see apps/worker/src/index.ts). Everything BidMorrow
+   authors keeps to the stricter "no inline style" convention the rest
+   of the codebase already follows (see Logo.tsx) so this asset family
+   never depends on that exception and stays portable to a stricter
+   policy later.
+
+   Color: fill/stroke for anything that must track the active theme
+   goes through `var(--token, <dark-theme fallback>)` — `:root`'s bare
+   (dark) values, matching every other CSS custom property fallback
+   convention in this codebase. Ink lines instead use the SVG
+   `stroke="currentColor"` / `fill="currentColor"` presentation
+   attributes directly (not classes here) so they inherit the
+   surrounding text color exactly like Logo.tsx's bars do.
+   ============================================================ */
+
+.bm-illust {
+  display: block;
+  overflow: visible;
+}
+
+.bm-illust text {
+  font-family: var(--font-ui, 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
+}
+
+.bm-illust .bm-mono {
+  font-family: var(
+    --font-num,
+    'Source Code Pro',
+    ui-monospace,
+    'SF Mono',
+    'Cascadia Mono',
+    Consolas,
+    monospace
+  );
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- token-following color utilities (accent + signal set) ---- */
+
+.bm-accent-stroke {
+  stroke: var(--accent, #2ec4b0);
+}
+.bm-accent-fill {
+  fill: var(--accent, #2ec4b0);
+}
+.bm-accent-tint {
+  fill: var(--accent-tint, rgba(46, 196, 176, 0.12));
+}
+.bm-accent-line {
+  stroke: var(--accent-line, rgba(46, 196, 176, 0.34));
+}
+.bm-accent-text {
+  fill: var(--accent-text, #6fe0d0);
+}
+.bm-caution-stroke {
+  stroke: var(--sig-caution, #e8a33d);
+}
+.bm-caution-fill {
+  fill: var(--sig-caution, #e8a33d);
+}
+.bm-risk-stroke {
+  stroke: var(--sig-risk, #ef6461);
+}
+.bm-risk-fill {
+  fill: var(--sig-risk, #ef6461);
+}
+.bm-ink3-fill {
+  fill: var(--ink-3, #7a8593);
+}
+.bm-accent-ink-fill {
+  fill: var(--accent-ink, #04211d);
+}
+.bm-surface-fill {
+  fill: var(--bg-raised, #1b2027);
+}
+.bm-line-stroke {
+  stroke: var(--line, #2e353f);
+}
+.bm-line-strong-stroke {
+  stroke: var(--line-strong, #414a57);
+}
+
+/* ============================================================
+   FunnelHero — hero signature visual: a permanent queue of notice
+   chips (6, static, 65% opacity — never empty) sits above the profile
+   lens; a small flow subset (3 chips) actually falls through it and
+   settles into three verdict cards. Runs once (≤ 2.6s total incl.
+   stagger), then holds its final frame (`animation-fill-mode:
+   forwards`) — never an infinite loop, so no pause control is required
+   per WCAG 2.2 SC 2.2.2. Revised 2026-08-26 (coordinator review): see
+   FunnelHero.tsx's header comment for what changed and why.
+   ============================================================ */
+
+.funnel-hero .bm-chip {
+  animation: bm-chip-fall 1s ease-in forwards;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Stagger via structural selectors (not a custom-property-per-node inline
+   style — this file keeps the "no inline style attributes" convention
+   too, so the stagger has to be expressible in the stylesheet alone).
+   Each chip is `<g transform="translate(x,y)"><g class="bm-chip">…</g></g>`
+   — the outer, unclassed <g> is what actually sits at position N among
+   `.bm-chip-stream`'s children (the animated `.bm-chip` is always its
+   only, and therefore first, child), so the stagger selector counts the
+   wrapper, not the class it targets for the delay. */
+.funnel-hero .bm-chip-stream > :nth-child(1) .bm-chip {
+  animation-delay: 0s;
+}
+.funnel-hero .bm-chip-stream > :nth-child(2) .bm-chip {
+  animation-delay: 0.35s;
+}
+.funnel-hero .bm-chip-stream > :nth-child(3) .bm-chip {
+  animation-delay: 0.7s;
+}
+
+.funnel-hero .bm-lens-pulse {
+  animation: bm-lens-pulse 1.4s ease-out 2;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.funnel-hero .bm-card {
+  animation: bm-card-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+/* Same wrapper-counts-not-the-class reasoning as the chip stagger above. */
+.funnel-hero .bm-verdict-cards > :nth-child(1) .bm-card {
+  animation-delay: 1.5s;
+}
+.funnel-hero .bm-verdict-cards > :nth-child(2) .bm-card {
+  animation-delay: 1.75s;
+}
+.funnel-hero .bm-verdict-cards > :nth-child(3) .bm-card {
+  animation-delay: 2s;
+}
+
+@keyframes bm-chip-fall {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(172px);
+    opacity: 0;
+  }
+}
+
+@keyframes bm-lens-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+@keyframes bm-card-in {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Static, fully-visible fallback. The permanent queue (6 chips), lens
+   ring and three verdict cards are unaffected by this media query — they
+   never animate — so they already read as one complete, static frame.
+   The 3 flow chips and the lens pulse are motion-only flourishes with no
+   information not already carried by the queue/lens/cards, so under
+   reduced motion they are hidden outright rather than frozen mid-flight:
+   that avoids a half-opacity/half-translated chip reading as a mistake,
+   and keeps every remaining element "fully visible" with nothing
+   partially transparent. */
+@media (prefers-reduced-motion: reduce) {
+  .funnel-hero .bm-chip,
+  .funnel-hero .bm-lens-pulse {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  .funnel-hero .bm-card {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

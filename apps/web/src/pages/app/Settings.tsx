@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { useLocation, useNavigate } from 'react-router';
+import { AlertTriangle, Building2, CreditCard, Mail, SlidersHorizontal } from 'lucide-react';
 import { CONTRACT_NATURES, type ContractNature } from '@bidmorrow/domain';
 import { Combobox } from '../../components/Combobox';
 import { ConfirmAction } from '../../components/ConfirmAction';
@@ -692,7 +693,15 @@ export function Settings(): ReactElement {
 
         <div className="settings-content">
           <section id="billing" className="settings-group">
-            <h2>Billing</h2>
+            <h2>
+              <CreditCard
+                className="settings-group__icon"
+                size={18}
+                strokeWidth={2.2}
+                aria-hidden="true"
+              />
+              Billing
+            </h2>
             {billingError !== null && (
               <p role="alert" className="form-error">
                 {billingError}
@@ -770,7 +779,15 @@ export function Settings(): ReactElement {
           </section>
 
           <section id="company" className="settings-group">
-            <h2>Company profile</h2>
+            <h2>
+              <Building2
+                className="settings-group__icon"
+                size={18}
+                strokeWidth={2.2}
+                aria-hidden="true"
+              />
+              Company profile
+            </h2>
             <div className="form-field">
               <label htmlFor="settings-name">Company name</label>
               <input
@@ -812,7 +829,15 @@ export function Settings(): ReactElement {
           </section>
 
           <section id="matching-profile" className="settings-group">
-            <h2>Matching profile</h2>
+            <h2>
+              <SlidersHorizontal
+                className="settings-group__icon"
+                size={18}
+                strokeWidth={2.2}
+                aria-hidden="true"
+              />
+              Matching profile
+            </h2>
             <p className="hint">
               Everything below is what the scoring engine matches against — CPV codes, keywords,
               geographies, capabilities, certifications, exclusions, and your value/deadline range.
@@ -1359,7 +1384,15 @@ export function Settings(): ReactElement {
 
           {digest !== null && (
             <section id="digest" className="settings-group">
-              <h2>Digest preferences</h2>
+              <h2>
+                <Mail
+                  className="settings-group__icon"
+                  size={18}
+                  strokeWidth={2.2}
+                  aria-hidden="true"
+                />
+                Digest preferences
+              </h2>
               <label className="checkbox-row">
                 <input
                   type="checkbox"
@@ -1415,7 +1448,15 @@ export function Settings(): ReactElement {
           )}
 
           <section id="danger-zone" className="settings-group settings-danger">
-            <h2>Delete account</h2>
+            <h2>
+              <AlertTriangle
+                className="settings-group__icon"
+                size={18}
+                strokeWidth={2.2}
+                aria-hidden="true"
+              />
+              Delete account
+            </h2>
             <p>
               This permanently deletes your account. If you're the sole owner of an organization,
               you must transfer or delete it first.

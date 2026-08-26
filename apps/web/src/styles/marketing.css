@@ -950,6 +950,18 @@
 }
 
 /* 2 — TED scan */
+/* Illustrated figure (brand elevation): the step art fills the panel width. */
+.mkt-figure--art {
+  display: grid;
+  place-items: center;
+  padding: 0.5rem;
+}
+.mkt-figure--art .mkt-figure__art {
+  width: 100%;
+  max-width: 20rem;
+  height: auto;
+}
+
 .mkt-figure--scan {
   position: relative;
   overflow: hidden;
@@ -3453,4 +3465,618 @@ body.consent-banner-open {
   max-width: 65ch;
   font-size: 0.875rem;
   color: var(--ink-2);
+}
+
+/* ============================================================
+   BRAND ELEVATION — MARKETING (2026-08-26)
+   docs/redesign/brand-elevation-phase.md. Scroll reveal, hero aurora +
+   two-column layout, the product frame's shadow/gradient border/tilt,
+   step-art cross-fade, pricing founding glow + hold-bar grow-in, the
+   mobile sticky CTA + card carousel, and fact count-up polish.
+   ============================================================ */
+
+/* --- Scroll reveal (lib/use-reveal.ts) ---------------------------------
+   `[data-reveal]` only ever hides content under BOTH `html.js-reveal`
+   (added by the hook, never present without JS) AND
+   `prefers-reduced-motion: no-preference` — so a visitor with JS off, or
+   motion reduced, always sees content already in place. Stagger via
+   `[data-reveal-i]`, same 80ms cadence as the pre-existing (now retired)
+   `.mkt-reveal--d1/d2/d3` in base.css. */
+@media (prefers-reduced-motion: no-preference) {
+  .js-reveal [data-reveal] {
+    opacity: 0;
+    transform: translateY(12px);
+    transition:
+      opacity 500ms var(--ease),
+      transform 500ms var(--ease);
+  }
+  .js-reveal [data-reveal].is-in {
+    opacity: 1;
+    transform: none;
+  }
+  .js-reveal [data-reveal-i='1'] {
+    transition-delay: 60ms;
+  }
+  .js-reveal [data-reveal-i='2'] {
+    transition-delay: 120ms;
+  }
+  .js-reveal [data-reveal-i='3'] {
+    transition-delay: 180ms;
+  }
+  .js-reveal [data-reveal-i='4'] {
+    transition-delay: 240ms;
+  }
+  .js-reveal [data-reveal-i='5'] {
+    transition-delay: 300ms;
+  }
+  .js-reveal [data-reveal-i='6'] {
+    transition-delay: 360ms;
+  }
+}
+
+/* Belt-and-braces progressive-enhancement guard for the rare case where
+   `scripting` is reported unavailable but the JS-added class somehow
+   still landed (e.g. a crawler that executes script without a real
+   viewport). */
+@media (scripting: none) {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* --- Hero: aurora ground -------------------------------------------------
+   Two soft radial washes (accent tint + warm-neutral caution tint, both
+   theme-aware tokens already used elsewhere) drifting very slowly behind
+   the grid. Purely decorative, sits inside the existing `aria-hidden`
+   `.hp-grid-bg` wrapper. */
+.hp-aurora {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(64px);
+  opacity: 0.4;
+}
+
+.hp-aurora--1 {
+  left: -8%;
+  top: -18%;
+  width: 34rem;
+  height: 34rem;
+  background: radial-gradient(circle, var(--accent-tint) 0%, transparent 70%);
+}
+
+.hp-aurora--2 {
+  right: -12%;
+  top: 6%;
+  width: 28rem;
+  height: 28rem;
+  background: radial-gradient(circle, var(--sig-caution-tint) 0%, transparent 70%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hp-aurora--1 {
+    animation: hp-aurora-drift-1 60s ease-in-out infinite alternate;
+  }
+  .hp-aurora--2 {
+    animation: hp-aurora-drift-2 60s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes hp-aurora-drift-1 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(48px, 32px) scale(1.08);
+  }
+}
+
+@keyframes hp-aurora-drift-2 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(-36px, 44px) scale(1.05);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .hp-aurora {
+    display: none;
+  }
+}
+
+/* --- Hero: two-column layout + word-stagger headline -------------------- */
+@media (min-width: 60rem) {
+  .hp-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 25rem);
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+  }
+
+  .hp-hero__copy {
+    grid-column: 1;
+  }
+
+  .hp-hero__art {
+    grid-column: 2;
+    display: flex;
+    justify-content: center;
+  }
+}
+
+.hp-hero__art {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+@media (min-width: 60rem) {
+  .hp-hero__art {
+    margin-top: 0;
+  }
+}
+
+/* Floating frame: sized to the illustration, not to a fixed box. A flex
+   container's cross-axis default (`align-items: stretch`) was forcing the
+   `<svg>` child to fill whatever height the frame had rather than the
+   other way around — the frame ended up taller than the artwork, with
+   the (`preserveAspectRatio`-centered) SVG rendering small in the middle
+   and empty space above/below it. `align-items: center` makes the frame
+   hug the SVG's own aspect-ratio-driven height instead; the only
+   height cap left is the mobile ~62vw one below, which is a viewport-
+   relative bound on the ARTWORK, not an arbitrary frame min-height. */
+.hp-hero__frame {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 28px;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  background: linear-gradient(160deg, var(--accent-line), transparent 55%, var(--line-hair));
+  box-shadow:
+    var(--shadow-panel),
+    0 48px 80px -40px rgba(0, 0, 0, 0.32);
+}
+
+.hp-hero__frame .funnel-hero {
+  display: block;
+  width: min(100%, 25rem);
+  height: auto;
+  /* Matches the SVG's own `viewBox="0 0 560 360"` exactly — modern
+     browsers already infer this ratio from the viewBox under `height:
+     auto` (no explicit width/height attrs on the <svg>), so this changes
+     no rendered pixel; it is a belt-and-braces reservation so the LCP
+     hero copy next to it never shifts on the frame between the CSS
+     applying and the SVG's own intrinsic size being available, on
+     whichever engine/version does the inference later or not at all. */
+  aspect-ratio: 560 / 360;
+  max-height: 62vw;
+}
+
+@media (min-width: 60rem) {
+  .hp-hero__frame .funnel-hero {
+    max-height: none;
+  }
+}
+
+.hp-hero__frame::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: 27px;
+  background: var(--bg-panel);
+  z-index: 0;
+}
+
+.hp-hero__frame > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .hp-hero__frame {
+    background: var(--line-strong);
+    box-shadow: none;
+  }
+}
+
+/* Headline word-stagger entrance: each word is a span (`Home.tsx`); runs
+   once on mount, never loops. */
+.hp-hero h1 .hp-word {
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hp-hero h1 .hp-word {
+    animation: hp-word-in 560ms var(--ease) both;
+  }
+  .hp-hero h1 .hp-word:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .hp-hero h1 .hp-word:nth-child(2) {
+    animation-delay: 40ms;
+  }
+  .hp-hero h1 .hp-word:nth-child(3) {
+    animation-delay: 80ms;
+  }
+  .hp-hero h1 .hp-word:nth-child(4) {
+    animation-delay: 120ms;
+  }
+  .hp-hero h1 .hp-word:nth-child(5) {
+    animation-delay: 160ms;
+  }
+  .hp-hero h1 .hp-word:nth-child(6) {
+    animation-delay: 200ms;
+  }
+  .hp-hero h1 .hp-word:nth-child(7) {
+    animation-delay: 240ms;
+  }
+  .hp-hero h1 .hp-word:nth-child(8) {
+    animation-delay: 280ms;
+  }
+  .hp-hero h1 .hp-word:nth-child(9) {
+    animation-delay: 320ms;
+  }
+  .hp-hero h1 .hp-word:nth-child(10) {
+    animation-delay: 360ms;
+  }
+}
+
+@keyframes hp-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- Product frame: layered shadow, gradient border, pointer tilt ------- */
+.hp-demo-frame {
+  position: relative;
+  border-radius: clamp(21px, 3.1vw, 33px);
+  padding: 1px;
+  background: linear-gradient(135deg, var(--accent-line), transparent 45%, var(--line-hair));
+  box-shadow:
+    var(--shadow-panel),
+    0 56px 96px -48px rgba(0, 0, 0, 0.34);
+}
+
+.hp-demo-frame .hp-demo {
+  box-shadow: none;
+}
+
+.hp-demo-persp {
+  position: relative;
+}
+
+@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .hp-demo-persp {
+    perspective: 1200px;
+  }
+  .hp-demo-frame {
+    transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    transition: transform 200ms var(--ease);
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .hp-demo-frame {
+    background: var(--line-strong);
+    box-shadow: var(--shadow-panel);
+  }
+}
+
+/* --- Step art: cross-fade on step change --------------------------------
+   `className` lands directly on the Step* SVG (see `assets/steps/*.tsx`),
+   so this rule targets the illustration itself, not a wrapper. */
+.hp-stage__art {
+  margin: 0 0 1rem;
+  max-width: 20rem;
+  width: 100%;
+  height: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hp-stage__art {
+    animation: hp-stage-art-in 420ms var(--ease) both;
+  }
+}
+
+@keyframes hp-stage-art-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* --- Fact cards: accent hairline on hover -------------------------------- */
+.hp-fact {
+  border-radius: 16px;
+  border: 1px solid transparent;
+  padding: 0.75rem;
+  margin: -0.75rem;
+  transition: border-color 200ms var(--ease);
+}
+
+.hp-fact:hover,
+.hp-fact:focus-within {
+  border-color: var(--accent-line);
+}
+
+/* --- Compare table: rows reveal in sequence ------------------------------ */
+@media (prefers-reduced-motion: no-preference) {
+  .js-reveal .hp-compare tbody tr {
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity 420ms var(--ease),
+      transform 420ms var(--ease);
+  }
+  .js-reveal .hp-compare.is-in tbody tr {
+    opacity: 1;
+    transform: none;
+  }
+  .js-reveal .hp-compare.is-in tbody tr:nth-child(1) {
+    transition-delay: 40ms;
+  }
+  .js-reveal .hp-compare.is-in tbody tr:nth-child(2) {
+    transition-delay: 90ms;
+  }
+  .js-reveal .hp-compare.is-in tbody tr:nth-child(3) {
+    transition-delay: 140ms;
+  }
+  .js-reveal .hp-compare.is-in tbody tr:nth-child(4) {
+    transition-delay: 190ms;
+  }
+  .js-reveal .hp-compare.is-in tbody tr:nth-child(5) {
+    transition-delay: 240ms;
+  }
+  .js-reveal .hp-compare.is-in tbody tr:nth-child(6) {
+    transition-delay: 290ms;
+  }
+}
+
+/* --- Pricing: founding card gradient border + glow + hover lift --------- */
+.mkt-plan--founding {
+  position: relative;
+  isolation: isolate;
+}
+
+.mkt-plan--founding::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--r-l) + 1px);
+  padding: 1px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-line), var(--accent));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  z-index: -1;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mkt-plan--founding {
+    transition:
+      transform 220ms var(--ease),
+      box-shadow 220ms var(--ease);
+  }
+  .mkt-plan--founding:hover,
+  .mkt-plan--founding:focus-within {
+    transform: translateY(-4px);
+    box-shadow:
+      var(--shadow-l),
+      var(--edge-lit),
+      0 0 0 1px var(--accent-line),
+      0 24px 48px -24px var(--accent-tint);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .mkt-plan--founding::before {
+    display: none;
+  }
+  .mkt-plan--founding {
+    border: 2px solid var(--accent);
+  }
+  .mkt-plan--founding:hover,
+  .mkt-plan--founding:focus-within {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* Both pricing cards reveal (staggered via [data-reveal-i] in Pricing.tsx). */
+
+/* --- Pricing: twelve-month hold bars grow in on reveal ------------------- */
+.mkt-hold__fill {
+  transform-origin: left;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mkt-hold__fill {
+    transform: scaleX(0);
+    transition: transform 700ms var(--ease);
+  }
+  .js-reveal .mkt-hold.is-in .mkt-hold__fill {
+    transform: scaleX(1);
+  }
+  .js-reveal .mkt-hold.is-in .mkt-hold__line:nth-child(2) .mkt-hold__fill {
+    transition-delay: 120ms;
+  }
+}
+
+/* --- Mobile: sticky bottom CTA (Home) ------------------------------------ */
+.hp-sticky-cta {
+  position: fixed;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: var(--glass-solid);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.625rem 0.625rem 0.625rem 1rem;
+  box-shadow: var(--shadow-l);
+  padding-bottom: calc(0.625rem + env(safe-area-inset-bottom, 0px));
+}
+
+.hp-sticky-cta__note {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hp-sticky-cta .cta {
+  flex: 0 0 auto;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.hp-sticky-cta__close {
+  flex: 0 0 auto;
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.hp-sticky-cta__close:hover {
+  color: var(--ink-1);
+  background: var(--bg-panel);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hp-sticky-cta {
+    animation: hp-sticky-in 260ms var(--ease) both;
+  }
+}
+
+@keyframes hp-sticky-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Hidden ≥40rem (desktop already shows the hero/pricing CTAs inline) and
+   whenever the cookie banner is open, so the two fixed bottom bars never
+   overlap. */
+@media (min-width: 40rem) {
+  .hp-sticky-cta {
+    display: none;
+  }
+}
+
+body.consent-banner-open .hp-sticky-cta {
+  display: none;
+}
+
+/* WCAG 2.2 SC 2.4.11 Focus Not Obscured (Minimum): the sticky CTA is a
+   fixed bar over the bottom ~4.5rem of the viewport, so the browser's own
+   scroll-into-view-on-focus could otherwise land a keyboard-focused
+   element (a link, a form field near the page bottom) flush behind it,
+   fully hidden. `scroll-padding-bottom` reserves that space in the
+   scroll port itself — mirrors `body.consent-banner-open` above, which
+   already gets this for free from the cookie banner sitting in normal
+   flow at the bottom of its own dialog; the CTA needed the explicit rule
+   since `position: fixed` content never claims scroll-port space on its
+   own. Bar height ≈ 44px control + 2×0.625rem padding + 0.75rem bottom
+   offset ≈ 4.5rem; the extra half-rem is headroom, not a measured value.
+   Mobile-only: the CTA itself is hidden ≥40rem. */
+@media (max-width: 40rem) {
+  html.sticky-cta-open {
+    scroll-padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* --- Mobile: sample-card horizontal snap carousel ------------------------
+   Only the three verdict cards are slides — the geo-chip row and the
+   illustrative-data disclaimer stay static above the track (Home.tsx
+   renders `.hp-demo__disclaimer` as a sibling BEFORE `.hp-demo__cards`,
+   not inside it, precisely so it can never end up as a swallowed slide).
+   `scroll-snap-align: start` (not `center`) so slide 1's left edge sits
+   flush with the track's own left edge — i.e. `.hp-demo`'s padding box,
+   since the track carries no extra margin/padding of its own. */
+@media (max-width: 40rem) {
+  .hp-demo__cards {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 0.75rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .hp-demo__cards .hp-card {
+    scroll-snap-align: start;
+    flex: 0 0 100%;
+    min-width: 0;
+  }
+
+  .hp-demo__geo {
+    flex-wrap: wrap;
+  }
+
+  /* Tap targets ≥44px on touch widths. */
+  .hp-geo-chip {
+    min-height: 44px;
+    padding: 0.5rem 0.875rem;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+.hp-carousel-dots {
+  display: none;
+}
+
+@media (max-width: 40rem) {
+  .hp-carousel-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    font-family: var(--font-num);
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
 }

@@ -4531,6 +4531,60 @@ server contract, UI notes).
   from `.dev.vars` and onboards that account. `bootstrapOnboardedUserWith
 Matches` accepts `{ email }`.
 
+## Brand elevation: imagery, motion, mobile-first polish (2026-08-26)
+
+Owner request: "more modern, mobile friendly, catchy features, modern
+animations, images — top brand world-wide." Brief + baseline audit:
+`docs/redesign/brand-elevation-phase.md`. Not a re-brand — same tokens,
+fonts and accent; adds depth, imagery and motion within the hard rules
+(CSP-safe self-hosted assets, no fake proof, reduced-motion, budget).
+
+- **Original illustration system** (`apps/web/src/assets/`, inline SVG
+  React components, `illustrations.css` for keyframes/token colours):
+  `FunnelHero` (hero signature visual: notice chips → profile lens →
+  three verdict cards, 2.6 s single-pass animation, static under reduced
+  motion, labelled "illustrative example — not live data"), four `Step*`
+  panels, three `Empty*` empty-state marks. Lesson recorded by the asset
+  owner: CSS `transform` from a keyframe REPLACES an SVG `transform`
+  attribute — position with an outer `<g>`, animate an inner one.
+- **OG share image** replaced (funnel motif; `public/og/og-default.svg` →
+  PNG 52 KB via `scripts/generate-og-image.mjs`); `scripts/og/og-default.html`
+  removed; `docs/redesign/seo-content-strategy.md` §3 updated.
+- **Marketing**: two-column hero with the funnel in a floating frame,
+  word-stagger headline, aurora ground; `lib/use-reveal.ts` scroll-reveal
+  (`[data-reveal]`, one IntersectionObserver + MutationObserver for lazy
+  routes; visible without JS/under reduced motion); `lib/use-tilt.ts`
+  pointer tilt on the product frame (fine pointer only); step art in the
+  Home stepper and How-it-works step 2; fact count-ups (`home-facts.ts`);
+  founding-card glow/lift + hold bars grow-in; sticky mobile CTA (hides
+  under the cookie banner); verdict-card snap carousel ≤ 40rem with
+  "N / 3" indicator. Entry chunk +5.6 KB gz (37 KB total vs 150 KB budget).
+- **App**: `lib/motion.ts` (`usePrefersReducedMotion`, `useCountUp`);
+  KPI count-up and a mobile snap-scroll chip row (dl/dt/dd kept;
+  regression where `.feed-stat dd span` swallowed the number fixed by the
+  `feed-stat__note` class); staggered card entrance, hover lift, score
+  ring arc draw, skeleton shimmer, illustrated empty states with a primary
+  action; `RouteTransition` (View Transitions cross-fade, guarded);
+  Settings section icons + card-in.
+- **Reviews**: accessibility-performance-engineer fixed 9 findings in-tree
+  (RouteTransition fired on every AppRoutes render and raced the tender
+  slide-over — now keyed on pathname+search, so hash-only jumps no longer
+  cross-fade; rAF-throttled tilt/carousel handlers; carousel Tab stop +
+  polite "N / 3" status; FunnelHero caption contrast; sticky-CTA
+  `scroll-padding-bottom`; KPI count-up width reservation; hero frame
+  `aspect-ratio`). qa-reviewer (full gates, Playwright 89/89 on re-run,
+  axe 0 violations on / and /pricing at 390) found two blockers on the
+  mobile KPI strip — document widened to 480px by the visually-hidden note
+  (no containing block) and the scroll region not focusable — plus the app
+  header overflowing at 768px; all three fixed (`position: relative` +
+  `overflow: hidden` on `.feed-stat`, `tabIndex` via `useMediaQuery` below
+  40rem, a 40–56rem header block) and re-verified at 320/390/768/1024.
+- **Follow-ups**: (1) `playwright.config.ts` `reducedMotion: 'reduce'` does
+  not take effect in the chromium project (matchMedia reports false) —
+  motion is on during the suite; investigate. (2) `wrangler dev` died once
+  mid-suite with an empty miniflare ProxyController error; re-run green.
+  (3) Sticky CTA note truncates to "first 100 cu…" at 390px (cosmetic).
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
