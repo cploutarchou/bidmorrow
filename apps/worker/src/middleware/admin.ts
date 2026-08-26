@@ -35,6 +35,16 @@ function parseAllowlist(value: string | undefined): Set<string> {
   );
 }
 
+/**
+ * Pure allowlist check shared with `GET /api/account/me` (navigation
+ * discoverability — the SPA shows an "Admin" entry only for operators).
+ * Deliberately a boolean: the caller decides whether to cloak (this
+ * middleware 404s) or to answer plainly (the account route).
+ */
+export function isInternalAdminEmail(allowlistValue: string | undefined, email: string): boolean {
+  return parseAllowlist(allowlistValue).has(email.trim().toLowerCase());
+}
+
 /** Bound so the audit row's `after_summary` never carries a raw querystring beyond a sane length. */
 const MAX_SUMMARY_LEN = 200;
 
@@ -45,7 +55,7 @@ export const requireInternalAdmin: MiddlewareHandler<AppBindings> = async (c, ne
   }
   const auth = createRequestAuth(c.env, c.get('logger'), c.executionCtx);
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  if (session === null || !allowlist.has(session.user.email.toLowerCase())) {
+  if (session === null || !isInternalAdminEmail(c.env.ADMIN_EMAILS, session.user.email)) {
     return c.json({ error: 'not_found', request_id: c.get('requestId') }, 404);
   }
   c.set('session', session);

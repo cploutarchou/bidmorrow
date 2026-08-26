@@ -1,8 +1,13 @@
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactElement } from 'react';
 import { Link } from 'react-router';
 import { HEADLINE, SUBHEADLINE } from '../../copy';
 import { PageMeta } from '../../components/PageMeta';
 import { MARKETING_META } from '../../lib/seo';
+import { FunnelHero, StepProfile, StepScoring, StepSource, StepVerdict } from '../../assets';
+import { useCountUp } from '../../lib/motion';
+import { useRevealed } from '../../lib/use-reveal';
+import { useTilt } from '../../lib/use-tilt';
+import { parseFactValue } from './home-facts';
 
 /**
  * Homepage — 2026-08-21 handoff redesign (`BidMorrow Homepage.dc.html`).
@@ -250,8 +255,6 @@ const STAGE_CAPTIONS = [
   '04 · The verdict',
 ];
 
-const NOTICE_LINES = ['92%', '76%', '84%', '61%', '88%', '48%'];
-
 const PROFILE_CHIPS = [
   '72000000 IT services',
   '48730000 Security software',
@@ -433,6 +436,89 @@ function ringDash(score: number): string {
   return `${((score / 100) * 106.8).toFixed(1)} 106.8`;
 }
 
+/**
+ * Splits the headline into one `<span>` per word so CSS can stagger a
+ * rise/fade entrance 40ms apart (brand-elevation delivery item 1). The
+ * space between words is rendered as its OWN text node, a sibling of the
+ * `.hp-word` spans rather than trailing content inside one: an
+ * `inline-block` (required so `transform`, used by the entrance
+ * animation, applies at all) treats a trailing space as being at the end
+ * of its own single-line box and collapses it per the CSS Text Module's
+ * white-space rules, which silently ran every pair of words together
+ * ("Findthetenders") when the space lived inside the span instead. A
+ * sibling text node in the heading's own inline formatting context has no
+ * such edge to collapse against. The heading's accessible name still
+ * concatenates to the exact `HEADLINE` string `app.test.ts` asserts, and
+ * line-wrap behaves exactly as plain text would.
+ */
+function HeroHeadline({ text }: { text: string }): ReactElement {
+  const words = text.split(' ');
+  return (
+    <>
+      {words.map((word, i) => (
+        <Fragment key={`${i}-${word}`}>
+          <span className="hp-word">{word}</span>
+          {i < words.length - 1 ? ' ' : null}
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+/**
+ * One "product facts" tile (`FACTS`). The numeric part counts up from 0
+ * with `useCountUp` the moment the card is scrolled into view
+ * (`useRevealed`, driven by the same shared observer `useReveal()`
+ * installs in `MarketingLayout`) — before that, and whenever
+ * `IntersectionObserver` never fires, it renders the plain final string,
+ * so the text is never wrong, only sometimes still counting up to it.
+ */
+function FactCard({
+  value,
+  label,
+  index,
+}: {
+  value: string;
+  label: string;
+  index: number;
+}): ReactElement {
+  const ref = useRef<HTMLDivElement>(null);
+  const revealed = useRevealed(ref);
+  const parsed = parseFactValue(value);
+
+  return (
+    <div className="hp-fact" key={value} ref={ref} data-reveal data-reveal-i={index + 1}>
+      <p className="hp-fact__value">
+        {revealed && parsed !== null ? (
+          <FactCountUp prefix={parsed.prefix} target={parsed.target} suffix={parsed.suffix} />
+        ) : (
+          value
+        )}
+      </p>
+      <p className="hp-fact__label">{label}</p>
+    </div>
+  );
+}
+
+function FactCountUp({
+  prefix,
+  target,
+  suffix,
+}: {
+  prefix: string;
+  target: number;
+  suffix: string;
+}): ReactElement {
+  const value = useCountUp(target);
+  return (
+    <>
+      {prefix}
+      {value}
+      {suffix}
+    </>
+  );
+}
+
 export function Home(): ReactElement {
   const [detected] = useState<string | null>(() => detectCountry());
   const [geoPicked, setGeoPicked] = useState<string | null>(null);
@@ -440,6 +526,12 @@ export function Home(): ReactElement {
   const [stepHeld, setStepHeld] = useState(0);
   const [playing, setPlaying] = useState(true);
   const tickRef = useRef<number | null>(null);
+  const demoTiltRef = useTilt<HTMLDivElement>();
+  const heroRef = useRef<HTMLElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
+  const [activeCard, setActiveCard] = useState(0);
+  const [showStickyCta, setShowStickyCta] = useState(false);
+  const [stickyCtaDismissed, setStickyCtaDismissed] = useState(false);
 
   // Auto-advancing stepper: 5 ticks × 900ms per step; never starts under
   // prefers-reduced-motion; pauses on manual step selection.
@@ -457,6 +549,103 @@ export function Home(): ReactElement {
       if (tickRef.current !== null) window.clearInterval(tickRef.current);
     };
   }, [playing]);
+
+  // Mobile sticky CTA (brand-elevation delivery item 6): appears once the
+  // hero has scrolled fully out of view, stays dismissed for the rest of
+  // the visit once closed. CSS hides it entirely at ≥40rem, so this
+  // observer only ever matters below that width, but it's cheap to run
+  // everywhere.
+  useEffect(() => {
+    const el = heroRef.current;
+    if (el === null || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry === undefined) return;
+        setShowStickyCta(!entry.isIntersecting);
+      },
+      { threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Mobile card carousel "N / total" indicator: track which card sits
+  // nearest the centre of the scroll snap container. rAF-throttled: a
+  // touch-driven scroll fires this event far faster than the layout reads
+  // inside it (`querySelectorAll` + `offsetLeft`/`offsetWidth`, both
+  // forced-layout) need to run — coalescing to one measurement per
+  // animation frame keeps a scroll fling from queuing more forced-layout
+  // work than a mid-range mobile device can paint through.
+  useEffect(() => {
+    const el = cardsRef.current;
+    if (el === null) return;
+    let frame: number | null = null;
+
+    function updateActive(): void {
+      frame = null;
+      if (el === null) return;
+      const cardEls = Array.from(el.querySelectorAll<HTMLElement>('.hp-card'));
+      if (cardEls.length === 0) return;
+      const center = el.scrollLeft + el.clientWidth / 2;
+      let closest = 0;
+      let closestDist = Number.POSITIVE_INFINITY;
+      cardEls.forEach((card, i) => {
+        const dist = Math.abs(card.offsetLeft + card.offsetWidth / 2 - center);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closest = i;
+        }
+      });
+      setActiveCard(closest);
+    }
+    function onScroll(): void {
+      if (frame === null) frame = window.requestAnimationFrame(updateActive);
+    }
+    updateActive();
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      if (frame !== null) window.cancelAnimationFrame(frame);
+      el.removeEventListener('scroll', onScroll);
+    };
+  }, [geoPicked, detected]);
+
+  // Whether the card track is actually acting as a carousel (CSS switches
+  // it to `overflow-x: auto` + snap only ≤40rem, see marketing.css) — kept
+  // in sync via `matchMedia` rather than assumed from viewport width at
+  // mount, since a device can cross the breakpoint (rotation, resizing a
+  // window) without a reload. Drives `tabIndex`/`role` below: the
+  // scrollable region needs to be keyboard-focusable so arrow-key/Page
+  // scrolling can reach cards 2 and 3 (axe "scrollable-region-focusable" —
+  // WCAG 2.1.1), but only while it is actually the scroll container; at
+  // ≥40rem the same element is a static grid with no scroll to reach, and
+  // a `tabIndex` there would be a dead, purposeless Tab stop.
+  const [carouselMode, setCarouselMode] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mql = window.matchMedia('(max-width: 40rem)');
+    setCarouselMode(mql.matches);
+    const onChange = (): void => setCarouselMode(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
+  // Sticky mobile CTA (SC 2.4.11 Focus Not Obscured — Minimum): a fixed
+  // bottom bar can hide whatever a sighted keyboard user has just tabbed
+  // to underneath it. `scroll-padding-bottom` (styles/marketing.css,
+  // `html.sticky-cta-open`) reserves that space so the browser's own
+  // scroll-into-view-on-focus never leaves a focused element flush behind
+  // the bar. The class goes on `<html>`, not `<body>`: `scroll-padding`
+  // applies to the element that owns the document's scroll port, which in
+  // standards mode is the root (`document.scrollingElement`/`<html>`),
+  // not `<body>` — unlike `body.consent-banner-open` (marketing.css)
+  // above, which uses plain `padding-bottom` and works on `<body>` for an
+  // unrelated reason (padding on any in-flow box adds to document height
+  // regardless of which element owns the scroll port).
+  useEffect(() => {
+    const open = showStickyCta && !stickyCtaDismissed;
+    document.documentElement.classList.toggle('sticky-cta-open', open);
+    return () => document.documentElement.classList.remove('sticky-cta-open');
+  }, [showStickyCta, stickyCtaDismissed]);
 
   const picked =
     geoPicked ??
@@ -491,139 +680,210 @@ export function Home(): ReactElement {
         <div className="hp-grid-bg" aria-hidden="true">
           <span className="hp-grid-bg__cols" />
           <span className="hp-grid-bg__rows" />
+          <span className="hp-aurora hp-aurora--1" />
+          <span className="hp-aurora hp-aurora--2" />
           <span className="hp-grid-bg__dot hp-grid-bg__dot--1" />
           <span className="hp-grid-bg__dot hp-grid-bg__dot--2" />
           <span className="hp-grid-bg__dot hp-grid-bg__dot--3" />
           <span className="hp-grid-bg__dot hp-grid-bg__dot--4" />
         </div>
-        <section className="mkt-wrap hp-hero" aria-labelledby="hero-h">
-          <p className="mkt-eyebrow">Bid/no-bid qualification · EU public procurement · TED</p>
-          <h1 id="hero-h">{HEADLINE}</h1>
-          <p className="hp-hero__sub">{SUBHEADLINE}</p>
-          <div className="mkt-cta-row">
-            <Link className="cta" to="/pilot">
-              Join the founding pilot
-            </Link>
-            <a className="mkt-btn-quiet" href="#how">
-              See how it works
-            </a>
-            <span className="mkt-cta-note">€29/month · first 100 customers</span>
+        <section className="mkt-wrap hp-hero" aria-labelledby="hero-h" ref={heroRef}>
+          <div className="hp-hero__copy">
+            <p className="mkt-eyebrow">Bid/no-bid qualification · EU public procurement · TED</p>
+            <h1 id="hero-h">
+              <HeroHeadline text={HEADLINE} />
+            </h1>
+            <p className="hp-hero__sub">{SUBHEADLINE}</p>
+            <div className="mkt-cta-row">
+              <Link className="cta" to="/pilot">
+                Join the founding pilot
+              </Link>
+              <a className="mkt-btn-quiet" href="#how">
+                See how it works
+              </a>
+              <span className="mkt-cta-note">€29/month · first 100 customers</span>
+            </div>
+          </div>
+          <div className="hp-hero__art">
+            <div className="hp-hero__frame">
+              <FunnelHero />
+            </div>
           </div>
         </section>
       </div>
 
-      <section className="mkt-wrap hp-section" aria-label="Example feed — illustrative data">
-        <div className="hp-demo">
-          <div className="hp-demo__chrome" aria-hidden="true">
-            <span className="hp-demo__dot" />
-            <span className="hp-demo__dot" />
-            <span className="hp-demo__dot" />
-            <span className="hp-demo__crumb">{geoHeadline}</span>
-          </div>
-          <div className="hp-demo__geo">
-            <span className="hp-demo__geo-note">{geoNote}</span>
-            {GEO_OPTIONS.map((code) => (
-              <button
-                type="button"
-                key={code}
-                className={picked === code ? 'hp-geo-chip is-active' : 'hp-geo-chip'}
-                onClick={() => setGeoPicked(code)}
-              >
-                {code === 'EU' ? 'EU-wide' : (COUNTRY_NAMES[code] ?? code)}
-              </button>
-            ))}
-          </div>
-          <div className="hp-demo__cards">
+      {showStickyCta && !stickyCtaDismissed && (
+        <div className="hp-sticky-cta" role="region" aria-label="Join the founding pilot">
+          <span className="hp-sticky-cta__note">€29/month · first 100 customers</span>
+          <Link className="cta cta-small" to="/pilot">
+            Join the pilot
+          </Link>
+          <button
+            type="button"
+            className="hp-sticky-cta__close"
+            aria-label="Dismiss"
+            onClick={() => setStickyCtaDismissed(true)}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                d="M3 3 L13 13 M13 3 L3 13"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      <section
+        className="mkt-wrap hp-section hp-demo-persp"
+        aria-label="Example feed — illustrative data"
+        data-reveal
+      >
+        <div className="hp-demo-frame" ref={demoTiltRef}>
+          <div className="hp-demo">
+            <div className="hp-demo__chrome" aria-hidden="true">
+              <span className="hp-demo__dot" />
+              <span className="hp-demo__dot" />
+              <span className="hp-demo__dot" />
+              <span className="hp-demo__crumb">{geoHeadline}</span>
+            </div>
+            <div className="hp-demo__geo">
+              <span className="hp-demo__geo-note">{geoNote}</span>
+              {GEO_OPTIONS.map((code) => (
+                <button
+                  type="button"
+                  key={code}
+                  className={picked === code ? 'hp-geo-chip is-active' : 'hp-geo-chip'}
+                  onClick={() => setGeoPicked(code)}
+                >
+                  {code === 'EU' ? 'EU-wide' : (COUNTRY_NAMES[code] ?? code)}
+                </button>
+              ))}
+            </div>
             <p className="hp-demo__disclaimer">
               Illustrative examples with anonymized buyers — this is what a scored feed looks like,
               not live TED data.
             </p>
-            {shown.map((card) => (
-              <article className={`hp-card hp-card--${card.tone}`} key={card.title}>
-                <div className="hp-card__gutter" aria-hidden="true" />
-                <div className="hp-card__body">
-                  <div className="hp-card__head">
-                    <span className="hp-ring" aria-hidden="true">
-                      <svg width="40" height="40" viewBox="0 0 40 40">
-                        <circle
-                          cx="20"
-                          cy="20"
-                          r="17"
-                          fill="none"
-                          className="hp-ring__track"
-                          strokeWidth="3"
-                        />
-                        <circle
-                          cx="20"
-                          cy="20"
-                          r="17"
-                          fill="none"
-                          className="hp-ring__fill"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeDasharray={ringDash(card.score)}
-                          transform="rotate(-90 20 20)"
-                        />
-                      </svg>
-                      <span className="hp-ring__num">{card.score}</span>
-                    </span>
-                    <span className="hp-card__chip">{card.fit}</span>
-                    <span className={`hp-card__deadline hp-card__deadline--${card.deadlineTone}`}>
-                      {card.deadline}
-                    </span>
+            <div
+              className="hp-demo__cards"
+              ref={cardsRef}
+              // Only a real scroll container (≤40rem, see `carouselMode`
+              // above) gets pulled into the tab order — a static desktop
+              // grid has nothing to scroll to and no business owning a Tab
+              // stop. `role="group"` + `aria-label` (rather than leaving it
+              // an unlabelled scrollable `<div>`) gives the region a name
+              // when it announces on focus.
+              tabIndex={carouselMode ? 0 : undefined}
+              role={carouselMode ? 'group' : undefined}
+              aria-label={carouselMode ? 'Example verdict cards, scroll for more' : undefined}
+            >
+              {shown.map((card) => (
+                <article className={`hp-card hp-card--${card.tone}`} key={card.title}>
+                  <div className="hp-card__gutter" aria-hidden="true" />
+                  <div className="hp-card__body">
+                    <div className="hp-card__head">
+                      <span className="hp-ring" aria-hidden="true">
+                        <svg width="40" height="40" viewBox="0 0 40 40">
+                          <circle
+                            cx="20"
+                            cy="20"
+                            r="17"
+                            fill="none"
+                            className="hp-ring__track"
+                            strokeWidth="3"
+                          />
+                          <circle
+                            cx="20"
+                            cy="20"
+                            r="17"
+                            fill="none"
+                            className="hp-ring__fill"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeDasharray={ringDash(card.score)}
+                            transform="rotate(-90 20 20)"
+                          />
+                        </svg>
+                        <span className="hp-ring__num">{card.score}</span>
+                      </span>
+                      <span className="hp-card__chip">{card.fit}</span>
+                      <span className={`hp-card__deadline hp-card__deadline--${card.deadlineTone}`}>
+                        {card.deadline}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="hp-card__title">{card.title}</p>
+                      <p className="hp-card__meta">{card.meta}</p>
+                    </div>
+                    <div className="hp-card__comps">
+                      {card.comps.map((comp) => (
+                        <div className="hp-comp" key={comp.name}>
+                          <span className="hp-comp__name">{comp.name}</span>
+                          {/* Native <progress> — CSP forbids inline style widths. */}
+                          <progress
+                            className="score-bar score-bar--sm"
+                            value={comp.pts}
+                            max={comp.max}
+                            aria-hidden="true"
+                          />
+                          <span className="hp-comp__pts">
+                            +{comp.pts}/{comp.max}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    {card.risk !== undefined && (
+                      <p
+                        className={
+                          card.risk.kind === 'Blocker'
+                            ? 'hp-risk hp-risk--blocker'
+                            : 'hp-risk hp-risk--caution'
+                        }
+                      >
+                        <span className="hp-risk__kind">{card.risk.kind}</span>
+                        <span>{card.risk.text}</span>
+                      </p>
+                    )}
                   </div>
-                  <div>
-                    <p className="hp-card__title">{card.title}</p>
-                    <p className="hp-card__meta">{card.meta}</p>
-                  </div>
-                  <div className="hp-card__comps">
-                    {card.comps.map((comp) => (
-                      <div className="hp-comp" key={comp.name}>
-                        <span className="hp-comp__name">{comp.name}</span>
-                        {/* Native <progress> — CSP forbids inline style widths. */}
-                        <progress
-                          className="score-bar score-bar--sm"
-                          value={comp.pts}
-                          max={comp.max}
-                          aria-hidden="true"
-                        />
-                        <span className="hp-comp__pts">
-                          +{comp.pts}/{comp.max}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  {card.risk !== undefined && (
-                    <p
-                      className={
-                        card.risk.kind === 'Blocker'
-                          ? 'hp-risk hp-risk--blocker'
-                          : 'hp-risk hp-risk--caution'
-                      }
-                    >
-                      <span className="hp-risk__kind">{card.risk.kind}</span>
-                      <span>{card.risk.text}</span>
-                    </p>
-                  )}
-                </div>
-              </article>
-            ))}
+                </article>
+              ))}
+            </div>
+            <div className="hp-carousel-dots" aria-hidden="true">
+              <span>
+                {activeCard + 1} / {shown.length}
+              </span>
+            </div>
+            {/* Accessible counterpart to the visual (`aria-hidden`) dots
+                above — announced politely as the carousel scrolls, rather
+                than left silent for screen-reader users. Only rendered in
+                carousel mode: at ≥40rem the visual indicator is hidden too
+                (marketing.css), and `shown.length` never changes there
+                (`activeCard` stays 0), so there is nothing to announce. */}
+            {carouselMode && (
+              <p role="status" aria-live="polite" className="visually-hidden-status">
+                Card {activeCard + 1} of {shown.length}
+              </p>
+            )}
           </div>
         </div>
       </section>
 
       <section className="mkt-wrap hp-section" aria-label="Product facts">
         <div className="hp-facts">
-          {FACTS.map((fact) => (
-            <div className="hp-fact" key={fact.value}>
-              <p className="hp-fact__value">{fact.value}</p>
-              <p className="hp-fact__label">{fact.label}</p>
-            </div>
+          {FACTS.map((fact, index) => (
+            <FactCard key={fact.value} value={fact.value} label={fact.label} index={index} />
           ))}
         </div>
       </section>
 
-      <section id="how" className="mkt-wrap hp-section hp-section--major" aria-labelledby="how-h">
+      <section
+        id="how"
+        className="mkt-wrap hp-section hp-section--major"
+        aria-labelledby="how-h"
+        data-reveal
+      >
         <p className="mkt-eyebrow">How it works</p>
         <h2 id="how-h" className="hp-h2">
           From official journal to defensible decision
@@ -682,12 +942,7 @@ export function Home(): ReactElement {
             <p className="hp-stage__caption">{STAGE_CAPTIONS[step]}</p>
             {step === 0 && (
               <>
-                <div className="hp-stage__scan" aria-hidden="true">
-                  {NOTICE_LINES.map((w) => (
-                    <span className="hp-stage__line" key={w} />
-                  ))}
-                  <span className="hp-stage__scanline" />
-                </div>
+                <StepSource className="hp-stage__art" />
                 <p className="hp-stage__note">
                   TED publishes; BidMorrow ingests inside the documented CPV scope and stores the
                   notice with its source URL.
@@ -696,6 +951,7 @@ export function Home(): ReactElement {
             )}
             {step === 1 && (
               <>
+                <StepProfile className="hp-stage__art" />
                 <div className="hp-stage__chips">
                   {PROFILE_CHIPS.map((chip) => (
                     <span className="hp-stage__chip" key={chip}>
@@ -711,6 +967,7 @@ export function Home(): ReactElement {
             )}
             {step === 2 && (
               <>
+                <StepScoring className="hp-stage__art" />
                 <div className="hp-stage__bars">
                   {STAGE_SCORE_BARS.map((bar) => (
                     <span className="hp-sbar" key={bar.label}>
@@ -735,6 +992,7 @@ export function Home(): ReactElement {
             )}
             {step === 3 && (
               <div className="hp-verdict">
+                <StepVerdict className="hp-stage__art" />
                 <div className="hp-verdict__head">
                   <span className="hp-ring hp-ring--lg" aria-hidden="true">
                     <svg width="56" height="56" viewBox="0 0 56 56">
@@ -786,6 +1044,7 @@ export function Home(): ReactElement {
         id="method"
         className="mkt-wrap hp-section hp-section--major"
         aria-labelledby="method-h"
+        data-reveal
       >
         <p className="mkt-eyebrow">Methodology</p>
         <h2 id="method-h" className="hp-h2">
@@ -812,6 +1071,7 @@ export function Home(): ReactElement {
         id="score"
         className="mkt-wrap hp-section hp-section--major"
         aria-labelledby="score-h"
+        data-reveal
       >
         <p className="mkt-eyebrow">The score</p>
         <h2 id="score-h" className="hp-h2">
@@ -852,6 +1112,7 @@ export function Home(): ReactElement {
         id="tiers"
         className="mkt-wrap hp-section hp-section--major"
         aria-labelledby="tiers-h"
+        data-reveal
       >
         <p className="mkt-eyebrow">Your feed</p>
         <h2 id="tiers-h" className="hp-h2">
@@ -883,6 +1144,7 @@ export function Home(): ReactElement {
         id="coverage"
         className="mkt-wrap hp-section hp-section--major"
         aria-labelledby="coverage-h"
+        data-reveal
       >
         <p className="mkt-eyebrow">Coverage and exclusions</p>
         <h2 id="coverage-h" className="hp-h2">
@@ -943,7 +1205,7 @@ export function Home(): ReactElement {
             asserted from memory, and the basis is stated to the reader below
             rather than left as an implied survey of the whole market. Every
             BidMorrow cell links to the page where that claim is kept true. */}
-        <div className="mkt-table-card hp-compare">
+        <div className="mkt-table-card hp-compare" data-reveal>
           <table aria-labelledby="compare-h">
             <thead>
               <tr>
@@ -1012,6 +1274,7 @@ export function Home(): ReactElement {
         id="pricing"
         className="mkt-wrap hp-section hp-section--major"
         aria-labelledby="pricing-h"
+        data-reveal
       >
         <p className="mkt-eyebrow">Pricing</p>
         <h2 id="pricing-h" className="hp-h2">
@@ -1063,7 +1326,12 @@ export function Home(): ReactElement {
         </p>
       </section>
 
-      <section id="faq" className="mkt-wrap hp-section hp-section--major" aria-labelledby="faq-h">
+      <section
+        id="faq"
+        className="mkt-wrap hp-section hp-section--major"
+        aria-labelledby="faq-h"
+        data-reveal
+      >
         <p className="mkt-eyebrow">Questions</p>
         <h2 id="faq-h" className="hp-h2">
           Before you sign up.
@@ -1081,6 +1349,7 @@ export function Home(): ReactElement {
       <section
         className="mkt-wrap hp-section hp-section--major hp-section--last"
         aria-labelledby="close-h"
+        data-reveal
       >
         <div className="hp-close">
           <div>

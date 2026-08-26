@@ -18,9 +18,22 @@
   font-size: 0.9rem;
 }
 
+/* Escapes the bare `header { max-width; margin-inline: auto }` box in
+   base.css (same root cause as `.app-header`): a full-bleed strip whose
+   content is re-centred by `.admin-header__inner` to the `.admin-split`
+   width, so the header aligns with the rail and main column. */
 .admin-header {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
   border-bottom: 1px solid var(--line-hair);
   background: var(--bg-panel);
+  padding: 0;
+}
+.admin-header__inner {
+  width: 100%;
+  max-width: 1560px;
+  margin-inline: auto;
   padding: 0.75rem clamp(0.875rem, 2.5vw, 1.625rem);
   display: flex;
   align-items: center;
@@ -31,6 +44,9 @@
 .admin-header__id {
   display: grid;
   gap: 0.1875rem;
+  /* Shrinks (note wraps) before the action cluster is pushed to a second row. */
+  flex: 1 1 16rem;
+  min-width: 0;
 }
 
 .admin-header__title {
@@ -56,6 +72,47 @@
   gap: 0.625rem;
 }
 
+/* Who is signed in + the way back to the customer app + sign-out — the
+   admin shell must not be a dead end (navigation spec N3). */
+.admin-header__who {
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  color: var(--ink-3);
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-header__link {
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  text-decoration: none;
+  background: transparent;
+  border: 1px solid var(--accent-line);
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  min-height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.admin-header__link:hover {
+  background: var(--accent-soft);
+  text-decoration: none;
+}
+.admin-header__status {
+  flex-basis: 100%;
+}
+.admin-header__status:empty {
+  display: none;
+}
+.admin-header__status .form-error {
+  margin: 0;
+}
+
 .admin-split {
   flex: 1;
   width: 100%;
@@ -77,6 +134,22 @@
   align-content: start;
 }
 
+.admin-rail__group {
+  display: grid;
+  gap: 2px;
+}
+.admin-rail__group + .admin-rail__group {
+  margin-top: 0.9rem;
+}
+.admin-rail__caption {
+  margin: 0 0 0.2rem;
+  padding-left: calc(0.75rem + 2px);
+  font-family: var(--font-num);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
 .admin-rail a {
   text-align: left;
   border-left: 2px solid transparent;
@@ -168,6 +241,11 @@
 @media (max-width: 53.75rem) {
   .admin-split {
     grid-template-columns: 1fr;
+    /* The shell is min-height 100vh and the split flexes to fill it; with
+       stacked rows the default `align-content: stretch` would hand the
+       leftover height to the rail's row, opening a gap above the main
+       column. Pack the rows at the top instead. */
+    align-content: start;
   }
   .admin-rail {
     position: static;
@@ -176,10 +254,29 @@
     gap: 0.25rem;
     padding-top: 1rem;
   }
+  .admin-rail__group {
+    display: contents;
+  }
+  .admin-rail__caption {
+    display: none;
+  }
   .admin-rail a {
     border-left: 0;
     border-bottom: 2px solid transparent;
     border-radius: 8px 8px 0 0;
+    min-height: 2.75rem;
+  }
+  .admin-header__who {
+    display: none;
+  }
+  /* Never a sideways-scrolling header (WCAG 1.4.10): the cluster wraps. */
+  .admin-header__actions {
+    flex-wrap: wrap;
+    margin-left: 0;
+    row-gap: 0.5rem;
+  }
+  .admin-main {
+    padding-top: 0.5rem;
   }
   .admin-rail a[aria-current='page'] {
     border-left: 0;

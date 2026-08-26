@@ -1,7 +1,16 @@
-import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
-import { useNavigate } from 'react-router';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+} from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { api, ApiError } from '../../lib/api';
+import { DEFAULT_FEED_VIEW, parseFeedView, type FeedView } from '../../lib/feed-view';
 import { appendCursor, startCursor, type CursorState } from '../../lib/cursor';
+import { useCountUp, useMediaQuery } from '../../lib/motion';
 import type { FeedResponse, FeedRow } from '../../lib/types';
 import { subscribeToMatchUpdates } from '../../lib/match-events';
 import { FeedRail } from '../../components/FeedRail';
@@ -9,8 +18,37 @@ import type { SavedSearch } from '../../lib/saved-searches';
 import type { OrgProfileResponse } from '../../lib/onboarding-types';
 import { TenderCard } from '../../components/TenderCard';
 import { SubscriptionRequiredNotice } from '../../components/SubscriptionRequiredNotice';
+import { EmptyFeed, EmptyIgnored, EmptySaved } from '../../assets';
 
-type Tab = 'today' | 'strong' | 'worth_reviewing' | 'possible' | 'saved' | 'ignored';
+/** One KPI tile's number — counts up on mount/refetch (instant under
+ *  `prefers-reduced-motion`, see lib/motion.ts). A tiny component of its
+ *  own so the hook (one count-up sequence per tile) is only invoked where
+ *  a number is actually rendered, not once per Feed render.
+ *
+ * `.feed-stat dd` is a flex row (`app.css`) with this number and its
+ * `.feed-stat__note` sibling side by side, so as the count-up climbs from
+ * 0 to `value` the digit count — and therefore this span's own width —
+ * grows over the ~900ms animation, pushing the note sideways on every
+ * digit gained (layout shift, CLS, with no user input, well after first
+ * paint). `--kpi-w` reserves the FINAL digit count's width up front, via
+ * a `useLayoutEffect` CSSOM property write (same CSP-safe convention as
+ * `lib/use-tilt.ts` — a property write, never an inline `style=`) that
+ * commits before the browser's first paint, so the box is always at its
+ * settled width and only the digits inside it change. */
+function KpiValue({ value }: { value: number }): ReactElement {
+  const displayed = useCountUp(value);
+  const ref = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    ref.current?.style.setProperty('--kpi-w', `${String(Math.round(value)).length}ch`);
+  }, [value]);
+  return (
+    <span className="num kpi-num" ref={ref}>
+      {Math.round(displayed)}
+    </span>
+  );
+}
+
+type Tab = FeedView;
 
 /**
  * Fix for C5 (docs/redesign/ux-strategy.md §5.1): the score-band views and
@@ -103,7 +141,28 @@ interface FoundingAvailability {
 
 export function Feed(): ReactElement {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>('today');
+  // The URL is the single source of truth for the active view: `?view=`
+  // makes shelves linkable (header "Saved" link, bookmarks, reload) and a
+  // tab click writes it back with `replace` so history is not spammed.
+  // Deriving `tab` from the URL (rather than mirroring URL <-> state with
+  // two effects) is what keeps an external navigation from ping-ponging.
+  const compactStats = useMediaQuery('(max-width: 40rem)');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab: Tab = parseFeedView(searchParams.get('view'));
+  const setTab = useCallback(
+    (next: Tab): void => {
+      setSearchParams(
+        (previous) => {
+          const params = new URLSearchParams(previous);
+          if (next === DEFAULT_FEED_VIEW) params.delete('view');
+          else params.set('view', next);
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const [sort, setSort] = useState<Sort>('fit');
   const tablistRef = useRef<HTMLDivElement>(null);
 
@@ -199,13 +258,13 @@ export function Feed(): ReactElement {
   function applySavedSearch(search: SavedSearch): void {
     const next: Filters = { ...EMPTY_FILTERS, ...search.filters };
     setFilters(next);
-    setTab(search.tab as Tab);
+    setTab(parseFeedView(search.tab));
     setUseCustomCountry(next.country.length > 0 && !countryOptions.includes(next.country));
     // Saved searches predate the sort control and store no order — applying
     // one resets to the default fit ordering rather than inheriting whatever
     // sort happens to be active.
     setSort('fit');
-    void load(search.tab as Tab, next, 'fit');
+    void load(parseFeedView(search.tab), next, 'fit');
   }
 
   // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) —
@@ -453,11 +512,20 @@ export function Feed(): ReactElement {
             {/* dt/dd pairs — the note rides inside the dd (a bare <p> is
                 invalid inside a <dl>'s div wrapper). */}
             {stats !== null && (
-              <dl className="feed-stats" aria-label="Feed overview">
+              <dl
+                className="feed-stats"
+                aria-label="Feed overview"
+                // Below 40rem the strip is a horizontal scroll region, so it
+                // must be keyboard-reachable (WCAG 2.1.1 / axe
+                // scrollable-region-focusable); at wider widths it is a static
+                // grid where a Tab stop would be dead weight.
+                tabIndex={compactStats ? 0 : undefined}
+              >
                 <div className="feed-stat">
                   <dt>New today</dt>
                   <dd>
-                    {stats.newToday} <span>scored in the last 24 hours</span>
+                    <KpiValue value={stats.newToday} />{' '}
+                    <span className="feed-stat__note">scored in the last 24 hours</span>
                   </dd>
                 </div>
                 <div
@@ -465,19 +533,22 @@ export function Feed(): ReactElement {
                 >
                   <dt>Closing ≤ 7 days</dt>
                   <dd>
-                    {stats.closingSoon} <span>deadline within a week</span>
+                    <KpiValue value={stats.closingSoon} />{' '}
+                    <span className="feed-stat__note">deadline within a week</span>
                   </dd>
                 </div>
                 <div className="feed-stat">
                   <dt>Strong matches</dt>
                   <dd>
-                    {stats.strong} <span>open right now</span>
+                    <KpiValue value={stats.strong} />{' '}
+                    <span className="feed-stat__note">open right now</span>
                   </dd>
                 </div>
                 <div className="feed-stat">
                   <dt>Saved</dt>
                   <dd>
-                    {stats.saved} <span>on your shelf</span>
+                    <KpiValue value={stats.saved} />{' '}
+                    <span className="feed-stat__note">on your shelf</span>
                   </dd>
                 </div>
               </dl>
@@ -714,13 +785,29 @@ export function Feed(): ReactElement {
             )}
             {!loading && error === null && state !== null && state.items.length === 0 && (
               <div className="feed-empty">
-                <span className="feed-empty__glyph" aria-hidden="true" />
+                {/* One illustration per shelf/feed context — apps/web/src/assets/empty/
+                    (visual-asset-designer, same phase). Still `aria-hidden` inside the
+                    component itself; the empty state's own copy is the accessible text. */}
+                {tab === 'saved' ? (
+                  <EmptySaved className="feed-empty__illust" />
+                ) : tab === 'ignored' ? (
+                  <EmptyIgnored className="feed-empty__illust" />
+                ) : (
+                  <EmptyFeed className="feed-empty__illust" />
+                )}
                 {isShelfTab ? (
-                  <p className="feed-empty__title">
-                    {tab === 'saved'
-                      ? 'Nothing saved yet — use Save on a tender you want to come back to.'
-                      : 'Nothing ignored yet — use Ignore to keep a tender out of your review queue.'}
-                  </p>
+                  <>
+                    <p className="feed-empty__title">
+                      {tab === 'saved'
+                        ? 'Nothing saved yet — use Save on a tender you want to come back to.'
+                        : 'Nothing ignored yet — use Ignore to keep a tender out of your review queue.'}
+                    </p>
+                    <div className="feed-empty__actions">
+                      <Link className="btn-quiet" to="/app">
+                        Browse today's matches
+                      </Link>
+                    </div>
+                  </>
                 ) : activeFilterCount > 0 ? (
                   <>
                     <p className="feed-empty__title">No matches with these filters.</p>

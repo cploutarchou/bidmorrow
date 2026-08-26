@@ -679,3 +679,28 @@ describe('pagination cap', () => {
     expect(response.status).toBe(400);
   });
 });
+
+describe('GET /api/account/me: identity + isAdmin navigation hint', () => {
+  it('401 without a session', async () => {
+    const response = await fetchApi('/api/account/me');
+    expect(response.status).toBe(401);
+  });
+
+  it('isAdmin=false for an ordinary user (plain answer, not cloaked)', async () => {
+    const email = uniqueEmail('me-plain');
+    const cookie = await createVerifiedUser(email);
+    const response = await fetchApi('/api/account/me', { headers: { cookie } });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { user: { email: string }; isAdmin: boolean };
+    expect(body.user.email).toBe(email);
+    expect(body.isAdmin).toBe(false);
+  });
+
+  it('isAdmin=true for an ADMIN_EMAILS member (case-insensitive)', async () => {
+    const cookie = await adminCookie();
+    const response = await fetchApi('/api/account/me', { headers: { cookie } });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { isAdmin: boolean };
+    expect(body.isAdmin).toBe(true);
+  });
+});

@@ -48,6 +48,7 @@ import { organizationId as toOrganizationId } from '@bidmorrow/domain';
 
 import { createRequestAuth } from '../auth-instance';
 import type { AppBindings } from '../env';
+import { isInternalAdminEmail } from '../middleware/admin';
 import { createIpRateLimit } from '../middleware/rate-limit';
 import { requireSession } from '../middleware/session';
 
@@ -56,6 +57,30 @@ export const accountRoutes = new Hono<AppBindings>();
 // P10-R-04 sweep: every API route group shares the IP-keyed limiter.
 accountRoutes.use('*', createIpRateLimit('/api/account/*'));
 accountRoutes.use('*', requireSession);
+
+/**
+ * `GET /api/account/me` — the signed-in identity plus the one capability
+ * the SPA needs for navigation: whether this user is an INTERNAL_ADMIN
+ * (`ADMIN_EMAILS` allowlist, same parser as `requireInternalAdmin`). The
+ * "Admin" header link renders only when `isAdmin` is true
+ * (docs/redesign/navigation-and-admin-entry.md §3). This is a
+ * discoverability hint, never authorization: every `/api/admin/*` call is
+ * still independently gated (and 404-cloaked) by the middleware. A `false`
+ * answer discloses nothing about the admin surface's existence beyond the
+ * field name, so it is not cloaked and not audited (not an admin action).
+ */
+accountRoutes.get('/me', (c) => {
+  const session = c.get('session');
+  if (session === undefined) return c.json({ error: 'unauthenticated' }, 401);
+  return c.json({
+    user: {
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name.length > 0 ? session.user.name : null,
+    },
+    isAdmin: isInternalAdminEmail(c.env.ADMIN_EMAILS, session.user.email),
+  });
+});
 
 accountRoutes.delete('/', async (c) => {
   const session = c.get('session');

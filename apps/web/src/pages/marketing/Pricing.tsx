@@ -54,7 +54,12 @@ export function Pricing(): ReactElement {
       </p>
 
       <div className="mkt-plans">
-        <article className="mkt-plan mkt-plan--founding" aria-labelledby="founding-plan-heading">
+        <article
+          className="mkt-plan mkt-plan--founding"
+          aria-labelledby="founding-plan-heading"
+          data-reveal
+          data-reveal-i={1}
+        >
           <p className="mkt-plan__cap">Founding — first 100 customers</p>
           <h2 id="founding-plan-heading">Founding plan</h2>
           <p className="mkt-plan__price">€29 / month</p>
@@ -73,7 +78,12 @@ export function Pricing(): ReactElement {
           </Link>
         </article>
 
-        <article className="mkt-plan mkt-plan--quiet" aria-labelledby="standard-plan-heading">
+        <article
+          className="mkt-plan mkt-plan--quiet"
+          aria-labelledby="standard-plan-heading"
+          data-reveal
+          data-reveal-i={2}
+        >
           <p className="mkt-plan__cap mkt-plan__cap--quiet">Standard</p>
           <h2 id="standard-plan-heading">Standard plan</h2>
           <p className="mkt-plan__price">€49 / month</p>
@@ -91,7 +101,11 @@ export function Pricing(): ReactElement {
         </article>
       </div>
 
-      <section className="mkt-hold" aria-label="What the founding price does over twelve months">
+      <section
+        className="mkt-hold"
+        aria-label="What the founding price does over twelve months"
+        data-reveal
+      >
         <div className="mkt-hold__head">
           <p className="mkt-hold__cap">What the founding price does over twelve months</p>
           <p className="mkt-hold__lede">
@@ -135,7 +149,7 @@ export function Pricing(): ReactElement {
         <Link to="/methodology">the methodology</Link> shows exactly how a score is built.
       </p>
 
-      <div className="mkt-cellgrid mkt-factgrid">
+      <div className="mkt-cellgrid mkt-factgrid" data-reveal>
         {BILLING_FACTS.map((fact) => (
           <div className="mkt-cell" key={fact.label}>
             <p className="mkt-cell__cap">{fact.label}</p>
