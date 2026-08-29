@@ -4842,6 +4842,54 @@ credentials in CI secrets.
 
 Gates green: 1060 tests (root 710 +3 skipped, worker 279, db 71).
 
+## F-07 closed — the DLQs are consumed, so poison messages stop being invisible (2026-08-29)
+
+Owner instruction: "merge it till nothing is pending" — taken as the decision
+on F-07, where I had recommended option (2) but flagged it as post-launch.
+
+The real finding was worse than the checklist item. The three DLQs were
+declared as `dead_letter_queue` targets but had **no consumer at all**:
+nothing drained them and nothing read them, so a message that exhausted its
+retries landed in a queue nobody looks at and nobody ever found out. The
+health-page gap was a symptom.
+
+- **Migration 0012** — `dead_letter_messages`, one new table, additive,
+  nothing dropped or retyped. GLOBAL (no `organization_id`, like
+  `ingestion_runs`/`ingestion_errors`); `dead-letters.ts` added to the
+  tenant-isolation contract's GLOBAL_FILES with the reason written down. A
+  digest payload names an org inside the opaque `body_json`, but nothing
+  scopes or joins on it.
+- **Consumers on all three DLQs in all three environments** (9 entries), and
+  a `batch.queue.includes('-dlq-')` branch in the queue handler. **Persist
+  then ack**: a failed D1 write throws and the message retries, because
+  acking there would destroy the only record of the failure. No DLQ for the
+  DLQ — that just moves the invisibility one hop; after `max_retries` the
+  loss is at least loud as `queue.dead_letter.record_failed`.
+- **`onConflictDoNothing`, deliberately not an upsert.** DLQ delivery is
+  at-least-once, so recording is idempotent on `provider_message_id` — but an
+  upsert would reset `resolved_at` and silently resurrect work an operator had
+  already closed every time Cloudflare redelivered. Asserted by test.
+- **Depth means outstanding, not all-time**: `COUNT(*) WHERE resolved_at IS
+NULL`. A number that only ever grows would stop meaning anything the first
+  time something dead-lettered. History is kept; only the count moves.
+- `listDeadLetters` returns a plain array, not a `Page` — handing the UI a
+  `nextCursor` that no endpoint consumes would be worse than offering none. A
+  DLQ deeper than one screenful is an incident, not a browsing problem.
+- The admin Dashboard's honest-but-empty `dlq.note` is replaced by the real
+  count, with the `--risk` treatment when non-zero and a per-queue breakdown.
+
+Two tests caught real mistakes while writing this: the migration sentinel
+still expected eleven migrations, and my repository tests assumed a clean
+table when `testDb()` hands back the same local D1 across tests in a file —
+the depth assertions were passing on inherited rows until the per-test delete
+went in.
+
+**Deployment consequence worth stating**: production is two migrations behind
+already, so its next deploy applies 0010, 0011 and 0012 together.
+
+Gates green: 1071 tests (root 710 +3 skipped, worker 279, db 79), plus
+`pnpm verify:build`.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

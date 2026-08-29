@@ -15,7 +15,9 @@ change), **F-05** (D1 capacity alert), **F-08** (no-login unsubscribe + RFC
 check now actually runs in CI). Closed by review: **F-10**. Still open:
 **F-02, F-03, F-04** — all owner-gated on the live Paddle account and the only
 remaining HIGHs; **F-06** (baseline now measured, staging measurement still
-owed); **F-07** (DLQ depth — costed below, needs an owner pick).
+owed — needs a seeded staging account in CI secrets, an owner action);
+**F-07** — **now FIXED**: the owner chose the DLQ-consumer option, so the
+DLQs are consumed and recorded (migration 0012).
 
 **Follow-up security review** (2026-08-29, `security` agent, read-only, gates
 re-run by the reviewer) over the F-08/F-09 change and the F-10 backlog: **no
@@ -198,7 +200,7 @@ double-gated e2e mailbox hook, which 404s outside local/test by design.
 Closing it needs a dedicated seeded staging account with credentials in CI
 secrets.
 
-### F-07 · MEDIUM · Admin/ops · OPEN — **needs an owner decision (costed 2026-08-29)**
+### F-07 · MEDIUM · Admin/ops · **FIXED 2026-08-29** (owner picked option 2)
 
 **Queue/DLQ depth is not on the admin health page.** `apps/worker/src/
 routes/admin.ts:774-794` returns `dlq: { note }` with an honest explanation
@@ -226,9 +228,23 @@ Three options, with their real costs:
    launch, with production already two migrations behind.
 3. **Accept the deviation**, record the rationale, and strike the box.
 
-Recommendation: **(2), after launch, not before it.** The audit's own rule is
-that a mandatory item is never a qualified pass, so this stays a FAIL line
-until the owner picks one — it is not for the implementer to waive.
+Recommendation was **(2)**, with a note to prefer after launch. The owner
+chose to take it now ("merge it till nothing is pending").
+
+_Fixed_: migration `0012_dead_letter_messages.sql` (one new table, additive,
+nothing dropped or retyped), DLQ consumers declared for all three queues in
+all three environments, and a queue-handler branch that records each
+dead-lettered message and only then acks — a failed D1 write retries rather
+than destroying the only record of the failure. "Depth" is now
+`COUNT(*) WHERE resolved_at IS NULL`, shown on the admin Dashboard with the
+`--risk` treatment when non-zero, and the honest-but-empty `dlq.note` is gone.
+Recording is idempotent on `provider_message_id` and uses
+`onConflictDoNothing`, NOT an upsert, so a Cloudflare redelivery cannot
+resurrect a row an operator already resolved — asserted by test. 8 repository
+tests; the migration sentinel now expects twelve.
+
+Deployment note that matters: production is already two migrations behind, so
+its next deploy applies `0010`, `0011` and now `0012` together.
 
 ### F-08 · MEDIUM · Digest/compliance · **FIXED 2026-08-29**
 
@@ -332,7 +348,7 @@ claim.
 | Customer product (3)      | **FAIL**                    | pagination and the methodology page verified; **p95 never measured** (F-06)                                                                                                                                                                                                                                                         |
 | Digest (3)                | **PASS** (2026-08-29)       | idempotency is genuinely DB-enforced and tested ("a raw duplicate insert fails"); no-login unsubscribe + RFC 8058 headers shipped, closing F-08                                                                                                                                                                                     |
 | Billing (3)               | **PASS (code)**             | signature verification with no unverified path; `uq_billing_events__provider_event_id`; state re-fetched from Paddle, never trusted from payload; entitlements server-side. Live/sandbox separation cannot be exercised until F-03.                                                                                                 |
-| Admin & ops (3)           | **FAIL**                    | health page, audit events and pause/resume verified; **DLQ depth absent** (F-07)                                                                                                                                                                                                                                                    |
+| Admin & ops (3)           | **PASS** (2026-08-29)       | health page, audit events and pause/resume verified; DLQ depth is a real number since F-07 — the DLQs are consumed and recorded to `dead_letter_messages`                                                                                                                                                                           |
 | Observability (3)         | **PASS** (2026-08-29)       | correlation IDs and pattern-based redaction verified (`/password\|token\|secret\|authorization\|apikey\|api_key\|cookie/i` — covers `PADDLE_*` by construction); watchdog cron wired at 09:00 UTC with `STALE_INGESTION_HOURS = 36`; the 60% DB-size alert shipped 2026-08-29, closing F-05                                         |
 | Security (4)              | **PASS with a process gap** | security review of PR #105: no Critical/High, four findings fixed in-tree; gitleaks green in CI; adversarial fixtures present. See F-10.                                                                                                                                                                                            |
 | Testing (3)               | **PASS**                    | 1032 tests green; axe specs present; nightly E2E green 08-27, 08-28, 08-29 after being red 08-19→08-26                                                                                                                                                                                                                              |

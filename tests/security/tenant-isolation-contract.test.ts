@@ -43,6 +43,12 @@ const TENANT_FILES = [
 /** Global (non-tenant) data: shared corpus, ingestion plumbing, ops config. */
 const GLOBAL_FILES = [
   'admin.ts',
+  // Dead-lettered queue messages (F-07, migration 0012): operator
+  // infrastructure alongside ingestion_runs/ingestion_errors, written by the
+  // DLQ consumer and read only by INTERNAL_ADMIN. The table has no
+  // organization_id; a digest payload names an org inside the opaque
+  // body_json blob, but nothing scopes or joins on it.
+  'dead-letters.ts',
   'ingestion.ts',
   'ops-global.ts',
   'org-purge.ts',

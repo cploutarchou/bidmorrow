@@ -83,8 +83,10 @@ gates the production launch.
 
 ## Admin & ops
 
-- [ ] Admin health page shows: ingestion runs, digest runs, queue/DLQ depth,
-      D1 size vs limit, delivery failure rate
+- [x] Admin health page shows: ingestion runs, digest runs, queue/DLQ depth,
+      D1 size vs limit, delivery failure rate — DLQ depth is real since F-07
+      (the DLQs are consumed and recorded to `dead_letter_messages`); D1 size
+      shows percent-of-ceiling with the 60% alert (F-05), 2026-08-29
 - [ ] Audit events written for every admin action and destructive customer
       action (append-only)
 - [ ] `ingestion_paused` / `digest_paused` switches tested (pause + resume)

@@ -33,7 +33,11 @@ export interface AdminHealthDetails {
     usedFraction: number | null;
     alerting: boolean;
   };
-  dlq: { note: string };
+  dlq: {
+    unresolved: number;
+    byQueue: { queue: string; count: number }[];
+    lastDeadLetteredAt: number | null;
+  };
   flags: { key: string; value: string | null }[];
 }
 
