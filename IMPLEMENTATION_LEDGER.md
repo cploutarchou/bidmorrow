@@ -4678,6 +4678,170 @@ test` failed one assertion — the `_headers` verbatim-copy check read a
 Not tagged: `phase-13-complete` was never created and Phase 14's verdict is
 FAIL, so no phase tag is claimed.
 
+## F-08 / F-09 — no-login unsubscribe and the verified-recipient filter (2026-08-29)
+
+Owner instruction: "start everything please" — the audit findings that are
+not owner-gated, taken one coherent unit at a time. This is the first.
+
+- **F-08, no-login unsubscribe.** `packages/notifications/unsubscribe-token.ts`
+  mints `base64url(payload).hex(HMAC-SHA256)` keyed with `BETTER_AUTH_SECRET`
+  under an explicit `bidmorrow-unsub:v1:` purpose prefix (same
+  domain-separation reasoning as billing's `provenance.ts`, so a token from
+  one HMAC surface can never be replayed against the other). Stateless: no
+  table, no cleanup job. **Deliberately no expiry** — an unsubscribe link
+  has to still work in a message someone finds months later, and the
+  capability it grants is only ever "turn a digest OFF". Rotating
+  `BETTER_AUTH_SECRET` is the revocation.
+- **GET confirms, POST acts.** `apps/worker/src/routes/digest.ts` — the
+  route is unauthenticated by design (the token IS the authorization),
+  rate-limited before any HMAC work like the webhook route. GET renders a
+  confirmation page and mutates nothing, because mail scanners, link
+  previews and corporate security gateways follow links eagerly and a
+  mutating GET would silently kill digests nobody asked to stop. That split
+  is also exactly RFC 8058's contract, so the same endpoint serves the human
+  and the provider's one-click button.
+- **Headers.** `List-Unsubscribe: <url>` + `List-Unsubscribe-Post:
+List-Unsubscribe=One-Click`, set per recipient. `DigestSendMessage` gained
+  an optional `headers` passthrough to Resend's documented `headers` field.
+  Rendering MOVED INSIDE the recipient loop: the token is per recipient, so
+  one shared render would have put one member's token in everyone's mail.
+  `renderDigest` is pure string building over ≤10 items, so this is cheap.
+- **Org-scoped, and the copy says so.** `digest_preferences` has one row per
+  organization with no per-member column, so unsubscribing turns the digest
+  off for the workspace. Invisible today (no invite flow ⇒ one member per
+  org) but stated plainly on both pages rather than papered over. If invites
+  ever land, per-recipient suppression becomes a real requirement.
+- **F-09.** `listOrganizationMemberEmails` now filters on
+  `users.email_verified`. It has exactly one caller (the digest), so the
+  change is contained. Unverified addresses were already unreachable — via
+  `requireEmailVerification: true` plus the absence of invites — but that
+  made the guarantee a property of two distant facts instead of the query.
+- **Verification**: all gates green. 1049 tests (root 702 +3 skipped, worker
+  279, db 68) — 7 new route tests (GET does not mutate, cross-org forgery
+  refused with the victim's digest still on, idempotent double-POST writing
+  exactly one audit event, preferences preserved, missing-prefs 200) and 12
+  new token tests including validly-signed-but-malformed payloads, signed
+  with the real key so field validation is genuinely what rejects them.
+- **Resend `headers` verified** and recorded in dependency-versions.md —
+  with the caveat stated in the doc that `resend.com` is proxy-blocked here,
+  so it was confirmed from Resend's documentation pages via search rather
+  than a direct fetch of the API reference. To re-confirm on the first real
+  staging send that both headers arrive and are DKIM-covered.
+- Checklist boxes now genuinely evidenced: email-verification-before-digest,
+  unsubscribe-without-login, digest idempotency, and the two 2026-08-16
+  drills whose evidence the audit surfaced.
+
+## F-05 and F-11 — the D1 capacity alert and a CI check that never ran (2026-08-29)
+
+- **F-05, the DB-size alert.** `D1_MAX_BYTES` (10 GiB, the paid-plan
+  ceiling) + `D1_SIZE_ALERT_FRACTION` (0.6) + `evaluateDbSize()` in
+  `packages/procurement/src/health.ts`, beside the other watchdog
+  thresholds. `/api/admin/health-details` returns the evaluated alert
+  instead of a bare byte count; the Dashboard shows percent-of-ceiling and
+  takes the existing `--risk` card treatment past the threshold; the 09:00
+  UTC watchdog logs `db.size.threshold_exceeded`. That last part is the
+  point — the byte count was ALREADY on the admin page and nothing alerted
+  on it, so nobody would have learned the database was filling until writes
+  started failing. 60% is early on purpose: the mitigation (retention change
+  or the `match_components` JSON fallback) is a schema migration, which
+  needs lead time.
+  Honest handling of the unmeasured case: `getDbSizeEstimate` returns
+  `measured: false` rather than a fabricated number, and `evaluateDbSize`
+  never alerts on that — alerting on every missing measurement trains an
+  operator to ignore the alert. It also never reads as healthy: the watchdog
+  logs `db.size.unmeasured` on its own line and the Dashboard says
+  "Unmeasured". 6 tests, including the boundary (alerts exactly AT 60%, not
+  only past it) and the no-fabricated-fraction rule.
+
+- **F-11, the `_headers` check that never ran.** The assertion is guarded
+  "when one exists" and CI checks out clean and runs Test BEFORE Build — so
+  `dist/` never existed at that point and it silently no-opped on every CI
+  run since it was written. A build that stopped copying `_headers` (no CSP,
+  no HSTS, no `X-Frame-Options` on static assets) would have shipped green.
+  Fixed with `scripts/verify-build-artifacts.mjs` as its own CI step after
+  Build. **Verified by hand that it actually fails**: exit 1 with
+  `dist/_headers` removed, exit 1 with it tampered, exit 0 restored — a new
+  gate that has never been seen to fail is not a gate. The test's comment
+  claiming the build step covered this end-to-end was false and is
+  corrected; its opportunistic assertion stays because it catches a stale
+  local `dist/`, which is exactly how this was found during the audit.
+
+- **F-07 investigated, NOT closed — owner decision, costed.** The three DLQs
+  are declared in `wrangler.jsonc` but **have no consumer**: nothing drains
+  them and nothing reads them, so a dead-lettered message is not just missing
+  from the admin page — nobody ever finds out it happened. Bigger than the
+  checklist item describes. Options recorded in the audit: (1) Cloudflare
+  Queues REST API from the admin route — new account-token secret + outbound
+  dependency; (2) a DLQ consumer recording into D1 — no new secret, makes
+  poison messages visible, costs migration 0012 and three consumer bindings;
+  (3) accept the deviation. Recommended (2) AFTER launch: it is a one-way
+  door two days out with production already two migrations behind. Not
+  waived by the implementer — the box stays unchecked until the owner picks.
+
+- Gates green: 1055 tests (root 708 +3 skipped, worker 279, db 68), plus the
+  new `pnpm verify:build`.
+
+## Security review, its three fixes, and the p95 baseline (2026-08-29)
+
+**Security review (F-10 closed).** The `security` agent ran read-only over
+both the new F-08/F-09 work and the #107–#110 backlog, re-running the gates
+itself. **No CRITICAL or HIGH in either scope.** It confirmed the audit's
+provisional reading of `GET /api/account/me`: session-gated, strictly
+self-referential, and a `false` answer cannot distinguish an empty allowlist
+from a non-listed address, so it is not an enumeration oracle; the 404 cloak
+and per-request admin audit row are intact. #107 (secrets fail closed, never
+logged), #108 (copy/flags only) and #110 (no new origins, no inline scripts)
+were clean.
+
+Three findings fixed the same day:
+
+- **SEC-UNSUB-01 (LOW) — a real error in my own reasoning.** The unsubscribe
+  audit row wrote the recipient address into `afterSummary`, with a comment
+  arguing it was "no new PII" because `email_deliveries` already holds it.
+  That was wrong, and retention is why: `email_deliveries` is age-purged at
+  12 months AND purged when an organization is purged, whereas `audit_events`
+  is an append-only 24-month ledger that deliberately SURVIVES org purge and
+  tombstoning (`tombstoneOrganization`). The address would have become the
+  longest-lived copy in the system and outlived the very erasure tombstoning
+  exists to perform. Address removed; the comment now explains the asymmetry
+  instead of asserting the opposite. Correlation still works while it matters
+  via the `email_deliveries` row plus `occurredAt`.
+- **SEC-UNSUB-02 (INFO→fixed).** CRLF/NUL guard on the Resend `headers`
+  passthrough. Not exploitable today (two constants and a percent-encoded
+  URL), but `headers` is a general seam and a future caller interpolating a
+  name or address would otherwise be trusting someone else's serializer to
+  refuse header splitting. Throws at the boundary that owns the risk; the
+  offending value is never echoed into the message.
+- **A-3 (LOW).** F-09's `email_verified` filter had **zero** test coverage —
+  deleting it would have shipped green, which is the exact failure mode the
+  filter exists to prevent. New `identity.d1.test.ts`, and **mutation-checked**:
+  removing the predicate makes two tests fail, restoring it makes them pass.
+  A test that would pass either way is worth nothing.
+
+Accepted and recorded rather than fixed: unsubscribe tokens are unbounded in
+time and are not re-bound to current membership, so a forwarded digest can
+disable an org's digest later (bounded, audited, reversible in Settings — but
+**per-recipient suppression becomes mandatory the day team invites ship**);
+and `BETTER_AUTH_SECRET` reuse couples session rotation to breaking every
+outstanding unsubscribe link, so a dedicated secret is worth having later.
+
+**F-06 baseline measured (box still unchecked).**
+`scripts/measure-api-latency.mjs` + `docs/performance.md`. Local stack, 40
+iterations/route, all 200: worst p95 is the feed at **29.7 ms**, ~17× inside
+the 500 ms budget.
+Two things worth keeping: the harness aborts on any 4xx/5xx because an error
+path short-circuits before the work the budget is about — and that guard
+immediately caught its own first run reporting 23.9 ms for a feed request
+that had 400'd on a wrong query param and done no work. And the box stays
+UNCHECKED: a local run has no network or edge, uses a seed-sized dataset (the
+two slowest routes are precisely the two whose cost grows with the corpus),
+and the harness cannot reach staging as written because it establishes a
+session through the double-gated e2e mailbox hook, which 404s outside
+local/test by design. Closing it needs a seeded staging account with
+credentials in CI secrets.
+
+Gates green: 1060 tests (root 710 +3 skipped, worker 279, db 71).
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

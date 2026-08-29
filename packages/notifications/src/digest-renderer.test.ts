@@ -28,6 +28,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
 
     expect(rendered.subject).toContain('1 new match');
@@ -56,6 +57,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.html).toContain('verify in source documents');
     expect(rendered.text).toContain('verify in source documents');
@@ -71,6 +73,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.html).toContain('Confirmed pattern');
   });
@@ -89,6 +92,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.html).not.toContain('<script>');
     expect(rendered.html).not.toContain('<img src=x');
@@ -106,6 +110,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.html).toContain('IT support services');
     expect(rendered.html).not.toContain('/app/tenders/');
@@ -122,6 +127,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.subject).toContain('no new matches');
     expect(rendered.html).toContain('No new matches met your digest threshold today.');
@@ -139,6 +145,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.html).toContain('Lot 9');
     expect(rendered.html).not.toContain('Lot 10');
@@ -154,6 +161,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.html).toContain('Strong: 1');
     expect(rendered.html).toContain('Worth reviewing: 2');
@@ -164,5 +172,39 @@ describe('renderDigest', () => {
     expect(rendered.html).toMatch(/turn it off any time/);
     expect(rendered.text).toMatch(/Tenders Electronic Daily \(TED\)/);
     expect(rendered.text).toContain('https://app.bidmorrow.com/app/settings');
+  });
+
+  // F-08: the no-login unsubscribe link. `null` is the preview path (no
+  // recipient, so no token to sign) and must render NO unsubscribe block
+  // rather than a dead link.
+  it('renders the no-login unsubscribe link in both bodies when a URL is given', () => {
+    const unsubscribeUrl = 'https://app.bidmorrow.com/api/digest/unsubscribe?token=abc.def';
+    const rendered = renderDigest({
+      items: [item()],
+      counts: { ...ZERO_COUNTS, STRONG_MATCH: 1 },
+      orgName: 'Acme',
+      digestDate: '2026-08-15',
+      appBaseUrl: 'https://app.bidmorrow.com',
+      manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl,
+    });
+    expect(rendered.html).toContain(`href="${unsubscribeUrl}"`);
+    expect(rendered.html).toMatch(/no sign-in needed/);
+    expect(rendered.text).toContain(unsubscribeUrl);
+    expect(rendered.text).toMatch(/Unsubscribe \(no sign-in needed\)/);
+  });
+
+  it('omits the unsubscribe block entirely when the URL is null (preview path)', () => {
+    const rendered = renderDigest({
+      items: [item()],
+      counts: { ...ZERO_COUNTS, STRONG_MATCH: 1 },
+      orgName: 'Acme',
+      digestDate: '2026-08-15',
+      appBaseUrl: 'https://app.bidmorrow.com',
+      manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
+    });
+    expect(rendered.html).not.toMatch(/unsubscribe/i);
+    expect(rendered.text).not.toMatch(/unsubscribe/i);
   });
 });

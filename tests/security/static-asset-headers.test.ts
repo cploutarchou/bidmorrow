@@ -9,9 +9,15 @@
  * 2. If a `dist/_headers` build artifact exists (i.e. `pnpm build` already
  *    ran in this workspace), it is byte-identical to the source — proving
  *    Vite's public-dir copy actually happened and nothing rewrote it.
- *    (This test does not itself invoke `pnpm build`; the quality-gate build
- *    step, run every session per `.claude/skills/run-quality-gates`, covers
- *    the "confirm it's really in dist" half end-to-end.)
+ *
+ * ASSERTION 2 IS OPPORTUNISTIC AND IS NOT THE REAL GATE (F-11). CI checks
+ * out clean and runs Test BEFORE Build, so `dist/` does not exist and this
+ * assertion no-ops on every CI run. An earlier version of this comment
+ * claimed the quality-gate build step covered it end-to-end; it did not —
+ * `pnpm build` only proves the build exits 0. The actual gate is
+ * `scripts/verify-build-artifacts.mjs`, run as its own CI step after Build.
+ * Assertion 2 is kept because it still catches a stale or wrong `dist/` in a
+ * local run, which is how the gap was found in the first place.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

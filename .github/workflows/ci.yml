@@ -51,6 +51,14 @@ jobs:
         # deployment is a separate, explicitly-invoked concern.
         run: pnpm build
 
+      - name: Verify build artifacts
+        # F-11: the _headers verbatim-copy assertion in
+        # tests/security/static-asset-headers.test.ts is guarded "when one
+        # exists", and Test runs before Build on a clean checkout — so it
+        # never fired in CI. This step is that assertion, placed where dist/
+        # actually exists.
+        run: pnpm verify:build
+
   secret-scan:
     runs-on: ubuntu-latest
     steps:

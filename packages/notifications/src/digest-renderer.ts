@@ -48,6 +48,14 @@ export interface RenderDigestArgs {
   readonly appBaseUrl: string;
   /** e.g. `https://app.bidmorrow.com/app/settings` — manage-preferences link. */
   readonly manageUrl: string;
+  /**
+   * Absolute, per-recipient no-login unsubscribe URL (F-08). `null` ONLY on
+   * the preview path, which renders a digest for an operator with no
+   * recipient and therefore no token to sign — a real send always passes
+   * one, and the unsubscribe block is omitted rather than faked when it is
+   * absent. The same URL is set in `List-Unsubscribe`.
+   */
+  readonly unsubscribeUrl: string | null;
 }
 
 export interface RenderedDigest {
@@ -151,7 +159,13 @@ export function renderDigest(args: RenderDigestArgs): RenderedDigest {
     always verify against the original notice before bidding.</p>
     <p><a href="${escapeHtml(args.manageUrl)}">Manage digest preferences</a></p>
     <p>You are receiving this because your organization enabled the daily digest.
-    You can turn it off any time from digest preferences.</p>
+    You can turn it off any time from digest preferences.</p>${
+      args.unsubscribeUrl === null
+        ? ''
+        : `
+    <p><a href="${escapeHtml(args.unsubscribeUrl)}">Unsubscribe from this digest</a> —
+    no sign-in needed.</p>`
+    }
   </footer>
 </body>
 </html>`;
@@ -187,7 +201,10 @@ export function renderDigest(args: RenderDigestArgs): RenderedDigest {
     `always verify against the original notice before bidding.\n` +
     `Manage digest preferences: ${args.manageUrl}\n` +
     `You are receiving this because your organization enabled the daily digest. ` +
-    `You can turn it off any time from digest preferences.\n`;
+    `You can turn it off any time from digest preferences.\n` +
+    (args.unsubscribeUrl === null
+      ? ''
+      : `Unsubscribe (no sign-in needed): ${args.unsubscribeUrl}\n`);
 
   return { subject, html, text };
 }

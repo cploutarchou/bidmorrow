@@ -127,6 +127,7 @@ export async function runDigestJob(
       provider: provider ?? resolveDigestProvider(env, logger),
       appBaseUrl: env.APP_BASE_URL,
       engineVersion: ENGINE_VERSION,
+      unsubscribeSecret: env.BETTER_AUTH_SECRET,
     },
     toOrganizationId(message.organizationId),
     { localDate: message.localDate, utcNow: Date.now() },
