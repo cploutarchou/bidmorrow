@@ -133,16 +133,28 @@ digestRoutes.post('/unsubscribe', async (c) => {
     await insertAuditEvent(db, {
       // 'system', not 'user': the token proves possession of a message we
       // sent to that address, not the identity of a signed-in user, and
-      // there is no session to take a `users.id` from. The address is
-      // recorded in the summary — it is already stored on the
-      // `email_deliveries` row this link came from, so this adds no new PII.
+      // there is no session to take a `users.id` from.
+      //
+      // The recipient address is DELIBERATELY NOT recorded here (SEC-UNSUB-01).
+      // An earlier version of this call wrote it into `afterSummary` on the
+      // reasoning that `email_deliveries` already stores it, so it was no new
+      // PII. That reasoning was wrong, and the retention rules are why:
+      // `email_deliveries` is age-purged at 12 months AND purged when an
+      // organization is purged, whereas `audit_events` is an append-only
+      // ledger kept for 24 months that deliberately SURVIVES org purge and
+      // tombstoning (see `tombstoneOrganization`). Writing the address here
+      // would have made this row the longest-lived copy of it in the system
+      // and would have kept it past the very erasure tombstoning exists to
+      // perform. Correlation is still possible while it matters: the
+      // `email_deliveries` row for this digest carries the address, and
+      // `occurredAt` pins the event to it.
       actorType: 'system',
       organizationId,
       action: 'digest.unsubscribed',
       targetType: 'digest_preferences',
       targetId: existing.id,
       beforeSummary: 'enabled',
-      afterSummary: `disabled via signed unsubscribe link sent to ${payload.email}`,
+      afterSummary: 'disabled via a signed unsubscribe link (no session)',
       occurredAt: Date.now(),
     });
     c.get('logger').info('digest.unsubscribed', { organization_id: organizationId });

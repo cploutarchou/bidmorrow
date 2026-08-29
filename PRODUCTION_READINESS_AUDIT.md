@@ -12,10 +12,28 @@ is open.
 **Remediation log** (2026-08-29) — fixed: F-01, F-12 (in the audit's own
 change), **F-05** (D1 capacity alert), **F-08** (no-login unsubscribe + RFC
 8058 headers), **F-09** (verified-recipient filter), **F-11** (the `_headers`
-check now actually runs in CI). Still open: **F-02, F-03, F-04** — all
-owner-gated on the live Paddle account and the only remaining HIGHs; **F-06**
-(p95 unmeasured); **F-07** (DLQ depth — costed below, needs an owner pick);
-**F-10** (missing security sign-off for #107–#110).
+check now actually runs in CI). Closed by review: **F-10**. Still open:
+**F-02, F-03, F-04** — all owner-gated on the live Paddle account and the only
+remaining HIGHs; **F-06** (baseline now measured, staging measurement still
+owed); **F-07** (DLQ depth — costed below, needs an owner pick).
+
+**Follow-up security review** (2026-08-29, `security` agent, read-only, gates
+re-run by the reviewer) over the F-08/F-09 change and the F-10 backlog: **no
+CRITICAL or HIGH in either scope**. Three LOW/INFO items were fixed
+immediately — SEC-UNSUB-01 (the recipient address was being written into
+`audit_events`, whose 24-month append-only retention SURVIVES org purge and
+tombstoning, while `email_deliveries` is purged at 12 months and with the org;
+the in-code claim that this "adds no new PII" was wrong and the address is now
+omitted), SEC-UNSUB-02 (a CRLF/NUL guard at the Resend `headers` boundary —
+not exploitable with today's sole caller, but the seam that owns the risk),
+and A-3 (the F-09 filter had no test at all, so deleting it would have shipped
+green; now covered, and mutation-checked by removing the predicate and
+confirming two tests fail). Accepted and recorded, not fixed: unsubscribe
+tokens are unbounded in time and not re-bound to current membership, so a
+forwarded digest can disable an org's digest later (bounded, audited,
+reversible in Settings — but per-recipient suppression becomes mandatory the
+day team invites ship), and `BETTER_AUTH_SECRET` reuse couples session
+rotation to breaking outstanding unsubscribe links.
 
 The failure is **not in the shipped application code**. All five quality
 gates are green on `99c4e61`, the full migration chain applies from empty,
@@ -160,13 +178,25 @@ not an alert. 6 tests, including the boundary (alerts exactly AT 60%, not only
 past it) and the rule that an unmeasured estimate never alerts and never
 fabricates a fraction.
 
-### F-06 · MEDIUM · Performance · OPEN
+### F-06 · MEDIUM · Performance · OPEN — **baseline measured 2026-08-29**
 
 **"API p95 < 500 ms" has never been measured.** It appears as a target in
 `docs/architecture.md:66` and as a checklist box; no measurement exists in
 any doc, test, or ledger entry. The box cannot be checked on intent.
-Remediation: measure against staging (which has real ingested data) and
-record the numbers, or renegotiate the DoD item.
+
+_Progress 2026-08-29_: `scripts/measure-api-latency.mjs` + a recorded
+baseline in `docs/performance.md`. Local stack, 40 iterations/route, all 200:
+worst p95 is the feed at **29.7 ms**, ~17× inside the budget. The harness
+refuses to report a route that answered 4xx/5xx — which caught its own first
+run publishing 23.9 ms for a feed request that had 400'd on a bad query
+param and done no work.
+**Still open, and the box stays unchecked**, because a local run is a floor,
+not production: no network or edge, a seed-sized dataset (the two slowest
+routes are exactly the two whose cost grows with the corpus), and the harness
+cannot reach staging as written — it establishes a session through the
+double-gated e2e mailbox hook, which 404s outside local/test by design.
+Closing it needs a dedicated seeded staging account with credentials in CI
+secrets.
 
 ### F-07 · MEDIUM · Admin/ops · OPEN — **needs an owner decision (costed 2026-08-29)**
 
@@ -233,7 +263,7 @@ begin mailing unverified addresses. _Fixed_: `listOrganizationMemberEmails` now 
 so the change is contained; the guarantee is now a property of the query
 rather than of two distant facts.
 
-### F-10 · LOW · Process/security · OPEN
+### F-10 · LOW · Process/security · **CLOSED 2026-08-29**
 
 **PRs #107–#110 carry no recorded `security` sign-off**, though #109 added
 `GET /api/account/me` returning `isAdmin`. The last recorded security
@@ -243,6 +273,16 @@ self-referential — it tells you whether _you_ are an admin, and the admin
 routes keep their 404 cloak — so I found no vulnerability. The finding is
 that CLAUDE.md's mandated gate for authorization-touching work did not run,
 not that it would have failed.
+
+_Closed_: the `security` agent ran the retro-review on 2026-08-29 over
+`ad3d7e1..99c4e61` and **confirmed** that reading against the code rather than
+the PR descriptions — the endpoint sits behind `requireSession` plus the IP
+rate limit, returns only the caller's own identity, and a `false` answer
+distinguishes an empty allowlist from a non-listed address, so it is not an
+enumeration oracle; the 404 cloak and the per-request admin audit row are
+intact. #107 (secrets fail closed, never logged), #108 (copy/flags only) and
+#110 (no new origins, no inline scripts) also came back clean. No finding
+above INFO in any of the four.
 
 ### F-11 · LOW · Testing · **FIXED 2026-08-29**
 

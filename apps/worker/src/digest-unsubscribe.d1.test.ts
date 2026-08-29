@@ -111,6 +111,12 @@ describe('POST /api/digest/unsubscribe', () => {
     expect(event).toBeDefined();
     expect(event?.actorType).toBe('system');
     expect(event?.beforeSummary).toBe('enabled');
+    // SEC-UNSUB-01: audit_events is append-only, kept 24 months, and survives
+    // org purge and tombstoning — so the recipient address must NOT be here.
+    // email_deliveries (12 months, purged with the org) is the correlatable
+    // copy.
+    expect(event?.afterSummary).not.toContain(email);
+    expect(event?.afterSummary).not.toContain('@');
   });
 
   it('preserves the other digest preferences — it only flips `enabled`', async () => {

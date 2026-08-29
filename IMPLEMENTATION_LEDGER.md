@@ -4781,6 +4781,67 @@ List-Unsubscribe=One-Click`, set per recipient. `DigestSendMessage` gained
 - Gates green: 1055 tests (root 708 +3 skipped, worker 279, db 68), plus the
   new `pnpm verify:build`.
 
+## Security review, its three fixes, and the p95 baseline (2026-08-29)
+
+**Security review (F-10 closed).** The `security` agent ran read-only over
+both the new F-08/F-09 work and the #107–#110 backlog, re-running the gates
+itself. **No CRITICAL or HIGH in either scope.** It confirmed the audit's
+provisional reading of `GET /api/account/me`: session-gated, strictly
+self-referential, and a `false` answer cannot distinguish an empty allowlist
+from a non-listed address, so it is not an enumeration oracle; the 404 cloak
+and per-request admin audit row are intact. #107 (secrets fail closed, never
+logged), #108 (copy/flags only) and #110 (no new origins, no inline scripts)
+were clean.
+
+Three findings fixed the same day:
+
+- **SEC-UNSUB-01 (LOW) — a real error in my own reasoning.** The unsubscribe
+  audit row wrote the recipient address into `afterSummary`, with a comment
+  arguing it was "no new PII" because `email_deliveries` already holds it.
+  That was wrong, and retention is why: `email_deliveries` is age-purged at
+  12 months AND purged when an organization is purged, whereas `audit_events`
+  is an append-only 24-month ledger that deliberately SURVIVES org purge and
+  tombstoning (`tombstoneOrganization`). The address would have become the
+  longest-lived copy in the system and outlived the very erasure tombstoning
+  exists to perform. Address removed; the comment now explains the asymmetry
+  instead of asserting the opposite. Correlation still works while it matters
+  via the `email_deliveries` row plus `occurredAt`.
+- **SEC-UNSUB-02 (INFO→fixed).** CRLF/NUL guard on the Resend `headers`
+  passthrough. Not exploitable today (two constants and a percent-encoded
+  URL), but `headers` is a general seam and a future caller interpolating a
+  name or address would otherwise be trusting someone else's serializer to
+  refuse header splitting. Throws at the boundary that owns the risk; the
+  offending value is never echoed into the message.
+- **A-3 (LOW).** F-09's `email_verified` filter had **zero** test coverage —
+  deleting it would have shipped green, which is the exact failure mode the
+  filter exists to prevent. New `identity.d1.test.ts`, and **mutation-checked**:
+  removing the predicate makes two tests fail, restoring it makes them pass.
+  A test that would pass either way is worth nothing.
+
+Accepted and recorded rather than fixed: unsubscribe tokens are unbounded in
+time and are not re-bound to current membership, so a forwarded digest can
+disable an org's digest later (bounded, audited, reversible in Settings — but
+**per-recipient suppression becomes mandatory the day team invites ship**);
+and `BETTER_AUTH_SECRET` reuse couples session rotation to breaking every
+outstanding unsubscribe link, so a dedicated secret is worth having later.
+
+**F-06 baseline measured (box still unchecked).**
+`scripts/measure-api-latency.mjs` + `docs/performance.md`. Local stack, 40
+iterations/route, all 200: worst p95 is the feed at **29.7 ms**, ~17× inside
+the 500 ms budget.
+Two things worth keeping: the harness aborts on any 4xx/5xx because an error
+path short-circuits before the work the budget is about — and that guard
+immediately caught its own first run reporting 23.9 ms for a feed request
+that had 400'd on a wrong query param and done no work. And the box stays
+UNCHECKED: a local run has no network or edge, uses a seed-sized dataset (the
+two slowest routes are precisely the two whose cost grows with the corpus),
+and the harness cannot reach staging as written because it establishes a
+session through the double-gated e2e mailbox hook, which 404s outside
+local/test by design. Closing it needs a seeded staging account with
+credentials in CI secrets.
+
+Gates green: 1060 tests (root 710 +3 skipped, worker 279, db 71).
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
