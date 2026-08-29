@@ -204,18 +204,26 @@ and live — must be `internal`; see 4b and 4c.
   approval → add `staging.bidmorrow.com` (auto-approved in sandbox).
   Without the default payment link Paddle.js shows "Something went wrong".
   **Done 2026-08-26** (domain approved, payment link set).
+  - ~~**Tax mode → inclusive** on both prices~~ **DONE 2026-08-29 (owner
+    confirmed).** Both sandbox prices set to tax mode "Inclusive" (API name
+    `internal`), matching the 2026-08-26 decision that €29/€49 include VAT.
+    **Not independently verified from the session that recorded this**: no
+    Paddle MCP is connected here and the API key is a GitHub secret that
+    never enters the repo, so this rests on the owner's confirmation. The
+    code side was already correct (`PlanPrice.taxInclusive: true`) and the
+    copy says "incl. VAT" everywhere. **The confirming test is a real
+    sandbox checkout on staging**: open the overlay from Settings and check
+    the total reads €29 with VAT carved out of it, not €29 + VAT added on
+    top. That is the one observation that distinguishes `internal` from
+    `external`, and it is still owed — it was already deferred once (4a/4b),
+    so nothing has yet exercised the inclusive path end to end.
+
   Still open in the sandbox dashboard:
-  - **Tax mode → inclusive** on both prices (owner decision 2026-08-26:
-    €29/€49 include VAT). Catalog → Products → each price → edit → tax
-    mode "Inclusive" (API name `internal`). The MCP could not do it — its
-    API key stopped authenticating after the key rotation; reconnect the
-    `paddle-sandbox` MCP with the new key or do it in the dashboard.
-    Until this is done the overlay adds VAT on top of €29/€49 while the
-    site says "incl. VAT".
   - **Checkout branding** to match the site: Checkout → Checkout settings
     → upload the BidMorrow logo and set the brand colour (the site's teal
     button colour); code already opens the overlay with the light theme.
     Repeat both in the LIVE account under 4c.
+
 - **4c. LIVE account — start immediately, approval takes DAYS** (launch is
   2026-08-31): sign up at https://vendors.paddle.com and complete seller
   verification (individual seller is fine); website approval for
