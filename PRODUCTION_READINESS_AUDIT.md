@@ -13,11 +13,12 @@ is open.
 change), **F-05** (D1 capacity alert), **F-08** (no-login unsubscribe + RFC
 8058 headers), **F-09** (verified-recipient filter), **F-11** (the `_headers`
 check now actually runs in CI). Closed by review: **F-10**. Still open:
-**F-02, F-03, F-04** — all owner-gated on the live Paddle account and the only
-remaining HIGHs; **F-06** (baseline now measured, staging measurement still
-owed — needs a seeded staging account in CI secrets, an owner action);
-**F-07** — **now FIXED**: the owner chose the DLQ-consumer option, so the
-DLQs are consumed and recorded (migration 0012).
+**F-02, F-03** — both owner-gated on the live Paddle account, and the only
+remaining HIGHs; **F-04** — owner-reported done 2026-08-29 but unverified
+here, with the confirming sandbox checkout still owed; **F-06** (baseline now
+measured, staging measurement still owed — needs a seeded staging account in
+CI secrets, an owner action); **F-07** — **now FIXED**: the owner chose the
+DLQ-consumer option, so the DLQs are consumed and recorded (migration 0012).
 
 **Follow-up security review** (2026-08-29, `security` agent, read-only, gates
 re-run by the reviewer) over the F-08/F-09 change and the F-10 backlog: **no
@@ -149,14 +150,24 @@ control here; every other production step queues behind them.
 _Remediation_: owner starts live signup, seller verification and
 `bidmorrow.com` website approval immediately.
 
-### F-04 · MEDIUM · Billing · OPEN (owner)
+### F-04 · MEDIUM · Billing · **OWNER-REPORTED DONE 2026-08-29, unverified here**
 
-**Sandbox Paddle prices are still `tax_mode: external` while staging says
-"incl. VAT".** Blockers 4b. The overlay adds VAT on top of €29/€49, so the
-staging checkout currently contradicts its own page. Not customer-facing
-(sandbox), but it means the inclusive-pricing path has never actually been
-exercised end to end. Remediation: switch both prices to tax mode
-"Inclusive" in the sandbox dashboard, then re-run a sandbox checkout.
+**Sandbox Paddle prices were `tax_mode: external` while staging said
+"incl. VAT".** Blockers 4b. The overlay added VAT on top of €29/€49, so the
+staging checkout contradicted its own page.
+
+_Status_: the owner reports both sandbox prices are now tax mode
+"Inclusive". This could NOT be verified from the auditing session — no
+Paddle MCP is connected and the API key is a GitHub secret that never
+enters the repo — so it is recorded on the owner's word, not on an
+observation. The code side was already correct
+(`PlanPrice.taxInclusive: true`) and the copy already says "incl. VAT".
+
+_Still owed, and it is the half that actually proves it_: a real sandbox
+checkout on staging showing the total as €29 with VAT carved out, not €29
+plus VAT added. That single observation is what distinguishes `internal`
+from `external` at runtime, and the inclusive-pricing path has still never
+been exercised end to end.
 
 ### F-05 · MEDIUM · Observability · **FIXED 2026-08-29**
 
