@@ -22,6 +22,7 @@ export * from './repositories/errors';
 // Global repositories (no organizationId by design; see the header comment
 // in each file): tender corpus, ingestion ops, global feature flags.
 export * from './repositories/tender-corpus';
+export * from './repositories/dead-letters';
 export * from './repositories/ingestion';
 export * from './repositories/ops-global';
 export * from './repositories/retention';

@@ -14,7 +14,7 @@
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
-import { createDb, getDbSizeEstimate } from '@bidmorrow/db';
+import { createDb, getDbSizeEstimate, recordDeadLetter } from '@bidmorrow/db';
 import { robotsTxt } from './robots';
 import { resolveBillingConfig } from './billing';
 import { readPrelaunchState } from './prelaunch';
@@ -374,6 +374,49 @@ async function queue(
   // to construct, so this build applies even to batches with zero digest
   // messages.
   const digestProvider = resolveDigestProvider(env, logger);
+
+  // F-07: dead-letter queues. A message reaching one has already exhausted
+  // its retries on the real queue, so there is nothing left to run — the job
+  // here is to make the failure VISIBLE, which nothing did before: the DLQs
+  // had no consumer at all, so a poison message sat in a queue nobody drains
+  // and nobody reads. Recorded to D1 (migration 0012), which is also what
+  // makes "DLQ depth" a number this app can show without a Cloudflare API
+  // token.
+  //
+  // Persist THEN ack: a failed D1 write throws, so the message is retried
+  // rather than silently dropped. `retryAll()` is deliberate on failure —
+  // acking here would destroy the only record of the failure.
+  if (batch.queue.includes('-dlq-')) {
+    const db = createDb(env.DB);
+    for (const message of batch.messages) {
+      try {
+        await recordDeadLetter(db, {
+          queue: batch.queue,
+          providerMessageId: message.id,
+          bodyJson: JSON.stringify(message.body),
+          attempts: message.attempts,
+          deadLetteredAt: message.timestamp.getTime(),
+        });
+        message.ack();
+        logger.error('queue.dead_letter.recorded', {
+          dlq: batch.queue,
+          message_id: message.id,
+          attempts: message.attempts,
+        });
+      } catch (cause) {
+        // Loud: this is the failure path of the mechanism whose whole purpose
+        // is that failures stop being invisible.
+        logger.error('queue.dead_letter.record_failed', {
+          dlq: batch.queue,
+          message_id: message.id,
+          error: cause instanceof Error ? cause.message : String(cause),
+        });
+        message.retry();
+      }
+    }
+    return;
+  }
+
   for (const message of batch.messages) {
     try {
       switch (message.body.kind) {

@@ -40,6 +40,7 @@ export {
   ingestionErrors,
   ingestionFetchRetries,
   sourceSnapshots,
+  deadLetterMessages,
 } from './ingestion';
 export { tenderMatches, matchComponents, matchRiskFlags } from './matching';
 export {

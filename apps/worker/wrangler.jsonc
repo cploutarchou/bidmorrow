@@ -98,6 +98,27 @@
         "max_retries": 3,
         "dead_letter_queue": "bidmorrow-digest-dlq-local",
       },
+      // F-07: the DLQs are consumed so a dead-lettered message is RECORDED
+      // (migration 0012) instead of sitting in a queue nobody reads. The
+      // handler persists first and acks after, so a D1 failure retries rather
+      // than losing the record. No dead_letter_queue of its own: a DLQ for a
+      // DLQ just moves the invisibility one hop, and after max_retries the
+      // loss is at least visible as queue.dead_letter.record_failed.
+      {
+        "queue": "bidmorrow-ingest-dlq-local",
+        "max_batch_size": 10,
+        "max_retries": 3,
+      },
+      {
+        "queue": "bidmorrow-match-dlq-local",
+        "max_batch_size": 10,
+        "max_retries": 3,
+      },
+      {
+        "queue": "bidmorrow-digest-dlq-local",
+        "max_batch_size": 10,
+        "max_retries": 3,
+      },
     ],
   },
   // Cron triggers (UTC): daily ingestion catch-up, daily retention purge, a
@@ -179,6 +200,27 @@
             "max_retries": 3,
             "dead_letter_queue": "bidmorrow-digest-dlq-staging",
           },
+          // F-07: the DLQs are consumed so a dead-lettered message is RECORDED
+          // (migration 0012) instead of sitting in a queue nobody reads. The
+          // handler persists first and acks after, so a D1 failure retries rather
+          // than losing the record. No dead_letter_queue of its own: a DLQ for a
+          // DLQ just moves the invisibility one hop, and after max_retries the
+          // loss is at least visible as queue.dead_letter.record_failed.
+          {
+            "queue": "bidmorrow-ingest-dlq-staging",
+            "max_batch_size": 10,
+            "max_retries": 3,
+          },
+          {
+            "queue": "bidmorrow-match-dlq-staging",
+            "max_batch_size": 10,
+            "max_retries": 3,
+          },
+          {
+            "queue": "bidmorrow-digest-dlq-staging",
+            "max_batch_size": 10,
+            "max_retries": 3,
+          },
         ],
       },
       "triggers": {
@@ -251,6 +293,27 @@
             "max_batch_size": 10,
             "max_retries": 3,
             "dead_letter_queue": "bidmorrow-digest-dlq-production",
+          },
+          // F-07: the DLQs are consumed so a dead-lettered message is RECORDED
+          // (migration 0012) instead of sitting in a queue nobody reads. The
+          // handler persists first and acks after, so a D1 failure retries rather
+          // than losing the record. No dead_letter_queue of its own: a DLQ for a
+          // DLQ just moves the invisibility one hop, and after max_retries the
+          // loss is at least visible as queue.dead_letter.record_failed.
+          {
+            "queue": "bidmorrow-ingest-dlq-production",
+            "max_batch_size": 10,
+            "max_retries": 3,
+          },
+          {
+            "queue": "bidmorrow-match-dlq-production",
+            "max_batch_size": 10,
+            "max_retries": 3,
+          },
+          {
+            "queue": "bidmorrow-digest-dlq-production",
+            "max_batch_size": 10,
+            "max_retries": 3,
           },
         ],
       },

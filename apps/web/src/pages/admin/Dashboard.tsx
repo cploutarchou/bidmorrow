@@ -112,9 +112,22 @@ export function Dashboard(): ReactElement {
               </p>
             </div>
 
-            <div className="admin-card">
+            <div
+              className={health.dlq.unresolved > 0 ? 'admin-card admin-card--risk' : 'admin-card'}
+            >
               <p className="admin-card__label">Dead-letter queue</p>
-              <p className="admin-card__note">{health.dlq.note}</p>
+              <p className="admin-card__value">{health.dlq.unresolved}</p>
+              <p className="admin-card__note">
+                {health.dlq.unresolved === 0
+                  ? health.dlq.lastDeadLetteredAt === null
+                    ? 'No message has ever dead-lettered.'
+                    : `Nothing outstanding. Last dead-letter ${formatIsoUtc(health.dlq.lastDeadLetteredAt)}.`
+                  : `Unresolved dead-lettered messages, by queue: ${health.dlq.byQueue
+                      .map((entry) => `${entry.queue} ${String(entry.count)}`)
+                      .join(
+                        ', ',
+                      )}. Each exhausted its retries — investigate the cause, then mark it resolved.`}
+              </p>
             </div>
           </div>
 
