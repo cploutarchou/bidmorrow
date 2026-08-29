@@ -179,6 +179,7 @@ skill — never from memory.
   ship the demo + founder posting to it. GDPR/ePrivacy limits codified (no
   scraped bulk cold email; LinkedIn 1:1 as compliant outbound). No paid
   spend committed — all paid channels remain flagged owner decisions.
+- _(Both figures in this entry were later superseded: the cap became 100 and prices became tax-inclusive, both by owner decision 2026-08-26. Kept verbatim as the dated record of what was decided on 2026-08-17.)_
 - 2026-08-17 (~17:10 UTC): **Founding cap DECIDED = 50** (owner picked the
   single number from the 25–50 range; billing agent's non-binding rec had
   been 30). Canonical EUR pricing spec written

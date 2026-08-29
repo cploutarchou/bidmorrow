@@ -5,26 +5,35 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-**Phase 13 — Deployment/Launch: IN PROGRESS, nearly complete.** Phase 12
-is COMPLETE (sign-offs recorded below, merged via PR #12). As of
-2026-08-16 night: staging AND production live on custom domains, all
-owner-side launch items CLOSED (HUMAN_DECISION_BLOCKERS snapshot: "owner
-checklist is now EMPTY"), fixture refresh from real TED notices DONE
-(PR #33), security sign-off RECORDED (see "Phase 13 sign-offs" below),
-production-reviewer reviewed with conditional findings — all doc/test
-fixes applied same night.
+_Rewritten 2026-08-29. The previous text was the 2026-08-16 snapshot and
+had gone stale in three ways that mattered: it called the owner checklist
+empty (ADR-0011 reopened it), it described the website overhaul as a
+not-yet-started hold (it ran, across PRs #67–#110), and it still framed
+Phase 14 as a future step._
 
-**PIPELINE ON HOLD (owner instruction, 2026-08-16 night)**: the
-remaining launch pipeline — first-ingestion verification →
-production-reviewer re-verify → `phase-13-complete` tag → Phase 14
-audit → go-live — is PAUSED until the owner's pre-go-live task is done.
-That task (requested same night): **website/UI overhaul** — plan-first
-(competitor/UX research, IA, design system, milestones), owner approval
-REQUIRED before any implementation. The 05:40 UTC self check-in remains
-armed but downgraded to a SILENT read-only health check of the first
-real staging ingestion (record results here; do NOT advance the phase
-pipeline). Production ingestion stays PAUSED until the owner's explicit
-go-live.
+**Phase 14 — Production-readiness audit: RUN 2026-08-29. Verdict FAIL.**
+Findings in `PRODUCTION_READINESS_AUDIT.md` (3 HIGH, 4 MEDIUM, 4 LOW).
+Nothing in the finding set is a defect in the shipped application code —
+all five quality gates are green on `99c4e61` and every mandatory
+invariant with a test has a passing one. The FAIL is carried by the
+launch path itself: **production runs 41 PRs of stale code with no live
+Paddle billing behind it**, and the owner-side Paddle items (blockers
+4a/4b/4c) are unstarted with the 2026-08-31 launch two days out.
+
+**Phase 13 — Deployment/Launch: substantially complete, never tagged.**
+Staging and production both came up on custom domains 2026-08-16; the
+rollback and D1 Time Travel restore drills were both executed on staging
+the same day (runs 31950784770 / 31951034559, recorded in
+docs/backup-restore.md). The 2026-08-16 hold — a pre-go-live website/UI
+overhaul, owner-approved plan first — was lifted and delivered: the
+redesign, SEO artifacts, code splitting, the Stripe→Paddle migration
+(ADR-0011) and the brand elevation all landed between then and
+2026-08-26. `phase-13-complete` was never tagged and Phase 14's verdict
+is FAIL, so neither tag is claimed here.
+
+**Production ingestion stays PAUSED** (`ingestion_paused: true`, verified
+live 2026-08-29) until the owner's explicit go-live, as does the
+`prelaunch` registration gate (blockers item 11).
 
 **First staging-ingestion health check (2026-08-17 05:40 UTC, silent,
 read-only — via Cloudflare D1 API)**: the 05:00 UTC staging cron ran and
@@ -3453,9 +3462,19 @@ modules; `wrangler deploy --dry-run` for both the top-level env and
 
 ## Human actions required
 
-See HUMAN_DECISION_BLOCKERS.md (8 open items: Cloudflare account/token,
-DNS + email auth records, Resend, Stripe, auth secret, admin allowlist,
-business/legal info, GitHub branch protection). None block Phases 2–7.
+_Corrected 2026-08-29 — the previous text listed the Phase-2-era set and
+said "none block Phases 2–7", which had stopped being the relevant
+question._
+
+HUMAN_DECISION_BLOCKERS.md is authoritative; read its snapshot. On the
+launch path as of 2026-08-29: **item 4c** (LIVE Paddle account — seller
+verification and website approval take days, and nothing about production
+billing can be finished without it), **item 4a/4b** (staging Paddle
+secrets; sandbox prices still `tax_mode: external` while the site says
+"incl. VAT"), **item 1** (`production` environment secrets/vars, now
+Paddle-shaped, plus `ADMIN_EMAILS`), **item 4d** (Stripe decommission),
+and **item 11** (the go-live `prelaunch` flag flip). Items 10 and 13 are
+open but deliberately not launch-blocking.
 
 ## Security findings
 
@@ -3469,7 +3488,31 @@ Baseline model established: ~$6/mo (0–10 customers), ~$26/mo (100),
 
 ## Deployment state
 
-Nothing deployed. No Cloudflare resources exist yet.
+_Superseded repeatedly; kept as one live section rather than a Phase-5-era
+snapshot. Last verified 2026-08-29 against the Cloudflare API and the
+GitHub deploy history._
+
+- **Staging** — CURRENT. `staging.bidmorrow.com`; D1 `bidmorrow-staging`
+  (`cd51fe7b-6b12-48b4-ae94-84205c3de99a`) at migration
+  `0011_paddle_billing.sql` (11 applied). Last deploy 2026-08-26 01:08 UTC
+  (`Deploy staging`, push). Ingestion RUNNING (`ingestion_paused: false`):
+  the 2026-08-29 05:00 UTC run ingested 133/133 notices with 0 errors;
+  459 notices / 753 lots hold. Flags: `ingestion_paused: false`, plus a
+  dead `stripe_tax_enabled: false` row left behind by ADR-0011 (the code
+  no longer reads it — harmless, delete at leisure).
+- **Production** — STALE, 41 PRs behind. Last deploy 2026-08-21 17:06 UTC
+  (`Deploy production` run 32506382104, commit `4448e09` = PR #69), while
+  `main` is `99c4e61` (PR #110). D1 `bidmorrow-production`
+  (`cd5f6ceb-3262-4ba9-a5f4-4c1ed43e27bb`) has only **9** migrations —
+  missing `0010_saved_searches` and `0011_paddle_billing` — and 0 users,
+  0 organizations, 0 notices, 0 ingestion runs. `ingestion_paused: true`
+  (deliberate); no `prelaunch` row, so the env-aware default keeps
+  registrations CLOSED on production. The deployed code is the Stripe-era
+  billing package: a production deploy of `main` therefore requires the
+  live Paddle secrets first (HUMAN_DECISION_BLOCKERS item 4c). See
+  PRODUCTION_READINESS_AUDIT.md F-02.
+- **www redirect** — `apps/www-redirect` deployed 2026-08-22, 301s to the
+  apex (blockers item 12).
 
 ## Reviewer sign-offs per phase
 
@@ -4584,6 +4627,56 @@ fonts and accent; adds depth, imagery and motion within the hard rules
   motion is on during the suite; investigate. (2) `wrangler dev` died once
   mid-suite with an empty miniflare ProxyController error; re-run green.
   (3) Sticky CTA note truncates to "first 100 cu…" at 390px (cosmetic).
+
+## Phase 14 production-readiness audit — verdict FAIL (2026-08-29)
+
+Owner instruction: "run the phase 14 audit and fix the stale docs." Full
+report: `PRODUCTION_READINESS_AUDIT.md` (3 HIGH, 4 MEDIUM, 4 LOW, 1 INFO).
+Procedure of record followed — every gate re-run here, every checklist item
+verified by execution or by reading the implementation, no ledger claim
+taken as evidence.
+
+- **Gates on `99c4e61`**: format/lint/typecheck/build all exit 0; tests
+  1032 passing (root 692 + 3 skipped, worker 272, db 68). The first `pnpm
+test` failed one assertion — the `_headers` verbatim-copy check read a
+  `dist/` left from a pre-Paddle build. Re-run after build: green. Root
+  cause recorded as F-11: that assertion is guarded "when one exists" and
+  CI runs Test before Build on a clean checkout, so it has **never
+  executed in CI** — a build that stopped copying `_headers` would ship
+  green.
+- **Migrations**: full 0001→0011 chain applied to a fresh local D1, all 11
+  ✅. `git log --follow` confirms one commit per migration except 0010 (2 —
+  the documented 2026-08-24 comment fix, made while unapplied everywhere).
+- **The FAIL is not in the application code.** Every mandatory invariant
+  that has a test has a passing one. It is carried by the launch path:
+  production is 41 PRs behind (`4448e09`, 2026-08-21) with Stripe-era
+  billing and only 9 migrations (F-02), and the live Paddle account
+  (F-03) is unstarted two days from launch.
+- **F-01 (HIGH), found and fixed here**: eight owner-facing passages —
+  blockers 4c/item-4 header/snapshot 6/item 7, setup-guide §4b + §4f,
+  pricing.md, agents/billing.md — still instructed `tax_mode: external`
+  after PR #108 made prices VAT-INCLUSIVE. Following them to build the
+  LIVE catalog would have charged €29/€49 + VAT while every page promises
+  all-in. ADR-0011 §2 had been amended; the instructions had not.
+- **New MEDIUMs worth knowing**: no 60%-of-10 GB DB-size alert exists at
+  all (F-05, only a raw byte estimate); API p95 has never been measured
+  (F-06); DLQ depth is a `note`, not a number (F-07); and there is **no
+  unsubscribe that works without login** — the digest links to
+  `/app/settings`, and no `List-Unsubscribe` header exists (F-08).
+- **Correction to the record**: the rollback and D1 Time Travel restore
+  drills WERE executed on staging 2026-08-16 (runs 31950784770 /
+  31951034559, `docs/backup-restore.md:130-135`). Their checklist boxes
+  were simply never ticked; an earlier status in this session read the
+  empty boxes as "not done".
+- **Stale docs fixed** (F-12): the "owner-side launch checklist is now
+  EMPTY" claim, this ledger's Current phase / Deployment state / Human
+  actions required sections. Deliberately NOT changed because they were
+  already right: production-checklist.md's Billing section and ADR-0011 §2.
+  Two dated decision logs (pricing.md row 3, the redesign skill's
+  2026-08-17 entry) were annotated with the supersession, not rewritten.
+
+Not tagged: `phase-13-complete` was never created and Phase 14's verdict is
+FAIL, so no phase tag is claimed.
 
 ## Notes
 

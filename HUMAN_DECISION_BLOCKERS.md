@@ -56,10 +56,13 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
    `staging` GitHub environment (item 4a).
 6. **Legal inputs** (item 7): ~~postal address + privacy email~~ DECIDED
    2026-08-16 (email-only contact, implemented). ~~VAT approach~~
-   RE-DECIDED 2026-08-25 (ADR-0011): Paddle is Merchant of Record and
-   collects VAT itself; prices are **tax-exclusive** (customer pays
-   €29/€49 + VAT). Owner still needs no VAT registration. Terms/privacy
-   copy names Paddle as the seller — owner to review the wording once.
+   RE-DECIDED 2026-08-25 (ADR-0011), AMENDED 2026-08-26: Paddle is
+   Merchant of Record and collects VAT itself; prices are
+   **tax-INCLUSIVE** (`tax_mode: internal`) — the customer pays exactly
+   €29/€49 and Paddle carves their country's VAT out of that amount. The
+   2026-08-25 tax-exclusive ("+ VAT") choice is superseded. Owner still
+   needs no VAT registration. Terms/privacy copy names Paddle as the
+   seller — owner to review the wording once.
 7. ~~**Test-mode Stripe webhook URL update**~~ DONE 2026-08-16 — now
    OBSOLETE: after the Paddle PR merges, **delete** the Stripe test-mode
    webhook endpoint, the Stripe products/prices and the four `STRIPE_*`
@@ -164,7 +167,10 @@ issues invoices — which removes the sole-trader VAT problem that item 7
 had parked. The earlier note here recommending "stay on Stripe as
 Individual" is superseded; the billing package was rewritten for Paddle
 (sandbox now, live later — owner decision the same day). Prices are
-**tax-exclusive**: €29/€49 + VAT.
+**tax-INCLUSIVE** (`tax_mode: internal`, owner decision 2026-08-26
+superseding the 2026-08-25 tax-exclusive choice): the customer pays
+exactly €29/€49, VAT included. Every price created from here on — sandbox
+and live — must be `internal`; see 4b and 4c.
 
 **DONE (the assistant, via the Paddle MCP, sandbox account):**
 
@@ -216,7 +222,9 @@ Individual" is superseded; the billing package was rewritten for Paddle
   `bidmorrow.com` (Paddle reviews for public pricing, terms naming Paddle
   as Merchant of Record, privacy and refund policy — the redesigned pages
   cover this); recreate the two products/prices exactly (EUR, monthly,
-  tax-exclusive); live notification destination for
+  **tax mode "Inclusive"** — API name `internal`, per the 2026-08-26
+  owner decision; creating them `external` would charge €29/€49 + VAT
+  while every page says "incl. VAT"); live notification destination for
   `https://bidmorrow.com/api/webhooks/paddle` with the same event set;
   live client token; default payment link
   `https://bidmorrow.com/app/settings`. Then the `production` GitHub
@@ -260,9 +268,14 @@ expect an address; can be added later with a one-line edit if ever needed.
 ~~⚠️ Consequence: item 2's email-forwarding test is now REQUIRED~~
 **DONE 2026-08-16** (owner confirmed): Cloudflare Email Routing set up —
 support@/privacy@bidmorrow.com route to the owner's Gmail; Cloudflare's
-MX records installed (Resend's send/DKIM records unaffected). **The
+MX records installed (Resend's send/DKIM records unaffected). ~~**The
 owner-side launch checklist is now EMPTY** — every numbered item in the
-snapshot above is closed.
+snapshot above is closed.~~ **NO LONGER TRUE (corrected 2026-08-29):**
+that sentence described the checklist as it stood on 2026-08-16. The
+2026-08-25 move to Paddle (ADR-0011) reopened it — snapshot items 1, 5
+and 7 and item 4's sub-steps 4a/4b/4c/4d are OPEN and on the launch path.
+Read the snapshot at the top of this file, not this line, for current
+owner state.
 
 **VAT — SUPERSEDED 2026-08-25 by ADR-0011 (Paddle as Merchant of
 Record)**. History: on 2026-08-16 the owner decided "no VAT at launch"
@@ -271,10 +284,12 @@ because a Cyprus sole trader with no VAT registration cannot collect it
 Paddle is the seller, computes VAT for the buyer's country at checkout,
 collects and remits it, and issues the invoice — the owner needs no VAT
 registration and no threshold monitoring for subscription revenue.
-Owner decision 2026-08-25: prices are **tax-exclusive** (`tax_mode:
-external`) — customers pay €29/€49 **+ VAT** (EU B2B with a valid VAT ID:
-reverse charge, i.e. €29/€49 flat). Copy on pricing/terms says "+ VAT"
-and names Paddle as Merchant of Record. Owner's own income tax on Paddle
+Owner decision 2026-08-26 (superseding the 2026-08-25 tax-exclusive
+choice): prices are **tax-inclusive** (`tax_mode: internal`) — customers
+pay exactly €29/€49 and Paddle carves out their country's VAT share (an
+EU B2B customer under reverse charge has no VAT share, so BidMorrow nets
+the full amount less Paddle's fee). Copy on pricing/terms says "incl.
+VAT" and names Paddle as Merchant of Record. Owner's own income tax on Paddle
 payouts remains their/their accountant's matter.
 
 ## 8. GitHub settings — PARTIALLY PROVIDED (2026-08-15)

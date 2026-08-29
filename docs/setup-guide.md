@@ -129,9 +129,12 @@ webhook destinations); nothing crosses between them.
 
 ### 4b. Catalog — ALREADY CREATED (2026-08-25, via the Paddle MCP)
 
-Two products with one EUR monthly price each, tax category `saas`,
-**tax-exclusive** (`tax_mode: external` — the customer pays the price +
-VAT):
+Two products with one EUR monthly price each, tax category `saas`.
+They were created `tax_mode: external`; the owner decision of 2026-08-26
+made prices **tax-INCLUSIVE**, so both must be switched to tax mode
+"Inclusive" (`internal`) in the dashboard — until that is done the
+overlay adds VAT on top of €29/€49 while the site says "incl. VAT"
+(blockers item 4b):
 
 | Product            | Product id                       | Price id (monthly, EUR)          | Amount |
 | ------------------ | -------------------------------- | -------------------------------- | ------ |
@@ -178,8 +181,9 @@ webhook registration). Only the secret copy in 4c is left to do.
    approves asynchronously).
 2. **Website approval** for `bidmorrow.com` (manual review: public pricing,
    terms with Paddle named as Merchant of Record, privacy, refund policy).
-3. Recreate the catalog exactly as 4b (EUR, monthly, tax-exclusive) and
-   note the new `pri_…` ids.
+3. Recreate the catalog exactly as 4b (EUR, monthly) but with tax mode
+   **"Inclusive"** (`internal`) from the start — the 2026-08-26 owner
+   decision; €29/€49 is what the customer pays. Note the new `pri_…` ids.
 4. Notification destination → `https://bidmorrow.com/api/webhooks/paddle`,
    same event set; copy its secret.
 5. Client-side token (`live_…`); default payment link

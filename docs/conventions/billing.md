@@ -34,7 +34,9 @@ Rules:
   past_due (7-day grace), paused (not entitled), canceled (terminal).
 - Sandbox credentials only outside production; never mix sandbox/live;
   never invent keys or price ids (see HUMAN_DECISION_BLOCKERS.md item 4).
-- Products: BidMorrow Founding (€29 + VAT, capped via feature flag) and
-  BidMorrow Standard (€49 + VAT), EUR monthly, tax-exclusive. Paddle
-  computes and collects VAT; nothing tax-related is configurable in code.
+- Products: BidMorrow Founding (€29 incl. VAT, capped via feature flag)
+  and BidMorrow Standard (€49 incl. VAT), EUR monthly, tax-INCLUSIVE
+  (`tax_mode: internal`, owner decision 2026-08-26). Paddle computes and
+  collects VAT out of that amount; nothing tax-related is configurable in
+  code.
 - Run quality gates before declaring done.
