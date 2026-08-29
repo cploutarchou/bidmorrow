@@ -188,16 +188,21 @@ and live — must be `internal`; see 4b and 4c.
 
 **OPEN — owner actions (docs/setup-guide.md §4 has the click paths):**
 
-- **4a. Staging secrets/vars** (GitHub → Settings → Environments →
-  `staging`): secrets `PADDLE_API_KEY` (sandbox dashboard → Developer
-  tools → Authentication → new API key, `pdl_sdbx_apikey_…`),
-  `PADDLE_WEBHOOK_SECRET` (Developer tools → Notifications → "BidMorrow
-  staging" → secret key, `pdl_ntfset_…`), `PADDLE_PRICE_FOUNDING_MONTHLY`
-  = `pri_01m0wx38ymack0vxmqvtadddg9`, `PADDLE_PRICE_STANDARD_MONTHLY` =
-  `pri_01m0wx39a5dkx4fpr7pexbwv6b`; **variables** `PADDLE_CLIENT_TOKEN` =
-  `test_71e5894f9d1a1e0d7f52b651ba5`, `PADDLE_ENVIRONMENT` = `sandbox`.
-  Then redeploy staging. Claude never sees the API key or the webhook
-  secret — copy them straight from the dashboard.
+- ~~**4a. Staging secrets/vars**~~ **DONE — confirmed 2026-08-29 from
+  evidence, not from memory.** This item was still written as an open owner
+  action; the 2026-08-26 staging verification (recorded in the ledger)
+  proves it was already done: `/api/public-config` exposed
+  `paddle: {clientToken: test_…, environment: sandbox}`, and a
+  `subscription_creation` scenario from the sandbox simulator was ACCEPTED
+  by signature verification — which is only possible if the staging
+  `PADDLE_WEBHOOK_SECRET` matches the notification destination. The price
+  ids and `PADDLE_API_KEY` are exercised by the same deploy. Kept here for
+  the record: secrets `PADDLE_API_KEY` / `PADDLE_WEBHOOK_SECRET`,
+  `PADDLE_PRICE_FOUNDING_MONTHLY` = `pri_01m0wx38ymack0vxmqvtadddg9`,
+  `PADDLE_PRICE_STANDARD_MONTHLY` = `pri_01m0wx39a5dkx4fpr7pexbwv6b`;
+  variables `PADDLE_CLIENT_TOKEN` = `test_71e5894f9d1a1e0d7f52b651ba5`,
+  `PADDLE_ENVIRONMENT` = `sandbox`. Claude never sees the API key or the
+  webhook secret.
 - **4b. Sandbox dashboard settings** (not settable by API): Checkout →
   Checkout settings → **Default payment link** =
   `https://staging.bidmorrow.com/app/settings`; Checkout → Website
