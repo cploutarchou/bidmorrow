@@ -92,7 +92,9 @@ gates the production launch.
 ## Observability
 
 - [ ] Structured logs with correlation IDs; secret/PII redaction verified
-- [ ] DB-size alert at 60% of 10 GB wired and tested
+- [x] DB-size alert at 60% of 10 GB wired and tested — `evaluateDbSize`
+      (`packages/procurement/src/health.ts`), surfaced on admin health-details
+      and the Dashboard, alerted by the 09:00 UTC watchdog (F-05, 2026-08-29)
 - [ ] Stale-ingestion watchdog cron fires on a simulated stall
 
 ## Security

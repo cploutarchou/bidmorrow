@@ -14,13 +14,15 @@
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
-import { createDb } from '@bidmorrow/db';
+import { createDb, getDbSizeEstimate } from '@bidmorrow/db';
 import { robotsTxt } from './robots';
 import { resolveBillingConfig } from './billing';
 import { readPrelaunchState } from './prelaunch';
 import { createLogger } from '@bidmorrow/observability';
 import {
   checkFetchResilienceAlerts,
+  D1_SIZE_ALERT_FRACTION,
+  evaluateDbSize,
   isIngestionStale,
   lastSuccessfulRunAt,
 } from '@bidmorrow/procurement';
@@ -303,6 +305,28 @@ async function scheduled(
         });
       } else {
         logger.info('ingestion.watchdog.fetch_resilience_ok', {});
+      }
+      // F-05: D1 storage capacity. The number was already on the admin
+      // health page; nothing ever ALERTED on it, so nobody would learn the
+      // database was filling until writes started failing at the 10 GB
+      // ceiling. Logged here so it reaches the same place every other
+      // watchdog signal does. An unmeasured estimate logs its own line —
+      // it must not read as healthy.
+      const dbSize = evaluateDbSize(await getDbSizeEstimate(db));
+      if (!dbSize.measured) {
+        logger.warn('db.size.unmeasured', { limit_bytes: dbSize.limitBytes });
+      } else if (dbSize.alerting) {
+        logger.error('db.size.threshold_exceeded', {
+          approx_bytes: dbSize.approxBytes,
+          limit_bytes: dbSize.limitBytes,
+          used_fraction: dbSize.usedFraction,
+          alert_fraction: D1_SIZE_ALERT_FRACTION,
+        });
+      } else {
+        logger.info('db.size.ok', {
+          approx_bytes: dbSize.approxBytes,
+          used_fraction: dbSize.usedFraction,
+        });
       }
       return;
     }

@@ -4731,6 +4731,56 @@ List-Unsubscribe=One-Click`, set per recipient. `DigestSendMessage` gained
   unsubscribe-without-login, digest idempotency, and the two 2026-08-16
   drills whose evidence the audit surfaced.
 
+## F-05 and F-11 — the D1 capacity alert and a CI check that never ran (2026-08-29)
+
+- **F-05, the DB-size alert.** `D1_MAX_BYTES` (10 GiB, the paid-plan
+  ceiling) + `D1_SIZE_ALERT_FRACTION` (0.6) + `evaluateDbSize()` in
+  `packages/procurement/src/health.ts`, beside the other watchdog
+  thresholds. `/api/admin/health-details` returns the evaluated alert
+  instead of a bare byte count; the Dashboard shows percent-of-ceiling and
+  takes the existing `--risk` card treatment past the threshold; the 09:00
+  UTC watchdog logs `db.size.threshold_exceeded`. That last part is the
+  point — the byte count was ALREADY on the admin page and nothing alerted
+  on it, so nobody would have learned the database was filling until writes
+  started failing. 60% is early on purpose: the mitigation (retention change
+  or the `match_components` JSON fallback) is a schema migration, which
+  needs lead time.
+  Honest handling of the unmeasured case: `getDbSizeEstimate` returns
+  `measured: false` rather than a fabricated number, and `evaluateDbSize`
+  never alerts on that — alerting on every missing measurement trains an
+  operator to ignore the alert. It also never reads as healthy: the watchdog
+  logs `db.size.unmeasured` on its own line and the Dashboard says
+  "Unmeasured". 6 tests, including the boundary (alerts exactly AT 60%, not
+  only past it) and the no-fabricated-fraction rule.
+
+- **F-11, the `_headers` check that never ran.** The assertion is guarded
+  "when one exists" and CI checks out clean and runs Test BEFORE Build — so
+  `dist/` never existed at that point and it silently no-opped on every CI
+  run since it was written. A build that stopped copying `_headers` (no CSP,
+  no HSTS, no `X-Frame-Options` on static assets) would have shipped green.
+  Fixed with `scripts/verify-build-artifacts.mjs` as its own CI step after
+  Build. **Verified by hand that it actually fails**: exit 1 with
+  `dist/_headers` removed, exit 1 with it tampered, exit 0 restored — a new
+  gate that has never been seen to fail is not a gate. The test's comment
+  claiming the build step covered this end-to-end was false and is
+  corrected; its opportunistic assertion stays because it catches a stale
+  local `dist/`, which is exactly how this was found during the audit.
+
+- **F-07 investigated, NOT closed — owner decision, costed.** The three DLQs
+  are declared in `wrangler.jsonc` but **have no consumer**: nothing drains
+  them and nothing reads them, so a dead-lettered message is not just missing
+  from the admin page — nobody ever finds out it happened. Bigger than the
+  checklist item describes. Options recorded in the audit: (1) Cloudflare
+  Queues REST API from the admin route — new account-token secret + outbound
+  dependency; (2) a DLQ consumer recording into D1 — no new secret, makes
+  poison messages visible, costs migration 0012 and three consumer bindings;
+  (3) accept the deviation. Recommended (2) AFTER launch: it is a one-way
+  door two days out with production already two migrations behind. Not
+  waived by the implementer — the box stays unchecked until the owner picks.
+
+- Gates green: 1055 tests (root 708 +3 skipped, worker 279, db 68), plus the
+  new `pnpm verify:build`.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

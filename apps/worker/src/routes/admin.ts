@@ -69,6 +69,7 @@ import { assertNever, organizationId as toOrganizationId } from '@bidmorrow/doma
 import { ENGINE_VERSION, scoreLotForOrg } from '@bidmorrow/matching';
 import { isDigestPaused, previewDigest } from '@bidmorrow/notifications';
 import {
+  evaluateDbSize,
   isIngestionPaused,
   isIngestionStale,
   lastSuccessfulRunAt,
@@ -774,6 +775,8 @@ adminRoutes.get('/health-details', async (c) => {
   // A DLQ's contents are not directly readable from the Worker runtime — a
   // dead-lettered message only shows up as a Cloudflare dashboard / `wrangler
   // queues` metric outside this API. Documented honestly rather than faked.
+  // (F-07 tracks closing this properly; the options and their costs are in
+  // PRODUCTION_READINESS_AUDIT.md.)
   return c.json({
     ingestion: {
       lastSuccessfulRunAt: lastRun,
@@ -790,7 +793,11 @@ adminRoutes.get('/health-details', async (c) => {
       })),
     },
     email: { failures24h: errorCounts.emailFailures24h },
-    db: dbSize,
+    // F-05: the raw estimate plus the evaluated capacity alert. `alerting`
+    // is true only on a real measurement at or above the threshold —
+    // `measured: false` is carried through so the UI can say "Unmeasured"
+    // rather than imply a healthy zero.
+    db: evaluateDbSize(dbSize),
     dlq: {
       note: 'not directly readable from the Worker runtime — see Cloudflare dashboard / wrangler queues list-dlq',
     },

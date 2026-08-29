@@ -147,3 +147,71 @@ export async function checkFetchResilienceAlerts(
     degraded: thresholdOrAbandonment || pendingRetryBacklog || consecutiveFetchFailedRunsAlert,
   };
 }
+
+// ---------------------------------------------------------------------------
+// D1 storage-capacity alert (F-05, PRODUCTION_READINESS_AUDIT.md)
+// ---------------------------------------------------------------------------
+
+/**
+ * D1's hard per-database ceiling on the paid plan
+ * (docs/dependency-versions.md, verified 2026-08-14). Not a soft quota: a
+ * database at this size stops accepting writes.
+ */
+export const D1_MAX_BYTES = 10 * 1024 * 1024 * 1024;
+
+/**
+ * Alert threshold as a fraction of `D1_MAX_BYTES`, per
+ * docs/production-checklist.md ("DB-size alert at 60% of 10 GB"). 60% is
+ * deliberately early: `match_components` is the documented growth driver
+ * (docs/data-model.md, revisit at 50 orgs) and the mitigation — a retention
+ * policy change or the JSON-column fallback — is a schema migration, which
+ * needs lead time, not a same-day scramble at 95%.
+ */
+export const D1_SIZE_ALERT_FRACTION = 0.6;
+
+export interface DbSizeEstimateInput {
+  readonly measured: boolean;
+  readonly approxBytes: number | null;
+}
+
+export interface DbSizeAlert {
+  readonly measured: boolean;
+  readonly approxBytes: number | null;
+  readonly limitBytes: number;
+  /** `approxBytes / limitBytes`, or null when unmeasured. Never guessed. */
+  readonly usedFraction: number | null;
+  /** True ONLY on a real measurement at or above the threshold. */
+  readonly alerting: boolean;
+}
+
+/**
+ * Turns a raw size estimate into an alert decision.
+ *
+ * An UNMEASURED estimate is never `alerting`. That is not "unknown means
+ * fine": `getDbSizeEstimate` returns `measured: false` rather than
+ * fabricating a number, and alerting on the absence of a measurement would
+ * fire constantly on any runtime where the PRAGMA path is unavailable,
+ * training the operator to ignore it. `measured` is carried through
+ * unchanged so the admin surface can show "Unmeasured" — which it does —
+ * and the watchdog logs the unmeasured case separately, so the gap stays
+ * visible instead of reading as healthy.
+ */
+export function evaluateDbSize(estimate: DbSizeEstimateInput): DbSizeAlert {
+  if (!estimate.measured || estimate.approxBytes === null) {
+    return {
+      measured: false,
+      approxBytes: null,
+      limitBytes: D1_MAX_BYTES,
+      usedFraction: null,
+      alerting: false,
+    };
+  }
+  const usedFraction = estimate.approxBytes / D1_MAX_BYTES;
+  return {
+    measured: true,
+    approxBytes: estimate.approxBytes,
+    limitBytes: D1_MAX_BYTES,
+    usedFraction,
+    alerting: usedFraction >= D1_SIZE_ALERT_FRACTION,
+  };
+}
