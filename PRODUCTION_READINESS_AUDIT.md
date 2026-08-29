@@ -13,11 +13,12 @@ is open.
 change), **F-05** (D1 capacity alert), **F-08** (no-login unsubscribe + RFC
 8058 headers), **F-09** (verified-recipient filter), **F-11** (the `_headers`
 check now actually runs in CI). Closed by review: **F-10**. Still open:
-**F-02, F-03, F-04** — all owner-gated on the live Paddle account and the only
-remaining HIGHs; **F-06** (baseline now measured, staging measurement still
-owed — needs a seeded staging account in CI secrets, an owner action);
-**F-07** — **now FIXED**: the owner chose the DLQ-consumer option, so the
-DLQs are consumed and recorded (migration 0012).
+**F-02, F-03** — both owner-gated on the live Paddle account, and the only
+remaining HIGHs; **F-04** — owner-reported done 2026-08-29 but unverified
+here, with the confirming sandbox checkout still owed; **F-06** (baseline now
+measured, staging measurement still owed — needs a seeded staging account in
+CI secrets, an owner action); **F-07** — **now FIXED**: the owner chose the
+DLQ-consumer option, so the DLQs are consumed and recorded (migration 0012).
 
 **Follow-up security review** (2026-08-29, `security` agent, read-only, gates
 re-run by the reviewer) over the F-08/F-09 change and the F-10 backlog: **no
