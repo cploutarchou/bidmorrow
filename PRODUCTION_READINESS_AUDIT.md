@@ -9,6 +9,11 @@ Code session, procedure of record `.claude/skills/production-readiness-audit`
 3 HIGH, 4 MEDIUM, 4 LOW, 1 INFO. Readiness may not be declared while a HIGH
 is open.
 
+**Remediation log** — F-01 and F-12 were fixed in the audit's own change;
+**F-08 and F-09 were fixed 2026-08-29** (no-login unsubscribe + RFC 8058
+headers, and the `emailVerified` recipient filter). Open: F-02, F-03, F-04
+(all owner-gated on the live Paddle account), F-05, F-06, F-07, F-10, F-11.
+
 The failure is **not in the shipped application code**. All five quality
 gates are green on `99c4e61`, the full migration chain applies from empty,
 and every mandatory invariant that has a test has a passing one. What fails
@@ -161,7 +166,7 @@ is still unmet. Remediation: either read depth via the Cloudflare Queues
 API from the admin route, or record an accepted deviation with rationale so
 the box can be struck rather than left silently unchecked.
 
-### F-08 · MEDIUM · Digest/compliance · OPEN
+### F-08 · MEDIUM · Digest/compliance · **FIXED 2026-08-29**
 
 **There is no unsubscribe that works without login.** The digest's only
 opt-out affordance is a "Manage digest preferences" link to
@@ -172,10 +177,15 @@ which requires a session; there is no unsubscribe token route and no
 deliverability failure — Gmail/Yahoo's one-click requirement binds bulk
 senders (~5,000 msg/day) and BidMorrow is far below that — so the cost
 today is the unmet DoD item and the recipient experience, not blocked mail.
-Remediation: a signed unsubscribe-token route plus the `List-Unsubscribe`
-and `List-Unsubscribe-Post` headers.
+_Fixed_: `packages/notifications/src/unsubscribe-token.ts` (HMAC-signed,
+domain-separated, deliberately no expiry — an unsubscribe link must still
+work in a message found months later), `apps/worker/src/routes/digest.ts`
+(`GET` renders a confirmation page and mutates nothing, because mail
+scanners follow links; `POST` performs it, which is also exactly RFC 8058's
+one-click contract), and both headers set per recipient on the digest send.
+7 route tests including a cross-org forgery attempt and idempotency.
 
-### F-09 · LOW · Digest/auth · OPEN (defence in depth)
+### F-09 · LOW · Digest/auth · **FIXED 2026-08-29**
 
 **Digest recipients are not filtered on `emailVerified`.**
 `listOrganizationMemberEmails` selects every member email with no
@@ -184,9 +194,10 @@ runs with `requireEmailVerification: true`
 (`packages/auth/src/index.ts:131`) and there is **no invite flow**, so a
 membership row can only be created by a verified, signed-in user for
 themselves. Adding team invites — a natural next feature — would silently
-begin mailing unverified addresses. Remediation: filter on `emailVerified`
-in the recipient query, so the guarantee is local to the query that needs
-it.
+begin mailing unverified addresses. _Fixed_: `listOrganizationMemberEmails` now filters on
+`users.email_verified`. The function has exactly one caller (the digest),
+so the change is contained; the guarantee is now a property of the query
+rather than of two distant facts.
 
 ### F-10 · LOW · Process/security · OPEN
 
@@ -239,7 +250,7 @@ claim.
 | TED ingestion (6)         | **PASS**                    | idempotency/checkpoint/error-surfacing tests green; live staging evidence: 2026-08-29 run 133/133, 0 errors, checkpoint advancing; `NOTICE_RENDER_PENDING` handled by the retry queue, never silently dropped                                                                                                                       |
 | Matching (6)              | **PASS**                    | named passing tests for determinism, component sum = total, all-UNKNOWN → LOW_FIT without throwing, `COMPONENT_MAX` = 100, evidence capping; `ENGINE_VERSION = '2'` written on every match                                                                                                                                          |
 | Customer product (3)      | **FAIL**                    | pagination and the methodology page verified; **p95 never measured** (F-06)                                                                                                                                                                                                                                                         |
-| Digest (3)                | **FAIL**                    | idempotency is genuinely DB-enforced and tested ("a raw duplicate insert fails"); **no no-login unsubscribe** (F-08)                                                                                                                                                                                                                |
+| Digest (3)                | **PASS** (2026-08-29)       | idempotency is genuinely DB-enforced and tested ("a raw duplicate insert fails"); no-login unsubscribe + RFC 8058 headers shipped, closing F-08                                                                                                                                                                                     |
 | Billing (3)               | **PASS (code)**             | signature verification with no unverified path; `uq_billing_events__provider_event_id`; state re-fetched from Paddle, never trusted from payload; entitlements server-side. Live/sandbox separation cannot be exercised until F-03.                                                                                                 |
 | Admin & ops (3)           | **FAIL**                    | health page, audit events and pause/resume verified; **DLQ depth absent** (F-07)                                                                                                                                                                                                                                                    |
 | Observability (3)         | **FAIL**                    | correlation IDs and pattern-based redaction verified (`/password\|token\|secret\|authorization\|apikey\|api_key\|cookie/i` — covers `PADDLE_*` by construction); watchdog cron wired at 09:00 UTC with `STALE_INGESTION_HOURS = 36`; **no 60% DB-size alert** (F-05)                                                                |

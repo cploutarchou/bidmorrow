@@ -23,6 +23,7 @@ export * from './digest-orchestration';
 export * from './resend';
 export * from './auth-mail';
 export * from './test-mailbox';
+export * from './unsubscribe-token';
 
 export const PACKAGE = '@bidmorrow/notifications';
 

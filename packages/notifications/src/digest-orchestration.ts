@@ -46,6 +46,7 @@ import { renderDigest } from './digest-renderer';
 import type { DigestClassification, DigestCounts, DigestRenderItem } from './digest-renderer';
 import { PermanentEmailError, RetryableEmailError } from './resend';
 import type { DigestEmailProvider } from './resend';
+import { signUnsubscribeToken, unsubscribeUrlFor } from './unsubscribe-token';
 
 const FLAG_DIGEST_PAUSED = 'digest_paused' as const;
 /** Send-hour cutoff, in the org's local time — documented above. */
@@ -251,6 +252,12 @@ export interface GenerateDigestDeps {
   readonly appBaseUrl: string;
   /** Threaded in from the composition root — see module doc. */
   readonly engineVersion: string;
+  /**
+   * Key for the per-recipient unsubscribe token (F-08) — `BETTER_AUTH_SECRET`
+   * from the composition root. See `unsubscribe-token.ts` for why this
+   * secret and what rotating it does.
+   */
+  readonly unsubscribeSecret: string;
 }
 
 /**
@@ -271,7 +278,7 @@ export async function generateDigest(
   organizationId: OrganizationId,
   args: { localDate: string; utcNow: number },
 ): Promise<DigestOutcome> {
-  const { db, logger, provider, appBaseUrl, engineVersion } = deps;
+  const { db, logger, provider, appBaseUrl, engineVersion, unsubscribeSecret } = deps;
 
   if (await isDigestPaused(db, logger)) {
     logger.info('digest.skipped.paused_global', { organization_id: organizationId });
@@ -370,14 +377,20 @@ export async function generateDigest(
     return { status: 'failed', resumed, matchesCount: itemRows.length };
   }
 
-  const rendered = renderDigest({
+  // Rendering moved INSIDE the recipient loop with F-08: the unsubscribe
+  // URL carries a per-recipient signed token, so the body differs per
+  // recipient and a single shared render would put one member's token in
+  // everyone's mail. `renderDigest` is pure string building over at most
+  // DIGEST_MAX_ITEMS items, so per-recipient rendering is cheap; the
+  // rendered content is otherwise identical for every recipient.
+  const renderShared = {
     items: renderItems,
     counts: countsFromItems(itemRows),
     orgName: organization.name,
     digestDate: args.localDate,
     appBaseUrl,
     manageUrl: `${appBaseUrl}/app/settings`,
-  });
+  } as const;
 
   // P8-R-02: email every org member, not just the first. One
   // `email_deliveries` row per recipient (the table's `to_email` column is
@@ -404,12 +417,27 @@ export async function generateDigest(
     if (firstDeliveryId === null) firstDeliveryId = delivery.id;
 
     try {
+      const unsubscribeUrl = unsubscribeUrlFor(
+        appBaseUrl,
+        await signUnsubscribeToken(unsubscribeSecret, { organizationId, email: toEmail }),
+      );
+      const rendered = renderDigest({ ...renderShared, unsubscribeUrl });
       const sendResult = await provider.send({
         to: toEmail,
         kind: 'digest',
         subject: rendered.subject,
         html: rendered.html,
         text: rendered.text,
+        // RFC 8058 one-click unsubscribe. `List-Unsubscribe-Post` must be
+        // exactly this string; the URI must be HTTPS and must identify the
+        // recipient and the list, which the signed token does. Both headers
+        // must be DKIM-signed — Resend signs the headers it sends with the
+        // domain key, so they are covered by the same DKIM signature as the
+        // rest of the message.
+        headers: {
+          'List-Unsubscribe': `<${unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
       });
       await updateEmailDeliveryStatus(db, organizationId, {
         emailDeliveryId: delivery.id,
@@ -525,6 +553,10 @@ export async function previewDigest(
     digestDate: args.localDate,
     appBaseUrl,
     manageUrl: `${appBaseUrl}/app/settings`,
+    // Preview renders for an operator, not for a recipient: there is no
+    // address to bind a token to, so the unsubscribe block is omitted
+    // rather than shown with a link that would not work.
+    unsubscribeUrl: null,
   });
   return { kind: 'rendered', rendered };
 }

@@ -45,6 +45,7 @@ import {
 import { accountRoutes } from './routes/account';
 import { adminRoutes } from './routes/admin';
 import { billingRoutes } from './routes/billing';
+import { digestRoutes } from './routes/digest';
 import { feedRoutes } from './routes/feed';
 import { orgRoutes } from './routes/org';
 import { tendersRoutes } from './routes/tenders';
@@ -221,6 +222,10 @@ app.route('/api/account', accountRoutes);
 // deliberately unauthenticated-by-session route — see routes/webhooks.ts).
 app.route('/api/billing', billingRoutes);
 app.route('/api/webhooks', webhookRoutes);
+// Digest unsubscribe: the other deliberately session-less route. Mounted
+// alongside the webhook for the same reason — its authorization is a signed
+// token, not a cookie (routes/digest.ts).
+app.route('/api/digest', digestRoutes);
 // Phase 12 stage A: E2E test-only hooks, double-gated to 404 everywhere
 // except a local/test env with E2E_TEST_HOOKS=true — see routes/test-hooks.ts.
 app.route('/api/test', testHookRoutes);

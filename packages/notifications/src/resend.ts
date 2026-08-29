@@ -37,6 +37,15 @@ export interface DigestSendMessage {
   readonly subject: string;
   readonly html: string;
   readonly text: string;
+  /**
+   * Extra MIME headers, passed straight to Resend's documented `headers`
+   * field (an object of header name -> value; verified against Resend's
+   * custom-headers documentation 2026-08-29 — see
+   * docs/dependency-versions.md). Used for RFC 8058 one-click unsubscribe
+   * (`List-Unsubscribe` + `List-Unsubscribe-Post`); omitted entirely when
+   * empty so the request body is unchanged for callers that set none.
+   */
+  readonly headers?: Readonly<Record<string, string>>;
 }
 
 export interface DigestSendResult {
@@ -122,6 +131,9 @@ export function createResendEmailProvider(
             subject: message.subject,
             html: message.html,
             text: message.text,
+            ...(message.headers !== undefined && Object.keys(message.headers).length > 0
+              ? { headers: message.headers }
+              : {}),
           }),
         });
       } catch (cause) {

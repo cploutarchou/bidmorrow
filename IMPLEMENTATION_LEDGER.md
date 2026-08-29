@@ -4678,6 +4678,59 @@ test` failed one assertion — the `_headers` verbatim-copy check read a
 Not tagged: `phase-13-complete` was never created and Phase 14's verdict is
 FAIL, so no phase tag is claimed.
 
+## F-08 / F-09 — no-login unsubscribe and the verified-recipient filter (2026-08-29)
+
+Owner instruction: "start everything please" — the audit findings that are
+not owner-gated, taken one coherent unit at a time. This is the first.
+
+- **F-08, no-login unsubscribe.** `packages/notifications/unsubscribe-token.ts`
+  mints `base64url(payload).hex(HMAC-SHA256)` keyed with `BETTER_AUTH_SECRET`
+  under an explicit `bidmorrow-unsub:v1:` purpose prefix (same
+  domain-separation reasoning as billing's `provenance.ts`, so a token from
+  one HMAC surface can never be replayed against the other). Stateless: no
+  table, no cleanup job. **Deliberately no expiry** — an unsubscribe link
+  has to still work in a message someone finds months later, and the
+  capability it grants is only ever "turn a digest OFF". Rotating
+  `BETTER_AUTH_SECRET` is the revocation.
+- **GET confirms, POST acts.** `apps/worker/src/routes/digest.ts` — the
+  route is unauthenticated by design (the token IS the authorization),
+  rate-limited before any HMAC work like the webhook route. GET renders a
+  confirmation page and mutates nothing, because mail scanners, link
+  previews and corporate security gateways follow links eagerly and a
+  mutating GET would silently kill digests nobody asked to stop. That split
+  is also exactly RFC 8058's contract, so the same endpoint serves the human
+  and the provider's one-click button.
+- **Headers.** `List-Unsubscribe: <url>` + `List-Unsubscribe-Post:
+List-Unsubscribe=One-Click`, set per recipient. `DigestSendMessage` gained
+  an optional `headers` passthrough to Resend's documented `headers` field.
+  Rendering MOVED INSIDE the recipient loop: the token is per recipient, so
+  one shared render would have put one member's token in everyone's mail.
+  `renderDigest` is pure string building over ≤10 items, so this is cheap.
+- **Org-scoped, and the copy says so.** `digest_preferences` has one row per
+  organization with no per-member column, so unsubscribing turns the digest
+  off for the workspace. Invisible today (no invite flow ⇒ one member per
+  org) but stated plainly on both pages rather than papered over. If invites
+  ever land, per-recipient suppression becomes a real requirement.
+- **F-09.** `listOrganizationMemberEmails` now filters on
+  `users.email_verified`. It has exactly one caller (the digest), so the
+  change is contained. Unverified addresses were already unreachable — via
+  `requireEmailVerification: true` plus the absence of invites — but that
+  made the guarantee a property of two distant facts instead of the query.
+- **Verification**: all gates green. 1049 tests (root 702 +3 skipped, worker
+  279, db 68) — 7 new route tests (GET does not mutate, cross-org forgery
+  refused with the victim's digest still on, idempotent double-POST writing
+  exactly one audit event, preferences preserved, missing-prefs 200) and 12
+  new token tests including validly-signed-but-malformed payloads, signed
+  with the real key so field validation is genuinely what rejects them.
+- **Resend `headers` verified** and recorded in dependency-versions.md —
+  with the caveat stated in the doc that `resend.com` is proxy-blocked here,
+  so it was confirmed from Resend's documentation pages via search rather
+  than a direct fetch of the API reference. To re-confirm on the first real
+  staging send that both headers arrive and are DKIM-covered.
+- Checklist boxes now genuinely evidenced: email-verification-before-digest,
+  unsubscribe-without-login, digest idempotency, and the two 2026-08-16
+  drills whose evidence the audit surfaced.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

@@ -276,9 +276,38 @@ budget now tracks. (An earlier audit note cited "181 KB shipped" — that
 figure matches no current on-disk measurement and is superseded by the
 table above.)
 
+## Resend custom headers — RFC 8058 unsubscribe (verified 2026-08-29)
+
+`POST https://api.resend.com/emails` accepts a **`headers`** field: an
+object of header name -> string value, added to the outgoing message.
+Used by the digest send path to set `List-Unsubscribe` and
+`List-Unsubscribe-Post` (F-08).
+
+**Verification caveat, stated plainly**: `resend.com` is blocked by this
+sandbox's egress proxy, so the API reference could not be fetched
+directly. The field and its object shape were confirmed from Resend's own
+documentation pages surfaced through web search — "Custom Headers"
+(`resend.com/docs/dashboard/emails/custom-headers`) and the "Custom Email
+Headers" changelog — which show the documented
+`headers: { 'X-Entity-Ref-ID': 'xxx_xxxx' }` example. Re-verify against
+the API reference directly the first time this runs from an unblocked
+network, and confirm on the first real staging send that both headers
+appear in the received message's source.
+
+RFC 8058 requirements this satisfies (verified against the RFC Editor
+record for RFC 8058, 2026-08-29): at least one HTTPS URI in
+`List-Unsubscribe`; `List-Unsubscribe-Post` exactly
+`List-Unsubscribe=One-Click`; the URI identifies the recipient and the
+list; a POST to it unsubscribes without further confirmation. Both headers
+must be covered by the message's DKIM signature — Resend signs the headers
+it sends with the domain key, which is the assumption to confirm on that
+first staging send.
+
 ## Unverified / to re-check when network allows
 
 - Resend pricing tiers (free 3k/mo, $20/50k figures from secondary sources).
+- Resend's `headers` field: confirmed from documentation pages via search,
+  not from a direct fetch of the API reference (see the section above).
 
 ## TED notice-XML download route (2026-08-18)
 

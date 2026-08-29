@@ -24,7 +24,9 @@ gates the production launch.
 
 ## Auth & tenancy
 
-- [ ] Email verification enforced before digest sending
+- [x] Email verification enforced before digest sending — `listOrganizationMemberEmails`
+      filters on `users.email_verified` (F-09, 2026-08-29); Better Auth also
+      runs `requireEmailVerification: true`
 - [ ] Password reset with anti-enumeration verified by tests
 - [ ] Org context derived from session membership only; grep-audit confirms
       every org-scoped repository function requires `organizationId`
@@ -63,8 +65,11 @@ gates the production launch.
 
 ## Digest
 
-- [ ] DB-enforced idempotency: unique (org, digest_date) proven by test
-- [ ] Only-when-meaningful sending verified; unsubscribe works without login
+- [x] DB-enforced idempotency: unique (org, digest_date) proven by test —
+      `engagement.d1.test.ts` asserts a raw duplicate insert fails at the DB
+- [x] Only-when-meaningful sending verified; unsubscribe works without login —
+      signed-token route, `GET` confirms / `POST` acts, `List-Unsubscribe` +
+      `List-Unsubscribe-Post` per RFC 8058 (F-08, 2026-08-29)
 - [ ] Delivery tracked in `email_deliveries` with bounded retries
 
 ## Billing
@@ -112,9 +117,10 @@ gates the production launch.
       reviewers need GitHub Enterprise on private repos — gate is
       protected-branches-only + typed `confirm` input validated in-job +
       no-agent-dispatch convention (threat-model §5 residual)
-- [ ] **D1 restore test performed on staging and documented**
-      (docs/backup-restore.md drill — mandatory)
-- [ ] Rollback drill performed (`wrangler rollback` on staging)
+- [x] **D1 restore test performed on staging and documented**
+      (docs/backup-restore.md drill — mandatory) — run 31951034559, 2026-08-16
+- [x] Rollback drill performed (`wrangler rollback` on staging) —
+      run 31950784770, 2026-08-16
 - [ ] Custom domain, Paddle live notification destination + website approval + default payment link, Resend SPF/DKIM/DMARC verified
 
 ## Cost
