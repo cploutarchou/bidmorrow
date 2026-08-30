@@ -161,6 +161,12 @@ _Remediation_: owner starts live signup, seller verification and
 
 ### F-04 · MEDIUM · Billing · **OWNER-REPORTED DONE 2026-08-29, unverified here**
 
+_Update 2026-08-30_: verified by API through the reconnected sandbox MCP —
+both sandbox prices are `tax_mode: internal`; live prices likewise, with
+`transactions.preview` returning €29.00 / €49.00 totals in 8 countries.
+Still owed: one real inclusive checkout on staging (the only completed
+sandbox transaction, €58.31, predates the switch).
+
 **Sandbox Paddle prices were `tax_mode: external` while staging said
 "incl. VAT".** Blockers 4b. The overlay added VAT on top of €29/€49, so the
 staging checkout contradicted its own page.
