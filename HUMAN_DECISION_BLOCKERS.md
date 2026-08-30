@@ -8,6 +8,14 @@ Status legend: `OPEN` (needs human), `PROVIDED` (done), `DEFERRED` (not needed y
 
 ---
 
+## 🚀 LAUNCHED 2026-08-30 (owner instruction; a day ahead of the 08-31 date)
+
+`prelaunch=false`, `ingestion_paused=false`, `founding_plan_open=true` in
+production D1; live Paddle config deployed; registrations + checkout open.
+Still owed after launch: the live €0 checkout test + lifecycle (owner
+runs the checkout, Claude verifies), archive `BMTEST100`, F-06 staging
+credentials in CI, sandbox branding (4b). Everything below is history.
+
 ## OPEN ITEMS SNAPSHOT — 2026-08-16 (production launch checklist)
 
 Everything below is detailed in the numbered items further down; this is
