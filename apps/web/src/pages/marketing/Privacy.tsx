@@ -10,13 +10,7 @@ export function Privacy(): ReactElement {
       <p className="mkt-eyebrow">Privacy</p>
       <h1>Privacy</h1>
 
-      <div className="mkt-panel glass">
-        <p>
-          <strong>Final legal text pending.</strong> This page is an honest summary of our current
-          practices, not a substitute for a lawyer-reviewed privacy policy. We will replace this
-          page with full legal text before general availability.
-        </p>
-      </div>
+      <p className="mkt-muted">Last updated 30 August 2026.</p>
 
       <div className="mkt-prose">
         <h2>What we collect</h2>
