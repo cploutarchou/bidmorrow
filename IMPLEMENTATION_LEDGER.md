@@ -4890,6 +4890,44 @@ already, so its next deploy applies 0010, 0011 and 0012 together.
 Gates green: 1071 tests (root 710 +3 skipped, worker 279, db 79), plus
 `pnpm verify:build`.
 
+## F-03 live Paddle account configured; F-02 unblocked to two secrets; 4d done (2026-08-30)
+
+Owner connected the `paddle-live` and `paddle-sandbox` MCPs and asked for
+F-03 first (the only item with an external clock, launch 2026-08-31).
+
+- **Live account state on arrival**: reachable, zero products, zero
+  notification destinations, zero checkout domains. The **sandbox MCP key is
+  rejected** ("You aren't permitted") — rotated after 2026-08-25 — so the
+  sandbox tax mode still cannot be checked by API; recorded in blockers 4b.
+- **Created in the live account** (one atomic execute): products
+  `pro_01m19e8qdsyrezm8z9zf9bazc3` (Founding) /
+  `pro_01m19e8qk2cffzy8dp0m99b8tz` (Standard); prices
+  `pri_01m19e8qpvnd6kttmjr2dndpkd` (€29) / `pri_01m19e8qv0810gaeg1z2s27cv8`
+  (€49), EUR monthly, **`tax_mode: internal`**, quantity 1–1; destination
+  `ntfset_01m19e8r12sx7j9m31s4ef4j56` → `https://bidmorrow.com/api/webhooks/paddle`,
+  the eight `subscription.*` events the handler processes, `traffic_source: all`;
+  client token `ctkn_01m19e8r53epwzj5048b14m92b`. The destination secret was
+  returned by the API and deliberately NOT copied anywhere — the owner takes
+  it from the dashboard, keeping the "Claude never sees the webhook secret"
+  convention intact.
+- **Inclusive tax proven at API level**: `transactions.preview` on the live
+  €29 price with a DE address returns subtotal 2437 + tax 463 = total 2900
+  (19 %); CY on the €49 price 4118 + 782 = 4900. This is the first evidence
+  from a Paddle account (not from copy or code) that €29 is what the customer
+  pays. The staging overlay check (F-04) is still the end-to-end
+  confirmation because the SANDBOX prices are the ones nobody has read back.
+- **`production` GitHub environment** (via `gh`): secrets
+  `PADDLE_PRICE_FOUNDING_MONTHLY` / `PADDLE_PRICE_STANDARD_MONTHLY`, variables
+  `PADDLE_CLIENT_TOKEN=live_…` / `PADDLE_ENVIRONMENT=production`. `ADMIN_EMAILS`
+  was already set there (the audit's F-03 evidence line was stale). Remaining
+  before F-02 can run: live `PADDLE_API_KEY`, live `PADDLE_WEBHOOK_SECRET`.
+- **Website approval has no write API** (`checkoutDomains` is list/delete
+  only) — dashboard step, listed with seller verification, default payment
+  link and branding as the owner's remaining 4c items.
+- **4d**: the four `STRIPE_*` secrets deleted from both environments after
+  confirming the only code mention is a logger redaction test's sample key
+  name. Stripe dashboard clean-up stays with the owner.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

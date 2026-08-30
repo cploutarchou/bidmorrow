@@ -176,6 +176,17 @@ webhook registration). Only the secret copy in 4c is left to do.
 
 ### 4f. Live (before the first real charge — allow DAYS for approval)
 
+**Status 2026-08-30:** steps 3, 4 and 5 (token) and 6 (all but two secrets)
+are DONE via the `paddle-live` MCP — products
+`pro_01m19e8qdsyrezm8z9zf9bazc3` / `pro_01m19e8qk2cffzy8dp0m99b8tz`, prices
+`pri_01m19e8qpvnd6kttmjr2dndpkd` (€29, inclusive) /
+`pri_01m19e8qv0810gaeg1z2s27cv8` (€49, inclusive), destination
+`ntfset_01m19e8r12sx7j9m31s4ef4j56`, client token
+`ctkn_01m19e8r53epwzj5048b14m92b` = `live_0437a850a828f5dc3b74fcb3603`.
+Owner still owes: 1 (seller verification), 2 (website approval), the default
+payment link + branding in 5, and `PADDLE_API_KEY` + `PADDLE_WEBHOOK_SECRET`
+in 6.
+
 1. https://vendors.paddle.com → sign up for a LIVE account and complete
    Paddle's seller verification (identity/business review — Paddle
    approves asynchronously).

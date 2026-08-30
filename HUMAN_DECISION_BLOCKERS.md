@@ -21,7 +21,10 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
    production `RESEND_API_KEY` (item 3.2). Variables: `ADMIN_EMAILS`;
    `EMAIL_FROM` after item 2.3; `PADDLE_CLIENT_TOKEN` (`live_…`) +
    `PADDLE_ENVIRONMENT=production` (item 4).
-   (`BETTER_AUTH_SECRET` already set ✓.)
+   (`BETTER_AUTH_SECRET` already set ✓.) **STATUS 2026-08-30** (from `gh
+   secret/variable list -e production`): everything is set EXCEPT the live
+   `PADDLE_API_KEY` and `PADDLE_WEBHOOK_SECRET` — those two are the last
+   owner inputs before the production deploy (item 4c).
 2. **Production deploy gating — RESOLVED 2026-08-16 (with a plan-limit
    discovery)**: the owner HAS GitHub Pro, which enforces the `main`
    branch **ruleset** (PR + green `checks`/`secret-scan`, no force-push)
@@ -52,6 +55,9 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
    destination for `https://bidmorrow.com/api/webhooks/paddle` (can be
    done BEFORE the first deploy — the URL is fixed), live client token,
    default payment link. **Paddle's approval takes days — start now.**
+   **2026-08-30: live catalog, destination and client token CREATED and
+   wired into `production` (item 4c); remaining = seller verification,
+   website approval, default payment link, API key + webhook secret.**
    Plus, for staging: copy the sandbox API key + webhook secret into the
    `staging` GitHub environment (item 4a).
 6. **Legal inputs** (item 7): ~~postal address + privacy email~~ DECIDED
@@ -223,14 +229,47 @@ and live — must be `internal`; see 4b and 4c.
     `external`, and it is still owed — it was already deferred once (4a/4b),
     so nothing has yet exercised the inclusive path end to end.
 
+  **2026-08-30: the `paddle-sandbox` MCP key is rejected by Paddle ("You
+  aren't permitted to perform this request") — the sandbox API key was
+  rotated after 2026-08-25 and the MCP still holds the old one. Re-issue a
+  sandbox key with read scope for the MCP if API-side sandbox verification
+  is wanted; the tax mode still rests on the owner's confirmation.**
+
   Still open in the sandbox dashboard:
   - **Checkout branding** to match the site: Checkout → Checkout settings
     → upload the BidMorrow logo and set the brand colour (the site's teal
     button colour); code already opens the overlay with the light theme.
     Repeat both in the LIVE account under 4c.
 
-- **4c. LIVE account — start immediately, approval takes DAYS** (launch is
-  2026-08-31): sign up at https://vendors.paddle.com and complete seller
+- **4c. LIVE account — CATALOG + DESTINATION + TOKEN DONE 2026-08-30 (Claude,
+  via the `paddle-live` MCP); seller/website approval + two secrets still
+  OWNER.** Created in the live account: products
+  `pro_01m19e8qdsyrezm8z9zf9bazc3` (Founding) /
+  `pro_01m19e8qk2cffzy8dp0m99b8tz` (Standard), tax category `saas`; prices
+  `pri_01m19e8qpvnd6kttmjr2dndpkd` (€29/month) /
+  `pri_01m19e8qv0810gaeg1z2s27cv8` (€49/month), EUR, **`tax_mode:
+  internal`**, quantity locked to 1; notification destination
+  `ntfset_01m19e8r12sx7j9m31s4ef4j56` →
+  `https://bidmorrow.com/api/webhooks/paddle`, the eight `subscription.*`
+  events, `traffic_source: all`; client-side token
+  `ctkn_01m19e8r53epwzj5048b14m92b` = `live_0437a850a828f5dc3b74fcb3603`
+  (public by design). **Inclusive tax verified by API** (`transactions.preview`
+  on the live prices): DE → subtotal €24.37 + VAT €4.63 = **€29.00**; CY →
+  €41.18 + €7.82 = **€49.00**. `production` GitHub environment set the same
+  day: secrets `PADDLE_PRICE_FOUNDING_MONTHLY` / `PADDLE_PRICE_STANDARD_MONTHLY`
+  (the ids above), variables `PADDLE_CLIENT_TOKEN` = `live_…` above,
+  `PADDLE_ENVIRONMENT` = `production`; `ADMIN_EMAILS` was already there.
+  **STILL OWNER (dashboard-only, no API):** (1) seller verification —
+  asynchronous, Paddle approves in days; (2) Checkout → Website approval →
+  submit `bidmorrow.com` (the `checkout-domains` API is read-only — the
+  live list is currently empty); (3) Checkout settings → Default payment
+  link `https://bidmorrow.com/app/settings` + logo/brand colour; (4)
+  Developer tools → Authentication → new API key → `production` secret
+  `PADDLE_API_KEY`; (5) Developer tools → Notifications → "BidMorrow
+  production" destination → copy its secret → `production` secret
+  `PADDLE_WEBHOOK_SECRET`. Claude never sees (4) or (5). Until (1)+(2) are
+  approved, live checkouts fail even with everything else in place.
+  Original instructions kept below for reference: sign up at https://vendors.paddle.com and complete seller
   verification (individual seller is fine); website approval for
   `bidmorrow.com` (Paddle reviews for public pricing, terms naming Paddle
   as Merchant of Record, privacy and refund policy — the redesigned pages
@@ -245,11 +284,13 @@ and live — must be `internal`; see 4b and 4c.
   `live_…`, `PADDLE_ENVIRONMENT` = `production`. Sandbox and live are
   never mixed. Claude can create the live catalog/destination through the
   `paddle-live` MCP once the owner authorises it with write scope.
-- **4d. Decommission Stripe** once the Paddle PR is merged: delete the
-  test-mode webhook endpoint and products in the Stripe dashboard, revoke
-  the test key, and remove `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
-  `STRIPE_PRICE_FOUNDING_MONTHLY`, `STRIPE_PRICE_STANDARD_MONTHLY` from
-  both GitHub environments. Nothing in code reads them any more.
+- **4d. Decommission Stripe** — ~~GitHub secrets~~ **DONE 2026-08-30**:
+  `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_FOUNDING_MONTHLY`,
+  `STRIPE_PRICE_STANDARD_MONTHLY` deleted from BOTH `staging` and
+  `production` (verified: `gh secret list` shows none; the only code
+  mention is a logger redaction test using the name as a sample). STILL
+  OWNER: in the Stripe dashboard delete the test-mode webhook endpoint and
+  products and revoke the test key.
 
 ## 5. Auth secret — PROVIDED (2026-08-15)
 
