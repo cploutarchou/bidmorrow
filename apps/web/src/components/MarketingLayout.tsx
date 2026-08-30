@@ -230,6 +230,9 @@ export function MarketingLayout({
                 <Link to="/terms">Terms</Link>
               </li>
               <li>
+                <Link to="/refunds">Refunds</Link>
+              </li>
+              <li>
                 <Link to="/contact">Contact</Link>
               </li>
             </ul>

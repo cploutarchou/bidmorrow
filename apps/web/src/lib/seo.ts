@@ -109,6 +109,12 @@ export const MARKETING_META = {
       'BidMorrow terms summary: decision support only, scoped TED coverage, monthly billing via Paddle (Merchant of Record), cancel any time.',
     canonical: `${SITE_ORIGIN}/terms`,
   },
+  refunds: {
+    title: 'Refund policy — BidMorrow',
+    description:
+      '14-day money-back on your first payment, renewals non-refundable, billing errors always refunded. Refunds issued by Paddle, our Merchant of Record.',
+    canonical: `${SITE_ORIGIN}/refunds`,
+  },
 } as const satisfies Record<string, PageMetadata>;
 
 /** Every marketing URL in the sitemap, in sitemap order. */
@@ -123,4 +129,5 @@ export const SITEMAP_PATHS = [
   '/contact',
   '/privacy',
   '/terms',
+  '/refunds',
 ] as const;

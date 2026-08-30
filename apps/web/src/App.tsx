@@ -30,6 +30,7 @@ const Pricing = lazyPage(() => import('./pages/marketing/Pricing'), 'Pricing');
 const Pilot = lazyPage(() => import('./pages/marketing/Pilot'), 'Pilot');
 const Privacy = lazyPage(() => import('./pages/marketing/Privacy'), 'Privacy');
 const Terms = lazyPage(() => import('./pages/marketing/Terms'), 'Terms');
+const Refunds = lazyPage(() => import('./pages/marketing/Refunds'), 'Refunds');
 const Contact = lazyPage(() => import('./pages/marketing/Contact'), 'Contact');
 
 const Login = lazyPage(() => import('./pages/auth/Login'), 'Login');
@@ -184,6 +185,16 @@ function AppRoutes(): ReactElement {
             <MarketingLayout>
               <Lazy>
                 <Terms />
+              </Lazy>
+            </MarketingLayout>
+          }
+        />
+        <Route
+          path="/refunds"
+          element={
+            <MarketingLayout>
+              <Lazy>
+                <Refunds />
               </Lazy>
             </MarketingLayout>
           }
