@@ -100,7 +100,7 @@ export const MARKETING_META = {
   privacy: {
     title: 'Privacy — BidMorrow',
     description:
-      "What BidMorrow collects and what it deliberately doesn't: no third-party analytics, no session replay, no data sales. Full legal text pending.",
+      "What BidMorrow collects and what it deliberately doesn't: no third-party analytics, no session replay, no data sales.",
     canonical: `${SITE_ORIGIN}/privacy`,
   },
   terms: {

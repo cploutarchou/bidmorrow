@@ -12,13 +12,7 @@ export function Terms(): ReactElement {
       <p className="mkt-eyebrow">Terms</p>
       <h1>Terms</h1>
 
-      <div className="mkt-panel glass">
-        <p>
-          <strong>Final legal text pending.</strong> This page is an honest summary of the terms we
-          intend to operate under, not a substitute for lawyer-reviewed terms of service. We will
-          replace this page with full legal text before general availability.
-        </p>
-      </div>
+      <p className="mkt-muted">Last updated 30 August 2026.</p>
 
       <div className="mkt-prose">
         <h2>Decision-support only</h2>
