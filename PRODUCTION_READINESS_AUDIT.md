@@ -159,7 +159,7 @@ control here; every other production step queues behind them.
 _Remediation_: owner starts live signup, seller verification and
 `bidmorrow.com` website approval immediately.
 
-### F-04 · MEDIUM · Billing · **OWNER-REPORTED DONE 2026-08-29, unverified here**
+### F-04 · MEDIUM · Billing · **CLOSED 2026-08-30** — live end-to-end checkout + full lifecycle verified against Paddle live and production D1 (ledger entry "Live Paddle end-to-end test")
 
 _Update 2026-08-30_: verified by API through the reconnected sandbox MCP —
 both sandbox prices are `tax_mode: internal`; live prices likewise, with
