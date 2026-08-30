@@ -245,8 +245,15 @@ describe('GET /api/billing/status', () => {
       description: 'test: open founding plan',
     });
     const open = await fetchApi('/api/billing/status', { headers: { cookie } });
-    const openBody = (await open.json()) as { foundingAvailable: boolean };
+    const openBody = (await open.json()) as {
+      foundingAvailable: boolean;
+      foundingRemaining: number;
+      foundingCap: number;
+    };
     expect(openBody.foundingAvailable).toBe(true);
+    expect(openBody.foundingCap).toBe(100);
+    expect(openBody.foundingRemaining).toBeGreaterThan(0);
+    expect(openBody.foundingRemaining).toBeLessThanOrEqual(100);
 
     await setFeatureFlag(db, {
       key: 'founding_cap',
@@ -254,8 +261,12 @@ describe('GET /api/billing/status', () => {
       description: 'test: close founding via zero cap',
     });
     const capped = await fetchApi('/api/billing/status', { headers: { cookie } });
-    const cappedBody = (await capped.json()) as { foundingAvailable: boolean };
+    const cappedBody = (await capped.json()) as {
+      foundingAvailable: boolean;
+      foundingRemaining: number;
+    };
     expect(cappedBody.foundingAvailable).toBe(false);
+    expect(cappedBody.foundingRemaining).toBe(0);
 
     expect(await isFoundingPlanAvailable(db)).toBe(false);
   });
