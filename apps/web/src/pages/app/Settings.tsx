@@ -729,25 +729,36 @@ export function Settings(): ReactElement {
                       are ready — nothing to do until then.
                     </p>
                   ) : (
+                    /* The first `foundingCap` customers are offered the €29
+                       founding price automatically — one button, no choice to
+                       get wrong. Standard (€49) appears only once the founding
+                       spots are gone. Both are server-enforced (checkout.ts). */
                     <div className="button-row">
-                      {billing.foundingAvailable && (
+                      {billing.foundingAvailable ? (
+                        <>
+                          <button
+                            className="cta"
+                            type="button"
+                            disabled={billingBusy}
+                            onClick={() => void startCheckout('founding')}
+                          >
+                            Subscribe — €29/mo incl. VAT (founding price)
+                          </button>
+                          <p className="hint" aria-live="polite">
+                            {billing.foundingRemaining} of {billing.foundingCap} founding spots left
+                            — €29/mo for the life of your subscription, instead of €49.
+                          </p>
+                        </>
+                      ) : (
                         <button
                           className="cta"
                           type="button"
                           disabled={billingBusy}
-                          onClick={() => void startCheckout('founding')}
+                          onClick={() => void startCheckout('standard')}
                         >
-                          Subscribe — Founding (€29/mo incl. VAT, limited spots)
+                          Subscribe — Standard (€49/mo incl. VAT)
                         </button>
                       )}
-                      <button
-                        className="cta"
-                        type="button"
-                        disabled={billingBusy}
-                        onClick={() => void startCheckout('standard')}
-                      >
-                        Subscribe — Standard (€49/mo incl. VAT)
-                      </button>
                     </div>
                   )}
                   <BillingInvoiceHistory state={invoicesState} />

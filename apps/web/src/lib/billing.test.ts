@@ -14,6 +14,8 @@ const EMPTY: BillingStatus = {
   entitlement: { active: false, plan: null, status: null, reason: 'no_subscription' },
   subscription: null,
   foundingAvailable: true,
+  foundingRemaining: 100,
+  foundingCap: 100,
 };
 
 const SUBSCRIBED: BillingStatus = {
@@ -27,6 +29,8 @@ const SUBSCRIBED: BillingStatus = {
     paymentState: 'active',
   },
   foundingAvailable: true,
+  foundingRemaining: 100,
+  foundingCap: 100,
 };
 
 /** Records the delays asked for instead of actually waiting. */

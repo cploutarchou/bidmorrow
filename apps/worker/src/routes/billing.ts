@@ -16,7 +16,7 @@ import {
   FoundingPlanUnavailableError,
   getEntitlement,
   getInvoicePdfForOrganization,
-  isFoundingPlanAvailable,
+  getFoundingPlanStatus,
   listInvoicesForOrganization,
   NoBillingCustomerError,
   paymentStateFromStatus,
@@ -350,10 +350,10 @@ billingRoutes.get('/status', async (c) => {
   const organizationId = c.get('organizationId');
   if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
   const db = createDb(c.env.DB);
-  const [entitlement, subscription, foundingAvailable] = await Promise.all([
+  const [entitlement, subscription, founding] = await Promise.all([
     getEntitlement(db, organizationId),
     getSubscription(db, organizationId),
-    isFoundingPlanAvailable(db),
+    getFoundingPlanStatus(db),
   ]);
   return c.json({
     entitlement,
@@ -368,6 +368,8 @@ billingRoutes.get('/status', async (c) => {
             price: planPrice(subscription.plan as SubscriptionPlan),
             paymentState: paymentStateFromStatus(subscription.status as SubscriptionStatus),
           },
-    foundingAvailable,
+    foundingAvailable: founding.available,
+    foundingRemaining: founding.remaining,
+    foundingCap: founding.cap,
   });
 });
