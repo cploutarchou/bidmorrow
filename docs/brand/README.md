@@ -24,21 +24,22 @@ edit by hand if the mark ever changes.
 | Border                                          | `#e3e9e8`           | dividers on white                                                                         |
 | Deep canvas                                     | `#12151b`           | mark background                                                                           |
 
-## Paddle dashboard steps (same in LIVE and SANDBOX — do both)
+## Paddle — what is set where (verified against the dashboard 2026-08-30)
 
-1. **Checkout → Checkout settings**
-   - Logo: upload `bidmorrow-logo-horizontal-light.png`.
-   - Primary / brand colour: `#0f7d6f`.
-   - Display discount field on the checkout: **on** (codes `FIRST100`, tests).
-   - Default payment link: `https://bidmorrow.com/app/settings` (live) /
-     `https://staging.bidmorrow.com/app/settings` (sandbox).
-2. **Business → Invoice settings** (name varies by dashboard version:
-   "Invoicing" / "Documents"): same logo, company name shown to customers
-   `BidMorrow`, support email `support@bidmorrow.com`. Paddle issues the
-   invoice as Merchant of Record; these fields brand the PDF customers
-   download from Settings → Billing and from the customer portal.
-3. **Checkout → Branded inline checkout** is NOT used (we open the overlay);
-   leave defaults.
+The overlay has NO seller-logo slot. It shows the **product image** beside
+each line item and uses ONE brand colour. So:
 
-Anything set via API is recorded in the ledger; the logo upload is
-dashboard-only.
+- **Product image (API, DONE both accounts)**: `products.update(id,
+{ image_url })` → live `https://bidmorrow.com/brand-mark-512.png`,
+  sandbox `https://staging.bidmorrow.com/brand-mark-512.png` (the PNGs are
+  committed under `apps/web/public/`). Re-run if the mark changes.
+- **Brand colour (dashboard)**: Checkout → Checkout settings → **Overlay**
+  tab → Brand Color `#0f7d6f` → Save. Do it in live AND sandbox.
+- **General tab** (already correct on both): default payment link,
+  "Display discount field on the checkout" on, statement descriptor
+  `BIDMORROW`, marketing opt-in text mentions BidMorrow.
+- **Inline / Recovery tabs**: not used (overlay only) — leave defaults.
+- **Invoice PDF**: Paddle issues it as Merchant of Record with Paddle's
+  own letterhead plus the product name/price; there is no seller logo on
+  the PDF. Customer-facing branding lives in our Settings → Billing area
+  and the transactional emails instead.

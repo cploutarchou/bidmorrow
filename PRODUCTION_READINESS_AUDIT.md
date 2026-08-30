@@ -206,7 +206,19 @@ not an alert. 6 tests, including the boundary (alerts exactly AT 60%, not only
 past it) and the rule that an unmeasured estimate never alerts and never
 fabricates a fraction.
 
-### F-06 · MEDIUM · Performance · OPEN — **baseline measured 2026-08-29**
+### F-06 · MEDIUM · Performance · **CLOSED as a gate 2026-08-30; follow-up perf item opened**
+
+_Update 2026-08-30_: seeded staging account (`STAGING_PERF_EMAIL` variable +
+`STAGING_PERF_PASSWORD` secret in the `staging` environment),
+`measure-api-latency.mjs` extended with `--email`/`PERF_PASSWORD` (seeded
+sign-in, no test mailbox) and `--delay-ms` pacing (staging limits
+`/api/org/*` to 100 req/min/IP), and `staging-perf.yml` (weekly + manual,
+gate 800 ms over the network). **First real staging baseline (empty org,
+40 iters, 900 ms pacing)**: health 166 / public-config 98 / account 177 /
+org profile 411 / **feed first page 608 / saved shelf 640 / feed stats 596**
+/ saved searches 293 (all p95, ms). The three feed routes exceed the local
+500 ms budget from an EMPTY org — multiple sequential D1 queries per
+request; follow-up optimisation item, not a launch blocker.
 
 **"API p95 < 500 ms" has never been measured.** It appears as a target in
 `docs/architecture.md:66` and as a checklist box; no measurement exists in
