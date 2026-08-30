@@ -22,7 +22,7 @@ the consolidated to-do. Nothing else blocks launch on the owner side.
    `EMAIL_FROM` after item 2.3; `PADDLE_CLIENT_TOKEN` (`live_…`) +
    `PADDLE_ENVIRONMENT=production` (item 4).
    (`BETTER_AUTH_SECRET` already set ✓.) **STATUS 2026-08-30** (from `gh
-   secret/variable list -e production`): everything is set EXCEPT the live
+secret/variable list -e production`): everything is set EXCEPT the live
    `PADDLE_API_KEY` and `PADDLE_WEBHOOK_SECRET` — those two are the last
    owner inputs before the production deploy (item 4c).
 2. **Production deploy gating — RESOLVED 2026-08-16 (with a plan-limit
@@ -248,7 +248,7 @@ and live — must be `internal`; see 4b and 4c.
   `pro_01m19e8qk2cffzy8dp0m99b8tz` (Standard), tax category `saas`; prices
   `pri_01m19e8qpvnd6kttmjr2dndpkd` (€29/month) /
   `pri_01m19e8qv0810gaeg1z2s27cv8` (€49/month), EUR, **`tax_mode:
-  internal`**, quantity locked to 1; notification destination
+internal`**, quantity locked to 1; notification destination
   `ntfset_01m19e8r12sx7j9m31s4ef4j56` →
   `https://bidmorrow.com/api/webhooks/paddle`, the eight `subscription.*`
   events, `traffic_source: all`; client-side token
