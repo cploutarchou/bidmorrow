@@ -12,13 +12,7 @@ export function Terms(): ReactElement {
       <p className="mkt-eyebrow">Terms</p>
       <h1>Terms</h1>
 
-      <div className="mkt-panel glass">
-        <p>
-          <strong>Final legal text pending.</strong> This page is an honest summary of the terms we
-          intend to operate under, not a substitute for lawyer-reviewed terms of service. We will
-          replace this page with full legal text before general availability.
-        </p>
-      </div>
+      <p className="mkt-muted">Last updated 30 August 2026.</p>
 
       <div className="mkt-prose">
         <h2>Decision-support only</h2>
@@ -53,9 +47,11 @@ export function Terms(): ReactElement {
           </a>
           . Prices include VAT; the applicable VAT for your country is shown on the Paddle invoice.
           Subscriptions are monthly; cancel any time from account settings and access continues
-          until the end of the paid period. Founding pricing is limited to the first 100 customers
-          and may not be available when you sign up. Once you're on the founding price, it's
-          retained for the life of your subscription — it never auto-migrates to the standard price.
+          until the end of the paid period. Refunds follow our{' '}
+          <Link to="/refunds">refund policy</Link>. Founding pricing is limited to the first 100
+          customers and may not be available when you sign up. Once you're on the founding price,
+          it's retained for the life of your subscription — it never auto-migrates to the standard
+          price.
         </p>
 
         <h2>Contact</h2>

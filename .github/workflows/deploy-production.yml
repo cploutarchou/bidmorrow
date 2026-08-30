@@ -225,7 +225,15 @@ jobs:
           # the non-production body — a blanket `Disallow: /` — and deindex the
           # live site. Assert the production body here, where it is cheap to
           # catch, rather than discovering it in Search Console weeks later.
-          robots=$(curl -sf "$base/robots.txt")
+          # This zone has Cloudflare's managed robots.txt on: it prepends a
+          # block (between "# BEGIN/END Cloudflare Managed Content" markers)
+          # with per-AI-bot `Disallow: /` lines. Those are not ours and not a
+          # blanket block — strip the block so only the Worker's body is
+          # asserted (first seen: deploy run 33318306885, 2026-08-30).
+          robots=$(curl -sf "$base/robots.txt" | awk 'BEGIN{skip=0}
+            /^# BEGIN Cloudflare Managed [Cc]ontent/{skip=1; next}
+            /^# END Cloudflare Managed [Cc]ontent/{skip=0; next}
+            !skip')
           echo "$robots" | grep -q 'Sitemap: https://bidmorrow.com/sitemap.xml' || {
             echo "robots.txt is not serving the production body:"; echo "$robots"; exit 1; }
           echo "$robots" | grep -qx 'Disallow: /' && {

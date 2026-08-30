@@ -29,6 +29,9 @@ export interface BillingStatus {
     paymentState: SubscriptionStatus;
   } | null;
   foundingAvailable: boolean;
+  /** Spots left at the founding price; 0 when closed or full. */
+  foundingRemaining: number;
+  foundingCap: number;
 }
 
 export function fetchBillingStatus(): Promise<BillingStatus> {

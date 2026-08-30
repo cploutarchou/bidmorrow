@@ -6,6 +6,12 @@
  * titles/buyers are hostile input (an org could receive a match whose title
  * contains a `<script>` tag lifted verbatim from a TED notice).
  */
+import {
+  NOTIFICATIONS_DECISION_SUPPORT_DISCLAIMER,
+  NOTIFICATIONS_TED_ATTRIBUTION,
+  SUPPORT_EMAIL,
+} from './copy';
+import { EMAIL_BRAND, emailButton, emailLink, renderEmailLayout } from './email-layout';
 import { escapeHtml } from './escape-html';
 
 export type DigestClassification =
@@ -48,6 +54,14 @@ export interface RenderDigestArgs {
   readonly appBaseUrl: string;
   /** e.g. `https://app.bidmorrow.com/app/settings` — manage-preferences link. */
   readonly manageUrl: string;
+  /**
+   * Absolute, per-recipient no-login unsubscribe URL (F-08). `null` ONLY on
+   * the preview path, which renders a digest for an operator with no
+   * recipient and therefore no token to sign — a real send always passes
+   * one, and the unsubscribe block is omitted rather than faked when it is
+   * absent. The same URL is set in `List-Unsubscribe`.
+   */
+  readonly unsubscribeUrl: string | null;
 }
 
 export interface RenderedDigest {
@@ -104,6 +118,11 @@ export function renderDigest(args: RenderDigestArgs): RenderedDigest {
     `Strong: ${args.counts.STRONG_MATCH} · Worth reviewing: ${args.counts.WORTH_REVIEWING} · ` +
     `Possible: ${args.counts.POSSIBLE_MATCH} · Low fit: ${args.counts.LOW_FIT}`;
 
+  // "N matches today" — a short scannable summary above the per-classification
+  // breakdown (`countsLine`), which stays verbatim below since tests assert
+  // its exact "Strong: N · Worth reviewing: N · …" shape.
+  const summaryLabel = totalCount === 1 ? '1 match today' : `${totalCount} matches today`;
+
   const htmlItems = items
     .map((item) => {
       // CTA link only when matchId is known (P8-R-03) — a purged match or a
@@ -112,49 +131,56 @@ export function renderDigest(args: RenderDigestArgs): RenderedDigest {
       const titleHtml =
         item.matchId === null
           ? escapeHtml(item.title)
-          : `<a href="${escapeHtml(`${args.appBaseUrl}/app/tenders/${encodeURIComponent(item.matchId)}`)}">${escapeHtml(item.title)}</a>`;
+          : `<a href="${escapeHtml(`${args.appBaseUrl}/app/tenders/${encodeURIComponent(item.matchId)}`)}" style="color:${EMAIL_BRAND.accent};text-decoration:none;">${escapeHtml(item.title)}</a>`;
       const reasons = item.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join('');
       const risk =
         item.topRisk === null
           ? ''
-          : `<p>Risk: ${escapeHtml(item.topRisk.explanation)} (${escapeHtml(
+          : `<p style="margin:0 0 8px;">Risk: ${escapeHtml(item.topRisk.explanation)} (${escapeHtml(
               RISK_CONFIDENCE_LABEL[item.topRisk.confidence],
             )})</p>`;
       return `
-        <article>
-          <h2>${titleHtml}</h2>
-          <p>${escapeHtml(formatScore(item))}</p>
-          <ul>${reasons}</ul>
+        <div style="border:1px solid ${EMAIL_BRAND.border};border-radius:8px;padding:16px 20px;margin:0 0 16px;">
+          <h2 style="margin:0 0 8px;font-size:16px;line-height:1.4;">${titleHtml}</h2>
+          <p style="margin:0 0 8px;">
+            <span style="display:inline-block;background:${EMAIL_BRAND.background};color:${EMAIL_BRAND.ink};border-radius:999px;padding:2px 10px;font-size:13px;font-weight:600;">${escapeHtml(formatScore(item))}</span>
+          </p>
+          <ul style="margin:0 0 8px;padding-left:20px;color:${EMAIL_BRAND.ink};">${reasons}</ul>
           ${risk}
-          <p>Buyer: ${escapeHtml(item.buyerName ?? 'Unknown')}</p>
-          <p>Deadline: ${escapeHtml(formatDeadline(item.deadlineAt))}</p>
-        </article>`;
+          <p style="margin:0 0 4px;color:${EMAIL_BRAND.muted};">Buyer: ${escapeHtml(item.buyerName ?? 'Unknown')}</p>
+          <p style="margin:0;color:${EMAIL_BRAND.muted};">Deadline: ${escapeHtml(formatDeadline(item.deadlineAt))}</p>
+        </div>`;
     })
     .join('\n');
 
-  const bodyHtml =
-    items.length === 0
-      ? '<p>No new matches met your digest threshold today.</p>'
-      : `<p>${escapeHtml(countsLine)}</p>${htmlItems}`;
+  const emptyStateHtml =
+    items.length === 0 ? '<p>No new matches met your digest threshold today.</p>' : '';
 
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"><title>${escapeHtml(subject)}</title></head>
-<body>
-  <h1>${escapeHtml(`Daily digest for ${args.orgName}`)}</h1>
-  ${bodyHtml}
-  <hr>
-  <footer>
-    <p>Source: Tenders Electronic Daily (TED), the EU's public procurement portal
-    (Decision 2011/833/EU on the reuse of Commission documents).</p>
-    <p>Scores and flags are decision support, not legal or procurement advice —
-    always verify against the original notice before bidding.</p>
-    <p><a href="${escapeHtml(args.manageUrl)}">Manage digest preferences</a></p>
-    <p>You are receiving this because your organization enabled the daily digest.
-    You can turn it off any time from digest preferences.</p>
-  </footer>
-</body>
-</html>`;
+  const ctaHtml = `<p style="margin:24px 0 0;">${emailButton(`${args.appBaseUrl}/app`, 'View in BidMorrow')}</p>`;
+
+  const bodyHtml =
+    `<h1 style="margin:0 0 4px;font-size:20px;color:${EMAIL_BRAND.ink};">${escapeHtml(`Daily digest for ${args.orgName}`)}</h1>` +
+    `<p style="margin:0 0 16px;color:${EMAIL_BRAND.muted};">${escapeHtml(args.digestDate)}</p>` +
+    (totalCount > 0
+      ? `<p style="margin:0 0 4px;font-weight:600;">${escapeHtml(summaryLabel)}</p>`
+      : '') +
+    `<p style="margin:0 0 20px;color:${EMAIL_BRAND.muted};">${escapeHtml(countsLine)}</p>` +
+    emptyStateHtml +
+    htmlItems +
+    ctaHtml;
+
+  const footerHtml =
+    `<p style="margin:0 0 8px;">${escapeHtml(NOTIFICATIONS_TED_ATTRIBUTION)}</p>` +
+    `<p style="margin:0 0 8px;">${escapeHtml(NOTIFICATIONS_DECISION_SUPPORT_DISCLAIMER)}</p>` +
+    `<p style="margin:0 0 8px;">${emailLink(args.manageUrl, 'Manage digest preferences')}</p>` +
+    `<p style="margin:0 0 8px;">You are receiving this because your organization enabled the daily digest. ` +
+    `You can turn it off any time from digest preferences.</p>` +
+    (args.unsubscribeUrl === null
+      ? ''
+      : `<p style="margin:0 0 8px;">${emailLink(args.unsubscribeUrl, 'Unsubscribe from this digest')} — no sign-in needed.</p>`) +
+    `<p style="margin:0;">Questions? ${emailLink(`mailto:${SUPPORT_EMAIL}`, SUPPORT_EMAIL)}</p>`;
+
+  const html = renderEmailLayout({ subject, bodyHtml, footerHtml });
 
   const textItems = items
     .map((item) => {
@@ -178,16 +204,21 @@ export function renderDigest(args: RenderDigestArgs): RenderedDigest {
   const bodyText =
     items.length === 0 ? 'No new matches met your digest threshold today.\n' : textItems;
 
+  const summaryLine = totalCount > 0 ? `${summaryLabel}\n` : '';
+
   const text =
-    `Daily digest for ${args.orgName}\n\n${countsLine}\n${bodyText}\n` +
+    `Daily digest for ${args.orgName}\n${args.digestDate}\n\n${summaryLine}${countsLine}\n${bodyText}\n` +
     `---\n` +
-    `Source: Tenders Electronic Daily (TED), the EU's public procurement portal ` +
-    `(Decision 2011/833/EU on the reuse of Commission documents).\n` +
-    `Scores and flags are decision support, not legal or procurement advice — ` +
-    `always verify against the original notice before bidding.\n` +
+    `${NOTIFICATIONS_TED_ATTRIBUTION}\n` +
+    `${NOTIFICATIONS_DECISION_SUPPORT_DISCLAIMER}\n` +
     `Manage digest preferences: ${args.manageUrl}\n` +
     `You are receiving this because your organization enabled the daily digest. ` +
-    `You can turn it off any time from digest preferences.\n`;
+    `You can turn it off any time from digest preferences.\n` +
+    (args.unsubscribeUrl === null
+      ? ''
+      : `Unsubscribe (no sign-in needed): ${args.unsubscribeUrl}\n`) +
+    `View in BidMorrow: ${args.appBaseUrl}/app\n` +
+    `Questions? ${SUPPORT_EMAIL}\n`;
 
   return { subject, html, text };
 }

@@ -41,6 +41,7 @@ const EXPECTED_TABLES = [
   'organization_members',
   'organizations',
   'product_events',
+  'dead_letter_messages',
   'saved_searches',
   'saved_tenders',
   'source_snapshots',
@@ -78,7 +79,7 @@ describe('migrations apply from an empty database', () => {
     expect(tables.has('_bootstrap')).toBe(false);
   });
 
-  it('records all eleven migrations in d1_migrations', async () => {
+  it('records all twelve migrations in d1_migrations', async () => {
     const result = await env.DB.prepare('SELECT name FROM d1_migrations ORDER BY name').all<{
       name: string;
     }>();
@@ -94,6 +95,7 @@ describe('migrations apply from an empty database', () => {
       '0009_ingestion_render_pending.sql',
       '0010_saved_searches.sql',
       '0011_paddle_billing.sql',
+      '0012_dead_letter_messages.sql',
     ]);
   });
 

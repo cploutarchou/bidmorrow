@@ -45,6 +45,7 @@ import {
   getOrgAdminDetail,
   getRecentErrorCounts,
   getDbSizeEstimate,
+  getDeadLetterDepth,
   getTenderMatchByLot,
   getRailCounts,
   getUsageCounts,
@@ -69,6 +70,7 @@ import { assertNever, organizationId as toOrganizationId } from '@bidmorrow/doma
 import { ENGINE_VERSION, scoreLotForOrg } from '@bidmorrow/matching';
 import { isDigestPaused, previewDigest } from '@bidmorrow/notifications';
 import {
+  evaluateDbSize,
   isIngestionPaused,
   isIngestionStale,
   lastSuccessfulRunAt,
@@ -770,10 +772,14 @@ adminRoutes.get('/health-details', async (c) => {
       getDbSizeEstimate(db),
       Promise.all(FEATURE_FLAG_KEYS.map((key) => getFeatureFlag(db, key))),
     ]);
+  const dlqDepth = await getDeadLetterDepth(db);
   const recentDigestRuns = await listDigestRunsAdmin(db, { limit: 20 });
-  // A DLQ's contents are not directly readable from the Worker runtime — a
-  // dead-lettered message only shows up as a Cloudflare dashboard / `wrangler
-  // queues` metric outside this API. Documented honestly rather than faked.
+  // F-07 CLOSED: a DLQ's contents still are not readable from the Worker
+  // runtime, so instead the DLQs are CONSUMED and each dead-lettered message
+  // is recorded to D1 (migration 0012). "Depth" is therefore a real number
+  // this database owns — unresolved rows — rather than a Cloudflare API call
+  // on the request path, and it counts outstanding work rather than all-time
+  // history.
   return c.json({
     ingestion: {
       lastSuccessfulRunAt: lastRun,
@@ -790,9 +796,15 @@ adminRoutes.get('/health-details', async (c) => {
       })),
     },
     email: { failures24h: errorCounts.emailFailures24h },
-    db: dbSize,
+    // F-05: the raw estimate plus the evaluated capacity alert. `alerting`
+    // is true only on a real measurement at or above the threshold —
+    // `measured: false` is carried through so the UI can say "Unmeasured"
+    // rather than imply a healthy zero.
+    db: evaluateDbSize(dbSize),
     dlq: {
-      note: 'not directly readable from the Worker runtime — see Cloudflare dashboard / wrangler queues list-dlq',
+      unresolved: dlqDepth.unresolved,
+      byQueue: dlqDepth.byQueue,
+      lastDeadLetteredAt: dlqDepth.lastDeadLetteredAt,
     },
     flags: FEATURE_FLAG_KEYS.map((key, i) => ({
       key,

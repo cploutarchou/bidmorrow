@@ -16,7 +16,7 @@ import {
   FoundingPlanUnavailableError,
   getEntitlement,
   getInvoicePdfForOrganization,
-  isFoundingPlanAvailable,
+  getFoundingPlanStatus,
   listInvoicesForOrganization,
   NoBillingCustomerError,
   paymentStateFromStatus,
@@ -28,6 +28,7 @@ import {
 } from '@bidmorrow/billing';
 import { createDb, getSubscription, insertAuditEvent, insertProductEvent } from '@bidmorrow/db';
 import { readPrelaunchState } from '../prelaunch';
+import { isInternalAdminEmail } from '../middleware/admin';
 
 import { resolveBillingConfig } from '../billing';
 import type { AppBindings } from '../env';
@@ -65,8 +66,12 @@ billingRoutes.post(
     // Pre-launch gate (prelaunch.ts): NEW subscriptions are closed while
     // pre-launch is active. Portal/cancel/existing-subscription flows are
     // deliberately NOT gated — only starting a new checkout is.
+    // Internal admins (ADMIN_EMAILS allowlist) pass the gate so the live
+    // Paddle integration can be exercised end to end on the real domain
+    // before go-live (2026-08-30); customers still see 403.
     const { prelaunch } = await readPrelaunchState(db, c.env.APP_ENV);
-    if (prelaunch) {
+    const isAdmin = isInternalAdminEmail(c.env.ADMIN_EMAILS, session.user.email);
+    if (prelaunch && !isAdmin) {
       return c.json(
         { error: 'subscriptions_closed', message: 'Subscriptions open at launch.' },
         403,
@@ -345,10 +350,10 @@ billingRoutes.get('/status', async (c) => {
   const organizationId = c.get('organizationId');
   if (organizationId === undefined) return c.json({ error: 'no_organization' }, 403);
   const db = createDb(c.env.DB);
-  const [entitlement, subscription, foundingAvailable] = await Promise.all([
+  const [entitlement, subscription, founding] = await Promise.all([
     getEntitlement(db, organizationId),
     getSubscription(db, organizationId),
-    isFoundingPlanAvailable(db),
+    getFoundingPlanStatus(db),
   ]);
   return c.json({
     entitlement,
@@ -363,6 +368,8 @@ billingRoutes.get('/status', async (c) => {
             price: planPrice(subscription.plan as SubscriptionPlan),
             paymentState: paymentStateFromStatus(subscription.status as SubscriptionStatus),
           },
-    foundingAvailable,
+    foundingAvailable: founding.available,
+    foundingRemaining: founding.remaining,
+    foundingCap: founding.cap,
   });
 });

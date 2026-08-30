@@ -4,6 +4,16 @@ import { formatIsoUtc } from '../../lib/format';
 import { AdminPage } from '../../components/admin/AdminPage';
 import type { AdminHealthDetails, AdminUsageCounts } from '../../lib/admin-types';
 
+/**
+ * D1 usage as a percentage of the 10 GB ceiling (F-05). One decimal: at this
+ * scale the database sits far below 1%, and a bare "0%" would read as
+ * "nothing stored" rather than "plenty of headroom".
+ */
+function formatUsedFraction(usedFraction: number | null): string {
+  if (usedFraction === null) return 'Unmeasured';
+  return `${(usedFraction * 100).toFixed(usedFraction < 0.01 ? 2 : 1)}%`;
+}
+
 export function Dashboard(): ReactElement {
   const [health, setHealth] = useState<AdminHealthDetails | null>(null);
   const [usage, setUsage] = useState<AdminUsageCounts | null>(null);
@@ -84,23 +94,40 @@ export function Dashboard(): ReactElement {
               <p className="admin-card__note">Delivery failures in the last 24 hours</p>
             </div>
 
-            <div className="admin-card">
+            <div className={health.db.alerting ? 'admin-card admin-card--risk' : 'admin-card'}>
               <p className="admin-card__label">Database size</p>
               <p className="admin-card__value">
                 {health.db.measured
-                  ? `${(health.db.approxBytes ?? 0).toLocaleString()} bytes`
+                  ? `${formatUsedFraction(health.db.usedFraction)} of 10 GB`
                   : 'Unmeasured'}
               </p>
               <p className="admin-card__note">
                 {health.db.measured
-                  ? 'Approximate, from the PRAGMA-based estimate.'
+                  ? `${(health.db.approxBytes ?? 0).toLocaleString()} bytes, approximate, from the PRAGMA-based estimate.${
+                      health.db.alerting
+                        ? ' Past the 60% alert threshold — the mitigation (retention change or the match_components JSON fallback) is a schema migration, so start it now rather than at 95%.'
+                        : ''
+                    }`
                   : 'The PRAGMA-based estimate was unavailable. Reported as unmeasured rather than shown as zero, which would read as an empty database.'}
               </p>
             </div>
 
-            <div className="admin-card">
+            <div
+              className={health.dlq.unresolved > 0 ? 'admin-card admin-card--risk' : 'admin-card'}
+            >
               <p className="admin-card__label">Dead-letter queue</p>
-              <p className="admin-card__note">{health.dlq.note}</p>
+              <p className="admin-card__value">{health.dlq.unresolved}</p>
+              <p className="admin-card__note">
+                {health.dlq.unresolved === 0
+                  ? health.dlq.lastDeadLetteredAt === null
+                    ? 'No message has ever dead-lettered.'
+                    : `Nothing outstanding. Last dead-letter ${formatIsoUtc(health.dlq.lastDeadLetteredAt)}.`
+                  : `Unresolved dead-lettered messages, by queue: ${health.dlq.byQueue
+                      .map((entry) => `${entry.queue} ${String(entry.count)}`)
+                      .join(
+                        ', ',
+                      )}. Each exhausted its retries — investigate the cause, then mark it resolved.`}
+              </p>
             </div>
           </div>
 

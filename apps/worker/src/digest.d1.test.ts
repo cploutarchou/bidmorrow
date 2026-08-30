@@ -246,6 +246,8 @@ class FakeDigestProvider {
 const NOW = Date.parse('2026-08-15T12:00:00Z');
 const APP_BASE_URL = 'https://app.bidmorrow.test';
 
+const TEST_UNSUBSCRIBE_SECRET = 'test-unsubscribe-secret';
+
 describe('generateDigest', () => {
   it('happy path: creates a run, items, a sent email delivery, and status=sent', async () => {
     const db = createDb(env.DB);
@@ -272,6 +274,7 @@ describe('generateDigest', () => {
         provider,
         appBaseUrl: APP_BASE_URL,
         engineVersion: ENGINE_VERSION,
+        unsubscribeSecret: TEST_UNSUBSCRIBE_SECRET,
       },
       orgId,
       { localDate: '2026-08-15', utcNow: NOW },
@@ -334,6 +337,7 @@ describe('generateDigest', () => {
       provider,
       appBaseUrl: APP_BASE_URL,
       engineVersion: ENGINE_VERSION,
+      unsubscribeSecret: TEST_UNSUBSCRIBE_SECRET,
     };
     const first = await generateDigest(deps, orgId, { localDate: '2026-08-15', utcNow: NOW });
     expect(first.status).toBe('sent');
@@ -364,6 +368,7 @@ describe('generateDigest', () => {
         provider,
         appBaseUrl: APP_BASE_URL,
         engineVersion: ENGINE_VERSION,
+        unsubscribeSecret: TEST_UNSUBSCRIBE_SECRET,
       },
       orgId,
       { localDate: '2026-08-15', utcNow: NOW },
@@ -393,6 +398,7 @@ describe('generateDigest', () => {
         provider,
         appBaseUrl: APP_BASE_URL,
         engineVersion: ENGINE_VERSION,
+        unsubscribeSecret: TEST_UNSUBSCRIBE_SECRET,
       },
       orgId,
       { localDate: '2026-08-15', utcNow: NOW },
@@ -433,6 +439,7 @@ describe('generateDigest', () => {
         provider,
         appBaseUrl: APP_BASE_URL,
         engineVersion: ENGINE_VERSION,
+        unsubscribeSecret: TEST_UNSUBSCRIBE_SECRET,
       },
       orgId,
       { localDate: '2026-08-15', utcNow: NOW },
@@ -475,6 +482,7 @@ describe('generateDigest', () => {
         provider,
         appBaseUrl: APP_BASE_URL,
         engineVersion: ENGINE_VERSION,
+        unsubscribeSecret: TEST_UNSUBSCRIBE_SECRET,
       },
       orgId,
       { localDate: '2026-08-15', utcNow: NOW },
@@ -511,6 +519,7 @@ describe('generateDigest', () => {
           provider: failingProvider,
           appBaseUrl: APP_BASE_URL,
           engineVersion: ENGINE_VERSION,
+          unsubscribeSecret: TEST_UNSUBSCRIBE_SECRET,
         },
         orgId,
         { localDate: '2026-08-15', utcNow: NOW },
@@ -536,6 +545,7 @@ describe('generateDigest', () => {
         provider: succeedingProvider,
         appBaseUrl: APP_BASE_URL,
         engineVersion: ENGINE_VERSION,
+        unsubscribeSecret: TEST_UNSUBSCRIBE_SECRET,
       },
       orgId,
       { localDate: '2026-08-15', utcNow: NOW },
@@ -586,6 +596,7 @@ describe('generateDigest', () => {
         provider,
         appBaseUrl: APP_BASE_URL,
         engineVersion: ENGINE_VERSION,
+        unsubscribeSecret: TEST_UNSUBSCRIBE_SECRET,
       },
       orgId,
       { localDate: '2026-08-15', utcNow: NOW },
@@ -638,6 +649,7 @@ describe('generateDigest', () => {
         provider,
         appBaseUrl: APP_BASE_URL,
         engineVersion: ENGINE_VERSION,
+        unsubscribeSecret: TEST_UNSUBSCRIBE_SECRET,
       },
       orgId,
       { localDate: '2026-08-15', utcNow: NOW },
@@ -687,6 +699,7 @@ describe('generateDigest', () => {
         provider,
         appBaseUrl: APP_BASE_URL,
         engineVersion: ENGINE_VERSION,
+        unsubscribeSecret: TEST_UNSUBSCRIBE_SECRET,
       },
       orgId,
       { localDate: '2026-08-15', utcNow: NOW },

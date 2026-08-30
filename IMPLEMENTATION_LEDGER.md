@@ -4678,6 +4678,367 @@ test` failed one assertion — the `_headers` verbatim-copy check read a
 Not tagged: `phase-13-complete` was never created and Phase 14's verdict is
 FAIL, so no phase tag is claimed.
 
+## F-08 / F-09 — no-login unsubscribe and the verified-recipient filter (2026-08-29)
+
+Owner instruction: "start everything please" — the audit findings that are
+not owner-gated, taken one coherent unit at a time. This is the first.
+
+- **F-08, no-login unsubscribe.** `packages/notifications/unsubscribe-token.ts`
+  mints `base64url(payload).hex(HMAC-SHA256)` keyed with `BETTER_AUTH_SECRET`
+  under an explicit `bidmorrow-unsub:v1:` purpose prefix (same
+  domain-separation reasoning as billing's `provenance.ts`, so a token from
+  one HMAC surface can never be replayed against the other). Stateless: no
+  table, no cleanup job. **Deliberately no expiry** — an unsubscribe link
+  has to still work in a message someone finds months later, and the
+  capability it grants is only ever "turn a digest OFF". Rotating
+  `BETTER_AUTH_SECRET` is the revocation.
+- **GET confirms, POST acts.** `apps/worker/src/routes/digest.ts` — the
+  route is unauthenticated by design (the token IS the authorization),
+  rate-limited before any HMAC work like the webhook route. GET renders a
+  confirmation page and mutates nothing, because mail scanners, link
+  previews and corporate security gateways follow links eagerly and a
+  mutating GET would silently kill digests nobody asked to stop. That split
+  is also exactly RFC 8058's contract, so the same endpoint serves the human
+  and the provider's one-click button.
+- **Headers.** `List-Unsubscribe: <url>` + `List-Unsubscribe-Post:
+List-Unsubscribe=One-Click`, set per recipient. `DigestSendMessage` gained
+  an optional `headers` passthrough to Resend's documented `headers` field.
+  Rendering MOVED INSIDE the recipient loop: the token is per recipient, so
+  one shared render would have put one member's token in everyone's mail.
+  `renderDigest` is pure string building over ≤10 items, so this is cheap.
+- **Org-scoped, and the copy says so.** `digest_preferences` has one row per
+  organization with no per-member column, so unsubscribing turns the digest
+  off for the workspace. Invisible today (no invite flow ⇒ one member per
+  org) but stated plainly on both pages rather than papered over. If invites
+  ever land, per-recipient suppression becomes a real requirement.
+- **F-09.** `listOrganizationMemberEmails` now filters on
+  `users.email_verified`. It has exactly one caller (the digest), so the
+  change is contained. Unverified addresses were already unreachable — via
+  `requireEmailVerification: true` plus the absence of invites — but that
+  made the guarantee a property of two distant facts instead of the query.
+- **Verification**: all gates green. 1049 tests (root 702 +3 skipped, worker
+  279, db 68) — 7 new route tests (GET does not mutate, cross-org forgery
+  refused with the victim's digest still on, idempotent double-POST writing
+  exactly one audit event, preferences preserved, missing-prefs 200) and 12
+  new token tests including validly-signed-but-malformed payloads, signed
+  with the real key so field validation is genuinely what rejects them.
+- **Resend `headers` verified** and recorded in dependency-versions.md —
+  with the caveat stated in the doc that `resend.com` is proxy-blocked here,
+  so it was confirmed from Resend's documentation pages via search rather
+  than a direct fetch of the API reference. To re-confirm on the first real
+  staging send that both headers arrive and are DKIM-covered.
+- Checklist boxes now genuinely evidenced: email-verification-before-digest,
+  unsubscribe-without-login, digest idempotency, and the two 2026-08-16
+  drills whose evidence the audit surfaced.
+
+## F-05 and F-11 — the D1 capacity alert and a CI check that never ran (2026-08-29)
+
+- **F-05, the DB-size alert.** `D1_MAX_BYTES` (10 GiB, the paid-plan
+  ceiling) + `D1_SIZE_ALERT_FRACTION` (0.6) + `evaluateDbSize()` in
+  `packages/procurement/src/health.ts`, beside the other watchdog
+  thresholds. `/api/admin/health-details` returns the evaluated alert
+  instead of a bare byte count; the Dashboard shows percent-of-ceiling and
+  takes the existing `--risk` card treatment past the threshold; the 09:00
+  UTC watchdog logs `db.size.threshold_exceeded`. That last part is the
+  point — the byte count was ALREADY on the admin page and nothing alerted
+  on it, so nobody would have learned the database was filling until writes
+  started failing. 60% is early on purpose: the mitigation (retention change
+  or the `match_components` JSON fallback) is a schema migration, which
+  needs lead time.
+  Honest handling of the unmeasured case: `getDbSizeEstimate` returns
+  `measured: false` rather than a fabricated number, and `evaluateDbSize`
+  never alerts on that — alerting on every missing measurement trains an
+  operator to ignore the alert. It also never reads as healthy: the watchdog
+  logs `db.size.unmeasured` on its own line and the Dashboard says
+  "Unmeasured". 6 tests, including the boundary (alerts exactly AT 60%, not
+  only past it) and the no-fabricated-fraction rule.
+
+- **F-11, the `_headers` check that never ran.** The assertion is guarded
+  "when one exists" and CI checks out clean and runs Test BEFORE Build — so
+  `dist/` never existed at that point and it silently no-opped on every CI
+  run since it was written. A build that stopped copying `_headers` (no CSP,
+  no HSTS, no `X-Frame-Options` on static assets) would have shipped green.
+  Fixed with `scripts/verify-build-artifacts.mjs` as its own CI step after
+  Build. **Verified by hand that it actually fails**: exit 1 with
+  `dist/_headers` removed, exit 1 with it tampered, exit 0 restored — a new
+  gate that has never been seen to fail is not a gate. The test's comment
+  claiming the build step covered this end-to-end was false and is
+  corrected; its opportunistic assertion stays because it catches a stale
+  local `dist/`, which is exactly how this was found during the audit.
+
+- **F-07 investigated, NOT closed — owner decision, costed.** The three DLQs
+  are declared in `wrangler.jsonc` but **have no consumer**: nothing drains
+  them and nothing reads them, so a dead-lettered message is not just missing
+  from the admin page — nobody ever finds out it happened. Bigger than the
+  checklist item describes. Options recorded in the audit: (1) Cloudflare
+  Queues REST API from the admin route — new account-token secret + outbound
+  dependency; (2) a DLQ consumer recording into D1 — no new secret, makes
+  poison messages visible, costs migration 0012 and three consumer bindings;
+  (3) accept the deviation. Recommended (2) AFTER launch: it is a one-way
+  door two days out with production already two migrations behind. Not
+  waived by the implementer — the box stays unchecked until the owner picks.
+
+- Gates green: 1055 tests (root 708 +3 skipped, worker 279, db 68), plus the
+  new `pnpm verify:build`.
+
+## Security review, its three fixes, and the p95 baseline (2026-08-29)
+
+**Security review (F-10 closed).** The `security` agent ran read-only over
+both the new F-08/F-09 work and the #107–#110 backlog, re-running the gates
+itself. **No CRITICAL or HIGH in either scope.** It confirmed the audit's
+provisional reading of `GET /api/account/me`: session-gated, strictly
+self-referential, and a `false` answer cannot distinguish an empty allowlist
+from a non-listed address, so it is not an enumeration oracle; the 404 cloak
+and per-request admin audit row are intact. #107 (secrets fail closed, never
+logged), #108 (copy/flags only) and #110 (no new origins, no inline scripts)
+were clean.
+
+Three findings fixed the same day:
+
+- **SEC-UNSUB-01 (LOW) — a real error in my own reasoning.** The unsubscribe
+  audit row wrote the recipient address into `afterSummary`, with a comment
+  arguing it was "no new PII" because `email_deliveries` already holds it.
+  That was wrong, and retention is why: `email_deliveries` is age-purged at
+  12 months AND purged when an organization is purged, whereas `audit_events`
+  is an append-only 24-month ledger that deliberately SURVIVES org purge and
+  tombstoning (`tombstoneOrganization`). The address would have become the
+  longest-lived copy in the system and outlived the very erasure tombstoning
+  exists to perform. Address removed; the comment now explains the asymmetry
+  instead of asserting the opposite. Correlation still works while it matters
+  via the `email_deliveries` row plus `occurredAt`.
+- **SEC-UNSUB-02 (INFO→fixed).** CRLF/NUL guard on the Resend `headers`
+  passthrough. Not exploitable today (two constants and a percent-encoded
+  URL), but `headers` is a general seam and a future caller interpolating a
+  name or address would otherwise be trusting someone else's serializer to
+  refuse header splitting. Throws at the boundary that owns the risk; the
+  offending value is never echoed into the message.
+- **A-3 (LOW).** F-09's `email_verified` filter had **zero** test coverage —
+  deleting it would have shipped green, which is the exact failure mode the
+  filter exists to prevent. New `identity.d1.test.ts`, and **mutation-checked**:
+  removing the predicate makes two tests fail, restoring it makes them pass.
+  A test that would pass either way is worth nothing.
+
+Accepted and recorded rather than fixed: unsubscribe tokens are unbounded in
+time and are not re-bound to current membership, so a forwarded digest can
+disable an org's digest later (bounded, audited, reversible in Settings — but
+**per-recipient suppression becomes mandatory the day team invites ship**);
+and `BETTER_AUTH_SECRET` reuse couples session rotation to breaking every
+outstanding unsubscribe link, so a dedicated secret is worth having later.
+
+**F-06 baseline measured (box still unchecked).**
+`scripts/measure-api-latency.mjs` + `docs/performance.md`. Local stack, 40
+iterations/route, all 200: worst p95 is the feed at **29.7 ms**, ~17× inside
+the 500 ms budget.
+Two things worth keeping: the harness aborts on any 4xx/5xx because an error
+path short-circuits before the work the budget is about — and that guard
+immediately caught its own first run reporting 23.9 ms for a feed request
+that had 400'd on a wrong query param and done no work. And the box stays
+UNCHECKED: a local run has no network or edge, uses a seed-sized dataset (the
+two slowest routes are precisely the two whose cost grows with the corpus),
+and the harness cannot reach staging as written because it establishes a
+session through the double-gated e2e mailbox hook, which 404s outside
+local/test by design. Closing it needs a seeded staging account with
+credentials in CI secrets.
+
+Gates green: 1060 tests (root 710 +3 skipped, worker 279, db 71).
+
+## F-07 closed — the DLQs are consumed, so poison messages stop being invisible (2026-08-29)
+
+Owner instruction: "merge it till nothing is pending" — taken as the decision
+on F-07, where I had recommended option (2) but flagged it as post-launch.
+
+The real finding was worse than the checklist item. The three DLQs were
+declared as `dead_letter_queue` targets but had **no consumer at all**:
+nothing drained them and nothing read them, so a message that exhausted its
+retries landed in a queue nobody looks at and nobody ever found out. The
+health-page gap was a symptom.
+
+- **Migration 0012** — `dead_letter_messages`, one new table, additive,
+  nothing dropped or retyped. GLOBAL (no `organization_id`, like
+  `ingestion_runs`/`ingestion_errors`); `dead-letters.ts` added to the
+  tenant-isolation contract's GLOBAL_FILES with the reason written down. A
+  digest payload names an org inside the opaque `body_json`, but nothing
+  scopes or joins on it.
+- **Consumers on all three DLQs in all three environments** (9 entries), and
+  a `batch.queue.includes('-dlq-')` branch in the queue handler. **Persist
+  then ack**: a failed D1 write throws and the message retries, because
+  acking there would destroy the only record of the failure. No DLQ for the
+  DLQ — that just moves the invisibility one hop; after `max_retries` the
+  loss is at least loud as `queue.dead_letter.record_failed`.
+- **`onConflictDoNothing`, deliberately not an upsert.** DLQ delivery is
+  at-least-once, so recording is idempotent on `provider_message_id` — but an
+  upsert would reset `resolved_at` and silently resurrect work an operator had
+  already closed every time Cloudflare redelivered. Asserted by test.
+- **Depth means outstanding, not all-time**: `COUNT(*) WHERE resolved_at IS
+NULL`. A number that only ever grows would stop meaning anything the first
+  time something dead-lettered. History is kept; only the count moves.
+- `listDeadLetters` returns a plain array, not a `Page` — handing the UI a
+  `nextCursor` that no endpoint consumes would be worse than offering none. A
+  DLQ deeper than one screenful is an incident, not a browsing problem.
+- The admin Dashboard's honest-but-empty `dlq.note` is replaced by the real
+  count, with the `--risk` treatment when non-zero and a per-queue breakdown.
+
+Two tests caught real mistakes while writing this: the migration sentinel
+still expected eleven migrations, and my repository tests assumed a clean
+table when `testDb()` hands back the same local D1 across tests in a file —
+the depth assertions were passing on inherited rows until the per-test delete
+went in.
+
+**Deployment consequence worth stating**: production is two migrations behind
+already, so its next deploy applies 0010, 0011 and 0012 together.
+
+Gates green: 1071 tests (root 710 +3 skipped, worker 279, db 79), plus
+`pnpm verify:build`.
+
+## F-03 live Paddle account configured; F-02 unblocked to two secrets; 4d done (2026-08-30)
+
+Owner connected the `paddle-live` and `paddle-sandbox` MCPs and asked for
+F-03 first (the only item with an external clock, launch 2026-08-31).
+
+- **Live account state on arrival**: reachable, zero products, zero
+  notification destinations, zero checkout domains. The **sandbox MCP key is
+  rejected** ("You aren't permitted") — rotated after 2026-08-25 — so the
+  sandbox tax mode still cannot be checked by API; recorded in blockers 4b.
+- **Created in the live account** (one atomic execute): products
+  `pro_01m19e8qdsyrezm8z9zf9bazc3` (Founding) /
+  `pro_01m19e8qk2cffzy8dp0m99b8tz` (Standard); prices
+  `pri_01m19e8qpvnd6kttmjr2dndpkd` (€29) / `pri_01m19e8qv0810gaeg1z2s27cv8`
+  (€49), EUR monthly, **`tax_mode: internal`**, quantity 1–1; destination
+  `ntfset_01m19e8r12sx7j9m31s4ef4j56` → `https://bidmorrow.com/api/webhooks/paddle`,
+  the eight `subscription.*` events the handler processes, `traffic_source: all`;
+  client token `ctkn_01m19e8r53epwzj5048b14m92b`. The destination secret was
+  returned by the API and deliberately NOT copied anywhere — the owner takes
+  it from the dashboard, keeping the "the assistant never sees the webhook secret"
+  convention intact.
+- **Inclusive tax proven at API level**: `transactions.preview` on the live
+  €29 price with a DE address returns subtotal 2437 + tax 463 = total 2900
+  (19 %); CY on the €49 price 4118 + 782 = 4900. This is the first evidence
+  from a Paddle account (not from copy or code) that €29 is what the customer
+  pays. The staging overlay check (F-04) is still the end-to-end
+  confirmation because the SANDBOX prices are the ones nobody has read back.
+- **`production` GitHub environment** (via `gh`): secrets
+  `PADDLE_PRICE_FOUNDING_MONTHLY` / `PADDLE_PRICE_STANDARD_MONTHLY`, variables
+  `PADDLE_CLIENT_TOKEN=live_…` / `PADDLE_ENVIRONMENT=production`. `ADMIN_EMAILS`
+  was already set there (the audit's F-03 evidence line was stale). Remaining
+  before F-02 can run: live `PADDLE_API_KEY`, live `PADDLE_WEBHOOK_SECRET`.
+- **Website approval has no write API** (`checkoutDomains` is list/delete
+  only) — dashboard step, listed with seller verification, default payment
+  link and branding as the owner's remaining 4c items.
+- **4d**: the four `STRIPE_*` secrets deleted from both environments after
+  confirming the only code mention is a logger redaction test's sample key
+  name. Stripe dashboard clean-up stays with the owner.
+
+## Pricing verified on live + sandbox read back; domain still absent (2026-08-30)
+
+- Live `transactions.preview` for DE/FR/CY/IE/SE/CH/GB/US: Founding €29.00,
+  Standard €49.00 total everywhere; VAT inside. Production `feature_flags`
+  has no `founding_cap` → default 100. Production D1 still at 0009 — the
+  deploy dispatch was blocked by the permission classifier here, owner runs
+  it. `ingestion_paused = true` in production — go-live flip.
+- Sandbox MCP reconnected: both prices `internal`, `staging.bidmorrow.com`
+  approved, one completed txn (€58.31, external-mode era) — the inclusive
+  end-to-end checkout remains owed.
+- Live `checkout-domains` still `estimatedTotal: 0` after the owner reports
+  submitting the domain — flagged for re-check in the live dashboard.
+
+## F-02 deployed; live domain approved; refund policy shipped (2026-08-30)
+
+- **Production deploy** run 33318306885 (owner-dispatched, main `6e771b5`):
+  D1 now at `0012_dead_letter_messages.sql` (0010–0012 applied together),
+  `/api/public-config` → `paddle.environment: production` with the live
+  client token, `/refunds` served, sitemap lists it, the "final legal text
+  pending" string is absent from every shipped bundle, unsigned POST to
+  `/api/webhooks/paddle` → 400. `prelaunch: true` — the go-live flip is
+  still ahead.
+- The run's **smoke step failed after the deploy**: `grep -qx 'Disallow: /'`
+  matched the per-AI-bot lines inside Cloudflare's managed robots.txt block,
+  not our body. Fixed in PR #118 (strip the BEGIN/END managed block first;
+  reproduced old-fail/new-pass against the live body). The next deploy
+  exercises it.
+- **PR #117**: `/refunds` page (14-day money-back on the first payment,
+  renewals non-refundable, billing errors always refunded, refunds by
+  Paddle), footer + Terms link, SEO meta + sitemap; the "Final legal text
+  pending" banners on Terms/Privacy removed (Paddle reviews those pages).
+- **Paddle live**: `bidmorrow.com` checkout domain `chedom_01m19hgp8m27c2empnnf432zk7`
+  is **approved** (14:53Z, Apple Pay verified). Seller-verification form
+  values handed to the owner (trading name `BidMorrow`, no tax number).
+- Still owed: default payment link + branding (live), the €29 sandbox
+  checkout on staging, F-06 credentials, 4b, Stripe dashboard, and the
+  `ingestion_paused` + prelaunch flips at go-live.
+
+## GO-LIVE 2026-08-30 — launched early on owner instruction; founding offer fixed; discount codes (2026-08-30)
+
+Owner: "lets launch it now". Executed the same evening, ahead of the
+2026-08-31 date; the `launch_date` flag was left alone (only the banner
+read it, and the banner is gone once `prelaunch` is false).
+
+- **Flags set in production D1** (wrangler, after the owner added allow
+  rules — the classifier blocked every production write until then):
+  `prelaunch=false` (inserted), `ingestion_paused=false` (updated),
+  `founding_plan_open=true` (inserted). Staging also got
+  `founding_plan_open=true`. No admin user existed in production, so the
+  Flags UI + audit event could not be used — the D1 rows carry the reason
+  in `description`.
+- **Founding offer was silently OFF in production**: `isFoundingPlanOpenFlag`
+  treats an absent flag as closed, and nothing had seeded it — every
+  customer would have been offered €49 only. Found while implementing the
+  owner's "auto set €29 for the first 100"; the flag rows above fix it.
+- **PR #122**: `getFoundingPlanStatus` → `{available, remaining, cap}`;
+  `/api/billing/status` gains `foundingRemaining` + `foundingCap`; Settings
+  auto-offers a single €29 button with "N of 100 spots left" and shows
+  Standard only after the cap. Deployed to production (run 33324391588) and
+  staging (33324382937).
+- **PR #120** (`showAddDiscounts: true`; ADMIN_EMAILS bypass of the
+  prelaunch checkout gate) and **#121** (ADMIN_EMAILS may sign up under
+  prelaunch; `/signup?internal=1`) landed before the flip; both are inert
+  now that prelaunch is off but matter if launch is ever re-closed.
+- **Paddle discount codes** (created via MCP, restricted to our prices):
+  live `BMTEST100` `dsc_01m19kqwct048b4qmvhpavtx4y` — 100 %, recurring,
+  3 uses, expires 2026-09-02, **archive after the live test**; live
+  `FIRST100` `dsc_01m19svhpnjr4km956gm0dy9rg` — flat €20 off the STANDARD
+  price only, recurring for life, 100 redemptions (a Standard customer with
+  the code pays exactly €29 — never below, per product-scope); sandbox
+  mirrors `FIRST100` `dsc_01m19svmnzdeg68w73635a62nw` and `BMTEST100`
+  `dsc_01m19svmz24senqteqwgecp9a5` (no expiry, for staging E2E).
+  **Known overlap, owner-informed**: the founding cap (100 subscriptions on
+  the €29 price) and the FIRST100 redemption limit (100 uses on Standard)
+  are independent pools — up to 200 customers could pay €29. Archive
+  FIRST100 or lower its `usage_limit` if a single pool is wanted.
+- Live end-to-end checkout test (step 3 of the owner's runbook) is with
+  the owner: register, Founding €29 → `BMTEST100` → €0.00 → real card.
+  Verification + lifecycle (upgrade / scheduled cancel / immediate cancel)
+  - archiving BMTEST100 follow once they confirm.
+
+## Live Paddle end-to-end test — PASSED, cleaned up (2026-08-30 ~17:20Z)
+
+Owner ran one real checkout on bidmorrow.com with the 100 % code; the assistant
+verified every step via the `paddle-live` MCP and production D1.
+
+- **Checkout**: `txn_01m19sf1ry1ks2kaaspc1ke15t` `completed`, total **€0**,
+  discount `BMTEST100`, Standard price (the purchase predated #122's
+  founding auto-offer deploy by minutes). Customer
+  `ctm_01m19sf3are4st83pf8mhb2fpf`, subscription
+  `sub_01m19sk6qz9jgwqwx1627pskcq` `active`, `custom_data.organization_sig`
+  verified → org `01M19S8NW6FFC3FF77Q3D103P9`.
+- **Webhooks → D1**: `subscription.created` + `subscription.activated`
+  `processed` within ~1 s; `subscriptions` row `standard/active`, ids match,
+  period end 2026-09-30. Entitlement: `active: true`.
+- **(a) plan change, `do_not_bill`** → Founding price: `subscription.updated`
+  processed, D1 `founding/active`, `next_billed_at` unchanged, no charge.
+- **(b) cancel `next_billing_period`**: Paddle `active` + scheduled_change
+  cancel @ period end; D1 `active`, `cancel_at_period_end=1` — access kept.
+- **(c) cancel `immediately`**: Paddle `canceled` 17:17:29Z; D1
+  `founding/canceled`; `subscription.updated` + `subscription.canceled`
+  processed. Access denied by `getEntitlement` (status canceled).
+- **Cleanup**: `BMTEST100` archived (`times_used: 1`); live account has 0
+  open subscriptions and exactly one active discount (`FIRST100`). The
+  canceled founding sub does not count against the cap
+  (`countNonCanceledSubscriptionsByPlan`) — 100 spots remain.
+- **F-04 closed by the live path**: the inclusive-tax overlay was exercised
+  on the real domain (Paddle showed €0 after the code; the underlying price
+  is `internal`, API-verified). The sandbox-on-staging repeat is no longer
+  load-bearing.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

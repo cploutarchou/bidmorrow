@@ -37,6 +37,15 @@ export interface DigestSendMessage {
   readonly subject: string;
   readonly html: string;
   readonly text: string;
+  /**
+   * Extra MIME headers, passed straight to Resend's documented `headers`
+   * field (an object of header name -> value; verified against Resend's
+   * custom-headers documentation 2026-08-29 — see
+   * docs/dependency-versions.md). Used for RFC 8058 one-click unsubscribe
+   * (`List-Unsubscribe` + `List-Unsubscribe-Post`); omitted entirely when
+   * empty so the request body is unchanged for callers that set none.
+   */
+  readonly headers?: Readonly<Record<string, string>>;
 }
 
 export interface DigestSendResult {
@@ -73,6 +82,32 @@ export interface DigestEmailProvider {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Defense in depth at the provider boundary (SEC-UNSUB-02). Today's only
+ * caller passes two constants and a URL built from config plus a
+ * percent-encoded token, none of which can carry CR, LF or NUL — so nothing
+ * is exploitable now. But `headers` is a general passthrough, and a future
+ * caller interpolating an address, a name or any source-derived string would
+ * otherwise be relying entirely on Resend's serializer to refuse header
+ * splitting. Throwing here makes that a loud programming error at the seam
+ * that owns the risk, rather than a silent dependency on someone else's
+ * escaping.
+ */
+function assertHeaderSafe(
+  headers: Readonly<Record<string, string>>,
+): Readonly<Record<string, string>> {
+  for (const [name, value] of Object.entries(headers)) {
+    if (/[\r\n\0]/.test(name) || /[\r\n\0]/.test(value)) {
+      // The offending value is never included — it is attacker-influenced by
+      // assumption, and this message reaches logs.
+      throw new PermanentEmailError(
+        `refusing to send: header ${JSON.stringify(name.replace(/[\r\n\0]/g, '?'))} contains a control character`,
+      );
+    }
+  }
+  return headers;
 }
 
 export interface CreateResendEmailProviderArgs {
@@ -122,6 +157,9 @@ export function createResendEmailProvider(
             subject: message.subject,
             html: message.html,
             text: message.text,
+            ...(message.headers !== undefined && Object.keys(message.headers).length > 0
+              ? { headers: assertHeaderSafe(message.headers) }
+              : {}),
           }),
         });
       } catch (cause) {

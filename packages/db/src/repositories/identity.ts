@@ -288,10 +288,23 @@ export async function getOrganization(
 }
 
 /**
- * Every member's email address for an organization (digest recipient list —
- * docs/product-scope.md §7: V1 ships no invitation UI, so this is every user
- * with an `organization_members` row, owner or not). Emails only — never
- * `users.name` or other PII beyond what a "To:" header needs.
+ * Every VERIFIED member's email address for an organization (digest
+ * recipient list — docs/product-scope.md §7: V1 ships no invitation UI, so
+ * this is every user with an `organization_members` row, owner or not).
+ * Emails only — never `users.name` or other PII beyond what a "To:" header
+ * needs.
+ *
+ * The `email_verified` predicate is F-09 (PRODUCTION_READINESS_AUDIT.md).
+ * Digest mail to an unverified address was already unreachable in practice
+ * — Better Auth runs with `requireEmailVerification: true`, and with no
+ * invite flow a membership row can only be created by a verified user for
+ * themselves — but that made the guarantee a property of two distant
+ * facts rather than of this query. Adding team invites would otherwise
+ * have silently started mailing unverified addresses, which is both a
+ * deliverability problem (unverified addresses are disproportionately
+ * typos and spam traps) and the exact shape of an unconsented send.
+ * The production-checklist item reads "email verification enforced before
+ * digest sending"; now the query enforces it.
  */
 export async function listOrganizationMemberEmails(
   db: Db,
@@ -301,7 +314,9 @@ export async function listOrganizationMemberEmails(
     .select({ email: users.email })
     .from(organizationMembers)
     .innerJoin(users, eq(users.id, organizationMembers.userId))
-    .where(eq(organizationMembers.organizationId, organizationId));
+    .where(
+      and(eq(organizationMembers.organizationId, organizationId), eq(users.emailVerified, true)),
+    );
   return rows.map((row) => row.email);
 }
 

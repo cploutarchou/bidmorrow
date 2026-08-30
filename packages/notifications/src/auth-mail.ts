@@ -8,6 +8,9 @@
  * (docs/security.md C10: it never logs `url`/subject/html/text, and this
  * module does not log at all).
  */
+import { SUPPORT_EMAIL } from './copy';
+import { EMAIL_BRAND, emailButton, emailLink, renderEmailLayout } from './email-layout';
+import { escapeHtml } from './escape-html';
 import { createResendEmailProvider, type CreateResendEmailProviderArgs } from './resend';
 
 export type AuthEmailKind = 'verification' | 'password_reset';
@@ -33,35 +36,54 @@ export interface AuthEmailBody {
 /**
  * Builds the subject/text/html body for an auth transactional email. `url`
  * is BidMorrow's own outbound link (Better Auth-generated), not
- * user-controlled procurement content, so it does not need HTML-escaping
- * the way tender/procurement data would (docs/security.md C10's escaping
- * requirement is about untrusted TED content, not our own signed links) —
- * still, it is injected as-is with no surrounding untrusted content, so
- * there is nothing else in this template that requires escaping either.
+ * user-controlled procurement content — so, unlike digest content, it
+ * carries no XSS risk on its own — but it is still run through
+ * `escapeHtml` before landing in the HTML body (belt-and-suspenders,
+ * consistent with "every dynamic value goes through the escape helper").
+ * The plain-text body never escapes it: a real, clickable, human-readable
+ * URL is the point of the text alternative.
+ *
+ * No expiry note: Better Auth's verification/reset token lifetime is not
+ * configured/threaded into this module (docs/dependency-versions.md has
+ * no recorded value either), so stating a duration here would be a
+ * fabricated number. Add an `expiresInMinutes` parameter here (and thread
+ * it from wherever Better Auth's lifetime is finally configured) rather
+ * than hardcoding one from memory.
  */
 export function buildAuthEmailBody(kind: AuthEmailKind, url: string): AuthEmailBody {
-  const subject = kind === 'verification' ? 'Verify your email address' : 'Reset your password';
-  const action = kind === 'verification' ? 'verify your email address' : 'reset your password';
+  const isVerification = kind === 'verification';
+  const subject = isVerification ? 'Verify your email address' : 'Reset your password';
+  const headline = subject;
+  const bodyLine = isVerification
+    ? 'Confirm this email address to finish setting up your BidMorrow account.'
+    : 'Use the button below to choose a new password for your BidMorrow account.';
+  const buttonLabel = isVerification ? 'Verify email address' : 'Reset password';
+  const ignoreLine = "If you didn't request this, you can safely ignore this email.";
+
   const text = [
-    subject,
+    headline,
     '',
-    `Click the link below to ${action}:`,
+    bodyLine,
+    '',
     url,
     '',
-    'If you did not request this, you can safely ignore this email.',
+    ignoreLine,
+    '',
+    `Questions? ${SUPPORT_EMAIL}`,
   ].join('\n');
-  const html = `<!doctype html>
-<html>
-  <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#111827;">
-    <p style="font-weight:600;font-size:16px;margin:0 0 16px;">BidMorrow</p>
-    <p>Click the button below to ${action}.</p>
-    <p style="margin:24px 0;">
-      <a href="${url}" style="display:inline-block;background:#111827;color:#ffffff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">${subject}</a>
-    </p>
-    <p style="color:#6b7280;font-size:13px;">If the button does not work, copy this link into your browser:<br>${url}</p>
-    <p style="color:#6b7280;font-size:13px;">If you did not request this, you can safely ignore this email.</p>
-  </body>
-</html>`;
+
+  const bodyHtml =
+    `<h1 style="margin:0 0 12px;font-size:20px;color:${EMAIL_BRAND.ink};">${escapeHtml(headline)}</h1>` +
+    `<p style="margin:0 0 20px;">${escapeHtml(bodyLine)}</p>` +
+    `<p style="margin:0 0 20px;">${emailButton(url, buttonLabel)}</p>` +
+    `<p style="margin:0 0 8px;color:${EMAIL_BRAND.muted};font-size:13px;">If the button above does not work, copy and paste this link into your browser:</p>` +
+    `<p style="margin:0 0 20px;font-size:13px;word-break:break-all;color:${EMAIL_BRAND.muted};">${escapeHtml(url)}</p>` +
+    `<p style="margin:0;color:${EMAIL_BRAND.muted};font-size:13px;">${escapeHtml(ignoreLine)}</p>`;
+
+  const footerHtml = `<p style="margin:0;">Questions? ${emailLink(`mailto:${SUPPORT_EMAIL}`, SUPPORT_EMAIL)}</p>`;
+
+  const html = renderEmailLayout({ subject, bodyHtml, footerHtml });
+
   return { subject, text, html };
 }
 

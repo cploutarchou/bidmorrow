@@ -102,3 +102,62 @@ describe('createResendEmailProvider', () => {
     }
   });
 });
+
+// SEC-UNSUB-02: defense in depth at the provider boundary — a future caller
+// interpolating a source-derived string into a header must not be able to
+// split it. Today's caller cannot, which is exactly why this needs a test.
+describe('custom header passthrough', () => {
+  it('forwards headers when present and omits the field entirely when absent', async () => {
+    const calls: RequestInit[] = [];
+    const fetchImpl = (async (_url: string, init: RequestInit) => {
+      calls.push(init);
+      return new Response(JSON.stringify({ id: 'msg_1' }), { status: 200 });
+    }) as unknown as typeof fetch;
+    const provider = createResendEmailProvider({ apiKey: 'k', from: 'a@b.test', fetchImpl });
+
+    await provider.send({
+      to: 'x@example.test',
+      kind: 'digest',
+      subject: 's',
+      html: '<p>h</p>',
+      text: 't',
+      headers: { 'List-Unsubscribe': '<https://example.test/u?token=a.b>' },
+    });
+    expect(JSON.parse(String(calls[0]?.body)).headers).toEqual({
+      'List-Unsubscribe': '<https://example.test/u?token=a.b>',
+    });
+
+    await provider.send({
+      to: 'x@example.test',
+      kind: 'digest',
+      subject: 's',
+      html: '<p>h</p>',
+      text: 't',
+    });
+    expect(JSON.parse(String(calls[1]?.body))).not.toHaveProperty('headers');
+  });
+
+  it('refuses to send a header carrying CR, LF or NUL, and never echoes the value', async () => {
+    const fetchImpl = (async () =>
+      new Response(JSON.stringify({ id: 'msg_1' }), { status: 200 })) as unknown as typeof fetch;
+    const provider = createResendEmailProvider({ apiKey: 'k', from: 'a@b.test', fetchImpl });
+
+    for (const headers of [
+      { 'List-Unsubscribe': '<https://e.test>\r\nBcc: attacker@evil.test' },
+      { 'List-Unsubscribe': '<https://e.test>\nBcc: attacker@evil.test' },
+      { 'X-Bad\r\nInjected': 'value' },
+      { 'List-Unsubscribe': 'a\0b' },
+    ]) {
+      await expect(
+        provider.send({
+          to: 'x@example.test',
+          kind: 'digest',
+          subject: 's',
+          html: '<p>h</p>',
+          text: 't',
+          headers,
+        }),
+      ).rejects.toThrow(/control character/);
+    }
+  });
+});

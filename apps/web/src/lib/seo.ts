@@ -100,7 +100,7 @@ export const MARKETING_META = {
   privacy: {
     title: 'Privacy — BidMorrow',
     description:
-      "What BidMorrow collects and what it deliberately doesn't: no third-party analytics, no session replay, no data sales. Full legal text pending.",
+      "What BidMorrow collects and what it deliberately doesn't: no third-party analytics, no session replay, no data sales.",
     canonical: `${SITE_ORIGIN}/privacy`,
   },
   terms: {
@@ -108,6 +108,12 @@ export const MARKETING_META = {
     description:
       'BidMorrow terms summary: decision support only, scoped TED coverage, monthly billing via Paddle (Merchant of Record), cancel any time.',
     canonical: `${SITE_ORIGIN}/terms`,
+  },
+  refunds: {
+    title: 'Refund policy — BidMorrow',
+    description:
+      '14-day money-back on your first payment, renewals non-refundable, billing errors always refunded. Refunds issued by Paddle, our Merchant of Record.',
+    canonical: `${SITE_ORIGIN}/refunds`,
   },
 } as const satisfies Record<string, PageMetadata>;
 
@@ -123,4 +129,5 @@ export const SITEMAP_PATHS = [
   '/contact',
   '/privacy',
   '/terms',
+  '/refunds',
 ] as const;
