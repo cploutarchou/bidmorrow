@@ -26,6 +26,42 @@ describe('buildAuthEmailBody', () => {
     expect(body.text).toContain(url);
     expect(body.html).toContain(url);
   });
+
+  it('carries the BidMorrow brand, one primary button, and the "if you did not request this" line', () => {
+    const url = 'https://app.bidmorrow.com/verify?token=abc123';
+    const body = buildAuthEmailBody('verification', url);
+    expect(body.html).toContain('BidMorrow');
+    // One primary CTA — the button links straight to the raw url.
+    expect(body.html).toMatch(
+      new RegExp(
+        `<a href="${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>Verify email address</a>`,
+      ),
+    );
+    expect(body.html).toMatch(/request this, you can safely ignore this email/i);
+    expect(body.text).toMatch(/didn't request this, you can safely ignore this email/i);
+    // Raw url printed as plain text too, for clients that strip buttons.
+    expect(body.text.split('\n')).toContain(url);
+  });
+
+  it('never states an expiry duration that is not actually configured anywhere', () => {
+    const body = buildAuthEmailBody('password_reset', 'https://app.bidmorrow.com/reset?token=xyz');
+    expect(body.html).not.toMatch(/expires? in/i);
+    expect(body.text).not.toMatch(/expires? in/i);
+  });
+
+  it('includes the support address in both bodies', () => {
+    const body = buildAuthEmailBody('verification', 'https://app.bidmorrow.com/verify?token=abc');
+    expect(body.html).toContain('support@bidmorrow.com');
+    expect(body.text).toContain('support@bidmorrow.com');
+  });
+
+  it('the password_reset text body never contains a literal "<" (plain-text safety)', () => {
+    const body = buildAuthEmailBody(
+      'password_reset',
+      'https://app.bidmorrow.com/reset?token=xyz789',
+    );
+    expect(body.text).not.toContain('<');
+  });
 });
 
 describe('createResendAuthEmailProvider', () => {

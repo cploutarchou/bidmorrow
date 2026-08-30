@@ -18,6 +18,8 @@ import type { Logger } from '@bidmorrow/observability';
 import type { DigestEmailProvider, DigestSendMessage, DigestSendResult } from './resend';
 
 export * from './escape-html';
+export * from './copy';
+export * from './email-layout';
 export * from './digest-renderer';
 export * from './digest-orchestration';
 export * from './resend';
