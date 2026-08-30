@@ -81,7 +81,11 @@ export async function openCheckout(args: OpenCheckoutArgs): Promise<boolean> {
       locale: 'en',
       successUrl: args.successUrl,
       allowLogout: false,
-      showAddDiscounts: false,
+      // Discount codes are entered in the overlay (Paddle validates and
+      // applies them; the server-created transaction is re-priced by
+      // Paddle, never by us). Also needs "display discount field on the
+      // checkout" enabled in Paddle → Checkout → Checkout settings.
+      showAddDiscounts: true,
     },
   });
   return true;
