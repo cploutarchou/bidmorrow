@@ -71,8 +71,19 @@ export function renderEmailLayout(args: {
   readonly subject: string;
   readonly bodyHtml: string;
   readonly footerHtml: string;
+  /**
+   * Origin that serves `/brand-logo-light.png` (e.g. `https://bidmorrow.com`).
+   * When given, the header is the real logo with the wordmark as `alt` —
+   * clients that block images still show "BidMorrow". When absent, the
+   * header stays a text wordmark. Only ever an https origin we control.
+   */
+  readonly logoOrigin?: string | undefined;
 }): string {
   const titleSafe = escapeHtml(args.subject);
+  const headerHtml =
+    args.logoOrigin === undefined || !/^https:\/\/[a-z0-9.-]+(?::\d+)?$/i.test(args.logoOrigin)
+      ? `<p style="${WORDMARK_STYLE}">BidMorrow</p>`
+      : `<img src="${escapeHtml(`${args.logoOrigin}/brand-logo-light.png`)}" alt="BidMorrow" width="190" height="55" style="display:block;border:0;outline:none;text-decoration:none;height:auto;max-width:190px;${WORDMARK_STYLE}">`;
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -86,7 +97,7 @@ export function renderEmailLayout(args: {
 <tr><td align="center">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${CONTAINER_STYLE}">
 <tr><td style="${HEADER_CELL_STYLE}">
-<p style="${WORDMARK_STYLE}">BidMorrow</p>
+${headerHtml}
 </td></tr>
 <tr><td style="${BODY_CELL_STYLE}">
 ${args.bodyHtml}

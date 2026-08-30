@@ -5039,6 +5039,38 @@ verified every step via the `paddle-live` MCP and production D1.
   is `internal`, API-verified). The sandbox-on-staging repeat is no longer
   load-bearing.
 
+## Branding pass: emails, billing area, Paddle checkout (2026-08-30, PRs #125-#128)
+
+Owner asked for checkout branding (4b + live), better email templates and a
+branded invoice/client area. Delivered by two subagents + direct work, all
+deployed to production and staging:
+
+- **#125 emails**: `email-layout.ts` shared table-based layout (600px,
+  inline CSS, brand tokens, footer = TED attribution + decision-support
+  disclaimer + support@); verify/reset and the daily digest rebuilt on it
+  (cards, score badges, "View in BidMorrow" CTA that never touches
+  `/app/tenders/*`, unsubscribe untouched). Every value escaped; text
+  bodies kept. Notifications tests 37 → 48. Deliberate: no expiry line in
+  auth emails — no token lifetime is configured anywhere to state.
+- **#125 billing area**: `components/billing/` — BillingOfferCard (accent
+  rule, tabular price, founding pill, truthful bullets, aria-live spots
+  left), BillingSubscriptionCard, BillingInvoiceTable (status pills,
+  skeleton, stacked rows ≤40rem, "Paddle, Merchant of Record" note). Same
+  handlers/labels; billing + critical-path e2e pass.
+- **#126 + API**: brand PNGs (rendered from Logo.tsx + Archivo via
+  Playwright, sources in docs/brand/) served at `/brand-mark-512.png` and
+  `/brand-logo-light.png`; Paddle `products.update image_url` set on all
+  four products (live → bidmorrow.com URL, sandbox → staging URL) — the
+  overlay's order summary now shows the mark. **The overlay has no
+  seller-logo slot**; its only dashboard knobs are the Overlay tab's Brand
+  Color (owner: `#0f7d6f`, both dashboards — the last open click) and the
+  product image. #127 corrected docs/brand/README.md accordingly.
+- **#128 email logo**: header renders the hosted logo (origin derived
+  textually from the auth URL / appBaseUrl, https-validated, alt
+  "BidMorrow" fallback for image-blocking clients). Found en route: the
+  worker's TS lib types URL without `origin`/`host`, hence the regex
+  extraction. Owner confirmed the staging reset email renders correctly.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

@@ -82,7 +82,13 @@ export function buildAuthEmailBody(kind: AuthEmailKind, url: string): AuthEmailB
 
   const footerHtml = `<p style="margin:0;">Questions? ${emailLink(`mailto:${SUPPORT_EMAIL}`, SUPPORT_EMAIL)}</p>`;
 
-  const html = renderEmailLayout({ subject, bodyHtml, footerHtml });
+  // The action URL is minted by Better Auth against BETTER_AUTH_URL, so its
+  // origin is our own domain (staging or production) — the same origin
+  // serves the logo. Anything unparseable falls back to the text wordmark.
+  // Origin extracted textually (the worker's TS lib types URL minimally);
+  // renderEmailLayout re-validates the shape before using it.
+  const logoOrigin = /^https:\/\/[a-z0-9.-]+(?::\d+)?/i.exec(url)?.[0];
+  const html = renderEmailLayout({ subject, bodyHtml, footerHtml, logoOrigin });
 
   return { subject, text, html };
 }

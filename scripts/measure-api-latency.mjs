@@ -46,6 +46,14 @@ const { values } = parseArgs({
     // APP_BASE_URL, which scripts/e2e-write-dev-vars.mjs sets to
     // http://127.0.0.1:8787. A localhost origin is rejected as INVALID_ORIGIN.
     'base-url': { type: 'string', default: 'http://127.0.0.1:8787' },
+    // A pre-seeded account (staging: the CI perf probe). When given, the
+    // script signs straight in — no signup, no test mailbox — so it can
+    // measure staging (F-06). Password comes from PERF_PASSWORD.
+    email: { type: 'string' },
+    // Pause between samples. Staging limits /api/org/* to 100 req/min per
+    // IP — an unpaced run measures 429s, not routes. ~700 ms keeps a full
+    // run under the limit; local runs keep 0.
+    'delay-ms': { type: 'string', default: '0' },
     iterations: { type: 'string', default: '40' },
     'budget-ms': { type: 'string', default: '500' },
     json: { type: 'boolean', default: false },
@@ -55,7 +63,16 @@ const { values } = parseArgs({
 const BASE = values['base-url'].replace(/\/$/, '');
 const ITERATIONS = Number.parseInt(values.iterations, 10);
 const BUDGET_MS = Number.parseInt(values['budget-ms'], 10);
-const PASSWORD = 'correct horse battery staple 1!';
+const DELAY_MS = Number.parseInt(values['delay-ms'], 10);
+const SEEDED_EMAIL = values.email;
+const PASSWORD =
+  SEEDED_EMAIL === undefined
+    ? 'correct horse battery staple 1!'
+    : (process.env.PERF_PASSWORD ?? '');
+if (SEEDED_EMAIL !== undefined && PASSWORD.length === 0) {
+  console.error('--email requires PERF_PASSWORD in the environment');
+  process.exit(2);
+}
 
 if (!Number.isFinite(ITERATIONS) || ITERATIONS < 5) {
   console.error('--iterations must be an integer >= 5');
@@ -80,6 +97,21 @@ async function timed(fetchFn) {
 }
 
 async function establishSession() {
+  if (SEEDED_EMAIL !== undefined) {
+    // Seeded-account path: the account and its org already exist (created
+    // once, credentials in CI secrets) — sign in and go.
+    const signIn = await fetch(`${BASE}/api/auth/sign-in/email`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: BASE },
+      body: JSON.stringify({ email: SEEDED_EMAIL, password: PASSWORD }),
+    });
+    if (!signIn.ok) throw new Error(`seeded sign-in failed (${String(signIn.status)})`);
+    const seededCookie = (signIn.headers.getSetCookie?.() ?? [])
+      .map((value) => value.split(';')[0])
+      .join('; ');
+    if (seededCookie.length === 0) throw new Error('seeded sign-in returned no session cookie');
+    return seededCookie;
+  }
   const email = `perf-${String(Date.now())}-${String(Math.floor(Math.random() * 1e6))}@example.test`;
 
   const signUp = await fetch(`${BASE}/api/auth/sign-up/email`, {
@@ -140,6 +172,7 @@ async function measure(label, path, init = {}) {
   // would make p99 a measurement of startup rather than of the route.
   await timed(() => fetch(`${BASE}${path}`, init));
   for (let i = 0; i < ITERATIONS; i += 1) {
+    if (DELAY_MS > 0) await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
     const { ms, status } = await timed(() => fetch(`${BASE}${path}`, init));
     samples.push(ms);
     statuses.add(status);
