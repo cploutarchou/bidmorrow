@@ -114,7 +114,7 @@ were annotated rather than rewritten — history stays history.
 
 _Status_: **FIXED**.
 
-### F-02 · HIGH · Deployment · OPEN
+### F-02 · HIGH · Deployment · **CLOSED 2026-08-30** (run 33318306885: D1 at 0012, production Paddle config live; smoke-step robots assertion fixed in #118)
 
 **Production is 41 PRs behind `main` and its billing code targets a
 decommissioned provider.**
