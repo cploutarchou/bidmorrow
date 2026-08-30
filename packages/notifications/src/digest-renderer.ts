@@ -180,7 +180,10 @@ export function renderDigest(args: RenderDigestArgs): RenderedDigest {
       : `<p style="margin:0 0 8px;">${emailLink(args.unsubscribeUrl, 'Unsubscribe from this digest')} — no sign-in needed.</p>`) +
     `<p style="margin:0;">Questions? ${emailLink(`mailto:${SUPPORT_EMAIL}`, SUPPORT_EMAIL)}</p>`;
 
-  const html = renderEmailLayout({ subject, bodyHtml, footerHtml });
+  // Origin extracted textually (the worker's TS lib types URL minimally);
+  // renderEmailLayout re-validates the shape before using it.
+  const logoOrigin = /^https:\/\/[a-z0-9.-]+(?::\d+)?/i.exec(args.appBaseUrl)?.[0];
+  const html = renderEmailLayout({ subject, bodyHtml, footerHtml, logoOrigin });
 
   const textItems = items
     .map((item) => {
