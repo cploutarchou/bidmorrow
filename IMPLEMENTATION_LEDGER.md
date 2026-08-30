@@ -4928,6 +4928,19 @@ F-03 first (the only item with an external clock, launch 2026-08-31).
   confirming the only code mention is a logger redaction test's sample key
   name. Stripe dashboard clean-up stays with the owner.
 
+## Pricing verified on live + sandbox read back; domain still absent (2026-08-30)
+
+- Live `transactions.preview` for DE/FR/CY/IE/SE/CH/GB/US: Founding €29.00,
+  Standard €49.00 total everywhere; VAT inside. Production `feature_flags`
+  has no `founding_cap` → default 100. Production D1 still at 0009 — the
+  deploy dispatch was blocked by the permission classifier here, owner runs
+  it. `ingestion_paused = true` in production — go-live flip.
+- Sandbox MCP reconnected: both prices `internal`, `staging.bidmorrow.com`
+  approved, one completed txn (€58.31, external-mode era) — the inclusive
+  end-to-end checkout remains owed.
+- Live `checkout-domains` still `estimatedTotal: 0` after the owner reports
+  submitting the domain — flagged for re-check in the live dashboard.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

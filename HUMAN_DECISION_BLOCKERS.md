@@ -228,6 +228,10 @@ and live — must be `internal`; see 4b and 4c.
     top. That is the one observation that distinguishes `internal` from
     `external`, and it is still owed — it was already deferred once (4a/4b),
     so nothing has yet exercised the inclusive path end to end.
+    **2026-08-30: the tax mode itself is now VERIFIED by API via the
+    reconnected sandbox MCP — both prices `internal`. The end-to-end €29
+    checkout is still owed; the only completed sandbox transaction predates
+    the switch and totals €58.31.**
 
   **2026-08-30: the `paddle-sandbox` MCP key is rejected by Paddle ("You
   aren't permitted to perform this request") — the sandbox API key was
@@ -269,6 +273,19 @@ internal`**, quantity locked to 1; notification destination
   production" destination → copy its secret → `production` secret
   `PADDLE_WEBHOOK_SECRET`. Claude never sees (4) or (5). Until (1)+(2) are
   approved, live checkouts fail even with everything else in place.
+  **2026-08-30 (later) — pricing verified, domain still missing.**
+  `transactions.preview` on the live prices for DE, FR, CY, IE, SE, CH,
+  GB, US: Founding total **€29.00** and Standard total **€49.00** in every
+  case, VAT carved out inside (US: €0 tax, still €29/€49). Founding cap:
+  production `feature_flags` has NO `founding_cap` row → code default 100
+  (`DEFAULT_FOUNDING_CAP`), so the first 100 subscriptions get €29 and the
+  server selects the €49 price after that. **Website approval: the owner
+  reports submitting `bidmorrow.com`, but the live `checkout-domains`
+  list still returns `estimatedTotal: 0`** (the same key sees the
+  destination, so this is not a read-scope issue). Re-check in the LIVE
+  dashboard (vendors.paddle.com, not sandbox) → Checkout → Website
+  approval. Also seen: production `ingestion_paused = true` (seeded) —
+  flip at go-live.
   Original instructions kept below for reference: sign up at https://vendors.paddle.com and complete seller
   verification (individual seller is fine); website approval for
   `bidmorrow.com` (Paddle reviews for public pricing, terms naming Paddle
