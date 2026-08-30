@@ -15,10 +15,35 @@ describe('renderEmailLayout', () => {
     expect(html).toContain('Test subject');
     expect(html).toContain('<p>hello</p>');
     expect(html).toContain('<p>footer</p>');
-    // No remote images/scripts — text-only wordmark, no CSP-hostile assets.
+    // Without a logo origin: text-only wordmark, no remote assets.
     expect(html).not.toContain('<img');
     expect(html).not.toContain('<script');
     expect(html).not.toContain('<svg');
+  });
+
+  it('renders the hosted logo with the wordmark as alt when a logo origin is given', () => {
+    const html = renderEmailLayout({
+      subject: 's',
+      bodyHtml: '<p>b</p>',
+      footerHtml: '<p>f</p>',
+      logoOrigin: 'https://bidmorrow.com',
+    });
+    expect(html).toContain('src="https://bidmorrow.com/brand-logo-light.png"');
+    expect(html).toContain('alt="BidMorrow"');
+    expect(html).not.toContain('>BidMorrow</p>');
+  });
+
+  it('falls back to the text wordmark for a non-https or malformed origin', () => {
+    for (const bad of ['http://evil.example', 'javascript:alert(1)', 'https://x.y/z']) {
+      const html = renderEmailLayout({
+        subject: 's',
+        bodyHtml: '',
+        footerHtml: '',
+        logoOrigin: bad,
+      });
+      expect(html).not.toContain('<img');
+      expect(html).toContain('BidMorrow');
+    }
   });
 
   it('escapes the subject before it lands in <title>', () => {
