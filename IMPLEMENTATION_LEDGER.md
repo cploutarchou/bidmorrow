@@ -4941,6 +4941,31 @@ F-03 first (the only item with an external clock, launch 2026-08-31).
 - Live `checkout-domains` still `estimatedTotal: 0` after the owner reports
   submitting the domain — flagged for re-check in the live dashboard.
 
+## F-02 deployed; live domain approved; refund policy shipped (2026-08-30)
+
+- **Production deploy** run 33318306885 (owner-dispatched, main `6e771b5`):
+  D1 now at `0012_dead_letter_messages.sql` (0010–0012 applied together),
+  `/api/public-config` → `paddle.environment: production` with the live
+  client token, `/refunds` served, sitemap lists it, the "final legal text
+  pending" string is absent from every shipped bundle, unsigned POST to
+  `/api/webhooks/paddle` → 400. `prelaunch: true` — the go-live flip is
+  still ahead.
+- The run's **smoke step failed after the deploy**: `grep -qx 'Disallow: /'`
+  matched the per-AI-bot lines inside Cloudflare's managed robots.txt block,
+  not our body. Fixed in PR #118 (strip the BEGIN/END managed block first;
+  reproduced old-fail/new-pass against the live body). The next deploy
+  exercises it.
+- **PR #117**: `/refunds` page (14-day money-back on the first payment,
+  renewals non-refundable, billing errors always refunded, refunds by
+  Paddle), footer + Terms link, SEO meta + sitemap; the "Final legal text
+  pending" banners on Terms/Privacy removed (Paddle reviews those pages).
+- **Paddle live**: `bidmorrow.com` checkout domain `chedom_01m19hgp8m27c2empnnf432zk7`
+  is **approved** (14:53Z, Apple Pay verified). Seller-verification form
+  values handed to the owner (trading name `BidMorrow`, no tax number).
+- Still owed: default payment link + branding (live), the €29 sandbox
+  checkout on staging, F-06 credentials, 4b, Stripe dashboard, and the
+  `ingestion_paused` + prelaunch flips at go-live.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

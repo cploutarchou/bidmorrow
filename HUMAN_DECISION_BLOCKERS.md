@@ -286,6 +286,12 @@ internal`**, quantity locked to 1; notification destination
   dashboard (vendors.paddle.com, not sandbox) → Checkout → Website
   approval. Also seen: production `ingestion_paused = true` (seeded) —
   flip at go-live.
+  **2026-08-30 15:05Z — `bidmorrow.com` checkout domain APPROVED**
+  (`chedom_01m19hgp8m27c2empnnf432zk7`, Apple Pay verified) and the
+  production deploy (run 33318306885) is live with the full Paddle
+  production config. Remaining in the live dashboard: default payment link
+  `https://bidmorrow.com/app/settings` + logo/brand colour, and whatever
+  seller-verification steps Paddle still shows as pending.
   Original instructions kept below for reference: sign up at https://vendors.paddle.com and complete seller
   verification (individual seller is fine); website approval for
   `bidmorrow.com` (Paddle reviews for public pricing, terms naming Paddle
