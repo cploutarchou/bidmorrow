@@ -18,6 +18,7 @@ import { createDb, getDbSizeEstimate, recordDeadLetter } from '@bidmorrow/db';
 import { robotsTxt } from './robots';
 import { resolveBillingConfig } from './billing';
 import { readPrelaunchState } from './prelaunch';
+import { isInternalAdminEmail } from './middleware/admin';
 import { createLogger } from '@bidmorrow/observability';
 import {
   checkFetchResilienceAlerts,
@@ -191,7 +192,26 @@ app.get('/api/public-config', async (c) => {
 app.use('/api/auth/sign-up/email', async (c, next) => {
   if (c.req.method === 'POST') {
     const { prelaunch } = await readPrelaunchState(createDb(c.env.DB), c.env.APP_ENV);
+    // Internal admins (ADMIN_EMAILS) may create their account before go-live
+    // so the live billing flow can be tested on the real domain (2026-08-30).
+    // The body is read from a clone: Better Auth still consumes the original.
+    // Anything unparseable is treated as a normal (closed) sign-up.
+    let isAdminSignup = false;
     if (prelaunch) {
+      try {
+        const body: unknown = await c.req.raw.clone().json();
+        const email =
+          typeof body === 'object' && body !== null && 'email' in body
+            ? (body as { email: unknown }).email
+            : undefined;
+        if (typeof email === 'string') {
+          isAdminSignup = isInternalAdminEmail(c.env.ADMIN_EMAILS, email);
+        }
+      } catch {
+        isAdminSignup = false;
+      }
+    }
+    if (prelaunch && !isAdminSignup) {
       return c.json(
         {
           error: 'signups_closed',
