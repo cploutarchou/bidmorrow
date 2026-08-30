@@ -12,9 +12,11 @@ Status legend: `OPEN` (needs human), `PROVIDED` (done), `DEFERRED` (not needed y
 
 `prelaunch=false`, `ingestion_paused=false`, `founding_plan_open=true` in
 production D1; live Paddle config deployed; registrations + checkout open.
-Still owed after launch: the live €0 checkout test + lifecycle (owner
-runs the checkout, Claude verifies), archive `BMTEST100`, F-06 staging
-credentials in CI, sandbox branding (4b). Everything below is history.
+~~Still owed after launch: the live €0 checkout test + lifecycle~~ **DONE
+2026-08-30 17:20Z** — checkout, webhooks, D1, entitlement, plan change,
+scheduled + immediate cancel all verified; `BMTEST100` archived. Still
+open: F-06 staging credentials in CI, sandbox checkout branding (4b),
+live checkout logo/brand colour. Everything below is history.
 
 ## OPEN ITEMS SNAPSHOT — 2026-08-16 (production launch checklist)
 

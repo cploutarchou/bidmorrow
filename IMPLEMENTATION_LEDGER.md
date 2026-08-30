@@ -5009,6 +5009,36 @@ read it, and the banner is gone once `prelaunch` is false).
   Verification + lifecycle (upgrade / scheduled cancel / immediate cancel)
   - archiving BMTEST100 follow once they confirm.
 
+## Live Paddle end-to-end test — PASSED, cleaned up (2026-08-30 ~17:20Z)
+
+Owner ran one real checkout on bidmorrow.com with the 100 % code; Claude
+verified every step via the `paddle-live` MCP and production D1.
+
+- **Checkout**: `txn_01m19sf1ry1ks2kaaspc1ke15t` `completed`, total **€0**,
+  discount `BMTEST100`, Standard price (the purchase predated #122's
+  founding auto-offer deploy by minutes). Customer
+  `ctm_01m19sf3are4st83pf8mhb2fpf`, subscription
+  `sub_01m19sk6qz9jgwqwx1627pskcq` `active`, `custom_data.organization_sig`
+  verified → org `01M19S8NW6FFC3FF77Q3D103P9`.
+- **Webhooks → D1**: `subscription.created` + `subscription.activated`
+  `processed` within ~1 s; `subscriptions` row `standard/active`, ids match,
+  period end 2026-09-30. Entitlement: `active: true`.
+- **(a) plan change, `do_not_bill`** → Founding price: `subscription.updated`
+  processed, D1 `founding/active`, `next_billed_at` unchanged, no charge.
+- **(b) cancel `next_billing_period`**: Paddle `active` + scheduled_change
+  cancel @ period end; D1 `active`, `cancel_at_period_end=1` — access kept.
+- **(c) cancel `immediately`**: Paddle `canceled` 17:17:29Z; D1
+  `founding/canceled`; `subscription.updated` + `subscription.canceled`
+  processed. Access denied by `getEntitlement` (status canceled).
+- **Cleanup**: `BMTEST100` archived (`times_used: 1`); live account has 0
+  open subscriptions and exactly one active discount (`FIRST100`). The
+  canceled founding sub does not count against the cap
+  (`countNonCanceledSubscriptionsByPlan`) — 100 spots remain.
+- **F-04 closed by the live path**: the inclusive-tax overlay was exercised
+  on the real domain (Paddle showed €0 after the code; the underlying price
+  is `internal`, API-verified). The sandbox-on-staging repeat is no longer
+  load-bearing.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
