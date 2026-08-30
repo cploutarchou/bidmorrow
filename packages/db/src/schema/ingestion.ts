@@ -213,3 +213,35 @@ export const sourceSnapshots = sqliteTable(
     index('idx_source_snapshots__source_source_notice_id').on(t.source, t.sourceNoticeId),
   ],
 );
+
+/**
+ * Dead-lettered queue messages (migration 0012, F-07).
+ *
+ * Lives in the ingestion schema module because it is operator/pipeline
+ * infrastructure alongside `ingestion_runs` / `ingestion_errors`, even though
+ * it records failures from the match and digest queues too. GLOBAL — no
+ * `organization_id`; see the migration header for why.
+ */
+export const deadLetterMessages = sqliteTable(
+  'dead_letter_messages',
+  {
+    id: text('id').primaryKey(),
+    /** Full DLQ name, e.g. `bidmorrow-ingest-dlq-staging`. */
+    queue: text('queue').notNull(),
+    /** Cloudflare's message id — UNIQUE, making the recording idempotent. */
+    providerMessageId: text('provider_message_id').notNull(),
+    /** Verbatim message payload, for diagnosis and manual replay. */
+    bodyJson: text('body_json').notNull(),
+    /** Cloudflare's delivery attempt count when it dead-lettered. */
+    attempts: integer('attempts').notNull(),
+    deadLetteredAt: integer('dead_lettered_at').notNull(),
+    /** Operator-set; unresolved rows are what "DLQ depth" counts. */
+    resolvedAt: integer('resolved_at'),
+    createdAt: integer('created_at').notNull(),
+  },
+  (t) => [
+    uniqueIndex('uq_dead_letter_messages__provider_message_id').on(t.providerMessageId),
+    index('idx_dead_letter_messages__resolved_at').on(t.resolvedAt),
+    index('idx_dead_letter_messages__queue_dead_lettered_at').on(t.queue, t.deadLetteredAt),
+  ],
+);

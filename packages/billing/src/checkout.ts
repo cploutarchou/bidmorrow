@@ -92,12 +92,30 @@ export function resolveFoundingCap(flag: { readonly valueJson: string } | null):
  * founding Subscribe button at all (never inferred client-side).
  */
 export async function isFoundingPlanAvailable(db: Db): Promise<boolean> {
+  return (await getFoundingPlanStatus(db)).available;
+}
+
+export interface FoundingPlanStatus {
+  /** Flag open AND spots remaining — the server-side truth the UI renders from. */
+  readonly available: boolean;
+  /** Spots left under the cap (0 when closed or full); never negative. */
+  readonly remaining: number;
+  readonly cap: number;
+}
+
+/**
+ * Same guard as `isFoundingPlanAvailable`, plus the remaining-spot count so
+ * the UI can auto-offer the €29 founding price to the first `cap`
+ * customers and say how many spots are left (owner ask 2026-08-30).
+ */
+export async function getFoundingPlanStatus(db: Db): Promise<FoundingPlanStatus> {
   const openFlag = await getFeatureFlag(db, FLAG_FOUNDING_PLAN_OPEN);
-  if (!isFoundingPlanOpenFlag(openFlag)) return false;
   const capFlag = await getFeatureFlag(db, FLAG_FOUNDING_CAP);
   const cap = resolveFoundingCap(capFlag);
+  if (!isFoundingPlanOpenFlag(openFlag)) return { available: false, remaining: 0, cap };
   const count = await countNonCanceledSubscriptionsByPlan(db, 'founding');
-  return count < cap;
+  const remaining = Math.max(0, cap - count);
+  return { available: remaining > 0, remaining, cap };
 }
 
 async function assertFoundingPlanOpen(db: Db): Promise<void> {

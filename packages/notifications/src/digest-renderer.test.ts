@@ -28,6 +28,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
 
     expect(rendered.subject).toContain('1 new match');
@@ -56,6 +57,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.html).toContain('verify in source documents');
     expect(rendered.text).toContain('verify in source documents');
@@ -71,6 +73,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.html).toContain('Confirmed pattern');
   });
@@ -89,6 +92,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.html).not.toContain('<script>');
     expect(rendered.html).not.toContain('<img src=x');
@@ -106,6 +110,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.html).toContain('IT support services');
     expect(rendered.html).not.toContain('/app/tenders/');
@@ -122,6 +127,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.subject).toContain('no new matches');
     expect(rendered.html).toContain('No new matches met your digest threshold today.');
@@ -139,6 +145,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.html).toContain('Lot 9');
     expect(rendered.html).not.toContain('Lot 10');
@@ -154,6 +161,7 @@ describe('renderDigest', () => {
       digestDate: '2026-08-15',
       appBaseUrl: 'https://app.bidmorrow.com',
       manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
     });
     expect(rendered.html).toContain('Strong: 1');
     expect(rendered.html).toContain('Worth reviewing: 2');
@@ -164,5 +172,104 @@ describe('renderDigest', () => {
     expect(rendered.html).toMatch(/turn it off any time/);
     expect(rendered.text).toMatch(/Tenders Electronic Daily \(TED\)/);
     expect(rendered.text).toContain('https://app.bidmorrow.com/app/settings');
+  });
+
+  // F-08: the no-login unsubscribe link. `null` is the preview path (no
+  // recipient, so no token to sign) and must render NO unsubscribe block
+  // rather than a dead link.
+  it('renders the no-login unsubscribe link in both bodies when a URL is given', () => {
+    const unsubscribeUrl = 'https://app.bidmorrow.com/api/digest/unsubscribe?token=abc.def';
+    const rendered = renderDigest({
+      items: [item()],
+      counts: { ...ZERO_COUNTS, STRONG_MATCH: 1 },
+      orgName: 'Acme',
+      digestDate: '2026-08-15',
+      appBaseUrl: 'https://app.bidmorrow.com',
+      manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl,
+    });
+    expect(rendered.html).toContain(`href="${unsubscribeUrl}"`);
+    expect(rendered.html).toMatch(/no sign-in needed/);
+    expect(rendered.text).toContain(unsubscribeUrl);
+    expect(rendered.text).toMatch(/Unsubscribe \(no sign-in needed\)/);
+  });
+
+  it('omits the unsubscribe block entirely when the URL is null (preview path)', () => {
+    const rendered = renderDigest({
+      items: [item()],
+      counts: { ...ZERO_COUNTS, STRONG_MATCH: 1 },
+      orgName: 'Acme',
+      digestDate: '2026-08-15',
+      appBaseUrl: 'https://app.bidmorrow.com',
+      manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
+    });
+    expect(rendered.html).not.toMatch(/unsubscribe/i);
+    expect(rendered.text).not.toMatch(/unsubscribe/i);
+  });
+
+  it('carries the BidMorrow wordmark, a "N matches today" summary, a support address, and a global "View in BidMorrow" CTA that never targets a specific tender', () => {
+    const rendered = renderDigest({
+      items: [item()],
+      counts: { ...ZERO_COUNTS, STRONG_MATCH: 1 },
+      orgName: 'Acme',
+      digestDate: '2026-08-15',
+      appBaseUrl: 'https://app.bidmorrow.com',
+      manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
+    });
+    expect(rendered.html).toContain('BidMorrow');
+    expect(rendered.html).toContain('1 match today');
+    expect(rendered.text).toContain('1 match today');
+    expect(rendered.html).toContain('support@bidmorrow.com');
+    expect(rendered.text).toContain('support@bidmorrow.com');
+    // The global CTA points at the app shell, not at any one tender — this
+    // must hold even when a per-item CTA link IS present elsewhere in the
+    // same document (unlike the matchId===null case, which has no per-item
+    // link at all).
+    expect(rendered.html).toContain('View in BidMorrow');
+    expect(rendered.html).toContain('href="https://app.bidmorrow.com/app"');
+    expect(rendered.text).toContain('View in BidMorrow: https://app.bidmorrow.com/app');
+  });
+
+  it('pluralizes the "matches today" summary correctly for >1 match, and omits it entirely when there are none', () => {
+    const many = renderDigest({
+      items: [item({ matchId: 'match-1' }), item({ matchId: 'match-2', title: 'Second lot' })],
+      counts: { ...ZERO_COUNTS, STRONG_MATCH: 2 },
+      orgName: 'Acme',
+      digestDate: '2026-08-15',
+      appBaseUrl: 'https://app.bidmorrow.com',
+      manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
+    });
+    expect(many.html).toContain('2 matches today');
+    expect(many.text).toContain('2 matches today');
+
+    const none = renderDigest({
+      items: [],
+      counts: ZERO_COUNTS,
+      orgName: 'Acme',
+      digestDate: '2026-08-15',
+      appBaseUrl: 'https://app.bidmorrow.com',
+      manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
+    });
+    expect(none.html).not.toMatch(/match(es)? today/i);
+    expect(none.text).not.toMatch(/match(es)? today/i);
+  });
+
+  it('never uses the global CTA path when matchId is null, keeping the existing "no /app/tenders/ link" guarantee intact', () => {
+    const rendered = renderDigest({
+      items: [item({ matchId: null })],
+      counts: { ...ZERO_COUNTS, STRONG_MATCH: 1 },
+      orgName: 'Acme',
+      digestDate: '2026-08-15',
+      appBaseUrl: 'https://app.bidmorrow.com',
+      manageUrl: 'https://app.bidmorrow.com/app/settings',
+      unsubscribeUrl: null,
+    });
+    expect(rendered.html).not.toContain('/app/tenders/');
+    expect(rendered.html).toContain('View in BidMorrow');
+    expect(rendered.html).toContain('href="https://app.bidmorrow.com/app"');
   });
 });

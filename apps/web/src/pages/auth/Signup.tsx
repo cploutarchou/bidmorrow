@@ -1,6 +1,5 @@
 import { useState, type FormEvent, type ReactElement } from 'react';
-import { useNavigate } from 'react-router';
-import { Link } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { LaunchCountdown } from '../../components/LaunchCountdown';
 import { usePublicConfig } from '../../lib/public-config';
 import { useRedirectIfAuthenticated } from '../../lib/use-redirect-if-authenticated';
@@ -13,6 +12,7 @@ interface SignUpErrorBody {
 
 export function Signup(): ReactElement {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   // Already-authenticated visitor landing on /signup must not see the form
   // (auth/session-flow-polish R1) — this must run for every render, so it's
   // declared before the early loading-state return below.
@@ -84,7 +84,10 @@ export function Signup(): ReactElement {
   // Pre-launch (public-config): registrations are closed in production
   // until the go-live flag flip; the server refuses sign-up with 403
   // regardless, this is the honest UI for it. Log-in stays open.
-  if (publicConfig?.prelaunch === true) {
+  // `?internal=1` reveals the form for ADMIN_EMAILS accounts before go-live;
+  // the server still refuses every non-admin address, so this is a UI
+  // shortcut, not a gate.
+  if (publicConfig?.prelaunch === true && searchParams.get('internal') !== '1') {
     return (
       <AuthLayout
         title="Registrations open at launch"

@@ -175,10 +175,12 @@ destinations and secrets, never shared.
 all` (so simulator runs reach staging too). The owner copies its secret
   into the GitHub `staging` environment secret `PADDLE_WEBHOOK_SECRET`
   (blocker 4); the deploy workflow pushes it to the Worker.
-- **Live → production (owner, before the first real charge):** in the
-  LIVE dashboard create a destination for
-  `https://bidmorrow.com/api/webhooks/paddle` with the same event set and
-  copy its secret into the `production` environment secret.
+- **Live → production (DONE 2026-08-30, created via the Paddle MCP):**
+  destination `ntfset_01m19e8r12sx7j9m31s4ef4j56` ("BidMorrow production")
+  → `https://bidmorrow.com/api/webhooks/paddle`, same eight events,
+  `traffic_source: all`. The owner copies its secret from Developer tools →
+  Notifications into the `production` environment secret
+  `PADDLE_WEBHOOK_SECRET` — still open.
 
 Subscribed events (the implemented handler, `packages/billing/src/webhook.ts`):
 `subscription.created`, `subscription.activated`, `subscription.trialing`,

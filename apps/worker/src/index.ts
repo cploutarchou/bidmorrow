@@ -14,13 +14,16 @@
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
-import { createDb } from '@bidmorrow/db';
+import { createDb, getDbSizeEstimate, recordDeadLetter } from '@bidmorrow/db';
 import { robotsTxt } from './robots';
 import { resolveBillingConfig } from './billing';
 import { readPrelaunchState } from './prelaunch';
+import { isInternalAdminEmail } from './middleware/admin';
 import { createLogger } from '@bidmorrow/observability';
 import {
   checkFetchResilienceAlerts,
+  D1_SIZE_ALERT_FRACTION,
+  evaluateDbSize,
   isIngestionStale,
   lastSuccessfulRunAt,
 } from '@bidmorrow/procurement';
@@ -45,6 +48,7 @@ import {
 import { accountRoutes } from './routes/account';
 import { adminRoutes } from './routes/admin';
 import { billingRoutes } from './routes/billing';
+import { digestRoutes } from './routes/digest';
 import { feedRoutes } from './routes/feed';
 import { orgRoutes } from './routes/org';
 import { tendersRoutes } from './routes/tenders';
@@ -188,7 +192,26 @@ app.get('/api/public-config', async (c) => {
 app.use('/api/auth/sign-up/email', async (c, next) => {
   if (c.req.method === 'POST') {
     const { prelaunch } = await readPrelaunchState(createDb(c.env.DB), c.env.APP_ENV);
+    // Internal admins (ADMIN_EMAILS) may create their account before go-live
+    // so the live billing flow can be tested on the real domain (2026-08-30).
+    // The body is read from a clone: Better Auth still consumes the original.
+    // Anything unparseable is treated as a normal (closed) sign-up.
+    let isAdminSignup = false;
     if (prelaunch) {
+      try {
+        const body: unknown = await c.req.raw.clone().json();
+        const email =
+          typeof body === 'object' && body !== null && 'email' in body
+            ? (body as { email: unknown }).email
+            : undefined;
+        if (typeof email === 'string') {
+          isAdminSignup = isInternalAdminEmail(c.env.ADMIN_EMAILS, email);
+        }
+      } catch {
+        isAdminSignup = false;
+      }
+    }
+    if (prelaunch && !isAdminSignup) {
       return c.json(
         {
           error: 'signups_closed',
@@ -221,6 +244,10 @@ app.route('/api/account', accountRoutes);
 // deliberately unauthenticated-by-session route — see routes/webhooks.ts).
 app.route('/api/billing', billingRoutes);
 app.route('/api/webhooks', webhookRoutes);
+// Digest unsubscribe: the other deliberately session-less route. Mounted
+// alongside the webhook for the same reason — its authorization is a signed
+// token, not a cookie (routes/digest.ts).
+app.route('/api/digest', digestRoutes);
 // Phase 12 stage A: E2E test-only hooks, double-gated to 404 everywhere
 // except a local/test env with E2E_TEST_HOOKS=true — see routes/test-hooks.ts.
 app.route('/api/test', testHookRoutes);
@@ -299,6 +326,28 @@ async function scheduled(
       } else {
         logger.info('ingestion.watchdog.fetch_resilience_ok', {});
       }
+      // F-05: D1 storage capacity. The number was already on the admin
+      // health page; nothing ever ALERTED on it, so nobody would learn the
+      // database was filling until writes started failing at the 10 GB
+      // ceiling. Logged here so it reaches the same place every other
+      // watchdog signal does. An unmeasured estimate logs its own line —
+      // it must not read as healthy.
+      const dbSize = evaluateDbSize(await getDbSizeEstimate(db));
+      if (!dbSize.measured) {
+        logger.warn('db.size.unmeasured', { limit_bytes: dbSize.limitBytes });
+      } else if (dbSize.alerting) {
+        logger.error('db.size.threshold_exceeded', {
+          approx_bytes: dbSize.approxBytes,
+          limit_bytes: dbSize.limitBytes,
+          used_fraction: dbSize.usedFraction,
+          alert_fraction: D1_SIZE_ALERT_FRACTION,
+        });
+      } else {
+        logger.info('db.size.ok', {
+          approx_bytes: dbSize.approxBytes,
+          used_fraction: dbSize.usedFraction,
+        });
+      }
       return;
     }
     case CRON_DIGEST_SCHEDULE:
@@ -345,6 +394,49 @@ async function queue(
   // to construct, so this build applies even to batches with zero digest
   // messages.
   const digestProvider = resolveDigestProvider(env, logger);
+
+  // F-07: dead-letter queues. A message reaching one has already exhausted
+  // its retries on the real queue, so there is nothing left to run — the job
+  // here is to make the failure VISIBLE, which nothing did before: the DLQs
+  // had no consumer at all, so a poison message sat in a queue nobody drains
+  // and nobody reads. Recorded to D1 (migration 0012), which is also what
+  // makes "DLQ depth" a number this app can show without a Cloudflare API
+  // token.
+  //
+  // Persist THEN ack: a failed D1 write throws, so the message is retried
+  // rather than silently dropped. `retryAll()` is deliberate on failure —
+  // acking here would destroy the only record of the failure.
+  if (batch.queue.includes('-dlq-')) {
+    const db = createDb(env.DB);
+    for (const message of batch.messages) {
+      try {
+        await recordDeadLetter(db, {
+          queue: batch.queue,
+          providerMessageId: message.id,
+          bodyJson: JSON.stringify(message.body),
+          attempts: message.attempts,
+          deadLetteredAt: message.timestamp.getTime(),
+        });
+        message.ack();
+        logger.error('queue.dead_letter.recorded', {
+          dlq: batch.queue,
+          message_id: message.id,
+          attempts: message.attempts,
+        });
+      } catch (cause) {
+        // Loud: this is the failure path of the mechanism whose whole purpose
+        // is that failures stop being invisible.
+        logger.error('queue.dead_letter.record_failed', {
+          dlq: batch.queue,
+          message_id: message.id,
+          error: cause instanceof Error ? cause.message : String(cause),
+        });
+        message.retry();
+      }
+    }
+    return;
+  }
+
   for (const message of batch.messages) {
     try {
       switch (message.body.kind) {

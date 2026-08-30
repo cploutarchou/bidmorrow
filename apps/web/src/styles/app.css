@@ -1911,6 +1911,273 @@ td {
   font-size: 0.85rem;
 }
 
+/* --- Offer card ("no subscription" — Settings' BillingOfferCard) ---
+   Same opaque-panel language as `.billing-plan-card` but accent-forward:
+   this is the one surface in Settings actively selling something, so it
+   carries the brand accent as a top rule + a tinted price row rather than
+   the neutral `--surface-1` the active-subscription card uses. */
+.billing-offer-card {
+  border: 1px solid var(--stroke);
+  border-top: 3px solid var(--accent);
+  border-radius: var(--r-m);
+  background: var(--surface-1);
+  padding: 1.25rem 1.4rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.billing-offer-card__eyebrow {
+  margin: 0 0 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.billing-offer-card__plan {
+  display: grid;
+  gap: 1rem;
+}
+.billing-offer-card__price-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.billing-offer-card__price {
+  font-family: var(--font-num);
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+.billing-offer-card__price-suffix {
+  font-size: 0.95rem;
+  color: var(--text-2);
+}
+.billing-offer-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.billing-offer-card__bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.billing-offer-card__bullets li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.billing-offer-card__bullets li svg {
+  flex: none;
+  margin-top: 0.2rem;
+  color: var(--accent-text);
+}
+.billing-offer-card__cta {
+  display: grid;
+  gap: 0.6rem;
+}
+.billing-offer-card__spots {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-2);
+}
+.billing-offer-card__spots-dot {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .billing-offer-card__spots-dot {
+    animation: billing-spot-pulse 2.4s var(--ease) infinite;
+  }
+}
+@keyframes billing-spot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (max-width: 26rem) {
+  .billing-offer-card {
+    padding: 1.1rem 1rem 1.35rem;
+  }
+  .billing-offer-card__price {
+    font-size: 2.1rem;
+  }
+}
+
+/* Active-subscription card gets the same "figures read as figures" price
+   treatment as the offer card, without repeating the accent top rule (this
+   card states a fact, it isn't selling one). */
+.billing-plan-card__price {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* "Payments and invoices by Paddle" note — plain styled text (CSP forbids a
+   remote-hosted logo image; there is no self-hosted Paddle asset to serve
+   instead), shown once above the invoice table regardless of its
+   loading/empty/error state. */
+.billing-provider-note {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--text-3);
+}
+.billing-provider-note__mark {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text-2);
+}
+
+/* Invoice history skeleton (loading state) — three shimmer bars standing in
+   for table rows. Opacity/transform-only motion, no layout properties. */
+.billing-invoice-skeleton {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+/* Same shimmer technique as `.feed-skeleton-card` (`skeleton-sheen`,
+   defined above) — reused rather than duplicated so there is one skeleton
+   animation in the app bundle, not two near-identical ones. */
+.billing-invoice-skeleton__row {
+  height: 2.5rem;
+  border-radius: var(--r-m);
+  background: linear-gradient(90deg, var(--surface-1), var(--surface-2), var(--surface-1));
+  background-size: 200% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .billing-invoice-skeleton__row {
+    animation: skeleton-sheen 1.6s ease-in-out infinite;
+  }
+}
+
+/* Invoice table — a plain `.admin-table-scroll` outside `.admin-main` is
+   intentionally unstyled (see admin.css's boundary comment above
+   `.admin-main .admin-table-scroll`); this second class layers the
+   customer-facing card treatment on top without touching that shared
+   contract. Figures in `--font-num` for tabular alignment; amount column
+   right-aligned; rows collapse to labeled stacks at ≤40rem. */
+.billing-invoice-table {
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-m);
+  background: var(--surface-1);
+}
+.billing-invoice-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+.billing-invoice-table th,
+.billing-invoice-table td {
+  padding: 0.65rem 0.9rem;
+  text-align: left;
+  border-bottom: 1px solid var(--stroke-faint);
+  font-size: 0.85rem;
+}
+.billing-invoice-table th {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.billing-invoice-table td {
+  color: var(--text-2);
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+.billing-invoice-table td:first-child {
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  font-variant-numeric: normal;
+}
+.billing-invoice-table__amount {
+  text-align: right;
+}
+.billing-invoice-table tbody tr {
+  transition: background-color 150ms var(--ease);
+}
+.billing-invoice-table tbody tr:hover {
+  background: var(--accent-soft);
+}
+.billing-invoice-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+@media (max-width: 40rem) {
+  .billing-invoice-table table,
+  .billing-invoice-table thead,
+  .billing-invoice-table tbody,
+  .billing-invoice-table tr,
+  .billing-invoice-table td {
+    display: block;
+    width: 100%;
+  }
+  .billing-invoice-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .billing-invoice-table tbody tr {
+    padding: 0.75rem 0.9rem;
+    border-bottom: 1px solid var(--stroke-faint);
+  }
+  .billing-invoice-table tbody tr:hover {
+    background: none;
+  }
+  .billing-invoice-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.3rem 0;
+    border-bottom: 0;
+    text-align: right;
+  }
+  .billing-invoice-table td::before {
+    content: attr(data-label);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    text-align: left;
+  }
+  .billing-invoice-table__amount {
+    text-align: right;
+  }
+}
+
 /* Ghost / tertiary button — Theme Spec §06's third rank ("three ranks, two
    heights, one radius"), which the codebase never had: every quiet button
    today still carries a 1px accent border (.btn-quiet, .mkt-btn-quiet), so
@@ -2032,6 +2299,28 @@ td {
   #billing-print-area td {
     border: 1px solid #000;
     color: #000;
+  }
+  /* Offer card: same "black on white, no decoration" treatment as the rest
+     of the print sheet — the accent rule, tinted badge and accent
+     checkmarks are on-screen selling emphasis with nothing to sell on a
+     printed billing record. */
+  #billing-print-area .billing-offer-card {
+    border-top-color: #000;
+  }
+  #billing-print-area .billing-offer-card__price,
+  #billing-print-area .billing-offer-card__badge,
+  #billing-print-area .billing-offer-card__bullets li,
+  #billing-print-area .billing-offer-card__bullets li svg,
+  #billing-print-area .billing-provider-note,
+  #billing-print-area .billing-provider-note__mark {
+    color: #000;
+  }
+  #billing-print-area .billing-offer-card__badge {
+    background: transparent;
+    border: 1px solid #000;
+  }
+  #billing-print-area .billing-invoice-skeleton {
+    display: none;
   }
 }
 

@@ -26,8 +26,18 @@ export interface AdminHealthDetails {
     recentRuns: { organizationId: string; digestDate: string; status: string }[];
   };
   email: { failures24h: number };
-  db: { measured: boolean; approxBytes: number | null };
-  dlq: { note: string };
+  db: {
+    measured: boolean;
+    approxBytes: number | null;
+    limitBytes: number;
+    usedFraction: number | null;
+    alerting: boolean;
+  };
+  dlq: {
+    unresolved: number;
+    byQueue: { queue: string; count: number }[];
+    lastDeadLetteredAt: number | null;
+  };
   flags: { key: string; value: string | null }[];
 }
 

@@ -3,7 +3,10 @@ import { useLocation, useNavigate } from 'react-router';
 import { AlertTriangle, Building2, CreditCard, Mail, SlidersHorizontal } from 'lucide-react';
 import { CONTRACT_NATURES, type ContractNature } from '@bidmorrow/domain';
 import { Combobox } from '../../components/Combobox';
-import { ConfirmAction } from '../../components/ConfirmAction';
+import { BillingInvoiceTable } from '../../components/billing/BillingInvoiceTable';
+import { BillingOfferCard } from '../../components/billing/BillingOfferCard';
+import { BillingSubscriptionCard } from '../../components/billing/BillingSubscriptionCard';
+import type { Invoice, InvoicesState } from '../../components/billing/types';
 import { CPV_SUGGESTIONS } from '../../data/cpv-suggestions';
 import { api, ApiError } from '../../lib/api';
 import { fetchBillingStatus, type BillingStatus } from '../../lib/billing';
@@ -11,13 +14,6 @@ import { openCheckout } from '../../lib/paddle';
 import { usePublicConfig } from '../../lib/public-config';
 import { useAuth } from '../../lib/auth-context';
 import { localComboboxSource, type ComboboxOption } from '../../lib/combobox-filter';
-import {
-  formatCalendarDate,
-  formatMinorUnitsAsCurrency,
-  invoiceStatusLabel,
-  paymentStateLabel,
-  paymentStateTone,
-} from '../../lib/format';
 import { COUNTRY_REGIONS, KEYWORD_SUGGESTIONS } from '../../lib/onboarding-reference-data';
 import {
   CERTIFICATION_CODES,
@@ -94,30 +90,6 @@ function describeSaveError(cause: unknown): string {
   return 'Could not save — please try again.';
 }
 
-/** `GET /api/billing/invoices`'s `InvoiceSummary` (`packages/billing/src/invoices.ts`). */
-interface Invoice {
-  readonly id: string;
-  readonly number: string | null;
-  /** Paddle transaction status: `billed | paid | completed | past_due`. */
-  readonly status: string;
-  readonly currency: string;
-  readonly amountDue: number;
-  readonly amountPaid: number;
-  readonly createdAt: number;
-  readonly periodStartAt: number | null;
-  readonly periodEndAt: number | null;
-  /** `true` once Paddle has issued an invoice — the PDF endpoint will work. */
-  readonly hasInvoice: boolean;
-}
-
-type InvoicesState =
-  | { kind: 'loading' }
-  | { kind: 'forbidden' }
-  | { kind: 'not_configured' }
-  | { kind: 'provider_error' }
-  | { kind: 'error' }
-  | { kind: 'ready'; invoices: readonly Invoice[]; hasBillingCustomer: boolean };
-
 /** Mirrors the worker's `/api/billing/*` error shapes (apps/worker/src/routes/billing.ts). */
 function describeBillingError(cause: unknown): string {
   if (cause instanceof ApiError) {
@@ -187,7 +159,7 @@ const SETTINGS_GROUPS: { id: string; label: string }[] = [
 export function Settings(): ReactElement {
   const publicConfig = usePublicConfig();
   const navigate = useNavigate();
-  const { refresh } = useAuth();
+  const { refresh, isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -712,50 +684,22 @@ export function Settings(): ReactElement {
                 <p className="hint">Could not load billing status. Please refresh the page.</p>
               ) : billing.subscription === null ? (
                 <>
-                  <p>No active subscription.</p>
-                  <p className="hint">
-                    Founding price is locked in for the life of your subscription — it never
-                    migrates to the standard price later. Prices include VAT — what you see is what
-                    you pay. Payments and invoices are handled by Paddle, our Merchant of Record.
-                  </p>
-                  {publicConfig?.prelaunch === true ? (
-                    /* Pre-launch: new checkouts are refused server-side
-                       (403 subscriptions_closed) — show the honest state
-                       instead of a button that can only fail. */
-                    <p className="hint">
-                      Subscriptions open at launch, at the end of August. Your account and profile
-                      are ready — nothing to do until then.
-                    </p>
-                  ) : (
-                    <div className="button-row">
-                      {billing.foundingAvailable && (
-                        <button
-                          className="cta"
-                          type="button"
-                          disabled={billingBusy}
-                          onClick={() => void startCheckout('founding')}
-                        >
-                          Subscribe — Founding (€29/mo incl. VAT, limited spots)
-                        </button>
-                      )}
-                      <button
-                        className="cta"
-                        type="button"
-                        disabled={billingBusy}
-                        onClick={() => void startCheckout('standard')}
-                      >
-                        Subscribe — Standard (€49/mo incl. VAT)
-                      </button>
-                    </div>
-                  )}
-                  <BillingInvoiceHistory state={invoicesState} />
+                  <BillingOfferCard
+                    foundingAvailable={billing.foundingAvailable}
+                    foundingRemaining={billing.foundingRemaining}
+                    foundingCap={billing.foundingCap}
+                    billingBusy={billingBusy}
+                    prelaunchLocked={publicConfig?.prelaunch === true && !isAdmin}
+                    onSubscribe={(plan) => void startCheckout(plan)}
+                  />
+                  <BillingInvoiceTable state={invoicesState} />
                 </>
               ) : (
                 (() => {
                   const subscription = billing.subscription;
                   if (subscription === null) return null;
                   return (
-                    <BillingActiveSubscription
+                    <BillingSubscriptionCard
                       subscription={subscription}
                       entitlementActive={billing.entitlement.active}
                       entitlementReason={billing.entitlement.reason}
@@ -1486,312 +1430,5 @@ export function Settings(): ReactElement {
         </div>
       </div>
     </>
-  );
-}
-
-/** Non-null `BillingStatus['subscription']` — extracted so the plan
- * card/cancel-reactivate panel/invoice history below share one type instead
- * of each re-narrowing the parent's nullable field. */
-type ActiveSubscription = NonNullable<BillingStatus['subscription']>;
-
-/**
- * Plan card + cancel/reactivate controls + payment/print actions + invoice
- * history for an organization WITH a subscription (`billing.subscription !==
- * null`). Split out of `Settings` purely to keep that component's JSX
- * readable — same "local helper component in the page file" idiom already
- * used by `Onboarding.tsx` (`PhaseStepper`/`OnboardingHeader`/`StepActions`).
- */
-function BillingActiveSubscription({
-  subscription,
-  entitlementActive,
-  entitlementReason,
-  billingBusy,
-  cancelBusy,
-  cancelError,
-  reactivateBusy,
-  reactivateError,
-  reactivateNeedsCheckout,
-  knownNonOwner,
-  invoicesState,
-  onManagePayment,
-  onCancel,
-  onReactivate,
-  onStartCheckout,
-}: {
-  subscription: ActiveSubscription;
-  entitlementActive: boolean;
-  entitlementReason: string;
-  billingBusy: boolean;
-  cancelBusy: boolean;
-  cancelError: string | null;
-  reactivateBusy: boolean;
-  reactivateError: string | null;
-  reactivateNeedsCheckout: boolean;
-  knownNonOwner: boolean;
-  invoicesState: InvoicesState;
-  onManagePayment: () => void;
-  onCancel: () => void;
-  onReactivate: () => void;
-  onStartCheckout: () => void;
-}): ReactElement {
-  const overdue = subscription.paymentState === 'past_due';
-  const paused = subscription.paymentState === 'paused';
-  const planLabel = subscription.plan === 'founding' ? 'Founding' : 'Standard';
-  const tone = paymentStateTone(subscription.paymentState);
-
-  return (
-    <>
-      <div className="billing-plan-card">
-        <div className="billing-plan-card__row">
-          <span className="billing-plan-card__plan">{planLabel} plan</span>
-          <span>
-            {formatMinorUnitsAsCurrency(
-              subscription.price.amountMinorUnits,
-              subscription.price.currency,
-            )}{' '}
-            / {subscription.price.interval}
-            {subscription.price.taxInclusive ? ' incl. VAT' : ''}
-          </span>
-          <span className={`billing-status-badge billing-status-badge--${tone}`}>
-            {paymentStateLabel(subscription.paymentState)}
-          </span>
-        </div>
-        <p>
-          {subscription.cancelAtPeriodEnd
-            ? `Cancels on ${formatCalendarDate(subscription.currentPeriodEndAt)} — access continues until then.`
-            : `Renews on ${formatCalendarDate(subscription.currentPeriodEndAt)}.`}
-        </p>
-        {!entitlementActive && (
-          <p className="hint">
-            Feed and digest are currently paused: {entitlementReason.replace(/_/g, ' ')}.
-          </p>
-        )}
-        {overdue && (
-          <div className="billing-overdue-notice" role="alert">
-            <p>
-              We couldn't process your last payment — your subscription is past due. Update your
-              payment details to keep your feed and digest active.
-            </p>
-            {!knownNonOwner && (
-              <button
-                className="cta no-print"
-                type="button"
-                disabled={billingBusy}
-                onClick={onManagePayment}
-              >
-                Fix payment details
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {paused && (
-        <p className="hint" role="status">
-          Your subscription is paused — nothing is billed and the feed is off. Resume it from Manage
-          payment details.
-        </p>
-      )}
-
-      {!subscription.cancelAtPeriodEnd ? (
-        <div className="billing-cancel-panel">
-          <h3>Cancel subscription</h3>
-          <p className="hint">
-            Canceling takes effect at the end of your current billing period (
-            {formatCalendarDate(subscription.currentPeriodEndAt)}) — you keep full access until
-            then, and nothing is charged again after that date.
-          </p>
-          {cancelError !== null && (
-            <p role="alert" className="form-error">
-              {cancelError}
-            </p>
-          )}
-          {knownNonOwner ? (
-            <p className="hint">Only the organization owner can cancel billing.</p>
-          ) : (
-            <ConfirmAction
-              label="Cancel subscription"
-              confirmText="CANCEL_SUBSCRIPTION"
-              variant="danger"
-              busy={cancelBusy}
-              onConfirm={onCancel}
-            />
-          )}
-        </div>
-      ) : (
-        <div className="billing-cancel-panel">
-          <h3>Subscription ending</h3>
-          <p>
-            Cancels on <strong>{formatCalendarDate(subscription.currentPeriodEndAt)}</strong> —
-            access continues until then.
-          </p>
-          {reactivateError !== null && (
-            <p role="alert" className="form-error">
-              {reactivateError}
-            </p>
-          )}
-          {knownNonOwner ? (
-            <p className="hint">Only the organization owner can reactivate billing.</p>
-          ) : reactivateNeedsCheckout ? (
-            <div className="button-row">
-              <p className="hint">This subscription has already ended.</p>
-              <button
-                className="cta"
-                type="button"
-                disabled={billingBusy}
-                onClick={onStartCheckout}
-              >
-                Start a new subscription
-              </button>
-            </div>
-          ) : (
-            <button className="cta" type="button" disabled={reactivateBusy} onClick={onReactivate}>
-              {reactivateBusy ? 'Working…' : 'Keep my subscription'}
-            </button>
-          )}
-        </div>
-      )}
-
-      <div className="button-row">
-        {!knownNonOwner && (
-          <button
-            className="btn-quiet"
-            type="button"
-            disabled={billingBusy}
-            onClick={onManagePayment}
-          >
-            Manage payment details
-          </button>
-        )}
-        <button className="btn-quiet no-print" type="button" onClick={() => window.print()}>
-          Print
-        </button>
-      </div>
-
-      <BillingInvoiceHistory state={invoicesState} />
-    </>
-  );
-}
-
-/**
- * Invoice history table: loading/empty/error/forbidden states and a
- * per-invoice "Download PDF" action that resolves the Paddle-hosted PDF on
- * demand (`GET /api/billing/invoices/:id/pdf` — never a client-fabricated
- * PDF; the URL is temporary so it is fetched at click time, not listed).
- * `hasBillingCustomer: false` with zero invoices is a normal "never
- * checked out" state, not an error (mirrors
- * `packages/billing/src/invoices.ts`'s own framing).
- */
-function InvoicePdfButton({ transactionId }: { transactionId: string }): ReactElement {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  async function download(): Promise<void> {
-    setBusy(true);
-    setError(null);
-    try {
-      const { url } = await api.get<{ url: string }>(
-        `/api/billing/invoices/${encodeURIComponent(transactionId)}/pdf`,
-      );
-      window.open(url, '_blank', 'noopener');
-    } catch (cause) {
-      setError(
-        cause instanceof ApiError && cause.status === 404
-          ? 'No PDF available for this invoice yet.'
-          : 'Could not fetch the invoice PDF — please try again shortly.',
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <span className="billing-invoice-actions">
-      <button
-        type="button"
-        className="btn-quiet btn-sm"
-        disabled={busy}
-        onClick={() => void download()}
-      >
-        {busy ? 'Fetching…' : 'Download PDF'}
-      </button>
-      {error !== null && (
-        <span role="alert" className="form-error">
-          {error}
-        </span>
-      )}
-    </span>
-  );
-}
-
-function BillingInvoiceHistory({ state }: { state: InvoicesState }): ReactElement {
-  return (
-    <section className="settings-subsection" aria-labelledby="billing-invoices-heading">
-      <h3 id="billing-invoices-heading">Invoice history</h3>
-      {state.kind === 'loading' && <p className="hint">Loading invoices…</p>}
-      {state.kind === 'forbidden' && (
-        <p className="hint">Only the organization owner can view billing invoices.</p>
-      )}
-      {state.kind === 'not_configured' && (
-        <p className="hint">Billing is not available right now — please try again shortly.</p>
-      )}
-      {state.kind === 'provider_error' && (
-        <p role="alert" className="form-error">
-          Could not reach the billing provider — please try again shortly.
-        </p>
-      )}
-      {state.kind === 'error' && (
-        <p role="alert" className="form-error">
-          Could not load invoices — please try again.
-        </p>
-      )}
-      {state.kind === 'ready' && state.invoices.length === 0 && (
-        <p className="hint">No invoices yet.</p>
-      )}
-      {state.kind === 'ready' && state.invoices.length > 0 && (
-        <div className="admin-table-scroll">
-          <table>
-            <caption className="visually-hidden-status">Invoice history</caption>
-            <thead>
-              <tr>
-                <th scope="col">Number</th>
-                <th scope="col">Date</th>
-                <th scope="col">Period</th>
-                <th scope="col">Amount</th>
-                <th scope="col">Status</th>
-                <th scope="col" className="no-print">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.invoices.map((invoice) => (
-                <tr key={invoice.id}>
-                  <td>{invoice.number ?? invoice.id}</td>
-                  <td>{formatCalendarDate(invoice.createdAt)}</td>
-                  <td>
-                    {formatCalendarDate(invoice.periodStartAt)} –{' '}
-                    {formatCalendarDate(invoice.periodEndAt)}
-                  </td>
-                  <td>
-                    {/* Paid invoices show what was paid; open/past-due show
-                        what is owed (PR-M6-01 — a €0.00 "amount" on an unpaid
-                        invoice reads as ambiguous next to its status). */}
-                    {formatMinorUnitsAsCurrency(
-                      invoice.status === 'paid' || invoice.status === 'completed'
-                        ? invoice.amountPaid
-                        : invoice.amountDue,
-                      invoice.currency,
-                    )}
-                  </td>
-                  <td>{invoiceStatusLabel(invoice.status)}</td>
-                  <td className="no-print">
-                    {invoice.hasInvoice && <InvoicePdfButton transactionId={invoice.id} />}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
   );
 }
