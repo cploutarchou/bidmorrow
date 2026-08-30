@@ -187,7 +187,7 @@ const SETTINGS_GROUPS: { id: string; label: string }[] = [
 export function Settings(): ReactElement {
   const publicConfig = usePublicConfig();
   const navigate = useNavigate();
-  const { refresh } = useAuth();
+  const { refresh, isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -718,10 +718,12 @@ export function Settings(): ReactElement {
                     migrates to the standard price later. Prices include VAT — what you see is what
                     you pay. Payments and invoices are handled by Paddle, our Merchant of Record.
                   </p>
-                  {publicConfig?.prelaunch === true ? (
+                  {publicConfig?.prelaunch === true && !isAdmin ? (
                     /* Pre-launch: new checkouts are refused server-side
                        (403 subscriptions_closed) — show the honest state
-                       instead of a button that can only fail. */
+                       instead of a button that can only fail. Internal
+                       admins keep the buttons: the server lets them through
+                       so the live checkout can be tested before go-live. */
                     <p className="hint">
                       Subscriptions open at launch, at the end of August. Your account and profile
                       are ready — nothing to do until then.

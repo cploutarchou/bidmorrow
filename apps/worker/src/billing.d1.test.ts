@@ -324,6 +324,49 @@ describe('POST /api/billing/checkout', () => {
     expect(response.status).toBe(409);
   });
 
+  it('403s subscriptions_closed under prelaunch for a normal owner, but lets an ADMIN_EMAILS owner through', async () => {
+    const db = createDb(env.DB);
+    // Accounts first: prelaunch also closes sign-up, so both users must
+    // exist before the flag flips.
+    const normal = await setUpOrg('CheckoutPrelaunch');
+    // The admin (vitest.config.ts ADMIN_EMAILS, mixed case there). An
+    // existing subscription is seeded so the request stops at the 409 that
+    // comes AFTER the gate — proving the bypass without reaching Paddle.
+    const adminCookie = await createVerifiedUser('admin@example.test');
+    const adminOrgId = await createOrgForUser(adminCookie, 'Admin Prelaunch Org');
+    await seedSubscription(db, adminOrgId, { status: 'active' });
+
+    // `prelaunch` is a global flag shared by every test in this file — set it
+    // explicitly and restore it, whatever happens in between.
+    await setFeatureFlag(db, { key: 'prelaunch', valueJson: 'true', description: 'test: closed' });
+    try {
+      const closed = await fetchApi('/api/billing/checkout', {
+        method: 'POST',
+        headers: jsonHeaders(normal.cookie),
+        body: JSON.stringify({ plan: 'standard' }),
+      });
+      expect(closed.status).toBe(403);
+      expect(await closed.json()).toEqual({
+        error: 'subscriptions_closed',
+        message: 'Subscriptions open at launch.',
+      });
+
+      const admin = await fetchApi('/api/billing/checkout', {
+        method: 'POST',
+        headers: jsonHeaders(adminCookie),
+        body: JSON.stringify({ plan: 'standard' }),
+      });
+      expect(admin.status).toBe(409);
+      expect(await admin.json()).toEqual({ error: 'subscription_exists' });
+    } finally {
+      await setFeatureFlag(db, {
+        key: 'prelaunch',
+        valueJson: 'false',
+        description: 'test: reopen',
+      });
+    }
+  });
+
   it('409s founding_unavailable (flag_closed) before any Paddle call', async () => {
     const { cookie } = await setUpOrg('CheckoutFoundingClosed');
     const db = createDb(env.DB);
