@@ -79,6 +79,36 @@ describe('pre-launch gates (workerd + local D1)', () => {
     expect(body.error).toBe('signups_closed');
   });
 
+  it('lets an ADMIN_EMAILS address sign up while prelaunch is on (case-insensitive)', async () => {
+    await setFeatureFlag(createDb(env.DB), {
+      key: FLAG_PRELAUNCH,
+      valueJson: 'true',
+      description: 'test: close signups',
+    });
+    // vitest.config.ts binds ADMIN_EMAILS as 'Admin@Example.test'.
+    const response = await exports.default.fetch('https://bidmorrow.local/api/auth/sign-up/email', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'Admin', email: 'admin@example.test', password: 'passw0rd!x' }),
+    });
+    // Reached Better Auth (200 created); the gate's 403 never fired.
+    expect(response.status).toBe(200);
+  });
+
+  it('keeps refusing a malformed body while prelaunch is on', async () => {
+    await setFeatureFlag(createDb(env.DB), {
+      key: FLAG_PRELAUNCH,
+      valueJson: 'true',
+      description: 'test: close signups',
+    });
+    const response = await exports.default.fetch('https://bidmorrow.local/api/auth/sign-up/email', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: 'not json',
+    });
+    expect(response.status).toBe(403);
+  });
+
   it('the gate does not block other auth routes while prelaunch is on', async () => {
     await setFeatureFlag(createDb(env.DB), {
       key: FLAG_PRELAUNCH,
