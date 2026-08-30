@@ -4966,6 +4966,49 @@ F-03 first (the only item with an external clock, launch 2026-08-31).
   checkout on staging, F-06 credentials, 4b, Stripe dashboard, and the
   `ingestion_paused` + prelaunch flips at go-live.
 
+## GO-LIVE 2026-08-30 — launched early on owner instruction; founding offer fixed; discount codes (2026-08-30)
+
+Owner: "lets launch it now". Executed the same evening, ahead of the
+2026-08-31 date; the `launch_date` flag was left alone (only the banner
+read it, and the banner is gone once `prelaunch` is false).
+
+- **Flags set in production D1** (wrangler, after the owner added allow
+  rules — the classifier blocked every production write until then):
+  `prelaunch=false` (inserted), `ingestion_paused=false` (updated),
+  `founding_plan_open=true` (inserted). Staging also got
+  `founding_plan_open=true`. No admin user existed in production, so the
+  Flags UI + audit event could not be used — the D1 rows carry the reason
+  in `description`.
+- **Founding offer was silently OFF in production**: `isFoundingPlanOpenFlag`
+  treats an absent flag as closed, and nothing had seeded it — every
+  customer would have been offered €49 only. Found while implementing the
+  owner's "auto set €29 for the first 100"; the flag rows above fix it.
+- **PR #122**: `getFoundingPlanStatus` → `{available, remaining, cap}`;
+  `/api/billing/status` gains `foundingRemaining` + `foundingCap`; Settings
+  auto-offers a single €29 button with "N of 100 spots left" and shows
+  Standard only after the cap. Deployed to production (run 33324391588) and
+  staging (33324382937).
+- **PR #120** (`showAddDiscounts: true`; ADMIN_EMAILS bypass of the
+  prelaunch checkout gate) and **#121** (ADMIN_EMAILS may sign up under
+  prelaunch; `/signup?internal=1`) landed before the flip; both are inert
+  now that prelaunch is off but matter if launch is ever re-closed.
+- **Paddle discount codes** (created via MCP, restricted to our prices):
+  live `BMTEST100` `dsc_01m19kqwct048b4qmvhpavtx4y` — 100 %, recurring,
+  3 uses, expires 2026-09-02, **archive after the live test**; live
+  `FIRST100` `dsc_01m19svhpnjr4km956gm0dy9rg` — flat €20 off the STANDARD
+  price only, recurring for life, 100 redemptions (a Standard customer with
+  the code pays exactly €29 — never below, per product-scope); sandbox
+  mirrors `FIRST100` `dsc_01m19svmnzdeg68w73635a62nw` and `BMTEST100`
+  `dsc_01m19svmz24senqteqwgecp9a5` (no expiry, for staging E2E).
+  **Known overlap, owner-informed**: the founding cap (100 subscriptions on
+  the €29 price) and the FIRST100 redemption limit (100 uses on Standard)
+  are independent pools — up to 200 customers could pay €29. Archive
+  FIRST100 or lower its `usage_limit` if a single pool is wanted.
+- Live end-to-end checkout test (step 3 of the owner's runbook) is with
+  the owner: register, Founding €29 → `BMTEST100` → €0.00 → real card.
+  Verification + lifecycle (upgrade / scheduled cancel / immediate cancel)
+  - archiving BMTEST100 follow once they confirm.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
