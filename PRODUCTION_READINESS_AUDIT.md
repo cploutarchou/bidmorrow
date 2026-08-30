@@ -134,9 +134,18 @@ _Remediation_: sequence is F-03 → `production` environment secrets/vars
 (blockers item 1) → deploy `main` → verify migrations 0010/0011 applied →
 smoke → then the item-11 go-live flag flip.
 
-### F-03 · HIGH · Billing · OPEN (owner)
+### F-03 · HIGH · Billing · OPEN (owner) — **PARTIALLY CLOSED 2026-08-30**
 
 **No live Paddle account; production billing secrets absent.**
+
+_Update 2026-08-30_: the live account exists and the `paddle-live` MCP
+authenticates against it. Live catalog (tax-inclusive, verified by
+`transactions.preview`: DE total €29.00 = €24.37 + €4.63 VAT), notification
+destination and client token created; `production` now holds the two
+price-id secrets, `PADDLE_CLIENT_TOKEN`, `PADDLE_ENVIRONMENT=production` and
+`ADMIN_EMAILS`. Remaining and owner-only: seller verification, website
+approval for `bidmorrow.com`, default payment link, live `PADDLE_API_KEY`
+and `PADDLE_WEBHOOK_SECRET`. Details: `HUMAN_DECISION_BLOCKERS.md` 4c.
 
 _Evidence_: `HUMAN_DECISION_BLOCKERS.md` item 4c, unstarted; its own text
 says "approval takes DAYS". Item 1 lists the four `PADDLE_*` production
