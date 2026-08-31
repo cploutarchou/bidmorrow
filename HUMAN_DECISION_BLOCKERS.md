@@ -23,7 +23,7 @@ product image set via API on all four products, brand kit in docs/brand/.
 **The only remaining owner items, both dashboard-manual:** (1) Overlay tab
 → Brand Color `#0f7d6f` → Save, in sandbox-vendors AND vendors.paddle.com;
 (2) Stripe dashboard clean-up — delete the test-mode webhook endpoint +
-products, revoke the test key (GitHub `STRIPE_*` secrets already deleted;
+products, revoke the test key at dashboard.stripe.com (GitHub `STRIPE_*` secrets already deleted;
 last code mention scrubbed in #130). Everything below is history.
 
 ## OPEN ITEMS SNAPSHOT — 2026-08-16 (production launch checklist)
