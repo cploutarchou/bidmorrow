@@ -35,9 +35,9 @@ the ADR-0010 §5.2 operator window grew rather than shrank). The ~10-day
 "slow-motion abandonment" deadline recorded under 2026-08-19 below is
 therefore now ~14 days. Staging auto-deploys on merge and its backlog is
 already due (self-drains at ≤50/h); **production deploy awaits the owner's
-explicit instruction** (standing rule, blockers item 2c) — production's 150
-rows are due 2026-09-02 05:09 under the old ladder and will be picked up
-by the first `:40` drain after deploy.
+explicit instruction** (standing rule, blockers item 2c) — production's rows
+(125 due since 05:07 UTC, 25 due 2026-09-02 05:09) are picked up by the
+first `:40` drains after deploy.
 
 **Staging latency gate (F-06 weekly `staging-perf`), 2026-09-01.** The
 first scheduled run (08-31 05:47 UTC) died in 4 s with no logs, the same
@@ -52,6 +52,32 @@ query regression; customers are EU-based and do not take that path. Not
 loosened. Follow-up (task, not decided here): measure from where customers
 are, or take Smart Placement to the architect as an ADR. `timeout-minutes:
 20` added to the job so a hung probe cannot run for six hours.
+
+**2026-09-01 19:52–19:57 UTC — owner: "deploy to production and enable
+entitlement_enforced".** Both done and verified: `deploy-production.yml`
+run 33552153011 on `main` `3c08100` (#132 + #133) succeeded 19:55:04 UTC
+with smoke tests green (staging had deployed the same commit green at
+19:49); `entitlement_enforced = true` upserted directly into production D1
+at 19:53:41 UTC (no `audit_events` row; recorded in the blockers file).
+Production retry state at deploy: 125 rows `attempts = 0` due since 05:07
+UTC (never reached by the daily 25-row in-run drain) + 25 rows due
+2026-09-02 05:09 (the in-run drain's cycle burnt their first attempt); the
+earlier "150 rows due 09-02 05:09" wording above was wrong for the 125. The
+first hourly drain after deploy (20:40 UTC) starts on them. `tender_notices`
+in production: 0 at deploy time.
+
+**Staging, first hourly drain (19:40:22 UTC, 150 s):** attempted 50
+(oldest-first, publication dates from 2026-08-17), ALL 50 came back
+`NOTICE_RENDER_PENDING` after the full 6-visit cycle; 0 recovered, 0
+abandoned; `pending` still 1,069 (819 never attempted), `recovered` 100
+(all from earlier daily drains). Backlog by publication date: 08-17 106,
+08-18 66, 08-19 151, 08-20 129, 08-24 147, 08-25 122, 08-26 172, 08-27 26,
+08-31 150 (08-21..23 and 08-28 fully ingested). One data point, on the
+oldest rows; the 20:40/21:40 drains and production's 20:40 run decide
+whether TED renders on demand at all for these days. If three consecutive
+drains recover 0 of 50, the next step is an adaptive stand-down (skip the
+following hour after a zero-recovery full batch) rather than more traffic;
+documented as a follow-up, not implemented on one data point.
 
 **Phase 14 — Production-readiness audit: RUN 2026-08-29. Verdict FAIL at
 the time.** Findings in `PRODUCTION_READINESS_AUDIT.md` (3 HIGH, 4 MEDIUM,
