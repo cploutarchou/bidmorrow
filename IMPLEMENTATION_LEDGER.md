@@ -5302,6 +5302,76 @@ source documents'` label now differs from the web app's. And
   seeded wrangler server; the three assertion edits are literal swaps checked
   against the exact new source strings.
 
+## Website visual upgrade (design phases 0–6, 2026-09-01)
+
+Owner brief: principal web design / motion / product-visualisation pass
+over the public website, business functionality untouched. Full record:
+`docs/design-audit.md` (23 findings, each with its resolution),
+`docs/design-redesign-plan.md` (8 phases), `docs/design-dependencies.md`
+(nothing added), `docs/design-upgrade-report.md` (the brief's final
+report; staging/production sections filled by phases 7–8).
+
+- **Hero** (`components/hero/`): the decision engine. A TED notice enters,
+  eight components check in with their points, ring and counter draw to
+  n / 100, the tender settles into its band; three illustrative tenders
+  (84 Strong match, 71 Worth reviewing, 38 Low fit) on a 13.5 s loop.
+  Data in `decision-engine-data.ts`, pinned by a unit test (weights sum to
+  100, points sum to the score, band follows the thresholds, buyers
+  anonymised, no win/guarantee wording). Pure CSS motion; one
+  `animationend` listener hands scenes over (only the playing scene is in
+  the render tree), one IntersectionObserver pauses it off-screen; the
+  registered `--de-value` property drives counter and ring together;
+  scores reach CSS through `setProperty` (no inline style under the CSP).
+  Reduced motion: scene one's finished frame. `role="img"` with a full
+  sentence label.
+- **Main-thread cost, measured** (CDP Performance metrics, 4× CPU
+  throttle, 6 s windows on the local stack): first version 2.1 s of
+  main-thread time per 6 s (39 infinite animations, 26 of them in hidden
+  scenes); shipped version 0.6 s per 6 s (hidden scenes `display: none`,
+  short delayed one-shot animations that finish and stop ticking, size
+  containment on the counter and ring). Page baseline with the hero paused
+  went from 2.1 s to 0.5 s; the grid dots no longer pulse.
+- **Layout shift**: metric-matched font fallbacks (`size-adjust` +
+  overrides from real glyph advances, not OS/2 averages) and a
+  viewport-height lazy-route fallback with the skip-link target. Home
+  mobile CLS 0.158 → 0.001, Pricing / How-it-works 0.706 → 0.
+- **Imagery**: `FunnelHero` and the four step SVGs deleted; `frames.tsx`
+  (`SourceFrame`, `ProfileFrame`, `ScoringFrame`) reuses the hero's
+  primitives for the stepper and How-it-works; the verdict step names its
+  tender; `STAGE_SCORE_BARS` (summed to 86.5 against a verdict of 84) is
+  gone, both steps read the hero's tender. One `ScoreRing` (static /
+  engine / draw-once) replaces two hand-drawn rings. OG image redrawn as a
+  still of the engine (77 kB PNG, both self-hosted faces; the generator now
+  serves fonts under file://).
+- **Motion and polish**: figures play once on reveal (contrast audit no
+  longer catches chips mid-fade), FAQ as native `<details>`, founding
+  pricing card head band, micro-interactions 120–250 ms gated on
+  `(hover: hover)` and `prefers-reduced-motion`, footer link underline,
+  Pilot secondary CTA, Refunds "Last updated", mobile carousel peek,
+  compact consent banner on phones, hero grid mask.
+- **Not changed** (deliberately, per the brief): URLs, titles, meta,
+  canonical/OG tags, sitemap, forms, auth, Paddle entry, analytics,
+  consent behaviour, API calls, pricing copy. Email templates untouched
+  (owner: website only). Contact and auth pages left as they were.
+- **Gates**: format:check 0, lint 0, typecheck 0 (workspace), vitest web
+  20 files / 192, root 85 files / 735 (3 skipped), worker 298, db D1 84;
+  web build 0 (entry JS 78.3 kB, CSS 84.6 kB on disk); Playwright
+  marketing + accessibility + keyboard specs 41 passed on the local stack
+  (chromium + mobile-chromium). Lighthouse on the local stack: see the
+  report; local mobile numbers vary ±8 points run to run, staging's
+  `design-review` workflow is the record.
+- **Tooling**: `scripts/design-screenshots.mjs` (routes × widths ×
+  schemes, overflow + console check), `scripts/design-element-shot.mjs`
+  (`--click`), `scripts/design-lighthouse.mjs`,
+  `.github/workflows/design-review.yml` (workflow_dispatch against staging
+  or production, artifact upload). Captures under `artifacts/design-review/`
+  (git-ignored).
+- **Next** (phases 7–8): PR → merge → `deploy-staging.yml` → dispatch
+  `design-review` + `site-health` against staging → write
+  `docs/staging-design-validation.md` → production gate →
+  `deploy-production.yml` (typed confirmation) → verify live → append to
+  the report. Rollback is a re-dispatch at the previous production ref.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

@@ -91,11 +91,14 @@ No raster images were added; no external image URLs exist.
 
 ## Animations Added
 
-- Hero decision-engine cycle (13.5 s, three scenes of 4.5 s): notice
+- Hero decision-engine loop (13.5 s, three scenes of 4.5 s): notice
   enters and nods, connector dot travels, engine panel lifts, eight rows
   check in 0.2 s apart, ring and counter draw together, band chip and
-  bucket light, next tender. Pauses when scrolled out of view; static
-  finished frame under reduced motion.
+  bucket light, next tender. One scene is in the render tree at a time;
+  every element runs a short one-shot animation at a delay into the
+  scene, and the scene's own 4.5 s animation ending is what hands over to
+  the next (one `animationend` listener, no timers). Pauses when scrolled
+  out of view; static finished frame under reduced motion.
 - Score rings draw once when their section reveals (demo cards, verdict
   step, scoring frame).
 - How-it-works and pricing figures play once on reveal and rest.
@@ -149,9 +152,18 @@ disk; CSS 76.6 → 86.6 kB on disk, +0.8 kB over the wire).
   0.706 → 0.
 - Metric-matched fallback faces (`size-adjust` and the override
   descriptors, computed from real glyph advances): Home CLS 0.158 → 0.001.
-- Hero panel is `contain: layout paint` with a fixed-width counter; the
-  loop is CSS, paused off-screen, and contributes no layout shift.
-- JavaScript entry shrank by ~6 kB (SVG components removed).
+- Hero panel is `contain: layout paint` with a size-contained counter and
+  ring; the loop is CSS, paused off-screen, and contributes no layout
+  shift.
+- The loop's main-thread cost was measured with CDP `Performance`
+  metrics at 4× CPU throttling over 6 s windows: the first version kept
+  39 infinite animations ticking (three quarters of them in hidden
+  scenes) and cost about 2.1 s of main-thread time per 6 s; the shipped
+  version (hidden scenes out of the render tree, short delayed one-shots
+  that finish and stop ticking) costs about 0.6 s per 6 s, most of it the
+  0.7 s count-up. The ambient grid dots no longer pulse for the same
+  reason (four infinite loops that were never noticed).
+- JavaScript entry shrank by ~5 kB (SVG components removed).
 
 ## SEO Impact
 
@@ -170,7 +182,11 @@ change. Local Lighthouse SEO reads 66 because the local stack serves
 - Consent banner: compact two-column actions below 640 px; body reserves
   matching bottom padding; the sticky CTA already yields to it.
 - Demo carousel: slides at 88% width so the next card peeks in.
-- FAQ accordion removes ~1,400 px of phone scrolling.
+- FAQ accordion removes ~1,400 px of phone scrolling. Home at 390 px
+  measures 13,116 px against 13,417 px before: the accordion's saving is
+  partly spent on the hero (the engine panel is taller than the funnel
+  sketch it replaces) and the product frames in the stepper. The other
+  pages are within 60 px of their previous height.
 - Validated at 375 / 390 / 430 / 768 / 1024 / 1280 / 1440 / 1920, light
   and dark: no horizontal overflow on any route.
 
@@ -188,26 +204,32 @@ ref (recorded below once known).
 
 ## Lighthouse Results
 
-Local stack, Lighthouse 12.8, mobile emulation unless noted. SEO is 66 on
-the local stack (see above).
+Local stack (`wrangler dev`), Lighthouse 12.8, mobile emulation with
+simulated throttling unless noted. SEO reads 66 on the local stack
+because it serves `noindex`; production is crawlable. Local mobile
+performance varies by about ±8 points between runs on the sandbox
+(five runs of Home ranged 84–94); the staging and production rows come
+from the `design-review` workflow and are the record.
 
-| Page             | Before (perf / a11y / CLS) | After (perf / a11y / CLS) |
-| ---------------- | -------------------------- | ------------------------- |
-| Home (mobile)    | 79 / 100 / 0.158           | see rerun below           |
-| Home (desktop)   | 95 / 100 / 0.131           | 100 / 100 / 0.001         |
-| Pricing (mobile) | 74 / 100 / 0.706           | 95 / 100 / 0              |
-| How it works     | 72 / 96 / 0.706            | 90 / 100 / 0              |
-| Sample verdicts  | not measured               | 81 / 100 / 0              |
+| Page                     | Before (perf / a11y / LCP / CLS / TBT) | After (perf / a11y / LCP / CLS / TBT) |
+| ------------------------ | -------------------------------------- | ------------------------------------- |
+| Home (mobile)            | 79 / 100 / 2.6 s / 0.158 / 360 ms      | 87 / 100 / 2.5 s / 0.001 / 310 ms     |
+| Home (desktop)           | 95 / 100 / 0.6 s / 0.131 / 60 ms       | 100 / 100 / 0.5 s / 0.001 / 0 ms      |
+| Pricing (mobile)         | 74 / 100 / 2.1 s / 0.706 / 10 ms       | 96 / 100 / 2.1 s / 0 / 120 ms         |
+| How it works (mobile)    | 72 / 96 / 2.4 s / 0.706 / 20 ms        | 91 / 100 / 3.0 s / 0 / 130 ms         |
+| Sample verdicts (mobile) | not measured                           | 89 / 100 / 2.9 s / 0 / 210 ms         |
 
-Staging and production numbers are appended once the `design-review`
-workflow has run against each.
+Best practices is 100 on every page before and after. Staging and
+production numbers are appended below once the workflow has run against
+each.
 
 ## Remaining Recommendations
 
-- Sample verdicts (mobile) sits at 81 with 430 ms of blocking time from
-  rendering the generated verdict list; splitting or virtualising that
-  list is the one page still short of the 90 target and is application
-  work, not design.
+- Home (mobile) sits at 84–94 locally with 300 ms of blocking time that
+  is the SPA's own script execution on a throttled CPU, not the visuals
+  (the hero's loop measures ~0.1 s of main-thread time per second at 4×
+  throttle); the next step there is application work (less JavaScript on
+  the marketing entry), not design.
 - Local Lighthouse mobile numbers vary by ±8 points run to run on the
   sandbox; treat the staging workflow's numbers as the record.
 - Contact and the auth pages were deliberately left as they are.

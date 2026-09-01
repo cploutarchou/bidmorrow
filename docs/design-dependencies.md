@@ -49,12 +49,12 @@ compression).
 
 | Asset         | Before (2026-09-01 baseline) | After the upgrade      |
 | ------------- | ---------------------------- | ---------------------- |
-| `index-*.js`  | 83.7 kB (23.9 kB transfer)   | 77.7 kB (22.4 kB gzip) |
-| `index-*.css` | 76.6 kB (15.8 kB transfer)   | 86.6 kB (16.6 kB gzip) |
+| `index-*.js`  | 83.7 kB (23.9 kB transfer)   | 78.3 kB (22.6 kB gzip) |
+| `index-*.css` | 76.6 kB (15.8 kB transfer)   | 84.6 kB (16.3 kB gzip) |
 
 JavaScript shrank: the FunnelHero and the four step SVG components left
 the entry, and the hero's only script is one `IntersectionObserver` plus a
-CSSOM property write. CSS grew by about 10 kB on disk (0.8 kB over the
+CSSOM property write. CSS grew by about 8 kB on disk (0.5 kB over the
 wire): `styles/hero.css` carries the decision-engine timeline, the product
 frames and the ring draw, and the micro-interaction rules sit in
 `marketing.css`, less the dead hero-panel, figure-scan, score-bar and
