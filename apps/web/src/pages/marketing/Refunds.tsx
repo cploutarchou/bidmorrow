@@ -15,6 +15,7 @@ export function Refunds(): ReactElement {
 
       <p className="mkt-eyebrow">Refunds</p>
       <h1>Refund policy</h1>
+      <p className="mkt-muted">Last updated 30 August 2026.</p>
 
       <div className="mkt-prose">
         <h2>Who processes refunds</h2>

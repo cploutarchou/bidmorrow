@@ -100,9 +100,14 @@ export function clearChunkReloadGuard(): void {
 
 export function RouteFallback(): ReactElement {
   // Same shape the codebase already uses for route-level waiting
-  // (components/ProtectedRoute.tsx, components/admin/AdminGate.tsx).
+  // (components/ProtectedRoute.tsx, components/admin/AdminGate.tsx), plus
+  // `route-fallback`: the placeholder reserves a full viewport of height
+  // (base.css) so the footer below it paints off-screen while a lazy
+  // chunk loads. Before that, the footer painted a few lines down and
+  // then jumped to the page bottom when the route rendered: CLS 0.706 on
+  // every lazily loaded marketing page (docs/design-audit.md #1).
   return (
-    <main id="main-content">
+    <main id="main-content" className="route-fallback">
       <p>Loading…</p>
     </main>
   );
