@@ -70,6 +70,10 @@ jobs:
             design-review-shots*) ;;
             *) echo "refusing to delete $DELETE_BRANCH: not a design-review-shots* scratch branch"; exit 1 ;;
           esac
+          # No checkout in cleanup mode; git push needs a repository to run
+          # from, so use an empty throwaway one (runs 7 and 8 failed on
+          # "not a git repository").
+          cd "$(mktemp -d)" && git init -q
           git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" --delete "$DELETE_BRANCH"
           echo "deleted branch $DELETE_BRANCH"
 
