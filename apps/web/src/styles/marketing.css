@@ -1519,230 +1519,161 @@
   color: var(--text-3);
 }
 
-/* --- Motion (all uses gated; global reduce kill-switch still wins) --- */
+/* --- Motion (all uses gated; global reduce kill-switch still wins) ---
+   Every figure animates ONCE, when its `[data-reveal]` step scrolls into
+   view (`.is-in`, lib/use-reveal.ts), then rests. The previous versions
+   looped forever (7 s chips, 6 s bars, 7 s cards, 5.5 s day pulses, 6 s
+   month pulses): continuous motion with no pause control (WCAG 2.2.2 for
+   anything longer than five seconds), a chip fade that Lighthouse caught
+   mid-transition as a contrast failure, and a "busy" read that a
+   decision-support product does not want (docs/design-audit.md #8).
+   Without JS there is no `.js-reveal` on <html>, so the resting styles
+   below the media query are the only ones that apply: everything is
+   simply visible. */
 @media (prefers-reduced-motion: no-preference) {
-  @keyframes mkt-scan {
-    0% {
-      transform: translateY(-6px);
-      opacity: 0;
-    }
-    18% {
-      opacity: 1;
-    }
-    82% {
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(108px);
-      opacity: 0;
-    }
-  }
-  @keyframes mkt-grow-x {
-    0% {
+  @keyframes mkt-grow-once {
+    from {
       transform: scaleX(0);
     }
-    55% {
-      transform: scaleX(1);
-    }
-    100% {
+    to {
       transform: scaleX(1);
     }
   }
-  @keyframes mkt-chip-in {
-    0%,
-    12% {
+  @keyframes mkt-chip-once {
+    from {
       opacity: 0.14;
       transform: translateY(3px);
     }
-    26%,
-    88% {
+    to {
       opacity: 1;
       transform: translateY(0);
     }
-    100% {
-      opacity: 0.14;
-      transform: translateY(3px);
-    }
   }
-  @keyframes mkt-pulse {
-    0%,
-    100% {
-      opacity: 0.2;
-    }
-    50% {
-      opacity: 0.85;
-    }
-  }
-  @keyframes mkt-lift {
-    0%,
-    12% {
+  @keyframes mkt-lift-once {
+    from {
       transform: translateY(26px);
       opacity: 0.25;
     }
-    40%,
-    88% {
+    to {
       transform: translateY(0);
       opacity: 1;
     }
-    100% {
-      transform: translateY(26px);
-      opacity: 0.25;
-    }
   }
-  @keyframes mkt-settle {
-    0%,
-    12% {
+  @keyframes mkt-settle-once {
+    from {
       transform: translateY(-13px);
     }
-    40%,
-    100% {
+    to {
       transform: translateY(0);
     }
   }
-
-  .mkt-fig-chip {
-    animation: mkt-chip-in 7s ease-in-out infinite;
-  }
-  .mkt-fig-chip:nth-child(1) {
-    animation-delay: 0ms;
-  }
-  .mkt-fig-chip:nth-child(2) {
-    animation-delay: 340ms;
-  }
-  .mkt-fig-chip:nth-child(3) {
-    animation-delay: 680ms;
-  }
-  .mkt-fig-chip:nth-child(4) {
-    animation-delay: 1020ms;
-  }
-  .mkt-fig-chip:nth-child(5) {
-    animation-delay: 1360ms;
-  }
-  .mkt-fig-chip:nth-child(6) {
-    animation-delay: 1700ms;
-  }
-  .mkt-fig-chip:nth-child(7) {
-    animation-delay: 2040ms;
-  }
-  .mkt-fig-chip:nth-child(8) {
-    animation-delay: 2380ms;
+  @keyframes mkt-day-once {
+    from {
+      opacity: 0.2;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
-  .mkt-fig-scanline {
-    animation: mkt-scan 2.8s ease-in-out infinite;
+  .js-reveal .mkt-flow__step .mkt-fig-chip {
+    opacity: 0.14;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip {
+    animation: mkt-chip-once 520ms var(--ease) both;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(2) {
+    animation-delay: 90ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(3) {
+    animation-delay: 180ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(4) {
+    animation-delay: 270ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(5) {
+    animation-delay: 360ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(6) {
+    animation-delay: 450ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(7) {
+    animation-delay: 540ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(8) {
+    animation-delay: 630ms;
   }
 
-  .mkt-fig-bar__fill {
-    animation: mkt-grow-x 6s ease-out infinite;
+  .js-reveal .mkt-flow__step .mkt-fig-bar__fill {
+    transform: scaleX(0);
   }
-  .mkt-fig-bar:nth-child(2) .mkt-fig-bar__fill {
-    animation-delay: 160ms;
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-bar__fill {
+    animation: mkt-grow-once 900ms var(--ease) both;
   }
-  .mkt-fig-bar:nth-child(3) .mkt-fig-bar__fill {
-    animation-delay: 320ms;
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-bar:nth-child(2) .mkt-fig-bar__fill {
+    animation-delay: 120ms;
   }
-  .mkt-fig-bar:nth-child(4) .mkt-fig-bar__fill {
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-bar:nth-child(3) .mkt-fig-bar__fill {
+    animation-delay: 240ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-bar:nth-child(4) .mkt-fig-bar__fill {
+    animation-delay: 360ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-bar:nth-child(5) .mkt-fig-bar__fill {
     animation-delay: 480ms;
   }
-  .mkt-fig-bar:nth-child(5) .mkt-fig-bar__fill {
-    animation-delay: 640ms;
+
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-card--lead {
+    animation: mkt-lift-once 700ms var(--ease) both;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-card:nth-child(2) {
+    animation: mkt-settle-once 600ms var(--ease) 120ms both;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-card:nth-child(3) {
+    animation: mkt-settle-once 600ms var(--ease) 240ms both;
   }
 
-  .mkt-fig-card--lead {
-    animation: mkt-lift 7s ease-in-out infinite;
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-day--send {
+    animation: mkt-day-once 800ms var(--ease) both;
   }
-  .mkt-fig-card:nth-child(2) {
-    animation: mkt-settle 7s ease-in-out 120ms infinite;
-  }
-  .mkt-fig-card:nth-child(3) {
-    animation: mkt-settle 7s ease-in-out 240ms infinite;
-  }
-
-  .mkt-fig-day {
-    animation: mkt-pulse 5.5s ease-in-out infinite;
-  }
-  .mkt-fig-day:nth-child(2) {
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-day--send:nth-child(n + 2) {
     animation-delay: 260ms;
   }
-  .mkt-fig-day:nth-child(3) {
-    animation-delay: 520ms;
+
+  /* Methodology: the component-weight bars grow once when the list
+     reveals (the list carries `data-reveal`). */
+  .js-reveal [data-reveal] .mkt-comp-row__fill {
+    transform: scaleX(0);
   }
-  .mkt-fig-day:nth-child(4) {
-    animation-delay: 780ms;
+  .js-reveal [data-reveal].is-in .mkt-comp-row__fill {
+    animation: mkt-grow-once 800ms var(--ease) both;
   }
-  .mkt-fig-day:nth-child(5) {
-    animation-delay: 1040ms;
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(2) .mkt-comp-row__fill {
+    animation-delay: 80ms;
   }
-  .mkt-fig-day:nth-child(6) {
-    animation-delay: 1300ms;
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(3) .mkt-comp-row__fill {
+    animation-delay: 160ms;
   }
-  .mkt-fig-day:nth-child(7) {
-    animation-delay: 1560ms;
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(4) .mkt-comp-row__fill {
+    animation-delay: 240ms;
+  }
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(5) .mkt-comp-row__fill {
+    animation-delay: 320ms;
+  }
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(6) .mkt-comp-row__fill {
+    animation-delay: 400ms;
+  }
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(7) .mkt-comp-row__fill {
+    animation-delay: 480ms;
+  }
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(8) .mkt-comp-row__fill {
+    animation-delay: 560ms;
   }
 
-  .mkt-comp-row__fill {
-    animation: mkt-grow-x 5.5s ease-out infinite;
-  }
-  .mkt-comp-row:nth-child(2) .mkt-comp-row__fill {
-    animation-delay: 110ms;
-  }
-  .mkt-comp-row:nth-child(3) .mkt-comp-row__fill {
-    animation-delay: 220ms;
-  }
-  .mkt-comp-row:nth-child(4) .mkt-comp-row__fill {
-    animation-delay: 330ms;
-  }
-  .mkt-comp-row:nth-child(5) .mkt-comp-row__fill {
-    animation-delay: 440ms;
-  }
-  .mkt-comp-row:nth-child(6) .mkt-comp-row__fill {
-    animation-delay: 550ms;
-  }
-  .mkt-comp-row:nth-child(7) .mkt-comp-row__fill {
-    animation-delay: 660ms;
-  }
-  .mkt-comp-row:nth-child(8) .mkt-comp-row__fill {
-    animation-delay: 770ms;
-  }
-
-  .mkt-hold__line--founding .mkt-hold__fill {
-    animation: mkt-grow-x 3.4s ease-out both;
-  }
-  .mkt-hold__month {
-    animation: mkt-pulse 6s ease-in-out infinite;
-  }
-  .mkt-hold__month:nth-child(2) {
-    animation-delay: 190ms;
-  }
-  .mkt-hold__month:nth-child(3) {
-    animation-delay: 380ms;
-  }
-  .mkt-hold__month:nth-child(4) {
-    animation-delay: 570ms;
-  }
-  .mkt-hold__month:nth-child(5) {
-    animation-delay: 760ms;
-  }
-  .mkt-hold__month:nth-child(6) {
-    animation-delay: 950ms;
-  }
-  .mkt-hold__month:nth-child(7) {
-    animation-delay: 1140ms;
-  }
-  .mkt-hold__month:nth-child(8) {
-    animation-delay: 1330ms;
-  }
-  .mkt-hold__month:nth-child(9) {
-    animation-delay: 1520ms;
-  }
-  .mkt-hold__month:nth-child(10) {
-    animation-delay: 1710ms;
-  }
-  .mkt-hold__month:nth-child(11) {
-    animation-delay: 1900ms;
-  }
-  .mkt-hold__month:nth-child(12) {
-    animation-delay: 2090ms;
+  /* Pricing: the founding line grows once; the twelve month cells are a
+     static scale now (they used to pulse forever and meant nothing). */
+  .js-reveal [data-reveal].is-in .mkt-hold__line--founding .mkt-hold__fill {
+    animation: mkt-grow-once 1.2s var(--ease) both;
   }
 }
 
@@ -2844,7 +2775,42 @@ body.consent-banner-open {
 
 @media (max-width: 640px) {
   body.consent-banner-open {
-    padding-bottom: 16rem;
+    padding-bottom: 13rem;
+  }
+}
+
+/* Phone layout (docs/design-audit.md #4): the banner used to stack three
+   full-height buttons under four lines of copy and cover the hero's price
+   note and first CTA at 390 px. Same copy, same three choices, same
+   order and semantics; tighter type and buttons on one row bring it from
+   ~330 px to ~200 px. */
+@media (max-width: 640px) {
+  .consent-banner__inner {
+    padding: 0.875rem 1rem;
+    gap: 0.75rem;
+  }
+  .consent-banner__title {
+    font-size: 0.875rem;
+  }
+  .consent-banner__note {
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+  .consent-banner__actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .consent-banner__actions .consent-btn {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .consent-banner__actions .consent-btn--quiet {
+    grid-column: 1 / -1;
+    padding-block: 0.5rem;
   }
 }
 
