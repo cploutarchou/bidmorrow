@@ -34,7 +34,10 @@ primitives, standing still, replace the step illustrations, and the
 share image is a still of the same scene. Motion is CSS only and
 reduced-motion safe. Layout shift is gone (Home mobile 0.158 → 0.001,
 Pricing 0.706 → 0), accessibility stays at 100, the JavaScript entry got
-smaller, and no dependency was added.
+smaller, and no dependency was added. It shipped to production on
+2026-09-01 at 23:02 UTC (`Deploy production` run 21) after the staging
+gate; the live verification and the production Lighthouse numbers are
+in the sections below.
 
 ## Pages Audited
 
@@ -249,6 +252,19 @@ under Cloudflare's managed block, `sitemap.xml` 200, `X-Robots-Tag`
 absent on production and `noindex, nofollow` on staging, and the new
 77,109-byte share image served from production.
 
+Visual verification on production: `design-review` run 6 (33569309061,
+23:04 to 23:13 UTC against `https://bidmorrow.com`): 64 captures (every
+public route full-page at 390 and 1440 in light and dark, plus the Home
+hero and consent-banner frames), no console errors, no horizontal
+overflow; the 112 CSP-blocked Cloudflare beacon messages are the
+pre-existing zone injection, reported separately. The hero frames at
+both widths and in both themes render the deployed decision engine as
+they did on staging (notice card, engine panel with the eight rows
+checked in, band row, the "illustrative example, not live data" label).
+The captures are on the run's `design-review-production` artifact (30
+days) and were also pushed to a scratch branch for review, deleted
+afterwards.
+
 Rollback (decided before deploying): the upgrade carries no migration, so
 rollback is code only. First choice is the Cloudflare Workers deployment
 rollback to the previous version (the 19:55 UTC deploy of `3c08100`,
@@ -292,15 +308,45 @@ everywhere is the console-error audit catching the CSP-blocked
 Cloudflare Web Analytics beacon (pre-existing, owner decision recorded
 in `HUMAN_DECISION_BLOCKERS.md`).
 
+Production, `design-review` run 6 (33569309061, 2026-09-01 23:11 to
+23:13 UTC, real network from a GitHub runner, the same build as staging):
+
+| Page                     | Perf | A11y | BP  | SEO | LCP   | CLS   | TBT    |
+| ------------------------ | ---- | ---- | --- | --- | ----- | ----- | ------ |
+| Home (mobile)            | 80   | 100  | 93  | 92  | 2.5 s | 0.001 | 570 ms |
+| Home (desktop)           | 100  | 100  | 93  | 92  | 0.6 s | 0.001 | 0 ms   |
+| Pricing (mobile)         | 97   | 100  | 93  | 92  | 2.2 s | 0     | 30 ms  |
+| How it works (mobile)    | 92   | 100  | 93  | 92  | 3.0 s | 0     | 20 ms  |
+| Sample verdicts (mobile) | 92   | 100  | 93  | 92  | 2.9 s | 0     | 110 ms |
+
+Accessibility 100 on every pair, CLS 0.001 or 0 everywhere. SEO 92
+rather than 100 is Lighthouse's robots.txt audit reporting
+`Content-Signal: search=yes,ai-train=no,use=reference` as an unknown
+directive; that line is Cloudflare's zone-level managed robots.txt
+(Content Signals Policy), not the Worker's body, crawlers ignore
+directives they do not know, and the owner decision is recorded in
+`HUMAN_DECISION_BLOCKERS.md`. Home (mobile) 80 against 87 on staging is
+a single throttled run on the identical bundle (same chunk hashes, 12
+requests, 190 kB transferred, script bootup about 1.0 s on both): the
+difference is 570 ms against 300 ms of blocking time from the same SPA
+JavaScript, inside the run-to-run spread already noted, and the other
+four pairs match staging within a point.
+
 ## Remaining Recommendations
 
-- Home (mobile) sits at 84–94 locally with 300 ms of blocking time that
+- Home (mobile) sits at 84–94 locally (87 on staging, 80 on production,
+  single runs) with 300 to 570 ms of blocking time that
   is the SPA's own script execution on a throttled CPU, not the visuals
   (the hero's loop measures ~0.1 s of main-thread time per second at 4×
   throttle); the next step there is application work (less JavaScript on
   the marketing entry), not design.
 - Local Lighthouse mobile numbers vary by ±8 points run to run on the
   sandbox; treat the staging workflow's numbers as the record.
+- Cloudflare's zone-level managed robots.txt prepends a `Content-Signal`
+  line that Lighthouse's robots audit calls an unknown directive (SEO 92
+  on production); keeping it or switching it off in the zone is an
+  owner decision recorded in `HUMAN_DECISION_BLOCKERS.md` (recommended:
+  keep it, the site's own rules are unaffected).
 - Contact and the auth pages were deliberately left as they are.
 - Email templates (`packages/notifications`) were not touched, per the
   owner's instruction that the copy sweep applied to the website only.

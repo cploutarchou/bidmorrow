@@ -5482,8 +5482,15 @@ Lighthouse sections of `docs/design-upgrade-report.md`.
   unchanged security headers, health live/ready 200 (`db: ok`, `stale:
 false`), `www` 301, robots production body, sitemap 200, `X-Robots-Tag`
   absent on production, the new 77,109-byte share image served.
-  `design-review` run 6 (33569309061) against production: recorded in
-  the report's Production Deployment and Lighthouse sections.
+  `design-review` run 6 (33569309061, 23:04 to 23:13 UTC) against
+  production: 64 captures at 390/1440 in both themes, no console errors,
+  no horizontal overflow (112 CSP-blocked beacon messages reported
+  separately); hero frames reviewed at both widths and themes.
+  Lighthouse on production: accessibility 100 on all five pairs, CLS
+  0.001 / 0, performance 80 (Home mobile, a single throttled run on the
+  identical bundle; 87 on staging) to 100, best practices 93 (beacon),
+  SEO 92 (Cloudflare's managed robots.txt `Content-Signal` line, see
+  below). Report and validation doc carry the tables.
 - **Commit authorship**: from #135 onward every commit is authored and
   committed as the repository owner with no assistant trailers or
   footers, and PR bodies carry no session links. Rewriting the earlier
@@ -5496,8 +5503,11 @@ false`), `www` 301, robots production body, sitemap 200, `X-Robots-Tag`
   CSP (owner decision, recommended: switch the automatic injection off
   at the zone); Home mobile performance 87 is the SPA's own JavaScript
   at 4× CPU throttle, an application follow-up outside the design scope;
+  Cloudflare's zone-level managed robots.txt prepends a `Content-Signal`
+  directive that Lighthouse's robots audit flags as unknown (SEO 92 on
+  production, no indexing effect; owner decision, recommended keep);
   scratch branches `design-review-shots` and `design-review-shots-prod`
-  are deleted after review.
+  deleted after review.
 
 ## Notes
 
