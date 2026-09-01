@@ -149,6 +149,58 @@
 /* ============================================================
    TOKENS — bare :root = dark (default). Theme Spec v2 §09.
    ============================================================ */
+/* Metric-matched fallbacks (docs/design-audit.md #3). While Archivo /
+   Source Code Pro load (`font-display: swap`), text renders in a local
+   face whose advance widths, ascent, descent and line gap are overridden
+   to the web font's own metrics. `size-adjust` is the ratio of the two
+   faces' average advance width over English-frequency-weighted a-z and
+   space, measured from the real glyph tables with fontTools (Archivo
+   0.4979 em vs Liberation Sans 0.4857 em, which shares Arial's advances;
+   DejaVu Sans 0.5576 em; Source Code Pro vs Liberation/Courier New
+   0.600 em both), NOT OS/2 xAvgCharWidth, which Arial and Liberation
+   report on different formulas. Ascent/descent overrides are Archivo's
+   878/210 per 1000 and Source Code Pro's 984/273, divided by the size
+   adjustment. The swap then changes glyph shapes but not line boxes, so
+   the hero copy stops pushing the art down after first paint. */
+@font-face {
+  font-family: 'Archivo Fallback';
+  src: local('Arial'), local('Liberation Sans');
+  size-adjust: 102.51%;
+  ascent-override: 85.65%;
+  descent-override: 20.49%;
+  line-gap-override: 0%;
+}
+/* Linux desktops without Liberation Sans usually carry DejaVu Sans. */
+@font-face {
+  font-family: 'Archivo Fallback DejaVu';
+  src: local('DejaVu Sans');
+  size-adjust: 89.29%;
+  ascent-override: 98.33%;
+  descent-override: 23.52%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Source Code Pro Fallback';
+  src: local('Courier New'), local('Liberation Mono');
+  size-adjust: 99.98%;
+  ascent-override: 98.42%;
+  descent-override: 27.3%;
+  line-gap-override: 0%;
+}
+
+/* Lazy-route placeholder (components/RouteChunkBoundary.tsx): a full
+   viewport tall so nothing already painted below it moves when the chunk
+   arrives. Layout shift is only counted for elements visible in the
+   viewport, so keeping the footer off-screen during the wait is the whole
+   fix. `100dvh` tracks the mobile browser chrome; the `100vh` line is the
+   fallback for engines without dynamic viewport units. */
+.route-fallback {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 2rem clamp(1rem, 4vw, 2rem);
+  color: var(--ink-3);
+}
+
 :root {
   color-scheme: dark;
 
@@ -223,9 +275,15 @@
   --t-micro: 0.6875rem/1.45;
 
   /* type — self-hosted (see @font-face above) */
-  --font-head: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-ui: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-num: 'Source Code Pro', ui-monospace, 'SF Mono', 'Cascadia Mono', Consolas, monospace;
+  --font-head:
+    'Archivo', 'Archivo Fallback', 'Archivo Fallback DejaVu', system-ui, -apple-system, 'Segoe UI',
+    Roboto, sans-serif;
+  --font-ui:
+    'Archivo', 'Archivo Fallback', 'Archivo Fallback DejaVu', system-ui, -apple-system, 'Segoe UI',
+    Roboto, sans-serif;
+  --font-num:
+    'Source Code Pro', 'Source Code Pro Fallback', ui-monospace, 'SF Mono', 'Cascadia Mono',
+    Consolas, monospace;
 
   /* geometry (Theme Spec: radii come down; 16px tier retires) */
   --r-xs: 3px;
