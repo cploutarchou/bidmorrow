@@ -127,7 +127,7 @@
   // not daily, because org-local send times roll over at different UTC
   // hours — see src/index.ts's CRON_DIGEST_SCHEDULE comment).
   "triggers": {
-    "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *"],
+    "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *", "40 * * * *"],
   },
   // Non-secret config vars. Secrets (BETTER_AUTH_SECRET, RESEND_API_KEY) are
   // NEVER put here: local dev reads them from `.dev.vars` (git-ignored —
@@ -224,7 +224,7 @@
         ],
       },
       "triggers": {
-        "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *"],
+        "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *", "40 * * * *"],
       },
       "vars": {
         "APP_ENV": "staging",
@@ -318,7 +318,7 @@
         ],
       },
       "triggers": {
-        "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *"],
+        "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *", "40 * * * *"],
       },
       "vars": {
         "APP_ENV": "production",

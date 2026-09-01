@@ -45,15 +45,21 @@ Assumptions behind the request math:
 
 - Ingestion: 1 daily cron, ~150–300 scoped notices/day. TED's async
   notice-XML rendering (docs/ted-data-source.md, 2026-08-18) makes the
-  happy path ≥2 fetches/notice, and the ADR-0008 fetch-retry drain (amended
-  2026-08-19) adds ≤150 requests/day worst case (25 rows × 6 render
-  visits) → ~350–800 outbound TED calls/day, inside the self-imposed
-  2,000/run budget; these are outbound subrequests, not billed Worker
-  requests. ADR-0009 (2026-08-20) removes the early abort for
+  happy path ≥2 fetches/notice, and the ADR-0008 daily in-run fetch-retry
+  drain (amended 2026-08-19) adds ≤150 requests/day worst case (25 rows ×
+  6 render visits) → ~350–800 outbound TED calls/day, inside the
+  self-imposed 2,000/run budget; these are outbound subrequests, not billed
+  Worker requests. ADR-0009 (2026-08-20) removes the early abort for
   render-pending-only days: the degraded-day worst case (every render
   pending, full 6 visits each) is ~936 fetches at 156 notices/day and
   ~1,800 at the 300/day ceiling — still inside the 2,000/run budget; $0
-  billing impact (outbound subrequests). Queue-batched normalization → well under 100k Worker
+  billing impact (outbound subrequests). ADR-0008 §A5 (2026-09-01) adds
+  the HOURLY standalone drain (`40 * * * *`, 50 rows × ≤6 visits = ≤300
+  requests/run, ≤2.5 min): expected ~900–1,800 extra requests on a
+  render-slow weekday, near zero on a normal one; the 7,200/day ceiling is
+  reachable only in the confirmed-outage posture where the operator's
+  suspension flag stands it down. +1 cron trigger (5 of the 250/account
+  limit), +24 queue messages/day; still $0. Queue-batched normalization → well under 100k Worker
   requests/mo and ~1M D1 row writes/mo including match recomputation.
   Matching writes ≈ orgs × new lots × ~10 component rows/day: at 100 orgs ×
   200 lots × 12 rows ≈ 240k writes/day ≈ 7.2M/mo — inside the 50M allowance.
@@ -134,8 +140,9 @@ queue batch caps · max retries with DLQ · max keywords (50) / CPV
 preferences (30) per org · bounded recompute windows · digest batching ·
 emergency pause flags (ingestion_paused, digest_paused) · CPV/country
 ingestion scope config · retention purge job · DB-size alert at 60% ·
-fetch-retry drain caps (≤25 rows × ≤6 render visits/run, 5 attempts, then
-alerting abandonment — ADR-0008) · systemic fetch-failure threshold on
+fetch-retry drain caps (daily in-run ≤25 rows, hourly standalone ≤50
+rows, each ≤6 render visits/run; 6 attempts on a 1/4/16/64/256 h ladder,
+then alerting abandonment — ADR-0008 §3/§A5) · systemic fetch-failure threshold on
 genuine fetch failures (ADR-0008 §2 as narrowed by ADR-0009 §1; render-
 pending days alert via RENDER_PENDING_DEGRADED instead of failing) ·
 cause-classified drain skip on systemic/budget window failures

@@ -76,7 +76,11 @@ usable ~2 s; pagination everywhere; indexes per docs/data-model.md; no N+1
   checkpoint only on full window success, then enqueues match computation
   per new/changed lot. Failures land in ingestion_errors; run status is
   never falsely successful. Bounded: request budget, ≤K windows/run,
-  max retries with DLQ.
+  max retries with DLQ. Notices whose XML TED has not rendered yet are
+  skipped into `ingestion_fetch_retries` and re-attempted by an hourly
+  standalone drain (cron → queue → `runFetchRetryDrainJob`, ADR-0008
+  §3/§A5) that stands down while ingestion is paused, attempts are
+  suspended, or another ingestion run is live.
 - **Matching**: queue consumer scores (org × lot) pairs pre-filtered by CPV
   scope intersection; writes tender_matches + components + risk flags with
   ENGINE_VERSION.
