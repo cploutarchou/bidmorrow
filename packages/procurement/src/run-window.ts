@@ -89,6 +89,20 @@ export const RENDER_RETRY_DELAY_MS = 20_000;
 export const MAX_RENDER_VISITS = 6;
 
 /**
+ * ADR-0008 Amendment §A5: a freshly-skipped notice becomes due for its first
+ * drain cycle this long AFTER the skip, not immediately. The window's own
+ * pass has just spent `MAX_RENDER_VISITS` on the notice inside ~2 minutes;
+ * the previous `next_attempt_at = now()` made the same invocation's drain
+ * re-cycle it at once, which on 2026-09-01 (150/151 notices render-pending
+ * on both staging and production) was a guaranteed second exhaustion that
+ * burnt one of the row's attempts for nothing. Twenty minutes clears TED's
+ * front-end cache window (ADR-0010 §2, ~2–4 min) with margin and lands the
+ * first real re-attempt on the next hourly standalone drain
+ * (apps/worker `runFetchRetryDrainJob`, `40 * * * *`).
+ */
+export const FETCH_RETRY_FIRST_DELAY_MS = 20 * 60_000;
+
+/**
  * Systemic-fetch-failure threshold (ADR-0008 §2): record-and-continue for
  * per-notice fetch failures is bounded so a genuinely systemic problem (TED
  * blocking/outage) still fails the window and holds the checkpoint, rather
@@ -648,10 +662,12 @@ export async function processOneNotice(
 /**
  * Shared plumbing for BOTH record-and-continue skip paths (ADR-0009 §1): a
  * durable `ingestion_errors` row, an idempotent `ingestion_fetch_retries`
- * upsert (due immediately — `next_attempt_at = now()` — so the SAME run's
- * drain, if any, can pick it up per ADR-0008 Amendment §A2), and a structured
- * warn log. No skipped notice ever loses its retry row, regardless of which
- * counter (`noticesFetchFailed` vs `noticesRenderPending`) the caller bumps.
+ * upsert (due `FETCH_RETRY_FIRST_DELAY_MS` from now — ADR-0008 Amendment
+ * §A5 — so the SAME run's drain deliberately does NOT re-cycle it; the
+ * hourly standalone drain does, once TED has had time to render), and a
+ * structured warn log. No skipped notice ever loses its retry row,
+ * regardless of which counter (`noticesFetchFailed` vs
+ * `noticesRenderPending`) the caller bumps.
  */
 async function writeSkipDiagnostic(
   deps: RunWindowDeps,
@@ -677,7 +693,7 @@ async function writeSkipDiagnostic(
     xmlUrl: row.xmlUrl,
     publicationDate: row.publicationDate,
     errorCode,
-    nextAttemptAt: now(),
+    nextAttemptAt: now() + FETCH_RETRY_FIRST_DELAY_MS,
     now: now(),
   });
   deps.logger.warn('ingestion.notice_fetch.skipped', {

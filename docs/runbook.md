@@ -46,13 +46,17 @@ A third operator flag, narrower than the pauses (ADR-0010 §5.2). Set it to
 `RENDER_PENDING_DEGRADED` alerts, i.e. notices failing solely because TED
 never renders their XML, not because of anything per-notice.
 
-While set, `drainFetchRetries`:
+While set:
 
-- pulls only 3 due rows per run instead of 25 (the drain becomes a recovery
-  probe — bounded at 18 requests/day), and
+- the hourly standalone drain (`40 * * * *`, ADR-0008 §A5) stands down
+  entirely — each hour's message logs `ingestion.fetch_retry_drain.skipped`
+  with `reason: attempts_suspended` and is acked;
+- the daily in-run `drainFetchRetries` pulls only 3 due rows instead of 25
+  (the drain becomes a recovery probe — bounded at 18 requests/day), and
 - does **not** increment `attempts` on render-pending outcomes, so the
-  5-attempt abandonment clock stops. Both `attempts` and `next_attempt_at`
-  are left untouched, so those rows stay due and keep being re-probed.
+  6-attempt abandonment clock (1/4/16/64/256 h ladder, ≈ 14 days reach)
+  stops. Both `attempts` and `next_attempt_at` are left untouched, so those
+  rows stay due and keep being re-probed.
 - Genuine HTTP/network failures still burn attempts — those are per-notice
   evidence whether or not an outage is running.
 

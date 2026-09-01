@@ -609,7 +609,9 @@ decision depends on the exact number.
 better justified than when written. A render-pending outcome really is
 evidence about TED's cache timing rather than about the notice, so
 burning one of the notice's five attempts on it was always charging the
-wrong account.
+wrong account. _2026-09-01: the attempt budget is now six on an
+hourly-geometric ladder, and the hourly standalone drain stands down
+entirely while the flag is set — ADR-0008 Amendment §A5._
 
 #### Branch B prerequisite — the mapping probe (2026-08-21)
 

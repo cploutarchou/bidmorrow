@@ -5,20 +5,50 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-_Rewritten 2026-08-29. The previous text was the 2026-08-16 snapshot and
-had gone stale in three ways that mattered: it called the owner checklist
-empty (ADR-0011 reopened it), it described the website overhaul as a
-not-yet-started hold (it ran, across PRs #67–#110), and it still framed
-Phase 14 as a future step._
+_Rewritten 2026-09-01 (previous rewrite 2026-08-29, which predates go-live
+and still said production ran 41 PRs of stale code with ingestion paused;
+both were resolved by the 08-30 launch)._
 
-**Phase 14 — Production-readiness audit: RUN 2026-08-29. Verdict FAIL.**
-Findings in `PRODUCTION_READINESS_AUDIT.md` (3 HIGH, 4 MEDIUM, 4 LOW).
-Nothing in the finding set is a defect in the shipped application code —
-all five quality gates are green on `99c4e61` and every mandatory
-invariant with a test has a passing one. The FAIL is carried by the
-launch path itself: **production runs 41 PRs of stale code with no live
-Paddle billing behind it**, and the owner-side Paddle items (blockers
-4a/4b/4c) are unstarted with the 2026-08-31 launch two days out.
+**LIVE since 2026-08-30 16:49 UTC** — owner instruction, a day ahead of the
+08-31 date (`HUMAN_DECISION_BLOCKERS.md` §LAUNCHED): `prelaunch=false`,
+`ingestion_paused=false`, founding pricing open, Paddle live with
+tax-inclusive prices owner-confirmed (F-04). Production runs `main` as of
+PR #114; PRs #111–#114 closed audit findings F-05–F-11 after the 08-29
+audit. Open owner-side items: blockers 4b/4c (Paddle seller verification,
+website approval, default payment link, sandbox checkout branding).
+
+**Post-launch incident #1 — 2026-09-01, empty production feed
+(`ingestion_fetch_retries` never converged).** Root cause and fix in
+ADR-0008 Amendment §A5. Symptom: the first live weekday window (05:00
+UTC) returned 150 of 151 notices `NOTICE_RENDER_PENDING` on BOTH staging
+and production; the same-run drain re-cycled 25 of them eight minutes
+later (guaranteed miss — TED's cache window vs. hours of render latency),
+burnt an attempt each and pushed them a day out; the daily 25-row drain
+against a ~150-row/weekday inflow meant the queue grew ~6× faster than it
+drained — staging was carrying 1,069 pending rows (869 never attempted,
+oldest 11 days). Fix (PR #132): hourly standalone drain
+(`40 * * * *` → `{kind:'drain_fetch_retries'}` → `runFetchRetryDrainJob`,
+50 rows/run, stands down on pause / attempts-suspended / live run),
+first retry +20 min instead of immediate, hourly-geometric backoff
+1/4/16/64/256 h with `FETCH_RETRY_MAX_ATTEMPTS` 5 → 6 (≈ 14-day reach, so
+the ADR-0010 §5.2 operator window grew rather than shrank). The ~10-day
+"slow-motion abandonment" deadline recorded under 2026-08-19 below is
+therefore now ~14 days. Staging auto-deploys on merge and its backlog is
+already due (self-drains at ≤50/h); **production deploy awaits the owner's
+explicit instruction** (standing rule, blockers item 2c) — production's 150
+rows are due 2026-09-02 05:09 under the old ladder and will be picked up
+by the first `:40` drain after deploy.
+
+**Phase 14 — Production-readiness audit: RUN 2026-08-29. Verdict FAIL at
+the time.** Findings in `PRODUCTION_READINESS_AUDIT.md` (3 HIGH, 4 MEDIUM,
+4 LOW). Nothing in the finding set was a defect in the shipped application
+code — all five quality gates were green on `99c4e61` and every mandatory
+invariant with a test had a passing one. The FAIL was carried by the
+launch path itself (production 41 PRs behind, no live Paddle billing,
+owner-side Paddle items unstarted); the launch on 08-30 and PRs #111–#114
+resolved the code-side findings, and the audit file carries per-finding
+status. Not re-verdicted as PASS here: that needs a fresh
+`production-reviewer` run, not a ledger claim.
 
 **Phase 13 — Deployment/Launch: substantially complete, never tagged.**
 Staging and production both came up on custom domains 2026-08-16; the
@@ -31,9 +61,9 @@ redesign, SEO artifacts, code splitting, the Stripe→Paddle migration
 2026-08-26. `phase-13-complete` was never tagged and Phase 14's verdict
 is FAIL, so neither tag is claimed here.
 
-**Production ingestion stays PAUSED** (`ingestion_paused: true`, verified
-live 2026-08-29) until the owner's explicit go-live, as does the
-`prelaunch` registration gate (blockers item 11).
+**Production ingestion was PAUSED** (`ingestion_paused: true`, verified
+live 2026-08-29) until the owner's go-live on 08-30, as was the
+`prelaunch` registration gate (blockers item 11); both are now open.
 
 **First staging-ingestion health check (2026-08-17 05:40 UTC, silent,
 read-only — via Cloudflare D1 API)**: the 05:00 UTC staging cron ran and

@@ -101,6 +101,16 @@ describe('queue() dispatcher (src/index.ts)', () => {
     expect(message.retry).not.toHaveBeenCalled();
   });
 
+  it('acks a {kind:"drain_fetch_retries"} message (ADR-0008 §A5 — routes to runFetchRetryDrainJob; this file\'s isolated D1 holds no due rows, so no network is touched)', async () => {
+    const message = fakeMessage<IngestQueueMessage>({ kind: 'drain_fetch_retries' });
+    const batch = fakeBatch('INGEST_QUEUE', [message]);
+
+    await runQueue(batch);
+
+    expect(message.ack).toHaveBeenCalledTimes(1);
+    expect(message.retry).not.toHaveBeenCalled();
+  });
+
   it('retries, and never acks, an unrecognized message kind (poison message, SEC-P6-02/SEC-P8-04)', async () => {
     const message = fakeMessage({ kind: 'not_a_real_kind' } as unknown as IngestQueueMessage);
     const batch = fakeBatch('INGEST_QUEUE', [message]);
