@@ -24,7 +24,8 @@
  *
  * Usage: node scripts/generate-og-image.mjs
  */
-import { stat } from 'node:fs/promises';
+import { readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from '@playwright/test';
@@ -48,7 +49,15 @@ try {
     viewport: { width: WIDTH, height: HEIGHT },
     deviceScaleFactor: 1,
   });
-  await page.goto(pathToFileURL(SOURCE).href, { waitUntil: 'load' });
+  // The SVG references its fonts as site-absolute `/fonts/*.woff2` (so it
+  // also renders when opened on the deployed site). Under file:// that
+  // path has no meaning, so render a temporary copy whose font URLs point
+  // at the same files in apps/web/public/fonts.
+  const fontsDir = pathToFileURL(resolve(ROOT, 'apps/web/public/fonts')).href;
+  const svg = (await readFile(SOURCE, 'utf8')).replaceAll("url('/fonts/", `url('${fontsDir}/`);
+  const tempSource = resolve(tmpdir(), `bidmorrow-og-${String(process.pid)}.svg`);
+  await writeFile(tempSource, svg);
+  await page.goto(pathToFileURL(tempSource).href, { waitUntil: 'load' });
   // `font-display: block` on the self-hosted face means an unloaded font
   // renders nothing rather than falling back — wait for it, or the
   // headline silently ships blank.
@@ -57,6 +66,7 @@ try {
   await page.screenshot({ path: OUTPUT, type: 'png' });
 } finally {
   await browser.close();
+  await rm(resolve(tmpdir(), `bidmorrow-og-${String(process.pid)}.svg`), { force: true });
 }
 
 const { size } = await stat(OUTPUT);

@@ -35,9 +35,9 @@ the ADR-0010 §5.2 operator window grew rather than shrank). The ~10-day
 "slow-motion abandonment" deadline recorded under 2026-08-19 below is
 therefore now ~14 days. Staging auto-deploys on merge and its backlog is
 already due (self-drains at ≤50/h); **production deploy awaits the owner's
-explicit instruction** (standing rule, blockers item 2c) — production's 150
-rows are due 2026-09-02 05:09 under the old ladder and will be picked up
-by the first `:40` drain after deploy.
+explicit instruction** (standing rule, blockers item 2c) — production's rows
+(125 due since 05:07 UTC, 25 due 2026-09-02 05:09) are picked up by the
+first `:40` drains after deploy.
 
 **Staging latency gate (F-06 weekly `staging-perf`), 2026-09-01.** The
 first scheduled run (08-31 05:47 UTC) died in 4 s with no logs, the same
@@ -52,6 +52,32 @@ query regression; customers are EU-based and do not take that path. Not
 loosened. Follow-up (task, not decided here): measure from where customers
 are, or take Smart Placement to the architect as an ADR. `timeout-minutes:
 20` added to the job so a hung probe cannot run for six hours.
+
+**2026-09-01 19:52–19:57 UTC — owner: "deploy to production and enable
+entitlement_enforced".** Both done and verified: `deploy-production.yml`
+run 33552153011 on `main` `3c08100` (#132 + #133) succeeded 19:55:04 UTC
+with smoke tests green (staging had deployed the same commit green at
+19:49); `entitlement_enforced = true` upserted directly into production D1
+at 19:53:41 UTC (no `audit_events` row; recorded in the blockers file).
+Production retry state at deploy: 125 rows `attempts = 0` due since 05:07
+UTC (never reached by the daily 25-row in-run drain) + 25 rows due
+2026-09-02 05:09 (the in-run drain's cycle burnt their first attempt); the
+earlier "150 rows due 09-02 05:09" wording above was wrong for the 125. The
+first hourly drain after deploy (20:40 UTC) starts on them. `tender_notices`
+in production: 0 at deploy time.
+
+**Staging, first hourly drain (19:40:22 UTC, 150 s):** attempted 50
+(oldest-first, publication dates from 2026-08-17), ALL 50 came back
+`NOTICE_RENDER_PENDING` after the full 6-visit cycle; 0 recovered, 0
+abandoned; `pending` still 1,069 (819 never attempted), `recovered` 100
+(all from earlier daily drains). Backlog by publication date: 08-17 106,
+08-18 66, 08-19 151, 08-20 129, 08-24 147, 08-25 122, 08-26 172, 08-27 26,
+08-31 150 (08-21..23 and 08-28 fully ingested). One data point, on the
+oldest rows; the 20:40/21:40 drains and production's 20:40 run decide
+whether TED renders on demand at all for these days. If three consecutive
+drains recover 0 of 50, the next step is an adaptive stand-down (skip the
+following hour after a zero-recovery full batch) rather than more traffic;
+documented as a follow-up, not implemented on one data point.
 
 **Phase 14 — Production-readiness audit: RUN 2026-08-29. Verdict FAIL at
 the time.** Findings in `PRODUCTION_READINESS_AUDIT.md` (3 HIGH, 4 MEDIUM,
@@ -3536,28 +3562,53 @@ Baseline model established: ~$6/mo (0–10 customers), ~$26/mo (100),
 ## Deployment state
 
 _Superseded repeatedly; kept as one live section rather than a Phase-5-era
-snapshot. Last verified 2026-08-29 against the Cloudflare API and the
-GitHub deploy history._
+snapshot. Last verified 2026-09-01 23:50 UTC against the GitHub deploy
+history (`Deploy production` run 23, `Deploy staging` run 128) and the
+`site-health` probe (run 8)._
 
-- **Staging** — CURRENT. `staging.bidmorrow.com`; D1 `bidmorrow-staging`
-  (`cd51fe7b-6b12-48b4-ae94-84205c3de99a`) at migration
-  `0011_paddle_billing.sql` (11 applied). Last deploy 2026-08-26 01:08 UTC
-  (`Deploy staging`, push). Ingestion RUNNING (`ingestion_paused: false`):
-  the 2026-08-29 05:00 UTC run ingested 133/133 notices with 0 errors;
-  459 notices / 753 lots hold. Flags: `ingestion_paused: false`, plus a
-  dead `stripe_tax_enabled: false` row left behind by ADR-0011 (the code
-  no longer reads it — harmless, delete at leisure).
-- **Production** — STALE, 41 PRs behind. Last deploy 2026-08-21 17:06 UTC
-  (`Deploy production` run 32506382104, commit `4448e09` = PR #69), while
-  `main` is `99c4e61` (PR #110). D1 `bidmorrow-production`
-  (`cd5f6ceb-3262-4ba9-a5f4-4c1ed43e27bb`) has only **9** migrations —
-  missing `0010_saved_searches` and `0011_paddle_billing` — and 0 users,
-  0 organizations, 0 notices, 0 ingestion runs. `ingestion_paused: true`
-  (deliberate); no `prelaunch` row, so the env-aware default keeps
-  registrations CLOSED on production. The deployed code is the Stripe-era
-  billing package: a production deploy of `main` therefore requires the
-  live Paddle secrets first (HUMAN_DECISION_BLOCKERS item 4c). See
-  PRODUCTION_READINESS_AUDIT.md F-02.
+- **Staging** — CURRENT at `main` `5bca213` (PRs #136 + #137, the deploy
+  record and the design-review cleanup mode, on top of #134 + #135, the
+  website visual upgrade and its accessibility fix). `staging.bidmorrow.com`; D1
+  `bidmorrow-staging` (`cd51fe7b-6b12-48b4-ae94-84205c3de99a`),
+  migrations unchanged by any of the three PRs. Deploys 2026-09-01
+  21:38–21:39 UTC (`Deploy staging` run 124, 33562159261, #134),
+  22:52–22:53 UTC (run 126, 33568361977, #135), 23:26–23:27 UTC (run 127,
+  33570999938, #136) and 23:35–23:36 UTC (run 128, 33571732213, #137),
+  all steps green, smoke passed. `site-health` run 8 at 23:04
+  UTC: health live/ready 200, `stale: false` (last successful ingestion
+  22:43 UTC), headers unchanged, `X-Robots-Tag: noindex, nofollow`
+  present. Ingestion RUNNING; the hourly fetch-retry drains recover (see
+  the 21:46 UTC evaluation below): `ingestion_fetch_retries` pending
+  1,000 (669 never attempted, 331 at attempts=1), recovered 169 (69
+  today), abandoned 0 at that check.
+- **Production** — CURRENT at `main` `5bca213`, deployed 2026-09-01
+  23:48:47–23:49:53 UTC (`Deploy production` run 23, 33572653017,
+  `success`, smoke tests passed) on the owner's instruction to deploy
+  everything to staging and production; run 22 (33571123557,
+  `eb66927`, 23:27–23:28 UTC, `success`) and run 23 shipped documentation
+  and a workflow input only, so the Worker build is the same as run
+  21's. Run 21
+  (33569044580, `main` `7e13eea`, 23:01–23:02 UTC, `success`, smoke tests
+  passed: health live/ready, CSP header present, e2e test hooks 404,
+  production `robots.txt` body with the sitemap line, `sitemap.xml`
+  served) shipped the website visual upgrade (#134 + #135) on the
+  owner's instruction after the design production gate passed
+  (`docs/design-upgrade-report.md`). Rollback targets: the run-21
+  version (same code) or run 20 (`3c08100`, 33552153011, the
+  pre-upgrade site). D1
+  `bidmorrow-production` (`cd5f6ceb-3262-4ba9-a5f4-4c1ed43e27bb`), no
+  migration in either PR; the deploy captured its D1 Time Travel
+  bookmark as usual. `site-health` run 8 at 23:04 UTC: health live/ready
+  200, `db: ok`, `stale: false` (last successful ingestion 22:43 UTC),
+  security headers unchanged, `X-Robots-Tag` absent, robots production
+  body, sitemap 200, the new 77,109-byte share image served, `www` 301
+  to the apex. Flags verified 21:47 UTC (unchanged by the deploy):
+  `ingestion_paused: false`, `prelaunch: false`, `founding_plan_open:
+true`, `entitlement_enforced: true` (row created 19:53:41 UTC on the
+  owner's instruction). First live data after the 20:40 UTC drain: 6
+  notices, 8 lots, 8 matches for the one organization (3
+  WORTH_REVIEWING, 5 EXCLUDED); retries pending 144 (75 at attempts=0,
+  69 at attempts=1), recovered 6.
 - **www redirect** — `apps/www-redirect` deployed 2026-08-22, 301s to the
   apex (blockers item 12).
 
@@ -5275,6 +5326,205 @@ source documents'` label now differs from the web app's. And
   Playwright not run: no browsers in this environment and the harness needs a
   seeded wrangler server; the three assertion edits are literal swaps checked
   against the exact new source strings.
+
+## Website visual upgrade (design phases 0–6, 2026-09-01)
+
+Owner brief: principal web design / motion / product-visualisation pass
+over the public website, business functionality untouched. Full record:
+`docs/design-audit.md` (23 findings, each with its resolution),
+`docs/design-redesign-plan.md` (8 phases), `docs/design-dependencies.md`
+(nothing added), `docs/design-upgrade-report.md` (the brief's final
+report; staging/production sections filled by phases 7–8).
+
+- **Hero** (`components/hero/`): the decision engine. A TED notice enters,
+  eight components check in with their points, ring and counter draw to
+  n / 100, the tender settles into its band; three illustrative tenders
+  (84 Strong match, 71 Worth reviewing, 38 Low fit) on a 13.5 s loop.
+  Data in `decision-engine-data.ts`, pinned by a unit test (weights sum to
+  100, points sum to the score, band follows the thresholds, buyers
+  anonymised, no win/guarantee wording). Pure CSS motion; one
+  `animationend` listener hands scenes over (only the playing scene is in
+  the render tree), one IntersectionObserver pauses it off-screen; the
+  registered `--de-value` property drives counter and ring together;
+  scores reach CSS through `setProperty` (no inline style under the CSP).
+  Reduced motion: scene one's finished frame. `role="img"` with a full
+  sentence label.
+- **Main-thread cost, measured** (CDP Performance metrics, 4× CPU
+  throttle, 6 s windows on the local stack): first version 2.1 s of
+  main-thread time per 6 s (39 infinite animations, 26 of them in hidden
+  scenes); shipped version 0.6 s per 6 s (hidden scenes `display: none`,
+  short delayed one-shot animations that finish and stop ticking, size
+  containment on the counter and ring). Page baseline with the hero paused
+  went from 2.1 s to 0.5 s; the grid dots no longer pulse.
+- **Layout shift**: metric-matched font fallbacks (`size-adjust` +
+  overrides from real glyph advances, not OS/2 averages) and a
+  viewport-height lazy-route fallback with the skip-link target. Home
+  mobile CLS 0.158 → 0.001, Pricing / How-it-works 0.706 → 0.
+- **Imagery**: `FunnelHero` and the four step SVGs deleted; `frames.tsx`
+  (`SourceFrame`, `ProfileFrame`, `ScoringFrame`) reuses the hero's
+  primitives for the stepper and How-it-works; the verdict step names its
+  tender; `STAGE_SCORE_BARS` (summed to 86.5 against a verdict of 84) is
+  gone, both steps read the hero's tender. One `ScoreRing` (static /
+  engine / draw-once) replaces two hand-drawn rings. OG image redrawn as a
+  still of the engine (77 kB PNG, both self-hosted faces; the generator now
+  serves fonts under file://).
+- **Motion and polish**: figures play once on reveal (contrast audit no
+  longer catches chips mid-fade), FAQ as native `<details>`, founding
+  pricing card head band, micro-interactions 120–250 ms gated on
+  `(hover: hover)` and `prefers-reduced-motion`, footer link underline,
+  Pilot secondary CTA, Refunds "Last updated", mobile carousel peek,
+  compact consent banner on phones, hero grid mask.
+- **Not changed** (deliberately, per the brief): URLs, titles, meta,
+  canonical/OG tags, sitemap, forms, auth, Paddle entry, analytics,
+  consent behaviour, API calls, pricing copy. Email templates untouched
+  (owner: website only). Contact and auth pages left as they were.
+- **Gates**: format:check 0, lint 0, typecheck 0 (workspace), vitest web
+  20 files / 192, root 85 files / 735 (3 skipped), worker 298, db D1 84;
+  web build 0 (entry JS 78.3 kB, CSS 84.6 kB on disk); Playwright
+  marketing + accessibility + keyboard specs 41 passed on the local stack
+  (chromium + mobile-chromium). Lighthouse on the local stack: see the
+  report; local mobile numbers vary ±8 points run to run, staging's
+  `design-review` workflow is the record.
+- **Tooling**: `scripts/design-screenshots.mjs` (routes × widths ×
+  schemes, overflow + console check), `scripts/design-element-shot.mjs`
+  (`--click`), `scripts/design-lighthouse.mjs`,
+  `.github/workflows/design-review.yml` (workflow_dispatch against staging
+  or production, artifact upload). Captures under `artifacts/design-review/`
+  (git-ignored).
+- **Phases 7–8**: done the same evening; see "Website visual upgrade
+  shipped" below.
+
+## Production: first hourly fetch-retry drain (2026-09-01 20:40 UTC, read-only check)
+
+Self check-in after the 19:55 UTC deploy of #132 + #133 (production D1
+`cd5f6ceb`). Baseline at 19:57: 125 retry rows at attempts=0 due since
+05:07 UTC, 25 at attempts=1 due 09-02 05:09, `tender_notices` 0.
+
+- `ingestion_runs` 01M1FB7WVB4TWD5PB9ENKTEHPJ: started 20:40:46 UTC,
+  `succeeded` in 148 s, notices_upserted 6, lots_created 8,
+  matches_scored 0 (the run row; MATCH_QUEUE scoring happens after it).
+- `ingestion_fetch_retries`: 6 recovered (all attempts=0 rows, last
+  error NOTICE_RENDER_PENDING before recovery); 69 pending at attempts=1
+  (the 25 from before plus 44 that failed again this drain, next attempt
+  21:42 UTC on the 1 h rung); 75 pending at attempts=0, still due since
+  05:07 UTC and next in line for the 21:40 drain.
+- Feed: `tender_notices` 6, `tender_lots` 8, `tender_matches` 8 for the
+  one organization (3 WORTH_REVIEWING, 5 EXCLUDED). The production feed
+  has started to fill; the first digest will go out on the next digest
+  window if anything clears the org's floor.
+- 6 of 50 attempted rows recovered (12%): TED is still returning
+  NOTICE_RENDER_PENDING for most of the 05:07 batch fourteen hours after
+  publication. The 21:40 drain takes the next 50 of the 75 attempts=0
+  rows; the 44 that just failed come back at 21:42 (1 h), then 4 h, 16 h,
+  64 h per the ADR-0008 A5 ladder, so nothing is abandoned before six
+  attempts. No production writes, no deploys, no flag changes in this
+  check.
+
+## Staging drains evaluated: TED renders on demand after all (2026-09-01 21:46 UTC check-in)
+
+Read-only D1 queries on staging (`cd51fe7b`) after the 20:40 and 21:40 UTC
+drains. Baseline at 19:57 UTC: pending 1,069, recovered 100, abandoned 0,
+never attempted 819; the 19:40 drain had recovered 0 of 50.
+
+- `ingestion_runs` since 20:40 UTC: 01M1FB73HXD51Z3D02JSVCH48A (20:40:20,
+  `succeeded`, 161 s, 15 notices / 19 lots), 01M1FEN04SBSYSBCT59BNN461Q
+  (21:40:21, `succeeded`, 126 s, **50 notices / 62 lots**: every attempted
+  row recovered) and 01M1FES0JQCGS50CVN018D05YD (21:42:33, `succeeded`,
+  148 s, 4 notices / 4 lots). Errors 0, fetch-failed 0, render-pending 0 on
+  all three.
+- `ingestion_fetch_retries`: pending 1,000 (669 at attempts=0 never
+  attempted, 331 at attempts=1 of which 131 touched in the last 3 h),
+  recovered 169 (69 today, all by drains: 15 + 50 + 4), abandoned 0. Every
+  row's last error is still `NOTICE_RENDER_PENDING` when it fails, so TED's
+  on-demand render is the only thing standing between a row and recovery.
+- Verdict: the 19:40 0/50 was TED lag on that morning's batch, not a
+  systemic refusal; by 21:40 the same class of notice rendered 50/50. No
+  adaptive stand-down and no lower standalone cap are proposed; the ladder
+  (20 min, then 1 h × 4^(n-1), six attempts) stays as ADR-0008 A5 records
+  it. Re-evaluate only if a full day passes with 0 recovered.
+- Production confirmed in the same check: `Deploy production` run 20
+  (33552153011, `main` `3c08100`) `success` at 19:55:05 UTC;
+  `feature_flags.entitlement_enforced = true` present (created 19:53:41
+  UTC). Both HUMAN_DECISION_BLOCKERS items were already marked closed; the
+  Deployment state section above is rewritten to the verified truth.
+
+## Website visual upgrade shipped: staging validation, gate, production (design phases 7–8, 2026-09-01)
+
+Record of the brief's last two phases. Evidence lives in
+`docs/staging-design-validation.md` and the Staging / Production /
+Lighthouse sections of `docs/design-upgrade-report.md`.
+
+- **Staging** (phase 7): #134 squash-merged as `adad0c2` at 21:38 UTC,
+  `Deploy staging` run 124 green in one minute. `site-health` run 7:
+  health 200 and not stale, headers unchanged, staging `noindex`,
+  production crawlable, new share image served on staging.
+  `design-review` run 3 (84 full-page captures, 14 routes × 390/768/1440
+  × light/dark): no console errors, no horizontal overflow; run 4 pushed
+  the 390/1440 captures to a scratch branch for a frame-by-frame look at
+  the hero, stepper, pricing and FAQ (the sandbox cannot download
+  workflow artifacts). Run 1 had failed on 168 console messages that were
+  Cloudflare's zone-level Web Analytics beacon refused by the site's own
+  CSP on every page; the capture script now reports that class
+  separately and the owner decision is in `HUMAN_DECISION_BLOCKERS.md`.
+- **What the validation caught**: accessibility 96 on one Home pair per
+  run (desktop in run 3, mobile in run 4). Lighthouse's axe pass sampled
+  the hero mid-entrance, when the engine head and the eight rows sat at
+  35% opacity for up to 1.6 s of every scene, and failed colour contrast
+  on that text. Fixed in #135 (`7e13eea`, 22:52 UTC, `Deploy staging`
+  run 126): entrances no longer put text at partial opacity (notice and
+  band chip wipe in with `clip-path`, engine panel rises and lights its
+  border, rows slide while only the check-in mark fades, scene wipes
+  out, band lights with a step). Verified with timed axe colour-contrast
+  passes at nine offsets after load at both widths, then on staging by
+  run 5: accessibility 100 on all five pairs, CLS 0.001 / 0, performance
+  87 (Home mobile) to 100 (Home desktop).
+- **Gate** (phase 8): the brief's thirteen conditions each hold with
+  evidence in the report's table (build, tests, console, links/images,
+  staging, responsive, payments, forms, analytics, auth, SEO metadata,
+  performance, accessibility). Rollback decided before deploying: no
+  migration, so code only; Workers deployment rollback to the run-20
+  version (`3c08100`) or `git revert` + re-dispatch.
+- **Production**: `deploy-production.yml` dispatched on `main` `7e13eea`
+  with the typed confirmation on the owner's instruction ("deploy to
+  production if the gate passes"). `Deploy production` run 21
+  (33569044580) 23:01:04 to 23:02:20 UTC, all steps green, smoke tests
+  passed. `site-health` run 8 at 23:04 UTC: production 200 with the
+  unchanged security headers, health live/ready 200 (`db: ok`, `stale:
+false`), `www` 301, robots production body, sitemap 200, `X-Robots-Tag`
+  absent on production, the new 77,109-byte share image served.
+  Run 22 (33571123557, 23:27–23:28 UTC) redeployed `main` `eb66927`
+  after #136 merged, on the owner's instruction that everything be in
+  production: identical build, smoke tests passed, production ref equal
+  to `main`. Run 23 (33572653017, 23:48–23:49 UTC) did the same for
+  `5bca213` after #137, on the instruction to deploy everything to
+  staging and production. `design-review` run 6 (33569309061, 23:04 to 23:13 UTC)
+  against production: 64 captures at 390/1440 in both themes, no console errors,
+  no horizontal overflow (112 CSP-blocked beacon messages reported
+  separately); hero frames reviewed at both widths and themes.
+  Lighthouse on production: accessibility 100 on all five pairs, CLS
+  0.001 / 0, performance 80 (Home mobile, a single throttled run on the
+  identical bundle; 87 on staging) to 100, best practices 93 (beacon),
+  SEO 92 (Cloudflare's managed robots.txt `Content-Signal` line, see
+  below). Report and validation doc carry the tables.
+- **Commit authorship**: from #135 onward every commit is authored and
+  committed as the repository owner with no assistant trailers or
+  footers, and PR bodies carry no session links. Rewriting the earlier
+  history on `main` to the same identity needs a force-push to `main`
+  that the sandbox is not permitted to make; it is pending the owner
+  either granting that permission or running the rewrite locally (the
+  commands were provided in the session). Rewritten commits lose
+  GitHub's "Verified" badge.
+- **Open after this work**: Cloudflare Web Analytics beacon versus the
+  CSP (owner decision, recommended: switch the automatic injection off
+  at the zone); Home mobile performance 87 is the SPA's own JavaScript
+  at 4× CPU throttle, an application follow-up outside the design scope;
+  Cloudflare's zone-level managed robots.txt prepends a `Content-Signal`
+  directive that Lighthouse's robots audit flags as unknown (SEO 92 on
+  production, no indexing effect; owner decision, recommended keep);
+  scratch branches `design-review-shots` and `design-review-shots-prod`
+  are removed by dispatching `design-review.yml` in its cleanup mode
+  (`delete_branch`, added in #136) once that PR merges; a delete from
+  the sandbox returns HTTP 403, the same limit as the tag pushes.
 
 ## Notes
 

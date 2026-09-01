@@ -1,0 +1,152 @@
+# Design review capture (docs/design-redesign-plan.md, phase 7): renders the
+# public site at eight viewport widths in both colour schemes with
+# Playwright and runs the five baseline Lighthouse pairs, against staging
+# by default (the session sandbox's egress proxy blocks bidmorrow.com, so
+# staging validation has to run here). Uploads everything as a workflow
+# artifact and writes the Lighthouse table to the job summary. Read-only:
+# it never touches the deployment.
+name: design-review
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Site to capture
+        default: https://staging.bidmorrow.com
+        required: true
+      label:
+        description: Artifact label (folder name under artifacts/design-review)
+        default: staging
+        required: true
+      widths:
+        description: Viewport widths to capture (comma list)
+        default: 375,390,430,768,1024,1280,1440,1920
+        required: true
+      lighthouse:
+        description: Run the five Lighthouse pairs after the screenshots
+        type: boolean
+        default: true
+      push_branch:
+        description: >-
+          Optional scratch branch to force-push the captures to (the session
+          sandbox cannot download workflow artifacts); leave empty to skip
+        default: ''
+        required: false
+      delete_branch:
+        description: >-
+          Cleanup mode: delete this design-review-shots* scratch branch
+          instead of capturing anything (session credentials cannot delete
+          refs; CI's token can). Leave empty for a normal capture run.
+        default: ''
+        required: false
+
+permissions:
+  contents: write # only used by the optional scratch-branch push and delete below
+
+concurrency:
+  group: design-review
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    # Eight widths x two schemes x fourteen routes is ~220 paced full-page
+    # captures (the script scrolls each page so reveal sections render),
+    # about 20 minutes on a runner, plus ~5 minutes of Lighthouse.
+    timeout-minutes: 50
+    steps:
+      # Same reason as ted-fixture-fetch.yml's delete_raw_branch mode: the
+      # scratch branches are transient by design and pushes from the
+      # session sandbox are scoped to the working branch (HTTP 403 on a
+      # delete), so the cleanup runs here with CI's token. Only the
+      # design-review-shots* names this workflow itself creates qualify.
+      - name: Delete the scratch branch (cleanup mode)
+        if: ${{ inputs.delete_branch != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DELETE_BRANCH: ${{ inputs.delete_branch }}
+        run: |
+          case "$DELETE_BRANCH" in
+            design-review-shots*) ;;
+            *) echo "refusing to delete $DELETE_BRANCH: not a design-review-shots* scratch branch"; exit 1 ;;
+          esac
+          # No checkout in cleanup mode; git push needs a repository to run
+          # from, so use an empty throwaway one (runs 7 and 8 failed on
+          # "not a git repository").
+          cd "$(mktemp -d)" && git init -q
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" --delete "$DELETE_BRANCH"
+          echo "deleted branch $DELETE_BRANCH"
+
+      - name: Checkout
+        if: ${{ inputs.delete_branch == '' }}
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up pnpm
+        if: ${{ inputs.delete_branch == '' }}
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - name: Set up Node
+        if: ${{ inputs.delete_branch == '' }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        if: ${{ inputs.delete_branch == '' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        if: ${{ inputs.delete_branch == '' }}
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Screenshots (375 to 1920, light and dark)
+        if: ${{ inputs.delete_branch == '' }}
+        run: |
+          node scripts/design-screenshots.mjs \
+            --base-url "${{ inputs.base_url }}" \
+            --label "${{ inputs.label }}" \
+            --widths "${{ inputs.widths }}"
+
+      - name: Lighthouse (five baseline pairs)
+        # Runs even when the screenshot step reports findings, so the
+        # numbers land beside the captures in the same artifact.
+        if: ${{ !cancelled() && inputs.lighthouse && inputs.delete_branch == '' }}
+        run: |
+          node scripts/design-lighthouse.mjs \
+            --base-url "${{ inputs.base_url }}" \
+            --label "${{ inputs.label }}" | tee lighthouse-summary.md
+          {
+            echo "## Lighthouse (${{ inputs.base_url }})"
+            echo
+            cat lighthouse-summary.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload captures and reports
+        if: ${{ always() && inputs.delete_branch == '' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: design-review-${{ inputs.label }}
+          path: artifacts/design-review
+          retention-days: 30
+
+      # Same pattern as competitor-screenshots.yml: a transient branch that
+      # git can fetch from the sandbox, deleted after review. Never touches
+      # main or the working branches.
+      - name: Push captures to the scratch branch
+        if: ${{ always() && inputs.push_branch != '' && inputs.delete_branch == '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUSH_BRANCH: ${{ inputs.push_branch }}
+        run: |
+          case "$PUSH_BRANCH" in
+            main|work/*) echo "refusing to push captures to $PUSH_BRANCH"; exit 1 ;;
+          esac
+          cd artifacts/design-review
+          git init -b "$PUSH_BRANCH"
+          git config user.name "bidmorrow-ci"
+          git config user.email "ci@users.noreply.github.com"
+          git add -A
+          git commit -q -m "design-review captures, label ${{ inputs.label }} ($(date -u +%FT%TZ))"
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$PUSH_BRANCH"
+          echo "pushed $(git ls-files | grep -c '\.png$') screenshots and $(git ls-files | grep -c '\.json$') reports to branch $PUSH_BRANCH"

@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
-import { StepSource } from '../../assets/steps/StepSource';
+import { SourceFrame } from '../../components/hero/frames';
 import { PageMeta } from '../../components/PageMeta';
 import { MARKETING_META } from '../../lib/seo';
 
@@ -81,7 +81,7 @@ export function HowItWorks(): ReactElement {
             </Link>
           </span>
           <span className="mkt-figure mkt-figure--art" aria-hidden="true">
-            <StepSource className="mkt-figure__art" />
+            <SourceFrame className="mkt-figure__art" />
           </span>
         </li>
 
