@@ -3562,29 +3562,32 @@ Baseline model established: ~$6/mo (0–10 customers), ~$26/mo (100),
 ## Deployment state
 
 _Superseded repeatedly; kept as one live section rather than a Phase-5-era
-snapshot. Last verified 2026-09-01 23:29 UTC against the GitHub deploy
-history (`Deploy production` run 22, `Deploy staging` run 127) and the
+snapshot. Last verified 2026-09-01 23:50 UTC against the GitHub deploy
+history (`Deploy production` run 23, `Deploy staging` run 128) and the
 `site-health` probe (run 8)._
 
-- **Staging** — CURRENT at `main` `eb66927` (PR #136, the deploy record
-  and the design-review cleanup mode, on top of #134 + #135, the website
-  visual upgrade and its accessibility fix). `staging.bidmorrow.com`; D1
+- **Staging** — CURRENT at `main` `5bca213` (PRs #136 + #137, the deploy
+  record and the design-review cleanup mode, on top of #134 + #135, the
+  website visual upgrade and its accessibility fix). `staging.bidmorrow.com`; D1
   `bidmorrow-staging` (`cd51fe7b-6b12-48b4-ae94-84205c3de99a`),
   migrations unchanged by any of the three PRs. Deploys 2026-09-01
   21:38–21:39 UTC (`Deploy staging` run 124, 33562159261, #134),
-  22:52–22:53 UTC (run 126, 33568361977, #135) and 23:26–23:27 UTC (run
-  127, 33570999938, #136), all steps green, smoke passed. `site-health` run 8 at 23:04
+  22:52–22:53 UTC (run 126, 33568361977, #135), 23:26–23:27 UTC (run 127,
+  33570999938, #136) and 23:35–23:36 UTC (run 128, 33571732213, #137),
+  all steps green, smoke passed. `site-health` run 8 at 23:04
   UTC: health live/ready 200, `stale: false` (last successful ingestion
   22:43 UTC), headers unchanged, `X-Robots-Tag: noindex, nofollow`
   present. Ingestion RUNNING; the hourly fetch-retry drains recover (see
   the 21:46 UTC evaluation below): `ingestion_fetch_retries` pending
   1,000 (669 never attempted, 331 at attempts=1), recovered 169 (69
   today), abandoned 0 at that check.
-- **Production** — CURRENT at `main` `eb66927`, deployed 2026-09-01
-  23:27:47–23:28:50 UTC (`Deploy production` run 22, 33571123557,
-  `success`, smoke tests passed) on the owner's instruction that
-  everything be in production; #136 changed documentation and a workflow
-  input only, so the Worker build is the same as run 21's. Run 21
+- **Production** — CURRENT at `main` `5bca213`, deployed 2026-09-01
+  23:48:47–23:49:53 UTC (`Deploy production` run 23, 33572653017,
+  `success`, smoke tests passed) on the owner's instruction to deploy
+  everything to staging and production; run 22 (33571123557,
+  `eb66927`, 23:27–23:28 UTC, `success`) and run 23 shipped documentation
+  and a workflow input only, so the Worker build is the same as run
+  21's. Run 21
   (33569044580, `main` `7e13eea`, 23:01–23:02 UTC, `success`, smoke tests
   passed: health live/ready, CSP header present, e2e test hooks 404,
   production `robots.txt` body with the sitemap line, `sitemap.xml`
@@ -5492,7 +5495,9 @@ false`), `www` 301, robots production body, sitemap 200, `X-Robots-Tag`
   Run 22 (33571123557, 23:27–23:28 UTC) redeployed `main` `eb66927`
   after #136 merged, on the owner's instruction that everything be in
   production: identical build, smoke tests passed, production ref equal
-  to `main`. `design-review` run 6 (33569309061, 23:04 to 23:13 UTC)
+  to `main`. Run 23 (33572653017, 23:48–23:49 UTC) did the same for
+  `5bca213` after #137, on the instruction to deploy everything to
+  staging and production. `design-review` run 6 (33569309061, 23:04 to 23:13 UTC)
   against production: 64 captures at 390/1440 in both themes, no console errors,
   no horizontal overflow (112 CSP-blocked beacon messages reported
   separately); hero frames reviewed at both widths and themes.
