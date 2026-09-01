@@ -14,9 +14,17 @@ Status legend: `OPEN` (needs human), `PROVIDED` (done), `DEFERRED` (not needed y
 production D1; live Paddle config deployed; registrations + checkout open.
 ~~Still owed after launch: the live €0 checkout test + lifecycle~~ **DONE
 2026-08-30 17:20Z** — checkout, webhooks, D1, entitlement, plan change,
-scheduled + immediate cancel all verified; `BMTEST100` archived. Still
-open: F-06 staging credentials in CI, sandbox checkout branding (4b),
-live checkout logo/brand colour. Everything below is history.
+scheduled + immediate cancel all verified; `BMTEST100` archived.
+**Further closed 2026-08-30 evening**: F-06 (seeded staging perf account +
+`staging-perf.yml` weekly gate, PR #130 — baseline in the audit; feed-route
+p95 is a follow-up perf item); FIRST100 coupon archived in BOTH accounts
+(founding price is the single first-100 mechanism); checkout branding —
+product image set via API on all four products, brand kit in docs/brand/.
+**The only remaining owner items, both dashboard-manual:** (1) Overlay tab
+→ Brand Color `#0f7d6f` → Save, in sandbox-vendors AND vendors.paddle.com;
+(2) Stripe dashboard clean-up — delete the test-mode webhook endpoint +
+products, revoke the test key at dashboard.stripe.com (GitHub `STRIPE_*` secrets already deleted;
+last code mention scrubbed in #130). Everything below is history.
 
 ## ✅ CLOSED 2026-09-01 19:55 UTC — production deploy of PRs #132 + #133 (owner instruction "deploy to production")
 
