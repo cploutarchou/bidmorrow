@@ -1,7 +1,7 @@
 /**
  * Client-side mirror of the ingestion CPV-scope validator
  * (apps/worker/src/routes/admin.ts `ingestionScopeSchema`,
- * `MAX_SCOPE_FAMILIES`) — immediate feedback only; the server independently
+ * `MAX_SCOPE_FAMILIES`): immediate feedback only; the server independently
  * re-validates through `parseIngestionScope` before persisting.
  */
 const MAX_SCOPE_FAMILIES = 20;

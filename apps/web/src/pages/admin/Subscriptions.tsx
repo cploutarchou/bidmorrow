@@ -52,9 +52,9 @@ export function Subscriptions(): ReactElement {
 
   return (
     <AdminPage
-      documentTitle="Subscriptions — Admin"
+      documentTitle="Subscriptions | Admin"
       heading="Subscriptions"
-      note="Billing state as written by the Paddle webhook. Paddle remains the source of truth — a row here can lag a very recent change until its webhook is delivered."
+      note="Billing state as written by the Paddle webhook. Paddle remains the source of truth, so a row here can lag a very recent change until its webhook is delivered."
     >
       <div className="admin-pills" role="group" aria-label="Filter by status">
         {STATUSES.map((s) => (

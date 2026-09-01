@@ -73,7 +73,7 @@ export function scoreCpv(lotCpv: LotCpv, org: OrgProfile): ComponentResult {
       points: 0,
       maxPoints,
       status: 'NO_MATCH',
-      explanation: 'No CPV preferences configured — no relationship to the lot CPV.',
+      explanation: 'No CPV preferences configured, so no relationship to the lot CPV.',
     };
   }
 
@@ -131,7 +131,7 @@ export function scoreCpv(lotCpv: LotCpv, org: OrgProfile): ComponentResult {
   const explanation =
     best.level.label === 'no relationship'
       ? `CPV: lot ${lotCpv.main} has no relationship to your CPV preferences.`
-      : `CPV: lot ${best.lotCode}${kindLabel} vs your preference ${best.orgCode} — ${relationshipText}${bonusText}`;
+      : `CPV: lot ${best.lotCode}${kindLabel} vs your preference ${best.orgCode}, ${relationshipText}${bonusText}`;
 
   return { key: 'cpv', points, maxPoints, status, explanation };
 }

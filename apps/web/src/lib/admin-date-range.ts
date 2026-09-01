@@ -1,6 +1,6 @@
 /**
  * Client-side mirror of the ingestion backfill window validator
- * (apps/worker/src/routes/admin.ts `enumerateDays`/`MAX_BACKFILL_DAYS`) —
+ * (apps/worker/src/routes/admin.ts `enumerateDays`/`MAX_BACKFILL_DAYS`):
  * gives the admin immediate feedback before submitting, but the server
  * re-validates independently and is the actual authority (never a security
  * boundary, just UX).

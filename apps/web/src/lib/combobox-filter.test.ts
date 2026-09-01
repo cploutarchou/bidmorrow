@@ -34,7 +34,7 @@ describe('rankComboboxOptions', () => {
 
   it('ranks a label-word-prefix match ahead of a substring-only match', () => {
     // "ware" sits mid-word in "Software" (substring-only, no word starts
-    // with it) but is a genuine word-prefix of "Warehouse" — querying a
+    // with it) but is a genuine word-prefix of "Warehouse": querying a
     // term that hits both tiers proves prefix sorts first regardless of
     // each option's `value`/alphabetical position.
     const options: readonly ComboboxOption[] = [
@@ -51,14 +51,14 @@ describe('rankComboboxOptions', () => {
   });
 
   it('matches a query that is a substring of the label but not a prefix of any word', () => {
-    // "onsult" is inside "consultancy" but is not itself a word-start —
+    // "onsult" is inside "consultancy" but is not itself a word-start,
     // every CPV_LIKE label containing "consultancy" matches, all in the
     // substring-only tier (numeric-aware value order).
     const result = rankComboboxOptions('onsult', CPV_LIKE);
     expect(result.map((o) => o.value)).toEqual(['72200000', '72220000', '79417000']);
   });
 
-  it('returns an empty array for a query with zero matches — never falls back to the full list', () => {
+  it('returns an empty array for a query with zero matches, never falling back to the full list', () => {
     expect(rankComboboxOptions('zzzznomatch', CPV_LIKE)).toEqual([]);
   });
 

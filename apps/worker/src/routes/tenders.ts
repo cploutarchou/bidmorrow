@@ -154,13 +154,13 @@ tendersRoutes.get('/tenders/:matchId', zValidator('param', matchIdParamSchema), 
   if (match.classification !== 'EXCLUDED' && components.length === 0) {
     if (match.engineVersion !== ENGINE_VERSION) {
       explanationNote =
-        'This match was scored by a previous engine version — a live explanation is not available; only the stored score is shown.';
+        'This match was scored by a previous engine version, so a live explanation is not available; only the stored score is shown.';
     } else {
       const bundles = await loadLotScoringBundlesByIds(db, [match.lotId]);
       const bundle = bundles[0];
       if (bundle === undefined) {
         explanationNote =
-          'The original tender data is no longer available — only the stored score is shown.';
+          'The original tender data is no longer available, so only the stored score is shown.';
       } else {
         const mapped = await mapLotToEngineInput(db, bundle, match.scoredAt, c.get('logger'));
         if (mapped.kind === 'missing_main_cpv') {

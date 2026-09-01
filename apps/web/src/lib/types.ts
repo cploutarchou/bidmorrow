@@ -1,5 +1,5 @@
 /**
- * Shared response DTO shapes — kept in exact sync with apps/worker/src/
+ * Shared response DTO shapes, kept in exact sync with apps/worker/src/
  * routes/{feed,tenders,org}.ts and packages/db/src/repositories/matching.ts
  * (`FeedRow`).
  */

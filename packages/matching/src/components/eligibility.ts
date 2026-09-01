@@ -53,7 +53,7 @@ export function scoreEligibility(
       points: maxPoints * UNKNOWN_NEUTRAL,
       maxPoints,
       status: 'UNKNOWN',
-      explanation: 'Eligibility: no signals detected — UNKNOWN, neutral half of 5',
+      explanation: 'Eligibility: no signals detected. UNKNOWN, neutral half of 5',
     };
   }
 

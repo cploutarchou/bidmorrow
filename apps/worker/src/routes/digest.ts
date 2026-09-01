@@ -55,7 +55,7 @@ function page(title: string, bodyHtml: string): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>${escapeHtml(title)} — BidMorrow</title>
+<title>${escapeHtml(title)} | BidMorrow</title>
 </head>
 <body>
 <main>
@@ -165,7 +165,7 @@ digestRoutes.post('/unsubscribe', async (c) => {
       'Daily digest turned off',
       `<p>We have stopped the BidMorrow daily digest for
 <strong>${escapeHtml(payload.email)}</strong>.</p>
-<p>Account emails — sign-in, password resets and billing — still work as
+<p>Account emails (sign-in, password resets and billing) still work as
 normal; this only affects the daily digest. You can turn it back on any time
 from Settings.</p>`,
     ),

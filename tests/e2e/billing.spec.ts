@@ -31,7 +31,7 @@ test.describe('billing: Settings', () => {
     await expect(page.getByRole('heading', { name: 'Billing' })).toBeVisible();
 
     await expect(page.getByText('No active subscription.')).toBeVisible();
-    await expect(page.getByRole('button', { name: /Subscribe — Standard/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Subscribe - Standard/ })).toBeVisible();
 
     // GET /api/billing/invoices -> 503 not_configured -> InvoicesState
     // 'not_configured' -> this EXACT rendered hint (Settings.tsx
@@ -39,7 +39,7 @@ test.describe('billing: Settings', () => {
     const invoiceHistory = page.locator('section[aria-labelledby="billing-invoices-heading"]');
     await expect(invoiceHistory.getByText('Loading invoices…')).toHaveCount(0);
     await expect(
-      invoiceHistory.getByText('Billing is not available right now — please try again shortly.'),
+      invoiceHistory.getByText('Billing is not available right now. Please try again shortly.'),
     ).toBeVisible();
   });
 

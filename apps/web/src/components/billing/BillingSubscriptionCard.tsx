@@ -13,7 +13,7 @@ import type { ActiveSubscription, InvoicesState } from './types';
  * Plan card + cancel/reactivate controls + payment/print actions + invoice
  * history for an organization WITH a subscription (`billing.subscription !==
  * null`). Extracted from Settings.tsx (formerly the local
- * `BillingActiveSubscription` helper) — same props, same handlers, same
+ * `BillingActiveSubscription` helper): same props, same handlers, same
  * `POST /api/billing/*` call sites; only the presentation moved.
  */
 export function BillingSubscriptionCard({
@@ -73,7 +73,7 @@ export function BillingSubscriptionCard({
         </div>
         <p>
           {subscription.cancelAtPeriodEnd
-            ? `Cancels on ${formatCalendarDate(subscription.currentPeriodEndAt)} — access continues until then.`
+            ? `Cancels on ${formatCalendarDate(subscription.currentPeriodEndAt)}. Access continues until then.`
             : `Renews on ${formatCalendarDate(subscription.currentPeriodEndAt)}.`}
         </p>
         {!entitlementActive && (
@@ -84,7 +84,7 @@ export function BillingSubscriptionCard({
         {overdue && (
           <div className="billing-overdue-notice" role="alert">
             <p>
-              We couldn't process your last payment — your subscription is past due. Update your
+              We couldn't process your last payment, so your subscription is past due. Update your
               payment details to keep your feed and digest active.
             </p>
             {!knownNonOwner && (
@@ -103,7 +103,7 @@ export function BillingSubscriptionCard({
 
       {paused && (
         <p className="hint" role="status">
-          Your subscription is paused — nothing is billed and the feed is off. Resume it from Manage
+          Your subscription is paused: nothing is billed and the feed is off. Resume it from Manage
           payment details.
         </p>
       )}
@@ -113,8 +113,8 @@ export function BillingSubscriptionCard({
           <h3>Cancel subscription</h3>
           <p className="hint">
             Canceling takes effect at the end of your current billing period (
-            {formatCalendarDate(subscription.currentPeriodEndAt)}) — you keep full access until
-            then, and nothing is charged again after that date.
+            {formatCalendarDate(subscription.currentPeriodEndAt)}). You keep full access until then,
+            and nothing is charged again after that date.
           </p>
           {cancelError !== null && (
             <p role="alert" className="form-error">
@@ -137,8 +137,8 @@ export function BillingSubscriptionCard({
         <div className="billing-cancel-panel">
           <h3>Subscription ending</h3>
           <p>
-            Cancels on <strong>{formatCalendarDate(subscription.currentPeriodEndAt)}</strong> —
-            access continues until then.
+            Cancels on <strong>{formatCalendarDate(subscription.currentPeriodEndAt)}</strong>.
+            Access continues until then.
           </p>
           {reactivateError !== null && (
             <p role="alert" className="form-error">

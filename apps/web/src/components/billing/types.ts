@@ -12,7 +12,7 @@ export interface Invoice {
   readonly createdAt: number;
   readonly periodStartAt: number | null;
   readonly periodEndAt: number | null;
-  /** `true` once Paddle has issued an invoice — the PDF endpoint will work. */
+  /** `true` once Paddle has issued an invoice, so the PDF endpoint will work. */
   readonly hasInvoice: boolean;
 }
 
@@ -24,6 +24,6 @@ export type InvoicesState =
   | { kind: 'error' }
   | { kind: 'ready'; invoices: readonly Invoice[]; hasBillingCustomer: boolean };
 
-/** Non-null `BillingStatus['subscription']` — shared by the subscription card
+/** Non-null `BillingStatus['subscription']`, shared by the subscription card
  * and the cancel/reactivate panel it renders. */
 export type ActiveSubscription = NonNullable<BillingStatus['subscription']>;

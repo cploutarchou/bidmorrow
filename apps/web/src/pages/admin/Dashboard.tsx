@@ -39,9 +39,9 @@ export function Dashboard(): ReactElement {
 
   return (
     <AdminPage
-      documentTitle="Admin dashboard — BidMorrow"
+      documentTitle="Admin dashboard | BidMorrow"
       heading="Dashboard"
-      note="System health at a glance. A paused queue is a deliberate state, not a fault — check the flag before treating it as an incident."
+      note="System health at a glance. A paused queue is a deliberate state, not a fault, so check the flag before treating it as an incident."
     >
       {loading && <p>Loading…</p>}
       {error !== null && (
@@ -105,7 +105,7 @@ export function Dashboard(): ReactElement {
                 {health.db.measured
                   ? `${(health.db.approxBytes ?? 0).toLocaleString()} bytes, approximate, from the PRAGMA-based estimate.${
                       health.db.alerting
-                        ? ' Past the 60% alert threshold — the mitigation (retention change or the match_components JSON fallback) is a schema migration, so start it now rather than at 95%.'
+                        ? ' Past the 60% alert threshold: the mitigation (retention change or the match_components JSON fallback) is a schema migration, so start it now rather than at 95%.'
                         : ''
                     }`
                   : 'The PRAGMA-based estimate was unavailable. Reported as unmeasured rather than shown as zero, which would read as an empty database.'}
@@ -126,7 +126,7 @@ export function Dashboard(): ReactElement {
                       .map((entry) => `${entry.queue} ${String(entry.count)}`)
                       .join(
                         ', ',
-                      )}. Each exhausted its retries — investigate the cause, then mark it resolved.`}
+                      )}. Each exhausted its retries. Investigate the cause, then mark it resolved.`}
               </p>
             </div>
           </div>

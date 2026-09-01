@@ -242,7 +242,7 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
     await page.getByLabel('Additional comment (optional, max 500 characters)').fill('E2E feedback');
     await page.getByRole('button', { name: 'Submit feedback' }).click();
     // See the toast-selector note above — target the accessible live region.
-    await expect(page.getByRole('status')).toHaveText('Thanks — feedback recorded.');
+    await expect(page.getByRole('status')).toHaveText('Thanks, feedback recorded.');
   });
 
   test('settings: keyword cap error path (51 keywords -> 422)', async () => {
@@ -323,7 +323,7 @@ test.describe.serial('critical path: signup -> onboarding -> feed -> detail -> s
 
   test('settings: billing renders the honest no-subscription empty state', async () => {
     await expect(page.getByText('No active subscription.')).toBeVisible();
-    await expect(page.getByRole('button', { name: /Subscribe — Standard/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Subscribe - Standard/ })).toBeVisible();
   });
 
   test('settings: account deletion blocked as sole org owner (409)', async () => {

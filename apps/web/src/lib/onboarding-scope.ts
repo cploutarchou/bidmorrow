@@ -7,13 +7,13 @@
  * The divisions below are derived from the SAME public facts already stated
  * and copy-locked in `SCOPED_COVERAGE_STATEMENT` (../copy.ts) and documented
  * in docs/ted-ingestion-scope.md `DEFAULT_INGESTION_SCOPE` (72*, 48*,
- * 79417000 -> divisions {72, 48, 79}). This is a client-side HINT only — the
+ * 79417000 -> divisions {72, 48, 79}). This is a client-side HINT only; the
  * real ingestion scope is DB-configured server-side
  * (`packages/procurement/src/scope.ts` `loadIngestionScope`) and can drift
  * from these constants if an admin reconfigures it. The server's own
  * `scopeOverlapWarning` (returned by `POST /api/org/onboarding/complete`)
  * remains the sole authority; this client hint exists purely to move the
- * warning earlier in the flow (ux-strategy.md §3.4 "Open question O2" —
+ * warning earlier in the flow (ux-strategy.md §3.4 "Open question O2":
  * drift risk accepted for this cycle, server check is the backstop).
  */
 
@@ -24,7 +24,7 @@
  *
  * This replaces an earlier `['72','48','79']` division list. Reducing
  * `79417000` to the division `79` made the whole of division 79 read as
- * covered, which it is not — ingestion takes that one code and nothing else
+ * covered, which it is not: ingestion takes that one code and nothing else
  * around it (the query builder emits `79417000`, never `79417000*`). That
  * was harmless while onboarding only offered the IT presets, whose only 79
  * code IS 79417000; it stopped being harmless the moment the sector picker
@@ -42,7 +42,7 @@ export interface CpvScopeOverlap {
   readonly hasOverlap: boolean;
 }
 
-/** The CPV division (first 2 digits) a code belongs to — mirrors the
+/** The CPV division (first 2 digits) a code belongs to; mirrors the
  * server's own `cpvDivisions` helper (`packages/procurement/src/score.ts`),
  * kept independent here since `apps/web` cannot depend on `packages/procurement`. */
 export function cpvDivision(code: string): string {

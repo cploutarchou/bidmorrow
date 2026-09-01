@@ -3,14 +3,14 @@ import { confirmationMatches } from '../lib/admin-confirm';
 
 /**
  * App-facing (non-admin) mirror of `components/admin/ConfirmAction.tsx`'s
- * typed-confirmation idiom — same exact-match gate (`confirmationMatches`,
+ * typed-confirmation idiom: same exact-match gate (`confirmationMatches`,
  * shared, not duplicated), same disabled-until-match affordance and
  * `.admin-confirm` visual treatment (the class name predates this second
  * caller but styles a generic pattern, not admin-specific chrome). Kept as
  * its own component rather than importing the admin one directly, so
  * `pages/app/*` never depends on anything under `components/admin/`,
  * preserving the admin/app code-split boundary. Used by Settings' billing
- * "Cancel subscription" flow — `POST /api/billing/cancel` independently
+ * "Cancel subscription" flow: `POST /api/billing/cancel` independently
  * requires the exact literal `CANCEL_SUBSCRIPTION` in the request body, so
  * this is a friction gate against a misclick, not the security boundary.
  */

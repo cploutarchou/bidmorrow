@@ -95,7 +95,7 @@ export function Matching(): ReactElement {
 
   return (
     <AdminPage
-      documentTitle="Matching — Admin"
+      documentTitle="Matching | Admin"
       heading="Matching"
       note="Trace one organization/lot pair to see why it scored what it scored, and enqueue a bounded recompute. A stored-vs-live mismatch means the engine changed since the score was written."
     >
@@ -133,8 +133,8 @@ export function Matching(): ReactElement {
                 <dt className="admin-fact__label">Stored score / classification</dt>
                 <dd className="admin-fact__value admin-fact__value--sm">
                   {trace.stored?.match !== undefined
-                    ? `${String((trace.stored.match as { score?: unknown }).score ?? '—')} / ${String(
-                        (trace.stored.match as { classification?: unknown }).classification ?? '—',
+                    ? `${String((trace.stored.match as { score?: unknown }).score ?? '–')} / ${String(
+                        (trace.stored.match as { classification?: unknown }).classification ?? '–',
                       )}`
                     : 'No stored match'}
                 </dd>
@@ -145,14 +145,14 @@ export function Matching(): ReactElement {
                   {trace.live === null
                     ? 'Not computed (see note above)'
                     : trace.live.kind === 'excluded'
-                      ? `EXCLUDED — ${trace.live.rule ?? ''}`
-                      : `${String(trace.live.score ?? '—')} / ${trace.live.classification ?? '—'}`}
+                      ? `EXCLUDED - ${trace.live.rule ?? ''}`
+                      : `${String(trace.live.score ?? '–')} / ${trace.live.classification ?? '–'}`}
                 </dd>
               </div>
               <div className="admin-fact">
                 <dt className="admin-fact__label">Engine version</dt>
                 <dd className="admin-fact__value admin-fact__value--sm">
-                  {trace.engineVersion ?? '—'}
+                  {trace.engineVersion ?? '–'}
                 </dd>
               </div>
             </dl>
@@ -181,12 +181,12 @@ export function Matching(): ReactElement {
                         <td>
                           {row.stored !== null
                             ? `${String(row.stored.points)}/${String(row.stored.maxPoints)} (${row.stored.status})`
-                            : '—'}
+                            : '–'}
                         </td>
                         <td>
                           {row.live !== null
                             ? `${String(row.live.points)}/${String(row.live.maxPoints)} (${row.live.status})`
-                            : '—'}
+                            : '–'}
                         </td>
                         <td>{mismatchMarker(row.mismatch)}</td>
                       </tr>

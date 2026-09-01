@@ -5,7 +5,7 @@ import { resolvePostAuthDestination } from './post-auth-route';
 
 /**
  * Shared guard for `/login` and `/signup`: an already-authenticated visitor
- * must never be asked to sign in/up again — redirect (replace) to
+ * must never be asked to sign in/up again, so redirect (replace) to
  * `resolvePostAuthDestination`, the same routing used right after a fresh
  * sign-in (Login.tsx), so an authenticated visit lands wherever that
  * account's state says it should (an explicit `?returnTo=`, else
@@ -13,14 +13,14 @@ import { resolvePostAuthDestination } from './post-auth-route';
  *
  * Callers must render the SAME minimal loading state `ProtectedRoute` uses
  * (`<main id="main-content"><p>Loading…</p></main>`) whenever `ready` is
- * false — never the sign-in/sign-up form — so there is no flash of a form
+ * false, never the sign-in/sign-up form, so there is no flash of a form
  * a session-holding visitor is about to be redirected away from. `ready`
  * covers both the initial session check (`loading`) and the follow-up
  * destination probe for an authenticated visitor (`redirecting`).
  *
  * Deliberately does NOT special-case an authenticated-but-unverified user:
  * Better Auth (packages/auth, `requireEmailVerification: true`) never
- * creates a session for an unverified email in this app — sign-up skips
+ * creates a session for an unverified email in this app: sign-up skips
  * auto-sign-in when verification is required, and sign-in itself 403s an
  * unverified email (`EMAIL_NOT_VERIFIED`, handled inline in Login.tsx)
  * before any session exists. So `user !== null` here always means

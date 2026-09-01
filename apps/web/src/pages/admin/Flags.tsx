@@ -82,7 +82,7 @@ export function Flags(): ReactElement {
 
   return (
     <AdminPage
-      documentTitle="Feature flags — Admin"
+      documentTitle="Feature flags | Admin"
       heading="Feature flags"
       note="Operational switches read by the server at runtime. Every change is typed-confirmed and written to the audit log."
     >
@@ -111,7 +111,7 @@ export function Flags(): ReactElement {
                 <tr key={flag.key}>
                   <td>{flag.key}</td>
                   <td>{flag.value ?? '(unset)'}</td>
-                  <td>{flag.description ?? '—'}</td>
+                  <td>{flag.description ?? '–'}</td>
                   <td>{formatIsoUtc(flag.updatedAt)}</td>
                   <td>
                     <button type="button" onClick={() => startEdit(flag)}>
@@ -137,7 +137,7 @@ export function Flags(): ReactElement {
               aria-describedby="flag-value-hint"
               onChange={(event) => setEditValue(event.target.value)}
             />
-            {/* Live validity readout (prototype's flag hint) — the same
+            {/* Live validity readout (prototype's flag hint): the same
                 JSON.parse gate saveEdit enforces, surfaced per keystroke so
                 the typed confirmation is never spent on a doomed value. */}
             <p
@@ -161,7 +161,7 @@ export function Flags(): ReactElement {
             <ConfirmAction
               label="Update flag"
               confirmText="UPDATE_FLAG"
-              consequence="Takes effect on the next request that reads this flag — there is no staged rollout."
+              consequence="Takes effect on the next request that reads this flag. There is no staged rollout."
               busy={busy}
               variant="danger"
               onConfirm={() => void saveEdit()}

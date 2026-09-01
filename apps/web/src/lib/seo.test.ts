@@ -1,7 +1,7 @@
 /**
  * Metadata constraints from docs/redesign/seo-content-strategy.md §3, enforced
  * rather than review-checked: titles ≤ 60, descriptions ≤ 155, canonicals
- * absolute on the production origin, em dash as the brand separator.
+ * absolute on the production origin, a pipe as the brand separator.
  *
  * The founding-cap assertion is the important one: the spec draft said "First
  * 20 Customers" on the pilot page while every product surface says 100. This
@@ -21,14 +21,17 @@ describe('marketing page metadata', () => {
     expect(canonicals).toEqual(expected);
   });
 
-  it.each(entries)('%s title is ≤ 60 chars and uses the em dash separator', (_key, meta) => {
+  it.each(entries)('%s title is ≤ 60 chars and uses the pipe separator', (_key, meta) => {
     expect(meta.title.length).toBeLessThanOrEqual(60);
-    expect(meta.title).not.toContain(' - ');
+    expect(meta.title).toContain(' | ');
+    // House rule (owner, 2026-09-01): no em dash in customer-facing copy.
+    expect(meta.title).not.toContain('\u2014');
   });
 
   it.each(entries)('%s description is ≤ 155 chars and non-empty', (_key, meta) => {
     expect(meta.description.length).toBeGreaterThan(0);
     expect(meta.description.length).toBeLessThanOrEqual(155);
+    expect(meta.description).not.toContain('\u2014');
   });
 
   it.each(entries)('%s canonical is absolute on the production origin', (_key, meta) => {

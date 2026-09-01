@@ -6,13 +6,13 @@
  *
  * Storage keys and semantics match the prototype exactly:
  * - `bm_consent_categories`: JSON of per-category booleans.
- * - `bm_analytics_consent`: 'granted' | 'denied' | 'custom' — only these
+ * - `bm_analytics_consent`: 'granted' | 'denied' | 'custom'. Only these
  *   three count as a recorded decision; anything else means "never
  *   asked", so the banner shows again and stale values self-heal.
  *
  * Analytics loading is a stub: the prototype gates GA4 injection on a
  * real measurement ID, and shipping one needs a CSP allowlist change
- * (script-src/connect-src are 'self') — an owner decision recorded in
+ * (script-src/connect-src are 'self'), an owner decision recorded in
  * HUMAN_DECISION_BLOCKERS.md. Until then consent is recorded but no
  * third-party script ever loads.
  */
@@ -91,7 +91,7 @@ export function saveConsent(categories: Omit<ConsentCategories, 'necessary'>): v
     window.localStorage.setItem(CATEGORIES_KEY, JSON.stringify(next));
     window.localStorage.setItem(DECISION_KEY, decision);
   } catch {
-    // Private mode — the in-memory state below still applies for this tab.
+    // Private mode; the in-memory state below still applies for this tab.
   }
   notify();
 }

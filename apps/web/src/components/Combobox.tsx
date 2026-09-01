@@ -2,12 +2,12 @@ import { useEffect, useRef, useState, type KeyboardEvent, type ReactElement } fr
 import type { ComboboxOption, ComboboxSource } from '../lib/combobox-filter';
 
 /**
- * Accessible autocomplete combobox — WAI-ARIA "combobox with listbox popup,
+ * Accessible autocomplete combobox, WAI-ARIA "combobox with listbox popup,
  * activedescendant" pattern: the text `<input role="combobox">` never moves
  * focus into the popup; the currently-active option is tracked via
  * `aria-activedescendant` and announced through a polite live region.
  *
- * Sources are `ComboboxSource` (see `lib/combobox-filter.ts`) — local
+ * Sources are `ComboboxSource` (see `lib/combobox-filter.ts`): local
  * static datasets resolve synchronously with no artificial debounce; a
  * remote source gets the same sequence-guard + `AbortSignal` cancellation
  * below for free, so a stale response can never overwrite a newer query's
@@ -15,11 +15,11 @@ import type { ComboboxOption, ComboboxSource } from '../lib/combobox-filter';
  *
  * This component intentionally does NOT auto-fill the input with a
  * selected option's label, and does NOT itself commit free-typed text on
- * Enter with nothing active — every caller in this app pairs it with its
+ * Enter with nothing active: every caller in this app pairs it with its
  * own existing "Add" button/validation (CPV 8-digit check, country 2-letter
  * uppercasing, etc.), so free text stays exactly as governed by that
  * caller. Selecting a suggestion (keyboard Enter/Tab, mouse click, or touch
- * tap) calls `onCommit` immediately — the caller decides what that means
+ * tap) calls `onCommit` immediately; the caller decides what that means
  * (usually: push it onto a list and clear the field).
  */
 
@@ -35,7 +35,7 @@ export interface ComboboxProps<T extends ComboboxOption = ComboboxOption> {
   readonly hint?: string | undefined;
   readonly noResultsLabel?: string | undefined;
   /** Marks an option as already chosen elsewhere (e.g. already added to the
-   * caller's list) — rendered as a visually distinct state from "active"
+   * caller's list), rendered as a visually distinct state from "active"
    * (the keyboard/pointer-highlighted option), never conflated with it. */
   readonly isChosen?: ((option: T) => boolean) | undefined;
   readonly disabled?: boolean | undefined;
@@ -68,7 +68,7 @@ export function Combobox<T extends ComboboxOption = ComboboxOption>({
   const [escapedOnce, setEscapedOnce] = useState(false);
 
   // Sequence guard (stale-result protection): a response only applies if it
-  // is still the MOST RECENT request issued — an out-of-order/late response
+  // is still the MOST RECENT request issued, so an out-of-order/late response
   // to an earlier query can never overwrite newer results.
   const seqRef = useRef(0);
 
@@ -93,7 +93,7 @@ export function Combobox<T extends ComboboxOption = ComboboxOption>({
       .catch((cause: unknown) => {
         if (seq !== seqRef.current) return;
         if (cause instanceof DOMException && cause.name === 'AbortError') return;
-        setError('Could not load suggestions — please try again.');
+        setError('Could not load suggestions. Please try again.');
         setOptions([]);
         setActiveIndex(null);
         setLoading(false);
@@ -165,7 +165,7 @@ export function Combobox<T extends ComboboxOption = ComboboxOption>({
       }
       case 'Tab': {
         // Commits the active option (if any) but never calls
-        // preventDefault — focus must still move to the next element.
+        // preventDefault: focus must still move to the next element.
         if (open && activeIndex !== null) {
           const active = options[activeIndex];
           if (active !== undefined) commit(active);

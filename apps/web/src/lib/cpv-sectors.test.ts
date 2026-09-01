@@ -10,7 +10,7 @@ import { isIngestedCpvCode } from './onboarding-scope';
 const DEFAULT_FAMILIES = ['72', '48', '79417000'];
 
 describe('CPV_SECTORS', () => {
-  it('covers more than the IT sector — the reason this exists', () => {
+  it('covers more than the IT sector, the reason this exists', () => {
     expect(CPV_SECTORS.length).toBeGreaterThanOrEqual(12);
     const divisions = new Set(CPV_SECTORS.flatMap((s) => s.codes.map((c) => c.code.slice(0, 2))));
     // If this ever collapses back to 72/48/79 the picker has silently
@@ -46,7 +46,7 @@ describe('isIngestedCpvCode', () => {
 
   it('treats a full 8-digit entry as an exact match, not a prefix', () => {
     expect(isIngestedCpvCode('79417000', DEFAULT_FAMILIES)).toBe(true);
-    // The rest of division 79 is NOT ingested — the scope picks one code out
+    // The rest of division 79 is NOT ingested: the scope picks one code out
     // of it deliberately (docs/ted-ingestion-scope.md).
     expect(isIngestedCpvCode('79400000', DEFAULT_FAMILIES)).toBe(false);
     expect(isIngestedCpvCode('79710000', DEFAULT_FAMILIES)).toBe(false);

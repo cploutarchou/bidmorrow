@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import '../../styles/illustrations.css';
 
 /**
- * Empty state — nothing ignored yet (crossed-out card, muted). Decorative,
+ * Empty state: nothing ignored yet (crossed-out card, muted). Decorative,
  * same convention as `EmptyFeed.tsx`.
  *
  * viewBox 160×120. Source ~0.7 KB.

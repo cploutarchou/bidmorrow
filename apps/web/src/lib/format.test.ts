@@ -17,7 +17,7 @@ import {
 } from './format';
 
 describe('classificationLabel', () => {
-  it('never returns a bare enum value — always a human label', () => {
+  it('never returns a bare enum value, always a human label', () => {
     expect(classificationLabel('STRONG_MATCH')).toBe('Strong match');
     expect(classificationLabel('WORTH_REVIEWING')).toBe('Worth reviewing');
     expect(classificationLabel('POSSIBLE_MATCH')).toBe('Possible match');
@@ -57,7 +57,7 @@ describe('formatOriginalValue', () => {
 
 describe('formatScoreLine', () => {
   it('matches the matching-engine.md worked-example rendering shape', () => {
-    expect(formatScoreLine(84.5, 'STRONG_MATCH')).toBe('84.5 / 100 — Strong match');
+    expect(formatScoreLine(84.5, 'STRONG_MATCH')).toBe('84.5 / 100 - Strong match');
   });
 });
 

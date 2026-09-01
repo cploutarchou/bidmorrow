@@ -1,5 +1,5 @@
 /**
- * Sector shortcuts for onboarding's "what line of work are you in?" step —
+ * Sector shortcuts for onboarding's "what line of work are you in?" step,
  * 2026-08-21 handoff (`BidMorrow Onboarding.dc.html`).
  *
  * WHY THIS EXISTS. Onboarding used to offer only the bundled IT presets, so a
@@ -10,7 +10,7 @@
  *
  * WHAT IT IS NOT. Picking a sector does not widen what BidMorrow ingests.
  * Ingestion runs on the CPV families in the live `ingestion_cpv_scope` flag
- * (`72*`, `48*`, `79417000` by default — docs/ted-ingestion-scope.md), and a
+ * (`72*`, `48*`, `79417000` by default, per docs/ted-ingestion-scope.md), and a
  * code outside those is saved to the profile but scores nothing until an
  * operator widens the scope. That is a real limitation, so the UI marks those
  * codes out of scope and the estimate panel shows the resulting count
@@ -19,7 +19,7 @@
  * LABEL PROVENANCE. The 48/72/79 titles are the official CPV 2008 wording,
  * carried over from the app's existing suggestion list. Every other label
  * here is OUR OWN plain-language wording, not a quotation from the CPV
- * codelist — a distinction `SECTOR_LABEL_NOTE` states in the UI rather than
+ * codelist, a distinction `SECTOR_LABEL_NOTE` states in the UI rather than
  * leaving the impression that all of it is official vocabulary.
  */
 

@@ -5210,6 +5210,58 @@ organization whose scheduled cancel has passed but whose Paddle webhook never
 landed stays entitled. Changing that changes the feed's 402 semantics too and
 belongs to the `billing` agent, not here.
 
+## Production issue #2: no em dash in customer-facing copy (2026-09-01)
+
+Owner house rule: "remove the em dash from everywhere we use it on the public
+and client-area pages."
+
+- **Cause**: not a defect, a typographic house rule with no enforcement. 742
+  em dashes across 139 files, from `<title>` separators to running body copy.
+- **Conventions chosen** (documented in the guard test): running prose is
+  rewritten with a comma, semicolon, colon, full stop or parentheses, never a
+  bare hyphen; document titles use `Page name | BidMorrow`, with a colon
+  introducing a descriptive subtitle; inline label separators (score line,
+  score badge, `Subscribe - Standard`, `MISMATCH - points differ`) use `-`;
+  admin empty-cell placeholders use an EN dash. En dashes and number ranges
+  (`0-100`, `5-50 people`) are untouched: the owner's rule does not reach
+  them.
+- **Fix, per surface**: `apps/web/src` (all of it, 691 occurrences) +
+  `apps/web/index.html` (2). Engine-rendered copy the client area displays
+  verbatim, so `packages/matching` component explanations, the risk-flag
+  wording and `renderExplanation` (21). `packages/procurement`'s sample-verdict
+  editorial lines plus the generator's file header, then
+  `apps/web/src/lib/sample-verdicts.generated.ts` REGENERATED (`npx tsx
+packages/procurement/scripts/generate-sample-verdicts.ts`) rather than
+  hand-edited, so `tests/integration/sample-verdicts-committed.test.ts` still
+  compares equal. Worker strings only where the UI renders them verbatim:
+  `tenders.ts` `explanationNote`, `admin.ts` trace note, `digest.ts`'s
+  server-rendered unsubscribe page.
+- **Tests**: new guard `apps/web/src/no-em-dash.test.ts` scans every
+  `src/**/*.{ts,tsx}` plus `index.html` via `import.meta.glob(?raw)`; seen red
+  (reintroduced the em dash in `NotFound.tsx`'s title) then green. Assertions
+  updated to the new copy, never deleted: `lib/seo.test.ts` (now asserts the
+  pipe separator AND no em dash in every title/description), `lib/format.test.ts`,
+  `packages/matching/src/explanation.test.ts`, `risk-flags.test.ts`,
+  `tests/e2e/{marketing,billing,critical-path}.spec.ts`.
+- **Docs**: `docs/matching-engine.md`'s worked example is declared
+  table-exact, so its rendered lines were updated with the engine; same for
+  the quoted explanation strings in `docs/data-model.md`,
+  `docs/website-redesign-plan.md` and `docs/redesign/i18n-architecture.md`.
+  No em-dash sweep of docs/ or ADRs was done: out of the owner's wording.
+- **NOT done**, deliberately: `packages/notifications` email templates (103
+  occurrences, 88 of them in the customer-facing digest/auth templates and
+  `copy.ts`) stay as they are, out of scope by the owner's wording. Ask before
+  sweeping them: the digest's `POSSIBLE: 'Possible requirement — verify in
+source documents'` label now differs from the web app's. And
+  `apps/web/src/pages/auth/ResetPassword.tsx` (3) was being rewritten on a
+  parallel branch, so it is the guard test's single TEMPORARY_EXCLUSIONS
+  entry; delete the entry and the 3 em dashes when that rewrite lands.
+- **Gates**: format:check 0, lint 0, typecheck 0 (workspace), vitest root 0
+  (84 files / 728 passed), worker 0 (282), db D1 0 (79), web build 0.
+  Playwright not run: no browsers in this environment and the harness needs a
+  seeded wrangler server; the three assertion edits are literal swaps checked
+  against the exact new source strings.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

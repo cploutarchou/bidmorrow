@@ -12,12 +12,12 @@ import { adminApi } from '../../lib/admin-api';
 import type { AdminHealthDetails, AdminRailCounts } from '../../lib/admin-types';
 
 /**
- * Shared admin operational state — one `health-details` response (the one
+ * Shared admin operational state: one `health-details` response (the one
  * `AdminGate` already made to authorize the surface, re-used rather than
  * re-fetched) plus the rail counts. Consumers: the shell's ops pills and
  * rail counts, and the Ingestion/Digest pause controls, which call
  * `refresh()` after a successful pause/resume so the pills flip without a
- * reload. Everything here is presentation state — the server independently
+ * reload. Everything here is presentation state; the server independently
  * authorizes every request regardless of what this renders.
  */
 export interface AdminOpsState {
@@ -38,7 +38,7 @@ export function AdminOpsProvider({
   const [health, setHealth] = useState<AdminHealthDetails | null>(initialHealth);
   const [railCounts, setRailCounts] = useState<AdminRailCounts | null>(null);
 
-  // Rail counts load once behind the gate — best-effort, the rail renders
+  // Rail counts load once behind the gate, best-effort: the rail renders
   // without counts if this fails.
   useEffect(() => {
     let cancelled = false;

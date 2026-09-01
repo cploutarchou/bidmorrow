@@ -5,7 +5,7 @@ import { Link } from 'react-router';
  * Fix for F17 (docs/redesign/ux-strategy.md §5.4): the feed's 402
  * `subscription_required` response is a designed paywall state, never the
  * generic "Could not load your feed" error. Reused by any future
- * entitlement-gated surface — kept presentational and reason-driven so it
+ * entitlement-gated surface, kept presentational and reason-driven so it
  * never has to guess.
  */
 
@@ -27,20 +27,20 @@ export function SubscriptionRequiredNotice({
     <section className="subscribe-required glass" aria-labelledby="subscribe-required-h">
       <h2 id="subscribe-required-h">
         {isLapsed
-          ? 'Your subscription has lapsed — reactivate to restore your feed.'
-          : 'Your profile is ready — a subscription activates your feed.'}
+          ? 'Your subscription has lapsed. Reactivate to restore your feed.'
+          : 'Your profile is ready. A subscription activates your feed.'}
       </h2>
       <p>
         A subscription activates your scored feed and daily digest email. Pricing is flat and
-        monthly — no usage-based fees.
+        monthly, with no usage-based fees.
       </p>
       <div className="subscribe-required__price-row">
         {!isLapsed && foundingAvailable === true && (
           <span className="subscribe-required__price">
-            Founding — €29/mo incl. VAT, limited spots
+            Founding - €29/mo incl. VAT, limited spots
           </span>
         )}
-        <span className="subscribe-required__price">Standard — €49/mo incl. VAT</span>
+        <span className="subscribe-required__price">Standard - €49/mo incl. VAT</span>
       </div>
       <div className="subscribe-required__actions">
         <Link className="btn-solar" to="/app/settings#billing">

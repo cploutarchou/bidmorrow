@@ -5,7 +5,7 @@ import { MARKETING_META } from '../../lib/seo';
 
 /**
  * Refund policy. Paddle (Merchant of Record) requires a public refund policy
- * at its own URL for website approval; Paddle also executes every refund —
+ * at its own URL for website approval; Paddle also executes every refund, and
  * BidMorrow never touches card data or money movement.
  */
 export function Refunds(): ReactElement {
@@ -28,10 +28,10 @@ export function Refunds(): ReactElement {
           .
         </p>
 
-        <h2>First payment — 14-day money-back</h2>
+        <h2>First payment: 14-day money-back</h2>
         <p>
           If BidMorrow isn't right for you, ask for a refund within 14 days of your first payment
-          and we'll refund it in full — no questions asked. This applies once per organisation, to
+          and we'll refund it in full, no questions asked. This applies once per organisation, to
           the first subscription payment only.
         </p>
 

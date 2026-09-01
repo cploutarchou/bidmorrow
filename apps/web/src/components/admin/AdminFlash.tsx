@@ -5,7 +5,7 @@ import type { ReactElement } from 'react';
  *
  * The pre-design pages rendered this same text inside
  * `.visually-hidden-status`, so an operator who suspended an organization,
- * rewrote a feature flag or paused ingestion saw no confirmation at all —
+ * rewrote a feature flag or paused ingestion saw no confirmation at all:
  * only a screen-reader user was told whether the action had taken. The
  * handoff design (`BidMorrow Admin.dc.html`) shows it as a live strip above
  * the page body, which is what this renders.

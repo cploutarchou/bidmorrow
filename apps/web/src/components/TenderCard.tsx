@@ -15,7 +15,7 @@ const CLASS_TO_CARD_MODIFIER: Record<FeedRow['classification'], string> = {
   STRONG_MATCH: 'tender-card--strong',
   WORTH_REVIEWING: 'tender-card--worth-reviewing',
   POSSIBLE_MATCH: 'tender-card--possible',
-  // Theme Spec §07 low-fit collapse — visual weight only; the bars/expander
+  // Theme Spec §07 low-fit collapse: visual weight only; the bars/expander
   // are already absent because LOW_FIT rows persist no components.
   LOW_FIT: 'tender-card--low',
   // EXCLUDED rows never reach the feed today (listFeedRows filters them);
@@ -26,7 +26,7 @@ const CLASS_TO_CARD_MODIFIER: Record<FeedRow['classification'], string> = {
 /**
  * Deadline urgency ink (audit minor; thresholds read off the design's own
  * demo-feed data in pages/marketing/Home.tsx rather than invented: 6 days
- * renders risk, 9 and 11 caution, 14 and 21 quiet). Color is supplementary —
+ * renders risk, 9 and 11 caution, 14 and 21 quiet). Color is supplementary:
  * the text next to it already states the deadline in words, so nothing is
  * conveyed by hue alone.
  */
@@ -47,13 +47,13 @@ function ringDashLength(score: number): number {
   return Number(((score / 100) * RING_CIRCUMFERENCE).toFixed(1));
 }
 
-/** Score ring from the 2026-08-21 handoff card anatomy — decorative
+/** Score ring from the 2026-08-21 handoff card anatomy: decorative
  *  (`aria-hidden`); the ScoreBadge text stays the accessible carrier.
  *
  * Draws its arc on mount: `stroke-dashoffset` starts equal to the dash
  * length itself (fully hidden) and animates to `0` (fully revealed) via
  * the CSS transition on `.score-ring__fill`, exactly like the classic
- * "SVG circle draw" technique — both values are plain SVG attributes, so
+ * "SVG circle draw" technique; both values are plain SVG attributes, so
  * nothing here touches the CSP-restricted `style=` attribute. Reduced
  * motion (and non-browser environments) render already-drawn on the very
  * first paint, never a flash of an empty ring. */
@@ -106,7 +106,7 @@ export function TenderCard({
   // Handing the current location forward is what lets App.tsx open this
   // tender as a slide-over over the feed instead of navigating away. It stays
   // a real <Link>, so middle-click, ctrl-click and "copy link address" all
-  // still resolve to the full page — a click handler would have broken those.
+  // still resolve to the full page; a click handler would have broken those.
   const location = useLocation();
   return (
     <article className={modifier.length > 0 ? `tender-card ${modifier}` : 'tender-card'}>
@@ -138,7 +138,7 @@ export function TenderCard({
               <li key={component.componentKey} className="card-anatomy__row">
                 <span className="card-anatomy__name">{componentLabel(component.componentKey)}</span>
                 {max !== null && (
-                  // Native <progress>, never an inline `style` width — CSP is
+                  // Native <progress>, never an inline `style` width: CSP is
                   // `style-src 'self'` with no unsafe-inline (.claude/agents/
                   // frontend-engineer.md); the fill is styled entirely via
                   // ::-webkit-progress-value/::-moz-progress-bar in styles/base.css.
@@ -162,7 +162,7 @@ export function TenderCard({
         <details className="tender-card__why">
           <summary>Why this score</summary>
           {/* The engine's own explanation strings for the card's top
-              components — already in the feed payload, previously fetched
+              components, already in the feed payload, previously fetched
               and never shown. The full eight-component breakdown stays one
               click away in the tender sheet. */}
           <ul>

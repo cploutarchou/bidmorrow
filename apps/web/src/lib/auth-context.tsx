@@ -35,7 +35,7 @@ interface MeResponse {
 interface AuthContextValue {
   user: SessionUser | null;
   /**
-   * INTERNAL_ADMIN navigation hint from `GET /api/account/me` — shows the
+   * INTERNAL_ADMIN navigation hint from `GET /api/account/me`; shows the
    * "Admin" header link (docs/redesign/navigation-and-admin-entry.md). UX
    * only: the server 404-cloaks and authorizes every `/api/admin/*` call
    * itself. `false` until known, and on any failure.
@@ -54,7 +54,7 @@ async function fetchSession(): Promise<SessionUser | null> {
   const text = await response.text();
   if (text.length === 0) return null;
   // Better Auth returns a bare JSON `null` body (not `{user: null}`) when
-  // there is no session — e.g. immediately after sign-out.
+  // there is no session, e.g. immediately after sign-out.
   const body = JSON.parse(text) as GetSessionResponse | null;
   if (body === null || body.user === null || body.session === null) return null;
   return {
@@ -65,7 +65,7 @@ async function fetchSession(): Promise<SessionUser | null> {
   };
 }
 
-/** Never throws — a missing/failed capability answer is simply "not admin". */
+/** Never throws: a missing/failed capability answer is simply "not admin". */
 async function fetchIsAdmin(): Promise<boolean> {
   try {
     const response = await fetch('/api/account/me', { credentials: 'include' });
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactElemen
   // over a stale value.
   const userRef = useRef<SessionUser | null>(null);
   userRef.current = user;
-  // Coalesces concurrent `refresh()` callers into one in-flight request —
+  // Coalesces concurrent `refresh()` callers into one in-flight request,
   // e.g. several app-page fetches all 401'ing at once when a session
   // expires mid-use would otherwise each kick off their own
   // `/api/auth/get-session` round trip.
@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactElemen
     // The shared point where an app API 401 (session expired/revoked
     // mid-use) re-syncs auth state (lib/api.ts). Re-fetching
     // `/api/auth/get-session` happens via `fetchSession()` directly, never
-    // through `api.*`, so this can never trigger itself — no loop. Once
+    // through `api.*`, so this can never trigger itself; no loop. Once
     // `user` is already null there is nothing left to resync, so further
     // 401s (e.g. several stragglers from the page the user was on when the
     // session died) are no-ops; `ProtectedRoute` reacts to `user` becoming

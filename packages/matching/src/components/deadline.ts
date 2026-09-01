@@ -27,7 +27,7 @@ export function scoreDeadline(
       points: maxPoints * UNKNOWN_NEUTRAL,
       maxPoints,
       status: 'UNKNOWN',
-      explanation: 'Deadline: no submission deadline published — neutral score applied.',
+      explanation: 'Deadline: no submission deadline published. Neutral score applied.',
     };
   }
 
