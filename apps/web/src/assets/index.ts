@@ -1,4 +1,3 @@
-export { FunnelHero } from './FunnelHero';
 export { StepSource } from './steps/StepSource';
 export { StepProfile } from './steps/StepProfile';
 export { StepScoring } from './steps/StepScoring';

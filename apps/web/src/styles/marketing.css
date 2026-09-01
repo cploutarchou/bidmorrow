@@ -161,31 +161,6 @@
   background: var(--accent-soft);
 }
 
-.mkt-hero-panel {
-  border-radius: var(--r-l);
-  padding: var(--s5);
-  display: grid;
-  gap: var(--s4);
-  align-content: start;
-}
-
-.mkt-hero-panel__caption {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-3);
-  margin: 0;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--stroke-faint);
-}
-
-.mkt-hero-panel__note {
-  font-size: 0.92rem;
-  color: var(--text-2);
-  margin: 0;
-}
-
 .mkt-chip-row {
   display: flex;
   flex-wrap: wrap;
@@ -815,9 +790,6 @@
   .mkt-plan-row {
     flex-direction: column;
   }
-  .mkt-hero-panel {
-    padding: 1.25rem;
-  }
 }
 
 /* ============================================================
@@ -960,51 +932,6 @@
   width: 100%;
   max-width: 20rem;
   height: auto;
-}
-
-.mkt-figure--scan {
-  position: relative;
-  overflow: hidden;
-  display: grid;
-  gap: 0.5625rem;
-  align-content: start;
-}
-
-.mkt-fig-line {
-  height: 8px;
-  background: var(--ground-deep);
-  border-radius: 999px;
-  display: block;
-}
-
-.mkt-fig-line:nth-child(1) {
-  width: 92%;
-}
-.mkt-fig-line:nth-child(2) {
-  width: 76%;
-}
-.mkt-fig-line:nth-child(3) {
-  width: 84%;
-}
-.mkt-fig-line:nth-child(4) {
-  width: 61%;
-}
-.mkt-fig-line:nth-child(5) {
-  width: 88%;
-}
-.mkt-fig-line:nth-child(6) {
-  width: 48%;
-}
-
-.mkt-fig-scanline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 2px;
-  background: var(--sol-1);
-  opacity: 0.75;
-  display: block;
 }
 
 /* 3 — score bars */
@@ -1722,6 +1649,43 @@
   height: 660px;
   pointer-events: none;
   opacity: 0.55;
+  /* Quieter behind the copy, full strength behind the decision engine
+     (docs/design-audit.md #9): the grid frames the product miniature
+     instead of competing with the headline. Single-column layouts
+     (below 60rem) fade it toward the bottom where the visual sits. */
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.3) 45%,
+    #000 75%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.3) 45%,
+    #000 75%,
+    #000 100%
+  );
+}
+
+@media (min-width: 60rem) {
+  .hp-grid-bg {
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0.3) 42%,
+      #000 68%,
+      #000 100%
+    );
+    mask-image: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0.3) 42%,
+      #000 68%,
+      #000 100%
+    );
+  }
 }
 
 .hp-grid-bg__cols,
@@ -1749,10 +1713,8 @@
 }
 
 .hp-grid-bg__dot--1 {
-  left: 12%;
-  top: 180px;
-  width: 6px;
-  height: 6px;
+  /* Retired: it sat in the headline's reading path (docs/design-audit.md #9). */
+  display: none;
 }
 .hp-grid-bg__dot--2 {
   left: 46%;
@@ -2275,43 +2237,6 @@
   gap: 0.5625rem;
   overflow: hidden;
   padding: 0.25rem 0;
-}
-
-.hp-stage__line {
-  height: 8px;
-  background: var(--bg-sunken);
-  border-radius: 999px;
-  display: block;
-}
-
-.hp-stage__line:nth-child(1) {
-  width: 92%;
-}
-.hp-stage__line:nth-child(2) {
-  width: 76%;
-}
-.hp-stage__line:nth-child(3) {
-  width: 84%;
-}
-.hp-stage__line:nth-child(4) {
-  width: 61%;
-}
-.hp-stage__line:nth-child(5) {
-  width: 88%;
-}
-.hp-stage__line:nth-child(6) {
-  width: 48%;
-}
-
-.hp-stage__scanline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 2px;
-  background: var(--accent);
-  opacity: 0.7;
-  display: block;
 }
 
 .hp-stage__chips {
@@ -3079,22 +3004,6 @@ body.consent-banner-open {
       transform: translateY(0);
     }
   }
-  @keyframes hp-scan {
-    0% {
-      transform: translateY(-6px);
-      opacity: 0;
-    }
-    18% {
-      opacity: 1;
-    }
-    82% {
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(108px);
-      opacity: 0;
-    }
-  }
 
   .hp-grid-bg__cols {
     animation: hp-drift-a 26s linear infinite alternate;
@@ -3115,27 +3024,6 @@ body.consent-banner-open {
     animation: hp-pulse 7s ease-in-out 0.6s infinite;
   }
 
-  .hp-stage__line {
-    animation: hp-rise-in 420ms ease-out both;
-  }
-  .hp-stage__line:nth-child(2) {
-    animation-delay: 90ms;
-  }
-  .hp-stage__line:nth-child(3) {
-    animation-delay: 180ms;
-  }
-  .hp-stage__line:nth-child(4) {
-    animation-delay: 270ms;
-  }
-  .hp-stage__line:nth-child(5) {
-    animation-delay: 360ms;
-  }
-  .hp-stage__line:nth-child(6) {
-    animation-delay: 450ms;
-  }
-  .hp-stage__scanline {
-    animation: hp-scan 2.6s ease-in-out infinite;
-  }
   .hp-stage__chip {
     animation: hp-rise-in 380ms ease-out both;
   }
@@ -3556,7 +3444,7 @@ body.consent-banner-open {
 @media (min-width: 60rem) {
   .hp-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 25rem);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 30rem);
     gap: clamp(2rem, 5vw, 4rem);
     align-items: center;
   }
@@ -3584,69 +3472,11 @@ body.consent-banner-open {
   }
 }
 
-/* Floating frame: sized to the illustration, not to a fixed box. A flex
-   container's cross-axis default (`align-items: stretch`) was forcing the
-   `<svg>` child to fill whatever height the frame had rather than the
-   other way around — the frame ended up taller than the artwork, with
-   the (`preserveAspectRatio`-centered) SVG rendering small in the middle
-   and empty space above/below it. `align-items: center` makes the frame
-   hug the SVG's own aspect-ratio-driven height instead; the only
-   height cap left is the mobile ~62vw one below, which is a viewport-
-   relative bound on the ARTWORK, not an arbitrary frame min-height. */
-.hp-hero__frame {
-  position: relative;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 28px;
-  padding: clamp(0.75rem, 2vw, 1.25rem);
-  background: linear-gradient(160deg, var(--accent-line), transparent 55%, var(--line-hair));
-  box-shadow:
-    var(--shadow-panel),
-    0 48px 80px -40px rgba(0, 0, 0, 0.32);
-}
-
-.hp-hero__frame .funnel-hero {
-  display: block;
-  width: min(100%, 25rem);
-  height: auto;
-  /* Matches the SVG's own `viewBox="0 0 560 360"` exactly — modern
-     browsers already infer this ratio from the viewBox under `height:
-     auto` (no explicit width/height attrs on the <svg>), so this changes
-     no rendered pixel; it is a belt-and-braces reservation so the LCP
-     hero copy next to it never shifts on the frame between the CSS
-     applying and the SVG's own intrinsic size being available, on
-     whichever engine/version does the inference later or not at all. */
-  aspect-ratio: 560 / 360;
-  max-height: 62vw;
-}
-
-@media (min-width: 60rem) {
-  .hp-hero__frame .funnel-hero {
-    max-height: none;
-  }
-}
-
-.hp-hero__frame::before {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  border-radius: 27px;
-  background: var(--bg-panel);
-  z-index: 0;
-}
-
-.hp-hero__frame > * {
-  position: relative;
-  z-index: 1;
-}
-
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .hp-hero__frame {
-    background: var(--line-strong);
-    box-shadow: none;
-  }
+/* The decision-engine visual (components/hero/DecisionEngine.tsx,
+   styles/hero.css) carries its own opaque surface, hairline and panel
+   shadow; the previous gradient frame around the funnel SVG is retired. */
+.hp-hero__art > .de {
+  margin: 0 auto;
 }
 
 /* Headline word-stagger entrance: each word is a span (`Home.tsx`); runs

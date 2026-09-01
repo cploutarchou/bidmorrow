@@ -3,7 +3,8 @@ import { Link } from 'react-router';
 import { HEADLINE, SUBHEADLINE } from '../../copy';
 import { PageMeta } from '../../components/PageMeta';
 import { MARKETING_META } from '../../lib/seo';
-import { FunnelHero, StepProfile, StepScoring, StepSource, StepVerdict } from '../../assets';
+import { StepProfile, StepScoring, StepSource, StepVerdict } from '../../assets';
+import { DecisionEngine } from '../../components/hero/DecisionEngine';
 import { useCountUp } from '../../lib/motion';
 import { useRevealed } from '../../lib/use-reveal';
 import { useTilt } from '../../lib/use-tilt';
@@ -31,7 +32,8 @@ interface DemoComponent {
 interface DemoCard {
   country: string;
   score: number;
-  fit: 'Strong fit' | 'Worth reviewing' | 'Possible';
+  /** Verdict band label, verbatim from the published bands (`TIERS`). */
+  fit: 'Strong match' | 'Worth reviewing' | 'Possible match';
   tone: 'strong' | 'mid' | 'neutral';
   deadline: string;
   deadlineTone: 'risk' | 'caution' | 'quiet';
@@ -45,7 +47,7 @@ const DEMO_POOL: DemoCard[] = [
   {
     country: 'CY',
     score: 91,
-    fit: 'Strong fit',
+    fit: 'Strong match',
     tone: 'strong',
     deadline: 'closes in 6 days',
     deadlineTone: 'risk',
@@ -65,7 +67,7 @@ const DEMO_POOL: DemoCard[] = [
   {
     country: 'CY',
     score: 84,
-    fit: 'Strong fit',
+    fit: 'Strong match',
     tone: 'strong',
     deadline: 'closes in 11 days',
     deadlineTone: 'caution',
@@ -85,7 +87,7 @@ const DEMO_POOL: DemoCard[] = [
   {
     country: 'CY',
     score: 58,
-    fit: 'Possible',
+    fit: 'Possible match',
     tone: 'neutral',
     deadline: 'closes in 9 days',
     deadlineTone: 'caution',
@@ -101,7 +103,7 @@ const DEMO_POOL: DemoCard[] = [
   {
     country: 'GR',
     score: 88,
-    fit: 'Strong fit',
+    fit: 'Strong match',
     tone: 'strong',
     deadline: 'closes in 14 days',
     deadlineTone: 'quiet',
@@ -285,8 +287,9 @@ const FACTS = [
     label: 'The only grounds on which a tender is excluded outright, all of them yours to set.',
   },
   {
-    value: '3 tiers',
-    label: 'Strong match, worth reviewing, possible. Your feed leads with the first.',
+    value: '5 verdicts',
+    label:
+      'Strong match, Worth reviewing and Possible match lead your feed; Low fit and Excluded are kept, not surfaced.',
   },
   { value: '1 email', label: 'Per day, and only on days when something scored worth reading.' },
 ];
@@ -705,9 +708,7 @@ export function Home(): ReactElement {
             </div>
           </div>
           <div className="hp-hero__art">
-            <div className="hp-hero__frame">
-              <FunnelHero />
-            </div>
+            <DecisionEngine />
           </div>
         </section>
       </div>

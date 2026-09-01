@@ -21,6 +21,8 @@
  * Runs the pre-installed sandbox Chromium when PLAYWRIGHT_CHROMIUM_PATH is
  * set (playwright.config.ts uses the same hook); otherwise Playwright's own.
  */
+/* global window, document */
+// (`page.evaluate` callbacks below run inside the browser page.)
 import { mkdirSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { chromium } from '@playwright/test';

@@ -1527,27 +1527,3 @@ button.danger:active,
     transition-delay: 180ms;
   }
 }
-
-/* --- 8.3 Hero panel scan sweep (marketing) — the app empty-state panel's
-   twin device is defined alongside `.feed-empty` above. One diagonal teal
-   sheen pass on mount, then static. --- */
-@media (prefers-reduced-motion: no-preference) {
-  .mkt-hero-panel {
-    position: relative;
-    overflow: hidden;
-  }
-  .mkt-hero-panel::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    transform: translateX(-110%);
-    background: linear-gradient(
-      105deg,
-      transparent 40%,
-      rgba(53, 211, 192, 0.08) 50%,
-      transparent 60%
-    );
-    animation: panel-scan 1.4s var(--ease) 400ms 1 forwards;
-    pointer-events: none;
-  }
-}

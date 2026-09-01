@@ -2,7 +2,7 @@
    Illustration system — brand-elevation phase (2026-08-26).
 
    Shared stylesheet for the original SVG assets in `src/assets/`
-   (FunnelHero, the four step illustrations, the three empty states).
+   (the four step illustrations, the three empty states).
    Kept separate from base.css because these rules only ever target
    inline SVG markup, not page chrome.
 
@@ -89,119 +89,4 @@
 }
 .bm-line-strong-stroke {
   stroke: var(--line-strong, #414a57);
-}
-
-/* ============================================================
-   FunnelHero — hero signature visual: a permanent queue of notice
-   chips (6, static, 65% opacity — never empty) sits above the profile
-   lens; a small flow subset (3 chips) actually falls through it and
-   settles into three verdict cards. Runs once (≤ 2.6s total incl.
-   stagger), then holds its final frame (`animation-fill-mode:
-   forwards`) — never an infinite loop, so no pause control is required
-   per WCAG 2.2 SC 2.2.2. Revised 2026-08-26 (coordinator review): see
-   FunnelHero.tsx's header comment for what changed and why.
-   ============================================================ */
-
-.funnel-hero .bm-chip {
-  animation: bm-chip-fall 1s ease-in forwards;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-/* Stagger via structural selectors (not a custom-property-per-node inline
-   style — this file keeps the "no inline style attributes" convention
-   too, so the stagger has to be expressible in the stylesheet alone).
-   Each chip is `<g transform="translate(x,y)"><g class="bm-chip">…</g></g>`
-   — the outer, unclassed <g> is what actually sits at position N among
-   `.bm-chip-stream`'s children (the animated `.bm-chip` is always its
-   only, and therefore first, child), so the stagger selector counts the
-   wrapper, not the class it targets for the delay. */
-.funnel-hero .bm-chip-stream > :nth-child(1) .bm-chip {
-  animation-delay: 0s;
-}
-.funnel-hero .bm-chip-stream > :nth-child(2) .bm-chip {
-  animation-delay: 0.35s;
-}
-.funnel-hero .bm-chip-stream > :nth-child(3) .bm-chip {
-  animation-delay: 0.7s;
-}
-
-.funnel-hero .bm-lens-pulse {
-  animation: bm-lens-pulse 1.4s ease-out 2;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-.funnel-hero .bm-card {
-  animation: bm-card-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-/* Same wrapper-counts-not-the-class reasoning as the chip stagger above. */
-.funnel-hero .bm-verdict-cards > :nth-child(1) .bm-card {
-  animation-delay: 1.5s;
-}
-.funnel-hero .bm-verdict-cards > :nth-child(2) .bm-card {
-  animation-delay: 1.75s;
-}
-.funnel-hero .bm-verdict-cards > :nth-child(3) .bm-card {
-  animation-delay: 2s;
-}
-
-@keyframes bm-chip-fall {
-  0% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  55% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(172px);
-    opacity: 0;
-  }
-}
-
-@keyframes bm-lens-pulse {
-  0% {
-    transform: scale(0.9);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(1.55);
-    opacity: 0;
-  }
-}
-
-@keyframes bm-card-in {
-  0% {
-    opacity: 0;
-    transform: translateY(14px) scale(0.96);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Static, fully-visible fallback. The permanent queue (6 chips), lens
-   ring and three verdict cards are unaffected by this media query — they
-   never animate — so they already read as one complete, static frame.
-   The 3 flow chips and the lens pulse are motion-only flourishes with no
-   information not already carried by the queue/lens/cards, so under
-   reduced motion they are hidden outright rather than frozen mid-flight:
-   that avoids a half-opacity/half-translated chip reading as a mistake,
-   and keeps every remaining element "fully visible" with nothing
-   partially transparent. */
-@media (prefers-reduced-motion: reduce) {
-  .funnel-hero .bm-chip,
-  .funnel-hero .bm-lens-pulse {
-    animation: none !important;
-    opacity: 0 !important;
-  }
-  .funnel-hero .bm-card {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
 }
