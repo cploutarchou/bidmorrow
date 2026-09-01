@@ -18,12 +18,18 @@ and artifacts.
   `ingestion_paused` seed (idempotent), web SPA build, staging assets
   marked `noindex`, Worker deployed, runtime secrets pushed, smoke tests
   passed.
+- Follow-up deploy (the accessibility fix found by this validation, PR
+  #135 squash-merged as `7e13eea`): `Deploy staging` run 126
+  (33568361977), 22:52:17 to 22:53:24 UTC, the same steps, all green.
 
 ## Commit
 
 `adad0c2917fc0eed8cb42f77e11e1f2e2a6e7c9f` on `main`: "design:
 decision-engine hero, product frames, layout-shift fixes, motion and
-polish (#134)". Previous production ref (for rollback): `3c08100`.
+polish (#134)", followed by `7e13eea4fae6bdd8b596b9061c0df15a70ca03a3`:
+"a11y: contrast-safe hero entrances; staging validation evidence;
+design-review workflow hardening (#135)", the commit that went to
+production. Previous production ref (for rollback): `3c08100`.
 
 ## Test results
 
@@ -76,6 +82,21 @@ emulation with simulated throttling unless noted):
 | Pricing (mobile)         | 97   | 100  | 93  | 58    | 2.2 s | 0     | 30 ms  |
 | How it works (mobile)    | 92   | 100  | 93  | 58    | 3.0 s | 0     | 20 ms  |
 | Sample verdicts (mobile) | 92   | 100  | 93  | 58    | 2.9 s | 0     | 110 ms |
+
+After the fix merged (#135, `main` `7e13eea`, `Deploy staging` run 126),
+run 5 (33568475343, 22:53–23:00 UTC, 390 px, both themes, 28 captures,
+no console errors, no overflow) measured:
+
+| Page                     | Perf | A11y | BP  | SEO\* | LCP   | CLS   | TBT    |
+| ------------------------ | ---- | ---- | --- | ----- | ----- | ----- | ------ |
+| Home (mobile)            | 87   | 100  | 93  | 58    | 2.6 s | 0.001 | 300 ms |
+| Home (desktop)           | 100  | 100  | 93  | 58    | 0.6 s | 0.001 | 0 ms   |
+| Pricing (mobile)         | 97   | 100  | 93  | 58    | 2.2 s | 0     | 30 ms  |
+| How it works (mobile)    | 92   | 100  | 93  | 58    | 3.1 s | 0     | 30 ms  |
+| Sample verdicts (mobile) | 91   | 100  | 93  | 58    | 3.0 s | 0     | 120 ms |
+
+Accessibility is 100 on every pair with no failing audit; this is the
+table of record for the production gate.
 
 \* SEO 58 is staging's own `noindex` (`X-Robots-Tag` and `Disallow: /`),
 by design; production is crawlable. Best practices 93 on every page is
