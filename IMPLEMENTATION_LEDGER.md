@@ -26,7 +26,7 @@ later (guaranteed miss — TED's cache window vs. hours of render latency),
 burnt an attempt each and pushed them a day out; the daily 25-row drain
 against a ~150-row/weekday inflow meant the queue grew ~6× faster than it
 drained — staging was carrying 1,069 pending rows (869 never attempted,
-oldest 11 days). Fix (this branch → PR #TBD): hourly standalone drain
+oldest 11 days). Fix (PR #132): hourly standalone drain
 (`40 * * * *` → `{kind:'drain_fetch_retries'}` → `runFetchRetryDrainJob`,
 50 rows/run, stands down on pause / attempts-suspended / live run),
 first retry +20 min instead of immediate, hourly-geometric backoff

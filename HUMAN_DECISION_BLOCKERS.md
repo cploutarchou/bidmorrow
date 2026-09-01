@@ -18,6 +18,25 @@ scheduled + immediate cancel all verified; `BMTEST100` archived. Still
 open: F-06 staging credentials in CI, sandbox checkout branding (4b),
 live checkout logo/brand colour. Everything below is history.
 
+## ⏳ AWAITING OWNER — production deploy of PR #132 (2026-09-01)
+
+**What:** the hourly fetch-retry drain fix for post-launch incident #1
+(empty production feed: 150/151 notices render-pending on 09-01, the
+retry queue never converged). Details: ADR-0008 Amendment A5,
+`IMPLEMENTATION_LEDGER.md` § Current phase.
+
+**State:** PR #132 opened as draft; merges to `main` once CI is green
+(staging then auto-deploys and its 1,069-row backlog self-drains at
+≤50/hour). **Production is NOT deployed by the merge** — the standing rule
+(item 2c) is that a production deploy is dispatched only on the owner's
+explicit instruction.
+
+**Owner action:** say "deploy #132 to production" (or dispatch the
+production deploy workflow yourself). Optional follow-up, also owner's
+call because it writes production data: set the 150 pending rows'
+`next_attempt_at = now` so the first `:40` drain after deploy picks them
+up instead of waiting for 2026-09-02 05:09.
+
 ## OPEN ITEMS SNAPSHOT — 2026-08-16 (production launch checklist)
 
 Everything below is detailed in the numbered items further down; this is
