@@ -144,6 +144,11 @@ disk; CSS 76.6 → 86.6 kB on disk, +0.8 kB over the wire).
 - The FAQ is native `<details>`, keyboard-operable with focus rings intact.
 - Micro-interactions are gated on `(hover: hover)` and
   `prefers-reduced-motion: no-preference`; focus styles untouched.
+- Hero entrances never leave text at partial opacity: notice and band
+  chip wipe in, the engine panel rises and lights its border, rows slide
+  in while only the check-in mark fades, the band lights with a step.
+  Staging Lighthouse had caught the 35% rows mid-entrance; timed axe
+  passes now show zero contrast violations at any point in the loop.
 - The axe e2e spec now covers `/reset-password` in both states.
 
 ## Performance Improvements

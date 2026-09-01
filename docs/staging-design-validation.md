@@ -83,9 +83,9 @@ the "errors logged to console" audit catching the CSP-blocked Cloudflare
 beacon (Known issues). Layout shift is 0 or 0.001 everywhere, against
 0.158 (Home) and 0.706 (Pricing, How it works) before the upgrade; Home
 mobile's blocking time is the SPA's script execution on a throttled CPU,
-not the visuals. Home desktop accessibility 96 (100 locally and on
-mobile) is being checked against the report's failing audit in run 4's
-pushed reports.
+not the visuals. The single 96 (Home desktop in run 3, Home mobile in
+run 4) is the hero's mid-entrance opacity, fixed before the production
+deploy (Known issues).
 
 ## Known issues
 
@@ -102,6 +102,11 @@ https://cdn.paddle.com` refuses both, so every page logs two CSP
   JavaScript at 4× CPU throttling; the design work did not add script
   (the hero's loop is CSS) and the entry chunk is smaller than before.
   Application-level follow-up, outside this upgrade's scope.
-- Home (desktop) accessibility 96: one audit short of 100 on desktop
-  only; identified from run 4's report and fixed or recorded before the
-  production deploy.
+- Accessibility 96 on one Home pair per run (desktop in run 3, mobile
+  in run 4): the audit's axe pass sampled the hero mid-entrance, when the
+  engine head and the eight rows sat at 35% opacity for up to 1.6 s of
+  every scene, and failed colour contrast on that text (19 nodes in run
+  4's mobile report, none anywhere else on the page). Fixed before the
+  production deploy: hero entrances no longer use opacity on text (wipe,
+  slide, border and mark animations instead), verified with axe
+  colour-contrast passes at nine offsets after load at both widths.
