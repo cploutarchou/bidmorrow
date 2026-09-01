@@ -34,7 +34,10 @@ primitives, standing still, replace the step illustrations, and the
 share image is a still of the same scene. Motion is CSS only and
 reduced-motion safe. Layout shift is gone (Home mobile 0.158 → 0.001,
 Pricing 0.706 → 0), accessibility stays at 100, the JavaScript entry got
-smaller, and no dependency was added.
+smaller, and no dependency was added. It shipped to production on
+2026-09-01 at 23:02 UTC (`Deploy production` run 21) after the staging
+gate; the live verification and the production Lighthouse numbers are
+in the sections below.
 
 ## Pages Audited
 
@@ -212,24 +215,57 @@ of five pairs, CLS 0 or 0.001 everywhere, performance 84 to 100).
 
 Gate (the brief's list, each with its evidence):
 
-| Gate                      | Evidence                                                                                                                    |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Build passes              | CI checks job on the PR head and on `main` (web build + `verify:build`)                                                     |
-| Tests pass                | vitest across the workspace, D1 and worker suites in CI; Playwright marketing, accessibility, keyboard: 41 passed locally   |
-| No major console errors   | 84 staging captures: none (the only console messages are the CSP-blocked Cloudflare beacon, pre-existing, recorded)         |
-| No broken links or images | Every route rendered with no failed resource loads (a failed load logs a console error); marketing e2e follows the nav      |
-| Staging verified          | `docs/staging-design-validation.md`                                                                                         |
-| Responsive verified       | 390 / 768 / 1440 on staging, 375 to 1920 locally, no overflow anywhere                                                      |
-| Payments unaffected       | Diff touches `apps/web` marketing UI, CSS, docs, scripts, one workflow; `packages/billing` and the checkout entry untouched |
-| Forms unaffected          | Auth and contact forms untouched; reset-password axe scan added                                                             |
-| Analytics unaffected      | Consent and analytics code untouched (`components/CookieConsent.tsx`, `lib/analytics`)                                      |
-| Authentication unaffected | Auth pages and API untouched; keyboard and marketing e2e green                                                              |
-| SEO metadata unaffected   | `lib/seo.test.ts` unchanged and green; site-health shows robots, sitemap, canonical behaviour unchanged                     |
-| Performance acceptable    | CLS 0.158/0.706 → 0.001/0; staging Lighthouse 84 to 100                                                                     |
-| Accessibility acceptable  | axe green locally on every public route; staging Lighthouse 100 on four pairs, Home desktop 96 (see validation doc)         |
+| Gate                      | Evidence                                                                                                                                                                                             |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build passes              | CI checks job on the PR head and on `main` (web build + `verify:build`)                                                                                                                              |
+| Tests pass                | vitest across the workspace, D1 and worker suites in CI; Playwright marketing, accessibility, keyboard: 41 passed locally                                                                            |
+| No major console errors   | 84 staging captures (run 3) and 28 after the accessibility fix (run 5): none; the only console messages are the CSP-blocked Cloudflare beacon, pre-existing, recorded                                |
+| No broken links or images | Every route rendered with no failed resource loads (a failed load logs a console error); marketing e2e follows the nav                                                                               |
+| Staging verified          | `docs/staging-design-validation.md`                                                                                                                                                                  |
+| Responsive verified       | 390 / 768 / 1440 on staging, 375 to 1920 locally, no overflow anywhere                                                                                                                               |
+| Payments unaffected       | Diff touches `apps/web` marketing UI, CSS, docs, scripts, one workflow; `packages/billing` and the checkout entry untouched                                                                          |
+| Forms unaffected          | Auth and contact forms untouched; reset-password axe scan added                                                                                                                                      |
+| Analytics unaffected      | Consent and analytics code untouched (`components/CookieConsent.tsx`, `lib/analytics`)                                                                                                               |
+| Authentication unaffected | Auth pages and API untouched; keyboard and marketing e2e green                                                                                                                                       |
+| SEO metadata unaffected   | `lib/seo.test.ts` unchanged and green; site-health shows robots, sitemap, canonical behaviour unchanged                                                                                              |
+| Performance acceptable    | CLS 0.158/0.706 → 0.001/0; staging Lighthouse 87 to 100 on the run of record (run 5)                                                                                                                 |
+| Accessibility acceptable  | axe green locally on every public route; staging Lighthouse 100 on all five pairs after the hero entrance fix (run 5; the 96 in runs 3 and 4 was axe sampling text mid-fade, see the validation doc) |
 
-Deploy: `deploy-production.yml` with the typed confirmation, run id and
-verification recorded here once done.
+Deploy: `deploy-production.yml` dispatched on `main` `7e13eea` with the
+typed confirmation, on the owner's instruction once the gate held.
+`Deploy production` run 21 (33569044580) ran from 23:01:04 to 23:02:20
+UTC on 2026-09-01 with every step green: queues, R2 bucket and D1
+ensured (idempotent), D1 Time Travel bookmark captured, migrations
+applied (nothing new), foreign-key enforcement verified, web SPA built,
+Worker deployed, runtime secrets pushed, smoke tests passed
+(`/api/health/live` and `/api/health/ready` 200, CSP header present,
+e2e test hooks 404, production `robots.txt` body with the sitemap line
+and no blanket disallow, `sitemap.xml` served).
+
+Live verification: `site-health` run 8 (33569323675, 23:04 UTC, from a
+GitHub runner) shows `https://bidmorrow.com/` 200 with the security
+headers unchanged (CSP with the Paddle allowances, HSTS with preload,
+`nosniff`, `X-Frame-Options: DENY`, permissions policy), health live and
+ready 200 with `db: ok` and `stale: false` (last successful ingestion
+22:43 UTC), `www` 301 to the apex, the production `robots.txt` body
+under Cloudflare's managed block, `sitemap.xml` 200, `X-Robots-Tag`
+absent on production and `noindex, nofollow` on staging, and the new
+77,109-byte share image served from production.
+
+Visual verification on production: `design-review` run 6 (33569309061,
+23:04 to 23:13 UTC against `https://bidmorrow.com`): 64 captures (every
+public route full-page at 390 and 1440 in light and dark, plus the Home
+hero and consent-banner frames), no console errors, no horizontal
+overflow; the 112 CSP-blocked Cloudflare beacon messages are the
+pre-existing zone injection, reported separately. The hero frames at
+both widths and in both themes render the deployed decision engine as
+they did on staging (notice card, engine panel with the eight rows
+checked in, band row, the "illustrative example, not live data" label).
+The captures are on the run's `design-review-production` artifact (30
+days) and were also pushed to a scratch branch for review; the
+workflow's cleanup mode (`delete_branch`) removes the scratch branches
+once the review is done, because pushes from the session sandbox cannot
+delete refs.
 
 Rollback (decided before deploying): the upgrade carries no migration, so
 rollback is code only. First choice is the Cloudflare Workers deployment
@@ -256,19 +292,63 @@ from the `design-review` workflow and are the record.
 | How it works (mobile)    | 72 / 96 / 2.4 s / 0.706 / 20 ms        | 91 / 100 / 3.0 s / 0 / 130 ms         |
 | Sample verdicts (mobile) | not measured                           | 89 / 100 / 2.9 s / 0 / 210 ms         |
 
-Best practices is 100 on every page before and after. Staging and
-production numbers are appended below once the workflow has run against
-each.
+Best practices is 100 on every page before and after on the local stack.
+
+Staging, `design-review` run 5 (33568475343, 2026-09-01 22:53 to 23:00
+UTC, after the accessibility fix, real network from a GitHub runner):
+
+| Page                     | Perf | A11y | BP  | SEO | LCP   | CLS   | TBT    |
+| ------------------------ | ---- | ---- | --- | --- | ----- | ----- | ------ |
+| Home (mobile)            | 87   | 100  | 93  | 58  | 2.6 s | 0.001 | 300 ms |
+| Home (desktop)           | 100  | 100  | 93  | 58  | 0.6 s | 0.001 | 0 ms   |
+| Pricing (mobile)         | 97   | 100  | 93  | 58  | 2.2 s | 0     | 30 ms  |
+| How it works (mobile)    | 92   | 100  | 93  | 58  | 3.1 s | 0     | 30 ms  |
+| Sample verdicts (mobile) | 91   | 100  | 93  | 58  | 3.0 s | 0     | 120 ms |
+
+SEO 58 on staging is its own `noindex` (by design); best practices 93
+everywhere is the console-error audit catching the CSP-blocked
+Cloudflare Web Analytics beacon (pre-existing, owner decision recorded
+in `HUMAN_DECISION_BLOCKERS.md`).
+
+Production, `design-review` run 6 (33569309061, 2026-09-01 23:11 to
+23:13 UTC, real network from a GitHub runner, the same build as staging):
+
+| Page                     | Perf | A11y | BP  | SEO | LCP   | CLS   | TBT    |
+| ------------------------ | ---- | ---- | --- | --- | ----- | ----- | ------ |
+| Home (mobile)            | 80   | 100  | 93  | 92  | 2.5 s | 0.001 | 570 ms |
+| Home (desktop)           | 100  | 100  | 93  | 92  | 0.6 s | 0.001 | 0 ms   |
+| Pricing (mobile)         | 97   | 100  | 93  | 92  | 2.2 s | 0     | 30 ms  |
+| How it works (mobile)    | 92   | 100  | 93  | 92  | 3.0 s | 0     | 20 ms  |
+| Sample verdicts (mobile) | 92   | 100  | 93  | 92  | 2.9 s | 0     | 110 ms |
+
+Accessibility 100 on every pair, CLS 0.001 or 0 everywhere. SEO 92
+rather than 100 is Lighthouse's robots.txt audit reporting
+`Content-Signal: search=yes,ai-train=no,use=reference` as an unknown
+directive; that line is Cloudflare's zone-level managed robots.txt
+(Content Signals Policy), not the Worker's body, crawlers ignore
+directives they do not know, and the owner decision is recorded in
+`HUMAN_DECISION_BLOCKERS.md`. Home (mobile) 80 against 87 on staging is
+a single throttled run on the identical bundle (same chunk hashes, 12
+requests, 190 kB transferred, script bootup about 1.0 s on both): the
+difference is 570 ms against 300 ms of blocking time from the same SPA
+JavaScript, inside the run-to-run spread already noted, and the other
+four pairs match staging within a point.
 
 ## Remaining Recommendations
 
-- Home (mobile) sits at 84–94 locally with 300 ms of blocking time that
+- Home (mobile) sits at 84–94 locally (87 on staging, 80 on production,
+  single runs) with 300 to 570 ms of blocking time that
   is the SPA's own script execution on a throttled CPU, not the visuals
   (the hero's loop measures ~0.1 s of main-thread time per second at 4×
   throttle); the next step there is application work (less JavaScript on
   the marketing entry), not design.
 - Local Lighthouse mobile numbers vary by ±8 points run to run on the
   sandbox; treat the staging workflow's numbers as the record.
+- Cloudflare's zone-level managed robots.txt prepends a `Content-Signal`
+  line that Lighthouse's robots audit calls an unknown directive (SEO 92
+  on production); keeping it or switching it off in the zone is an
+  owner decision recorded in `HUMAN_DECISION_BLOCKERS.md` (recommended:
+  keep it, the site's own rules are unaffected).
 - Contact and the auth pages were deliberately left as they are.
 - Email templates (`packages/notifications`) were not touched, per the
   owner's instruction that the copy sweep applied to the website only.

@@ -3562,29 +3562,42 @@ Baseline model established: ~$6/mo (0–10 customers), ~$26/mo (100),
 ## Deployment state
 
 _Superseded repeatedly; kept as one live section rather than a Phase-5-era
-snapshot. Last verified 2026-09-01 21:47 UTC against the GitHub deploy
-history and read-only D1 queries._
+snapshot. Last verified 2026-09-01 23:05 UTC against the GitHub deploy
+history and the `site-health` probe (run 8)._
 
-- **Staging** — CURRENT at `main` `adad0c2` (PR #134, the website visual
-  upgrade). `staging.bidmorrow.com`; D1 `bidmorrow-staging`
-  (`cd51fe7b-6b12-48b4-ae94-84205c3de99a`), migrations unchanged by #134.
-  Last deploy 2026-09-01 21:38–21:39 UTC (`Deploy staging` run 124,
-  33562159261, all steps green, smoke passed); `site-health` run 7 at
-  21:40 UTC: health live/ready 200, `stale: false`, headers unchanged,
-  `X-Robots-Tag: noindex` present. Ingestion RUNNING; the hourly
-  fetch-retry drains recover (see the 21:46 UTC evaluation below):
-  `ingestion_fetch_retries` pending 1,000 (669 never attempted, 331 at
-  attempts=1), recovered 169 (69 today), abandoned 0.
-- **Production** — CURRENT at `main` `3c08100` (PRs #132 + #133),
-  deployed 2026-09-01 19:53–19:55 UTC (`Deploy production` run 20,
-  33552153011, verified `success` on 21:47 UTC re-read). One PR behind
-  `main` (#134, the visual upgrade) pending the design production gate.
-  D1 `bidmorrow-production` (`cd5f6ceb-3262-4ba9-a5f4-4c1ed43e27bb`).
-  Flags verified 21:47 UTC: `ingestion_paused: false`, `prelaunch: false`,
-  `founding_plan_open: true`, `entitlement_enforced: true` (row created
-  19:53:41 UTC on the owner's instruction). First live data after the
-  20:40 UTC drain: 6 notices, 8 lots, 8 matches for the one organization
-  (3 WORTH_REVIEWING, 5 EXCLUDED); retries pending 144 (75 at attempts=0,
+- **Staging** — CURRENT at `main` `7e13eea` (PRs #134 + #135, the
+  website visual upgrade and its accessibility fix).
+  `staging.bidmorrow.com`; D1 `bidmorrow-staging`
+  (`cd51fe7b-6b12-48b4-ae94-84205c3de99a`), migrations unchanged by
+  either PR. Deploys 2026-09-01 21:38–21:39 UTC (`Deploy staging` run
+  124, 33562159261, #134) and 22:52–22:53 UTC (run 126, 33568361977,
+  #135), all steps green, smoke passed. `site-health` run 8 at 23:04
+  UTC: health live/ready 200, `stale: false` (last successful ingestion
+  22:43 UTC), headers unchanged, `X-Robots-Tag: noindex, nofollow`
+  present. Ingestion RUNNING; the hourly fetch-retry drains recover (see
+  the 21:46 UTC evaluation below): `ingestion_fetch_retries` pending
+  1,000 (669 never attempted, 331 at attempts=1), recovered 169 (69
+  today), abandoned 0 at that check.
+- **Production** — CURRENT at `main` `7e13eea` (PRs #134 + #135 on top
+  of #132 + #133), deployed 2026-09-01 23:01–23:02 UTC (`Deploy
+production` run 21, 33569044580, `success`, smoke tests passed:
+  health live/ready, CSP header present, e2e test hooks 404, production
+  `robots.txt` body with the sitemap line, `sitemap.xml` served) on the
+  owner's instruction after the design production gate passed
+  (`docs/design-upgrade-report.md`). Previous production ref `3c08100`
+  (run 20, 33552153011) is the rollback target. D1
+  `bidmorrow-production` (`cd5f6ceb-3262-4ba9-a5f4-4c1ed43e27bb`), no
+  migration in either PR; the deploy captured its D1 Time Travel
+  bookmark as usual. `site-health` run 8 at 23:04 UTC: health live/ready
+  200, `db: ok`, `stale: false` (last successful ingestion 22:43 UTC),
+  security headers unchanged, `X-Robots-Tag` absent, robots production
+  body, sitemap 200, the new 77,109-byte share image served, `www` 301
+  to the apex. Flags verified 21:47 UTC (unchanged by the deploy):
+  `ingestion_paused: false`, `prelaunch: false`, `founding_plan_open:
+true`, `entitlement_enforced: true` (row created 19:53:41 UTC on the
+  owner's instruction). First live data after the 20:40 UTC drain: 6
+  notices, 8 lots, 8 matches for the one organization (3
+  WORTH_REVIEWING, 5 EXCLUDED); retries pending 144 (75 at attempts=0,
   69 at attempts=1), recovered 6.
 - **www redirect** — `apps/www-redirect` deployed 2026-08-22, 301s to the
   apex (blockers item 12).
@@ -5368,11 +5381,8 @@ report; staging/production sections filled by phases 7–8).
   `.github/workflows/design-review.yml` (workflow_dispatch against staging
   or production, artifact upload). Captures under `artifacts/design-review/`
   (git-ignored).
-- **Next** (phases 7–8): PR → merge → `deploy-staging.yml` → dispatch
-  `design-review` + `site-health` against staging → write
-  `docs/staging-design-validation.md` → production gate →
-  `deploy-production.yml` (typed confirmation) → verify live → append to
-  the report. Rollback is a re-dispatch at the previous production ref.
+- **Phases 7–8**: done the same evening; see "Website visual upgrade
+  shipped" below.
 
 ## Production: first hourly fetch-retry drain (2026-09-01 20:40 UTC, read-only check)
 
@@ -5427,6 +5437,79 @@ never attempted 819; the 19:40 drain had recovered 0 of 50.
   `feature_flags.entitlement_enforced = true` present (created 19:53:41
   UTC). Both HUMAN_DECISION_BLOCKERS items were already marked closed; the
   Deployment state section above is rewritten to the verified truth.
+
+## Website visual upgrade shipped: staging validation, gate, production (design phases 7–8, 2026-09-01)
+
+Record of the brief's last two phases. Evidence lives in
+`docs/staging-design-validation.md` and the Staging / Production /
+Lighthouse sections of `docs/design-upgrade-report.md`.
+
+- **Staging** (phase 7): #134 squash-merged as `adad0c2` at 21:38 UTC,
+  `Deploy staging` run 124 green in one minute. `site-health` run 7:
+  health 200 and not stale, headers unchanged, staging `noindex`,
+  production crawlable, new share image served on staging.
+  `design-review` run 3 (84 full-page captures, 14 routes × 390/768/1440
+  × light/dark): no console errors, no horizontal overflow; run 4 pushed
+  the 390/1440 captures to a scratch branch for a frame-by-frame look at
+  the hero, stepper, pricing and FAQ (the sandbox cannot download
+  workflow artifacts). Run 1 had failed on 168 console messages that were
+  Cloudflare's zone-level Web Analytics beacon refused by the site's own
+  CSP on every page; the capture script now reports that class
+  separately and the owner decision is in `HUMAN_DECISION_BLOCKERS.md`.
+- **What the validation caught**: accessibility 96 on one Home pair per
+  run (desktop in run 3, mobile in run 4). Lighthouse's axe pass sampled
+  the hero mid-entrance, when the engine head and the eight rows sat at
+  35% opacity for up to 1.6 s of every scene, and failed colour contrast
+  on that text. Fixed in #135 (`7e13eea`, 22:52 UTC, `Deploy staging`
+  run 126): entrances no longer put text at partial opacity (notice and
+  band chip wipe in with `clip-path`, engine panel rises and lights its
+  border, rows slide while only the check-in mark fades, scene wipes
+  out, band lights with a step). Verified with timed axe colour-contrast
+  passes at nine offsets after load at both widths, then on staging by
+  run 5: accessibility 100 on all five pairs, CLS 0.001 / 0, performance
+  87 (Home mobile) to 100 (Home desktop).
+- **Gate** (phase 8): the brief's thirteen conditions each hold with
+  evidence in the report's table (build, tests, console, links/images,
+  staging, responsive, payments, forms, analytics, auth, SEO metadata,
+  performance, accessibility). Rollback decided before deploying: no
+  migration, so code only; Workers deployment rollback to the run-20
+  version (`3c08100`) or `git revert` + re-dispatch.
+- **Production**: `deploy-production.yml` dispatched on `main` `7e13eea`
+  with the typed confirmation on the owner's instruction ("deploy to
+  production if the gate passes"). `Deploy production` run 21
+  (33569044580) 23:01:04 to 23:02:20 UTC, all steps green, smoke tests
+  passed. `site-health` run 8 at 23:04 UTC: production 200 with the
+  unchanged security headers, health live/ready 200 (`db: ok`, `stale:
+false`), `www` 301, robots production body, sitemap 200, `X-Robots-Tag`
+  absent on production, the new 77,109-byte share image served.
+  `design-review` run 6 (33569309061, 23:04 to 23:13 UTC) against
+  production: 64 captures at 390/1440 in both themes, no console errors,
+  no horizontal overflow (112 CSP-blocked beacon messages reported
+  separately); hero frames reviewed at both widths and themes.
+  Lighthouse on production: accessibility 100 on all five pairs, CLS
+  0.001 / 0, performance 80 (Home mobile, a single throttled run on the
+  identical bundle; 87 on staging) to 100, best practices 93 (beacon),
+  SEO 92 (Cloudflare's managed robots.txt `Content-Signal` line, see
+  below). Report and validation doc carry the tables.
+- **Commit authorship**: from #135 onward every commit is authored and
+  committed as the repository owner with no assistant trailers or
+  footers, and PR bodies carry no session links. Rewriting the earlier
+  history on `main` to the same identity needs a force-push to `main`
+  that the sandbox is not permitted to make; it is pending the owner
+  either granting that permission or running the rewrite locally (the
+  commands were provided in the session). Rewritten commits lose
+  GitHub's "Verified" badge.
+- **Open after this work**: Cloudflare Web Analytics beacon versus the
+  CSP (owner decision, recommended: switch the automatic injection off
+  at the zone); Home mobile performance 87 is the SPA's own JavaScript
+  at 4× CPU throttle, an application follow-up outside the design scope;
+  Cloudflare's zone-level managed robots.txt prepends a `Content-Signal`
+  directive that Lighthouse's robots audit flags as unknown (SEO 92 on
+  production, no indexing effect; owner decision, recommended keep);
+  scratch branches `design-review-shots` and `design-review-shots-prod`
+  are removed by dispatching `design-review.yml` in its cleanup mode
+  (`delete_branch`, added in #136) once that PR merges; a delete from
+  the sandbox returns HTTP 403, the same limit as the tag pushes.
 
 ## Notes
 

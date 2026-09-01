@@ -56,6 +56,31 @@ doing exactly what docs/security.md says it should.
 Until decided, the capture script reports these messages separately and
 does not count them as site errors (commit on the dev branch, 22:09 UTC).
 
+## OPEN 2026-09-01 23:15 UTC — Cloudflare's managed robots.txt adds a `Content-Signal` line that Lighthouse flags (zone setting, owner decision)
+
+**What:** the production design-review run (33569309061, after the
+website upgrade deploy) scores SEO 92 instead of 100 on every page
+because Lighthouse's robots.txt audit reports one error:
+`Content-Signal: search=yes,ai-train=no,use=reference` is an unknown
+directive. That line, and the AI-crawler `Disallow` groups around it,
+are the zone's managed robots.txt (Cloudflare's Content Signals Policy,
+between the `# BEGIN/END Cloudflare Managed Content` markers). The
+Worker's own body underneath is exactly the documented production rules
+(site-health run 8; the deploy smoke test strips the managed block and
+asserts ours). Crawlers ignore directives they do not know, so there is
+no indexing effect; the cost is the Lighthouse point and audit noise.
+
+**Decide one of:**
+
+1. **Recommended:** keep it. `ai-train=no` is a deliberate rights
+   reservation that costs nothing in search, and the site's own rules
+   are unaffected. Accept SEO 92 in Lighthouse (noted in
+   `docs/design-upgrade-report.md`).
+2. Switch the managed robots.txt / Content Signals Policy off for the
+   zone in the Cloudflare dashboard (bidmorrow.com zone, the bot and AI
+   crawl settings) for SEO 100; the Worker keeps serving the same body
+   and no code changes.
+
 ## ✅ CLOSED 2026-09-01 19:55 UTC — production deploy of PRs #132 + #133 (owner instruction "deploy to production")
 
 **What:** the hourly fetch-retry drain fix for post-launch incident #1
