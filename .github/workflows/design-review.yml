@@ -68,7 +68,9 @@ jobs:
             --widths "${{ inputs.widths }}"
 
       - name: Lighthouse (five baseline pairs)
-        if: ${{ inputs.lighthouse }}
+        # Runs even when the screenshot step reports findings, so the
+        # numbers land beside the captures in the same artifact.
+        if: ${{ !cancelled() && inputs.lighthouse }}
         run: |
           node scripts/design-lighthouse.mjs \
             --base-url "${{ inputs.base_url }}" \

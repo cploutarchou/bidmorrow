@@ -82,6 +82,14 @@ const browser = await chromium.launch(
 );
 
 const errors = [];
+/* Third-party script injection blocked by the site's own CSP is not a
+   site error: Cloudflare's zone-level Web Analytics beacon is injected
+   into every response on staging and production and refused by
+   `script-src 'self' https://cdn.paddle.com`. Those messages are counted
+   and reported, but they do not fail the run; everything else still does. */
+const BLOCKED_INJECTION =
+  /static\.cloudflareinsights\.com|Executing inline script violates the following Content Security Policy/;
+const blockedInjection = new Map();
 try {
   for (const scheme of SCHEMES) {
     for (const width of WIDTHS) {
@@ -93,7 +101,14 @@ try {
       });
       const page = await context.newPage();
       page.on('console', (message) => {
-        if (message.type() === 'error') errors.push(`${scheme}/${width}: ${message.text()}`);
+        if (message.type() !== 'error') return;
+        const text = message.text();
+        if (BLOCKED_INJECTION.test(text)) {
+          const key = `${scheme}/${String(width)}`;
+          blockedInjection.set(key, (blockedInjection.get(key) ?? 0) + 1);
+          return;
+        }
+        errors.push(`${scheme}/${String(width)}: ${text}`);
       });
       page.on('pageerror', (error) =>
         errors.push(`${scheme}/${width}: pageerror ${error.message}`),
@@ -152,6 +167,12 @@ try {
   await browser.close();
 }
 
+if (blockedInjection.size > 0) {
+  const total = [...blockedInjection.values()].reduce((a, b) => a + b, 0);
+  console.log(
+    `\n${String(total)} CSP-blocked third-party injection message(s) (Cloudflare Web Analytics beacon), not counted as site errors`,
+  );
+}
 if (errors.length > 0) {
   console.error(`\n${String(errors.length)} console error(s) / overflow finding(s):`);
   for (const line of errors) console.error(`  ${line}`);
