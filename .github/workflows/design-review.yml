@@ -26,9 +26,15 @@ on:
         description: Run the five Lighthouse pairs after the screenshots
         type: boolean
         default: true
+      push_branch:
+        description: >-
+          Optional scratch branch to force-push the captures to (the session
+          sandbox cannot download workflow artifacts); leave empty to skip
+        default: ''
+        required: false
 
 permissions:
-  contents: read
+  contents: write # only used by the optional scratch-branch push below
 
 concurrency:
   group: design-review
@@ -88,3 +94,24 @@ jobs:
           name: design-review-${{ inputs.label }}
           path: artifacts/design-review
           retention-days: 30
+
+      # Same pattern as competitor-screenshots.yml: a transient branch that
+      # git can fetch from the sandbox, deleted after review. Never touches
+      # main or the working branches.
+      - name: Push captures to the scratch branch
+        if: ${{ always() && inputs.push_branch != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUSH_BRANCH: ${{ inputs.push_branch }}
+        run: |
+          case "$PUSH_BRANCH" in
+            main|claude/*) echo "refusing to push captures to $PUSH_BRANCH"; exit 1 ;;
+          esac
+          cd artifacts/design-review
+          git init -b "$PUSH_BRANCH"
+          git config user.name "bidmorrow-ci"
+          git config user.email "ci@users.noreply.github.com"
+          git add -A
+          git commit -q -m "design-review captures, label ${{ inputs.label }} ($(date -u +%FT%TZ))"
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$PUSH_BRANCH"
+          echo "pushed $(git ls-files | grep -c '\.png$') screenshots and $(git ls-files | grep -c '\.json$') reports to branch $PUSH_BRANCH"
