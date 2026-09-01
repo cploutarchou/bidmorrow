@@ -5101,6 +5101,37 @@ deployed to production and staging:
   worker's TS lib types URL without `origin`/`host`, hence the regex
   extraction. Owner confirmed the staging reset email renders correctly.
 
+## Production issue #1: confirm-password on the reset form (2026-09-01)
+
+- **Issue** (owner report): after following the emailed reset link, the
+  new-password form had a single input. A typo was unrecoverable, because
+  the link is single-use: whatever was typed once became the password and
+  the only way back was another reset email.
+- **Cause**: `apps/web/src/pages/auth/ResetPassword.tsx` only ever had one
+  `password` field. Client-side validation checked the 8-character minimum
+  and nothing else, so a mistyped password passed straight through to
+  Better Auth's `/api/auth/reset-password`, which has no confirmation
+  concept of its own. Purely a UI gap: no server, repository or schema
+  involvement.
+- **Fix** (one layer, UI only): a second "Confirm new password" input
+  (`autocomplete="new-password"`, real label, `aria-invalid` +
+  `aria-describedby` to its hint, live "These passwords match" / "do not
+  match" wording so the state is never colour alone). Submit is blocked on
+  a mismatch with a `role="alert"` banner; the 8-character minimum still
+  runs first. The request body is unchanged: `{ newPassword, token }`. The
+  confirmation value never leaves the browser.
+- **Copy**: the two em-dash strings in this file rewritten to sentences
+  (owner house rule, no em dashes in copy); the file is now em-dash free.
+- **Tests**: `tests/e2e/auth-session.spec.ts`, new describe block "reset
+  password: the confirmation must match before anything is sent" (2 tests,
+  route-intercepted so no reset token is spent). Both red before the fix
+  (no such field), green after, on chromium and mobile-chromium; the whole
+  spec file is 20/20.
+- **Not done**: no server change (Better Auth owns the endpoint and the
+  8-character floor); `/reset-password` is still absent from the axe sweep
+  in `tests/e2e/accessibility.spec.ts`, which was already the case; the
+  em-dash sweep was scoped to the one file touched, not the whole app.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
