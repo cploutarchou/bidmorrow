@@ -447,7 +447,7 @@ invariant 2). ~8 rows per scored match.
 | points        | REAL | no   | awarded (7.5-style halves possible)                                                                                     |
 | max_points    | REAL | no   | component max at this engine version                                                                                    |
 | status        | TEXT | no   | `MATCHED` \| `PARTIAL` \| `NO_MATCH` \| `UNKNOWN` (CHECK)                                                               |
-| explanation   | TEXT | no   | human-readable line, e.g. "value not published — neutral score applied"                                                 |
+| explanation   | TEXT | no   | human-readable line, e.g. "value not published. Neutral score applied"                                                  |
 
 - **Unique** `(match_id, component_key)` — doubles as the `match_id` lookup
   index (tender detail explanation, digest rendering).
@@ -468,7 +468,7 @@ requirement).
 NULL` — field path in the source notice the snippet came from.
 - `confidence TEXT NOT NULL` — `HIGH` \| `POSSIBLE` (CHECK).
 - `explanation TEXT NOT NULL` — rendered wording ("Possible requirement
-  detected — verify in source documents.").
+  detected: verify in source documents.").
 
 ## 7. Customer actions & feedback — all [tenant-owned]
 

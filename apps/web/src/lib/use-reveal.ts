@@ -7,12 +7,12 @@ import { useLocation } from 'react-router';
  *
  * `useReveal()` is ONE IntersectionObserver, shared across every
  * `[data-reveal]` element on the page, adding `.is-in` once each element
- * crosses 15% visible — call it exactly once, high in the marketing tree
+ * crosses 15% visible. Call it exactly once, high in the marketing tree
  * (`MarketingLayout`), never per section or per page.
  *
  * Progressive enhancement: the CSS that hides `[data-reveal]` content
  * (styles/marketing.css) only exists under `html.js-reveal` (added here
- * on mount) AND only under `prefers-reduced-motion: no-preference` — a
+ * on mount) AND only under `prefers-reduced-motion: no-preference`: a
  * visitor with JS never running, or motion reduced, sees every section
  * already in its final place, never gated on this observer firing.
  *
@@ -22,7 +22,7 @@ import { useLocation } from 'react-router';
  *
  * Every marketing route below Home is code-split (`lib/lazy-page.tsx`,
  * `React.lazy` + `Suspense`), so a route's real `[data-reveal]` content
- * can commit to the DOM strictly AFTER this effect's own initial scan —
+ * can commit to the DOM strictly AFTER this effect's own initial scan;
  * the effect runs on `pathname` changing, but the lazy chunk resolving is
  * a separate, later commit that does not change `pathname` again. A
  * `MutationObserver` on `<body>` catches that: any `[data-reveal]` node
@@ -88,7 +88,7 @@ export function useReveal(): void {
 }
 
 /** The event `useReveal()` dispatches on an element the instant it adds
- *  `.is-in` — content that needs to know *when* it was revealed (e.g. a
+ *  `.is-in`: content that needs to know *when* it was revealed (e.g. a
  *  count-up number), not just how to fade in, listens for this instead of
  *  opening a second observer. */
 export const REVEAL_EVENT = 'bm-reveal';
@@ -101,7 +101,7 @@ function revealElement(el: HTMLElement): void {
 /**
  * True once the element behind `ref` has been revealed by `useReveal()`'s
  * shared observer (or immediately, if it already carries `.is-in` when
- * this mounts — e.g. IntersectionObserver-unsupported fallback). Opens no
+ * this mounts, e.g. IntersectionObserver-unsupported fallback). Opens no
  * observer of its own.
  */
 export function useRevealed<T extends HTMLElement>(ref: RefObject<T | null>): boolean {
@@ -116,8 +116,8 @@ export function useRevealed<T extends HTMLElement>(ref: RefObject<T | null>): bo
     }
     el.addEventListener(REVEAL_EVENT, onReveal);
 
-    // `useReveal()`'s IntersectionObserver can fire — and dispatch
-    // REVEAL_EVENT — in the window between React committing this element
+    // `useReveal()`'s IntersectionObserver can fire (and dispatch
+    // REVEAL_EVENT) in the window between React committing this element
     // and THIS effect running (both are post-commit, but ordering across
     // components isn't guaranteed). Re-check `.is-in` after the listener
     // is attached, not only before, so a reveal that lands in that gap is

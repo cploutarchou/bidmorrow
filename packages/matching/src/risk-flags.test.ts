@@ -14,7 +14,7 @@ describe('detectRiskFlags', () => {
     );
     const cert = flags.find((f) => f.type === 'certification');
     expect(cert?.confidence).toBe('POSSIBLE');
-    expect(cert?.explanation).toBe('Possible requirement detected — verify in source documents.');
+    expect(cert?.explanation).toBe('Possible requirement detected: verify in source documents.');
     expect(cert?.evidence).toContain('ISO 27001');
     expect(cert?.sourceField).toBe('lot.descriptionByLang.eng');
   });

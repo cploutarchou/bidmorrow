@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, type ReactElement, type ReactNode } from 'react';
 
 /**
- * Right-hand slide-over — 2026-08-21 handoff (`BidMorrow Client Area.dc.html`),
+ * Right-hand slide-over: 2026-08-21 handoff (`BidMorrow Client Area.dc.html`),
  * which opens a tender beside the feed instead of navigating away from it.
  *
  * The prototype is a `sheetOpen` boolean with no URL and no keyboard model.
  * That is not shippable as-is: a tender is a thing people send each other, and
  * a sheet with no address cannot be linked, bookmarked, or reopened by Back.
  * So the sheet is driven by the SAME `/app/tenders/:matchId` route the full
- * page uses (see App.tsx's `backgroundLocation` handling) — Back closes it,
+ * page uses (see App.tsx's `backgroundLocation` handling): Back closes it,
  * the URL is shareable, and a shared link opens the full page.
  *
  * Everything below is the modal contract the prototype does not have:
@@ -81,7 +81,7 @@ export function DetailSheet({
       if (event.key !== 'Tab') return;
       const items = focusable();
       if (items.length === 0) {
-        // Nothing to land on (the content is still loading) — keep focus in
+        // Nothing to land on (the content is still loading): keep focus in
         // the panel rather than letting Tab escape to the page behind.
         event.preventDefault();
         panelRef.current?.focus();

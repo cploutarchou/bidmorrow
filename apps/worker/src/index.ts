@@ -39,6 +39,7 @@ import type {
 import { resolveDigestProvider, runDigestJob, runDigestScheduleJob } from './digest';
 import {
   runBackfillWindowJob,
+  runFetchRetryDrainJob,
   runIngestCatchUpJob,
   runRecomputeContinuationJob,
   runRecomputeJob,
@@ -269,12 +270,15 @@ app.onError((err, c) => {
 // (09:00), hourly digest scheduling (Phase 8 — timezones roll over at
 // different UTC hours, so a once-daily cron cannot serve every org at a
 // consistent LOCAL send time; see @bidmorrow/notifications
-// digest-orchestration.ts for the per-org due/resume logic this triggers).
-// Dispatch by exact pattern string — see ADR-0006.
+// digest-orchestration.ts for the per-org due/resume logic this triggers),
+// hourly fetch-retry drain at :40 (ADR-0008 Amendment §A5 — 20 minutes
+// after the 05:00 window's skips become due, and on a minute no other
+// trigger uses). Dispatch by exact pattern string — see ADR-0006.
 const CRON_INGEST = '0 5 * * *';
 const CRON_RETENTION = '30 6 * * *';
 const CRON_WATCHDOG = '0 9 * * *';
 const CRON_DIGEST_SCHEDULE = '15 * * * *';
+const CRON_FETCH_RETRY_DRAIN = '40 * * * *';
 
 /**
  * Cron entry point. Ingestion is enqueued (bounded, retried, DLQ'd via
@@ -293,6 +297,12 @@ async function scheduled(
     case CRON_INGEST:
       await env.INGEST_QUEUE.send({ kind: 'ingest' });
       logger.info('cron.ingest.enqueued', {});
+      return;
+    case CRON_FETCH_RETRY_DRAIN:
+      // Enqueued, never run inline, for the same reason as ingestion: a
+      // slow TED render cycle must never risk the cron's own time budget.
+      await env.INGEST_QUEUE.send({ kind: 'drain_fetch_retries' });
+      logger.info('cron.fetch_retry_drain.enqueued', {});
       return;
     case CRON_RETENTION:
       ctx.waitUntil(
@@ -452,6 +462,18 @@ async function queue(
         case 'purge': {
           const result = await runRetentionPurgeJob(env, logger);
           logger.info('queue.purge.completed', { notices_deleted: result.noticesDeleted });
+          break;
+        }
+        case 'drain_fetch_retries': {
+          const result = await runFetchRetryDrainJob(env, logger);
+          logger.info('queue.fetch_retry_drain.completed', {
+            skipped: result.skipped,
+            attempted: result.drain?.attempted ?? 0,
+            recovered: result.drain?.recovered ?? 0,
+            abandoned: result.drain?.abandoned ?? 0,
+            still_pending: result.drain?.stillPending ?? 0,
+            terminated_by_budget: result.drain?.terminatedByBudget ?? false,
+          });
           break;
         }
         case 'backfill_window': {

@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import '../../styles/illustrations.css';
 
 /**
- * Empty state — nothing saved yet (empty shelf / bookmark). Decorative,
+ * Empty state: nothing saved yet (empty shelf / bookmark). Decorative,
  * same convention as `EmptyFeed.tsx`.
  *
  * viewBox 160×120. Source ~0.7 KB.

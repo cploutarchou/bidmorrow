@@ -792,8 +792,8 @@ constraint.)
 NOT the mockups' illustrative labels. Real model (max 100): CPV fit 35 ·
 Capability/keyword fit 20 · Geography 15 · Contract value 10 ·
 Buyer/sector 5 · Procedure/contract nature 5 · Deadline runway 5 ·
-Eligibility/cert signals 5. UNKNOWN = 0.5×max, shown as "not published —
-neutral score applied". Any shipped sample verdict re-bases on these.
+Eligibility/cert signals 5. UNKNOWN = 0.5×max, shown as "not published.
+Neutral score applied". Any shipped sample verdict re-bases on these.
 
 **Pricing:** FROZEN — €29/€49 flat EUR (the "$" in owner directives is
 shorthand). Founding cap revised to first 25–50 (single number required

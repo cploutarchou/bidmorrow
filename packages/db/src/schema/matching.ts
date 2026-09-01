@@ -118,7 +118,7 @@ export const matchComponents = sqliteTable(
     /** Component max at this engine version. */
     maxPoints: real('max_points').notNull(),
     status: text('status').notNull(),
-    /** Human-readable line, e.g. "value not published — neutral score applied". */
+    /** Human-readable line, e.g. "value not published. Neutral score applied". */
     explanation: text('explanation').notNull(),
     createdAt: integer('created_at').notNull(),
   },

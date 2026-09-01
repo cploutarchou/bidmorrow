@@ -14,7 +14,7 @@ export function Signup(): ReactElement {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   // Already-authenticated visitor landing on /signup must not see the form
-  // (auth/session-flow-polish R1) — this must run for every render, so it's
+  // (auth/session-flow-polish R1): this must run for every render, so it's
   // declared before the early loading-state return below.
   const { ready } = useRedirectIfAuthenticated();
   const publicConfig = usePublicConfig();
@@ -34,7 +34,7 @@ export function Signup(): ReactElement {
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError('That does not look like an email address — check it and try again.');
+      setError('That does not look like an email address. Check it and try again.');
       return;
     }
     if (password.length < 8) {
@@ -45,7 +45,7 @@ export function Signup(): ReactElement {
     try {
       // callbackURL carries `?email=` through Better Auth's redirect after
       // the emailed link is followed (fix for ux-strategy.md F10: the
-      // "check your inbox" page previously couldn't say which inbox — pure
+      // "check your inbox" page previously couldn't say which inbox; pure
       // display text, never used for anything security-sensitive).
       const verifyEmailPath = `/verify-email?email=${encodeURIComponent(email)}`;
       const response = await fetch('/api/auth/sign-up/email', {
@@ -53,7 +53,7 @@ export function Signup(): ReactElement {
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
         // callbackURL: Better Auth's verify-email endpoint redirects here
-        // (success and `?error=...` alike) after the link is followed —
+        // (success and `?error=...` alike) after the link is followed.
         // without it, it defaults to '/' and VerifyEmail's error banner
         // (reads `?error=` from ITS OWN route) would never be reachable.
         // Found via Phase 12 E2E: following a real captured verification
@@ -91,7 +91,7 @@ export function Signup(): ReactElement {
     return (
       <AuthLayout
         title="Registrations open at launch"
-        subtitle="We are putting the final pieces in place — new accounts open when the countdown ends."
+        subtitle="We are putting the final pieces in place. New accounts open when the countdown ends."
       >
         <div className="auth-sentbox">
           <p className="auth-sentbox__cap">Launch</p>
@@ -100,7 +100,7 @@ export function Signup(): ReactElement {
           </p>
         </div>
         <p className="auth-note">
-          Already have an account? <Link to="/login">Log in</Link> — existing accounts are not
+          Already have an account? <Link to="/login">Log in</Link>. Existing accounts are not
           affected.
         </p>
         <Link className="cta" to="/">
@@ -182,7 +182,7 @@ export function Signup(): ReactElement {
         </button>
       </form>
       <p className="auth-note">
-        Verification is required before the first login — the account exists, but the feed stays
+        Verification is required before the first login: the account exists, but the feed stays
         closed until the emailed link is followed.
       </p>
     </AuthLayout>

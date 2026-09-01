@@ -138,7 +138,7 @@ export function Digest(): ReactElement {
 
   return (
     <AdminPage
-      documentTitle="Digest — Admin"
+      documentTitle="Digest | Admin"
       heading="Digest"
       note="The daily digest cycle: whether it is running, what it sent, what bounced, and a preview of exactly what one organization would receive."
     >
@@ -151,7 +151,7 @@ export function Digest(): ReactElement {
           <div className="admin-pause-control">
             <p className="hint">
               {digestPaused
-                ? 'The digest is PAUSED — no cycles are being sent.'
+                ? 'The digest is PAUSED. No cycles are being sent.'
                 : 'The digest is running.'}
             </p>
             <ConfirmAction
@@ -258,7 +258,7 @@ export function Digest(): ReactElement {
                       <td>{failure.toEmail}</td>
                       <td>{failure.kind}</td>
                       <td>{failure.provider}</td>
-                      <td>{failure.error ?? '—'}</td>
+                      <td>{failure.error ?? '–'}</td>
                       <td>{formatIsoUtc(failure.createdAt)}</td>
                     </tr>
                   ))}
@@ -310,8 +310,8 @@ export function Digest(): ReactElement {
               The preview HTML is our own renderer's already-escaped output,
               but dangerouslySetInnerHTML is banned repo-wide (eslint
               no-restricted-syntax, docs/security.md C2) regardless of
-              source. Rendered as plain TEXT in a <pre> — subject, the
-              text-alternative, and the raw HTML source — never injected as
+              source. Rendered as plain TEXT in a <pre>: subject, the
+              text-alternative, and the raw HTML source, never injected as
               markup.
             */}
             <h3 className="admin-panel__label">Subject</h3>

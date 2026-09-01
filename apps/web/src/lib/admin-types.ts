@@ -1,9 +1,9 @@
 /**
- * Response DTO shapes for `/api/admin/*` — kept in sync with
+ * Response DTO shapes for `/api/admin/*`, kept in sync with
  * apps/worker/src/routes/admin.ts and packages/db/src/repositories/admin.ts.
  * Deep/loosely-specified nested payloads (org scoring profile, engine lot
  * input) are typed as `unknown` and rendered as escaped JSON text rather than
- * re-declared field-for-field here — the admin UI's job is faithful, safe
+ * re-declared field-for-field here: the admin UI's job is faithful, safe
  * display, not re-deriving the engine's internal types.
  */
 
@@ -49,7 +49,7 @@ export interface AdminUsageCounts {
   matches: number;
 }
 
-/** `GET /api/admin/rail-counts` — per-section totals for the shell rail. */
+/** `GET /api/admin/rail-counts`: per-section totals for the shell rail. */
 export interface AdminRailCounts {
   organizations: number;
   users: number;
@@ -123,14 +123,14 @@ export interface AdminIngestionRun {
   errorsCount: number;
   /**
    * GENUINE per-notice XML fetch failures recorded as record-and-continue
-   * skips (ADR-0008 §1/§5, ADR-0009 §1) — a subset of `errorsCount`,
+   * skips (ADR-0008 §1/§5, ADR-0009 §1): a subset of `errorsCount`,
    * surfaced separately so the runs table distinguishes "healthy partial"
    * from "systemically degraded". No longer includes render-pending
    * exhaustion (see `noticesRenderPending`).
    */
   noticesFetchFailed: number;
   /**
-   * Render-pending exhaustion skips (ADR-0009 §1) — the origin cooperated
+   * Render-pending exhaustion skips (ADR-0009 §1): the origin cooperated
    * (202/accepted, render just slow), split out of `noticesFetchFailed`
    * because it has no fail ceiling and is not evidence TED is refusing us.
    */

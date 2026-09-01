@@ -46,13 +46,17 @@ A third operator flag, narrower than the pauses (ADR-0010 §5.2). Set it to
 `RENDER_PENDING_DEGRADED` alerts, i.e. notices failing solely because TED
 never renders their XML, not because of anything per-notice.
 
-While set, `drainFetchRetries`:
+While set:
 
-- pulls only 3 due rows per run instead of 25 (the drain becomes a recovery
-  probe — bounded at 18 requests/day), and
+- the hourly standalone drain (`40 * * * *`, ADR-0008 §A5) stands down
+  entirely — each hour's message logs `ingestion.fetch_retry_drain.skipped`
+  with `reason: attempts_suspended` and is acked;
+- the daily in-run `drainFetchRetries` pulls only 3 due rows instead of 25
+  (the drain becomes a recovery probe — bounded at 18 requests/day), and
 - does **not** increment `attempts` on render-pending outcomes, so the
-  5-attempt abandonment clock stops. Both `attempts` and `next_attempt_at`
-  are left untouched, so those rows stay due and keep being re-probed.
+  6-attempt abandonment clock (1/4/16/64/256 h ladder, ≈ 14 days reach)
+  stops. Both `attempts` and `next_attempt_at` are left untouched, so those
+  rows stay due and keep being re-probed.
 - Genuine HTTP/network failures still burn attempts — those are per-notice
   evidence whether or not an outage is running.
 
@@ -95,6 +99,30 @@ Symptoms: watchdog cron flags no successful run in >36 h, or health page red.
 4. Remediation: Resend outage → let bounded retries run; auth/key errors →
    rotate/verify `RESEND_API_KEY`; systematic template failure →
    `digest_paused = true`, fix, unpause (missed day is skipped by design).
+
+### Digest sent to an organization that should not get one
+
+Eligibility is decided in two places, both in `apps/worker/src/digest.ts`:
+`runDigestScheduleJob` filters the due list before enqueuing, and
+`runDigestJob` re-checks before generating, so a message enqueued just
+before a cancellation still cannot send. Both call
+`@bidmorrow/billing` `getEntitlement`, the same authority behind the feed's
+402, and both are inert while the `entitlement_enforced` flag is off.
+
+1. Is `entitlement_enforced` set at all in that environment? Absent means
+   `false`, which means billing state gates nothing: expected V1-pilot
+   behaviour, not a bug.
+2. With the flag on, look for `digest.schedule.skipped.no_entitlement` (not
+   enqueued) or `digest.skipped.no_entitlement` (enqueued, then skipped) in
+   the logs; both carry the organization id and the entitlement reason.
+3. Neither log line and an email still went out → check the subscription
+   row: `active` with a scheduled cancel is still entitled until
+   `current_period_end_at`, and `past_due` is entitled for
+   `PAST_DUE_GRACE_DAYS` past it. Those are correct sends.
+4. A skipped organization writes no `digest_runs` row, by design: that
+   table's status CHECK constraint has no value for "not entitled" and the
+   log line is the record. An organization that is not entitled for a whole
+   day therefore leaves no row for that day.
 
 ### Queue backlog / DLQ growth
 

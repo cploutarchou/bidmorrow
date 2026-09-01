@@ -18,6 +18,49 @@ scheduled + immediate cancel all verified; `BMTEST100` archived. Still
 open: F-06 staging credentials in CI, sandbox checkout branding (4b),
 live checkout logo/brand colour. Everything below is history.
 
+## ⏳ AWAITING OWNER — production deploy of PR #132 (2026-09-01)
+
+**What:** the hourly fetch-retry drain fix for post-launch incident #1
+(empty production feed: 150/151 notices render-pending on 09-01, the
+retry queue never converged). Details: ADR-0008 Amendment A5,
+`IMPLEMENTATION_LEDGER.md` § Current phase.
+
+**State:** PR #132 opened as draft; merges to `main` once CI is green
+(staging then auto-deploys and its 1,069-row backlog self-drains at
+≤50/hour). **Production is NOT deployed by the merge** — the standing rule
+(item 2c) is that a production deploy is dispatched only on the owner's
+explicit instruction.
+
+**Owner action:** say "deploy #132 to production" (or dispatch the
+production deploy workflow yourself). Optional follow-up, also owner's
+call because it writes production data: set the 150 pending rows'
+`next_attempt_at = now` so the first `:40` drain after deploy picks them
+up instead of waiting for 2026-09-02 05:09.
+
+## OPEN — `entitlement_enforced` in production (2026-09-01, issue #3)
+
+**Decision needed: set `entitlement_enforced = true` in production D1.**
+
+Owner reported that a cancelled subscription still receives daily digests.
+The code path is now correct at both the enqueue and the send step
+(`apps/worker/src/digest.ts`), but every entitlement gate in the product,
+the digest and the feed's 402 alike, is wrapped in the
+`entitlement_enforced` flag. Production `feature_flags` currently holds only
+`founding_plan_open`, `ingestion_paused` and `prelaunch`. With no
+`entitlement_enforced` row the flag reads `false`, so billing state gates
+nothing and the digests continue. the assistant will not flip a production flag.
+
+Blast radius, measured in production on 2026-09-01: one active
+organization, which is the canceled launch-test one; zero organizations with
+digests enabled and no subscription. So turning it on today stops digests
+and feed access for that one organization and affects nothing else. It also
+ends V1-pilot mode: from then on any manually provisioned organization with
+no `subscriptions` row is treated as unentitled.
+
+Immediate alternative if the flag flip should wait: turn off that
+organization's digest preference, which stops the mail without touching
+billing enforcement.
+
 ## OPEN ITEMS SNAPSHOT — 2026-08-16 (production launch checklist)
 
 Everything below is detailed in the numbered items further down; this is

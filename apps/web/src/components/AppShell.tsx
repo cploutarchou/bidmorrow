@@ -11,7 +11,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { NoIndex } from './NoIndex';
 
 /**
- * Customer app chrome — navigation model per
+ * Customer app chrome: navigation model per
  * docs/redesign/navigation-and-admin-entry.md §2: one primary nav (Feed,
  * Saved, Settings, Billing) plus an "Admin" entry that renders ONLY when
  * `useAuth().isAdmin` is true. The Admin link is a discoverability
@@ -23,7 +23,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
   const navigate = useNavigate();
   const location = useLocation();
   const { refresh, user, isAdmin } = useAuth();
-  // Avatar initials from the signed-in account (handoff header) — falls
+  // Avatar initials from the signed-in account (handoff header); falls
   // back to the email's first letter, then a generic mark.
   const initials = (() => {
     const name = user?.name?.trim() ?? '';
@@ -50,7 +50,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
   async function signOut(): Promise<void> {
     setSignOutError(null);
     try {
-      // Better Auth requires a JSON content type + body on sign-out — a bare
+      // Better Auth requires a JSON content type + body on sign-out; a bare
       // POST is rejected with 415 (caught by the E2E logout spec).
       const response = await fetch('/api/auth/sign-out', {
         method: 'POST',
@@ -62,7 +62,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
       await refresh();
       void navigate('/login');
     } catch {
-      setSignOutError('Could not log out — please try again.');
+      setSignOutError('Could not log out. Please try again.');
     }
   }
 
@@ -127,7 +127,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
         </nav>
       </header>
       <main id="main-content" className="app-main">
-        {/* Key off pathname+search, not `children` identity — see
+        {/* Key off pathname+search, not `children` identity; see
             `RouteTransition`'s own header comment (lib/lazy-page.tsx) for
             why: `location` here already resolves to the tender slide-over's
             `backgroundLocation` while the sheet is open (react-router scopes

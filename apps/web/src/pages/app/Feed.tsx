@@ -20,19 +20,19 @@ import { TenderCard } from '../../components/TenderCard';
 import { SubscriptionRequiredNotice } from '../../components/SubscriptionRequiredNotice';
 import { EmptyFeed, EmptyIgnored, EmptySaved } from '../../assets';
 
-/** One KPI tile's number — counts up on mount/refetch (instant under
+/** One KPI tile's number, counting up on mount/refetch (instant under
  *  `prefers-reduced-motion`, see lib/motion.ts). A tiny component of its
  *  own so the hook (one count-up sequence per tile) is only invoked where
  *  a number is actually rendered, not once per Feed render.
  *
  * `.feed-stat dd` is a flex row (`app.css`) with this number and its
  * `.feed-stat__note` sibling side by side, so as the count-up climbs from
- * 0 to `value` the digit count — and therefore this span's own width —
+ * 0 to `value` the digit count (and therefore this span's own width)
  * grows over the ~900ms animation, pushing the note sideways on every
  * digit gained (layout shift, CLS, with no user input, well after first
  * paint). `--kpi-w` reserves the FINAL digit count's width up front, via
  * a `useLayoutEffect` CSSOM property write (same CSP-safe convention as
- * `lib/use-tilt.ts` — a property write, never an inline `style=`) that
+ * `lib/use-tilt.ts`: a property write, never an inline `style=`) that
  * commits before the browser's first paint, so the box is always at its
  * settled width and only the digits inside it change. */
 function KpiValue({ value }: { value: number }): ReactElement {
@@ -53,7 +53,7 @@ type Tab = FeedView;
 /**
  * Fix for C5 (docs/redesign/ux-strategy.md §5.1): the score-band views and
  * the "your shelves" views are a different kind of thing, not six equal
- * tabs — split so a 390px screen never needs a scrolling segmented
+ * tabs, split so a 390px screen never needs a scrolling segmented
  * control. Both groups stay `role="tab"` children of the same tablist (no
  * extra DOM nesting) so keyboard/AT behavior and the existing E2E
  * `getByRole('tab', {name: ...})` selectors are unchanged; only the visual
@@ -106,7 +106,7 @@ const SORT_OPTIONS: { id: Sort; label: string }[] = [
   { id: 'newest', label: 'Newest' },
 ];
 
-/** `GET /api/org/feed/stats` — each count is what the matching tab shows. */
+/** `GET /api/org/feed/stats`: each count is what the matching tab shows. */
 interface FeedStats {
   newToday: number;
   closingSoon: number;
@@ -134,7 +134,7 @@ function buildQuery(tab: Tab, filters: Filters, sort: Sort, cursor: string | und
   return params.toString();
 }
 
-/** Minimal shape read from `/api/billing/status` for the 402 notice — see Settings.tsx for the full DTO. */
+/** Minimal shape read from `/api/billing/status` for the 402 notice; see Settings.tsx for the full DTO. */
 interface FoundingAvailability {
   foundingAvailable: boolean;
 }
@@ -199,9 +199,9 @@ export function Feed(): ReactElement {
   const now = Date.now();
 
   // KPI strip (prototype's stat tiles, restricted to counts the product can
-  // actually back — each tile is "what the matching tab shows"). An
+  // actually back: each tile is "what the matching tab shows"). An
   // accelerator like the rail's profile line: a failure hides the row and
-  // must never disturb the feed (a non-entitled org's 402 lands here too —
+  // must never disturb the feed (a non-entitled org's 402 lands here too;
   // the feed request renders the real paywall state).
   useEffect(() => {
     let cancelled = false;
@@ -218,7 +218,7 @@ export function Feed(): ReactElement {
     };
   }, []);
 
-  // The rail's profile line. Built from what the profile actually holds —
+  // The rail's profile line. Built from what the profile actually holds,
   // no completeness percentage, because the product has no such model and a
   // made-up one would be read as guidance.
   useEffect(() => {
@@ -260,14 +260,14 @@ export function Feed(): ReactElement {
     setFilters(next);
     setTab(parseFeedView(search.tab));
     setUseCustomCountry(next.country.length > 0 && !countryOptions.includes(next.country));
-    // Saved searches predate the sort control and store no order — applying
+    // Saved searches predate the sort control and store no order, so applying
     // one resets to the default fit ordering rather than inheriting whatever
     // sort happens to be active.
     setSort('fit');
     void load(parseFeedView(search.tab), next, 'fit');
   }
 
-  // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) —
+  // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) is
   // purely visual; the accessible `role="status"` live region below reads
   // `statusMessage` independently and is unaffected by this timeout.
   useEffect(() => {
@@ -277,7 +277,7 @@ export function Feed(): ReactElement {
   }, [statusMessage]);
 
   // Best-effort: populates the country filter's known-value select from the
-  // org's own saved opportunity/served countries (fix for C8 — a bare
+  // org's own saved opportunity/served countries (fix for C8: a bare
   // free-text field invites typos that silently return zero results). Never
   // blocks or errors the feed itself if it fails.
   useEffect(() => {
@@ -298,7 +298,7 @@ export function Feed(): ReactElement {
 
   // Guards against an out-of-order network response clobbering a newer one
   // (e.g. the initial mount's 'today' fetch resolving AFTER a fast tab
-  // switch's fetch — both legitimate requests, but only the response for
+  // switch's fetch; both legitimate requests, but only the response for
   // the CURRENTLY selected tab/filters should ever be committed to state).
   const latestRequestId = useRef(0);
 
@@ -321,7 +321,7 @@ export function Feed(): ReactElement {
           const body = cause.body as { error?: string } | null;
           // R2 (docs/redesign/ux-strategy.md §1.3): a brand-new user who never
           // created an organization is auto-routed to /onboarding instead of
-          // dead-ending on this page — the single worst moment in the product
+          // dead-ending on this page, the single worst moment in the product
           // before this fix (F12). `organization_deleted`/`organization_
           // suspended` are real, distinct problems and must NOT be routed the
           // same way.
@@ -332,7 +332,7 @@ export function Feed(): ReactElement {
           if (body?.error === 'organization_deleted') {
             setError('This organization has been deleted.');
           } else if (body?.error === 'organization_suspended') {
-            setError('This organization is currently suspended — contact support for help.');
+            setError('This organization is currently suspended. Contact support for help.');
           } else {
             setError('Complete onboarding to see your feed.');
           }
@@ -352,14 +352,14 @@ export function Feed(): ReactElement {
   );
 
   useEffect(() => {
-    // Intentionally re-runs only when the tab changes — filters and sort are
+    // Intentionally re-runs only when the tab changes; filters and sort are
     // applied explicitly by their own handlers, not on every keystroke.
     void load(tab, filters, sort);
     // filters/sort/load are deliberately excluded from deps for the reason above.
   }, [tab]);
 
   // Reads real founding-plan availability for the 402 notice's pricing line
-  // — never a hardcoded/fake claim (docs/redesign/ux-strategy.md §5.4 truth
+  // and never a hardcoded/fake claim (docs/redesign/ux-strategy.md §5.4 truth
   // constraint).
   useEffect(() => {
     if (subscriptionRequired === null) return;
@@ -381,7 +381,7 @@ export function Feed(): ReactElement {
     if (state === null || state.nextCursor === null) return;
     // Same request-id guard as load(): a tab/filter/sort change that resolves
     // while this page fetch is in flight must not have stale-order rows
-    // appended onto the fresh list (and vice versa — a newer load() discards
+    // appended onto the fresh list (and vice versa: a newer load() discards
     // this response). The spinner flag itself is unconditional: it is purely
     // local UI state and must never be left stuck on a superseded response.
     const requestId = latestRequestId.current + 1;
@@ -462,7 +462,7 @@ export function Feed(): ReactElement {
       setStatusMessage(nextSaved ? 'Saved.' : 'Removed from saved.');
     } catch {
       setState(previous);
-      setStatusMessage('Could not update — please try again.');
+      setStatusMessage('Could not update. Please try again.');
     }
   }
 
@@ -480,7 +480,7 @@ export function Feed(): ReactElement {
       setStatusMessage(nextIgnored ? 'Ignored.' : 'Removed from ignored.');
     } catch {
       setState(previous);
-      setStatusMessage('Could not update — please try again.');
+      setStatusMessage('Could not update. Please try again.');
     }
   }
 
@@ -489,7 +489,7 @@ export function Feed(): ReactElement {
 
   return (
     <>
-      <title>Feed — BidMorrow</title>
+      <title>Feed | BidMorrow</title>
       <h1>What should you investigate today?</h1>
 
       {subscriptionRequired !== null ? (
@@ -509,7 +509,7 @@ export function Feed(): ReactElement {
             profileSummary={profileSummary}
           />
           <div className="feed-main">
-            {/* dt/dd pairs — the note rides inside the dd (a bare <p> is
+            {/* dt/dd pairs: the note rides inside the dd (a bare <p> is
                 invalid inside a <dl>'s div wrapper). */}
             {stats !== null && (
               <dl
@@ -785,7 +785,7 @@ export function Feed(): ReactElement {
             )}
             {!loading && error === null && state !== null && state.items.length === 0 && (
               <div className="feed-empty">
-                {/* One illustration per shelf/feed context — apps/web/src/assets/empty/
+                {/* One illustration per shelf/feed context, from apps/web/src/assets/empty/
                     (visual-asset-designer, same phase). Still `aria-hidden` inside the
                     component itself; the empty state's own copy is the accessible text. */}
                 {tab === 'saved' ? (
@@ -799,8 +799,8 @@ export function Feed(): ReactElement {
                   <>
                     <p className="feed-empty__title">
                       {tab === 'saved'
-                        ? 'Nothing saved yet — use Save on a tender you want to come back to.'
-                        : 'Nothing ignored yet — use Ignore to keep a tender out of your review queue.'}
+                        ? 'Nothing saved yet. Use Save on a tender you want to come back to.'
+                        : 'Nothing ignored yet. Use Ignore to keep a tender out of your review queue.'}
                     </p>
                     <div className="feed-empty__actions">
                       <Link className="btn-quiet" to="/app">
@@ -820,7 +820,7 @@ export function Feed(): ReactElement {
                 ) : (
                   <>
                     <p className="feed-empty__title">
-                      No matches yet — ingestion and matching run daily.
+                      No matches yet. Ingestion and matching run daily.
                     </p>
                     <p className="feed-empty__body">Your next chance: tomorrow.</p>
                     <div className="feed-empty__actions">

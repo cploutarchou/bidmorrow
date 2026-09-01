@@ -2,7 +2,7 @@
  * Pure diff computation for the admin match-trace view
  * (`GET /api/admin/match-trace`): compares the STORED score components
  * against a LIVE recompute so an admin can see drift at a glance. Text
- * markers only — mismatch status is never conveyed by color alone
+ * markers only; mismatch status is never conveyed by color alone
  * (docs/conventions/frontend.md WCAG rule).
  */
 export interface TraceComponent {
@@ -23,19 +23,19 @@ export interface ComponentDiffRow {
   readonly mismatch: MismatchKind;
 }
 
-/** Text marker rendered next to a diff row — never color alone. */
+/** Text marker rendered next to a diff row, never color alone. */
 export function mismatchMarker(kind: MismatchKind): string {
   switch (kind) {
     case 'match':
       return 'Match';
     case 'points_differ':
-      return 'MISMATCH — points differ';
+      return 'MISMATCH - points differ';
     case 'status_differ':
-      return 'MISMATCH — status differs';
+      return 'MISMATCH - status differs';
     case 'stored_only':
-      return 'MISMATCH — missing from live recompute';
+      return 'MISMATCH - missing from live recompute';
     case 'live_only':
-      return 'MISMATCH — missing from stored match';
+      return 'MISMATCH - missing from stored match';
   }
 }
 
@@ -51,7 +51,7 @@ function classify(stored: TraceComponent | null, live: TraceComponent | null): M
 /**
  * Builds a stored-vs-live diff table keyed by component `key`, sorted for
  * stable rendering. Components present on only one side are included with
- * the other side `null` and flagged as a mismatch — an admin should never
+ * the other side `null` and flagged as a mismatch: an admin should never
  * silently lose a row that only exists in one recompute.
  */
 export function diffComponents(

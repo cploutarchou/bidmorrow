@@ -6,7 +6,7 @@
  * codelist (`cpv_2008_core`, canonical URI
  * http://publications.europa.eu/resource/dataset/cpv) as distributed in the
  * OP-TED eForms SDK (`codelists/cpv.gc`). Every label below was extracted
- * from that authoritative file on 2026-08-18 — none are recalled from memory
+ * from that authoritative file on 2026-08-18; none are recalled from memory
  * or paraphrased.
  *
  * Scope decision (deliberately not the full 9,454-code vocabulary): the
@@ -23,7 +23,7 @@
  *   scripts/seed-demo.sql.
  *
  * Codes are stored as 8-digit strings without the check-digit suffix,
- * matching packages/domain/src/presets.ts. These are suggestions only — the
+ * matching packages/domain/src/presets.ts. These are suggestions only: the
  * user can still enter any valid CPV code; this list never constrains
  * matching or ingestion scope (which is config-driven, see
  * docs/ted-ingestion-scope.md).

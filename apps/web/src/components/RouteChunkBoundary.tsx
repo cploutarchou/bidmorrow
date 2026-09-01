@@ -5,12 +5,12 @@ import { Component, type ErrorInfo, type ReactElement, type ReactNode } from 're
  *
  * Route code-splitting means navigation fetches a JS chunk by hashed name. The
  * Worker serves the SPA with `not_found_handling: "single-page-application"`,
- * so after a deploy a request for a chunk that no longer exists does NOT 404 —
+ * so after a deploy a request for a chunk that no longer exists does NOT 404.
  * it returns `index.html` with HTTP 200 and `text/html`. The browser then fails
  * the dynamic import with a MIME/parse error, and the route renders nothing.
  *
  * A reload fixes it permanently (the fresh `index.html` references the new
- * chunk names), so that is what this does — once. The `sessionStorage` guard
+ * chunk names), so that is what this does, once. The `sessionStorage` guard
  * is what stops a genuinely broken build from becoming a reload loop; if the
  * import fails again after reloading, the user gets a plain message instead.
  */
@@ -38,7 +38,7 @@ function readGuard(): boolean {
   try {
     return sessionStorage.getItem(RELOAD_GUARD_KEY) !== null;
   } catch {
-    return true; // Can't track attempts — don't risk a loop.
+    return true; // Can't track attempts, so don't risk a loop.
   }
 }
 
@@ -78,7 +78,7 @@ export class RouteChunkBoundary extends Component<{ children: ReactNode }, State
       <main id="main-content">
         <h1>Something went wrong</h1>
         <p>
-          This page didn't load. Reloading usually fixes it — if it keeps happening, contact{' '}
+          This page didn't load. Reloading usually fixes it. If it keeps happening, contact{' '}
           <a href="mailto:support@bidmorrow.com">support@bidmorrow.com</a>.
         </p>
       </main>

@@ -10,12 +10,12 @@ interface BackgroundLocationState {
  * neither).
  *
  * On a client-side navigation nothing happens by default: focus stays on the
- * link that was just clicked — so a screen reader announces nothing and the
- * next Tab continues from mid-page — and the scroll position carries over,
+ * link that was just clicked (so a screen reader announces nothing and the
+ * next Tab continues from mid-page) and the scroll position carries over,
  * so clicking a nav link from the bottom of a long page lands mid-way down
  * the next one. After each pathname change this moves focus to the page's
  * `<main>` (made programmatically focusable on the fly) and scrolls to the
- * top instantly — `scroll-behavior: smooth` is for in-page jumps, not for
+ * top instantly; `scroll-behavior: smooth` is for in-page jumps, not for
  * arriving on a different page.
  *
  * Three deliberate exceptions:
@@ -26,7 +26,7 @@ interface BackgroundLocationState {
  *   the page did not change, so focus must not move.
  * - The slide-over sheet, in both directions: a location whose state carries
  *   `backgroundLocation` is the sheet OPENING over the feed, and leaving one
- *   is the sheet CLOSING — `DetailSheet` traps focus on open and restores it
+ *   is the sheet CLOSING: `DetailSheet` traps focus on open and restores it
  *   to the card that opened it on close, and stealing either would break the
  *   dialog contract.
  */

@@ -22,7 +22,7 @@ import {
  *
  * Everything factual on the page is generated
  * (`lib/sample-verdicts.generated.ts`) by running the production matching
- * engine over notices TED actually published — see
+ * engine over notices TED actually published; see
  * `packages/procurement/src/sample-verdicts.ts`. The only hand-written text
  * per verdict is the one-line "why this one", which is labelled as ours.
  *
@@ -58,8 +58,8 @@ export function SampleVerdicts(): ReactElement {
               <h2>What you are looking at</h2>
               <p>
                 Five notices, three supplier profiles, one engine run on {SCORED_AT_LABEL}. The
-                profiles are composites of the companies we build for — 5 to 50 person EU IT and
-                cybersecurity consultancies — described in the ordinary trade vocabulary such a firm
+                profiles are composites of the companies we build for (5 to 50 person EU IT and
+                cybersecurity consultancies) described in the ordinary trade vocabulary such a firm
                 lists on its own site, not in words lifted from any one notice.
               </p>
             </div>
@@ -76,7 +76,7 @@ export function SampleVerdicts(): ReactElement {
               <h2>What this is not</h2>
               <p>
                 It is not a trial and not a free tier. You cannot submit a tender here, build a
-                profile, or reach the feed — those need an account, because a verdict is only worth
+                profile, or reach the feed: those need an account, because a verdict is only worth
                 anything when it is scored against your company rather than someone else&rsquo;s.
               </p>
             </div>
@@ -100,7 +100,7 @@ export function SampleVerdicts(): ReactElement {
           <h2 className="mkt-sec-title">Get verdicts matched to your company</h2>
           <p className="mkt-sec-lede">
             These four were scored against someone else&rsquo;s profile. Yours would score the same
-            notices differently — that is the entire idea.
+            notices differently, and that is the entire idea.
           </p>
           <p className="mkt-cta-row">
             <Link className="cta" to="/signup">
@@ -112,7 +112,7 @@ export function SampleVerdicts(): ReactElement {
             <p>
               Scored by matching engine v{SAMPLE_VERDICT_ENGINE_VERSION} on {SCORED_AT_LABEL}. The
               same engine, the same eight components and the same exclusion rules run for every
-              customer — see the <Link to="/methodology">methodology</Link> for what each component
+              customer. See the <Link to="/methodology">methodology</Link> for what each component
               measures and how missing data is handled. For how this plays out in one trade, see{' '}
               <Link to="/cybersecurity-tenders">cybersecurity tenders</Link>.
             </p>

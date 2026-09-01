@@ -1,7 +1,7 @@
 import { api, ApiError } from './api';
 
 /**
- * Saved searches — named feed filter sets, shared across the workspace.
+ * Saved searches: named feed filter sets, shared across the workspace.
  *
  * The shape mirrors the feed's own filter state exactly, so applying a saved
  * search is a plain state assignment rather than a translation step that
@@ -42,7 +42,7 @@ export async function createSavedSearch(args: {
     return response.savedSearch;
   } catch (cause) {
     // A 409 here is not a failure the user should see as "something went
-    // wrong" — it means the name is taken, which is actionable.
+    // wrong": it means the name is taken, which is actionable.
     if (cause instanceof ApiError && cause.status === 409) {
       throw new DuplicateSavedSearchName();
     }

@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import '../../styles/illustrations.css';
 
 /**
- * "How it works" step 1 — the official-journal document stream (TED).
+ * "How it works" step 1: the official-journal document stream (TED).
  * Decorative: the step already has real page text (title + description)
  * next to it, so this carries `aria-hidden` + empty semantics, matching
  * `Logo.tsx`'s convention (`role="img" aria-hidden="true" focusable="false"`).

@@ -227,9 +227,9 @@ export function Ingestion(): ReactElement {
 
   return (
     <AdminPage
-      documentTitle="Ingestion — Admin"
+      documentTitle="Ingestion | Admin"
       heading="Ingestion"
-      note="The TED intake pipeline: run history, per-notice fetch retries, and the scope and backfill controls. Render-pending skips are counted apart from genuine fetch failures — a slow origin is not evidence of refusal."
+      note="The TED intake pipeline: run history, per-notice fetch retries, and the scope and backfill controls. Render-pending skips are counted apart from genuine fetch failures: a slow origin is not evidence of refusal."
     >
       <AdminFlash message={statusMessage} tone={flashTone} />
 
@@ -243,7 +243,7 @@ export function Ingestion(): ReactElement {
           <div className="admin-pause-control">
             <p className="hint">
               {ingestionPaused
-                ? 'Ingestion is PAUSED — scheduled windows are not being enqueued.'
+                ? 'Ingestion is PAUSED. Scheduled windows are not being enqueued.'
                 : 'Ingestion is running.'}
             </p>
             <ConfirmAction
@@ -251,7 +251,7 @@ export function Ingestion(): ReactElement {
               confirmText={ingestionPaused ? 'RESUME_INGESTION' : 'PAUSE_INGESTION'}
               consequence={
                 ingestionPaused
-                  ? 'Scheduled windows resume from the stored checkpoint on the next run — days missed while paused are caught up automatically, bounded per run.'
+                  ? 'Scheduled windows resume from the stored checkpoint on the next run. Days missed while paused are caught up automatically, bounded per run.'
                   : 'Scheduled windows stop being enqueued. Notices already fetched are unaffected.'
               }
               busy={busy}
@@ -480,7 +480,7 @@ export function Ingestion(): ReactElement {
                     <tr key={err.id}>
                       <td>{err.stage}</td>
                       <td>{err.errorCode}</td>
-                      <td>{err.sourceNoticeId ?? '—'}</td>
+                      <td>{err.sourceNoticeId ?? '–'}</td>
                       <td>{err.message}</td>
                       <td>
                         {err.detailJson !== null ? (
@@ -500,7 +500,7 @@ export function Ingestion(): ReactElement {
                             )}
                           </>
                         ) : (
-                          '—'
+                          '–'
                         )}
                       </td>
                     </tr>
@@ -553,7 +553,7 @@ export function Ingestion(): ReactElement {
                       <td>{version.versionNumber}</td>
                       <td>
                         {version.lots.length === 0
-                          ? '—'
+                          ? '–'
                           : version.lots
                               .map((lot) => `${lot.lotNumber ?? '?'}: ${lot.title}`)
                               .join('; ')}
@@ -660,7 +660,7 @@ export function Ingestion(): ReactElement {
             <ConfirmAction
               label="Run backfill"
               confirmText="RUN_BACKFILL"
-              consequence="Enqueues one ingestion window per day in the range, processed alongside scheduled runs. Re-fetched notices are deduplicated by content hash — nothing is double-ingested."
+              consequence="Enqueues one ingestion window per day in the range, processed alongside scheduled runs. Re-fetched notices are deduplicated by content hash, so nothing is double-ingested."
               busy={busy}
               variant="danger"
               onConfirm={() => void submitBackfill()}

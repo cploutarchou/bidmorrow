@@ -53,7 +53,7 @@ export function Audit(): ReactElement {
 
   return (
     <AdminPage
-      documentTitle="Audit — Admin"
+      documentTitle="Audit | Admin"
       heading="Audit events"
       note="Every admin action lands here, including the ones that failed. Filters apply when submitted, not as you type."
     >
@@ -131,9 +131,9 @@ export function Audit(): ReactElement {
                       {event.targetType}
                       {event.targetId !== null ? ` (${event.targetId})` : ''}
                     </td>
-                    <td>{event.organizationId ?? '—'}</td>
+                    <td>{event.organizationId ?? '–'}</td>
                     <td>
-                      {event.beforeSummary ?? '—'} / {event.afterSummary ?? '—'}
+                      {event.beforeSummary ?? '–'} / {event.afterSummary ?? '–'}
                     </td>
                   </tr>
                 ))}

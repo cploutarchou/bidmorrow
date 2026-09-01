@@ -5,20 +5,64 @@ context compaction. Read first in every session.
 
 ## Current phase
 
-_Rewritten 2026-08-29. The previous text was the 2026-08-16 snapshot and
-had gone stale in three ways that mattered: it called the owner checklist
-empty (ADR-0011 reopened it), it described the website overhaul as a
-not-yet-started hold (it ran, across PRs #67–#110), and it still framed
-Phase 14 as a future step._
+_Rewritten 2026-09-01 (previous rewrite 2026-08-29, which predates go-live
+and still said production ran 41 PRs of stale code with ingestion paused;
+both were resolved by the 08-30 launch)._
 
-**Phase 14 — Production-readiness audit: RUN 2026-08-29. Verdict FAIL.**
-Findings in `PRODUCTION_READINESS_AUDIT.md` (3 HIGH, 4 MEDIUM, 4 LOW).
-Nothing in the finding set is a defect in the shipped application code —
-all five quality gates are green on `99c4e61` and every mandatory
-invariant with a test has a passing one. The FAIL is carried by the
-launch path itself: **production runs 41 PRs of stale code with no live
-Paddle billing behind it**, and the owner-side Paddle items (blockers
-4a/4b/4c) are unstarted with the 2026-08-31 launch two days out.
+**LIVE since 2026-08-30 16:49 UTC** — owner instruction, a day ahead of the
+08-31 date (`HUMAN_DECISION_BLOCKERS.md` §LAUNCHED): `prelaunch=false`,
+`ingestion_paused=false`, founding pricing open, Paddle live with
+tax-inclusive prices owner-confirmed (F-04). Production runs `main` as of
+PR #114; PRs #111–#114 closed audit findings F-05–F-11 after the 08-29
+audit. Open owner-side items: blockers 4b/4c (Paddle seller verification,
+website approval, default payment link, sandbox checkout branding).
+
+**Post-launch incident #1 — 2026-09-01, empty production feed
+(`ingestion_fetch_retries` never converged).** Root cause and fix in
+ADR-0008 Amendment §A5. Symptom: the first live weekday window (05:00
+UTC) returned 150 of 151 notices `NOTICE_RENDER_PENDING` on BOTH staging
+and production; the same-run drain re-cycled 25 of them eight minutes
+later (guaranteed miss — TED's cache window vs. hours of render latency),
+burnt an attempt each and pushed them a day out; the daily 25-row drain
+against a ~150-row/weekday inflow meant the queue grew ~6× faster than it
+drained — staging was carrying 1,069 pending rows (869 never attempted,
+oldest 11 days). Fix (PR #132): hourly standalone drain
+(`40 * * * *` → `{kind:'drain_fetch_retries'}` → `runFetchRetryDrainJob`,
+50 rows/run, stands down on pause / attempts-suspended / live run),
+first retry +20 min instead of immediate, hourly-geometric backoff
+1/4/16/64/256 h with `FETCH_RETRY_MAX_ATTEMPTS` 5 → 6 (≈ 14-day reach, so
+the ADR-0010 §5.2 operator window grew rather than shrank). The ~10-day
+"slow-motion abandonment" deadline recorded under 2026-08-19 below is
+therefore now ~14 days. Staging auto-deploys on merge and its backlog is
+already due (self-drains at ≤50/h); **production deploy awaits the owner's
+explicit instruction** (standing rule, blockers item 2c) — production's 150
+rows are due 2026-09-02 05:09 under the old ladder and will be picked up
+by the first `:40` drain after deploy.
+
+**Staging latency gate (F-06 weekly `staging-perf`), 2026-09-01.** The
+first scheduled run (08-31 05:47 UTC) died in 4 s with no logs, the same
+signature as the E2E nightly and TED canary that day: the GitHub Actions
+account block, not the workflow. A manual re-run at 19:13 UTC ran properly
+and FAILED THE 800 ms BUDGET: p95 health 671 ms, public config 387 ms,
+account 648 ms, org profile 1,190 ms, feed routes ~1,965 ms, saved searches
+1,165 ms, against the 08-30 baseline of 595–640 ms for the feed. Every
+route is ~3× slower including the trivial ones, so this is path latency
+(GitHub runner region → Cloudflare edge → the D1 primary) rather than a
+query regression; customers are EU-based and do not take that path. Not
+loosened. Follow-up (task, not decided here): measure from where customers
+are, or take Smart Placement to the architect as an ADR. `timeout-minutes:
+20` added to the job so a hung probe cannot run for six hours.
+
+**Phase 14 — Production-readiness audit: RUN 2026-08-29. Verdict FAIL at
+the time.** Findings in `PRODUCTION_READINESS_AUDIT.md` (3 HIGH, 4 MEDIUM,
+4 LOW). Nothing in the finding set was a defect in the shipped application
+code — all five quality gates were green on `99c4e61` and every mandatory
+invariant with a test had a passing one. The FAIL was carried by the
+launch path itself (production 41 PRs behind, no live Paddle billing,
+owner-side Paddle items unstarted); the launch on 08-30 and PRs #111–#114
+resolved the code-side findings, and the audit file carries per-finding
+status. Not re-verdicted as PASS here: that needs a fresh
+`production-reviewer` run, not a ledger claim.
 
 **Phase 13 — Deployment/Launch: substantially complete, never tagged.**
 Staging and production both came up on custom domains 2026-08-16; the
@@ -31,9 +75,9 @@ redesign, SEO artifacts, code splitting, the Stripe→Paddle migration
 2026-08-26. `phase-13-complete` was never tagged and Phase 14's verdict
 is FAIL, so neither tag is claimed here.
 
-**Production ingestion stays PAUSED** (`ingestion_paused: true`, verified
-live 2026-08-29) until the owner's explicit go-live, as does the
-`prelaunch` registration gate (blockers item 11).
+**Production ingestion was PAUSED** (`ingestion_paused: true`, verified
+live 2026-08-29) until the owner's go-live on 08-30, as was the
+`prelaunch` registration gate (blockers item 11); both are now open.
 
 **First staging-ingestion health check (2026-08-17 05:40 UTC, silent,
 read-only — via Cloudflare D1 API)**: the 05:00 UTC staging cron ran and
@@ -1755,8 +1799,11 @@ header, secret, tolerance?, cryptoProvider?, receivedAt?)` and
   (`apps/worker/src/digest.ts`'s `runDigestJob`, gated BEFORE
   `generateDigest` is ever called — `@bidmorrow/notifications` does not
   and should not depend on `@bidmorrow/billing`; apps/worker, the sole
-  composition root, wires both). Both branches D1-tested with the flag on
-  and off.
+  composition root, wires both). **Correction (2026-09-01):** only the
+  feed branch was ever D1-tested. The digest branch was not: every digest
+  D1 test called `generateDigest` directly and none went through
+  `runDigestJob`, so the gate had no coverage at all. Fixed in the
+  2026-09-01 issue #3 entry below.
 - **Routes** (`apps/worker/src/routes/billing.ts`,
   `routes/webhooks.ts`, composition in `src/billing.ts`): `POST
 /api/billing/checkout` (OWNER, 409 on existing-subscription/founding-
@@ -5070,6 +5117,164 @@ deployed to production and staging:
   "BidMorrow" fallback for image-blocking clients). Found en route: the
   worker's TS lib types URL without `origin`/`host`, hence the regex
   extraction. Owner confirmed the staging reset email renders correctly.
+
+## Production issue #1: confirm-password on the reset form (2026-09-01)
+
+- **Issue** (owner report): after following the emailed reset link, the
+  new-password form had a single input. A typo was unrecoverable, because
+  the link is single-use: whatever was typed once became the password and
+  the only way back was another reset email.
+- **Cause**: `apps/web/src/pages/auth/ResetPassword.tsx` only ever had one
+  `password` field. Client-side validation checked the 8-character minimum
+  and nothing else, so a mistyped password passed straight through to
+  Better Auth's `/api/auth/reset-password`, which has no confirmation
+  concept of its own. Purely a UI gap: no server, repository or schema
+  involvement.
+- **Fix** (one layer, UI only): a second "Confirm new password" input
+  (`autocomplete="new-password"`, real label, `aria-invalid` +
+  `aria-describedby` to its hint, live "These passwords match" / "do not
+  match" wording so the state is never colour alone). Submit is blocked on
+  a mismatch with a `role="alert"` banner; the 8-character minimum still
+  runs first. The request body is unchanged: `{ newPassword, token }`. The
+  confirmation value never leaves the browser.
+- **Copy**: the two em-dash strings in this file rewritten to sentences
+  (owner house rule, no em dashes in copy); the file is now em-dash free.
+- **Tests**: `tests/e2e/auth-session.spec.ts`, new describe block "reset
+  password: the confirmation must match before anything is sent" (2 tests,
+  route-intercepted so no reset token is spent). Both red before the fix
+  (no such field), green after, on chromium and mobile-chromium; the whole
+  spec file is 20/20.
+- **Not done**: no server change (Better Auth owns the endpoint and the
+  8-character floor); `/reset-password` is still absent from the axe sweep
+  in `tests/e2e/accessibility.spec.ts`, which was already the case; the
+  em-dash sweep was scoped to the one file touched, not the whole app.
+
+## Issue #3: digests kept going to a canceled subscription (2026-09-01)
+
+Owner report: "when a user cancels their subscription they still receive
+emails from us." The only recurring mail is the daily digest.
+
+**Reproduced in production, not inferred.** Read-only queries against
+`bidmorrow-production` D1: the single `subscriptions` row is `canceled`
+(created 2026-08-30 16:56Z, canceled 17:17Z, `cancel_at_period_end = 0`, so
+an immediate cancel, not a scheduled one), its organization still has
+`digest_preferences.enabled = 1`, and `digest_runs` for that organization
+shows `sent` on 2026-08-30, 2026-08-31 and 2026-09-01. Two of those three
+sends are after the cancellation. That is the owner's own live-test
+organization from the launch verification.
+
+**Cause, two independent defects.**
+
+1. The scheduler never consulted entitlement.
+   `runDigestScheduleJob` builds its due list from `selectDigestOrgs` →
+   `listOrgsWithDigestEnabled`, which selects on `digest_preferences.enabled`
+   plus `organizations.status = 'active'` and `suspended_at IS NULL`. It
+   never joins `subscriptions` and never asks `@bidmorrow/billing`, so a
+   canceled organization was enqueued every hour of every day.
+2. The one gate that did exist was inert in production. Phase 9 added a
+   consume-time check in `runDigestJob`, wrapped in `isEntitlementEnforced`.
+   Production `feature_flags` holds only `founding_plan_open`,
+   `ingestion_paused` and `prelaunch`. There is no `entitlement_enforced`
+   row, so the flag reads `false` and the gate was a no-op. The digest was
+   generated and sent.
+
+**Fix** (`apps/worker/src/digest.ts`, composition root only). Extracted the
+rule into one private `entitlementBlock` helper used by both entry points,
+so the scheduler and the consumer cannot drift apart, and so both keep using
+`getEntitlement`, the same authority behind the feed's 402, rather than a
+second digest-only rule. `runDigestScheduleJob` now reads the flag once per
+cron invocation and drops unentitled organizations from the due list before
+enqueuing; `runDigestJob` keeps its own check for a message enqueued before a
+cancellation landed. Chose the composition-root gate over injecting an
+`isEntitled` predicate into `@bidmorrow/notifications` deps because that is
+the pattern already in place there, and because `selectDigestOrgs` takes
+`(db, args, logger)` with no deps object to extend. A skipped organization is
+recorded as a log line only, `digest.schedule.skipped.no_entitlement` or
+`digest.skipped.no_entitlement`, carrying the organization id and the
+entitlement reason and never a recipient address. No `digest_runs` row and no
+new status value: the `digest_runs` status CHECK constraint in migration 0002
+allows only `pending|sent|skipped_empty|skipped_paused|failed`, and adding a
+value is a migration, which is the `database` agent's call and not worth a
+one-way door for a composition-root gate.
+
+**Behaviour by subscription state, flag on:** `trialing` and `active` send;
+`active` with a scheduled cancel sends until `current_period_end_at`, since
+the period is paid for; `past_due` sends inside the 7-day grace window;
+`past_due` past grace, `paused`, `canceled` and no-subscription do not send.
+Flag off: nothing changes anywhere, exactly as the feed does not paywall.
+
+**Tests.** `apps/worker/src/digest-schedule.d1.test.ts` gained seven schedule
+cases and `apps/worker/src/digest.d1.test.ts` three consumer cases. Four
+schedule cases fail against the pre-fix source (canceled, no subscription,
+paused, past-grace: all four were enqueued). The consumer cases pass against
+the pre-fix source because that gate already existed; they were verified
+non-vacuous by deleting the gate and watching the canceled case go red. Full
+worker suite green afterwards: 20 files, 292 tests, exit 0. Format, lint and
+typecheck all exit 0.
+
+**Not done, and it matters.** The code fix does not stop the owner's emails
+on its own. Production still has no `entitlement_enforced` row, so both gates
+stay inert until someone sets it to `true`. That is an owner decision, logged
+in HUMAN_DECISION_BLOCKERS.md: at the time of writing production has exactly
+one active organization, the canceled test one, and zero organizations with
+digests enabled but no subscription, so flipping the flag today cuts off that
+one organization and nothing else. Also left alone: `reasonFor` treats
+`active` as entitled without consulting `current_period_end_at`, so an
+organization whose scheduled cancel has passed but whose Paddle webhook never
+landed stays entitled. Changing that changes the feed's 402 semantics too and
+belongs to the `billing` agent, not here.
+
+## Production issue #2: no em dash in customer-facing copy (2026-09-01)
+
+Owner house rule: "remove the em dash from everywhere we use it on the public
+and client-area pages."
+
+- **Cause**: not a defect, a typographic house rule with no enforcement. 742
+  em dashes across 139 files, from `<title>` separators to running body copy.
+- **Conventions chosen** (documented in the guard test): running prose is
+  rewritten with a comma, semicolon, colon, full stop or parentheses, never a
+  bare hyphen; document titles use `Page name | BidMorrow`, with a colon
+  introducing a descriptive subtitle; inline label separators (score line,
+  score badge, `Subscribe - Standard`, `MISMATCH - points differ`) use `-`;
+  admin empty-cell placeholders use an EN dash. En dashes and number ranges
+  (`0-100`, `5-50 people`) are untouched: the owner's rule does not reach
+  them.
+- **Fix, per surface**: `apps/web/src` (all of it, 691 occurrences) +
+  `apps/web/index.html` (2). Engine-rendered copy the client area displays
+  verbatim, so `packages/matching` component explanations, the risk-flag
+  wording and `renderExplanation` (21). `packages/procurement`'s sample-verdict
+  editorial lines plus the generator's file header, then
+  `apps/web/src/lib/sample-verdicts.generated.ts` REGENERATED (`npx tsx
+packages/procurement/scripts/generate-sample-verdicts.ts`) rather than
+  hand-edited, so `tests/integration/sample-verdicts-committed.test.ts` still
+  compares equal. Worker strings only where the UI renders them verbatim:
+  `tenders.ts` `explanationNote`, `admin.ts` trace note, `digest.ts`'s
+  server-rendered unsubscribe page.
+- **Tests**: new guard `apps/web/src/no-em-dash.test.ts` scans every
+  `src/**/*.{ts,tsx}` plus `index.html` via `import.meta.glob(?raw)`; seen red
+  (reintroduced the em dash in `NotFound.tsx`'s title) then green. Assertions
+  updated to the new copy, never deleted: `lib/seo.test.ts` (now asserts the
+  pipe separator AND no em dash in every title/description), `lib/format.test.ts`,
+  `packages/matching/src/explanation.test.ts`, `risk-flags.test.ts`,
+  `tests/e2e/{marketing,billing,critical-path}.spec.ts`.
+- **Docs**: `docs/matching-engine.md`'s worked example is declared
+  table-exact, so its rendered lines were updated with the engine; same for
+  the quoted explanation strings in `docs/data-model.md`,
+  `docs/website-redesign-plan.md` and `docs/redesign/i18n-architecture.md`.
+  No em-dash sweep of docs/ or ADRs was done: out of the owner's wording.
+- **NOT done**, deliberately: `packages/notifications` email templates (103
+  occurrences, 88 of them in the customer-facing digest/auth templates and
+  `copy.ts`) stay as they are, out of scope by the owner's wording. Ask before
+  sweeping them: the digest's `POSSIBLE: 'Possible requirement — verify in
+source documents'` label now differs from the web app's. And
+  `apps/web/src/pages/auth/ResetPassword.tsx` (3) was being rewritten on a
+  parallel branch, so it is the guard test's single TEMPORARY_EXCLUSIONS
+  entry; delete the entry and the 3 em dashes when that rewrite lands.
+- **Gates**: format:check 0, lint 0, typecheck 0 (workspace), vitest root 0
+  (84 files / 728 passed), worker 0 (282), db D1 0 (79), web build 0.
+  Playwright not run: no browsers in this environment and the harness needs a
+  seeded wrangler server; the three assertion edits are literal swaps checked
+  against the exact new source strings.
 
 ## Notes
 

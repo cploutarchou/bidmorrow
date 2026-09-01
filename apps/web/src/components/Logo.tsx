@@ -1,14 +1,14 @@
 import { useId, type ReactElement } from 'react';
 
 /**
- * BidMorrow brand mark — three stacked rounded bars (shape unchanged by
+ * BidMorrow brand mark: three stacked rounded bars (shape unchanged by
  * the Control Room re-skin; same shape as `apps/web/public/favicon.svg`).
  * The top two bars are filled with `currentColor` at partial opacity so
  * they inherit whatever text color surrounds them; the bottom bar is
  * filled with a fixed teal gradient (`#35d3c0` -> `#1fa899`) shared with
- * favicon.svg's `#solgrad` stops — an intentional brand color, not a theme
+ * favicon.svg's `#solgrad` stops, an intentional brand color, not a theme
  * token (this file has only one theme now: 2026-08-18 decision log).
- * Sized purely via the `className` prop (CSS, never an inline `style` —
+ * Sized purely via the `className` prop (CSS, never an inline `style`;
  * CSP `style-src 'self'`).
  *
  * `useId()` gives the `<linearGradient>` a unique id per render so two

@@ -55,8 +55,8 @@ export interface PollDeps {
 
 /**
  * Polls billing status until a subscription row exists, or the attempts run
- * out. Extracted from the confirmation page so the retry behaviour — the part
- * with real failure modes — is testable without a DOM.
+ * out. Extracted from the confirmation page so the retry behaviour (the part
+ * with real failure modes) is testable without a DOM.
  *
  * Two deliberate behaviours:
  *

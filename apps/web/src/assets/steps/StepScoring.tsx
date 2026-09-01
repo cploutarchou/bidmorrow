@@ -2,8 +2,8 @@ import type { ReactElement } from 'react';
 import '../../styles/illustrations.css';
 
 /**
- * "How it works" step 3 — deterministic scoring: weighted bars sum to
- * one score. Deliberately abstract (unlabelled bars, round numbers) —
+ * "How it works" step 3, deterministic scoring: weighted bars sum to
+ * one score. Deliberately abstract (unlabelled bars, round numbers):
  * a stylized illustration of "how scoring works," not a rendering of
  * the real weighting scheme (that lives in the actual product UI and
  * docs/matching-engine.md's worked example). Decorative, same

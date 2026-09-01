@@ -19,15 +19,15 @@ import {
  * One tender's detail, rendered identically by the full page
  * (`/app/tenders/:matchId`) and by the slide-over sheet.
  *
- * Both surfaces exist on purpose — the sheet for reading beside the feed, the
- * page for a shared link or a refresh — and the content must not drift between
+ * Both surfaces exist on purpose (the sheet for reading beside the feed, the
+ * page for a shared link or a refresh) and the content must not drift between
  * them, so there is exactly one implementation and the surface only chooses
  * the frame.
  *
  * TABS. The handoff design gives the sheet five: Summary, Requirements, Score,
  * Buyer, Activity. Only two of those can be filled from what BidMorrow
  * actually knows. Requirements presupposes document extraction, Buyer
- * presupposes buyer award history, and Activity presupposes team notes — none
+ * presupposes buyer award history, and Activity presupposes team notes, none
  * of which exist in the V1 TED-only backend (recorded as the owner-gated item
  * in docs/redesign/template-conversion-audit.md). Rendering them empty, or
  * worse populated with plausible-looking placeholders, would be a claim about
@@ -63,7 +63,7 @@ export function TenderDetailContent({
   const tablistRef = useRef<HTMLDivElement>(null);
   const idPrefix = useId();
 
-  // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) —
+  // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) is
   // purely visual; the accessible `role="status"` live region below reads
   // `statusMessage` independently and is unaffected by this timeout.
   useEffect(() => {
@@ -105,7 +105,7 @@ export function TenderDetailContent({
       publishMatchUpdate({ matchId, savedByYou: nextSaved });
     } catch {
       setDetail({ ...detail, savedByYou: !nextSaved });
-      setStatusMessage('Could not update — please try again.');
+      setStatusMessage('Could not update. Please try again.');
     }
   }
 
@@ -119,7 +119,7 @@ export function TenderDetailContent({
       publishMatchUpdate({ matchId, ignoredByYou: nextIgnored });
     } catch {
       setDetail({ ...detail, ignoredByYou: !nextIgnored });
-      setStatusMessage('Could not update — please try again.');
+      setStatusMessage('Could not update. Please try again.');
     }
   }
 
@@ -131,10 +131,10 @@ export function TenderDetailContent({
           ? { reasons, comment: comment.length > 0 ? comment : null }
           : {}),
       });
-      setStatusMessage('Thanks — feedback recorded.');
+      setStatusMessage('Thanks, feedback recorded.');
       setShowNotUseful(false);
     } catch {
-      setStatusMessage('Could not record feedback — please try again.');
+      setStatusMessage('Could not record feedback. Please try again.');
     }
   }
 
@@ -191,7 +191,7 @@ export function TenderDetailContent({
 
   return (
     <>
-      {variant === 'page' && <title>{`${detail.lot.title} — BidMorrow`}</title>}
+      {variant === 'page' && <title>{`${detail.lot.title} | BidMorrow`}</title>}
 
       <header className="sheet-head">
         <div className="sheet-head__id">
@@ -319,7 +319,7 @@ export function TenderDetailContent({
                 {detail.riskFlags.map((flag, index) => (
                   <li key={`${flag.type}-${index}`} className="risk-flag">
                     <p className="risk-flag__headline">
-                      ⚠ {flag.explanation} — {riskConfidenceLabel(flag.confidence)}
+                      ⚠ {flag.explanation} ({riskConfidenceLabel(flag.confidence)})
                     </p>
                     <p className="risk-flag__evidence">
                       Evidence: "{flag.evidence}" ({flag.sourceField})
@@ -330,7 +330,7 @@ export function TenderDetailContent({
             </section>
           )}
 
-          {/* SEC-P7-05: sourceUrl is untrusted TED-sourced data — only render an
+          {/* SEC-P7-05: sourceUrl is untrusted TED-sourced data, so only render an
               actual clickable link when it is a genuine https:// URL, never a
               javascript:/data: or other scheme, otherwise show it as plain text. */}
           {sourceIsHttps ? (
@@ -377,7 +377,7 @@ export function TenderDetailContent({
                     <tr key={component.componentKey}>
                       <th scope="row">{componentLabel(component.componentKey)}</th>
                       <td className="num">
-                        {/* Native <progress>, never an inline `style` width — CSP is
+                        {/* Native <progress>, never an inline `style` width: CSP is
                             `style-src 'self'` with no unsafe-inline; the fill is
                             styled entirely via ::-webkit-progress-value/
                             ::-moz-progress-bar in styles/base.css. */}

@@ -86,7 +86,7 @@ export function scoreBuyer(buyerLegalType: string | null): ComponentResult {
       points: maxPoints * UNKNOWN_NEUTRAL,
       maxPoints,
       status: 'UNKNOWN',
-      explanation: 'Buyer: buyer legal type not published — neutral score applied.',
+      explanation: 'Buyer: buyer legal type not published. Neutral score applied.',
     };
   }
 
@@ -116,6 +116,6 @@ export function scoreBuyer(buyerLegalType: string | null): ComponentResult {
     points: maxPoints * UNKNOWN_NEUTRAL,
     maxPoints,
     status: 'UNKNOWN',
-    explanation: `Buyer: unrecognized buyer legal type code "${buyerLegalType}" — neutral score applied.`,
+    explanation: `Buyer: unrecognized buyer legal type code "${buyerLegalType}". Neutral score applied.`,
   };
 }

@@ -32,7 +32,7 @@ import {
 
 /**
  * Onboarding overhaul (M1, docs/redesign/ux-strategy.md §3): a 4-phase setup
- * assistant — Company, Coverage, Signals, Review — mapping 12 focused
+ * assistant (Company, Coverage, Signals, Review), mapping 12 focused
  * screens one-to-one onto the SAME per-resource endpoints the old 9-step
  * wizard already called, with byte-identical payloads. No API change.
  */
@@ -100,8 +100,8 @@ interface StepMeta {
  * The screen bodies themselves are unchanged: each step simply shows several
  * of them at once, so all of the existing per-resource state, validation,
  * dirty-tracking and resume behaviour carries over intact rather than being
- * rewritten. What changes is navigation — one Continue per step instead of
- * one per resource — and the progress model the stepper reports.
+ * rewritten. What changes is navigation (one Continue per step instead of
+ * one per resource) and the progress model the stepper reports.
  */
 const STEPS: readonly StepMeta[] = [
   {
@@ -118,7 +118,7 @@ const STEPS: readonly StepMeta[] = [
     label: 'Starting point',
     title: 'What line of work are you in?',
     blurb:
-      'Pick the sector closest to your work and BidMorrow fills in a starting set of CPV codes. Nothing is hidden — you see every code on the next step and can change all of it.',
+      'Pick the sector closest to your work and BidMorrow fills in a starting set of CPV codes. Nothing is hidden: you see every code on the next step and can change all of it.',
     screens: ['preset'],
     saves: [],
   },
@@ -168,7 +168,7 @@ function screenIndexOf(id: ScreenId): number {
   return index;
 }
 
-/** Safe indexed access into the static `SCREENS` array — `screenIndex`
+/** Safe indexed access into the static `SCREENS` array. `screenIndex`
  * state is always clamped to `[0, REVIEW_SCREEN_INDEX]` by `advance`/
  * `retreat`/the resume effect, so this never actually falls back; the
  * fallback only exists to satisfy `noUncheckedIndexedAccess`. */
@@ -180,7 +180,7 @@ const BASICS_SCREEN_INDEX = screenIndexOf('basics');
 const REVIEW_SCREEN_INDEX = screenIndexOf('review');
 
 /** Which screen a Review row's "Edit" link jumps to. */
-/** Save order for the whole profile — used by Review's finish sweep. */
+/** Save order for the whole profile, used by Review's finish sweep. */
 const RESOURCE_ORDER: readonly ResourceKey[] = [
   'profile',
   'cpv',
@@ -206,7 +206,7 @@ const RESOURCE_SCREEN_INDEX: Record<ResourceKey, number> = {
 const EMPLOYEE_BAND_OPTIONS = ['1-10', '11-25', '26-50', '51-100', '101-250', '250+'];
 
 /** Module-level (not per-render) Combobox options/source for the CPV
- * screen's "add another code" field — the FULL curated CPV suggestion set
+ * screen's "add another code" field: the FULL curated CPV suggestion set
  * (`data/cpv-suggestions.ts`, 141 entries), distinct from the smaller
  * `PRESET_CPV_CODES` checkbox list above (codes that appear in a bundled
  * preset) since this field is specifically for codes beyond the presets. */
@@ -227,8 +227,8 @@ function describeSaveError(cause: unknown): string {
     const body = cause.body as { error?: string; cap?: number } | null;
     if (body?.error === 'cap_exceeded') {
       return body.cap !== undefined
-        ? `You've reached the limit of ${String(body.cap)} items for this list — remove one before adding another.`
-        : "You've reached the limit for this list — remove an item before adding another.";
+        ? `You've reached the limit of ${String(body.cap)} items for this list. Remove one before adding another.`
+        : "You've reached the limit for this list. Remove an item before adding another.";
     }
   }
   return 'Could not save this step. Please try again.';
@@ -337,7 +337,7 @@ export function Onboarding(): ReactElement {
 
         if (res.profile.onboardingCompletedAt !== null) {
           // R3 (docs/redesign/ux-strategy.md §1.3): never re-run the wizard
-          // on an already-onboarded org — Settings is the editing surface.
+          // on an already-onboarded org; Settings is the editing surface.
           void navigate('/app', { replace: true });
           return;
         }
@@ -369,12 +369,12 @@ export function Onboarding(): ReactElement {
           setSaved((s) => ({ ...s, digest: true }));
         }
 
-        // Company phase is already complete — resume at the start of
+        // Company phase is already complete, so resume at the start of
         // Coverage. Resume granularity beyond these GETs is best-effort by
-        // design (ux-strategy.md §3.3) — Review is the safety net.
+        // design (ux-strategy.md §3.3); Review is the safety net.
         setScreenIndex(screenIndexOf('preset'));
 
-        // Best-effort prefill of the remaining resources — a failure here
+        // Best-effort prefill of the remaining resources: a failure here
         // shouldn't block the rest of the wizard from rendering.
         void api
           .get<{ cpvPreferences: { cpvCode: string }[] }>('/api/org/cpv-preferences')
@@ -517,7 +517,7 @@ export function Onboarding(): ReactElement {
         const ok = await saver.run();
         if (!ok) {
           setFailedResourceLabel(saver.label);
-          setError(`Could not save "${saver.label}" — please review it and try again.`);
+          setError(`Could not save "${saver.label}". Please review it and try again.`);
           return;
         }
         markSaved(key);
@@ -561,7 +561,7 @@ export function Onboarding(): ReactElement {
   /**
    * Fix for the F14 preset-prefill-loss defect: selecting a preset
    * immediately re-PUTs the profile with the new `presetKey` (same
-   * endpoint/shape as every other profile save — idempotent), AND marks
+   * endpoint/shape as every other profile save; idempotent), AND marks
    * cpv/keywords/capabilities dirty so the Review screen's reconciliation
    * (§3.6) will force-save them on finish even if their own screens get
    * Skipped afterward.
@@ -592,7 +592,7 @@ export function Onboarding(): ReactElement {
   }
 
   /**
-   * Sector shortcut — pre-fills CPV codes only.
+   * Sector shortcut: pre-fills CPV codes only.
    *
    * Deliberately narrower than `selectPreset`: a preset also carries keywords
    * and capabilities that were written for IT consultancies, and applying
@@ -731,14 +731,14 @@ export function Onboarding(): ReactElement {
       setScopeOverlapWarning(res.scopeOverlapWarning);
       // Best-effort: know whether the Done screen should show the
       // "start your subscription" step truthfully (ux-strategy.md §3.7). A
-      // failure here just hides that one line — never blocks completion.
+      // failure here just hides that one line; it never blocks completion.
       void api
         .get<BillingStatusLite>('/api/billing/status')
         .then((b) => setHasActiveSubscription(b.entitlement.active))
         .catch(() => setHasActiveSubscription(null));
       // Deliberately no `refresh()` here: it flips `AuthContext.loading`,
       // which unmounts `ProtectedRoute`'s children (this component,
-      // including its local `completed` state) and remounts them — the
+      // including its local `completed` state) and remounts them: the
       // fresh mount's own resume effect would then see the now-complete
       // profile and redirect to /app before the Done screen (§3.7's
       // subscribe-seam messaging) ever renders. Nothing about the identity
@@ -777,8 +777,8 @@ export function Onboarding(): ReactElement {
 
   /**
    * Review "Finish setup" (fix for F14/§3.6): fires every outstanding PUT
-   * for a resource whose local state was never explicitly saved — including
-   * preset-prefilled-but-skipped resources — THEN calls
+   * for a resource whose local state was never explicitly saved (including
+   * preset-prefilled-but-skipped resources), THEN calls
    * `POST /onboarding/complete`. Stops on the first failure and leaves the
    * user on Review with the failing resource named, per spec.
    */
@@ -791,7 +791,7 @@ export function Onboarding(): ReactElement {
       const ok = await saver.run();
       if (!ok) {
         setFailedResourceLabel(saver.label);
-        setError(`Could not save "${saver.label}" — please review it and try again.`);
+        setError(`Could not save "${saver.label}". Please review it and try again.`);
         return;
       }
       markSaved(key);
@@ -816,7 +816,7 @@ export function Onboarding(): ReactElement {
     toggleCpv(trimmed);
     setManualCpv('');
   }
-  /** Combobox suggestion commit — an ADD only (never a toggle-off): a
+  /** Combobox suggestion commit, an ADD only (never a toggle-off): a
    * suggestion is a known-good 8-digit code by dataset construction, so no
    * regex re-check is needed, but re-selecting an already-chosen one must
    * stay a no-op rather than silently removing it (unlike `toggleCpv`,
@@ -867,7 +867,7 @@ export function Onboarding(): ReactElement {
         <a className="skip-link" href="#main-content">
           Skip to main content
         </a>
-        <title>{`You're all set — Onboarding — ${PRODUCT_NAME}`}</title>
+        <title>{`You're all set | Onboarding | ${PRODUCT_NAME}`}</title>
         <NoIndex />
         <OnboardingHeader />
         <main id="main-content" className="assistant-main">
@@ -895,14 +895,14 @@ export function Onboarding(): ReactElement {
                   <span className="ob-checklist__mark" aria-hidden="true">
                     ○
                   </span>
-                  Start your subscription — your feed and daily digest activate with it.
+                  Start your subscription. Your feed and daily digest activate with it.
                 </li>
               )}
               <li>
                 <span className="ob-checklist__mark" aria-hidden="true">
                   ○
                 </span>
-                First matches: ingestion and matching run daily — expect your first scored tenders
+                First matches: ingestion and matching run daily, so expect your first scored tenders
                 by tomorrow, and a digest email when there's something worth your attention.
               </li>
             </ul>
@@ -935,12 +935,12 @@ export function Onboarding(): ReactElement {
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
-      <title>{`${currentStep.title} — Onboarding — ${PRODUCT_NAME}`}</title>
+      <title>{`${currentStep.title} | Onboarding | ${PRODUCT_NAME}`}</title>
       <NoIndex />
       <OnboardingHeader />
       <main id="main-content" className="assistant-main">
         <StepStepper currentStepIndex={stepIndex} />
-        {/* Decorative determinate fill under the stepper — the aria-live
+        {/* Decorative determinate fill under the stepper; the aria-live
             text below is the accessible source of truth (docs/redesign/
             app-interface-spec.md §7.2b). Native <progress>, never an inline
             width (CSP style-src 'self'). */}
@@ -969,7 +969,7 @@ export function Onboarding(): ReactElement {
               <>
                 <h2 className="ob-section-title">Name your workspace</h2>
                 <p>
-                  This is your organization's account name — you can change it later in Settings.
+                  This is your organization's account name. You can change it later in Settings.
                 </p>
                 <form
                   onSubmit={(event) => {
@@ -994,7 +994,7 @@ export function Onboarding(): ReactElement {
               <>
                 <h2 className="ob-section-title">Tell us about your company</h2>
                 <p className="assistant-why">
-                  Used to personalize your account — not a scoring input itself.
+                  Used to personalize your account, not a scoring input itself.
                 </p>
                 <div className="form-field">
                   <label htmlFor="display-name">Company name</label>
@@ -1058,7 +1058,7 @@ export function Onboarding(): ReactElement {
               <>
                 <h2 className="ob-section-title">Start from a preset</h2>
                 <p className="assistant-why">
-                  A preset only pre-fills CPV codes, keywords, and capabilities — the next few
+                  A preset only pre-fills CPV codes, keywords, and capabilities. The next few
                   screens save each one to your account, and you can edit everything before it's
                   used.
                 </p>
@@ -1067,7 +1067,7 @@ export function Onboarding(): ReactElement {
                   <legend>Not an IT company? Start from your sector</legend>
                   <p className="hint">
                     Every CPV sector, not just IT. Picking one fills in a starting set of CPV codes
-                    on the next step — you see every code there and can change all of it.
+                    on the next step: you see every code there and can change all of it.
                   </p>
                   <div className="ob-sector-grid">
                     {CPV_SECTORS.map((sector) => (
@@ -1148,7 +1148,7 @@ export function Onboarding(): ReactElement {
                       <span className="ob-preset-card__label">Start from scratch</span>
                     </label>
                     <p className="ob-preset-card__desc">
-                      Build your own CPV, keyword, and capability list — you'll need to add at least
+                      Build your own CPV, keyword, and capability list. You'll need to add at least
                       one CPV code on the next step.
                     </p>
                   </div>
@@ -1160,7 +1160,7 @@ export function Onboarding(): ReactElement {
               <>
                 <h2 className="ob-section-title">Which CPV codes describe your work?</h2>
                 <p className="assistant-why">
-                  CPV codes drive up to 35 of your 100 points — and decide which tenders get scored
+                  CPV codes drive up to 35 of your 100 points, and decide which tenders get scored
                   at all.
                 </p>
                 <p>
@@ -1168,8 +1168,8 @@ export function Onboarding(): ReactElement {
                   nothing to match you against. The fastest way to a valid list is a preset or a
                   sector (go Back to pick one). Every <em>preset</em> code sits inside BidMorrow's
                   current ingestion scope; sector codes outside it are saved to your profile but
-                  return nothing until ingestion is widened — the panel below shows exactly what
-                  your current selection would have returned.
+                  return nothing until ingestion is widened. The panel below shows exactly what your
+                  current selection would have returned.
                 </p>
                 <ScopeEstimate cpvCodes={cpvCodes} countryCodes={countries} />
                 <div className="form-field">
@@ -1184,13 +1184,13 @@ export function Onboarding(): ReactElement {
                 </div>
                 <fieldset>
                   <legend>Suggested CPV codes</legend>
-                  {/* Client-side filter only — selected codes filtered out of
+                  {/* Client-side filter only: selected codes filtered out of
                     view stay selected (state is the source of truth), same
                     behavior as the country search above. */}
                   {(() => {
                     // The bundled presets, plus the chosen sector's codes,
                     // plus anything already selected. Without the last two a
-                    // sector pick would leave codes selected but invisible —
+                    // sector pick would leave codes selected but invisible,
                     // and therefore impossible to remove here.
                     const labels = new Map<string, string>();
                     for (const code of PRESET_CPV_CODES) {
@@ -1279,7 +1279,7 @@ export function Onboarding(): ReactElement {
                     }}
                     source={cpvComboboxSource}
                     placeholder="e.g. 72220000 or software"
-                    hint="A curated shortlist beyond the presets above — any 8-digit CPV code is still accepted."
+                    hint="A curated shortlist beyond the presets above; any 8-digit CPV code is still accepted."
                     isChosen={(option) => cpvCodes.includes(option.value)}
                     onCommit={commitCpvSuggestion}
                     describedBy={manualCpvError !== null ? 'manual-cpv-error' : undefined}
@@ -1499,7 +1499,7 @@ export function Onboarding(): ReactElement {
                 <p className="assistant-why">
                   Capability and keyword fit is worth up to 20 of your 100 points.
                 </p>
-                <p>Your preset's keywords are pre-filled — edit freely.</p>
+                <p>Your preset's keywords are pre-filled. Edit freely.</p>
                 <ul className="chip-list">
                   {keywords.map((keyword, index) => (
                     <li key={`${keyword.kind}-${keyword.term}-${index}`}>
@@ -1557,7 +1557,7 @@ export function Onboarding(): ReactElement {
                   Capability and keyword fit is worth up to 20 points; certifications also count
                   toward eligibility signals worth up to 5.
                 </p>
-                <p>Used in your score explanations — never shown to buyers.</p>
+                <p>Used in your score explanations, never shown to buyers.</p>
                 <fieldset>
                   <legend>Capabilities</legend>
                   <ul className="chip-list">
@@ -1671,7 +1671,7 @@ export function Onboarding(): ReactElement {
               <>
                 <h2 className="ob-section-title">Anything you want to exclude?</h2>
                 <p className="assistant-why">
-                  Exclusions remove tenders before scoring — you'll never see them.
+                  Exclusions remove tenders before scoring, so you'll never see them.
                 </p>
                 <p>
                   Optional. Most companies add these later, once they've seen their feed and know
@@ -1766,7 +1766,7 @@ export function Onboarding(): ReactElement {
                     <option value="LOW_FIT">Everything</option>
                   </select>
                 </div>
-                <p className="hint">Your timezone: {digestTimezone} — used for digest timing.</p>
+                <p className="hint">Your timezone: {digestTimezone}, used for digest timing.</p>
               </>
             )}
 
@@ -1786,7 +1786,7 @@ export function Onboarding(): ReactElement {
                         ? displayName
                         : presetKey.length > 0
                           ? 'No company name yet'
-                          : 'No company details yet — a blank profile will be created.',
+                          : 'No company details yet. A blank profile will be created.',
                   },
                   cpv: {
                     state: rowState(saved, 'cpv', cpvCodes.length === 0),
@@ -1803,7 +1803,7 @@ export function Onboarding(): ReactElement {
                     ),
                     summary:
                       countries.length === 0 && nutsCodes.length === 0
-                        ? 'No countries selected — matches from anywhere in scope.'
+                        ? 'No countries selected. Matches from anywhere in scope.'
                         : [
                             countries.length > 0
                               ? `${String(countries.length)} ${countries.length === 1 ? 'country' : 'countries'}`
@@ -1854,7 +1854,7 @@ export function Onboarding(): ReactElement {
                     summary:
                       exclusions.length > 0
                         ? pluralize(exclusions.length, 'exclusion')
-                        : 'None — you can add these anytime in Settings.',
+                        : 'None. You can add these anytime in Settings.',
                   },
                   digest: {
                     state: rowState(saved, 'digest', false),
@@ -1918,7 +1918,7 @@ function valueSummary(fields: {
   if (fields.minimumDaysRemaining.length > 0) {
     parts.push(`min ${fields.minimumDaysRemaining} days runway`);
   }
-  return parts.length > 0 ? parts.join(' · ') : 'No value or deadline limits set — using defaults.';
+  return parts.length > 0 ? parts.join(' · ') : 'No value or deadline limits set. Using defaults.';
 }
 
 function StepStepper({ currentStepIndex }: { currentStepIndex: number }): ReactElement {
@@ -1957,7 +1957,7 @@ function OnboardingHeader(): ReactElement {
       await refresh();
       void navigate('/login');
     } catch {
-      setSignOutError('Could not log out — please try again.');
+      setSignOutError('Could not log out. Please try again.');
     }
   }
 
@@ -1984,7 +1984,7 @@ function OnboardingHeader(): ReactElement {
 
 /**
  * A step's actions. There is no Skip: a step now covers several resources at
- * once, so "skip" had no single meaning — leaving a field blank and
+ * once, so "skip" had no single meaning: leaving a field blank and
  * continuing already saves nothing for it, which is what Skip did.
  */
 function StepActions({
@@ -2062,13 +2062,13 @@ function ReviewScreen({
     <>
       <h2 className="ob-section-title">Review your scoring profile</h2>
       <p>
-        This is exactly what will be saved when you finish — including anything a preset filled in
+        This is exactly what will be saved when you finish, including anything a preset filled in
         that you haven't explicitly saved yet.
         {presetLabel !== null && ` Starting preset: ${presetLabel}.`}
       </p>
       {failedResourceLabel !== null && (
         <p role="alert" className="form-error">
-          Could not save "{failedResourceLabel}" — nothing after it was saved. Fix it via Edit and
+          Could not save "{failedResourceLabel}". Nothing after it was saved. Fix it via Edit and
           try Finish setup again.
         </p>
       )}
@@ -2081,7 +2081,7 @@ function ReviewScreen({
               ? 'Saved'
               : row.state === 'will-save'
                 ? 'Will be saved when you finish'
-                : 'Not set — using defaults';
+                : 'Not set, using defaults';
           return (
             <li key={key} className="ob-review-row">
               <span

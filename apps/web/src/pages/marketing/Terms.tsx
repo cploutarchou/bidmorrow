@@ -20,7 +20,7 @@ export function Terms(): ReactElement {
 
         <h2>Scoped coverage</h2>
         <p>
-          BidMorrow's tender coverage is scoped to a documented set of CPV codes — it is not
+          BidMorrow's tender coverage is scoped to a documented set of CPV codes; it is not
           exhaustive of all EU procurement. See <Link to="/methodology">methodology</Link> for the
           current scope.
         </p>
@@ -32,8 +32,7 @@ export function Terms(): ReactElement {
             No guarantee of award, eligibility, or compliance with any procurement requirement.
           </li>
           <li>
-            No guarantee of completeness or accuracy of source notices — TED is the source of
-            record.
+            No guarantee of completeness or accuracy of source notices. TED is the source of record.
           </li>
           <li>No guarantee of uninterrupted service.</li>
         </ul>
@@ -50,12 +49,12 @@ export function Terms(): ReactElement {
           until the end of the paid period. Refunds follow our{' '}
           <Link to="/refunds">refund policy</Link>. Founding pricing is limited to the first 100
           customers and may not be available when you sign up. Once you're on the founding price,
-          it's retained for the life of your subscription — it never auto-migrates to the standard
+          it's retained for the life of your subscription; it never auto-migrates to the standard
           price.
         </p>
 
         <h2>Contact</h2>
-        {/* Owner decision 2026-08-16: contact is email-only — no postal
+        {/* Owner decision 2026-08-16: contact is email-only, with no postal
             address published (HUMAN_DECISION_BLOCKERS item 7). */}
         <p>
           Questions about these terms:{' '}

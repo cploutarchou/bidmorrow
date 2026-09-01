@@ -50,9 +50,12 @@ export const FLAG_ENTITLEMENT_ENFORCED = 'entitlement_enforced';
  * - processes only the first `FETCH_RETRY_SUSPENDED_CANARY_ROWS` due rows per
  *   run (a recovery probe, not a drain), and
  * - does NOT increment `attempts` on `NOTICE_RENDER_PENDING` outcomes, so the
- *   5-attempt abandonment clock stops running against notices whose only
- *   failure is that TED never rendered them. Genuine `TedRequestError`
- *   outcomes still increment — those are per-notice evidence, outage or not.
+ *   `FETCH_RETRY_MAX_ATTEMPTS` abandonment clock stops running against
+ *   notices whose only failure is that TED never rendered them. Genuine
+ *   `TedRequestError` outcomes still increment — those are per-notice
+ *   evidence, outage or not.
+ * - The hourly standalone drain (ADR-0008 Amendment §A5) stands down
+ *   entirely; only the daily in-run canary probe keeps running.
  *
  * This is an operator lever, not an algorithm: confirming an outage is a
  * human judgment fed by `RENDER_PENDING_DEGRADED` alerts, exactly the

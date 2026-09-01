@@ -23,7 +23,7 @@ export function scoreValue(lot: LotInput, org: OrgProfile): ComponentResult {
       points: maxPoints * UNKNOWN_NEUTRAL,
       maxPoints,
       status: 'UNKNOWN',
-      explanation: `Value: not published or not convertible to EUR${currencyNote} — neutral score applied.`,
+      explanation: `Value: not published or not convertible to EUR${currencyNote}. Neutral score applied.`,
     };
   }
 
@@ -37,7 +37,7 @@ export function scoreValue(lot: LotInput, org: OrgProfile): ComponentResult {
       points: maxPoints * UNKNOWN_NEUTRAL,
       maxPoints,
       status: 'UNKNOWN',
-      explanation: 'Value: no value preference configured — neutral score applied.',
+      explanation: 'Value: no value preference configured. Neutral score applied.',
     };
   }
 

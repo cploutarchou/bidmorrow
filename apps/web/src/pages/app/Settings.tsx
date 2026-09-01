@@ -27,7 +27,7 @@ import {
   type OrgProfileResponse,
 } from '../../lib/onboarding-types';
 
-/** Module-level (not per-render) Combobox option lists + sources — stable
+/** Module-level (not per-render) Combobox option lists + sources: stable
  * references so `Combobox`'s `useEffect([..., source])` never re-fires on
  * every Settings render. All three datasets are static/public
  * (docs/redesign requirements: "no private data in suggestions"). */
@@ -55,7 +55,7 @@ const keywordComboboxSource = localComboboxSource(KEYWORD_COMBOBOX_OPTIONS);
 
 /**
  * Options for the digest timezone select. `Intl.supportedValuesOf` returns
- * canonical IANA zones only, so a stored legacy alias (still valid — the
+ * canonical IANA zones only, so a stored legacy alias (still valid, since the
  * server validates by constructing a formatter, which resolves aliases)
  * must be prepended or the select would silently display the wrong zone.
  */
@@ -83,11 +83,11 @@ function describeSaveError(cause: unknown): string {
     const body = cause.body as { error?: string; cap?: number } | null;
     if (body?.error === 'cap_exceeded') {
       return body.cap !== undefined
-        ? `You've reached the limit of ${String(body.cap)} items for this list — remove one before adding another.`
-        : "You've reached the limit for this list — remove an item before adding another.";
+        ? `You've reached the limit of ${String(body.cap)} items for this list. Remove one before adding another.`
+        : "You've reached the limit for this list. Remove an item before adding another.";
     }
   }
-  return 'Could not save — please try again.';
+  return 'Could not save. Please try again.';
 }
 
 /** Mirrors the worker's `/api/billing/*` error shapes (apps/worker/src/routes/billing.ts). */
@@ -101,34 +101,34 @@ function describeBillingError(cause: unknown): string {
         requiresCheckout?: boolean;
       } | null;
       if (body?.error === 'subscription_exists') {
-        return 'This organization already has a subscription — use Manage billing to change it.';
+        return 'This organization already has a subscription. Use Manage billing to change it.';
       }
       if (body?.error === 'founding_unavailable') {
         return body.reason === 'cap_reached'
-          ? 'The founding plan is full — please choose the standard plan.'
-          : 'The founding plan is not open right now — please choose the standard plan.';
+          ? 'The founding plan is full. Please choose the standard plan.'
+          : 'The founding plan is not open right now. Please choose the standard plan.';
       }
       if (body?.error === 'no_subscription') {
         return body.requiresCheckout === true
-          ? 'There is no subscription to reactivate — start a new one below.'
+          ? 'There is no subscription to reactivate. Start a new one below.'
           : 'There is no subscription to cancel.';
       }
       if (body?.error === 'already_canceled') {
         return body.requiresCheckout === true
-          ? 'Your subscription has already ended — start a new one below.'
+          ? 'Your subscription has already ended. Start a new one below.'
           : 'This subscription is already canceled.';
       }
       if (body?.error === 'not_scheduled') {
-        return 'This subscription is not scheduled to cancel — there is nothing to reactivate.';
+        return 'This subscription is not scheduled to cancel, so there is nothing to reactivate.';
       }
     }
-    if (cause.status === 404) return 'No billing account on file yet — subscribe first.';
+    if (cause.status === 404) return 'No billing account on file yet. Subscribe first.';
     if (cause.status === 503)
-      return 'Billing is not available right now — please try again shortly.';
+      return 'Billing is not available right now. Please try again shortly.';
     if (cause.status === 502)
-      return 'Could not reach the billing provider — please try again shortly.';
+      return 'Could not reach the billing provider. Please try again shortly.';
   }
-  return 'Could not open billing — please try again.';
+  return 'Could not open billing. Please try again.';
 }
 
 /** `true` when a 409 response's body carries `requiresCheckout: true` (`POST /api/billing/reactivate`'s "the subscription is truly gone, start over" outcome). */
@@ -144,7 +144,7 @@ function reactivateRequiresCheckout(cause: unknown): boolean {
  * Fix for C4 (docs/redesign/ux-strategy.md §5.3): the 11-section wall
  * collapses into 5 navigable groups mirroring the onboarding phase model
  * (Company / Coverage+Signals -> "Matching profile" / Review+Digest). Every
- * existing `<section>`/heading/id/save-button below is preserved verbatim —
+ * existing `<section>`/heading/id/save-button below is preserved verbatim:
  * this is grouping and navigation only, never a form refactor. IDs double as
  * the URL hash the 402 notice links to (`/app/settings#billing`).
  */
@@ -211,7 +211,7 @@ export function Settings(): ReactElement {
 
   const [activeGroup, setActiveGroup] = useState<string>('billing');
 
-  // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) —
+  // Transient toast auto-clear (docs/redesign/app-interface-spec.md §8.2) is
   // purely visual; the accessible `role="status"` live region below reads
   // `statusMessage` independently and is unaffected by this timeout.
   useEffect(() => {
@@ -265,11 +265,11 @@ export function Settings(): ReactElement {
 
   // Invoices are fetched independently of the main Promise.all above:
   // `GET /api/billing/invoices` is OWNER-only (403 for a member), while
-  // every other endpoint in that batch is member-visible — a 403 here must
+  // every other endpoint in that batch is member-visible, so a 403 here must
   // never fail the rest of Settings' load (Promise.all is fail-fast). A
   // 403 also doubles as this component's only client-side signal of "the
   // current user is not the organization owner" (the app has no other
-  // client-side role state — see the mutation-gating comments below).
+  // client-side role state; see the mutation-gating comments below).
   useEffect(() => {
     let cancelled = false;
     async function loadInvoices(): Promise<void> {
@@ -308,7 +308,7 @@ export function Settings(): ReactElement {
     };
   }, []);
 
-  /** Only known non-owner signal available client-side (see the invoices-effect comment above) — used to hide/disable owner-only mutation controls as a UX nicety, never as the security boundary (the server independently 403s every mutation for a non-owner regardless of what this renders). */
+  /** Only known non-owner signal available client-side (see the invoices-effect comment above), used to hide/disable owner-only mutation controls as a UX nicety, never as the security boundary (the server independently 403s every mutation for a non-owner regardless of what this renders). */
   const knownNonOwner = invoicesState.kind === 'forbidden';
 
   const minValueOverMax =
@@ -318,21 +318,21 @@ export function Settings(): ReactElement {
     matching.minValueEur > matching.maxValueEur;
 
   /**
-   * The prototype's "N to fix before the next run" layer — only conditions
+   * The prototype's "N to fix before the next run" layer. Only conditions
    * that are verifiably always wrong belong here: with zero CPV codes the
    * division pre-filter (packages/procurement score.ts) intersects nothing,
    * so nothing is ever scored; and no tender's value can fall inside an
    * inverted range, so the value component can never score it (the server
-   * rejects the save too). Computed from the live edit state — this is what
+   * rejects the save too). Computed from the live edit state: this is what
    * saving right now would produce.
    */
   const profileIssues: string[] = [];
   if (!loading && cpvCodes.length === 0) {
-    profileIssues.push('No CPV codes — without at least one, no tender is ever scored for you.');
+    profileIssues.push('No CPV codes. Without at least one, no tender is ever scored for you.');
   }
   if (minValueOverMax) {
     profileIssues.push(
-      "Minimum contract value is above the maximum — no tender's value can fall inside that range.",
+      "Minimum contract value is above the maximum, so no tender's value can fall inside that range.",
     );
   }
   const flaggedGroups = new Set(profileIssues.length > 0 ? ['matching-profile'] : []);
@@ -342,7 +342,7 @@ export function Settings(): ReactElement {
       const res = await fetchBillingStatus();
       setBilling(res);
     } catch {
-      // Best-effort refresh after cancel/reactivate — the mutation itself
+      // Best-effort refresh after cancel/reactivate: the mutation itself
       // already succeeded (or the caller wouldn't have reached this point);
       // a failed re-fetch just means the plan card shows slightly stale
       // data until the next load, never a lost mutation.
@@ -364,7 +364,7 @@ export function Settings(): ReactElement {
   }, [loading, hash]);
 
   // Fix for requirement C ("current-section indication"): scrollspy over the
-  // 5 group anchors. Best-effort — degrades to a static (non-highlighting)
+  // 5 group anchors. Best-effort: degrades to a static (non-highlighting)
   // nav in environments without IntersectionObserver; never blocks render.
   useEffect(() => {
     if (loading) return;
@@ -468,7 +468,7 @@ export function Settings(): ReactElement {
     if (minValueOverMax) {
       // The server now rejects an inverted range too; catching it here keeps
       // the feedback next to the fields instead of a generic 400 message.
-      setSaveError('Fix the value range first — the minimum is above the maximum.');
+      setSaveError('Fix the value range first: the minimum is above the maximum.');
       return;
     }
     setSaveError(null);
@@ -523,7 +523,7 @@ export function Settings(): ReactElement {
         onClosed: () => setBillingBusy(false),
       });
       if (!opened) {
-        setBillingError('Billing is not available right now — please try again shortly.');
+        setBillingError('Billing is not available right now. Please try again shortly.');
         setBillingBusy(false);
       }
     } catch (cause) {
@@ -545,7 +545,7 @@ export function Settings(): ReactElement {
   }
 
   /** Cancellation always takes effect at the CURRENT period end, never
-   * immediately (`POST /api/billing/cancel`'s `effective: 'period_end'`) —
+   * immediately (`POST /api/billing/cancel`'s `effective: 'period_end'`);
    * the confirm UI states this explicitly before the request ever fires. */
   async function handleCancel(): Promise<void> {
     setCancelError(null);
@@ -556,7 +556,7 @@ export function Settings(): ReactElement {
         { confirm: 'CANCEL_SUBSCRIPTION' },
       );
       setStatusMessage(
-        'Cancellation scheduled — access continues until the end of your billing period.',
+        'Cancellation scheduled. Access continues until the end of your billing period.',
       );
       await refreshBillingStatus();
     } catch (cause) {
@@ -611,7 +611,7 @@ export function Settings(): ReactElement {
 
   return (
     <>
-      <title>Settings — BidMorrow</title>
+      <title>Settings | BidMorrow</title>
       <h1>Settings</h1>
       <p role="status" aria-live="polite" className="visually-hidden-status">
         {statusMessage}
@@ -628,7 +628,7 @@ export function Settings(): ReactElement {
       )}
 
       {/* role=status (polite): present at load for a broken profile and
-          appears live while editing — assertive interruption is not
+          appears live while editing; assertive interruption is not
           warranted for a persistent condition. */}
       {profileIssues.length > 0 && (
         <div className="settings-issues" role="status">
@@ -783,7 +783,7 @@ export function Settings(): ReactElement {
               Matching profile
             </h2>
             <p className="hint">
-              Everything below is what the scoring engine matches against — CPV codes, keywords,
+              Everything below is what the scoring engine matches against: CPV codes, keywords,
               geographies, capabilities, certifications, exclusions, and your value/deadline range.
             </p>
 
@@ -814,12 +814,12 @@ export function Settings(): ReactElement {
                   }}
                   source={cpvComboboxSource}
                   placeholder="e.g. 72220000 or software"
-                  hint="A curated shortlist, not exhaustive — any 8-digit CPV code is still accepted below."
+                  hint="A curated shortlist, not exhaustive; any 8-digit CPV code is still accepted below."
                   isChosen={(option) => cpvCodes.includes(option.value)}
                   describedBy={cpvAddError !== null ? 'new-cpv-error' : undefined}
                   onCommit={(option) => {
                     // Suggestions are known-good 8-digit codes by dataset
-                    // construction — no shape re-check needed here.
+                    // construction, so no shape re-check needed here.
                     if (!cpvCodes.includes(option.value) && cpvCodes.length < 30) {
                       setCpvCodes((cs) => [...cs, option.value]);
                     }
@@ -883,7 +883,7 @@ export function Settings(): ReactElement {
                   onValueChange={setNewKeyword}
                   source={keywordComboboxSource}
                   placeholder="e.g. penetration testing"
-                  hint="Suggestions from BidMorrow's bundled presets — any term is still accepted below."
+                  hint="Suggestions from BidMorrow's bundled presets; any term is still accepted below."
                   isChosen={(option) => keywords.some((k) => k.term === option.value)}
                   onCommit={(option) => {
                     if (!keywords.some((k) => k.term === option.value)) {
@@ -959,7 +959,7 @@ export function Settings(): ReactElement {
                   }}
                   source={countryComboboxSource}
                   placeholder="e.g. Germany or DE"
-                  hint="EU/EEA countries shown here — any 2-letter country code is still accepted below."
+                  hint="EU/EEA countries shown here; any 2-letter country code is still accepted below."
                   isChosen={(option) =>
                     geographies.some(
                       (g) => g.kind === 'opportunity_country' && g.code === option.value,
@@ -1016,7 +1016,7 @@ export function Settings(): ReactElement {
 
               <h4 className="settings-subheading">Preferred NUTS regions</h4>
               <p className="hint">
-                Scored as a bonus, never a filter — a lot inside a preferred region scores the full
+                Scored as a bonus, never a filter: a lot inside a preferred region scores the full
                 geography points; anywhere else still scores by country.
               </p>
               <ul className="chip-list">
@@ -1058,7 +1058,7 @@ export function Settings(): ReactElement {
                     if (trimmed.length === 0) return;
                     if (!NUTS_CODE_PATTERN.test(trimmed)) {
                       setNutsAddError(
-                        'NUTS codes are a 2-letter country plus up to 3 characters (for example DE30 — DE alone covers all of Germany).',
+                        'NUTS codes are a 2-letter country plus up to 3 characters (for example DE30; DE alone covers all of Germany).',
                       );
                       return;
                     }
@@ -1380,7 +1380,7 @@ export function Settings(): ReactElement {
                   ))}
                 </select>
                 <p className="hint">
-                  Used for digest timing — your digest sends once a day from 06:00 in this timezone.
+                  Used for digest timing: your digest sends once a day from 06:00 in this timezone.
                 </p>
               </div>
               <div className="form-actions">

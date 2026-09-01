@@ -39,7 +39,7 @@ export interface Env {
   API_RATE_LIMITER?: RateLimit;
   /** Raw eForms XML snapshot bucket (ADR-0005), private, per-environment. */
   SNAPSHOTS: R2Bucket;
-  /** Ingestion-run queue producer (ADR-0006) — the daily cron enqueues `{kind:'ingest'}`/`{kind:'purge'}` messages. */
+  /** Ingestion-run queue producer (ADR-0006) — the crons enqueue `{kind:'ingest'}`/`{kind:'purge'}`/`{kind:'drain_fetch_retries'}` messages. */
   INGEST_QUEUE: Queue<IngestQueueMessage>;
   /**
    * Scoring queue producer (Phase 6): the ingestion queue consumer enqueues
@@ -111,12 +111,15 @@ export type DigestQueueMessage = {
  * /api/admin/ingestion/backfill`) reuses `runIngestionWindow` — the SAME
  * per-window pipeline the daily catch-up cron uses — for one explicit,
  * admin-supplied `YYYY-MM-DD` day, so a backfill is never a second,
- * divergent ingestion code path.
+ * divergent ingestion code path. `drain_fetch_retries` (ADR-0008 Amendment
+ * §A5) is the hourly standalone fetch-retry drain, enqueued by the
+ * `40 * * * *` cron and consumed by `runFetchRetryDrainJob`.
  */
 export type IngestQueueMessage =
   | { readonly kind: 'ingest' }
   | { readonly kind: 'purge' }
-  | { readonly kind: 'backfill_window'; readonly windowFrom: string; readonly windowTo: string };
+  | { readonly kind: 'backfill_window'; readonly windowFrom: string; readonly windowTo: string }
+  | { readonly kind: 'drain_fetch_retries' };
 
 /**
  * Message shape carried on MATCH_QUEUE (src/index.ts `queue()` dispatches on

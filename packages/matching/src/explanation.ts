@@ -40,7 +40,7 @@ function subjectFor(flag: RiskFlag): string {
 function renderRiskFlagLine(flag: RiskFlag): string {
   const subject = subjectFor(flag);
   const verb = flag.confidence === 'HIGH' ? 'is required' : 'may be required';
-  return ` ⚠ ${subject} ${verb} — "${flag.evidence}" (${flag.confidence}) — verify in source documents`;
+  return ` ⚠ ${subject} ${verb}: "${flag.evidence}" (${flag.confidence}), verify in source documents`;
 }
 
 function renderScored(result: ScoredResult): string {
@@ -48,7 +48,7 @@ function renderScored(result: ScoredResult): string {
   const roundedScore = Number.isInteger(result.score)
     ? String(result.score)
     : result.score.toFixed(1);
-  lines.push(`${roundedScore} / 100 — ${result.classification}        engine v1`);
+  lines.push(`${roundedScore} / 100 - ${result.classification}        engine v1`);
   lines.push('');
   for (const component of result.components) {
     const label = formatPoints(component.points).padStart(5, ' ');
@@ -68,7 +68,7 @@ function renderScored(result: ScoredResult): string {
 /** Render a `MatchResult` as the human-readable breakdown text. */
 export function renderExplanation(result: MatchResult): string {
   if (result.kind === 'excluded') {
-    return `EXCLUDED — rule: ${result.rule}, evidence: ${result.evidence}`;
+    return `EXCLUDED - rule: ${result.rule}, evidence: ${result.evidence}`;
   }
   return renderScored(result);
 }

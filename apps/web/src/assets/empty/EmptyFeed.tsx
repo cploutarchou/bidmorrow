@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import '../../styles/illustrations.css';
 
 /**
- * Empty state — feed with nothing scored yet (calm, not an error).
+ * Empty state: feed with nothing scored yet (calm, not an error).
  * Decorative: the surface always carries real empty-state copy next
  * to it, so `aria-hidden` + `focusable="false"`, same convention as
  * `../Logo.tsx` and the step illustrations.

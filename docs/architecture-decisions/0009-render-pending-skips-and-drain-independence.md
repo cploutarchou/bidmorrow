@@ -186,6 +186,10 @@ those two justify skipping.
   25 notices/day get a same-day second cycle. Each such cycle burns one of
   the 5 retry attempts; whether that same-day attempt is worth its budget
   on systemically slow days is §3's question and may be revised there.
+  _Superseded 2026-09-01 by ADR-0008 Amendment §A5: the same-run second
+  cycle was measured to be a guaranteed miss (TED's cache window vs. hours
+  of render latency); skips are now due 20 minutes later and an hourly
+  standalone drain re-cycles them. The drain-skip rule above is unchanged._
 
 ### 3. Window trigger strategy: NO client-side strategy — the hypothesis is refuted, the origin is not rendering
 
@@ -380,7 +384,8 @@ Negative / accepted costs:
   means a fully-skipped 156-notice day takes ≥7 calendar days to drain;
   if recovery arrives with a large backlog, re-sizing the drain caps is a
   deliberate, evidence-based follow-up decision (superseding ADR), not a
-  pre-tuned guess.
+  pre-tuned guess. _That decision was taken 2026-09-01 — ADR-0008
+  Amendment §A5: hourly standalone drain at 50 rows/run (1,200/day)._
 - One new `ingestion_runs` column, one new counter, two new constants, one
   new stable error code, one new `RunWindowResult` field + pure
   classifier. **12-month D1 projection** (ground rule): the new integer

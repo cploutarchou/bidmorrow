@@ -23,7 +23,7 @@ const NAV_LINKS: { to: string; label: string }[] = [
  * Shared shell for every marketing page (Direction B "Control Room" mockup,
  * docs/redesign/mockups/direction-b-control-room.html `header.site`/
  * `footer.site`). `.cta` and `.site-header` are also rendered by the auth
- * pages (`pages/auth/AuthLayout.tsx`) and, for `.cta`, by the app screens —
+ * pages (`pages/auth/AuthLayout.tsx`) and, for `.cta`, by the app screens;
  * their styling lives in styles/base.css as a shared upgrade, not a
  * `.mkt-*`-namespaced one, so it stays visually coherent everywhere it's
  * used. `fullBleed` opts a page's `<main>` out of the shared centered
@@ -32,7 +32,7 @@ const NAV_LINKS: { to: string; label: string }[] = [
  *
  * Below ~56rem (900px, styles/marketing.css `MARKETING SITE` section) the inline
  * `.nav-list`/`.nav-actions` are hidden and replaced with a hamburger
- * toggle that opens `.mkt-menu-panel` — a dropdown holding the same links
+ * toggle that opens `.mkt-menu-panel`, a dropdown holding the same links
  * plus Log in / Sign up. The mockup only hides the nav links under its
  * equivalent breakpoint and leaves nothing in their place; that's the
  * "3 stacked rows" bug this component fixes, so this menu is a deliberate
@@ -66,7 +66,7 @@ export function MarketingLayout({
   const publicConfig = usePublicConfig();
 
   // Scroll-triggered reveals (docs/redesign/brand-elevation-phase.md §2
-  // "Scroll reveal") — one shared IntersectionObserver for every
+  // "Scroll reveal"): one shared IntersectionObserver for every
   // `[data-reveal]` element on the page; see lib/use-reveal.ts for the
   // progressive-enhancement contract.
   useReveal();

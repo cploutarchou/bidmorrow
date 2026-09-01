@@ -10,8 +10,10 @@ import { MS_PER_DAY, T0, testDb } from '../test/helpers';
 import {
   advanceCheckpoint,
   createRun,
+  fetchRetryBackoffMs,
   finishRun,
   getCheckpoint,
+  hasActiveIngestionRun,
   listDueFetchRetries,
   markFetchRetryAbandoned,
   markFetchRetryRecovered,
@@ -21,6 +23,7 @@ import {
 } from './ingestion';
 
 const SOURCE = 'ted';
+const MS_PER_HOUR = 3_600_000;
 
 const COUNTS = {
   noticesSeen: 120,
@@ -392,22 +395,58 @@ describe('ingestion fetch retries (ADR-0008 §3)', () => {
     });
     expect(created.attempts).toBe(0);
 
+    // ADR-0008 Amendment §A5: hourly-geometric ladder. 0 -> 1 schedules one
+    // hour out (not a day, not immediately).
     const firstFailure = await recordFetchRetryFailure(db, {
       id: created.id,
       errorCode: 'NOTICE_FETCH_HTTP_503',
       now: T0,
     });
     expect(firstFailure.attempts).toBe(1);
-    expect(firstFailure.nextAttemptAt).toBe(T0 + 1 * MS_PER_DAY);
+    expect(firstFailure.nextAttemptAt).toBe(T0 + MS_PER_HOUR);
 
+    // 1 -> 2 schedules four hours out from THIS failure's `now`, proving the
+    // exponent is taken from the incremented value and the base from `now`.
     const secondFailure = await recordFetchRetryFailure(db, {
       id: created.id,
       errorCode: 'NOTICE_FETCH_NETWORK_ERROR',
       now: T0 + MS_PER_DAY,
     });
     expect(secondFailure.attempts).toBe(2);
-    expect(secondFailure.nextAttemptAt).toBe(T0 + MS_PER_DAY + 2 * MS_PER_DAY);
+    expect(secondFailure.nextAttemptAt).toBe(T0 + MS_PER_DAY + 4 * MS_PER_HOUR);
     expect(secondFailure.lastErrorCode).toBe('NOTICE_FETCH_NETWORK_ERROR');
+  });
+
+  it('ADR-0008 §A5 ladder: the SQL in recordFetchRetryFailure and the exported TS mirror agree rung for rung (1h, 4h, 16h, 64h, 256h)', async () => {
+    const created = await upsertFetchRetry(db, {
+      source: SOURCE,
+      sourceNoticeId: 'retry-ladder-001',
+      xmlUrl: 'https://ted.europa.eu/notice/v1.xml',
+      publicationDate: '2026-08-01',
+      errorCode: 'NOTICE_FETCH_HTTP_503',
+      nextAttemptAt: T0,
+    });
+    // The literal hours are the contract the ADR states; the TS helper is
+    // what tests and callers reason with; the SQL is what production runs.
+    // All three must be one formula, so all three are asserted together.
+    const expectedHours = [1, 4, 16, 64, 256];
+    for (const [index, hours] of expectedHours.entries()) {
+      const attemptsAfter = index + 1;
+      const failed = await recordFetchRetryFailure(db, {
+        id: created.id,
+        errorCode: 'NOTICE_RENDER_PENDING',
+        now: T0,
+      });
+      expect(failed.attempts).toBe(attemptsAfter);
+      expect(failed.nextAttemptAt - T0).toBe(hours * MS_PER_HOUR);
+      expect(fetchRetryBackoffMs(attemptsAfter)).toBe(hours * MS_PER_HOUR);
+    }
+  });
+
+  it('fetchRetryBackoffMs rejects a non-positive or fractional attempt count', () => {
+    expect(() => fetchRetryBackoffMs(0)).toThrow(RangeError);
+    expect(() => fetchRetryBackoffMs(-1)).toThrow(RangeError);
+    expect(() => fetchRetryBackoffMs(1.5)).toThrow(RangeError);
   });
 
   it('recordFetchRetryFailure throws for a missing or already-terminal row', async () => {
@@ -469,5 +508,60 @@ describe('ingestion fetch retries (ADR-0008 §3)', () => {
     const due = await listDueFetchRetries(db, { limit: 10, now: T0 });
     expect(due.map((r) => r.id)).not.toContain(recoveredRow.id);
     expect(due.map((r) => r.id)).not.toContain(abandonedRow.id);
+  });
+});
+
+describe('hasActiveIngestionRun (ADR-0008 §A5 standalone-drain guard)', () => {
+  // Own source string: this file shares one D1, and the run-lifecycle tests
+  // above leave `running` rows for SOURCE behind by design.
+  const GUARD_SOURCE = 'ted-active-run-guard';
+  let db: Db;
+
+  beforeEach(() => {
+    db = testDb();
+  });
+
+  it('is true for a running run started inside the horizon, false once it finishes', async () => {
+    const run = await createRun(db, {
+      source: GUARD_SOURCE,
+      windowFrom: '2026-08-01',
+      windowTo: '2026-08-01',
+      startedAt: T0,
+    });
+    expect(await hasActiveIngestionRun(db, { source: GUARD_SOURCE, sinceMs: T0 - 1 })).toBe(true);
+    expect(await hasActiveIngestionRun(db, { source: GUARD_SOURCE, sinceMs: T0 })).toBe(true);
+
+    await finishRun(db, { runId: run.id, status: 'succeeded', counts: COUNTS, finishedAt: T0 + 1 });
+    expect(await hasActiveIngestionRun(db, { source: GUARD_SOURCE, sinceMs: T0 - 1 })).toBe(false);
+  });
+
+  it('ignores an orphaned running run older than the horizon — a crashed consumer must not block the drain forever', async () => {
+    const orphan = await createRun(db, {
+      source: GUARD_SOURCE,
+      windowFrom: '2026-08-02',
+      windowTo: '2026-08-02',
+      startedAt: T0 - 16 * 60_000,
+    });
+    // Never finished, on purpose.
+    expect(
+      await hasActiveIngestionRun(db, { source: GUARD_SOURCE, sinceMs: T0 - 15 * 60_000 }),
+    ).toBe(false);
+    // The same row IS live under a wider horizon — the query is horizon-bound, not status-bound.
+    expect(
+      await hasActiveIngestionRun(db, { source: GUARD_SOURCE, sinceMs: T0 - 17 * 60_000 }),
+    ).toBe(true);
+    expect(orphan.status).toBe('running');
+  });
+
+  it('is scoped by source', async () => {
+    await createRun(db, {
+      source: `${GUARD_SOURCE}-other`,
+      windowFrom: '2026-08-03',
+      windowTo: '2026-08-03',
+      startedAt: T0,
+    });
+    expect(
+      await hasActiveIngestionRun(db, { source: `${GUARD_SOURCE}-none`, sinceMs: T0 - 1 }),
+    ).toBe(false);
   });
 });

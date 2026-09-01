@@ -56,7 +56,7 @@ export function SampleVerdictCard({ verdict }: { verdict: SampleVerdict }): Reac
           <dt>Deadline</dt>
           {/* The DATE, not a countdown. The breakdown below states the
               runway in the engine's own words, and a second relative figure
-              computed a different way sat beside it reading one day out —
+              computed a different way sat beside it reading one day out:
               two numbers for one fact, on a page about being checkable. */}
           <dd>
             {verdict.deadlineAt === null
@@ -77,14 +77,14 @@ export function SampleVerdictCard({ verdict }: { verdict: SampleVerdict }): Reac
             {verdict.exclusionRule !== null && exclusionRuleLabel(verdict.exclusionRule)}
             {verdict.exclusionEvidence !== null && (
               <>
-                {' — '}
+                {': '}
                 <span className="num">{verdict.exclusionEvidence}</span>
               </>
             )}
           </p>
           <p className="hint">
             Exclusions run before scoring. This lot was never given a number, so there is no
-            breakdown to show — which is the point: the supplier said they do not bid this kind of
+            breakdown to show, which is the point: the supplier said they do not bid this kind of
             contract, and nothing about the tender can override that.
           </p>
         </div>
@@ -124,7 +124,7 @@ export function SampleVerdictCard({ verdict }: { verdict: SampleVerdict }): Reac
           <ul>
             {verdict.riskFlags.map((flag) => (
               <li key={`${flag.type}-${flag.explanation}`}>
-                <strong>{riskConfidenceLabel(flag.confidence)}</strong> — {flag.explanation}
+                <strong>{riskConfidenceLabel(flag.confidence)}</strong>. {flag.explanation}
                 {flag.evidence !== null && (
                   <>
                     {' '}
@@ -143,7 +143,7 @@ export function SampleVerdictCard({ verdict }: { verdict: SampleVerdict }): Reac
         </p>
         {/* `sourceKind` is rendered, not assumed. Every committed verdict is a
             TED-published notice today and tests/integration/
-            sample-verdicts-committed.test.ts fails if that stops being true —
+            sample-verdicts-committed.test.ts fails if that stops being true,
             but the generator can legitimately produce `eforms_example` for one
             of the Publications Office's own sample notices, and if a future
             regeneration ever did, this page must say so rather than present it

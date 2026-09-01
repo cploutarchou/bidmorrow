@@ -217,7 +217,7 @@ const CASES: readonly SampleCase[] = [
     fixture: '1.13/real-cyber-pentest.xml',
     lotIndex: 0,
     profile: 'cyber',
-    why: 'Penetration testing, in this consultancy’s own city — its core service.',
+    why: 'Penetration testing, in this consultancy’s own city: its core service.',
     surfaces: ['demo', 'cybersecurity'],
   },
   // Software packaging and QA for a regional authority — the consultancy's
@@ -227,7 +227,7 @@ const CASES: readonly SampleCase[] = [
     fixture: '1.13/real-it-framework-three-lot.xml',
     lotIndex: 0,
     profile: 'software',
-    why: 'Software packaging for a state IT authority — this consultancy’s subject, at scale.',
+    why: 'Software packaging for a state IT authority: this consultancy’s subject, at scale.',
     surfaces: ['demo'],
   },
   // Gigabit broadband: CPV division 72, so it is scored rather than
@@ -237,7 +237,7 @@ const CASES: readonly SampleCase[] = [
     fixture: '1.13/real-broadband-no-deadline.xml',
     lotIndex: 0,
     profile: 'software',
-    why: 'Broadband infrastructure — close enough in CPV to reach scoring, far from the work.',
+    why: 'Broadband infrastructure: close enough in CPV to reach scoring, far from the work.',
     surfaces: ['demo'],
   },
   // Managed security services and a Security Operations Centre — the
@@ -264,7 +264,7 @@ const CASES: readonly SampleCase[] = [
     fixture: '1.13/real-english-framework-risk-flag.xml',
     lotIndex: 0,
     profile: 'irishSoftware',
-    why: 'A framework agreement in this supplier’s own market — and the one notice here the engine flags.',
+    why: 'A framework agreement in this supplier’s own market, and the one notice here the engine flags.',
     surfaces: ['demo'],
   },
   // Construction works against a supplier that excludes works outright: a
