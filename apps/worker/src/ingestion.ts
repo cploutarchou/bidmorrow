@@ -4,10 +4,13 @@
  * (`env.DB`, `env.SNAPSHOTS`) for the cron/queue handlers in `index.ts`.
  * Kept out of `index.ts` so it stays independently testable.
  */
-import { createDb } from '@bidmorrow/db';
+import { createDb, hasActiveIngestionRun } from '@bidmorrow/db';
 import type { Logger } from '@bidmorrow/observability';
-import { TedClient } from '@bidmorrow/ted';
+import { TED_SOURCE_ID, TedClient } from '@bidmorrow/ted';
 import {
+  FETCH_RETRY_STANDALONE_MAX_PER_RUN,
+  drainFetchRetries,
+  isFetchRetryAttemptsSuspended,
   isIngestionPaused,
   loadIngestionScope,
   refreshEcbRates,
@@ -19,6 +22,7 @@ import {
   scoreLotsForOrgs,
 } from '@bidmorrow/procurement';
 import type {
+  DrainFetchRetriesResult,
   RunCatchUpResult,
   RunLedgerPurgeResult,
   RunOrgPurgeResult,
@@ -39,6 +43,14 @@ const RETENTION_DAYS = 90;
 const PURGE_BATCH_LIMIT = 500;
 /** `MATCH_QUEUE` message batching — lot ids per `{kind:'score'}` message. */
 const SCORE_MESSAGE_LOT_BATCH = 100;
+/**
+ * A `running` `ingestion_runs` row started within this horizon is treated as
+ * live by the hourly fetch-retry drain; anything older is an orphan (a
+ * consumer killed mid-run never reaches `finishRun`). Equal to the Queues
+ * consumer wall-clock limit (15 min, verified Cloudflare docs 2026-09-01),
+ * so no genuinely-running invocation can be older than this.
+ */
+const ACTIVE_RUN_HORIZON_MS = 15 * 60_000;
 
 function chunk<T>(items: readonly T[], size: number): T[][] {
   const chunks: T[][] = [];
@@ -93,6 +105,107 @@ export async function runIngestCatchUpJob(env: Env, logger: Logger): Promise<Run
   }
 
   return result;
+}
+
+/** Why the hourly drain did NOT run this invocation (ADR-0008 Amendment §A5). */
+export type FetchRetryDrainSkipReason = 'paused' | 'attempts_suspended' | 'ingestion_running';
+
+export interface FetchRetryDrainJobResult {
+  /** Null when the drain ran (`drain` is then set, possibly with zero due rows). */
+  readonly skipped: FetchRetryDrainSkipReason | null;
+  readonly drain: DrainFetchRetriesResult | null;
+}
+
+export interface FetchRetryDrainJobOptions {
+  /** Test seam: an injected `TedClient` (fake fetch) instead of a real one. */
+  readonly client?: TedClient;
+  /** Test seam: injected clock, threaded into the drain and the active-run horizon. */
+  readonly now?: () => number;
+  /** Test seam: same as `FetchRetryDrainDeps.renderRetryDelayMs`. */
+  readonly renderRetryDelayMs?: number;
+}
+
+/**
+ * `INGEST_QUEUE` `{kind:'drain_fetch_retries'}` consumer — the HOURLY
+ * standalone fetch-retry drain (ADR-0008 Amendment §A5). The daily in-run
+ * drain inside `runIngestCatchUpJob` cycles 25 rows once a day; on
+ * 2026-09-01 a single weekday window skipped 150 render-pending notices on
+ * both staging and production, and staging was carrying 1,069 pending rows
+ * (869 never attempted). This job is what makes the queue converge: up to
+ * `FETCH_RETRY_STANDALONE_MAX_PER_RUN` due rows every hour, through the
+ * identical `drainFetchRetries` path, recovered lots enqueued to
+ * `MATCH_QUEUE` exactly like a window's.
+ *
+ * Stands down (result `skipped`, message still acked — the next hour's
+ * message is the retry) when:
+ * - `ingestion_paused` — the emergency stop covers every TED-touching path;
+ * - `fetch_retry_attempts_suspended` — during a confirmed upstream outage
+ *   the daily in-run drain is already the ADR-0010 §5.2 canary probe
+ *   (≤18 requests/day); an hourly probe would be 24× that for no new
+ *   information, and would burn nothing but TED's patience;
+ * - an ingestion run is live (`hasActiveIngestionRun` within
+ *   `ACTIVE_RUN_HORIZON_MS`) — the catch-up, a backfill, or a previous
+ *   drain. `INGEST_QUEUE` declares no `max_concurrency`, so Cloudflare may
+ *   run consumers concurrently; without this guard two `TedClient`s would
+ *   hit TED at once with unshared spacing/budget and two drains could pull
+ *   the same due rows.
+ */
+export async function runFetchRetryDrainJob(
+  env: Env,
+  logger: Logger,
+  opts: FetchRetryDrainJobOptions = {},
+): Promise<FetchRetryDrainJobResult> {
+  const db = createDb(env.DB);
+  const now = opts.now ?? Date.now;
+  let skipped: FetchRetryDrainSkipReason | null = null;
+  if (await isIngestionPaused(db, logger)) {
+    skipped = 'paused';
+  } else if (await isFetchRetryAttemptsSuspended(db, logger)) {
+    skipped = 'attempts_suspended';
+  } else if (
+    await hasActiveIngestionRun(db, {
+      source: TED_SOURCE_ID,
+      sinceMs: now() - ACTIVE_RUN_HORIZON_MS,
+    })
+  ) {
+    skipped = 'ingestion_running';
+  }
+  if (skipped !== null) {
+    logger.info('ingestion.fetch_retry_drain.skipped', { reason: skipped });
+    return { skipped, drain: null };
+  }
+
+  const client =
+    opts.client ??
+    new TedClient({
+      fetch: globalThis.fetch.bind(globalThis),
+      ...(env.TED_API_BASE_URL === undefined ? {} : { baseUrl: env.TED_API_BASE_URL }),
+      budget: { maxRequestsPerRun: MAX_REQUESTS_PER_RUN },
+      logger,
+    });
+  const drain = await drainFetchRetries({
+    db,
+    client,
+    snapshots: env.SNAPSHOTS,
+    logger,
+    limit: FETCH_RETRY_STANDALONE_MAX_PER_RUN,
+    ...(opts.now === undefined ? {} : { now: opts.now }),
+    ...(opts.renderRetryDelayMs === undefined
+      ? {}
+      : { renderRetryDelayMs: opts.renderRetryDelayMs }),
+  });
+
+  for (const batch of chunk(drain.newLotIds, SCORE_MESSAGE_LOT_BATCH)) {
+    const message: MatchQueueMessage = { kind: 'score', lotIds: batch };
+    await env.MATCH_QUEUE.send(message);
+  }
+  if (drain.newLotIds.length > 0) {
+    logger.info('ingestion.match_queue.enqueued', {
+      new_lot_count: drain.newLotIds.length,
+      messages: Math.ceil(drain.newLotIds.length / SCORE_MESSAGE_LOT_BATCH),
+    });
+  }
+  return { skipped: null, drain };
 }
 
 /**

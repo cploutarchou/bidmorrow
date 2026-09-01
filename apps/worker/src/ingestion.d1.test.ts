@@ -11,6 +11,7 @@ import { TedClient } from '@bidmorrow/ted';
 import type { TedFetch } from '@bidmorrow/ted';
 import {
   DEFAULT_INGESTION_SCOPE,
+  FETCH_RETRY_FIRST_DELAY_MS,
   FETCH_RETRY_MAX_ATTEMPTS,
   FETCH_RETRY_SUSPENDED_CANARY_ROWS,
   PENDING_RETRY_BACKLOG_ALERT_THRESHOLD,
@@ -28,6 +29,7 @@ import {
   createDb,
   createOrganization,
   createRun,
+  fetchRetryBackoffMs,
   getCheckpoint,
   getNoticeByPublicationNumber,
   insertLots,
@@ -1257,7 +1259,6 @@ describe('ADR-0008 fetch resilience', () => {
     // terminal outcome (via targeted queries), not on the drain's aggregate
     // per-call counts.
     const client = makeClient(makeFakeFetch([], {})); // xmlUrl never in the map -> 404 every time
-    const DAY_MS = 86_400_000;
     let attemptNow = T0 + 1000;
     for (let i = 0; i < FETCH_RETRY_MAX_ATTEMPTS; i += 1) {
       await drainFetchRetries({
@@ -1267,9 +1268,10 @@ describe('ADR-0008 fetch resilience', () => {
         logger: createLogger({ test: true }),
         now: () => attemptNow,
       });
-      // Push `now` well past whatever linear backoff was just scheduled so
-      // the row is due again on the next loop iteration.
-      attemptNow += (i + 2) * DAY_MS;
+      // Push `now` just past the rung the failure that was just recorded
+      // scheduled (ADR-0008 §A5 hourly-geometric ladder), so the row is due
+      // again on the next loop iteration and no earlier.
+      attemptNow += fetchRetryBackoffMs(i + 1) + 1000;
     }
 
     const retryRow = await env.DB.prepare(
@@ -1431,7 +1433,7 @@ describe('ADR-0008 fetch resilience', () => {
     expect(retryRow?.status).toBe('recovered');
   });
 
-  it("RV-0009-02: ADR-0009 §2 same-run drain pickup — a notice that exhausts render-pending during the window's own pass is re-attempted and recovered by the SAME `runIngestionCatchUp` invocation's drain (upserted, retry row `recovered`, lot id in newLotIds)", async () => {
+  it("ADR-0008 §A5 (supersedes RV-0009-02): a notice that exhausts render-pending during the window is NOT re-cycled by the same invocation's drain — its first retry is FETCH_RETRY_FIRST_DELAY_MS out — and a later drain recovers it", async () => {
     const db = createDb(env.DB);
     const before = await getCheckpoint(db, { source: 'ted' });
     const start = before?.lastPublicationDate ?? '2026-08-23';
@@ -1440,16 +1442,15 @@ describe('ADR-0008 fetch resilience', () => {
 
     const sourceNoticeId = 'same-run-drain-1';
     const xmlUrl = 'https://ted.europa.eu/notice/same-run-drain-1.xml';
-    // Stateful fake fetch keyed by call count on THIS url (the pattern
-    // already used above for the drain-cycle tests): the window's Phase 2
-    // trigger/collect cycle exhausts all MAX_RENDER_VISITS (6) as
-    // 202/render-pending, so `recordFetchSkip` lands a retry row with
-    // `nextAttemptAt = now()` and the window finishes `partial` (not
-    // failed -> not systemic -> the drain is not skipped). The SAME
-    // TedClient keeps counting hits into the drain that follows in the
-    // same `runIngestionCatchUp` call: the 7th hit (the drain's first
-    // visit for this row) serves the real XML — proving the drain picks
-    // up and lands the skip it JUST created, in one invocation.
+    // Stateful fake fetch keyed by call count on THIS url: the window's
+    // Phase 2 trigger/collect cycle exhausts all MAX_RENDER_VISITS (6) as
+    // 202/render-pending and `recordRenderPendingSkip` lands a retry row.
+    // The 7th hit — whenever it comes — serves the real XML. Under the
+    // pre-§A5 rule (`nextAttemptAt = now()`) the SAME invocation's drain
+    // took that 7th hit immediately and, on 2026-09-01, burnt an attempt
+    // on a guaranteed second exhaustion; §A5 makes the row due only
+    // FETCH_RETRY_FIRST_DELAY_MS later, so the in-run drain must leave it
+    // alone and the hit count must stop at 6.
     let hits = 0;
     const base = makeFakeFetch([{ notices: [searchRow(sourceNoticeId, windowDate, xmlUrl)] }], {});
     const fetchImpl: TedFetch = (url, init) => {
@@ -1474,20 +1475,52 @@ describe('ADR-0008 fetch resilience', () => {
     expect(result.results).toHaveLength(1);
     expect(result.results[0]?.status).toBe('partial');
     expect(result.results[0]?.failureCode).toBeNull();
-    // The same invocation's drain ran (non-systemic) and swept up the row
-    // the window just created.
+    // The in-run drain still RAN (non-systemic partial) — it just had no
+    // business with a row that is not due yet.
     expect(result.drain).not.toBeNull();
-    // 6 exhausted visits inside the window's own pass + 1 drain re-attempt
-    // that lands the XML — proof the drain re-fetched in THIS invocation,
-    // not merely that the notice exists somewhere.
-    expect(hits).toBe(7);
+    expect(hits).toBe(6);
 
-    const retryRow = await env.DB.prepare(
-      "SELECT status FROM ingestion_fetch_retries WHERE source = 'ted' AND source_notice_id = ?",
-    )
-      .bind(sourceNoticeId)
-      .first<{ status: string }>();
-    expect(retryRow?.status).toBe('recovered');
+    const retryRowOf = () =>
+      env.DB.prepare(
+        "SELECT status, attempts, next_attempt_at FROM ingestion_fetch_retries WHERE source = 'ted' AND source_notice_id = ?",
+      )
+        .bind(sourceNoticeId)
+        .first<{ status: string; attempts: number; next_attempt_at: number }>();
+    const fresh = await retryRowOf();
+    expect(fresh?.status).toBe('pending');
+    expect(fresh?.attempts).toBe(0);
+    expect(fresh?.next_attempt_at).toBe(now + FETCH_RETRY_FIRST_DELAY_MS);
+    expect(result.newLotIds).toEqual([]);
+
+    // One second before it is due: still not picked up. `limit` is raised so
+    // the row cannot be crowded out by this file's other pending rows — the
+    // ONLY thing that may exclude it here is the due-time predicate.
+    const early = await drainFetchRetries({
+      db,
+      client: makeClient(fetchImpl),
+      snapshots: env.SNAPSHOTS,
+      logger: createLogger({ test: true }),
+      now: () => now + FETCH_RETRY_FIRST_DELAY_MS - 1000,
+      renderRetryDelayMs: 0,
+      limit: 1_000,
+    });
+    expect(hits).toBe(6);
+    expect((await retryRowOf())?.attempts).toBe(0);
+    expect(early.newLotIds).toEqual([]);
+
+    // Once due, the (hourly standalone) drain fetches it on the 7th hit and
+    // recovers it — the whole §A5 story in one test.
+    const later = await drainFetchRetries({
+      db,
+      client: makeClient(fetchImpl),
+      snapshots: env.SNAPSHOTS,
+      logger: createLogger({ test: true }),
+      now: () => now + FETCH_RETRY_FIRST_DELAY_MS + 1000,
+      renderRetryDelayMs: 0,
+      limit: 1_000,
+    });
+    expect(hits).toBe(7);
+    expect((await retryRowOf())?.status).toBe('recovered');
 
     const notice = await getNoticeByPublicationNumber(db, {
       source: 'ted',
@@ -1501,10 +1534,7 @@ describe('ADR-0008 fetch resilience', () => {
       .bind(notice?.id)
       .first<{ id: string }>();
     expect(lot?.id).toBeDefined();
-    // The drain's freshly-created lot id surfaces in the catch-up's
-    // returned newLotIds — the composed result the worker enqueues to
-    // MATCH_QUEUE, not just the drain's own internal result.
-    expect(result.newLotIds).toContain(lot?.id);
+    expect(later.newLotIds).toContain(lot?.id);
   });
 
   it('Amendment §A2 F-3a: a drain row that cycles through render-pending responses then succeeds is recovered WITHOUT incrementing attempts (a whole successful cycle is not a "failure")', async () => {
@@ -1626,9 +1656,9 @@ describe('ADR-0008 fetch resilience', () => {
     // ONE cycle (6 visits, all render-pending) -> ONE `attempts` increment,
     // not 6 — the drain's attempts accounting is per-cycle (Amendment §A2).
     expect(retryRow?.attempts).toBe(1);
-    // Linear daily backoff computed from the INCREMENTED value (repo doc):
-    // next_attempt_at = (T0 + 1000) + 1 * 86_400_000.
-    expect(retryRow?.next_attempt_at).toBe(T0 + 1000 + 86_400_000);
+    // Hourly-geometric backoff computed from the INCREMENTED value (repo
+    // doc, ADR-0008 §A5): next_attempt_at = (T0 + 1000) + 1 h.
+    expect(retryRow?.next_attempt_at).toBe(T0 + 1000 + fetchRetryBackoffMs(1));
   });
 
   it('F-4: a drain row that fetches successfully but fails to PARSE is marked recovered (fetch problem solved); the parse failure lands in ingestion_errors under the drain run, and the drain run finishes partial', async () => {
@@ -1933,9 +1963,9 @@ describe('ADR-0010 §5.2: fetch_retry_attempts_suspended (outage attempt-burn su
     const retryRow = await retryRowOf(sourceNoticeId);
     expect(retryRow?.status).toBe('pending');
     expect(retryRow?.attempts).toBe(1);
-    // Normal linear daily backoff off the incremented value — suspension does
-    // not touch the HTTP-failure path at all.
-    expect(retryRow?.next_attempt_at).toBe(T0 + 1000 + MS_PER_DAY);
+    // Normal hourly-geometric backoff off the incremented value — suspension
+    // does not touch the HTTP-failure path at all.
+    expect(retryRow?.next_attempt_at).toBe(T0 + 1000 + fetchRetryBackoffMs(1));
   });
 
   it('S-3: while suspended the drain pulls only the canary subset, not FETCH_RETRY_MAX_PER_RUN', async () => {

@@ -446,6 +446,148 @@ days (render exhaustions + `TedRequestError`s) share the one
 `noticesFetchFailed` counter, so combined systemic signal is seen.
 **Confirmed: no constant changes needed.**
 
+### A5. (2026-09-01) The drain runs hourly on its own trigger; first retry +20 min; hourly-geometric backoff; 6 attempts
+
+**Status: accepted and implemented 2026-09-01 (post-launch incident #1).**
+Supersedes, within §3/§A2 and ADR-0009 §2: the once-daily in-run drain as
+the ONLY drain, the `next_attempt_at = now()` same-run second cycle, the
+linear daily backoff, and the 5-attempt give-up count. Everything else in
+§3 — table shape, `processOneNotice` path, windowless rows, abandonment
+diagnostic + alert, the ADR-0010 §5.2 suspension posture — is unchanged.
+
+#### Evidence (go-live + 1)
+
+- **2026-09-01 05:00 UTC window, both environments:** 150 of 151 notices
+  came back `NOTICE_RENDER_PENDING` after the full 6-visit cycle — on
+  staging AND production, identically. Identical counts on two
+  independent egress paths mean this is TED's morning render posture, not
+  an environment fault. Production's first live weekday therefore produced
+  an **empty feed**: every notice sat in `ingestion_fetch_retries`.
+- **The same-run second cycle was a guaranteed miss.** With
+  `next_attempt_at = now()` (ADR-0009 §2), the in-run drain re-cycled 25 of
+  those rows ~8 minutes after their first exhaustion. TED's front-end cache
+  window is ~2–4 min (ADR-0010 §2) and the render latency observed is
+  hours, so that second cycle spent one of each row's five attempts on a
+  certainty, then pushed them a full day out (`+1 day`, linear backoff):
+  production's 150 rows became due 2026-09-02 05:09.
+- **The queue never converged.** Inflow on a render-slow weekday is ~150
+  rows/window; the drain cleared ≤25 rows/day. Staging, which had been
+  ingesting since 08-17, was carrying **1,069 pending rows, 869 of them
+  never attempted, the oldest 11 days old**. A queue that grows six times
+  faster than it drains is not a backlog, it is a leak — and the "≥7
+  calendar days to drain a fully-skipped day" caveat ADR-0009 §3 recorded
+  was the optimistic case (one such day, no further inflow).
+
+#### Decisions
+
+1. **Hourly standalone drain.** New cron `40 * * * *` (5th trigger of the
+   250/account Paid-plan limit, verified Cloudflare docs 2026-09-01)
+   enqueues `{kind:'drain_fetch_retries'}` on `INGEST_QUEUE` (ADR-0006:
+   crons enqueue, consumers run). Consumer `runFetchRetryDrainJob`
+   (apps/worker/src/ingestion.ts) builds its own `TedClient` (same 2,000
+   request budget and 500 ms spacing as the catch-up) and calls the SAME
+   `drainFetchRetries` with `limit: FETCH_RETRY_STANDALONE_MAX_PER_RUN = 50`;
+   recovered lots go to `MATCH_QUEUE` in the usual ≤100-id `score` batches.
+   `:40` is 20 minutes after the 05:00 window's skips become due (below)
+   and a minute no other trigger uses.
+   **Stand-down rules** (result `skipped`, message acked — next hour is
+   the retry): `ingestion_paused` (the emergency stop covers every
+   TED-touching path); `fetch_retry_attempts_suspended` (during a confirmed
+   outage the daily in-run drain is already the ADR-0010 §5.2 canary at
+   ≤18 requests/day — an hourly probe would be 24× the traffic for no new
+   information); and **an ingestion run live within 15 minutes**
+   (`hasActiveIngestionRun`, new repository read over
+   `idx_ingestion_runs__source_started_at`). `INGEST_QUEUE` declares no
+   `max_concurrency`, so consumers may run concurrently; without the guard
+   two `TedClient`s would hit TED at once with unshared spacing/budget and
+   two drains could pull the same rows. The 15-minute horizon equals the
+   Queues consumer wall-clock limit, so an orphaned `running` row (consumer
+   killed before `finishRun`) can block at most one hour, never forever.
+   The guard is check-then-act, not a lock: a millisecond race is possible
+   and harmless — the rows' own `status = 'pending'` transitions make the
+   loser throw on `markFetchRetryRecovered`, the message retries (bounded,
+   DLQ'd, recorded — F-07), and the drain's own orphaned run row ages out.
+2. **First retry is `FETCH_RETRY_FIRST_DELAY_MS = 20 min` after the skip**,
+   not immediate (packages/procurement/src/run-window.ts
+   `writeSkipDiagnostic`). The same invocation's in-run drain therefore no
+   longer re-cycles what the window just exhausted; the next hourly drain
+   does, once TED has had time to render. ADR-0009 §2's "25 notices/day get
+   a same-day second cycle" is withdrawn — the same-day cycle now happens
+   at +20 min to +80 min, for ALL of them, without spending an attempt on
+   a cache-window certainty.
+3. **Hourly-geometric backoff, 6 attempts.** `recordFetchRetryFailure`
+   now schedules `1 h × 4^(n−1)` after the n-th failed cycle — **1 h, 4 h,
+   16 h, 64 h, 256 h** — in one atomic SQL expression
+   (`now + 3600000 × (1 << (2 × attempts))` on the pre-increment column),
+   mirrored by the exported `fetchRetryBackoffMs(n)` so tests hold the two
+   to one formula. `FETCH_RETRY_MAX_ATTEMPTS` rises 5 → 6. Four of the six
+   cycles land inside the first ~21 hours — where the recoveries are — and
+   the ladder's reach after the first drain cycle is ≈ 341 h ≈ **14 days**
+   (was ≈ 10 under linear-daily), so the ADR-0010 §5.2 operator window for
+   a confirmed outage did not shrink; it grew. Lifetime worst case per
+   row: 6 cycles × 6 visits = 36 requests (was 30). Already-pending rows
+   need no migration: `attempts ≤ 4` rows simply get more, denser chances;
+   rows at ≥ 5 were already terminal.
+4. **The daily in-run drain is unchanged** (25 rows, shared budget, after
+   the catch-up, ADR-0009 §2 skip rule) and keeps its ADR-0010 §5.2 canary
+   role — it is now the drain of last resort, not the drain.
+
+#### Cost (cost-audit note)
+
+- Standalone drain worst case **300 requests/run** (50 × 6 visits; 15% of
+  the 2,000 budget), ≈ 2.5 min wall clock (six 50-row passes at 500 ms
+  spacing — each pass already longer than the 20 s delay floor) against a
+  15-minute consumer limit. **7,200 requests/day** is reachable only while
+  ≥50 rows stay render-pending every hour all day — the confirmed-outage
+  posture in which the operator sets the suspension flag and this drain
+  stands down to zero. Expected render-slow weekday: ~150 rows × one to
+  two cycles ≈ 900–1,800 drain requests/day on top of the window's own
+  ≤936; a normal day: near zero. All outbound subrequests, $0 billing.
+- +1 cron trigger (5 of 250), +24 queue messages/day (noise against the
+  1M/month free operations), one indexed D1 read per hour. No new platform
+  component, no new dependency; docs/cost-model.md updated.
+- Convergence: 24 × 50 = **1,200 rows/day of drain capacity** against a
+  ~150/weekday inflow. Staging's 1,069-row backlog is already due and
+  self-drains in ≈ 1 day of hourly runs; no manual re-queue.
+
+#### Honest limits
+
+- A notice TED never renders now abandons after ≈ 14 days and 36 requests
+  — still loud (`NOTICE_FETCH_ABANDONED`, §5 alert), still recoverable only
+  via an ADR-0010 §5 channel.
+- The standalone drain does not share the catch-up's request budget (they
+  are different invocations); each is bounded on its own, and the active-run
+  guard keeps them from overlapping in time.
+- Nothing here changes what the window does at 05:00: it still triggers
+  renders it cannot wait for. If TED's morning render latency is
+  structurally > 1 h, the first hourly cycle also misses and the second
+  (at +1 h) is the one that lands — the ladder was shaped for exactly that.
+
+#### Tests
+
+- packages/db `ingestion.d1.test.ts`: ladder rung-for-rung (SQL vs TS
+  mirror, 1/4/16/64/256 h), `fetchRetryBackoffMs` domain guard,
+  `hasActiveIngestionRun` (live / finished / orphan past horizon / source
+  scoping).
+- apps/worker `ingestion.d1.test.ts`: the former RV-0009-02 same-run pickup
+  test is rewritten to its §A5 inverse (in-run drain does NOT touch the
+  fresh row, `next_attempt_at = now + 20 min`, hits stay at 6; one second
+  before due still untouched; once due, recovered on the 7th hit with the
+  lot in `newLotIds`); F-3b / S-2 backoff assertions moved to rung 1; the
+  abandonment loop advances by the ladder.
+- apps/worker `fetch-retry-drain-job.d1.test.ts` (new, isolated D1): the
+  three stand-downs, the orphan-run exception, the happy path with
+  `MATCH_QUEUE` enqueue and a not-yet-due row untouched, and the standalone
+  cap (55 due → exactly 50 attempted, overflow untouched).
+- apps/worker `queue-dispatch.test.ts`: `drain_fetch_retries` routes and acks.
+
+#### Doc touchpoints
+
+docs/cost-model.md (drain arithmetic), docs/runbook.md (suspension flag
+now also stands the hourly drain down; 6-attempt clock), docs/architecture.md
+(background paths), packages/config feature-flag doc; ADR-0009 §2/§3 and
+ADR-0010 §5.2 carry italic pointers here rather than edits to decided text.
+
 ### Doc touchpoints and transferred duties
 
 - **docs/cost-model.md updated with this amendment** (the §3 deferral is

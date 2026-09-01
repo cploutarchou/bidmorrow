@@ -16,7 +16,8 @@
  *   while the row is still `pending` — a `recovered`/`abandoned` row is
  *   terminal and a later re-skip of the same notice must not resurrect it;
  *   `recovered`/`abandoned` are one-way transitions out of `pending`, never
- *   reversed.
+ *   reversed; a failed drain cycle reschedules on the hourly-geometric
+ *   ladder (`fetchRetryBackoffMs`, ADR-0008 Amendment §A5).
  */
 import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, sql } from 'drizzle-orm';
 
@@ -182,6 +183,47 @@ export async function listRecentRuns(
     .orderBy(desc(ingestionRuns.id))
     .limit(limit + 1);
   return toPage(rows, limit, (row) => row.id);
+}
+
+export interface HasActiveIngestionRunArgs {
+  readonly source: string;
+  /**
+   * Only `running` rows started AT OR AFTER this instant count. A consumer
+   * killed mid-run (Queues wall-clock limit, deploy, crash) never reaches
+   * `finishRun`, so its row stays `running` forever; without a horizon one
+   * such orphan would make every later caller believe ingestion is busy.
+   */
+  readonly sinceMs: number;
+}
+
+/**
+ * True when an ingestion run for `source` is (plausibly) in flight: a
+ * `running` row started within the caller's horizon (ADR-0008 Amendment
+ * §A5 — the hourly standalone fetch-retry drain stands down while the
+ * daily catch-up or an admin backfill is live, so two `TedClient`s never
+ * hit TED concurrently and two drains never race on the same retry rows).
+ * Served by `idx_ingestion_runs__source_started_at`. Best-effort by nature
+ * (a check-then-act, not a lock) — the callers' own `status = 'pending'`
+ * guards on the retry rows are the correctness backstop.
+ */
+export async function hasActiveIngestionRun(
+  db: Db,
+  args: HasActiveIngestionRunArgs,
+): Promise<boolean> {
+  const row = (
+    await db
+      .select({ id: ingestionRuns.id })
+      .from(ingestionRuns)
+      .where(
+        and(
+          eq(ingestionRuns.source, args.source),
+          eq(ingestionRuns.status, 'running'),
+          gte(ingestionRuns.startedAt, args.sinceMs),
+        ),
+      )
+      .limit(1)
+  )[0];
+  return row !== undefined;
 }
 
 /**
@@ -502,8 +544,31 @@ export async function insertSnapshotIfNewHash(
 // Fetch retries (ADR-0008 §3 — bounded per-notice XML fetch retry queue)
 // ---------------------------------------------------------------------------
 
-/** Linear daily backoff unit (ADR-0008 §3): `next_attempt_at = now + attempts days`. */
-const FETCH_RETRY_BACKOFF_MS_PER_ATTEMPT = 86_400_000;
+/** One hour in ms — the unit of the fetch-retry backoff ladder (ADR-0008 Amendment §A5). */
+const HOUR_MS = 3_600_000;
+
+/**
+ * Hourly-geometric backoff (ADR-0008 Amendment §A5, superseding §3's linear
+ * daily ladder): the delay scheduled after the n-th failed drain cycle is
+ * `1 h × 4^(n−1)` — 1 h, 4 h, 16 h, 64 h, 256 h for n = 1..5. The early
+ * rungs are dense because that is where recoveries actually happen (a
+ * render-pending notice measured 2026-09-01 is fetchable within hours, not
+ * days); the last rung keeps the ladder's total reach at ≈ 14 days so a
+ * genuine multi-day upstream outage still gets the ADR-0010 §5.2 operator
+ * a two-week decision window before rows abandon. The caller abandons at
+ * `FETCH_RETRY_MAX_ATTEMPTS` and never schedules past it, which is what
+ * bounds this function — it is deliberately not capped here, so the SQL in
+ * `recordFetchRetryFailure` and this TS mirror stay one formula.
+ * Exported so tests can assert the two agree.
+ */
+export function fetchRetryBackoffMs(attemptsAfterIncrement: number): number {
+  if (!Number.isInteger(attemptsAfterIncrement) || attemptsAfterIncrement < 1) {
+    throw new RangeError(
+      `fetchRetryBackoffMs: attemptsAfterIncrement must be a positive integer, got ${String(attemptsAfterIncrement)}`,
+    );
+  }
+  return HOUR_MS * 4 ** (attemptsAfterIncrement - 1);
+}
 
 export interface UpsertFetchRetryArgs {
   readonly source: string;
@@ -591,7 +656,7 @@ export async function upsertFetchRetry(
 }
 
 export interface ListDueFetchRetriesArgs {
-  /** Bounded batch size (caller applies `FETCH_RETRY_MAX_PER_RUN`). */
+  /** Bounded batch size (the caller applies its own cap — `FETCH_RETRY_MAX_PER_RUN` in-run, `FETCH_RETRY_STANDALONE_MAX_PER_RUN` for the hourly drain). */
   readonly limit: number;
   /** Defaults to now. */
   readonly now?: number;
@@ -758,11 +823,13 @@ export interface RecordFetchRetryFailureArgs {
 /**
  * Records one failed re-attempt against a still-`pending` row: increments
  * `attempts`, then computes `next_attempt_at` from the INCREMENTED value
- * (ADR-0008 §3 linear daily backoff — `now + attempts_after_increment` days,
- * so the first failure, 0 -> 1, schedules the next attempt one day out, not
- * immediately). The increment and the backoff computation happen in ONE
- * atomic UPDATE (SQL column expressions, not a read-then-write) so a
- * concurrent caller can never double-count an attempt.
+ * (ADR-0008 Amendment §A5 hourly-geometric backoff — `fetchRetryBackoffMs`
+ * above, so the first failure, 0 -> 1, schedules the next attempt one hour
+ * out, not immediately). The increment and the backoff computation happen
+ * in ONE atomic UPDATE (SQL column expressions, not a read-then-write) so a
+ * concurrent caller can never double-count an attempt. `1 << (2 × attempts)`
+ * is `4^attempts` on the PRE-increment column value, i.e.
+ * `4^(attempts_after_increment − 1)` — the same formula as the TS mirror.
  *
  * Guarded to `status = 'pending'` — a terminal row can never be re-failed.
  * The returned row's `attempts` IS the new count: the caller compares it to
@@ -780,7 +847,7 @@ export async function recordFetchRetryFailure(
     .update(ingestionFetchRetries)
     .set({
       attempts: sql<number>`${ingestionFetchRetries.attempts} + 1`,
-      nextAttemptAt: sql<number>`${now} + (${ingestionFetchRetries.attempts} + 1) * ${FETCH_RETRY_BACKOFF_MS_PER_ATTEMPT}`,
+      nextAttemptAt: sql<number>`${now} + ${HOUR_MS} * (1 << (2 * ${ingestionFetchRetries.attempts}))`,
       lastErrorCode: args.errorCode,
       updatedAt: now,
     })

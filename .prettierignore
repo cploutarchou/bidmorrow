@@ -9,3 +9,5 @@ migrations/
 tests/fixtures/
 docs/redesign/mockups/
 bidmorrow-repository-connection/
+# Agent worktrees (git-excluded via .git/info/exclude; never product code)
+.claude/worktrees/

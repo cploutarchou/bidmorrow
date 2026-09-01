@@ -1,12 +1,21 @@
 /**
- * ADR-0008 §3 / Amendment §A2 — the fetch-retry drain: after the daily
- * catch-up loop, re-attempts up to `FETCH_RETRY_MAX_PER_RUN` due
- * `ingestion_fetch_retries` rows through the IDENTICAL fetch/snapshot/parse/
- * persist path (`processOneNotice`) the window uses, sharing the SAME
- * `TedClient` instance (budget, spacing, backoff) and the same
+ * ADR-0008 §3 / Amendments §A2 + §A5 — the fetch-retry drain: re-attempts
+ * due `ingestion_fetch_retries` rows through the IDENTICAL fetch/snapshot/
+ * parse/persist path (`processOneNotice`) the window uses, with the same
  * `MAX_RENDER_VISITS` render-pending cycling budget. Drain rows are
  * windowless by design (§3): they never touch the ingestion checkpoint and
  * never feed the §2 systemic-failure threshold.
+ *
+ * Two callers (§A5):
+ * - the daily in-run drain (`catch-up.ts`, after the catch-up loop, SAME
+ *   `TedClient` instance — shared budget, spacing, backoff; capped at
+ *   `FETCH_RETRY_MAX_PER_RUN`), which is also the ADR-0010 §5.2 canary
+ *   probe while attempts are suspended; and
+ * - the hourly standalone drain (apps/worker `runFetchRetryDrainJob`, its
+ *   own `TedClient`, `limit: FETCH_RETRY_STANDALONE_MAX_PER_RUN`), which is
+ *   what actually clears the queue: the 2026-09-01 evidence was ~150
+ *   render-pending rows per weekday window against a 25-rows-per-day drain,
+ *   a queue that grew six times faster than it drained and never converged.
  *
  * A drain "attempt" is a full render-visit CYCLE (Amendment §A2), not a
  * single fetch — TED's async render front-end makes a single fetch
@@ -24,14 +33,14 @@
  *   fetches fine but fails to parse is independently diagnosable from its
  *   own `ingestion_errors` row and must not keep occupying a retry slot.
  * - the cycle exhausts on `TedRenderPendingError` or fails on
- *   `TedRequestError` -> one `recordFetchRetryFailure` (attempts += 1, linear
- *   daily backoff computed by the repository) with NO `ingestion_errors` row
+ *   `TedRequestError` -> one `recordFetchRetryFailure` (attempts += 1,
+ *   hourly-geometric backoff computed by the repository) with NO `ingestion_errors` row
  *   yet (§3) -> `attempts >= FETCH_RETRY_MAX_ATTEMPTS` abandons the row
  *   (`markFetchRetryAbandoned`) and writes exactly one durable
  *   `NOTICE_FETCH_ABANDONED` diagnostic carrying the retry row's history.
  * - `TedBudgetExceededError` during the drain terminates the drain ONLY
- *   (logged; due rows remain due tomorrow) — no window is in flight, so
- *   nothing here is window-fatal.
+ *   (logged; due rows remain due for the next drain) — no window is in
+ *   flight, so nothing here is window-fatal.
  *
  * ADR-0010 §5.2 — SUSPENDED POSTURE. While the operator-set
  * `fetch_retry_attempts_suspended` flag is on, the drain stops being a drain
@@ -39,8 +48,8 @@
  * `FETCH_RETRY_SUSPENDED_CANARY_ROWS` due rows, and a render-pending cycle
  * exhaustion no longer increments `attempts`. The rationale is that
  * render-pending during a confirmed upstream outage is evidence about TED's
- * render farm, not about the notice — burning the notice's five attempts on
- * it abandons real procurement records for a failure that was never theirs.
+ * render farm, not about the notice — burning the notice's attempts on it
+ * abandons real procurement records for a failure that was never theirs.
  * Recovery detection is preserved (the canary rows are still fetched every
  * run, ~<=18 requests/day), and clearing the flag restores full behavior with
  * no attempts spent. `TedRequestError` outcomes are unaffected: an HTTP or
@@ -77,11 +86,32 @@ import {
 } from './run-window';
 import type { MutableCounts } from './run-window';
 
-/** Bounded batch size for one drain invocation (ADR-0008 §3). */
+/** Bounded batch size for the daily IN-RUN drain (ADR-0008 §3; shares the catch-up's request budget). */
 export const FETCH_RETRY_MAX_PER_RUN = 25;
 
-/** Failed re-attempts before a row is abandoned (ADR-0008 §3 give-up). */
-export const FETCH_RETRY_MAX_ATTEMPTS = 5;
+/**
+ * Bounded batch size for one HOURLY STANDALONE drain invocation (ADR-0008
+ * Amendment §A5). 50 rows × `MAX_RENDER_VISITS` = 300 requests and ≈ 2.5
+ * min wall clock worst case per run (six 50-row passes at 500 ms spacing,
+ * each already longer than the 20 s delay floor), 24 runs/day ⇒ 1,200
+ * rows/day of drain capacity against a measured ~150/weekday inflow, and
+ * a 7,200-request/day ceiling only reachable while every row stays
+ * render-pending all day — the confirmed-outage posture in which the
+ * operator sets `fetch_retry_attempts_suspended` and this drain stands
+ * down entirely (apps/worker `runFetchRetryDrainJob`).
+ */
+export const FETCH_RETRY_STANDALONE_MAX_PER_RUN = 50;
+
+/**
+ * Failed re-attempts before a row is abandoned (ADR-0008 §3 give-up, count
+ * re-set by Amendment §A5). Six cycles on the hourly-geometric ladder
+ * (`fetchRetryBackoffMs`: 1 h, 4 h, 16 h, 64 h, 256 h between them) reach
+ * ≈ 14 days after the first drain cycle — four of them inside the first
+ * day, where the recoveries actually are, and the same two-week reach the
+ * original five linear-daily attempts had, so the ADR-0010 §5.2 operator
+ * window for a confirmed outage did not shrink.
+ */
+export const FETCH_RETRY_MAX_ATTEMPTS = 6;
 
 /**
  * Due rows one drain invocation touches while `fetch_retry_attempts_suspended`
@@ -103,6 +133,13 @@ export interface FetchRetryDrainDeps {
   readonly now?: () => number;
   /** Same test seam as `RunWindowDeps.renderRetryDelayMs`; defaults to `RENDER_RETRY_DELAY_MS`. */
   readonly renderRetryDelayMs?: number;
+  /**
+   * Due rows to pull this invocation; defaults to `FETCH_RETRY_MAX_PER_RUN`
+   * (the in-run drain). The hourly standalone drain passes
+   * `FETCH_RETRY_STANDALONE_MAX_PER_RUN`. Ignored while attempts are
+   * suspended — the canary cap always wins (ADR-0010 §5.2).
+   */
+  readonly limit?: number;
 }
 
 export interface DrainFetchRetriesResult {
@@ -114,7 +151,7 @@ export interface DrainFetchRetriesResult {
   readonly stillPending: number;
   /** Freshly-created lot ids from recovered notices — the caller enqueues these to `MATCH_QUEUE`, same as a window. */
   readonly newLotIds: readonly string[];
-  /** True when `TedBudgetExceededError` cut the drain short (rows past that point remain untouched, due again tomorrow). */
+  /** True when `TedBudgetExceededError` cut the drain short (rows past that point remain untouched, still due for the next drain). */
   readonly terminatedByBudget: boolean;
   /** Null when there were no due rows (no `ingestion_runs` row was created). */
   readonly runId: string | null;
@@ -165,7 +202,7 @@ async function recordDrainCycleFailure(
   /**
    * ADR-0010 §5.2 — `fetch_retry_attempts_suspended` is set. A render-pending
    * outcome is then evidence about TED's render farm, not about this notice,
-   * so it must not consume one of the row's five attempts. The row keeps its
+   * so it must not consume one of the row's attempts. The row keeps its
    * `attempts` AND its `nextAttemptAt`, so it stays due and is re-probed on
    * the next run; nothing is lost when the flag clears. Genuine
    * `TedRequestError` outcomes are per-notice evidence and still burn.
@@ -220,11 +257,14 @@ async function recordDrainCycleFailure(
 }
 
 /**
- * Drains up to `FETCH_RETRY_MAX_PER_RUN` due `ingestion_fetch_retries` rows.
- * Skipped entirely (empty result, no run created) when there are no due
- * rows. Ordering/skip rules (who calls this and when) live in the caller
- * (`catch-up.ts`): the drain must run AFTER catch-up and be skipped when
- * catch-up ended `failed` or ingestion is paused (Amendment §A2).
+ * Drains up to `deps.limit` (default `FETCH_RETRY_MAX_PER_RUN`) due
+ * `ingestion_fetch_retries` rows. Skipped entirely (empty result, no run
+ * created) when there are no due rows. Ordering/skip rules (who calls this
+ * and when) live in the callers: the in-run drain (`catch-up.ts`) runs
+ * AFTER catch-up and is skipped on a systemic window failure or while
+ * ingestion is paused (Amendment §A2, ADR-0009 §2); the hourly standalone
+ * drain (apps/worker `runFetchRetryDrainJob`) additionally stands down while
+ * attempts are suspended or another ingestion run is live (Amendment §A5).
  */
 export async function drainFetchRetries(
   deps: FetchRetryDrainDeps,
@@ -235,7 +275,9 @@ export async function drainFetchRetries(
   // not a drain.
   const attemptsSuspended = await isFetchRetryAttemptsSuspended(deps.db, deps.logger);
   const dueRows = await listDueFetchRetries(deps.db, {
-    limit: attemptsSuspended ? FETCH_RETRY_SUSPENDED_CANARY_ROWS : FETCH_RETRY_MAX_PER_RUN,
+    limit: attemptsSuspended
+      ? FETCH_RETRY_SUSPENDED_CANARY_ROWS
+      : (deps.limit ?? FETCH_RETRY_MAX_PER_RUN),
     now: now(),
   });
   if (dueRows.length === 0) {
