@@ -37,6 +37,30 @@ call because it writes production data: set the 150 pending rows'
 `next_attempt_at = now` so the first `:40` drain after deploy picks them
 up instead of waiting for 2026-09-02 05:09.
 
+## OPEN — `entitlement_enforced` in production (2026-09-01, issue #3)
+
+**Decision needed: set `entitlement_enforced = true` in production D1.**
+
+Owner reported that a cancelled subscription still receives daily digests.
+The code path is now correct at both the enqueue and the send step
+(`apps/worker/src/digest.ts`), but every entitlement gate in the product,
+the digest and the feed's 402 alike, is wrapped in the
+`entitlement_enforced` flag. Production `feature_flags` currently holds only
+`founding_plan_open`, `ingestion_paused` and `prelaunch`. With no
+`entitlement_enforced` row the flag reads `false`, so billing state gates
+nothing and the digests continue. the assistant will not flip a production flag.
+
+Blast radius, measured in production on 2026-09-01: one active
+organization, which is the canceled launch-test one; zero organizations with
+digests enabled and no subscription. So turning it on today stops digests
+and feed access for that one organization and affects nothing else. It also
+ends V1-pilot mode: from then on any manually provisioned organization with
+no `subscriptions` row is treated as unentitled.
+
+Immediate alternative if the flag flip should wait: turn off that
+organization's digest preference, which stops the mail without touching
+billing enforcement.
+
 ## OPEN ITEMS SNAPSHOT — 2026-08-16 (production launch checklist)
 
 Everything below is detailed in the numbered items further down; this is

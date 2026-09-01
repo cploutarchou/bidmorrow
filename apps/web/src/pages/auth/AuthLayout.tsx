@@ -7,7 +7,7 @@ import { ThemeToggle } from '../../components/ThemeToggle';
 import { NoIndex } from '../../components/NoIndex';
 
 /**
- * Shared shell for the five auth screens — 2026-08-21 handoff redesign
+ * Shared shell for the five auth screens: 2026-08-21 handoff redesign
  * (`BidMorrow Auth.dc.html`): a two-column split with a routing-rules
  * aside on the left and the form card on the right. The aside explains
  * the real post-auth routing contract (lib/post-auth-route.ts) and is
@@ -19,7 +19,7 @@ import { NoIndex } from '../../components/NoIndex';
 const ROUTING_RULES: { tag: string; text: string }[] = [
   {
     tag: 'Saved destination wins',
-    text: 'A destination carried in the link is used as-is, provided it is a plain path on this site — never a full URL.',
+    text: 'A destination carried in the link is used as-is, provided it is a plain path on this site, never a full URL.',
   },
   {
     tag: 'Otherwise, by state',
@@ -42,10 +42,10 @@ export function AuthLayout({
 }): ReactElement {
   return (
     <>
-      <title>{`${title} — ${PRODUCT_NAME}`}</title>
+      <title>{`${title} | ${PRODUCT_NAME}`}</title>
       <NoIndex />
       {/* Phase 12 stage A: AppShell already had a skip-link; AuthLayout
-          (login/signup/verify/reset) didn't — found via the keyboard
+          (login/signup/verify/reset) didn't, found via the keyboard
           traversal E2E spec, fixed for consistency across every page shell. */}
       <a className="skip-link" href="#main-content">
         Skip to main content
@@ -66,7 +66,7 @@ export function AuthLayout({
               <p className="auth-aside__eyebrow">Account access</p>
               <p className="auth-aside__headline">Sign in and land where you left off.</p>
               <p className="auth-aside__lede">
-                Where you land is decided by the state of your account, not a fixed URL — a saved
+                Where you land is decided by the state of your account, not a fixed URL: a saved
                 destination wins, an unfinished profile goes to onboarding, a complete one goes to
                 your feed.
               </p>

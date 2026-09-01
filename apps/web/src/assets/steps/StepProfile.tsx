@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import '../../styles/illustrations.css';
 
 /**
- * "How it works" step 2 — the company profile: CPV codes + keyword
+ * "How it works" step 2, the company profile: CPV codes + keyword
  * chips the matching engine scores every notice against. Decorative,
  * same convention as `StepSource.tsx`.
  *

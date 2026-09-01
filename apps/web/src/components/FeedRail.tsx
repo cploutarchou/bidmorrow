@@ -10,7 +10,7 @@ import {
 } from '../lib/saved-searches';
 
 /**
- * The feed's left rail — 2026-08-21 handoff (`BidMorrow Client Area.dc.html`).
+ * The feed's left rail: 2026-08-21 handoff (`BidMorrow Client Area.dc.html`).
  *
  * Saved searches turn the filter bar from something retyped every morning
  * into a named thing the whole workspace can re-apply.
@@ -23,8 +23,8 @@ import {
  *   a plausible-looking wrong one is worse than none.
  * - The "Shelves" block itself. Saved and Ignored are already two of the
  *   feed's own tabs, so repeating them in the rail would be a second control
- *   for the same thing — and without counts it would add nothing at all.
- * - The "78% complete — add 2 references" profile meter. There is no
+ *   for the same thing, and without counts it would add nothing at all.
+ * - The "78% complete, add 2 references" profile meter. There is no
  *   completeness model in the product, so the summary states what the
  *   profile actually contains and links to Settings instead.
  */
@@ -39,7 +39,7 @@ export function FeedRail({
   activeFilters: Record<string, string>;
   hasActiveFilters: boolean;
   onApply: (search: SavedSearch) => void;
-  /** Real values only — omitted entirely when the profile has not loaded. */
+  /** Real values only; omitted entirely when the profile has not loaded. */
   profileSummary: string | null;
 }): ReactElement {
   const [searches, setSearches] = useState<SavedSearch[] | null>(null);
@@ -86,7 +86,7 @@ export function FeedRail({
       setError(
         cause instanceof DuplicateSavedSearchName
           ? 'You already have a saved search with that name.'
-          : 'Could not save this search — please try again.',
+          : 'Could not save this search. Please try again.',
       );
     } finally {
       setBusy(false);

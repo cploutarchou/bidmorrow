@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router';
 import { useAuth } from '../lib/auth-context';
 
 /**
- * Client-side route guard for UX only — never a security boundary (the
+ * Client-side route guard for UX only, never a security boundary (the
  * server independently enforces auth/authorization on every API call;
  * docs/conventions/frontend.md "never embed role/organization logic
  * client-side as a security mechanism"). Redirects to /login when there is
@@ -11,7 +11,7 @@ import { useAuth } from '../lib/auth-context';
  *
  * R4 (docs/redesign/ux-strategy.md §1.3): carries the page the visitor was
  * trying to reach as `?returnTo=`, so a session that expired mid-visit (the
- * digest email's main re-engagement path) survives a fresh login — `Login`
+ * digest email's main re-engagement path) survives a fresh login; `Login`
  * honors it via `resolvePostAuthDestination`.
  */
 export function ProtectedRoute({ children }: { children: ReactNode }): ReactElement {

@@ -4,7 +4,7 @@ import { isIngestedCpvCode } from '../lib/onboarding-scope';
 
 /**
  * What the current CPV + country selection WOULD have returned over the last
- * 30 days — 2026-08-21 handoff (`BidMorrow Onboarding.dc.html`).
+ * 30 days, per the 2026-08-21 handoff (`BidMorrow Onboarding.dc.html`).
  *
  * The point of this panel is to make one specific disappointment impossible:
  * finishing onboarding with a selection that matches nothing and finding out
@@ -42,7 +42,7 @@ export function ScopeEstimate({
 }): ReactElement {
   const [state, setState] = useState<State>({ kind: 'idle' });
 
-  // Serialized so the effect re-runs on content change, not identity change —
+  // Serialized so the effect re-runs on content change, not identity change:
   // these arrays are rebuilt on every render of the wizard.
   const cpvKey = [...cpvCodes].sort().join(',');
   const countryKey = [...countryCodes].sort().join(',');
@@ -78,7 +78,7 @@ export function ScopeEstimate({
   if (state.kind === 'idle') {
     return (
       <section className="ob-estimate" aria-live="polite">
-        <p className="ob-estimate__value">—</p>
+        <p className="ob-estimate__value">–</p>
         <p className="ob-estimate__note">Add CPV codes to see what they would have returned.</p>
       </section>
     );
@@ -96,9 +96,9 @@ export function ScopeEstimate({
   if (state.kind === 'failed') {
     return (
       <section className="ob-estimate" aria-live="polite">
-        <p className="ob-estimate__value">—</p>
+        <p className="ob-estimate__value">–</p>
         <p className="ob-estimate__note">
-          The estimate is unavailable right now. This does not affect your selection — carry on.
+          The estimate is unavailable right now. This does not affect your selection, so carry on.
         </p>
       </section>
     );
@@ -121,7 +121,7 @@ export function ScopeEstimate({
         {data.inChosenCountries !== null && data.scorableLots > 0 && (
           <>
             {' '}
-            {data.inChosenCountries} of them in the countries you chose — the rest are still scored,
+            {data.inChosenCountries} of them in the countries you chose. The rest are still scored,
             because geography affects the score rather than deciding whether a tender is scored at
             all.
           </>
@@ -131,7 +131,7 @@ export function ScopeEstimate({
       {outOfScope.length > 0 && (
         <p className="ob-estimate__scope">
           {allOutOfScope
-            ? `None of your ${String(cpvCodes.length)} codes are ingested yet. They are saved to your profile and start scoring if ingestion is widened to cover them — until then this selection returns nothing.`
+            ? `None of your ${String(cpvCodes.length)} codes are ingested yet. They are saved to your profile and start scoring if ingestion is widened to cover them. Until then this selection returns nothing.`
             : `${String(outOfScope.length)} of your ${String(cpvCodes.length)} codes are outside the ingested scope. They are saved, and wait for a scope change; the rest are scored today.`}
         </p>
       )}

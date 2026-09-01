@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router';
 import { TenderDetailContent } from '../../components/TenderDetailContent';
 
 /**
- * Full-page tender detail — what a shared link, a bookmark or a refresh
+ * Full-page tender detail: what a shared link, a bookmark or a refresh
  * lands on.
  *
  * Opening the same tender from the feed renders `TenderSheet` over the feed

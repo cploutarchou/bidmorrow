@@ -6,7 +6,7 @@ import '../styles/illustrations.css';
  * §2 "the funnel"): a queue of notice chips sits above the profile
  * "lens"; a few of them flow down through it and settle into three
  * verdict groups. The 3 / 4 / 2 split sums to the 9 chips actually drawn
- * (6 static queue + 3 animated flow) — an illustrative worked count, not
+ * (6 static queue + 3 animated flow): an illustrative worked count, not
  * a product metric, and labelled as such in the artwork itself so
  * nothing here reads as a real statistic.
  *
@@ -15,23 +15,23 @@ import '../styles/illustrations.css';
  * ~55% of the frame empty once everything had fallen away, and the card
  * type was unreadably small at real display width. Fixed by splitting
  * the chips into a permanent, never-animated "queue" (6 chips, 65%
- * opacity, always on screen — the composition is never empty, motion or
+ * opacity, always on screen, so the composition is never empty, motion or
  * not) and a small flow subset (3 chips) that do the actual fall-through
  * animation; by tightening the viewBox from 560×420 to 560×360 so the
  * lens + cards fill the frame; and by raising every card/caption font
  * size (title 16, number 28, "of 9 notices" 12, footer 11 viewBox units
- * — all above the coordinator's stated floors of 15/26/11/10).
+ * units, all above the coordinator's stated floors of 15/26/11/10).
  *
  * CSS-only animation (keyframes live in `../styles/illustrations.css`,
- * a real stylesheet — never an inline `<style>`/`style=`, see that
+ * a real stylesheet, never an inline `<style>`/`style=`, see that
  * file's header). The 3 flow chips run once, ≤ 3s end-to-end, then hold
- * their final (invisible) frame (`animation-fill-mode: forwards`) — not
+ * their final (invisible) frame (`animation-fill-mode: forwards`), not
  * an infinite loop, so WCAG 2.2 SC 2.2.2 needs no pause control; the
  * static queue, lens and cards need no such allowance since they never
  * move. Under `prefers-reduced-motion: reduce` the 3 flow chips and the
  * lens pulse are hidden outright (they are motion-only flourishes, never
- * load-bearing) rather than frozen mid-flight, so the remaining frame —
- * queue, lens, three verdict cards, footer caption — is a single fully
+ * load-bearing) rather than frozen mid-flight, so the remaining frame
+ * (queue, lens, three verdict cards, footer caption) is a single fully
  * visible static composition with nothing left half-transparent.
  *
  * Decorative role is *not* used here: this is the product's signature
@@ -51,9 +51,9 @@ export function FunnelHero({ className }: { className?: string }): ReactElement 
       viewBox="0 0 560 360"
       fill="none"
       role="img"
-      aria-label="Illustration: a stream of procurement notices flows through a matching lens and sorts into three illustrative verdict groups — Strong fit, Worth reviewing, and Possible."
+      aria-label="Illustration: a stream of procurement notices flows through a matching lens and sorts into three illustrative verdict groups: Strong fit, Worth reviewing, and Possible."
     >
-      {/* Permanent queue — never animated, always on screen at 65%
+      {/* Permanent queue: never animated, always on screen at 65%
           opacity, so the composition is never empty regardless of where
           the flow animation (or reduced motion) leaves things. */}
       <g stroke="currentColor" strokeWidth="1.5" opacity="0.65">
@@ -73,7 +73,7 @@ export function FunnelHero({ className }: { className?: string }): ReactElement 
         ))}
       </g>
 
-      {/* Flow subset — the only chips that move. Start just above the
+      {/* Flow subset: the only chips that move. Start just above the
           frame (overflow: visible on .bm-illust lets that read cleanly)
           and fall through the lens. */}
       <g className="bm-chip-stream" stroke="currentColor" strokeWidth="1.5">
@@ -166,7 +166,7 @@ export function FunnelHero({ className }: { className?: string }): ReactElement 
             </text>
             {/* Solid, not opacity-reduced: at 75% opacity this measured
                 3.55:1 against the accent fill in the light theme (below
-                the 4.5:1 small-text floor — WCAG 1.4.3, `--accent-ink` on
+                the 4.5:1 small-text floor of WCAG 1.4.3, `--accent-ink` on
                 `--accent`). Full opacity restores the ≥5:1 the token pair
                 already carries everywhere else it's used (e.g. `.cta`). */}
             <text x="16" y="90" className="bm-accent-ink-fill" fontSize="12">
@@ -195,7 +195,7 @@ export function FunnelHero({ className }: { className?: string }): ReactElement 
             {/* `bm-accent-text`, not `bm-ink3-fill`: ink-3 is calibrated
                 against opaque neutral surfaces (see base.css's own axe
                 comment on that token), not the translucent `accent-tint`
-                wash this card's background actually is — measured 3.87:1
+                wash this card's background actually is: measured 3.87:1
                 in the dark theme, below the 4.5:1 small-text floor.
                 `accent-text` is the same pairing `.score-badge--worth-
                 reviewing` already uses on this exact background
@@ -245,7 +245,7 @@ export function FunnelHero({ className }: { className?: string }): ReactElement 
         fontSize="11"
         letterSpacing="0.06em"
       >
-        ILLUSTRATIVE EXAMPLE — NOT LIVE DATA
+        ILLUSTRATIVE EXAMPLE - NOT LIVE DATA
       </text>
     </svg>
   );

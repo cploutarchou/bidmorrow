@@ -9,7 +9,7 @@ export type Classification =
   'STRONG_MATCH' | 'WORTH_REVIEWING' | 'POSSIBLE_MATCH' | 'LOW_FIT' | 'EXCLUDED';
 
 /**
- * Text label for a classification — status must never be conveyed by color
+ * Text label for a classification. Status must never be conveyed by color
  * alone (WCAG 2.2 AA), so every score badge renders this label alongside any
  * color treatment.
  */
@@ -44,7 +44,7 @@ export function formatRelativeDeadline(deadlineAt: number | null, now: number): 
 }
 
 /**
- * Formats an original-currency value for display (never converts — the
+ * Formats an original-currency value for display (never converts; the
  * original currency is what the buyer published; EUR-equivalent is a
  * separate, explicitly labelled figure elsewhere).
  */
@@ -62,14 +62,14 @@ export function formatOriginalValue(amount: number | null, currency: string | nu
   }
 }
 
-/** Score badge status text, distinct from the classification label (used together, e.g. "84.5 / 100 — Strong match"). */
+/** Score badge status text, distinct from the classification label (used together, e.g. "84.5 / 100 - Strong match"). */
 export function formatScoreLine(score: number, classification: Classification): string {
-  return `${score} / 100 — ${classificationLabel(classification)}`;
+  return `${score} / 100 - ${classificationLabel(classification)}`;
 }
 
 const RISK_CONFIDENCE_LABEL: Record<string, string> = {
   HIGH: 'Confirmed pattern',
-  POSSIBLE: 'Possible requirement — verify in source documents',
+  POSSIBLE: 'Possible requirement: verify in source documents',
 };
 
 export function riskConfidenceLabel(confidence: string): string {
@@ -80,7 +80,7 @@ const COMPONENT_STATUS_LABEL: Record<string, string> = {
   MATCHED: 'Matched',
   PARTIAL: 'Partial match',
   NO_MATCH: 'No match',
-  UNKNOWN: 'Unknown — neutral score applied',
+  UNKNOWN: 'Unknown: neutral score applied',
 };
 
 export function componentStatusLabel(status: string): string {
@@ -89,7 +89,7 @@ export function componentStatusLabel(status: string): string {
 
 /**
  * ISO-8601 UTC timestamp for admin tooling (docs instruction: "all
- * timestamps rendered ISO UTC" — internal ops screens are not localized).
+ * timestamps rendered ISO UTC"; internal ops screens are not localized).
  * Returns a fixed placeholder for `null` rather than an empty string, so a
  * missing timestamp is never rendered as blank/ambiguous.
  */
@@ -100,7 +100,7 @@ export function formatIsoUtc(epochMs: number | null): string {
 
 /**
  * Score component keys stored in `match_components.component_key`
- * (packages/db/src/schema/matching.ts CHECK constraint) — the REAL 8
+ * (packages/db/src/schema/matching.ts CHECK constraint): the REAL 8
  * engine components (docs/matching-engine.md), never the illustrative
  * labels from the Strata mockup. Human labels + max points are derived
  * directly from that spec; regression-tested in format.test.ts against the
@@ -138,7 +138,7 @@ export function componentLabel(key: string): string {
  * "Cancels on ..."), following the same no-hardcoded-locale idiom as
  * `formatOriginalValue` above (`Intl` with `undefined` locale = the
  * browser's own). Distinct from `formatIsoUtc` (fixed ISO-UTC, admin-only
- * tooling) — this is a customer-facing date, so it renders in the visitor's
+ * tooling). This is a customer-facing date, so it renders in the visitor's
  * own locale/calendar, not a fixed machine format.
  */
 export function formatCalendarDate(epochMs: number | null): string {
@@ -150,7 +150,7 @@ export function formatCalendarDate(epochMs: number | null): string {
  * Formats a lowest-unit amount (e.g. cents) as a currency
  * string, same `Intl.NumberFormat` idiom as `formatOriginalValue`. Unlike
  * `formatOriginalValue`, `amountMinorUnits`/`currency` here are never
- * user/notice-supplied — they come from `packages/billing`'s own
+ * user/notice-supplied: they come from `packages/billing`'s own
  * `planPrice()`/Paddle transaction totals, so there is no "value not published"
  * case to report.
  */
@@ -169,7 +169,7 @@ export function formatMinorUnitsAsCurrency(amountMinorUnits: number, currency: s
 /**
  * `GET /api/billing/status` `subscription.status`/`paymentState` and
  * `POST /api/billing/reactivate`'s returned `status` (`packages/billing/src/
- * plans.ts` `SubscriptionStatus`/`PaymentState` — identical vocabularies).
+ * plans.ts` `SubscriptionStatus`/`PaymentState`, identical vocabularies).
  * Kept as a plain `string` param (not the DB/billing package's own type) so
  * `apps/web` never depends on `@bidmorrow/billing` for a five-value enum.
  */
@@ -195,7 +195,7 @@ const PAYMENT_STATE_TONE: Record<string, PaymentStateTone> = {
   canceled: 'muted',
 };
 
-/** Visual tone bucket for the payment-state badge — text label is always
+/** Visual tone bucket for the payment-state badge; the text label is always
  * rendered alongside it (WCAG: status is never color-only). */
 export function paymentStateTone(state: string): PaymentStateTone {
   return PAYMENT_STATE_TONE[state] ?? 'muted';
@@ -204,7 +204,7 @@ export function paymentStateTone(state: string): PaymentStateTone {
 /** Paddle transaction status as surfaced by `GET /api/billing/invoices`
  * (`billed | paid | completed | past_due | canceled`, see
  * `packages/billing/src/invoices.ts`). `completed` is a paid transaction
- * whose invoice has been finalised — the customer-facing meaning is the
+ * whose invoice has been finalised; the customer-facing meaning is the
  * same as `paid`. */
 const INVOICE_STATUS_LABEL: Record<string, string> = {
   billed: 'Issued',
@@ -221,7 +221,7 @@ export function invoiceStatusLabel(status: string | null): string {
 
 /**
  * Max points for a `component_key` per docs/matching-engine.md. Returns
- * `null` for an unrecognized key rather than guessing — callers must treat
+ * `null` for an unrecognized key rather than guessing: callers must treat
  * that as "no bar to render", never a silent 0/100.
  */
 export function componentMaxPoints(key: string): number | null {

@@ -48,13 +48,13 @@ const BillingSuccess = lazyPage(() => import('./pages/app/BillingSuccess'), 'Bil
 
 /* AppShell is lazy for its STYLESHEET, not its size: it imports
    styles/app.css, and an eager AppShell would pull the whole app surface's
-   CSS back into the marketing entry. Each /app route nests two boundaries —
-   `<Lazy><AppShell><Lazy><Page/>` — so the first app visit suspends once for
+   CSS back into the marketing entry. Each /app route nests two boundaries
+   (`<Lazy><AppShell><Lazy><Page/>`), so the first app visit suspends once for
    the shell chunk, while later page-to-page navigations suspend only the
    inner boundary and the shell chrome never flashes. */
 const AppShell = lazyPage(() => import('./components/AppShell'), 'AppShell');
 
-/* The admin surface — gate, shell, 11 pages and their lib/admin-* modules —
+/* The admin surface (gate, shell, 11 pages and their lib/admin-* modules)
    leaves the customer bundle entirely. Nothing outside pages/admin and
    components/admin imports it, so the seam is clean. */
 const AdminGate = lazyPage(() => import('./components/admin/AdminGate'), 'AdminGate');
@@ -79,8 +79,8 @@ const AdminFlags = lazyPage(() => import('./pages/admin/Flags'), 'Flags');
  *
  * The mechanism is the location's `backgroundLocation` state, set by the feed
  * card's link. When it is present, the main `<Routes>` is rendered against
- * that background — so the feed stays mounted and keeps its scroll, loaded
- * pages and filters — and a second `<Routes>` renders the sheet on top.
+ * that background, so the feed stays mounted and keeps its scroll, loaded
+ * pages and filters, and a second `<Routes>` renders the sheet on top.
  * Without it (shared link, bookmark, refresh, or a hard reload of the sheet
  * URL) there is no feed to render behind, so the full page is the right
  * answer and is what appears.
@@ -322,7 +322,7 @@ function AppRoutes(): ReactElement {
             Internal admin surface (Phase 10 stage B). `AdminGate` probes
             `/api/admin/health-details` on mount and renders the SAME
             `NotFound` page as the catch-all route below for any non-admin
-            visitor — the admin surface's existence is never revealed
+            visitor: the admin surface's existence is never revealed
             client-side, mirroring the server's 404-for-everyone-but-admins
             cloaking (apps/worker/src/middleware/admin.ts).
           */}

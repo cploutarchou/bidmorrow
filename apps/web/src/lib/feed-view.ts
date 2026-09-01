@@ -1,5 +1,5 @@
 /**
- * The Feed's `?view=` query parameter — makes the score-band and shelf
+ * The Feed's `?view=` query parameter, which makes the score-band and shelf
  * views linkable (header "Saved" link, bookmarks, digest deep-links; see
  * docs/redesign/navigation-and-admin-entry.md §2). Anything unknown falls
  * back to the default view rather than erroring: a stale link must never

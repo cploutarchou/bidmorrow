@@ -2,7 +2,7 @@
  * Paddle.js loader + overlay checkout (ADR-0011). The SPA never chooses
  * items or prices: the server creates a Paddle transaction
  * (`POST /api/billing/checkout`) and this module only opens the overlay
- * for that transaction id. Provisioning is webhook-driven — landing on the
+ * for that transaction id. Provisioning is webhook-driven: landing on the
  * success URL is never treated as proof of payment (BillingSuccess.tsx).
  *
  * `initializePaddle` downloads Paddle.js from cdn.paddle.com (allowed by
@@ -16,7 +16,7 @@ let onClosed: (() => void) | null = null;
 
 /**
  * Lazy singleton. Resolves `null` when billing is not configured (public
- * config carries no `paddle` block) or Paddle.js fails to load — callers
+ * config carries no `paddle` block) or Paddle.js fails to load, so callers
  * show the honest not-configured state rather than a broken button.
  */
 export function loadPaddle(): Promise<Paddle | null> {
@@ -30,7 +30,7 @@ export function loadPaddle(): Promise<Paddle | null> {
         eventCallback: handleEvent,
       });
       if (paddle === undefined) {
-        // Don't memoise a transient load failure — the next click retries.
+        // Don't memoise a transient load failure; the next click retries.
         instance = null;
         return null;
       }

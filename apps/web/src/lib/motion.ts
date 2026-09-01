@@ -7,25 +7,25 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
  * cross-fade, pointer tilt) reads `prefers-reduced-motion` through here
  * rather than re-querying `matchMedia` ad hoc, so the "instant, never
  * merely slowed" rule is enforced in one place. Pure CSS animations don't
- * need this module at all — `styles/base.css`'s global
+ * need this module at all: `styles/base.css`'s global
  * `@media (prefers-reduced-motion: reduce) { *, *::before, *::after {
  * animation: none !important; transition: none !important; } }`
  * kill-switch already disables them (the exception is the View
  * Transition API's own pseudo-element tree, which that `*` selector does
- * not reach — `RouteTransition` below guards it explicitly).
+ * not reach; `RouteTransition` below guards it explicitly).
  */
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 /** No `window`/`matchMedia` in the Node-environment unit test project
  *  (root `vitest.config.ts` runs `apps/web/src/**\/*.test.ts` under
- *  `environment: 'node'`, not jsdom) and none server-side — every access
+ *  `environment: 'node'`, not jsdom) and none server-side, so every access
  *  is guarded so this module is safe to import anywhere. */
 function hasMatchMedia(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function';
 }
 
-/** Synchronous, one-shot read — SSR/non-browser-safe (`false`, i.e.
+/** Synchronous, one-shot read; SSR/non-browser-safe (`false`, i.e.
  *  motion allowed, when there is no `window`). */
 export function prefersReducedMotion(): boolean {
   if (!hasMatchMedia()) return false;
@@ -39,20 +39,20 @@ function subscribe(onChange: () => void): () => void {
   return () => mql.removeEventListener('change', onChange);
 }
 
-/** Live `prefers-reduced-motion: reduce` value — updates if the user
+/** Live `prefers-reduced-motion: reduce` value; updates if the user
  *  flips the OS setting while the tab is open. */
 export function usePrefersReducedMotion(): boolean {
   return useSyncExternalStore(subscribe, prefersReducedMotion, () => false);
 }
 
-/** Ease-out cubic: quick start, gentle settle — the standard "count up to
+/** Ease-out cubic: quick start, gentle settle, the standard "count up to
  *  a resting number" feel. Pure and exported for direct testing. */
 export function easeOutCubic(t: number): number {
   const clamped = Math.min(1, Math.max(0, t));
   return 1 - Math.pow(1 - clamped, 3);
 }
 
-/** How many decimal digits `n`'s own value carries (4.5 -> 1, 100 -> 0) —
+/** How many decimal digits `n`'s own value carries (4.5 -> 1, 100 -> 0);
  *  lets `useCountUp` preserve the target's precision instead of assuming
  *  every counter is an integer. Falls back to 0 for non-finite input and
  *  for scientific notation, which a UI counter should never produce. */
@@ -82,7 +82,7 @@ const DEFAULT_COUNT_UP_DURATION_MS = 900;
  * Counts up from 0 to `target` over `durationMs`, easing out.
  *
  * - Under `prefers-reduced-motion`, and on the very first paint for a
- *   reduced-motion user, this returns `target` directly — never a flash
+ *   reduced-motion user, this returns `target` directly, never a flash
  *   of `0` before the "instant" value lands.
  * - Re-triggers (from 0 again) whenever `target` changes, matching a
  *   freshly-landed number rather than interpolating from the old one.

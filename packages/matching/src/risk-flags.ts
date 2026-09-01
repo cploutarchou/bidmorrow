@@ -48,11 +48,11 @@ function quoteEvidence(raw: string, matchIndex: number, matchLength: number): st
 }
 
 function possibleExplanation(): string {
-  return 'Possible requirement detected — verify in source documents.';
+  return 'Possible requirement detected: verify in source documents.';
 }
 
 function highExplanation(): string {
-  return 'Requirement detected in source text — verify against source documents.';
+  return 'Requirement detected in source text: verify against source documents.';
 }
 
 interface PatternRule {

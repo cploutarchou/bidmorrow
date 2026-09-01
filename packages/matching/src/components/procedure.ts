@@ -54,7 +54,7 @@ export function scoreProcedure(
       maxPoints,
       status,
       explanation:
-        'Procedure: contract nature and procedure type both not published — neutral score applied.',
+        'Procedure: contract nature and procedure type both not published. Neutral score applied.',
     };
   }
 

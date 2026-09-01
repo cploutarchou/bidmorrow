@@ -45,6 +45,42 @@ detail):
 - Requests failing verification get a neutral reply pointing to
   self-service flows; log the attempt if it looks like social engineering.
 
+## Digest email after a cancellation
+
+"I cancelled and I am still getting your emails" has a definite answer, so
+check the state before replying. The only recurring email BidMorrow sends is
+the daily digest; there is no marketing mail, and transactional mail
+(verification, password reset) always sends regardless of billing state.
+
+Digest eligibility is: `digest_preferences.enabled = 1`, the organization is
+`active` and not suspended, and, when the `entitlement_enforced` flag is on,
+`@bidmorrow/billing` `getEntitlement` reports `active`. That is the same
+entitlement rule the feed's 402 uses, applied both when the hourly cron
+enqueues a digest and again when the queue consumer runs it.
+
+By subscription state, with `entitlement_enforced` on:
+
+| State                                                        | Digest                               |
+| ------------------------------------------------------------ | ------------------------------------ |
+| `trialing`, `active`                                         | sends                                |
+| `active` with a scheduled cancel, before period end          | sends (they paid through the period) |
+| `past_due` inside the 7-day grace window                     | sends                                |
+| `past_due` past grace, `paused`, `canceled`, no subscription | stops                                |
+
+Two things to tell the customer honestly:
+
+- A cancellation scheduled for the end of the billing period does not stop
+  the digest immediately, and should not: the period is paid for. Digests
+  stop when Paddle moves the subscription to `canceled` at the period end.
+- Anyone can stop digest mail immediately without touching billing, through
+  the unsubscribe link in the footer of every digest or the digest toggle in
+  Settings.
+
+If neither explanation fits, check whether `entitlement_enforced` is set in
+that environment: while the flag is off the product is in V1-pilot mode and
+nothing is gated on billing state at all, so a canceled organization does
+keep receiving digests until its digest preference is turned off.
+
 ## Escalation to incident response
 
 Anything revealing a bug, outage, or security concern leaves support and

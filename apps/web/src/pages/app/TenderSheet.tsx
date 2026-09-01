@@ -11,7 +11,7 @@ import { TenderDetailContent } from '../../components/TenderDetailContent';
  *
  * Closing is `navigate(-1)` rather than a push to `/app`: the sheet was
  * reached by a push, so going back both restores the exact feed state
- * underneath — scroll position, loaded pages, active tab — and leaves no
+ * underneath (scroll position, loaded pages, active tab) and leaves no
  * dead entry in the history for Back to land on afterwards.
  */
 export function TenderSheet(): ReactElement | null {

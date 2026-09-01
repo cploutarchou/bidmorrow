@@ -2,12 +2,12 @@ import { useState, type FormEvent, type ReactElement } from 'react';
 import { AuthLayout } from './AuthLayout';
 
 /**
- * Forgot password — with the failure modes separated honestly.
+ * Forgot password, with the failure modes separated honestly.
  *
  * Two very different things can happen after submit, and they must not share
  * one message. A 200 means the server accepted the request, and the
  * confirmation is deliberately identical whether or not the address is
- * registered — an unauthenticated caller is never told which accounts exist.
+ * registered: an unauthenticated caller is never told which accounts exist.
  * A network failure or a 5xx means NOTHING was sent, and showing the
  * confirmation anyway would leave someone waiting on an email that is not
  * coming. The first version of this page had no catch at all: a fetch
@@ -31,13 +31,13 @@ export function ForgotPassword(): ReactElement {
         body: JSON.stringify({ email, redirectTo: '/reset-password' }),
       });
       if (!response.ok) {
-        setError('Could not reach the server — nothing was sent. Please try again.');
+        setError('Could not reach the server. Nothing was sent. Please try again.');
         return;
       }
       if (sent) setResent(true);
       setSent(true);
     } catch {
-      setError('Could not reach the server — nothing was sent. Please try again.');
+      setError('Could not reach the server. Nothing was sent. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -53,7 +53,7 @@ export function ForgotPassword(): ReactElement {
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setError('That does not look like an email address — check it and try again.');
+      setError('That does not look like an email address. Check it and try again.');
       return;
     }
     await requestReset();
@@ -72,8 +72,8 @@ export function ForgotPassword(): ReactElement {
               : 'If an account exists for that email, a password reset link has been sent.'}
           </p>
           <p className="auth-note">
-            The same confirmation shows whether or not the address is registered — an
-            unauthenticated caller is never told which accounts exist.
+            The same confirmation shows whether or not the address is registered. An unauthenticated
+            caller is never told which accounts exist.
           </p>
           {error !== null && (
             <p role="alert" className="form-error">

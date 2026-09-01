@@ -1,12 +1,12 @@
 /**
- * Public runtime config (GET /api/public-config — unauthenticated,
+ * Public runtime config (GET /api/public-config, unauthenticated and
  * secret-free): the pre-launch gate state, the countdown target, and the
  * Paddle.js client-side token + environment (`paddle` is `null` when
- * billing is not configured, e.g. local/test — a Paddle client token is
+ * billing is not configured, e.g. local/test; a Paddle client token is
  * public by Paddle's design; the server-side API key never reaches here).
  * Fetched once per page load and cached module-wide; on any failure the
  * SPA assumes the OPEN state so a config hiccup can never hide the
- * product — the server gates are the real enforcement.
+ * product; the server gates are the real enforcement.
  */
 import { useEffect, useState } from 'react';
 

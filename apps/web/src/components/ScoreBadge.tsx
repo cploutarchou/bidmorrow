@@ -11,7 +11,7 @@ const CLASS_TO_CSS: Record<Classification, string> = {
 
 /**
  * Score badge: classification is always rendered as text, never conveyed by
- * color alone (WCAG 2.2 AA — see docs/conventions/frontend.md).
+ * color alone (WCAG 2.2 AA; see docs/conventions/frontend.md).
  */
 export function ScoreBadge({
   score,
@@ -25,7 +25,7 @@ export function ScoreBadge({
       {score !== null && (
         <>
           <span className="score-badge__num num">{score}/100</span>
-          {' — '}
+          {' - '}
         </>
       )}
       <span className="score-badge__label">{classificationLabel(classification)}</span>

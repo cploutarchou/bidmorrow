@@ -44,7 +44,7 @@ export function Users(): ReactElement {
 
   return (
     <AdminPage
-      documentTitle="Users — Admin"
+      documentTitle="Users | Admin"
       heading="Users"
       note="Accounts across every organization, with the organizations each one belongs to. Read-only: user records cannot be edited from the admin surface."
     >
@@ -86,7 +86,7 @@ export function Users(): ReactElement {
                   <td>{user.email}</td>
                   <td>{user.emailVerified ? 'Yes' : 'No'}</td>
                   <td>
-                    {user.organizationIds.length === 0 ? '—' : user.organizationIds.join(', ')}
+                    {user.organizationIds.length === 0 ? '–' : user.organizationIds.join(', ')}
                   </td>
                 </tr>
               ))}

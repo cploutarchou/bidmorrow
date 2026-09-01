@@ -1,16 +1,16 @@
 /**
- * Static onboarding reference data — CPV shorthand labels and a
+ * Static onboarding reference data: CPV shorthand labels and a
  * region-grouped country list. Both are display-only wayfinding aids (fix
  * for ux-strategy.md F16: "CPV codes rendered as bare numbers... 30-item
  * flat country checkbox list"); neither changes what gets sent to the API
  * (`cpvCodes: string[]` / `geographies: [{kind, code}]}` stay byte-identical
- * to today). No API call needed — this is data already known at build time.
+ * to today). No API call needed, because this is data already known at build time.
  */
 import { COMPANY_PRESETS } from '@bidmorrow/domain';
 
 /**
  * Short, plain-language shorthand for the CPV codes that appear in the
- * bundled onboarding presets — NOT an official CPV vocabulary quotation.
+ * bundled onboarding presets, NOT an official CPV vocabulary quotation.
  * A code outside this map (e.g. a manually-entered one) falls back to the
  * bare code, which is always honest even when a label isn't available.
  */
@@ -116,7 +116,7 @@ export const COUNTRY_NAME_BY_CODE: Readonly<Record<string, string>> = Object.fro
 /**
  * Union of every keyword term across the bundled onboarding presets
  * (`packages/domain`'s `COMPANY_PRESETS`), de-duplicated case-insensitively
- * and sorted — a public, static suggestion source for Settings' "Add
+ * and sorted: a public, static suggestion source for Settings' "Add
  * keyword" combobox. Same non-exhaustive posture as `CPV_SUGGESTIONS`
  * (`data/cpv-suggestions.ts`): a suggestion list only, any free-typed
  * keyword is still accepted.

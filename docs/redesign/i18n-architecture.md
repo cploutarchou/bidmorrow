@@ -201,7 +201,7 @@ explicit `locale` parameter; web re-exports for compatibility):
   message keys (`deadline_in_days_one` / `_other`) or
   `Intl.RelativeTimeFormat` — never numeric concatenation.
 - **Numbers**: `Intl.NumberFormat(locale)`; score lines stay message-keyed
-  (`{{score}} / 100 — {{label}}` as a message, not code-side concatenation).
+  (`{{score}} / 100 - {{label}}` as a message, not code-side concatenation).
 - **Currency (EUR + original currencies)**: keep the existing correct
   policy — never convert; format the buyer's original currency code via
   `Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 })`

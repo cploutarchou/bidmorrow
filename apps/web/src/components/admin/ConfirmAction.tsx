@@ -11,11 +11,11 @@ import { confirmationMatches } from '../../lib/admin-confirm';
  * confirm string the API contract demands (see apps/worker/src/routes/
  * admin.ts CONFIRMATION PATTERN doc comment), and offers Cancel. Focus moves
  * into the input on arm and back to the arm button on cancel. In-flow, not
- * the prototype's `position: sticky` — that needs a page-level pending state
+ * the prototype's `position: sticky`, which needs a page-level pending state
  * machine this app deliberately does not have (see the admin-bodies note in
  * docs/redesign/template-conversion-audit.md).
  *
- * Not a security boundary — the server independently requires the same
+ * Not a security boundary: the server independently requires the same
  * literal in the request body and would reject a mismatch regardless.
  */
 export function ConfirmAction({
@@ -42,7 +42,7 @@ export function ConfirmAction({
   const matches = confirmationMatches(confirmText, typed);
 
   // Focus follows the phase change: into the input on arm, back to the arm
-  // button on cancel — never dropped to <body>.
+  // button on cancel, never dropped to <body>.
   useEffect(() => {
     if (armed) inputRef.current?.focus();
     else armButtonRef.current?.focus({ preventScroll: true });

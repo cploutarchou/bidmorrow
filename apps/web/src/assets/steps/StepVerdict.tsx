@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import '../../styles/illustrations.css';
 
 /**
- * "How it works" step 4 — the verdict card: a badge plus the
+ * "How it works" step 4, the verdict card: a badge plus the
  * point-by-point explanation. The badge text ("Strong fit") is a real,
  * stable product label (the verdict taxonomy), not invented copy; the
  * three explanation rows are drawn as generic placeholder bars rather

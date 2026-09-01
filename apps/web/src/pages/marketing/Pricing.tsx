@@ -4,7 +4,7 @@ import { PageMeta } from '../../components/PageMeta';
 import { MARKETING_META } from '../../lib/seo';
 
 /**
- * Pricing — 2026-08-21 handoff redesign (`BidMorrow Marketing.dc.html`,
+ * Pricing: 2026-08-21 handoff redesign (`BidMorrow Marketing.dc.html`,
  * page="pricing"): founding €29 highlighted against standard €49, a
  * twelve-month price-hold comparison (€348 vs €588, VAT included), and a billing-facts
  * strip. Facts follow the source: founding price retained for the life of
@@ -13,14 +13,14 @@ import { MARKETING_META } from '../../lib/seo';
  */
 
 const FOUNDING_POINTS = [
-  'The identical product — there is no cut-down pilot tier',
+  'The identical product, with no cut-down pilot tier',
   'A direct line to the people building it',
   'Cancel from settings whenever you like',
 ];
 
 const STANDARD_POINTS = [
   'The same feed, engine, daily digest and support',
-  'Billed monthly through Paddle, our Merchant of Record — VAT included in the price',
+  'Billed monthly through Paddle, our Merchant of Record, with VAT included in the price',
   'Cancel from settings whenever you like',
 ];
 
@@ -60,12 +60,12 @@ export function Pricing(): ReactElement {
           data-reveal
           data-reveal-i={1}
         >
-          <p className="mkt-plan__cap">Founding — first 100 customers</p>
+          <p className="mkt-plan__cap">Founding: first 100 customers</p>
           <h2 id="founding-plan-heading">Founding plan</h2>
           <p className="mkt-plan__price">€29 / month</p>
           <p className="mkt-plan__desc">
             For the first hundred companies through the door, while the pilot runs. Your price is
-            fixed for as long as the subscription lives — it never quietly becomes the standard
+            fixed for as long as the subscription lives; it never quietly becomes the standard
             price.
           </p>
           <ul className="mkt-plan__list">
@@ -109,7 +109,7 @@ export function Pricing(): ReactElement {
         <div className="mkt-hold__head">
           <p className="mkt-hold__cap">What the founding price does over twelve months</p>
           <p className="mkt-hold__lede">
-            One line holds. The other is what the same year costs at the standard price — the gap is
+            One line holds. The other is what the same year costs at the standard price. The gap is
             the whole benefit of being early.
           </p>
         </div>

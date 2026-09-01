@@ -15,8 +15,8 @@ interface AdminNavItem {
 
 /**
  * Rail groups (docs/redesign/navigation-and-admin-entry.md §2): the ten
- * sections read as four questions — is the system healthy, who are the
- * customers, is the pipeline moving, what did we change — instead of a
+ * sections read as four questions (is the system healthy, who are the
+ * customers, is the pipeline moving, what did we change) instead of a
  * flat list the on-call reader re-scans every time.
  */
 const ADMIN_NAV_GROUPS: { caption: string; items: AdminNavItem[] }[] = [
@@ -48,7 +48,7 @@ const ADMIN_NAV_GROUPS: { caption: string; items: AdminNavItem[] }[] = [
 ];
 
 /**
- * Internal-tooling shell — 2026-08-21 handoff redesign (`BidMorrow
+ * Internal-tooling shell: 2026-08-21 handoff redesign (`BidMorrow
  * Admin.dc.html`): header strip with the audited-surface note, and a
  * sticky left section rail with a left-mark active state. Deliberately
  * distinct from the customer `AppShell`, but no longer a dead end: the
@@ -85,7 +85,7 @@ export function AdminShell({ children }: { children: ReactNode }): ReactElement 
       await refresh();
       void navigate('/login');
     } catch {
-      setSignOutError('Could not log out — please try again.');
+      setSignOutError('Could not log out. Please try again.');
     }
   }
 
@@ -98,16 +98,16 @@ export function AdminShell({ children }: { children: ReactNode }): ReactElement 
       <header className="admin-header">
         <div className="admin-header__inner">
           <div className="admin-header__id">
-            <p className="admin-header__title">BidMorrow — Internal Admin</p>
+            <p className="admin-header__title">BidMorrow Internal Admin</p>
             <p className="admin-header__note">
-              Internal ops tooling — not a customer surface. Every request here is audited.
+              Internal ops tooling, not a customer surface. Every request here is audited.
             </p>
           </div>
           <div className="admin-header__actions">
             {/* Ops pills (prototype header): live pause state from the same
               health-details response that authorized the surface. The
               prototype's third pill (audit-event count) lives in the rail
-              instead — one source, not two. */}
+              instead: one source, not two. */}
             {health !== null && (
               <>
                 <span
@@ -131,7 +131,7 @@ export function AdminShell({ children }: { children: ReactNode }): ReactElement 
               </>
             )}
             <span className="admin-header__who" title={user?.email ?? undefined}>
-              {user?.email ?? '—'}
+              {user?.email ?? '–'}
             </span>
             <Link className="admin-header__link" to="/app">
               ← Open app

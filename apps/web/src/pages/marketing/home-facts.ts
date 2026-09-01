@@ -1,8 +1,8 @@
 /**
  * Parses a Home "product facts" value (`FACTS` in `Home.tsx`, e.g.
  * `'0–100'`, `'5 rules'`) into the pieces `<FactValue>` needs to animate
- * the numeric part with `useCountUp` while keeping everything around it —
- * including the en dash in `'0–100'` — untouched.
+ * the numeric part with `useCountUp` while keeping everything around it
+ * (including the en dash in `'0–100'`) untouched.
  *
  * `prefix + String(target) + suffix` reconstructs the original string
  * exactly (brand-elevation delivery item 7: "the strings must still end

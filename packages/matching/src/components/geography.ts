@@ -14,7 +14,7 @@ export function scoreGeography(lot: LotInput, org: OrgProfile): ComponentResult 
       points: maxPoints * UNKNOWN_NEUTRAL,
       maxPoints,
       status: 'UNKNOWN',
-      explanation: 'No NUTS region or country on this lot — neutral score applied.',
+      explanation: 'No NUTS region or country on this lot. Neutral score applied.',
     };
   }
 

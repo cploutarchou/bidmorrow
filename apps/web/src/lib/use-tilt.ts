@@ -9,16 +9,16 @@ const MAX_TILT_DEG = 4;
  * elevation delivery item 3): desktop, fine-pointer only, capped at 4°.
  *
  * Writes `--tilt-x`/`--tilt-y` custom properties on the element via
- * `element.style.setProperty` — CSSOM property writes, not a `style=`
+ * `element.style.setProperty`: CSSOM property writes, not a `style=`
  * attribute or a `<style>` tag, so this stays inside `style-src 'self'`
  * with no `unsafe-inline` (same reasoning as `styles/illustrations.css`'s
  * header). `styles/marketing.css` reads those properties inside
- * `@media (pointer: fine) and (prefers-reduced-motion: no-preference)` —
+ * `@media (pointer: fine) and (prefers-reduced-motion: no-preference)`;
  * the CSS itself is the second gate, so even if this hook ran on a touch
  * device the properties it wrote would have no visible effect.
  *
  * `pointermove` fires far more often than the display can repaint (every
- * mouse-move tick, easily 60-plus times a second on a fast mouse) — the
+ * mouse-move tick, easily 60-plus times a second on a fast mouse), so the
  * handler is rAF-throttled (one `getBoundingClientRect` + two style
  * writes per animation frame, not per event) so a fast sweep across the
  * card never queues more style-recalculation work than the browser can

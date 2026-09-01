@@ -20,7 +20,7 @@ export interface MatchingPreferencesDto {
   minimumDaysRemaining: number | null;
 }
 
-/** Raw D1 row shape — `enabled`/`sendEmpty` are stored as INTEGER 0/1. */
+/** Raw D1 row shape: `enabled`/`sendEmpty` are stored as INTEGER 0/1. */
 export interface DigestPreferencesDto {
   id: string;
   organizationId: string;
@@ -53,7 +53,7 @@ export interface ExclusionDto {
   value: string;
 }
 
-/** Matches `packages/db` `CertificationCode` — kept as a local literal union
+/** Matches `packages/db` `CertificationCode`, kept as a local literal union
  * since `apps/web` depends only on `@bidmorrow/domain`, not `@bidmorrow/db`. */
 export type CertificationCode = 'ISO_27001' | 'ISO_9001' | 'SOC2' | 'OTHER';
 

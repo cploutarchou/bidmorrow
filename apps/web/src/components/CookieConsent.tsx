@@ -39,12 +39,12 @@ const TOGGLE_ROWS: ToggleRow[] = [
   {
     id: 'analytics',
     label: 'Analytics',
-    note: 'Would allow Google Analytics 4 with IP anonymisation (page views and feature use). No analytics runs today — nothing loads unless this ships AND you have said yes.',
+    note: 'Would allow Google Analytics 4 with IP anonymisation (page views and feature use). No analytics runs today: nothing loads unless this ships AND you have said yes.',
   },
   {
     id: 'marketing',
     label: 'Marketing',
-    note: 'Nothing today. If we ever add advertising or retargeting tags, they would sit here — off unless you turn them on.',
+    note: 'Nothing today. If we ever add advertising or retargeting tags, they would sit here, off unless you turn them on.',
   },
 ];
 
@@ -92,7 +92,7 @@ export function CookieConsent(): ReactElement | null {
 
   // The banner is position:fixed over the page's tail, so while it is open
   // the document gets matching bottom clearance (styles/marketing.css
-  // `body.consent-banner-open`) — otherwise the footer's links, including
+  // `body.consent-banner-open`); otherwise the footer's links, including
   // the legally-relevant privacy policy, sit underneath it unreachable.
   // A class + stylesheet rule rather than a measured inline style: the CSP
   // is `style-src 'self'` with no inline styles, by design.
@@ -115,7 +115,7 @@ export function CookieConsent(): ReactElement | null {
               <p className="consent-banner__title">Your choice about cookies</p>
               <p className="consent-banner__note">
                 We use strictly necessary cookies to run the site. Analytics, preference and
-                marketing cookies stay switched off until you say yes — and you can change or
+                marketing cookies stay switched off until you say yes, and you can change or
                 withdraw your choice at any time from the footer.
               </p>
             </div>
@@ -154,15 +154,15 @@ export function CookieConsent(): ReactElement | null {
             <p className="consent-dialog__title">Cookie preferences</p>
             <p className="consent-dialog__lede">
               Nothing outside “strictly necessary” runs before you switch it on. Your choice is
-              stored on this device until you change or withdraw it — one click from the footer.
+              stored on this device until you change or withdraw it, one click from the footer.
             </p>
             <div className="mkt-cellgrid mkt-cellgrid--rows consent-rows">
               <div className="mkt-cell consent-row">
                 <div>
                   <p className="consent-row__label">Strictly necessary</p>
                   <p className="consent-row__note">
-                    Session, sign-in and security. These cannot be switched off — they are what
-                    makes the app work.
+                    Session, sign-in and security. These cannot be switched off; they are what makes
+                    the app work.
                   </p>
                 </div>
                 <div className="consent-row__control">
