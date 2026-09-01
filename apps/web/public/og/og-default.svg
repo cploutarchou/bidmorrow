@@ -22,16 +22,17 @@
     inherit from) — kept in sync by hand; if those tokens move, update here.
 
     Content: wordmark, the one-line brand promise, the actual meta
-    description sub-line, and a static (non-animated; this is a raster
-    source) version of the funnel motif from src/assets/FunnelHero.tsx.
-    The 3 / 2 / 1 verdict split sums to the 6 notice chips actually drawn
-    here — same "illustrative worked count, not a product metric" rule as
-    the hero, and labelled as such in the image.
+    description sub-line, and a static frame of the homepage hero's
+    decision engine (src/components/hero/DecisionEngine.tsx, first
+    scene): the same illustrative tender, the eight published components
+    with the points they earned (they sum to the 84 shown, as the hero's
+    unit test enforces), and the Strong match band. Labelled illustrative
+    in the image, same rule as the hero.
   -->
-  <title id="og-title">BidMorrow — Find the tenders worth pursuing. Skip the rest.</title>
+  <title id="og-title">BidMorrow: Find the tenders worth pursuing. Skip the rest.</title>
   <desc id="og-desc">
-    Bid/no-bid qualification for EU public procurement, TED. A stream of notice chips flows
-    through a matching lens and sorts into three illustrative verdict groups.
+    Bid/no-bid qualification for EU public procurement, TED. An illustrative notice is scored
+    on eight components to 84 of 100 and placed in the Strong match band.
   </desc>
 
   <style>
@@ -39,6 +40,12 @@
       font-family: 'Archivo';
       src: url('/fonts/archivo-latin.woff2') format('woff2');
       font-weight: 100 900;
+      font-display: block;
+    }
+    @font-face {
+      font-family: 'Source Code Pro';
+      src: url('/fonts/source-code-pro-latin.woff2') format('woff2');
+      font-weight: 200 900;
       font-display: block;
     }
     text {
@@ -75,7 +82,9 @@
     <text x="40" y="434">procurement &#183; TED</text>
   </g>
 
-  <!-- funnel motif panel -->
+  <!-- decision engine panel: a static frame of the homepage hero
+       (src/components/hero/DecisionEngine.tsx, first scene). Same
+       illustrative tender, same eight components, same 84 / 100. -->
   <g>
     <rect
       x="720"
@@ -88,73 +97,123 @@
       stroke-width="1.5"
     />
 
-    <g stroke="#14181d" stroke-width="1.5">
-      <rect x="768" y="135" width="24" height="14" rx="3" stroke-opacity="0.45" fill="none" />
-      <rect x="916" y="135" width="24" height="14" rx="3" stroke-opacity="0.45" fill="none" />
-      <rect x="1064" y="135" width="24" height="14" rx="3" stroke-opacity="0.45" fill="none" />
-      <rect x="842" y="163" width="24" height="14" rx="3" stroke-opacity="0.45" fill="none" />
-      <rect x="990" y="163" width="24" height="14" rx="3" stroke-opacity="0.45" fill="none" />
-      <rect x="916" y="191" width="24" height="14" rx="3" stroke-opacity="0.45" fill="none" />
+    <!-- source line + queue -->
+    <text x="744" y="124" class="mono" font-size="10" letter-spacing="0.08em" fill="#5f6875">
+      TED · OJ S · EVERY MORNING
+    </text>
+    <g fill="none" stroke="#14181d" stroke-opacity="0.35" stroke-width="1.5">
+      <rect x="1080" y="114" width="16" height="10" rx="2" />
+      <rect x="1102" y="114" width="16" height="10" rx="2" />
+      <rect x="1124" y="114" width="16" height="10" rx="2" />
     </g>
 
-    <g transform="translate(940, 270)">
-      <circle r="46" fill="none" stroke="#0f7d6f" stroke-width="1.5" />
-      <circle r="30" fill="none" stroke="#14181d" stroke-opacity="0.25" stroke-width="1.5" />
-      <circle r="3.5" fill="#0f7d6f" />
-      <g stroke="#14181d" stroke-opacity="0.4" stroke-width="1.5" stroke-linecap="round">
-        <line x1="0" y1="-58" x2="0" y2="-50" />
-        <line x1="0" y1="50" x2="0" y2="58" />
-        <line x1="-58" y1="0" x2="-50" y2="0" />
-        <line x1="50" y1="0" x2="58" y2="0" />
+    <!-- the notice, as the feed card shows it -->
+    <rect x="736" y="138" width="408" height="100" rx="10" fill="#ffffff" stroke="#d5dae0" stroke-width="1.5" />
+    <text x="752" y="160" class="mono" font-size="10" letter-spacing="0.04em" fill="#5f6875">
+      NATIONAL HEALTH MINISTRY · CY
+    </text>
+    <text x="752" y="181" font-size="14" font-weight="600" fill="#14181d">
+      Cloud migration and managed hosting
+    </text>
+    <text x="752" y="199" font-size="14" font-weight="600" fill="#14181d">
+      for national health records
+    </text>
+    <text x="752" y="220" class="mono" font-size="11" fill="#4d5661">
+      €1.84M · closes in 11 days
+    </text>
+
+    <!-- pipeline -->
+    <line x1="940" y1="238" x2="940" y2="258" stroke="#d5dae0" stroke-width="2" stroke-linecap="round" />
+    <circle cx="940" cy="248" r="3.5" fill="#0f7d6f" />
+
+    <!-- the engine -->
+    <rect
+      x="736"
+      y="258"
+      width="408"
+      height="196"
+      rx="10"
+      fill="#ffffff"
+      stroke="rgba(15,125,111,0.28)"
+      stroke-width="1.5"
+    />
+    <text x="752" y="278" font-size="11" font-weight="600" fill="#14181d">BidMorrow qualification</text>
+    <text x="1130" y="278" class="mono" font-size="9" letter-spacing="0.06em" text-anchor="end" fill="#5f6875">
+      ENGINE V1
+    </text>
+    <line x1="752" y1="287" x2="1130" y2="287" stroke="#eef0f2" stroke-width="1" />
+      <g>
+        <path d="M750.0 301.0 l2.6 2.6 l5.4 -6" fill="none" stroke="#0f7d6f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="768" y="304" font-size="10.5" fill="#14181d">CPV fit</text>
+        <text x="1130" y="304" class="mono" font-size="10.5" text-anchor="end" fill="#4d5661">32/35</text>
       </g>
-    </g>
+      <g>
+        <path d="M750.0 316.0 l2.6 2.6 l5.4 -6" fill="none" stroke="#0f7d6f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="768" y="319" font-size="10.5" fill="#14181d">Capability &amp; keyword fit</text>
+        <text x="1130" y="319" class="mono" font-size="10.5" text-anchor="end" fill="#4d5661">18/20</text>
+      </g>
+      <g>
+        <path d="M750.0 331.0 l2.6 2.6 l5.4 -6" fill="none" stroke="#0f7d6f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="768" y="334" font-size="10.5" fill="#14181d">Geography</text>
+        <text x="1130" y="334" class="mono" font-size="10.5" text-anchor="end" fill="#4d5661">14/15</text>
+      </g>
+      <g>
+        <path d="M750.0 346.0 l2.6 2.6 l5.4 -6" fill="none" stroke="#0f7d6f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="768" y="349" font-size="10.5" fill="#14181d">Contract value</text>
+        <text x="1130" y="349" class="mono" font-size="10.5" text-anchor="end" fill="#4d5661">9/10</text>
+      </g>
+      <g>
+        <path d="M750.0 361.0 l2.6 2.6 l5.4 -6" fill="none" stroke="#0f7d6f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        <text x="768" y="364" font-size="10.5" fill="#14181d">Buyer &amp; sector</text>
+        <text x="1130" y="364" class="mono" font-size="10.5" text-anchor="end" fill="#4d5661">4/5</text>
+      </g>
+      <g>
+        <circle cx="754" cy="375.5" r="4.2" fill="none" stroke="#0f7d6f" stroke-width="1.4" /><path d="M754 371.3 a4.2 4.2 0 0 1 0 8.4 Z" fill="#0f7d6f" />
+        <text x="768" y="379" font-size="10.5" fill="#14181d">Procedure &amp; contract nature</text>
+        <text x="1130" y="379" class="mono" font-size="10.5" text-anchor="end" fill="#4d5661">3/5</text>
+      </g>
+      <g>
+        <circle cx="754" cy="390.5" r="4.2" fill="none" stroke="#0f7d6f" stroke-width="1.4" /><path d="M754 386.3 a4.2 4.2 0 0 1 0 8.4 Z" fill="#0f7d6f" />
+        <text x="768" y="394" font-size="10.5" fill="#14181d">Deadline runway</text>
+        <text x="1130" y="394" class="mono" font-size="10.5" text-anchor="end" fill="#4d5661">2/5</text>
+      </g>
+      <g>
+        <circle cx="754" cy="405.5" r="4.2" fill="none" stroke="#0f7d6f" stroke-width="1.4" /><path d="M754 401.3 a4.2 4.2 0 0 1 0 8.4 Z" fill="#0f7d6f" />
+        <text x="768" y="409" font-size="10.5" fill="#14181d">Eligibility &amp; certifications</text>
+        <text x="1130" y="409" class="mono" font-size="10.5" text-anchor="end" fill="#4d5661">2/5</text>
+      </g>
+    <line x1="752" y1="418" x2="1130" y2="418" stroke="#eef0f2" stroke-width="1" />
 
-    <g>
-      <rect x="728" y="356" width="132" height="64" rx="10" fill="#0f7d6f" />
-      <text x="742" y="380" font-size="12" font-weight="600" fill="#ffffff">Strong fit</text>
-      <text x="742" y="406" class="mono" font-size="18" font-weight="700" fill="#ffffff">3</text>
-
-      <rect x="874" y="356" width="132" height="64" rx="10" fill="rgba(15,125,111,0.1)" />
-      <rect
-        x="874"
-        y="356"
-        width="132"
-        height="64"
-        rx="10"
+    <!-- score -->
+    <g transform="translate(768, 437)">
+      <circle r="14" fill="none" stroke="#e6e9ec" stroke-width="3.5" />
+      <circle
+        r="14"
         fill="none"
-        stroke="rgba(15,125,111,0.28)"
-        stroke-width="1.5"
+        stroke="#0f7d6f"
+        stroke-width="3.5"
+        stroke-linecap="round"
+        stroke-dasharray="73.89 87.96"
+        transform="rotate(-90)"
       />
-      <text x="888" y="380" font-size="12" font-weight="600" fill="#0b6a5e">Worth reviewing</text>
-      <text x="888" y="406" class="mono" font-size="18" font-weight="700" fill="#0b6a5e">2</text>
-
-      <rect x="1020" y="356" width="132" height="64" rx="10" fill="#ffffff" />
-      <rect
-        x="1020"
-        y="356"
-        width="132"
-        height="64"
-        rx="10"
-        fill="none"
-        stroke="#d5dae0"
-        stroke-width="1.5"
-      />
-      <text x="1034" y="380" font-size="12" font-weight="600" fill="#14181d" opacity="0.85">
-        Possible
-      </text>
-      <text x="1034" y="406" class="mono" font-size="18" font-weight="700" fill="#14181d">1</text>
     </g>
+    <text x="792" y="445" class="mono" font-size="22" font-weight="700" letter-spacing="-0.02em" fill="#14181d">84</text>
+    <text x="824" y="445" class="mono" font-size="11" fill="#5f6875">/ 100</text>
+    <rect x="1030" y="425" width="100" height="24" rx="12" fill="#0f7d6f" />
+    <text x="1080" y="441" font-size="11" font-weight="600" text-anchor="middle" fill="#ffffff">
+      Strong match
+    </text>
 
     <text
       x="940"
-      y="458"
+      y="486"
       class="mono"
       text-anchor="middle"
       font-size="10"
       letter-spacing="0.08em"
       fill="#5f6875"
     >
-      ILLUSTRATIVE EXAMPLE &#8212; NOT LIVE DATA
+      ILLUSTRATIVE EXAMPLE · NOT LIVE DATA
     </text>
   </g>
 </svg>
