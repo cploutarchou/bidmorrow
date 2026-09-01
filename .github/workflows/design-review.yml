@@ -18,9 +18,23 @@ on:
         description: Artifact label (folder name under artifacts/design-review)
         default: staging
         required: true
+      widths:
+        description: Viewport widths to capture (comma list)
+        default: 375,390,430,768,1024,1280,1440,1920
+        required: true
+      lighthouse:
+        description: Run the five Lighthouse pairs after the screenshots
+        type: boolean
+        default: true
+      push_branch:
+        description: >-
+          Optional scratch branch to force-push the captures to (the session
+          sandbox cannot download workflow artifacts); leave empty to skip
+        default: ''
+        required: false
 
 permissions:
-  contents: read
+  contents: write # only used by the optional scratch-branch push below
 
 concurrency:
   group: design-review
@@ -29,7 +43,10 @@ concurrency:
 jobs:
   capture:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Eight widths x two schemes x fourteen routes is ~220 paced full-page
+    # captures (the script scrolls each page so reveal sections render),
+    # about 20 minutes on a runner, plus ~5 minutes of Lighthouse.
+    timeout-minutes: 50
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -54,9 +71,12 @@ jobs:
           node scripts/design-screenshots.mjs \
             --base-url "${{ inputs.base_url }}" \
             --label "${{ inputs.label }}" \
-            --widths 375,390,430,768,1024,1280,1440,1920
+            --widths "${{ inputs.widths }}"
 
       - name: Lighthouse (five baseline pairs)
+        # Runs even when the screenshot step reports findings, so the
+        # numbers land beside the captures in the same artifact.
+        if: ${{ !cancelled() && inputs.lighthouse }}
         run: |
           node scripts/design-lighthouse.mjs \
             --base-url "${{ inputs.base_url }}" \
@@ -68,8 +88,30 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload captures and reports
+        if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: design-review-${{ inputs.label }}
           path: artifacts/design-review
           retention-days: 30
+
+      # Same pattern as competitor-screenshots.yml: a transient branch that
+      # git can fetch from the sandbox, deleted after review. Never touches
+      # main or the working branches.
+      - name: Push captures to the scratch branch
+        if: ${{ always() && inputs.push_branch != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUSH_BRANCH: ${{ inputs.push_branch }}
+        run: |
+          case "$PUSH_BRANCH" in
+            main|claude/*) echo "refusing to push captures to $PUSH_BRANCH"; exit 1 ;;
+          esac
+          cd artifacts/design-review
+          git init -b "$PUSH_BRANCH"
+          git config user.name "bidmorrow-ci"
+          git config user.email "ci@users.noreply.github.com"
+          git add -A
+          git commit -q -m "design-review captures, label ${{ inputs.label }} ($(date -u +%FT%TZ))"
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$PUSH_BRANCH"
+          echo "pushed $(git ls-files | grep -c '\.png$') screenshots and $(git ls-files | grep -c '\.json$') reports to branch $PUSH_BRANCH"

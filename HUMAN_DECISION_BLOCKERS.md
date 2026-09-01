@@ -26,6 +26,36 @@ product image set via API on all four products, brand kit in docs/brand/.
 products, revoke the test key at dashboard.stripe.com (GitHub `STRIPE_*` secrets already deleted;
 last code mention scrubbed in #130). Everything below is history.
 
+## OPEN 2026-09-01 22:10 UTC — Cloudflare Web Analytics beacon is injected into every page and blocked by our CSP (zone setting, owner decision)
+
+**What:** the staging design-review capture (run 33562293252) logged two
+CSP violations on every page: Cloudflare injects
+`https://static.cloudflareinsights.com/beacon.min.js` plus an inline
+loader into every HTML response of the zone (the dashboard's Web
+Analytics "automatic setup"), and the site's own header
+`script-src 'self' https://cdn.paddle.com` refuses both. The same happens
+on production (same zone): every visitor's console shows the violations
+and the beacon never runs, so Cloudflare Web Analytics collects nothing
+anyway. Nothing in the repository references the beacon; the CSP is
+doing exactly what docs/security.md says it should.
+
+**Decide one of:**
+
+1. **Recommended:** turn the automatic injection off for the zone
+   (Cloudflare dashboard → Analytics & Logs → Web Analytics → the
+   bidmorrow.com site → disable "Automatic setup" / JS snippet
+   injection). No code change; consent-gated first-party analytics stays
+   as designed (docs/redesign/ux-strategy.md). Also removes an
+   unconsented third-party request from every page.
+2. Keep Web Analytics and allow it in the CSP: add
+   `https://static.cloudflareinsights.com` to `script-src` in
+   `apps/worker/src/index.ts` (the inline loader would still need a
+   nonce or `'unsafe-inline'`, which the security posture forbids, so
+   the beacon would have to be loaded by our own bundle instead).
+
+Until decided, the capture script reports these messages separately and
+does not count them as site errors (commit on the dev branch, 22:09 UTC).
+
 ## ✅ CLOSED 2026-09-01 19:55 UTC — production deploy of PRs #132 + #133 (owner instruction "deploy to production")
 
 **What:** the hourly fetch-retry drain fix for post-launch incident #1

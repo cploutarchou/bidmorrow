@@ -3562,28 +3562,30 @@ Baseline model established: ~$6/mo (0–10 customers), ~$26/mo (100),
 ## Deployment state
 
 _Superseded repeatedly; kept as one live section rather than a Phase-5-era
-snapshot. Last verified 2026-08-29 against the Cloudflare API and the
-GitHub deploy history._
+snapshot. Last verified 2026-09-01 21:47 UTC against the GitHub deploy
+history and read-only D1 queries._
 
-- **Staging** — CURRENT. `staging.bidmorrow.com`; D1 `bidmorrow-staging`
-  (`cd51fe7b-6b12-48b4-ae94-84205c3de99a`) at migration
-  `0011_paddle_billing.sql` (11 applied). Last deploy 2026-08-26 01:08 UTC
-  (`Deploy staging`, push). Ingestion RUNNING (`ingestion_paused: false`):
-  the 2026-08-29 05:00 UTC run ingested 133/133 notices with 0 errors;
-  459 notices / 753 lots hold. Flags: `ingestion_paused: false`, plus a
-  dead `stripe_tax_enabled: false` row left behind by ADR-0011 (the code
-  no longer reads it — harmless, delete at leisure).
-- **Production** — STALE, 41 PRs behind. Last deploy 2026-08-21 17:06 UTC
-  (`Deploy production` run 32506382104, commit `4448e09` = PR #69), while
-  `main` is `99c4e61` (PR #110). D1 `bidmorrow-production`
-  (`cd5f6ceb-3262-4ba9-a5f4-4c1ed43e27bb`) has only **9** migrations —
-  missing `0010_saved_searches` and `0011_paddle_billing` — and 0 users,
-  0 organizations, 0 notices, 0 ingestion runs. `ingestion_paused: true`
-  (deliberate); no `prelaunch` row, so the env-aware default keeps
-  registrations CLOSED on production. The deployed code is the Stripe-era
-  billing package: a production deploy of `main` therefore requires the
-  live Paddle secrets first (HUMAN_DECISION_BLOCKERS item 4c). See
-  PRODUCTION_READINESS_AUDIT.md F-02.
+- **Staging** — CURRENT at `main` `adad0c2` (PR #134, the website visual
+  upgrade). `staging.bidmorrow.com`; D1 `bidmorrow-staging`
+  (`cd51fe7b-6b12-48b4-ae94-84205c3de99a`), migrations unchanged by #134.
+  Last deploy 2026-09-01 21:38–21:39 UTC (`Deploy staging` run 124,
+  33562159261, all steps green, smoke passed); `site-health` run 7 at
+  21:40 UTC: health live/ready 200, `stale: false`, headers unchanged,
+  `X-Robots-Tag: noindex` present. Ingestion RUNNING; the hourly
+  fetch-retry drains recover (see the 21:46 UTC evaluation below):
+  `ingestion_fetch_retries` pending 1,000 (669 never attempted, 331 at
+  attempts=1), recovered 169 (69 today), abandoned 0.
+- **Production** — CURRENT at `main` `3c08100` (PRs #132 + #133),
+  deployed 2026-09-01 19:53–19:55 UTC (`Deploy production` run 20,
+  33552153011, verified `success` on 21:47 UTC re-read). One PR behind
+  `main` (#134, the visual upgrade) pending the design production gate.
+  D1 `bidmorrow-production` (`cd5f6ceb-3262-4ba9-a5f4-4c1ed43e27bb`).
+  Flags verified 21:47 UTC: `ingestion_paused: false`, `prelaunch: false`,
+  `founding_plan_open: true`, `entitlement_enforced: true` (row created
+  19:53:41 UTC on the owner's instruction). First live data after the
+  20:40 UTC drain: 6 notices, 8 lots, 8 matches for the one organization
+  (3 WORTH_REVIEWING, 5 EXCLUDED); retries pending 144 (75 at attempts=0,
+  69 at attempts=1), recovered 6.
 - **www redirect** — `apps/www-redirect` deployed 2026-08-22, 301s to the
   apex (blockers item 12).
 
@@ -5397,6 +5399,34 @@ Self check-in after the 19:55 UTC deploy of #132 + #133 (production D1
   64 h per the ADR-0008 A5 ladder, so nothing is abandoned before six
   attempts. No production writes, no deploys, no flag changes in this
   check.
+
+## Staging drains evaluated: TED renders on demand after all (2026-09-01 21:46 UTC check-in)
+
+Read-only D1 queries on staging (`cd51fe7b`) after the 20:40 and 21:40 UTC
+drains. Baseline at 19:57 UTC: pending 1,069, recovered 100, abandoned 0,
+never attempted 819; the 19:40 drain had recovered 0 of 50.
+
+- `ingestion_runs` since 20:40 UTC: 01M1FB73HXD51Z3D02JSVCH48A (20:40:20,
+  `succeeded`, 161 s, 15 notices / 19 lots), 01M1FEN04SBSYSBCT59BNN461Q
+  (21:40:21, `succeeded`, 126 s, **50 notices / 62 lots**: every attempted
+  row recovered) and 01M1FES0JQCGS50CVN018D05YD (21:42:33, `succeeded`,
+  148 s, 4 notices / 4 lots). Errors 0, fetch-failed 0, render-pending 0 on
+  all three.
+- `ingestion_fetch_retries`: pending 1,000 (669 at attempts=0 never
+  attempted, 331 at attempts=1 of which 131 touched in the last 3 h),
+  recovered 169 (69 today, all by drains: 15 + 50 + 4), abandoned 0. Every
+  row's last error is still `NOTICE_RENDER_PENDING` when it fails, so TED's
+  on-demand render is the only thing standing between a row and recovery.
+- Verdict: the 19:40 0/50 was TED lag on that morning's batch, not a
+  systemic refusal; by 21:40 the same class of notice rendered 50/50. No
+  adaptive stand-down and no lower standalone cap are proposed; the ladder
+  (20 min, then 1 h × 4^(n-1), six attempts) stays as ADR-0008 A5 records
+  it. Re-evaluate only if a full day passes with 0 recovered.
+- Production confirmed in the same check: `Deploy production` run 20
+  (33552153011, `main` `3c08100`) `success` at 19:55:05 UTC;
+  `feature_flags.entitlement_enforced = true` present (created 19:53:41
+  UTC). Both HUMAN_DECISION_BLOCKERS items were already marked closed; the
+  Deployment state section above is rewritten to the verified truth.
 
 ## Notes
 

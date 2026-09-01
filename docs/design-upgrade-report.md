@@ -144,6 +144,11 @@ disk; CSS 76.6 → 86.6 kB on disk, +0.8 kB over the wire).
 - The FAQ is native `<details>`, keyboard-operable with focus rings intact.
 - Micro-interactions are gated on `(hover: hover)` and
   `prefers-reduced-motion: no-preference`; focus styles untouched.
+- Hero entrances never leave text at partial opacity: notice and band
+  chip wipe in, the engine panel rises and lights its border, rows slide
+  in while only the check-in mark fades, the band lights with a step.
+  Staging Lighthouse had caught the 35% rows mid-entrance; timed axe
+  passes now show zero contrast violations at any point in the loop.
 - The axe e2e spec now covers `/reset-password` in both states.
 
 ## Performance Improvements
@@ -192,15 +197,47 @@ change. Local Lighthouse SEO reads 66 because the local stack serves
 
 ## Staging Deployment
 
-Pending: filled in after the PR merges and `deploy-staging.yml` runs;
-evidence goes to `docs/staging-design-validation.md`.
+PR #134 squash-merged to `main` as `adad0c2` on 2026-09-01 at 21:38 UTC
+after CI passed; `Deploy staging` run 124 (33562159261) deployed it in one
+minute with smoke tests green, and the docs-only #131 merge redeployed the
+identical build as run 125 at 22:06 UTC. Evidence and results are in
+`docs/staging-design-validation.md`: `site-health` run 7 (health 200 and
+not stale, security headers unchanged, staging `noindex`, production
+crawlable, new share image served), `design-review` run 3 (84 full-page
+captures at 390/768/1440 in both themes, no console errors, no
+horizontal overflow) and its Lighthouse table (accessibility 100 on four
+of five pairs, CLS 0 or 0.001 everywhere, performance 84 to 100).
 
 ## Production Deployment
 
-Pending: only after every gate in the plan's Phase 8 holds and the owner's
-deploy instruction stands (`deploy-production.yml`, typed confirmation).
-Rollback: re-dispatch `deploy-production.yml` at the previous production
-ref (recorded below once known).
+Gate (the brief's list, each with its evidence):
+
+| Gate                      | Evidence                                                                                                                    |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Build passes              | CI checks job on the PR head and on `main` (web build + `verify:build`)                                                     |
+| Tests pass                | vitest across the workspace, D1 and worker suites in CI; Playwright marketing, accessibility, keyboard: 41 passed locally   |
+| No major console errors   | 84 staging captures: none (the only console messages are the CSP-blocked Cloudflare beacon, pre-existing, recorded)         |
+| No broken links or images | Every route rendered with no failed resource loads (a failed load logs a console error); marketing e2e follows the nav      |
+| Staging verified          | `docs/staging-design-validation.md`                                                                                         |
+| Responsive verified       | 390 / 768 / 1440 on staging, 375 to 1920 locally, no overflow anywhere                                                      |
+| Payments unaffected       | Diff touches `apps/web` marketing UI, CSS, docs, scripts, one workflow; `packages/billing` and the checkout entry untouched |
+| Forms unaffected          | Auth and contact forms untouched; reset-password axe scan added                                                             |
+| Analytics unaffected      | Consent and analytics code untouched (`components/CookieConsent.tsx`, `lib/analytics`)                                      |
+| Authentication unaffected | Auth pages and API untouched; keyboard and marketing e2e green                                                              |
+| SEO metadata unaffected   | `lib/seo.test.ts` unchanged and green; site-health shows robots, sitemap, canonical behaviour unchanged                     |
+| Performance acceptable    | CLS 0.158/0.706 → 0.001/0; staging Lighthouse 84 to 100                                                                     |
+| Accessibility acceptable  | axe green locally on every public route; staging Lighthouse 100 on four pairs, Home desktop 96 (see validation doc)         |
+
+Deploy: `deploy-production.yml` with the typed confirmation, run id and
+verification recorded here once done.
+
+Rollback (decided before deploying): the upgrade carries no migration, so
+rollback is code only. First choice is the Cloudflare Workers deployment
+rollback to the previous version (the 19:55 UTC deploy of `3c08100`,
+`Deploy production` run 20) from the dashboard or `wrangler rollback`
+with production credentials; the alternative is `git revert` of the
+squash commit on `main` and a re-dispatch of `deploy-production.yml`.
+`docs/deployment.md` "Rollback strategy" is the procedure of record.
 
 ## Lighthouse Results
 
