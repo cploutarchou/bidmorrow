@@ -1277,11 +1277,11 @@ export function Home(): ReactElement {
           Before you sign up.
         </h2>
         <div className="hp-faqs">
-          {FAQS.map((faq) => (
-            <div className="hp-faq" key={faq.q}>
-              <p className="hp-faq__q">{faq.q}</p>
+          {FAQS.map((faq, index) => (
+            <details className="hp-faq" key={faq.q} open={index === 0}>
+              <summary className="hp-faq__q">{faq.q}</summary>
               <p className="hp-faq__a">{faq.a}</p>
-            </div>
+            </details>
           ))}
         </div>
       </section>

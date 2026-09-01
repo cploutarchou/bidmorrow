@@ -468,6 +468,36 @@
   font-weight: 700;
 }
 
+/* Card head: cap + name + price as one band; the founding card's band is
+   accent-tinted and its cap becomes a pill, so the offer reads as the
+   offer before the copy is read (docs/design-audit.md #10). */
+.mkt-plan__head {
+  display: grid;
+  gap: var(--s2);
+  margin: calc(var(--s6) * -1) calc(var(--s6) * -1) 0;
+  padding: var(--s5) var(--s6);
+  border-bottom: 1px solid var(--stroke-faint);
+  border-radius: var(--r-l) var(--r-l) 0 0;
+}
+
+.mkt-plan--founding .mkt-plan__head {
+  background: var(--accent-tint);
+  border-bottom-color: var(--accent-line);
+}
+
+.mkt-plan--founding .mkt-plan__cap {
+  justify-self: start;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.72rem;
+}
+
+.mkt-plan--founding .mkt-plan__price {
+  font-size: 2.5rem;
+}
+
 /* `.cta`/`.mkt-btn-quiet` are grid items inside `.mkt-plan` (a single-
    column grid) and would otherwise stretch to the full card width by
    `justify-items: normal`'s stretch behavior — pin them to their content
@@ -2549,28 +2579,57 @@
 }
 
 /* --- FAQ --- */
+/* Native <details>: the answers stay in the DOM (SEO, find-in-page),
+   the first is open, the rest fold to a row each (docs/design-audit.md #12). */
 .hp-faqs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  max-width: 48rem;
 }
 
 .hp-faq {
   background: var(--bg-panel);
   border: 1px solid var(--line-hair);
   border-radius: 20px;
-  padding: 1.375rem 1.5rem;
 }
 
 .hp-faq__q {
-  margin: 0 0 0.5rem;
+  position: relative;
+  margin: 0;
+  padding: 1.125rem 3.25rem 1.125rem 1.5rem;
+  list-style: none;
+  cursor: pointer;
   font-family: var(--font-head);
-  font-size: 1.1875rem;
+  font-size: 1.125rem;
   font-weight: 600;
+  border-radius: 20px;
+}
+
+.hp-faq__q::-webkit-details-marker {
+  display: none;
+}
+
+.hp-faq__q::after {
+  content: '';
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--ink-3);
+  border-bottom: 2px solid var(--ink-3);
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform 200ms var(--ease);
+}
+
+.hp-faq[open] .hp-faq__q::after {
+  transform: translateY(-30%) rotate(225deg);
 }
 
 .hp-faq__a {
   margin: 0;
+  padding: 0 1.5rem 1.25rem;
   font-size: 0.91rem;
   line-height: 1.6;
   color: var(--ink-2);
@@ -3784,7 +3843,9 @@ body.consent-banner-open .hp-sticky-cta {
    not inside it, precisely so it can never end up as a swallowed slide).
    `scroll-snap-align: start` (not `center`) so slide 1's left edge sits
    flush with the track's own left edge — i.e. `.hp-demo`'s padding box,
-   since the track carries no extra margin/padding of its own. */
+   since the track carries no extra margin/padding of its own. Slides are
+   88% wide so the next card peeks in from the right: the affordance that
+   there is more to swipe (docs/design-audit.md #13), on top of the dots. */
 @media (max-width: 40rem) {
   .hp-demo__cards {
     display: flex;
@@ -3797,7 +3858,7 @@ body.consent-banner-open .hp-sticky-cta {
 
   .hp-demo__cards .hp-card {
     scroll-snap-align: start;
-    flex: 0 0 100%;
+    flex: 0 0 88%;
     min-width: 0;
   }
 
@@ -3829,5 +3890,122 @@ body.consent-banner-open .hp-sticky-cta {
     font-size: 0.8125rem;
     color: var(--ink-2);
     font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ============================================================
+   Micro-interactions (design phase 4, docs/design-redesign-plan.md).
+   120–250 ms, the site ease, hover devices only for anything that moves,
+   and nothing here runs under prefers-reduced-motion: reduce. Focus
+   rings are untouched (base.css :focus-visible).
+   ============================================================ */
+
+.mkt-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .cta:hover,
+  .mkt-btn-quiet:hover {
+    transform: translateY(-1px);
+  }
+  .cta:active,
+  .mkt-btn-quiet:active {
+    transform: translateY(0);
+  }
+}
+
+.hp-card,
+.hp-truth,
+.hp-tier,
+.hp-faq,
+.mkt-plan--quiet {
+  transition:
+    border-color 180ms var(--ease),
+    box-shadow 180ms var(--ease);
+}
+
+@media (hover: hover) {
+  .hp-card:hover,
+  .hp-truth:hover,
+  .hp-tier:hover,
+  .hp-faq:hover,
+  .mkt-plan--quiet:hover {
+    border-color: var(--accent-line);
+  }
+}
+
+.hp-geo-chip {
+  transition:
+    background-color 150ms var(--ease),
+    border-color 150ms var(--ease),
+    color 150ms var(--ease);
+}
+
+.hp-step {
+  transition:
+    background-color 150ms var(--ease),
+    border-color 150ms var(--ease);
+}
+
+.hp-step__num {
+  transition:
+    background-color 150ms var(--ease),
+    border-color 150ms var(--ease),
+    color 150ms var(--ease);
+}
+
+.hp-how__play {
+  transition:
+    border-color 150ms var(--ease),
+    color 150ms var(--ease);
+}
+
+@media (hover: hover) {
+  .hp-geo-chip:not(.is-active):hover {
+    border-color: var(--line-strong);
+    color: var(--ink-1);
+  }
+  .hp-step:not(.is-active):hover {
+    border-color: var(--line);
+  }
+  .hp-how__play:hover {
+    border-color: var(--line-strong);
+    color: var(--ink-1);
+  }
+}
+
+/* Footer links: the header's colour shift plus an accent underline that
+   fades in (docs/design-audit.md #19). */
+.mkt-footer .nav-list a {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.3em;
+  transition:
+    color 180ms var(--ease),
+    text-decoration-color 180ms var(--ease);
+}
+
+.mkt-footer .nav-list a:hover,
+.mkt-footer .nav-list a:focus-visible {
+  text-decoration-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-faq__q::after,
+  .hp-card,
+  .hp-truth,
+  .hp-tier,
+  .hp-faq,
+  .mkt-plan--quiet,
+  .hp-geo-chip,
+  .hp-step,
+  .hp-step__num,
+  .hp-how__play,
+  .mkt-footer .nav-list a {
+    transition: none;
   }
 }
