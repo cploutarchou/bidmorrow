@@ -18,6 +18,14 @@ on:
         description: Artifact label (folder name under artifacts/design-review)
         default: staging
         required: true
+      widths:
+        description: Viewport widths to capture (comma list)
+        default: 375,390,430,768,1024,1280,1440,1920
+        required: true
+      lighthouse:
+        description: Run the five Lighthouse pairs after the screenshots
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -29,7 +37,10 @@ concurrency:
 jobs:
   capture:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Eight widths x two schemes x fourteen routes is ~220 paced full-page
+    # captures (the script scrolls each page so reveal sections render),
+    # about 20 minutes on a runner, plus ~5 minutes of Lighthouse.
+    timeout-minutes: 50
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -54,9 +65,10 @@ jobs:
           node scripts/design-screenshots.mjs \
             --base-url "${{ inputs.base_url }}" \
             --label "${{ inputs.label }}" \
-            --widths 375,390,430,768,1024,1280,1440,1920
+            --widths "${{ inputs.widths }}"
 
       - name: Lighthouse (five baseline pairs)
+        if: ${{ inputs.lighthouse }}
         run: |
           node scripts/design-lighthouse.mjs \
             --base-url "${{ inputs.base_url }}" \
@@ -68,6 +80,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload captures and reports
+        if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: design-review-${{ inputs.label }}
