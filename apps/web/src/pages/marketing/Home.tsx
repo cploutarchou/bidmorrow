@@ -3,8 +3,15 @@ import { Link } from 'react-router';
 import { HEADLINE, SUBHEADLINE } from '../../copy';
 import { PageMeta } from '../../components/PageMeta';
 import { MARKETING_META } from '../../lib/seo';
-import { StepProfile, StepScoring, StepSource, StepVerdict } from '../../assets';
 import { DecisionEngine } from '../../components/hero/DecisionEngine';
+import { HERO_TENDERS } from '../../components/hero/decision-engine-data';
+import {
+  ProfileFrame,
+  ScoringFrame,
+  SourceFrame,
+  type ProfileRow,
+} from '../../components/hero/frames';
+import { ScoreRing } from '../../components/hero/ScoreRing';
 import { useCountUp } from '../../lib/motion';
 import { useRevealed } from '../../lib/use-reveal';
 import { useTilt } from '../../lib/use-tilt';
@@ -257,24 +264,19 @@ const STAGE_CAPTIONS = [
   '04 · The verdict',
 ];
 
-const PROFILE_CHIPS = [
-  '72000000 IT services',
-  '48730000 Security software',
-  'CY · GR · MT',
-  '€250k – €5M',
-  'penetration testing',
-  '7 days runway',
-];
+/* The profile the stage scores against, as onboarding stores it. The
+   scoring step draws the hero's illustrative tender through the engine
+   (components/hero/decision-engine-data.ts), so its points and the
+   verdict step's 84 come from one source that a unit test keeps summing
+   to the score. */
+const STAGE_TENDER = HERO_TENDERS[0];
 
-const STAGE_SCORE_BARS = [
-  { label: 'CPV fit', pts: 30, max: 35 },
-  { label: 'Capability & keyword fit', pts: 17, max: 20 },
-  { label: 'Geography', pts: 15, max: 15 },
-  { label: 'Contract value', pts: 10, max: 10 },
-  { label: 'Buyer & sector', pts: 5, max: 5 },
-  { label: 'Procedure & nature', pts: 5, max: 5 },
-  { label: 'Deadline runway', pts: 2, max: 5 },
-  { label: 'Eligibility & certs', pts: 2.5, max: 5 },
+const PROFILE_ROWS: readonly ProfileRow[] = [
+  { label: 'CPV', chips: ['72000000 IT services', '48730000 Security software'] },
+  { label: 'Geography', chips: ['CY · GR · MT'] },
+  { label: 'Value band', chips: ['€250k – €5M'] },
+  { label: 'Keyword', chips: ['penetration testing'] },
+  { label: 'Deadline', chips: ['7 days runway'] },
 ];
 
 const FACTS = [
@@ -433,11 +435,6 @@ const STANDARD_POINTS = [
   'Monthly subscription via Paddle',
   'Cancel any time from account settings',
 ];
-
-/** SVG ring: circumference of r=17 is ~106.8. */
-function ringDash(score: number): string {
-  return `${((score / 100) * 106.8).toFixed(1)} 106.8`;
-}
 
 /**
  * Splits the headline into one `<span>` per word so CSS can stagger a
@@ -786,27 +783,7 @@ export function Home(): ReactElement {
                   <div className="hp-card__body">
                     <div className="hp-card__head">
                       <span className="hp-ring" aria-hidden="true">
-                        <svg width="40" height="40" viewBox="0 0 40 40">
-                          <circle
-                            cx="20"
-                            cy="20"
-                            r="17"
-                            fill="none"
-                            className="hp-ring__track"
-                            strokeWidth="3"
-                          />
-                          <circle
-                            cx="20"
-                            cy="20"
-                            r="17"
-                            fill="none"
-                            className="hp-ring__fill"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeDasharray={ringDash(card.score)}
-                            transform="rotate(-90 20 20)"
-                          />
-                        </svg>
+                        <ScoreRing value={card.score} mode="draw" />
                         <span className="hp-ring__num">{card.score}</span>
                       </span>
                       <span className="hp-card__chip">{card.fit}</span>
@@ -943,7 +920,7 @@ export function Home(): ReactElement {
             <p className="hp-stage__caption">{STAGE_CAPTIONS[step]}</p>
             {step === 0 && (
               <>
-                <StepSource className="hp-stage__art" />
+                <SourceFrame className="hp-stage__art" />
                 <p className="hp-stage__note">
                   TED publishes; BidMorrow ingests inside the documented CPV scope and stores the
                   notice with its source URL.
@@ -952,14 +929,7 @@ export function Home(): ReactElement {
             )}
             {step === 1 && (
               <>
-                <StepProfile className="hp-stage__art" />
-                <div className="hp-stage__chips">
-                  {PROFILE_CHIPS.map((chip) => (
-                    <span className="hp-stage__chip" key={chip}>
-                      {chip}
-                    </span>
-                  ))}
-                </div>
+                <ProfileFrame rows={PROFILE_ROWS} className="hp-stage__art" />
                 <p className="hp-stage__note">
                   Your CPV codes, keywords, geography, value band and exclusions: the only inputs
                   that decide what gets scored.
@@ -968,23 +938,7 @@ export function Home(): ReactElement {
             )}
             {step === 2 && (
               <>
-                <StepScoring className="hp-stage__art" />
-                <div className="hp-stage__bars">
-                  {STAGE_SCORE_BARS.map((bar) => (
-                    <span className="hp-sbar" key={bar.label}>
-                      <span className="hp-sbar__label">{bar.label}</span>
-                      <progress
-                        className="score-bar score-bar--sm"
-                        value={bar.pts}
-                        max={bar.max}
-                        aria-hidden="true"
-                      />
-                      <span className="hp-sbar__pts">
-                        +{bar.pts}/{bar.max}
-                      </span>
-                    </span>
-                  ))}
-                </div>
+                <ScoringFrame className="hp-stage__art" />
                 <p className="hp-stage__note">
                   Eight components, published weights, no LLM. Same notice and engine version, same
                   points every time.
@@ -993,31 +947,16 @@ export function Home(): ReactElement {
             )}
             {step === 3 && (
               <div className="hp-verdict">
-                <StepVerdict className="hp-stage__art" />
+                {STAGE_TENDER !== undefined && (
+                  <p className="hp-verdict__notice">
+                    <span className="de-notice__buyer">{STAGE_TENDER.buyer}</span>
+                    <span className="de-notice__title">{STAGE_TENDER.title}</span>
+                  </p>
+                )}
                 <div className="hp-verdict__head">
                   <span className="hp-ring hp-ring--lg" aria-hidden="true">
-                    <svg width="56" height="56" viewBox="0 0 56 56">
-                      <circle
-                        cx="28"
-                        cy="28"
-                        r="24"
-                        fill="none"
-                        className="hp-ring__track"
-                        strokeWidth="4"
-                      />
-                      <circle
-                        cx="28"
-                        cy="28"
-                        r="24"
-                        fill="none"
-                        className="hp-ring__fill"
-                        strokeWidth="4"
-                        strokeLinecap="round"
-                        strokeDasharray="127.2 150.8"
-                        transform="rotate(-90 28 28)"
-                      />
-                    </svg>
-                    <span className="hp-ring__num">84</span>
+                    <ScoreRing value={STAGE_TENDER?.score ?? 84} mode="draw" />
+                    <span className="hp-ring__num">{STAGE_TENDER?.score ?? 84}</span>
                   </span>
                   <span className="hp-verdict__id">
                     <span className="hp-verdict__chip">Strong match</span>

@@ -1916,19 +1916,16 @@
   height: 56px;
 }
 
-.hp-ring__track {
-  stroke: var(--bg-sunken);
+.hp-ring > .score-ring {
+  width: 100%;
+  height: 100%;
 }
 
-.hp-ring__fill {
-  stroke: var(--accent);
-}
-
-.hp-card--mid .hp-ring__fill {
+.hp-card--mid .score-ring__value {
   stroke: var(--accent-line);
 }
 
-.hp-card--neutral .hp-ring__fill {
+.hp-card--neutral .score-ring__value {
   stroke: var(--line-strong);
 }
 
@@ -2229,55 +2226,6 @@
   font-size: 0.84rem;
   line-height: 1.6;
   color: var(--ink-2);
-}
-
-.hp-stage__scan {
-  position: relative;
-  display: grid;
-  gap: 0.5625rem;
-  overflow: hidden;
-  padding: 0.25rem 0;
-}
-
-.hp-stage__chips {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.hp-stage__chip {
-  background: var(--accent-tint);
-  border: 1px solid var(--accent-line);
-  border-radius: 999px;
-  padding: 0.375rem 0.75rem;
-  font-family: var(--font-num);
-  font-size: 0.78rem;
-  color: var(--accent-text);
-}
-
-.hp-stage__bars {
-  display: grid;
-  gap: 0.5625rem;
-}
-
-.hp-sbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px 56px;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.hp-sbar__label {
-  font-size: 0.78rem;
-  color: var(--ink-2);
-}
-
-.hp-sbar__pts {
-  font-family: var(--font-num);
-  font-size: 0.72rem;
-  color: var(--ink-3);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 .hp-verdict {
@@ -3571,13 +3519,20 @@ body.consent-banner-open {
 }
 
 /* --- Step art: cross-fade on step change --------------------------------
-   `className` lands directly on the Step* SVG (see `assets/steps/*.tsx`),
-   so this rule targets the illustration itself, not a wrapper. */
+   `className` lands on the product frame's root (components/hero/frames.tsx),
+   so this rule sizes and fades the frame itself, not a wrapper. */
 .hp-stage__art {
   margin: 0 0 1rem;
-  max-width: 20rem;
+  max-width: 24rem;
   width: 100%;
   height: auto;
+}
+
+/* Verdict step: the notice the verdict belongs to, then the verdict head. */
+.hp-verdict__notice {
+  display: grid;
+  gap: 0.125rem;
+  margin: 0;
 }
 
 @media (prefers-reduced-motion: no-preference) {

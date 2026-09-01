@@ -146,6 +146,9 @@
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--bg-raised);
+}
+
+.de__scene .de-notice {
   animation: de-notice var(--de-cycle) var(--ease) infinite;
   animation-delay: var(--scene-delay);
 }
@@ -223,6 +226,9 @@
   margin-top: -3px;
   border-radius: 999px;
   background: var(--accent);
+}
+
+.de__scene .de-connector__dot {
   opacity: 0;
   animation: de-dot var(--de-cycle) var(--ease) infinite;
   animation-delay: var(--scene-delay);
@@ -237,6 +243,9 @@
   border-radius: 12px;
   border: 1px solid var(--accent-line);
   background: var(--bg-panel);
+}
+
+.de__scene .de-engine {
   animation: de-engine var(--de-cycle) var(--ease) infinite;
   animation-delay: var(--scene-delay);
 }
@@ -281,6 +290,9 @@
   min-height: 1.375rem;
   font-size: 0.8125rem;
   line-height: 1.2;
+}
+
+.de__scene .de-signal {
   animation-duration: var(--de-cycle);
   animation-timing-function: var(--ease);
   animation-iteration-count: infinite;
@@ -347,6 +359,9 @@
   gap: 0.5rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--line-hair);
+}
+
+.de__scene .de-score {
   animation: de-score var(--de-cycle) var(--ease) infinite;
   animation-delay: var(--scene-delay);
 }
@@ -384,7 +399,7 @@
   letter-spacing: -0.02em;
 }
 
-.de-score__num::before {
+.de__scene .de-score__num::before {
   counter-reset: de-score var(--de-value);
   content: counter(de-score);
 }
@@ -402,6 +417,9 @@
   font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
+}
+
+.de__scene .de-score__band {
   animation: de-band-label var(--de-cycle) var(--ease) infinite;
   animation-delay: var(--scene-delay);
 }
@@ -657,28 +675,28 @@
   }
 }
 
-.de-signal:nth-child(1) {
+.de__scene .de-signal:nth-child(1) {
   animation-name: de-row-1;
 }
-.de-signal:nth-child(2) {
+.de__scene .de-signal:nth-child(2) {
   animation-name: de-row-2;
 }
-.de-signal:nth-child(3) {
+.de__scene .de-signal:nth-child(3) {
   animation-name: de-row-3;
 }
-.de-signal:nth-child(4) {
+.de__scene .de-signal:nth-child(4) {
   animation-name: de-row-4;
 }
-.de-signal:nth-child(5) {
+.de__scene .de-signal:nth-child(5) {
   animation-name: de-row-5;
 }
-.de-signal:nth-child(6) {
+.de__scene .de-signal:nth-child(6) {
   animation-name: de-row-6;
 }
-.de-signal:nth-child(7) {
+.de__scene .de-signal:nth-child(7) {
   animation-name: de-row-7;
 }
-.de-signal:nth-child(8) {
+.de__scene .de-signal:nth-child(8) {
   animation-name: de-row-8;
 }
 
@@ -818,5 +836,144 @@
   }
   .de__band {
     white-space: normal;
+  }
+}
+
+/* ============================================================
+   Product frames: the hero's primitives, standing still.
+
+   `components/hero/frames.tsx` reuses NoticeCard / SignalRow / the score
+   block for the "How it works" stage and figures. Nothing here animates
+   on the hero cycle (every cycle animation above is scoped to
+   `.de__scene`); the only motion is the one-shot ring draw below, keyed
+   on the section's scroll reveal, and the stage's own cross-fade.
+   ============================================================ */
+
+.pf {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+}
+
+/* Source: the morning's notices, the front one real. */
+.pf__stack {
+  position: relative;
+  padding-top: 1rem;
+  isolation: isolate;
+}
+
+.pf__stack .de-notice {
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--shadow-panel);
+}
+
+.pf__ghost {
+  position: absolute;
+  inset: 0.5rem 0.75rem 0.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--line-hair);
+  background: var(--bg-raised);
+  opacity: 0.7;
+}
+
+.pf__ghost--2 {
+  inset: 0 1.5rem 1rem;
+  opacity: 0.4;
+}
+
+.pf__source-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Profile: what the customer told us, row by row. */
+.pf--profile {
+  margin: 0;
+  gap: 0.625rem;
+  padding: 0.875rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+}
+
+.pf__row {
+  display: grid;
+  grid-template-columns: 5.25rem minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.pf__key {
+  margin: 0;
+  padding-top: 0.3125rem;
+  font-family: var(--font-num);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.pf__chips {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.pf__chip {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  border: 1px solid var(--accent-line);
+  background: var(--accent-tint);
+  font-family: var(--font-num);
+  font-size: 0.75rem;
+  color: var(--accent-text);
+}
+
+/* Scoring: the engine panel with its rows and score, no cycle. */
+.pf--scoring .de-engine {
+  gap: 0.5rem;
+}
+
+.pf--scoring .de-score__num {
+  min-width: 0;
+}
+
+/* --- Ring draw: once, on reveal ---------------------------------------- */
+
+.js-reveal .score-ring--draw {
+  --de-value: var(--de-target);
+}
+
+.js-reveal .score-ring--draw .score-ring__value {
+  stroke-dasharray: var(--de-value) 100;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .js-reveal [data-reveal].is-in .score-ring--draw {
+    animation: ring-draw 720ms var(--ease) both;
+  }
+}
+
+@keyframes ring-draw {
+  from {
+    --de-value: 0;
+  }
+}
+
+@media (max-width: 40rem) {
+  .pf__row {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
   }
 }
