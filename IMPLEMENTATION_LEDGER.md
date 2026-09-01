@@ -5372,6 +5372,32 @@ report; staging/production sections filled by phases 7–8).
   `deploy-production.yml` (typed confirmation) → verify live → append to
   the report. Rollback is a re-dispatch at the previous production ref.
 
+## Production: first hourly fetch-retry drain (2026-09-01 20:40 UTC, read-only check)
+
+Self check-in after the 19:55 UTC deploy of #132 + #133 (production D1
+`cd5f6ceb`). Baseline at 19:57: 125 retry rows at attempts=0 due since
+05:07 UTC, 25 at attempts=1 due 09-02 05:09, `tender_notices` 0.
+
+- `ingestion_runs` 01M1FB7WVB4TWD5PB9ENKTEHPJ: started 20:40:46 UTC,
+  `succeeded` in 148 s, notices_upserted 6, lots_created 8,
+  matches_scored 0 (the run row; MATCH_QUEUE scoring happens after it).
+- `ingestion_fetch_retries`: 6 recovered (all attempts=0 rows, last
+  error NOTICE_RENDER_PENDING before recovery); 69 pending at attempts=1
+  (the 25 from before plus 44 that failed again this drain, next attempt
+  21:42 UTC on the 1 h rung); 75 pending at attempts=0, still due since
+  05:07 UTC and next in line for the 21:40 drain.
+- Feed: `tender_notices` 6, `tender_lots` 8, `tender_matches` 8 for the
+  one organization (3 WORTH_REVIEWING, 5 EXCLUDED). The production feed
+  has started to fill; the first digest will go out on the next digest
+  window if anything clears the org's floor.
+- 6 of 50 attempted rows recovered (12%): TED is still returning
+  NOTICE_RENDER_PENDING for most of the 05:07 batch fourteen hours after
+  publication. The 21:40 drain takes the next 50 of the 75 attempts=0
+  rows; the 44 that just failed come back at 21:42 (1 h), then 4 h, 16 h,
+  64 h per the ADR-0008 A5 ladder, so nothing is abandoned before six
+  attempts. No production writes, no deploys, no flag changes in this
+  check.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
