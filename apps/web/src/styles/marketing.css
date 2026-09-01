@@ -3013,24 +3013,6 @@ body.consent-banner-open {
      animation costs a style pass per frame for the life of the page, and
      the pulse was never noticed; they now sit still at mid opacity. */
 
-  .hp-stage__chip {
-    animation: hp-rise-in 380ms ease-out both;
-  }
-  .hp-stage__chip:nth-child(2) {
-    animation-delay: 80ms;
-  }
-  .hp-stage__chip:nth-child(3) {
-    animation-delay: 160ms;
-  }
-  .hp-stage__chip:nth-child(4) {
-    animation-delay: 240ms;
-  }
-  .hp-stage__chip:nth-child(5) {
-    animation-delay: 320ms;
-  }
-  .hp-stage__chip:nth-child(6) {
-    animation-delay: 400ms;
-  }
   .hp-verdict {
     animation: hp-rise-in 420ms ease-out both;
   }

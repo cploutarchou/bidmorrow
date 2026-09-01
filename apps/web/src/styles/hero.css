@@ -33,6 +33,17 @@
   initial-value: 0;
 }
 
+/* The check-in mark's visibility, driven by the row's own animation so
+   the eight rows keep one animation each. Text in the hero never sits at
+   a partial opacity: an accessibility audit that samples mid-entrance
+   would otherwise read low-contrast text (staging Lighthouse caught the
+   old 35% rows), so entrances slide and wipe, and only the mark fades. */
+@property --de-mark {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
 .de {
   --de-scene: 4.5s;
   --de-target: 0;
@@ -313,6 +324,7 @@
   display: inline-flex;
   width: 1rem;
   height: 1rem;
+  opacity: var(--de-mark);
 }
 
 .de-signal__mark svg {
@@ -484,15 +496,15 @@
 /* The playing scene's band lights in the scene's last fifth; when the
    scene changes the rule stops matching and the band goes quiet. */
 .de[data-scene='1'] .de__band--strong {
-  animation: de-band-strong 0.4s var(--ease) 3.6s both;
+  animation: de-band-strong 0.4s steps(1, end) 3.6s both;
 }
 
 .de[data-scene='2'] .de__band--review {
-  animation: de-band-review 0.4s var(--ease) 3.6s both;
+  animation: de-band-review 0.4s steps(1, end) 3.6s both;
 }
 
 .de[data-scene='3'] .de__band--low {
-  animation: de-band-low 0.4s var(--ease) 3.6s both;
+  animation: de-band-low 0.4s steps(1, end) 3.6s both;
 }
 
 .de__caption {
@@ -510,21 +522,21 @@
 @keyframes de-scene {
   0%,
   93.33% {
-    opacity: 1;
+    clip-path: inset(0 0 0 0);
   }
   100% {
-    opacity: 0;
+    clip-path: inset(100% 0 0 0);
   }
 }
 
 @keyframes de-notice-in {
   from {
-    opacity: 0;
     transform: translateY(-12px);
+    clip-path: inset(0 0 100% 0);
   }
   to {
-    opacity: 1;
     transform: none;
+    clip-path: inset(0 0 0 0);
   }
 }
 
@@ -554,22 +566,22 @@
 
 @keyframes de-engine {
   from {
-    opacity: 0.35;
     transform: translateY(6px);
+    border-color: var(--line-hair);
   }
   to {
-    opacity: 1;
     transform: none;
+    border-color: var(--accent-line);
   }
 }
 
 @keyframes de-row {
   from {
-    opacity: 0.35;
+    --de-mark: 0;
     transform: translateX(-4px);
   }
   to {
-    opacity: 1;
+    --de-mark: 1;
     transform: none;
   }
 }
@@ -585,12 +597,12 @@
 
 @keyframes de-band-label {
   from {
-    opacity: 0;
     transform: translateY(4px);
+    clip-path: inset(0 100% 0 0);
   }
   to {
-    opacity: 1;
     transform: none;
+    clip-path: inset(0 0 0 0);
   }
 }
 
