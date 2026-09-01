@@ -40,14 +40,11 @@ const shell = import.meta.glob('../index.html', {
 /**
  * Files the rule does not yet hold for. Intended to stay EMPTY: an entry is a
  * temporary carve-out with a named reason and a removal condition, never a
- * standing permission to use an em dash.
- *
- * - `./pages/auth/ResetPassword.tsx`: rewritten on a parallel branch while
- *   this sweep ran (2026-09-01), so it was left untouched to avoid a merge
- *   conflict. Delete this entry, and the em dashes in that file, as soon as
- *   that rewrite lands.
+ * standing permission to use an em dash. (The one entry the sweep shipped
+ * with, `./pages/auth/ResetPassword.tsx`, was removed the same day once the
+ * parallel rewrite of that file landed with no em dashes.)
  */
-const TEMPORARY_EXCLUSIONS: readonly string[] = ['./pages/auth/ResetPassword.tsx'];
+const TEMPORARY_EXCLUSIONS: readonly string[] = [];
 
 const scanned = Object.entries({ ...sources, ...shell })
   .filter(([path]) => !TEMPORARY_EXCLUSIONS.includes(path))
