@@ -60,9 +60,11 @@ export function Pricing(): ReactElement {
           data-reveal
           data-reveal-i={1}
         >
-          <p className="mkt-plan__cap">Founding: first 100 customers</p>
-          <h2 id="founding-plan-heading">Founding plan</h2>
-          <p className="mkt-plan__price">€29 / month</p>
+          <div className="mkt-plan__head">
+            <p className="mkt-plan__cap">Founding: first 100 customers</p>
+            <h2 id="founding-plan-heading">Founding plan</h2>
+            <p className="mkt-plan__price">€29 / month</p>
+          </div>
           <p className="mkt-plan__desc">
             For the first hundred companies through the door, while the pilot runs. Your price is
             fixed for as long as the subscription lives; it never quietly becomes the standard
@@ -84,9 +86,11 @@ export function Pricing(): ReactElement {
           data-reveal
           data-reveal-i={2}
         >
-          <p className="mkt-plan__cap mkt-plan__cap--quiet">Standard</p>
-          <h2 id="standard-plan-heading">Standard plan</h2>
-          <p className="mkt-plan__price">€49 / month</p>
+          <div className="mkt-plan__head">
+            <p className="mkt-plan__cap mkt-plan__cap--quiet">Standard</p>
+            <h2 id="standard-plan-heading">Standard plan</h2>
+            <p className="mkt-plan__price">€49 / month</p>
+          </div>
           <p className="mkt-plan__desc">
             Open once the founding hundred are taken, and any time after.
           </p>

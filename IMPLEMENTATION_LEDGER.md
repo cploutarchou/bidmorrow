@@ -35,9 +35,9 @@ the ADR-0010 §5.2 operator window grew rather than shrank). The ~10-day
 "slow-motion abandonment" deadline recorded under 2026-08-19 below is
 therefore now ~14 days. Staging auto-deploys on merge and its backlog is
 already due (self-drains at ≤50/h); **production deploy awaits the owner's
-explicit instruction** (standing rule, blockers item 2c) — production's 150
-rows are due 2026-09-02 05:09 under the old ladder and will be picked up
-by the first `:40` drain after deploy.
+explicit instruction** (standing rule, blockers item 2c) — production's rows
+(125 due since 05:07 UTC, 25 due 2026-09-02 05:09) are picked up by the
+first `:40` drains after deploy.
 
 **Staging latency gate (F-06 weekly `staging-perf`), 2026-09-01.** The
 first scheduled run (08-31 05:47 UTC) died in 4 s with no logs, the same
@@ -52,6 +52,32 @@ query regression; customers are EU-based and do not take that path. Not
 loosened. Follow-up (task, not decided here): measure from where customers
 are, or take Smart Placement to the architect as an ADR. `timeout-minutes:
 20` added to the job so a hung probe cannot run for six hours.
+
+**2026-09-01 19:52–19:57 UTC — owner: "deploy to production and enable
+entitlement_enforced".** Both done and verified: `deploy-production.yml`
+run 33552153011 on `main` `3c08100` (#132 + #133) succeeded 19:55:04 UTC
+with smoke tests green (staging had deployed the same commit green at
+19:49); `entitlement_enforced = true` upserted directly into production D1
+at 19:53:41 UTC (no `audit_events` row; recorded in the blockers file).
+Production retry state at deploy: 125 rows `attempts = 0` due since 05:07
+UTC (never reached by the daily 25-row in-run drain) + 25 rows due
+2026-09-02 05:09 (the in-run drain's cycle burnt their first attempt); the
+earlier "150 rows due 09-02 05:09" wording above was wrong for the 125. The
+first hourly drain after deploy (20:40 UTC) starts on them. `tender_notices`
+in production: 0 at deploy time.
+
+**Staging, first hourly drain (19:40:22 UTC, 150 s):** attempted 50
+(oldest-first, publication dates from 2026-08-17), ALL 50 came back
+`NOTICE_RENDER_PENDING` after the full 6-visit cycle; 0 recovered, 0
+abandoned; `pending` still 1,069 (819 never attempted), `recovered` 100
+(all from earlier daily drains). Backlog by publication date: 08-17 106,
+08-18 66, 08-19 151, 08-20 129, 08-24 147, 08-25 122, 08-26 172, 08-27 26,
+08-31 150 (08-21..23 and 08-28 fully ingested). One data point, on the
+oldest rows; the 20:40/21:40 drains and production's 20:40 run decide
+whether TED renders on demand at all for these days. If three consecutive
+drains recover 0 of 50, the next step is an adaptive stand-down (skip the
+following hour after a zero-recovery full batch) rather than more traffic;
+documented as a follow-up, not implemented on one data point.
 
 **Phase 14 — Production-readiness audit: RUN 2026-08-29. Verdict FAIL at
 the time.** Findings in `PRODUCTION_READINESS_AUDIT.md` (3 HIGH, 4 MEDIUM,
@@ -5275,6 +5301,102 @@ source documents'` label now differs from the web app's. And
   Playwright not run: no browsers in this environment and the harness needs a
   seeded wrangler server; the three assertion edits are literal swaps checked
   against the exact new source strings.
+
+## Website visual upgrade (design phases 0–6, 2026-09-01)
+
+Owner brief: principal web design / motion / product-visualisation pass
+over the public website, business functionality untouched. Full record:
+`docs/design-audit.md` (23 findings, each with its resolution),
+`docs/design-redesign-plan.md` (8 phases), `docs/design-dependencies.md`
+(nothing added), `docs/design-upgrade-report.md` (the brief's final
+report; staging/production sections filled by phases 7–8).
+
+- **Hero** (`components/hero/`): the decision engine. A TED notice enters,
+  eight components check in with their points, ring and counter draw to
+  n / 100, the tender settles into its band; three illustrative tenders
+  (84 Strong match, 71 Worth reviewing, 38 Low fit) on a 13.5 s loop.
+  Data in `decision-engine-data.ts`, pinned by a unit test (weights sum to
+  100, points sum to the score, band follows the thresholds, buyers
+  anonymised, no win/guarantee wording). Pure CSS motion; one
+  `animationend` listener hands scenes over (only the playing scene is in
+  the render tree), one IntersectionObserver pauses it off-screen; the
+  registered `--de-value` property drives counter and ring together;
+  scores reach CSS through `setProperty` (no inline style under the CSP).
+  Reduced motion: scene one's finished frame. `role="img"` with a full
+  sentence label.
+- **Main-thread cost, measured** (CDP Performance metrics, 4× CPU
+  throttle, 6 s windows on the local stack): first version 2.1 s of
+  main-thread time per 6 s (39 infinite animations, 26 of them in hidden
+  scenes); shipped version 0.6 s per 6 s (hidden scenes `display: none`,
+  short delayed one-shot animations that finish and stop ticking, size
+  containment on the counter and ring). Page baseline with the hero paused
+  went from 2.1 s to 0.5 s; the grid dots no longer pulse.
+- **Layout shift**: metric-matched font fallbacks (`size-adjust` +
+  overrides from real glyph advances, not OS/2 averages) and a
+  viewport-height lazy-route fallback with the skip-link target. Home
+  mobile CLS 0.158 → 0.001, Pricing / How-it-works 0.706 → 0.
+- **Imagery**: `FunnelHero` and the four step SVGs deleted; `frames.tsx`
+  (`SourceFrame`, `ProfileFrame`, `ScoringFrame`) reuses the hero's
+  primitives for the stepper and How-it-works; the verdict step names its
+  tender; `STAGE_SCORE_BARS` (summed to 86.5 against a verdict of 84) is
+  gone, both steps read the hero's tender. One `ScoreRing` (static /
+  engine / draw-once) replaces two hand-drawn rings. OG image redrawn as a
+  still of the engine (77 kB PNG, both self-hosted faces; the generator now
+  serves fonts under file://).
+- **Motion and polish**: figures play once on reveal (contrast audit no
+  longer catches chips mid-fade), FAQ as native `<details>`, founding
+  pricing card head band, micro-interactions 120–250 ms gated on
+  `(hover: hover)` and `prefers-reduced-motion`, footer link underline,
+  Pilot secondary CTA, Refunds "Last updated", mobile carousel peek,
+  compact consent banner on phones, hero grid mask.
+- **Not changed** (deliberately, per the brief): URLs, titles, meta,
+  canonical/OG tags, sitemap, forms, auth, Paddle entry, analytics,
+  consent behaviour, API calls, pricing copy. Email templates untouched
+  (owner: website only). Contact and auth pages left as they were.
+- **Gates**: format:check 0, lint 0, typecheck 0 (workspace), vitest web
+  20 files / 192, root 85 files / 735 (3 skipped), worker 298, db D1 84;
+  web build 0 (entry JS 78.3 kB, CSS 84.6 kB on disk); Playwright
+  marketing + accessibility + keyboard specs 41 passed on the local stack
+  (chromium + mobile-chromium). Lighthouse on the local stack: see the
+  report; local mobile numbers vary ±8 points run to run, staging's
+  `design-review` workflow is the record.
+- **Tooling**: `scripts/design-screenshots.mjs` (routes × widths ×
+  schemes, overflow + console check), `scripts/design-element-shot.mjs`
+  (`--click`), `scripts/design-lighthouse.mjs`,
+  `.github/workflows/design-review.yml` (workflow_dispatch against staging
+  or production, artifact upload). Captures under `artifacts/design-review/`
+  (git-ignored).
+- **Next** (phases 7–8): PR → merge → `deploy-staging.yml` → dispatch
+  `design-review` + `site-health` against staging → write
+  `docs/staging-design-validation.md` → production gate →
+  `deploy-production.yml` (typed confirmation) → verify live → append to
+  the report. Rollback is a re-dispatch at the previous production ref.
+
+## Production: first hourly fetch-retry drain (2026-09-01 20:40 UTC, read-only check)
+
+Self check-in after the 19:55 UTC deploy of #132 + #133 (production D1
+`cd5f6ceb`). Baseline at 19:57: 125 retry rows at attempts=0 due since
+05:07 UTC, 25 at attempts=1 due 09-02 05:09, `tender_notices` 0.
+
+- `ingestion_runs` 01M1FB7WVB4TWD5PB9ENKTEHPJ: started 20:40:46 UTC,
+  `succeeded` in 148 s, notices_upserted 6, lots_created 8,
+  matches_scored 0 (the run row; MATCH_QUEUE scoring happens after it).
+- `ingestion_fetch_retries`: 6 recovered (all attempts=0 rows, last
+  error NOTICE_RENDER_PENDING before recovery); 69 pending at attempts=1
+  (the 25 from before plus 44 that failed again this drain, next attempt
+  21:42 UTC on the 1 h rung); 75 pending at attempts=0, still due since
+  05:07 UTC and next in line for the 21:40 drain.
+- Feed: `tender_notices` 6, `tender_lots` 8, `tender_matches` 8 for the
+  one organization (3 WORTH_REVIEWING, 5 EXCLUDED). The production feed
+  has started to fill; the first digest will go out on the next digest
+  window if anything clears the org's floor.
+- 6 of 50 attempted rows recovered (12%): TED is still returning
+  NOTICE_RENDER_PENDING for most of the 05:07 batch fourteen hours after
+  publication. The 21:40 drain takes the next 50 of the 75 attempts=0
+  rows; the 44 that just failed come back at 21:42 (1 h), then 4 h, 16 h,
+  64 h per the ADR-0008 A5 ladder, so nothing is abandoned before six
+  attempts. No production writes, no deploys, no flag changes in this
+  check.
 
 ## Notes
 

@@ -161,31 +161,6 @@
   background: var(--accent-soft);
 }
 
-.mkt-hero-panel {
-  border-radius: var(--r-l);
-  padding: var(--s5);
-  display: grid;
-  gap: var(--s4);
-  align-content: start;
-}
-
-.mkt-hero-panel__caption {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-3);
-  margin: 0;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--stroke-faint);
-}
-
-.mkt-hero-panel__note {
-  font-size: 0.92rem;
-  color: var(--text-2);
-  margin: 0;
-}
-
 .mkt-chip-row {
   display: flex;
   flex-wrap: wrap;
@@ -491,6 +466,36 @@
   color: var(--accent-text);
   font-family: var(--font-mono);
   font-weight: 700;
+}
+
+/* Card head: cap + name + price as one band; the founding card's band is
+   accent-tinted and its cap becomes a pill, so the offer reads as the
+   offer before the copy is read (docs/design-audit.md #10). */
+.mkt-plan__head {
+  display: grid;
+  gap: var(--s2);
+  margin: calc(var(--s6) * -1) calc(var(--s6) * -1) 0;
+  padding: var(--s5) var(--s6);
+  border-bottom: 1px solid var(--stroke-faint);
+  border-radius: var(--r-l) var(--r-l) 0 0;
+}
+
+.mkt-plan--founding .mkt-plan__head {
+  background: var(--accent-tint);
+  border-bottom-color: var(--accent-line);
+}
+
+.mkt-plan--founding .mkt-plan__cap {
+  justify-self: start;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.72rem;
+}
+
+.mkt-plan--founding .mkt-plan__price {
+  font-size: 2.5rem;
 }
 
 /* `.cta`/`.mkt-btn-quiet` are grid items inside `.mkt-plan` (a single-
@@ -815,9 +820,6 @@
   .mkt-plan-row {
     flex-direction: column;
   }
-  .mkt-hero-panel {
-    padding: 1.25rem;
-  }
 }
 
 /* ============================================================
@@ -960,51 +962,6 @@
   width: 100%;
   max-width: 20rem;
   height: auto;
-}
-
-.mkt-figure--scan {
-  position: relative;
-  overflow: hidden;
-  display: grid;
-  gap: 0.5625rem;
-  align-content: start;
-}
-
-.mkt-fig-line {
-  height: 8px;
-  background: var(--ground-deep);
-  border-radius: 999px;
-  display: block;
-}
-
-.mkt-fig-line:nth-child(1) {
-  width: 92%;
-}
-.mkt-fig-line:nth-child(2) {
-  width: 76%;
-}
-.mkt-fig-line:nth-child(3) {
-  width: 84%;
-}
-.mkt-fig-line:nth-child(4) {
-  width: 61%;
-}
-.mkt-fig-line:nth-child(5) {
-  width: 88%;
-}
-.mkt-fig-line:nth-child(6) {
-  width: 48%;
-}
-
-.mkt-fig-scanline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 2px;
-  background: var(--sol-1);
-  opacity: 0.75;
-  display: block;
 }
 
 /* 3 — score bars */
@@ -1519,230 +1476,161 @@
   color: var(--text-3);
 }
 
-/* --- Motion (all uses gated; global reduce kill-switch still wins) --- */
+/* --- Motion (all uses gated; global reduce kill-switch still wins) ---
+   Every figure animates ONCE, when its `[data-reveal]` step scrolls into
+   view (`.is-in`, lib/use-reveal.ts), then rests. The previous versions
+   looped forever (7 s chips, 6 s bars, 7 s cards, 5.5 s day pulses, 6 s
+   month pulses): continuous motion with no pause control (WCAG 2.2.2 for
+   anything longer than five seconds), a chip fade that Lighthouse caught
+   mid-transition as a contrast failure, and a "busy" read that a
+   decision-support product does not want (docs/design-audit.md #8).
+   Without JS there is no `.js-reveal` on <html>, so the resting styles
+   below the media query are the only ones that apply: everything is
+   simply visible. */
 @media (prefers-reduced-motion: no-preference) {
-  @keyframes mkt-scan {
-    0% {
-      transform: translateY(-6px);
-      opacity: 0;
-    }
-    18% {
-      opacity: 1;
-    }
-    82% {
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(108px);
-      opacity: 0;
-    }
-  }
-  @keyframes mkt-grow-x {
-    0% {
+  @keyframes mkt-grow-once {
+    from {
       transform: scaleX(0);
     }
-    55% {
-      transform: scaleX(1);
-    }
-    100% {
+    to {
       transform: scaleX(1);
     }
   }
-  @keyframes mkt-chip-in {
-    0%,
-    12% {
+  @keyframes mkt-chip-once {
+    from {
       opacity: 0.14;
       transform: translateY(3px);
     }
-    26%,
-    88% {
+    to {
       opacity: 1;
       transform: translateY(0);
     }
-    100% {
-      opacity: 0.14;
-      transform: translateY(3px);
-    }
   }
-  @keyframes mkt-pulse {
-    0%,
-    100% {
-      opacity: 0.2;
-    }
-    50% {
-      opacity: 0.85;
-    }
-  }
-  @keyframes mkt-lift {
-    0%,
-    12% {
+  @keyframes mkt-lift-once {
+    from {
       transform: translateY(26px);
       opacity: 0.25;
     }
-    40%,
-    88% {
+    to {
       transform: translateY(0);
       opacity: 1;
     }
-    100% {
-      transform: translateY(26px);
-      opacity: 0.25;
-    }
   }
-  @keyframes mkt-settle {
-    0%,
-    12% {
+  @keyframes mkt-settle-once {
+    from {
       transform: translateY(-13px);
     }
-    40%,
-    100% {
+    to {
       transform: translateY(0);
     }
   }
-
-  .mkt-fig-chip {
-    animation: mkt-chip-in 7s ease-in-out infinite;
-  }
-  .mkt-fig-chip:nth-child(1) {
-    animation-delay: 0ms;
-  }
-  .mkt-fig-chip:nth-child(2) {
-    animation-delay: 340ms;
-  }
-  .mkt-fig-chip:nth-child(3) {
-    animation-delay: 680ms;
-  }
-  .mkt-fig-chip:nth-child(4) {
-    animation-delay: 1020ms;
-  }
-  .mkt-fig-chip:nth-child(5) {
-    animation-delay: 1360ms;
-  }
-  .mkt-fig-chip:nth-child(6) {
-    animation-delay: 1700ms;
-  }
-  .mkt-fig-chip:nth-child(7) {
-    animation-delay: 2040ms;
-  }
-  .mkt-fig-chip:nth-child(8) {
-    animation-delay: 2380ms;
+  @keyframes mkt-day-once {
+    from {
+      opacity: 0.2;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
-  .mkt-fig-scanline {
-    animation: mkt-scan 2.8s ease-in-out infinite;
+  .js-reveal .mkt-flow__step .mkt-fig-chip {
+    opacity: 0.14;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip {
+    animation: mkt-chip-once 520ms var(--ease) both;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(2) {
+    animation-delay: 90ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(3) {
+    animation-delay: 180ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(4) {
+    animation-delay: 270ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(5) {
+    animation-delay: 360ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(6) {
+    animation-delay: 450ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(7) {
+    animation-delay: 540ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-chip:nth-child(8) {
+    animation-delay: 630ms;
   }
 
-  .mkt-fig-bar__fill {
-    animation: mkt-grow-x 6s ease-out infinite;
+  .js-reveal .mkt-flow__step .mkt-fig-bar__fill {
+    transform: scaleX(0);
   }
-  .mkt-fig-bar:nth-child(2) .mkt-fig-bar__fill {
-    animation-delay: 160ms;
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-bar__fill {
+    animation: mkt-grow-once 900ms var(--ease) both;
   }
-  .mkt-fig-bar:nth-child(3) .mkt-fig-bar__fill {
-    animation-delay: 320ms;
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-bar:nth-child(2) .mkt-fig-bar__fill {
+    animation-delay: 120ms;
   }
-  .mkt-fig-bar:nth-child(4) .mkt-fig-bar__fill {
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-bar:nth-child(3) .mkt-fig-bar__fill {
+    animation-delay: 240ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-bar:nth-child(4) .mkt-fig-bar__fill {
+    animation-delay: 360ms;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-bar:nth-child(5) .mkt-fig-bar__fill {
     animation-delay: 480ms;
   }
-  .mkt-fig-bar:nth-child(5) .mkt-fig-bar__fill {
-    animation-delay: 640ms;
+
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-card--lead {
+    animation: mkt-lift-once 700ms var(--ease) both;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-card:nth-child(2) {
+    animation: mkt-settle-once 600ms var(--ease) 120ms both;
+  }
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-card:nth-child(3) {
+    animation: mkt-settle-once 600ms var(--ease) 240ms both;
   }
 
-  .mkt-fig-card--lead {
-    animation: mkt-lift 7s ease-in-out infinite;
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-day--send {
+    animation: mkt-day-once 800ms var(--ease) both;
   }
-  .mkt-fig-card:nth-child(2) {
-    animation: mkt-settle 7s ease-in-out 120ms infinite;
-  }
-  .mkt-fig-card:nth-child(3) {
-    animation: mkt-settle 7s ease-in-out 240ms infinite;
-  }
-
-  .mkt-fig-day {
-    animation: mkt-pulse 5.5s ease-in-out infinite;
-  }
-  .mkt-fig-day:nth-child(2) {
+  .js-reveal .mkt-flow__step.is-in .mkt-fig-day--send:nth-child(n + 2) {
     animation-delay: 260ms;
   }
-  .mkt-fig-day:nth-child(3) {
-    animation-delay: 520ms;
+
+  /* Methodology: the component-weight bars grow once when the list
+     reveals (the list carries `data-reveal`). */
+  .js-reveal [data-reveal] .mkt-comp-row__fill {
+    transform: scaleX(0);
   }
-  .mkt-fig-day:nth-child(4) {
-    animation-delay: 780ms;
+  .js-reveal [data-reveal].is-in .mkt-comp-row__fill {
+    animation: mkt-grow-once 800ms var(--ease) both;
   }
-  .mkt-fig-day:nth-child(5) {
-    animation-delay: 1040ms;
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(2) .mkt-comp-row__fill {
+    animation-delay: 80ms;
   }
-  .mkt-fig-day:nth-child(6) {
-    animation-delay: 1300ms;
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(3) .mkt-comp-row__fill {
+    animation-delay: 160ms;
   }
-  .mkt-fig-day:nth-child(7) {
-    animation-delay: 1560ms;
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(4) .mkt-comp-row__fill {
+    animation-delay: 240ms;
+  }
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(5) .mkt-comp-row__fill {
+    animation-delay: 320ms;
+  }
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(6) .mkt-comp-row__fill {
+    animation-delay: 400ms;
+  }
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(7) .mkt-comp-row__fill {
+    animation-delay: 480ms;
+  }
+  .js-reveal [data-reveal].is-in .mkt-comp-row:nth-child(8) .mkt-comp-row__fill {
+    animation-delay: 560ms;
   }
 
-  .mkt-comp-row__fill {
-    animation: mkt-grow-x 5.5s ease-out infinite;
-  }
-  .mkt-comp-row:nth-child(2) .mkt-comp-row__fill {
-    animation-delay: 110ms;
-  }
-  .mkt-comp-row:nth-child(3) .mkt-comp-row__fill {
-    animation-delay: 220ms;
-  }
-  .mkt-comp-row:nth-child(4) .mkt-comp-row__fill {
-    animation-delay: 330ms;
-  }
-  .mkt-comp-row:nth-child(5) .mkt-comp-row__fill {
-    animation-delay: 440ms;
-  }
-  .mkt-comp-row:nth-child(6) .mkt-comp-row__fill {
-    animation-delay: 550ms;
-  }
-  .mkt-comp-row:nth-child(7) .mkt-comp-row__fill {
-    animation-delay: 660ms;
-  }
-  .mkt-comp-row:nth-child(8) .mkt-comp-row__fill {
-    animation-delay: 770ms;
-  }
-
-  .mkt-hold__line--founding .mkt-hold__fill {
-    animation: mkt-grow-x 3.4s ease-out both;
-  }
-  .mkt-hold__month {
-    animation: mkt-pulse 6s ease-in-out infinite;
-  }
-  .mkt-hold__month:nth-child(2) {
-    animation-delay: 190ms;
-  }
-  .mkt-hold__month:nth-child(3) {
-    animation-delay: 380ms;
-  }
-  .mkt-hold__month:nth-child(4) {
-    animation-delay: 570ms;
-  }
-  .mkt-hold__month:nth-child(5) {
-    animation-delay: 760ms;
-  }
-  .mkt-hold__month:nth-child(6) {
-    animation-delay: 950ms;
-  }
-  .mkt-hold__month:nth-child(7) {
-    animation-delay: 1140ms;
-  }
-  .mkt-hold__month:nth-child(8) {
-    animation-delay: 1330ms;
-  }
-  .mkt-hold__month:nth-child(9) {
-    animation-delay: 1520ms;
-  }
-  .mkt-hold__month:nth-child(10) {
-    animation-delay: 1710ms;
-  }
-  .mkt-hold__month:nth-child(11) {
-    animation-delay: 1900ms;
-  }
-  .mkt-hold__month:nth-child(12) {
-    animation-delay: 2090ms;
+  /* Pricing: the founding line grows once; the twelve month cells are a
+     static scale now (they used to pulse forever and meant nothing). */
+  .js-reveal [data-reveal].is-in .mkt-hold__line--founding .mkt-hold__fill {
+    animation: mkt-grow-once 1.2s var(--ease) both;
   }
 }
 
@@ -1791,6 +1679,43 @@
   height: 660px;
   pointer-events: none;
   opacity: 0.55;
+  /* Quieter behind the copy, full strength behind the decision engine
+     (docs/design-audit.md #9): the grid frames the product miniature
+     instead of competing with the headline. Single-column layouts
+     (below 60rem) fade it toward the bottom where the visual sits. */
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.3) 45%,
+    #000 75%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.3) 45%,
+    #000 75%,
+    #000 100%
+  );
+}
+
+@media (min-width: 60rem) {
+  .hp-grid-bg {
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0.3) 42%,
+      #000 68%,
+      #000 100%
+    );
+    mask-image: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0.3) 42%,
+      #000 68%,
+      #000 100%
+    );
+  }
 }
 
 .hp-grid-bg__cols,
@@ -1814,14 +1739,12 @@
   border-radius: 999px;
   background: var(--accent);
   display: block;
-  opacity: 0.2;
+  opacity: 0.45;
 }
 
 .hp-grid-bg__dot--1 {
-  left: 12%;
-  top: 180px;
-  width: 6px;
-  height: 6px;
+  /* Retired: it sat in the headline's reading path (docs/design-audit.md #9). */
+  display: none;
 }
 .hp-grid-bg__dot--2 {
   left: 46%;
@@ -2023,19 +1946,16 @@
   height: 56px;
 }
 
-.hp-ring__track {
-  stroke: var(--bg-sunken);
+.hp-ring > .score-ring {
+  width: 100%;
+  height: 100%;
 }
 
-.hp-ring__fill {
-  stroke: var(--accent);
-}
-
-.hp-card--mid .hp-ring__fill {
+.hp-card--mid .score-ring__value {
   stroke: var(--accent-line);
 }
 
-.hp-card--neutral .hp-ring__fill {
+.hp-card--neutral .score-ring__value {
   stroke: var(--line-strong);
 }
 
@@ -2336,92 +2256,6 @@
   font-size: 0.84rem;
   line-height: 1.6;
   color: var(--ink-2);
-}
-
-.hp-stage__scan {
-  position: relative;
-  display: grid;
-  gap: 0.5625rem;
-  overflow: hidden;
-  padding: 0.25rem 0;
-}
-
-.hp-stage__line {
-  height: 8px;
-  background: var(--bg-sunken);
-  border-radius: 999px;
-  display: block;
-}
-
-.hp-stage__line:nth-child(1) {
-  width: 92%;
-}
-.hp-stage__line:nth-child(2) {
-  width: 76%;
-}
-.hp-stage__line:nth-child(3) {
-  width: 84%;
-}
-.hp-stage__line:nth-child(4) {
-  width: 61%;
-}
-.hp-stage__line:nth-child(5) {
-  width: 88%;
-}
-.hp-stage__line:nth-child(6) {
-  width: 48%;
-}
-
-.hp-stage__scanline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 2px;
-  background: var(--accent);
-  opacity: 0.7;
-  display: block;
-}
-
-.hp-stage__chips {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.hp-stage__chip {
-  background: var(--accent-tint);
-  border: 1px solid var(--accent-line);
-  border-radius: 999px;
-  padding: 0.375rem 0.75rem;
-  font-family: var(--font-num);
-  font-size: 0.78rem;
-  color: var(--accent-text);
-}
-
-.hp-stage__bars {
-  display: grid;
-  gap: 0.5625rem;
-}
-
-.hp-sbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px 56px;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.hp-sbar__label {
-  font-size: 0.78rem;
-  color: var(--ink-2);
-}
-
-.hp-sbar__pts {
-  font-family: var(--font-num);
-  font-size: 0.72rem;
-  color: var(--ink-3);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 .hp-verdict {
@@ -2745,28 +2579,57 @@
 }
 
 /* --- FAQ --- */
+/* Native <details>: the answers stay in the DOM (SEO, find-in-page),
+   the first is open, the rest fold to a row each (docs/design-audit.md #12). */
 .hp-faqs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  max-width: 48rem;
 }
 
 .hp-faq {
   background: var(--bg-panel);
   border: 1px solid var(--line-hair);
   border-radius: 20px;
-  padding: 1.375rem 1.5rem;
 }
 
 .hp-faq__q {
-  margin: 0 0 0.5rem;
+  position: relative;
+  margin: 0;
+  padding: 1.125rem 3.25rem 1.125rem 1.5rem;
+  list-style: none;
+  cursor: pointer;
   font-family: var(--font-head);
-  font-size: 1.1875rem;
+  font-size: 1.125rem;
   font-weight: 600;
+  border-radius: 20px;
+}
+
+.hp-faq__q::-webkit-details-marker {
+  display: none;
+}
+
+.hp-faq__q::after {
+  content: '';
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--ink-3);
+  border-bottom: 2px solid var(--ink-3);
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform 200ms var(--ease);
+}
+
+.hp-faq[open] .hp-faq__q::after {
+  transform: translateY(-30%) rotate(225deg);
 }
 
 .hp-faq__a {
   margin: 0;
+  padding: 0 1.5rem 1.25rem;
   font-size: 0.91rem;
   line-height: 1.6;
   color: var(--ink-2);
@@ -2844,7 +2707,42 @@ body.consent-banner-open {
 
 @media (max-width: 640px) {
   body.consent-banner-open {
-    padding-bottom: 16rem;
+    padding-bottom: 13rem;
+  }
+}
+
+/* Phone layout (docs/design-audit.md #4): the banner used to stack three
+   full-height buttons under four lines of copy and cover the hero's price
+   note and first CTA at 390 px. Same copy, same three choices, same
+   order and semantics; tighter type and buttons on one row bring it from
+   ~330 px to ~200 px. */
+@media (max-width: 640px) {
+  .consent-banner__inner {
+    padding: 0.875rem 1rem;
+    gap: 0.75rem;
+  }
+  .consent-banner__title {
+    font-size: 0.875rem;
+  }
+  .consent-banner__note {
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+  .consent-banner__actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .consent-banner__actions .consent-btn {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .consent-banner__actions .consent-btn--quiet {
+    grid-column: 1 / -1;
+    padding-block: 0.5rem;
   }
 }
 
@@ -3094,15 +2992,6 @@ body.consent-banner-open {
       transform: translateY(42px);
     }
   }
-  @keyframes hp-pulse {
-    0%,
-    100% {
-      opacity: 0.2;
-    }
-    50% {
-      opacity: 0.9;
-    }
-  }
   @keyframes hp-rise-in {
     from {
       opacity: 0;
@@ -3113,22 +3002,6 @@ body.consent-banner-open {
       transform: translateY(0);
     }
   }
-  @keyframes hp-scan {
-    0% {
-      transform: translateY(-6px);
-      opacity: 0;
-    }
-    18% {
-      opacity: 1;
-    }
-    82% {
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(108px);
-      opacity: 0;
-    }
-  }
 
   .hp-grid-bg__cols {
     animation: hp-drift-a 26s linear infinite alternate;
@@ -3136,40 +3009,10 @@ body.consent-banner-open {
   .hp-grid-bg__rows {
     animation: hp-drift-b 34s linear infinite alternate;
   }
-  .hp-grid-bg__dot--1 {
-    animation: hp-pulse 4.5s ease-in-out infinite;
-  }
-  .hp-grid-bg__dot--2 {
-    animation: hp-pulse 6s ease-in-out 1.2s infinite;
-  }
-  .hp-grid-bg__dot--3 {
-    animation: hp-pulse 5.2s ease-in-out 2.4s infinite;
-  }
-  .hp-grid-bg__dot--4 {
-    animation: hp-pulse 7s ease-in-out 0.6s infinite;
-  }
+  /* The grid dots used to pulse on four infinite loops. Each running
+     animation costs a style pass per frame for the life of the page, and
+     the pulse was never noticed; they now sit still at mid opacity. */
 
-  .hp-stage__line {
-    animation: hp-rise-in 420ms ease-out both;
-  }
-  .hp-stage__line:nth-child(2) {
-    animation-delay: 90ms;
-  }
-  .hp-stage__line:nth-child(3) {
-    animation-delay: 180ms;
-  }
-  .hp-stage__line:nth-child(4) {
-    animation-delay: 270ms;
-  }
-  .hp-stage__line:nth-child(5) {
-    animation-delay: 360ms;
-  }
-  .hp-stage__line:nth-child(6) {
-    animation-delay: 450ms;
-  }
-  .hp-stage__scanline {
-    animation: hp-scan 2.6s ease-in-out infinite;
-  }
   .hp-stage__chip {
     animation: hp-rise-in 380ms ease-out both;
   }
@@ -3590,7 +3433,7 @@ body.consent-banner-open {
 @media (min-width: 60rem) {
   .hp-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 25rem);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 30rem);
     gap: clamp(2rem, 5vw, 4rem);
     align-items: center;
   }
@@ -3618,69 +3461,11 @@ body.consent-banner-open {
   }
 }
 
-/* Floating frame: sized to the illustration, not to a fixed box. A flex
-   container's cross-axis default (`align-items: stretch`) was forcing the
-   `<svg>` child to fill whatever height the frame had rather than the
-   other way around — the frame ended up taller than the artwork, with
-   the (`preserveAspectRatio`-centered) SVG rendering small in the middle
-   and empty space above/below it. `align-items: center` makes the frame
-   hug the SVG's own aspect-ratio-driven height instead; the only
-   height cap left is the mobile ~62vw one below, which is a viewport-
-   relative bound on the ARTWORK, not an arbitrary frame min-height. */
-.hp-hero__frame {
-  position: relative;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 28px;
-  padding: clamp(0.75rem, 2vw, 1.25rem);
-  background: linear-gradient(160deg, var(--accent-line), transparent 55%, var(--line-hair));
-  box-shadow:
-    var(--shadow-panel),
-    0 48px 80px -40px rgba(0, 0, 0, 0.32);
-}
-
-.hp-hero__frame .funnel-hero {
-  display: block;
-  width: min(100%, 25rem);
-  height: auto;
-  /* Matches the SVG's own `viewBox="0 0 560 360"` exactly — modern
-     browsers already infer this ratio from the viewBox under `height:
-     auto` (no explicit width/height attrs on the <svg>), so this changes
-     no rendered pixel; it is a belt-and-braces reservation so the LCP
-     hero copy next to it never shifts on the frame between the CSS
-     applying and the SVG's own intrinsic size being available, on
-     whichever engine/version does the inference later or not at all. */
-  aspect-ratio: 560 / 360;
-  max-height: 62vw;
-}
-
-@media (min-width: 60rem) {
-  .hp-hero__frame .funnel-hero {
-    max-height: none;
-  }
-}
-
-.hp-hero__frame::before {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  border-radius: 27px;
-  background: var(--bg-panel);
-  z-index: 0;
-}
-
-.hp-hero__frame > * {
-  position: relative;
-  z-index: 1;
-}
-
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .hp-hero__frame {
-    background: var(--line-strong);
-    box-shadow: none;
-  }
+/* The decision-engine visual (components/hero/DecisionEngine.tsx,
+   styles/hero.css) carries its own opaque surface, hairline and panel
+   shadow; the previous gradient frame around the funnel SVG is retired. */
+.hp-hero__art > .de {
+  margin: 0 auto;
 }
 
 /* Headline word-stagger entrance: each word is a span (`Home.tsx`); runs
@@ -3775,13 +3560,20 @@ body.consent-banner-open {
 }
 
 /* --- Step art: cross-fade on step change --------------------------------
-   `className` lands directly on the Step* SVG (see `assets/steps/*.tsx`),
-   so this rule targets the illustration itself, not a wrapper. */
+   `className` lands on the product frame's root (components/hero/frames.tsx),
+   so this rule sizes and fades the frame itself, not a wrapper. */
 .hp-stage__art {
   margin: 0 0 1rem;
-  max-width: 20rem;
+  max-width: 24rem;
   width: 100%;
   height: auto;
+}
+
+/* Verdict step: the notice the verdict belongs to, then the verdict head. */
+.hp-verdict__notice {
+  display: grid;
+  gap: 0.125rem;
+  margin: 0;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -4033,7 +3825,9 @@ body.consent-banner-open .hp-sticky-cta {
    not inside it, precisely so it can never end up as a swallowed slide).
    `scroll-snap-align: start` (not `center`) so slide 1's left edge sits
    flush with the track's own left edge — i.e. `.hp-demo`'s padding box,
-   since the track carries no extra margin/padding of its own. */
+   since the track carries no extra margin/padding of its own. Slides are
+   88% wide so the next card peeks in from the right: the affordance that
+   there is more to swipe (docs/design-audit.md #13), on top of the dots. */
 @media (max-width: 40rem) {
   .hp-demo__cards {
     display: flex;
@@ -4046,7 +3840,7 @@ body.consent-banner-open .hp-sticky-cta {
 
   .hp-demo__cards .hp-card {
     scroll-snap-align: start;
-    flex: 0 0 100%;
+    flex: 0 0 88%;
     min-width: 0;
   }
 
@@ -4078,5 +3872,122 @@ body.consent-banner-open .hp-sticky-cta {
     font-size: 0.8125rem;
     color: var(--ink-2);
     font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ============================================================
+   Micro-interactions (design phase 4, docs/design-redesign-plan.md).
+   120–250 ms, the site ease, hover devices only for anything that moves,
+   and nothing here runs under prefers-reduced-motion: reduce. Focus
+   rings are untouched (base.css :focus-visible).
+   ============================================================ */
+
+.mkt-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .cta:hover,
+  .mkt-btn-quiet:hover {
+    transform: translateY(-1px);
+  }
+  .cta:active,
+  .mkt-btn-quiet:active {
+    transform: translateY(0);
+  }
+}
+
+.hp-card,
+.hp-truth,
+.hp-tier,
+.hp-faq,
+.mkt-plan--quiet {
+  transition:
+    border-color 180ms var(--ease),
+    box-shadow 180ms var(--ease);
+}
+
+@media (hover: hover) {
+  .hp-card:hover,
+  .hp-truth:hover,
+  .hp-tier:hover,
+  .hp-faq:hover,
+  .mkt-plan--quiet:hover {
+    border-color: var(--accent-line);
+  }
+}
+
+.hp-geo-chip {
+  transition:
+    background-color 150ms var(--ease),
+    border-color 150ms var(--ease),
+    color 150ms var(--ease);
+}
+
+.hp-step {
+  transition:
+    background-color 150ms var(--ease),
+    border-color 150ms var(--ease);
+}
+
+.hp-step__num {
+  transition:
+    background-color 150ms var(--ease),
+    border-color 150ms var(--ease),
+    color 150ms var(--ease);
+}
+
+.hp-how__play {
+  transition:
+    border-color 150ms var(--ease),
+    color 150ms var(--ease);
+}
+
+@media (hover: hover) {
+  .hp-geo-chip:not(.is-active):hover {
+    border-color: var(--line-strong);
+    color: var(--ink-1);
+  }
+  .hp-step:not(.is-active):hover {
+    border-color: var(--line);
+  }
+  .hp-how__play:hover {
+    border-color: var(--line-strong);
+    color: var(--ink-1);
+  }
+}
+
+/* Footer links: the header's colour shift plus an accent underline that
+   fades in (docs/design-audit.md #19). */
+.mkt-footer .nav-list a {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.3em;
+  transition:
+    color 180ms var(--ease),
+    text-decoration-color 180ms var(--ease);
+}
+
+.mkt-footer .nav-list a:hover,
+.mkt-footer .nav-list a:focus-visible {
+  text-decoration-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-faq__q::after,
+  .hp-card,
+  .hp-truth,
+  .hp-tier,
+  .hp-faq,
+  .mkt-plan--quiet,
+  .hp-geo-chip,
+  .hp-step,
+  .hp-step__num,
+  .hp-how__play,
+  .mkt-footer .nav-list a {
+    transition: none;
   }
 }

@@ -99,8 +99,8 @@ export function SampleVerdicts(): ReactElement {
         <div className="mkt-wrap">
           <h2 className="mkt-sec-title">Get verdicts matched to your company</h2>
           <p className="mkt-sec-lede">
-            These four were scored against someone else&rsquo;s profile. Yours would score the same
-            notices differently, and that is the entire idea.
+            Each of these was scored against someone else&rsquo;s profile. Yours would score the
+            same notices differently, and that is the entire idea.
           </p>
           <p className="mkt-cta-row">
             <Link className="cta" to="/signup">

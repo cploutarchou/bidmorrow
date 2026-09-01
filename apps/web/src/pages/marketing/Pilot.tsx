@@ -41,9 +41,14 @@ export function Pilot(): ReactElement {
         </ul>
       </div>
 
-      <Link className="cta" to="/signup">
-        Start the founding pilot
-      </Link>
+      <div className="mkt-cta-row" data-reveal data-reveal-i={3}>
+        <Link className="cta" to="/signup">
+          Start the founding pilot
+        </Link>
+        <Link className="mkt-btn-quiet" to="/pricing">
+          What it costs
+        </Link>
+      </div>
     </>
   );
 }

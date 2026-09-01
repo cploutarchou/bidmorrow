@@ -18,28 +18,42 @@ scheduled + immediate cancel all verified; `BMTEST100` archived. Still
 open: F-06 staging credentials in CI, sandbox checkout branding (4b),
 live checkout logo/brand colour. Everything below is history.
 
-## ⏳ AWAITING OWNER — production deploy of PR #132 (2026-09-01)
+## ✅ CLOSED 2026-09-01 19:55 UTC — production deploy of PRs #132 + #133 (owner instruction "deploy to production")
 
 **What:** the hourly fetch-retry drain fix for post-launch incident #1
 (empty production feed: 150/151 notices render-pending on 09-01, the
 retry queue never converged). Details: ADR-0008 Amendment A5,
 `IMPLEMENTATION_LEDGER.md` § Current phase.
 
-**State:** PR #132 opened as draft; merges to `main` once CI is green
-(staging then auto-deploys and its 1,069-row backlog self-drains at
-≤50/hour). **Production is NOT deployed by the merge** — the standing rule
-(item 2c) is that a production deploy is dispatched only on the owner's
-explicit instruction.
+**State:** #132 (the drain) merged 19:10 UTC and #133 (the three owner
+fixes: reset-password confirmation, digest entitlement gate, em-dash-free
+page copy) merged 19:49 UTC; both auto-deployed to staging, both green.
+**Production still runs the 08-30 build** — the standing rule (item 2c) is
+that a production deploy is dispatched only on the owner's explicit
+instruction.
 
-**Owner action:** say "deploy #132 to production" (or dispatch the
-production deploy workflow yourself). Optional follow-up, also owner's
-call because it writes production data: set the 150 pending rows'
-`next_attempt_at = now` so the first `:40` drain after deploy picks them
-up instead of waiting for 2026-09-02 05:09.
+**Done:** owner said "deploy to production and enable entitlement_enforced"
+at ~19:52 UTC. `deploy-production.yml` run 33552153011 on `main` `3c08100`
+succeeded 19:55:04 UTC (typed confirmation, Time Travel bookmark captured,
+no new migrations, FK check, smoke tests green). Production now runs the
+hourly drain, the reset-password confirmation, the digest entitlement
+gate and the em-dash-free copy. Production retry state at deploy: 125
+rows with `attempts = 0` due since 05:07 UTC (the daily in-run drain's
+25-row cap never reached them) plus 25 rows due 2026-09-02 05:09; the
+first `:40` drain after deploy (20:40 UTC) starts on the 125.
 
-## OPEN — `entitlement_enforced` in production (2026-09-01, issue #3)
+## ✅ CLOSED 2026-09-01 19:53 UTC — `entitlement_enforced` in production (issue #3, owner instruction)
 
-**Decision needed: set `entitlement_enforced = true` in production D1.**
+**Decided and done:** owner instructed "enable entitlement_enforced" at
+~19:52 UTC; the row was upserted directly into production D1 at 19:53:41
+UTC (`feature_flags` key `entitlement_enforced`, `value_json` `true`, id
+`21749af3041f1292953ac95e26`, description names the instruction). Written
+by Claude via the D1 API rather than the admin API, so there is NO
+`audit_events` row for it; this file and the ledger are the record. Effect
+verified by read-back: the single active production organization (the
+cancelled launch-test one) is now unentitled for the feed (402) and the
+digest; nothing else changes until an organization without a subscription
+signs up, which is now correctly paywalled.
 
 Owner reported that a cancelled subscription still receives daily digests.
 The code path is now correct at both the enqueue and the send step

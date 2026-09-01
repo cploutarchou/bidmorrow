@@ -85,6 +85,19 @@ test.describe('unauthenticated pages', () => {
     await page.goto('/signup');
     expectNoSeriousViolations(await seriousOrCriticalViolations(page), '/signup');
   });
+
+  test('reset password', async ({ page }) => {
+    // Without a token the page renders its request form; the confirm-
+    // password pair (2026-09-01) lives on the tokened form, so both
+    // states get scanned.
+    await page.goto('/reset-password');
+    expectNoSeriousViolations(await seriousOrCriticalViolations(page), '/reset-password');
+    await page.goto('/reset-password?token=e2e-axe-scan');
+    expectNoSeriousViolations(
+      await seriousOrCriticalViolations(page),
+      '/reset-password?token=e2e-axe-scan',
+    );
+  });
 });
 
 test.describe('unauthenticated pages — 320px reflow (WCAG 1.4.10)', () => {

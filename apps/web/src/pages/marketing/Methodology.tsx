@@ -129,7 +129,9 @@ export function Methodology(): ReactElement {
       </p>
 
       <div className="mkt-method">
-        <section>
+        {/* `data-reveal`: the component bars grow once when this section scrolls
+            into view (marketing.css); content is visible without JS. */}
+        <section data-reveal>
           <h2 className="mkt-sec-title">Where the hundred points go</h2>
           <p className="mkt-sec-lede">
             Eight components, fixed maximums, the same arithmetic for every company. Same inputs at

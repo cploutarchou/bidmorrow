@@ -1,0 +1,839 @@
+/* ============================================================
+   Decision engine — homepage hero visual (components/hero/DecisionEngine.tsx)
+
+   One 13.5 s loop, three 4.5 s scenes, one scene in the render tree at a
+   time. Every animated element runs a short one-shot animation at a
+   delay into the scene (fill both, so it rests on its finished frame);
+   when the scene's own 4.5 s `de-scene` animation ends, DecisionEngine.tsx hides it (`hidden`),
+   shows the next, and writes `data-scene` on the root, which restarts the
+   next scene's animations from zero and lights that scene's band. Hidden
+   scenes and finished animations cost nothing per frame, which is the
+   point: the earlier shared-timeline version kept 39 infinite animations
+   ticking, three quarters of them invisible. Within a scene:
+
+     0.0–0.4 s  notice card enters
+     0.4–0.9 s  a dot travels the connector
+     0.8–2.4 s  eight signal rows check in, 200 ms each
+     2.6–3.3 s  the score ring draws, the number counts
+     3.3–3.6 s  the band label appears
+     3.6–4.2 s  the card nods, the band below lights
+     4.2–4.5 s  scene fades, the next one takes over
+
+   No inline styles (CSP): per-scene score targets arrive through the
+   CSSOM as `--de-target`; the count-up interpolates the registered
+   `--de-value` (an <integer>, so `counter()` can print it) and the ring
+   draws from the same value through `pathLength="100"`. Reduced motion:
+   scene one's finished frame, static. Off-screen: paused (`.is-offscreen`,
+   one IntersectionObserver).
+   ============================================================ */
+
+@property --de-value {
+  syntax: '<integer>';
+  inherits: true;
+  initial-value: 0;
+}
+
+.de {
+  --de-scene: 4.5s;
+  --de-target: 0;
+  position: relative;
+  width: min(100%, 30rem);
+  display: grid;
+  gap: 0.625rem;
+  padding: 1.125rem 1.125rem 0.875rem;
+  border-radius: 20px;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-hair);
+  box-shadow: var(--shadow-panel);
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+  contain: layout paint;
+}
+
+.de.is-offscreen,
+.de.is-offscreen * {
+  animation-play-state: paused;
+}
+
+/* --- source line ------------------------------------------------------ */
+
+.de__source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 1.25rem;
+}
+
+.de__source-label {
+  font-family: var(--font-num);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.de__queue {
+  display: inline-flex;
+  gap: 0.375rem;
+}
+
+.de__queue-chip {
+  position: relative;
+  width: 1.5rem;
+  height: 0.875rem;
+  border-radius: 3px;
+  border: 1px solid var(--line-strong);
+  opacity: 0.7;
+}
+
+/* Two text rules inside each queued notice, so the chips read as
+   documents waiting their turn rather than empty boxes. */
+.de__queue-chip::before,
+.de__queue-chip::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  height: 1px;
+  background: var(--line-strong);
+}
+
+.de__queue-chip::before {
+  top: 4px;
+  width: 12px;
+}
+
+.de__queue-chip::after {
+  top: 8px;
+  width: 8px;
+}
+
+.de__queue-chip:nth-child(2) {
+  opacity: 0.5;
+}
+
+.de__queue-chip:nth-child(3) {
+  opacity: 0.3;
+}
+
+/* Chips already taken through the engine fade back as the scenes advance
+   (`data-scene` on the root, set by DecisionEngine.tsx). */
+.de__queue-chip {
+  transition: opacity 300ms var(--ease);
+}
+
+.de[data-scene='2'] .de__queue-chip:nth-child(1),
+.de[data-scene='3'] .de__queue-chip:nth-child(-n + 2) {
+  opacity: 0.12;
+}
+
+/* --- scenes, stacked in one cell --------------------------------------- */
+
+.de__scenes {
+  display: grid;
+}
+
+.de__scene {
+  grid-area: 1 / 1;
+  display: grid;
+  gap: 0.375rem;
+  animation: de-scene var(--de-scene) linear both;
+}
+
+/* Only the playing scene exists in the render tree: the others are
+   `hidden` (DecisionEngine.tsx flips them on the scene's animationend),
+   so a hidden scene costs no style, layout or paint at all. */
+.de__scene[hidden] {
+  display: none;
+}
+
+/* --- notice card ------------------------------------------------------- */
+
+.de-notice {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem 0.875rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+}
+
+/* Short animations with delays, not scene-long ones with holds: an
+   animation that has finished costs nothing per frame, so each element
+   only ticks while it actually moves. The nod carries no fill so it does
+   not mask the entry before its delay. */
+.de__scene .de-notice {
+  animation:
+    de-notice-in 0.4s var(--ease) both,
+    de-notice-nod 0.6s var(--ease) 3.6s;
+}
+
+.de-notice p {
+  margin: 0;
+}
+
+.de-notice__buyer {
+  font-family: var(--font-num);
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+}
+
+.de-notice__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+
+.de-notice__meta {
+  display: flex;
+  gap: 0.75rem;
+  font-family: var(--font-num);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.de-notice__deadline {
+  color: var(--sig-caution);
+}
+
+.de-notice__flag {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  margin-top: 0.25rem;
+  padding-top: 0.375rem;
+  border-top: 1px solid var(--line-hair);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+
+.de-notice__flag-kind {
+  flex: 0 0 auto;
+  font-family: var(--font-num);
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sig-caution);
+}
+
+/* --- connector --------------------------------------------------------- */
+
+.de-connector {
+  position: relative;
+  justify-self: center;
+  width: 2px;
+  height: 1.25rem;
+  background: var(--line);
+  border-radius: 1px;
+}
+
+.de-connector__dot {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  margin-top: -3px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.de__scene .de-connector__dot {
+  opacity: 0;
+  animation: de-dot 0.5s var(--ease) 0.4s both;
+}
+
+/* --- engine panel ------------------------------------------------------ */
+
+.de-engine {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem 0.875rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--accent-line);
+  background: var(--bg-panel);
+}
+
+.de__scene .de-engine {
+  animation: de-engine 0.4s var(--ease) 0.4s both;
+}
+
+.de-engine__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--line-hair);
+}
+
+.de-engine__title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.de-engine__version {
+  font-family: var(--font-num);
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.de-signals {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.125rem;
+}
+
+.de-signal {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1.375rem;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}
+
+.de__scene .de-signal {
+  animation: de-row 0.2s var(--ease) both;
+}
+
+.de-signal__mark {
+  display: inline-flex;
+  width: 1rem;
+  height: 1rem;
+}
+
+.de-signal__mark svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.de-signal__half {
+  fill: currentColor;
+  stroke: none;
+}
+
+.de-signal[data-state='matched'] .de-signal__mark,
+.de-signal[data-state='partial'] .de-signal__mark {
+  color: var(--accent-text);
+}
+
+.de-signal[data-state='missed'] .de-signal__mark {
+  color: var(--ink-3);
+}
+
+.de-signal[data-state='unknown'] .de-signal__mark {
+  color: var(--sig-caution);
+}
+
+.de-signal__label {
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.de-signal__pts {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  color: var(--ink-1);
+}
+
+.de-signal[data-state='missed'] .de-signal__pts {
+  color: var(--ink-3);
+}
+
+/* --- score row --------------------------------------------------------- */
+
+.de-score {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line-hair);
+}
+
+.de__scene .de-score {
+  animation: de-score 0.7s var(--ease) 2.6s both;
+}
+
+.score-ring {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+}
+
+.score-ring__track {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 4;
+}
+
+.score-ring__value {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.score-ring--engine {
+  contain: strict; /* the arc redraw stays inside the ring's own box */
+}
+
+.score-ring--engine .score-ring__value {
+  stroke-dasharray: var(--de-value) 100;
+}
+
+.de-score__num {
+  /* The count-up changes text every frame for 0.7 s; size and layout
+     containment keep that reflow inside this 2ch box. */
+  inline-size: 2ch;
+  block-size: 1em;
+  contain: strict;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.625rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.de__scene .de-score__num::before {
+  counter-reset: de-score var(--de-value);
+  content: counter(de-score);
+}
+
+.de-score__of {
+  font-family: var(--font-num);
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+.de-score__band {
+  margin-left: auto;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.de__scene .de-score__band {
+  animation: de-band-label 0.3s var(--ease) 3.3s both;
+}
+
+.de-score__band--strong {
+  background: var(--fit-strong-fill);
+  color: var(--fit-strong-ink);
+}
+
+.de-score__band--review {
+  background: var(--fit-review-tint);
+  color: var(--fit-review-ink);
+  border: 1px solid var(--accent-line);
+}
+
+.de-score__band--possible,
+.de-score__band--low {
+  background: var(--bg-raised);
+  color: var(--ink-2);
+  border: 1px solid var(--line-strong);
+}
+
+/* --- bands row --------------------------------------------------------- */
+
+.de__bands {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.375rem;
+}
+
+.de__band {
+  padding: 0.375rem 0.25rem;
+  border-radius: 8px;
+  border: 1px solid var(--line-hair);
+  background: var(--bg-canvas);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The playing scene's band lights in the scene's last fifth; when the
+   scene changes the rule stops matching and the band goes quiet. */
+.de[data-scene='1'] .de__band--strong {
+  animation: de-band-strong 0.4s var(--ease) 3.6s both;
+}
+
+.de[data-scene='2'] .de__band--review {
+  animation: de-band-review 0.4s var(--ease) 3.6s both;
+}
+
+.de[data-scene='3'] .de__band--low {
+  animation: de-band-low 0.4s var(--ease) 3.6s both;
+}
+
+.de__caption {
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ink-3);
+}
+
+/* --- keyframes: each is the motion only; timing lives in the delays above --- */
+
+@keyframes de-scene {
+  0%,
+  93.33% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes de-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes de-notice-nod {
+  0%,
+  100% {
+    transform: none;
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+@keyframes de-dot {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(1.25rem);
+  }
+}
+
+@keyframes de-engine {
+  from {
+    opacity: 0.35;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes de-row {
+  from {
+    opacity: 0.35;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes de-score {
+  from {
+    --de-value: 0;
+  }
+  to {
+    --de-value: var(--de-target);
+  }
+}
+
+@keyframes de-band-label {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes de-band-strong {
+  from {
+    background: var(--bg-canvas);
+    border-color: var(--line-hair);
+    color: var(--ink-3);
+  }
+  to {
+    background: var(--fit-strong-fill);
+    border-color: var(--fit-strong-fill);
+    color: var(--fit-strong-ink);
+  }
+}
+
+@keyframes de-band-review {
+  from {
+    background: var(--bg-canvas);
+    border-color: var(--line-hair);
+    color: var(--ink-3);
+  }
+  to {
+    background: var(--fit-review-tint);
+    border-color: var(--accent-line);
+    color: var(--fit-review-ink);
+  }
+}
+
+@keyframes de-band-low {
+  from {
+    background: var(--bg-canvas);
+    border-color: var(--line-hair);
+    color: var(--ink-3);
+  }
+  to {
+    background: var(--bg-raised);
+    border-color: var(--line-strong);
+    color: var(--ink-1);
+  }
+}
+
+/* --- reduced motion: scene one, finished, still ----------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .de,
+  .de * {
+    animation: none !important;
+  }
+  .de__scene--2,
+  .de__scene--3 {
+    display: none;
+  }
+  .de__scene--1 {
+    opacity: 1;
+    visibility: visible;
+  }
+  .de-notice,
+  .de-engine,
+  .de-signal,
+  .de-score__band {
+    opacity: 1;
+    transform: none;
+  }
+  .de-score {
+    --de-value: var(--de-target);
+  }
+  .de__band--strong {
+    background: var(--fit-strong-fill);
+    border-color: var(--fit-strong-fill);
+    color: var(--fit-strong-ink);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .de,
+  .de-notice,
+  .de-engine {
+    border-color: var(--line-strong);
+  }
+  .de__band {
+    border-color: var(--line);
+  }
+}
+
+/* --- phones: same story, tighter ---------------------------------------- */
+
+@media (max-width: 40rem) {
+  .de {
+    width: 100%;
+    padding: 0.875rem 0.875rem 0.75rem;
+    gap: 0.5rem;
+  }
+  .de-notice__title {
+    font-size: 0.875rem;
+  }
+  .de-signal {
+    min-height: 1.25rem;
+    font-size: 0.75rem;
+  }
+  .de__bands {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .de__band {
+    white-space: normal;
+  }
+}
+
+/* ============================================================
+   Product frames: the hero's primitives, standing still.
+
+   `components/hero/frames.tsx` reuses NoticeCard / SignalRow / the score
+   block for the "How it works" stage and figures. Nothing here animates
+   on the hero cycle (every cycle animation above is scoped to
+   `.de__scene`); the only motion is the one-shot ring draw below, keyed
+   on the section's scroll reveal, and the stage's own cross-fade.
+   ============================================================ */
+
+.pf {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+}
+
+/* Source: the morning's notices, the front one real. */
+.pf__stack {
+  position: relative;
+  padding-top: 1rem;
+  isolation: isolate;
+}
+
+.pf__stack .de-notice {
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--shadow-panel);
+}
+
+.pf__ghost {
+  position: absolute;
+  inset: 0.5rem 0.75rem 0.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--line-hair);
+  background: var(--bg-raised);
+  opacity: 0.7;
+}
+
+.pf__ghost--2 {
+  inset: 0 1.5rem 1rem;
+  opacity: 0.4;
+}
+
+.pf__source-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  font-family: var(--font-num);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Profile: what the customer told us, row by row. */
+.pf--profile {
+  margin: 0;
+  gap: 0.625rem;
+  padding: 0.875rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+}
+
+.pf__row {
+  display: grid;
+  grid-template-columns: 5.25rem minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.pf__key {
+  margin: 0;
+  padding-top: 0.3125rem;
+  font-family: var(--font-num);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.pf__chips {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.pf__chip {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  border: 1px solid var(--accent-line);
+  background: var(--accent-tint);
+  font-family: var(--font-num);
+  font-size: 0.75rem;
+  color: var(--accent-text);
+}
+
+/* Scoring: the engine panel with its rows and score, no cycle. */
+.pf--scoring .de-engine {
+  gap: 0.5rem;
+}
+
+.pf--scoring .de-score__num {
+  min-width: 0;
+}
+
+/* --- Ring draw: once, on reveal ---------------------------------------- */
+
+.js-reveal .score-ring--draw {
+  --de-value: var(--de-target);
+}
+
+.js-reveal .score-ring--draw .score-ring__value {
+  stroke-dasharray: var(--de-value) 100;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .js-reveal [data-reveal].is-in .score-ring--draw {
+    animation: ring-draw 720ms var(--ease) both;
+  }
+}
+
+@keyframes ring-draw {
+  from {
+    --de-value: 0;
+  }
+}
+
+@media (max-width: 40rem) {
+  .pf__row {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+  }
+}
