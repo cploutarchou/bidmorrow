@@ -15,6 +15,9 @@ export default tseslint.config(
       '**/coverage/**',
       '**/playwright-report/**',
       '**/test-results/**',
+      // Agent worktrees checked out inside the repo during a session —
+      // full copies of the tree, git-excluded, never product code.
+      '**/.claude/worktrees/**',
     ],
   },
   js.configs.recommended,
