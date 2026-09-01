@@ -271,7 +271,9 @@ After the record of this deploy merged (#136, `main` `eb66927`), `Deploy
 production` run 22 (33571123557, 23:27 to 23:28 UTC) redeployed `main`
 so that the production ref matches it: the build is identical to run
 21's (documentation and a workflow input were the only changes) and the
-smoke tests passed again.
+smoke tests passed again. Run 23 (33572653017, 23:48 to 23:49 UTC)
+repeated this for `5bca213` (#137) on the owner's instruction to deploy
+everything to staging and production.
 
 Rollback (decided before deploying): the upgrade carries no migration, so
 rollback is code only. First choice is the Cloudflare Workers deployment
