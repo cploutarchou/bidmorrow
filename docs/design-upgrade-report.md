@@ -262,8 +262,10 @@ both widths and in both themes render the deployed decision engine as
 they did on staging (notice card, engine panel with the eight rows
 checked in, band row, the "illustrative example, not live data" label).
 The captures are on the run's `design-review-production` artifact (30
-days) and were also pushed to a scratch branch for review, deleted
-afterwards.
+days) and were also pushed to a scratch branch for review; the
+workflow's cleanup mode (`delete_branch`) removes the scratch branches
+once the review is done, because pushes from the session sandbox cannot
+delete refs.
 
 Rollback (decided before deploying): the upgrade carries no migration, so
 rollback is code only. First choice is the Cloudflare Workers deployment

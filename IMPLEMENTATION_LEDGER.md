@@ -5507,7 +5507,9 @@ false`), `www` 301, robots production body, sitemap 200, `X-Robots-Tag`
   directive that Lighthouse's robots audit flags as unknown (SEO 92 on
   production, no indexing effect; owner decision, recommended keep);
   scratch branches `design-review-shots` and `design-review-shots-prod`
-  deleted after review.
+  are removed by dispatching `design-review.yml` in its cleanup mode
+  (`delete_branch`, added in #136) once that PR merges; a delete from
+  the sandbox returns HTTP 403, the same limit as the tag pushes.
 
 ## Notes
 

@@ -32,9 +32,16 @@ on:
           sandbox cannot download workflow artifacts); leave empty to skip
         default: ''
         required: false
+      delete_branch:
+        description: >-
+          Cleanup mode: delete this design-review-shots* scratch branch
+          instead of capturing anything (session credentials cannot delete
+          refs; CI's token can). Leave empty for a normal capture run.
+        default: ''
+        required: false
 
 permissions:
-  contents: write # only used by the optional scratch-branch push below
+  contents: write # only used by the optional scratch-branch push and delete below
 
 concurrency:
   group: design-review
@@ -48,25 +55,49 @@ jobs:
     # about 20 minutes on a runner, plus ~5 minutes of Lighthouse.
     timeout-minutes: 50
     steps:
+      # Same reason as ted-fixture-fetch.yml's delete_raw_branch mode: the
+      # scratch branches are transient by design and pushes from the
+      # session sandbox are scoped to the working branch (HTTP 403 on a
+      # delete), so the cleanup runs here with CI's token. Only the
+      # design-review-shots* names this workflow itself creates qualify.
+      - name: Delete the scratch branch (cleanup mode)
+        if: ${{ inputs.delete_branch != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DELETE_BRANCH: ${{ inputs.delete_branch }}
+        run: |
+          case "$DELETE_BRANCH" in
+            design-review-shots*) ;;
+            *) echo "refusing to delete $DELETE_BRANCH: not a design-review-shots* scratch branch"; exit 1 ;;
+          esac
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" --delete "$DELETE_BRANCH"
+          echo "deleted branch $DELETE_BRANCH"
+
       - name: Checkout
+        if: ${{ inputs.delete_branch == '' }}
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up pnpm
+        if: ${{ inputs.delete_branch == '' }}
         uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
 
       - name: Set up Node
+        if: ${{ inputs.delete_branch == '' }}
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: pnpm
 
       - name: Install dependencies
+        if: ${{ inputs.delete_branch == '' }}
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright Chromium
+        if: ${{ inputs.delete_branch == '' }}
         run: pnpm exec playwright install chromium --with-deps
 
       - name: Screenshots (375 to 1920, light and dark)
+        if: ${{ inputs.delete_branch == '' }}
         run: |
           node scripts/design-screenshots.mjs \
             --base-url "${{ inputs.base_url }}" \
@@ -76,7 +107,7 @@ jobs:
       - name: Lighthouse (five baseline pairs)
         # Runs even when the screenshot step reports findings, so the
         # numbers land beside the captures in the same artifact.
-        if: ${{ !cancelled() && inputs.lighthouse }}
+        if: ${{ !cancelled() && inputs.lighthouse && inputs.delete_branch == '' }}
         run: |
           node scripts/design-lighthouse.mjs \
             --base-url "${{ inputs.base_url }}" \
@@ -88,7 +119,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload captures and reports
-        if: ${{ always() }}
+        if: ${{ always() && inputs.delete_branch == '' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: design-review-${{ inputs.label }}
@@ -99,7 +130,7 @@ jobs:
       # git can fetch from the sandbox, deleted after review. Never touches
       # main or the working branches.
       - name: Push captures to the scratch branch
-        if: ${{ always() && inputs.push_branch != '' }}
+        if: ${{ always() && inputs.push_branch != '' && inputs.delete_branch == '' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PUSH_BRANCH: ${{ inputs.push_branch }}
