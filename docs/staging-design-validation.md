@@ -49,15 +49,59 @@ polish (#134)". Previous production ref (for rollback): `3c08100`.
 
 ## Visual verification
 
-`design-review.yml` (label `staging`): screenshots of every public route
-at 375 / 390 / 430 / 768 / 1024 / 1280 / 1440 / 1920 in light and dark,
-with the capture script's console-error and horizontal-overflow checks.
-Pending.
+`design-review.yml` run 3 (33564742786, 22:09–22:20 UTC, from a GitHub
+runner against `https://staging.bidmorrow.com`): every public route
+(Home, How it works, Methodology, Sample verdicts, Cybersecurity tenders,
+Pricing, Pilot, Contact, Privacy, Terms, Refunds, Login, Signup, Forgot
+password) captured full-page at 390 / 768 / 1440 in light and dark, 84
+captures. The capture script's checks: **no console errors, no
+horizontal overflow on any route at any width**. The same script had
+failed run 1 (33562293252) on 168 console messages that turned out to be
+Cloudflare's zone-level Web Analytics beacon being refused by the site's
+own CSP on every page; those are now reported separately (see Known
+issues) and are not site errors. Run 4 repeats the capture at 390 / 1440
+and pushes the images to a scratch branch for a frame-by-frame look at the
+hero, stepper, pricing and FAQ on staging (the sandbox cannot download
+workflow artifacts).
 
 ## Performance
 
-Lighthouse (five baseline pairs) from the same workflow run. Pending.
+Lighthouse 12 from the same run (GitHub runner, real network, mobile
+emulation with simulated throttling unless noted):
+
+| Page                     | Perf | A11y | BP  | SEO\* | LCP   | CLS   | TBT    |
+| ------------------------ | ---- | ---- | --- | ----- | ----- | ----- | ------ |
+| Home (mobile)            | 84   | 100  | 93  | 58    | 2.5 s | 0.001 | 400 ms |
+| Home (desktop)           | 100  | 96   | 93  | 58    | 0.6 s | 0.001 | 0 ms   |
+| Pricing (mobile)         | 97   | 100  | 93  | 58    | 2.2 s | 0     | 30 ms  |
+| How it works (mobile)    | 92   | 100  | 93  | 58    | 3.0 s | 0     | 20 ms  |
+| Sample verdicts (mobile) | 92   | 100  | 93  | 58    | 2.9 s | 0     | 110 ms |
+
+\* SEO 58 is staging's own `noindex` (`X-Robots-Tag` and `Disallow: /`),
+by design; production is crawlable. Best practices 93 on every page is
+the "errors logged to console" audit catching the CSP-blocked Cloudflare
+beacon (Known issues). Layout shift is 0 or 0.001 everywhere, against
+0.158 (Home) and 0.706 (Pricing, How it works) before the upgrade; Home
+mobile's blocking time is the SPA's script execution on a throttled CPU,
+not the visuals. Home desktop accessibility 96 (100 locally and on
+mobile) is being checked against the report's failing audit in run 4's
+pushed reports.
 
 ## Known issues
 
-Pending.
+- **Cloudflare Web Analytics beacon blocked by the CSP** (staging and
+  production alike, pre-existing, not introduced by this upgrade): the
+  zone injects `static.cloudflareinsights.com/beacon.min.js` and an
+  inline loader into every HTML response and `script-src 'self'
+https://cdn.paddle.com` refuses both, so every page logs two CSP
+  violations and the beacon never runs. Owner decision recorded in
+  `HUMAN_DECISION_BLOCKERS.md` (recommended: switch the automatic
+  injection off at the zone). Cost today: Lighthouse best practices 93
+  instead of 100 and console noise; no functional impact.
+- Home (mobile) performance 84: blocking time from the SPA's own
+  JavaScript at 4× CPU throttling; the design work did not add script
+  (the hero's loop is CSS) and the entry chunk is smaller than before.
+  Application-level follow-up, outside this upgrade's scope.
+- Home (desktop) accessibility 96: one audit short of 100 on desktop
+  only; identified from run 4's report and fixed or recorded before the
+  production deploy.
