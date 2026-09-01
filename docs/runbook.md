@@ -100,6 +100,30 @@ Symptoms: watchdog cron flags no successful run in >36 h, or health page red.
    rotate/verify `RESEND_API_KEY`; systematic template failure →
    `digest_paused = true`, fix, unpause (missed day is skipped by design).
 
+### Digest sent to an organization that should not get one
+
+Eligibility is decided in two places, both in `apps/worker/src/digest.ts`:
+`runDigestScheduleJob` filters the due list before enqueuing, and
+`runDigestJob` re-checks before generating, so a message enqueued just
+before a cancellation still cannot send. Both call
+`@bidmorrow/billing` `getEntitlement`, the same authority behind the feed's
+402, and both are inert while the `entitlement_enforced` flag is off.
+
+1. Is `entitlement_enforced` set at all in that environment? Absent means
+   `false`, which means billing state gates nothing: expected V1-pilot
+   behaviour, not a bug.
+2. With the flag on, look for `digest.schedule.skipped.no_entitlement` (not
+   enqueued) or `digest.skipped.no_entitlement` (enqueued, then skipped) in
+   the logs; both carry the organization id and the entitlement reason.
+3. Neither log line and an email still went out → check the subscription
+   row: `active` with a scheduled cancel is still entitled until
+   `current_period_end_at`, and `past_due` is entitled for
+   `PAST_DUE_GRACE_DAYS` past it. Those are correct sends.
+4. A skipped organization writes no `digest_runs` row, by design: that
+   table's status CHECK constraint has no value for "not entitled" and the
+   log line is the record. An organization that is not entitled for a whole
+   day therefore leaves no row for that day.
+
 ### Queue backlog / DLQ growth
 
 1. Which queue? Ingest/match/digest have different consumers.

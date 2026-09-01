@@ -505,7 +505,12 @@ adminRoutes.get('/match-trace', zValidator('query', matchTraceQuerySchema), asyn
   const scoringTime = stored?.match.scoredAt ?? Date.now();
   const mapped = await mapLotToEngineInput(db, bundle, scoringTime, c.get('logger'));
   if (mapped.kind === 'missing_main_cpv') {
-    return c.json({ stored, orgProfile, live: null, note: 'lot has no main CPV — cannot score' });
+    return c.json({
+      stored,
+      orgProfile,
+      live: null,
+      note: 'lot has no main CPV, so it cannot be scored',
+    });
   }
   const live = scoreLotForOrg({ org: orgProfile, lot: mapped.lot, scoringTime });
 

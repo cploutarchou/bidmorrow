@@ -29,7 +29,7 @@ tender lot)** and stored with the engine version that produced them.
 Neutral fraction is a single engine constant `UNKNOWN_NEUTRAL = 0.5` of the
 component max. Each component result records `status: MATCHED | PARTIAL |
 NO_MATCH | UNKNOWN` in `match_components`, so explanations can say
-"value not published — neutral score applied".
+"value not published. Neutral score applied".
 
 ### CPV fit (35) — hierarchical gradient
 
@@ -222,7 +222,7 @@ mandatory_references.
 
 Every flag: `{type, evidence (quoted source snippet + field path), confidence
 (HIGH | POSSIBLE), explanation}`. Wording for POSSIBLE: "Possible requirement
-detected — verify in source documents." English patterns + a small reviewed
+detected: verify in source documents." English patterns + a small reviewed
 multilingual set (ISO/EN standard numbers are language-independent). No
 machine translation.
 
@@ -232,9 +232,9 @@ Every rendered line derives strictly from the component tables above
 (this example is table-exact and is used as a test fixture):
 
 ```
-84.5 / 100 — STRONG_MATCH        engine v1
+84.5 / 100 - STRONG_MATCH        engine v1
 
-+27   CPV: lot 72155000 vs your preference 72150000 — same class (7215)
++27   CPV: lot 72155000 vs your preference 72150000, same class (7215)
 +15   Capabilities: phrases "penetration testing" (+4), "security assessment"
       (+4), synonym group "SOC" (+3), words "audit" (+2), "cloud" (+2)
 +15   Geography: lot NUTS CY00 within your preferred region CY
@@ -242,10 +242,10 @@ Every rendered line derives strictly from the component tables above
  +5   Buyer: national ministry (strong-fit buyer type)
  +5   Procedure: services supported (+3), open procedure (+2)
  +5   Deadline: 34 days ≥ 2× your 10-day threshold
-+2.5  Eligibility: no signals detected — UNKNOWN, neutral half of 5
++2.5  Eligibility: no signals detected. UNKNOWN, neutral half of 5
 
 Risk flags:
- ⚠ ISO 27001 may be required — "certified to ISO 27001" (POSSIBLE) — verify in source documents
+ ⚠ ISO 27001 may be required: "certified to ISO 27001" (POSSIBLE), verify in source documents
 ```
 
 ## Versioning & recomputation

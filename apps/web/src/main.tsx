@@ -4,7 +4,7 @@ import { App } from './App';
 import { initTheme } from './lib/theme';
 import './styles/base.css';
 
-// Stamp the stored theme preference on <html> before the first render —
+// Stamp the stored theme preference on <html> before the first render:
 // dark is the stylesheet default, so only an explicit stored choice
 // changes anything (Theme Spec v2; lib/theme.ts).
 initTheme();

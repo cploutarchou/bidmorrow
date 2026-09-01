@@ -12,7 +12,7 @@ import {
  * and the shared Open Graph / Twitter block
  * (docs/redesign/seo-content-strategy.md §3).
  *
- * There is no head-management library here by design — React 19 hoists bare
+ * There is no head-management library here by design: React 19 hoists bare
  * `<title>`/`<meta>`/`<link>` elements out of the render tree into `<head>`,
  * which is the pattern every page already used before this component existed.
  * Consolidating it here means the 13-tag OG block is written once instead of

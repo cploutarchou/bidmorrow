@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 
 /**
- * Page frame for every admin section — 2026-08-21 handoff redesign
+ * Page frame for every admin section: 2026-08-21 handoff redesign
  * (`BidMorrow Admin.dc.html`), which gives each section a title and a
  * one-line note explaining what the operator is looking at.
  *

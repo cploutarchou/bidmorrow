@@ -5,7 +5,7 @@
  * `packages/procurement/scripts/generate-sample-verdicts.ts`: real output of
  * the production matching engine scoring real eForms notices against
  * representative supplier profiles. Nothing on the demo page is authored by
- * hand, which is the whole point — a demonstration of explainability that
+ * hand, which is the whole point: a demonstration of explainability that
  * showed invented numbers would be demonstrating the opposite of the
  * product's claim (docs/product-scope.md, "Product policy lock", 2026-08-17).
  *
@@ -15,7 +15,7 @@
 import type { Classification } from './format';
 
 export interface SampleVerdictComponent {
-  /** `match_components.component_key` vocabulary — the same one the customer UI reads. */
+  /** `match_components.component_key` vocabulary, the same one the customer UI reads. */
   readonly key: string;
   readonly points: number;
   readonly maxPoints: number;
@@ -33,10 +33,10 @@ export interface SampleVerdictRiskFlag {
 /**
  * Where the notice behind a verdict comes from.
  *
- * `ted_notice` — a notice TED actually published: a real buyer, a real
+ * `ted_notice` is a notice TED actually published: a real buyer, a real
  * procurement, a resolvable ted.europa.eu link.
  *
- * `eforms_example` — one of the Publications Office's own official eForms
+ * `eforms_example` is one of the Publications Office's own official eForms
  * example notices. A real, well-formed eForms document that the engine
  * scores exactly as it scores a live one, but not a tender anyone could have
  * bid for. The page labels these rather than presenting them as live
@@ -44,12 +44,12 @@ export interface SampleVerdictRiskFlag {
  */
 export type SampleVerdictSourceKind = 'ted_notice' | 'eforms_example';
 
-/** Which public pages show a verdict — see `SampleCase.surfaces` in the generator. */
+/** Which public pages show a verdict; see `SampleCase.surfaces` in the generator. */
 export type SampleVerdictSurface = 'demo' | 'cybersecurity';
 
 export interface SampleVerdict {
   readonly id: string;
-  /** One line on why this pairing is worth showing — editorial, not engine output. */
+  /** One line on why this pairing is worth showing: editorial, not engine output. */
   readonly why: string;
   readonly surfaces: readonly SampleVerdictSurface[];
   readonly supplierLabel: string;
@@ -70,7 +70,7 @@ export interface SampleVerdict {
   readonly classification: Classification;
   readonly exclusionRule: string | null;
   readonly exclusionEvidence: string | null;
-  /** Empty for an excluded lot — there is no breakdown of a score that was never computed. */
+  /** Empty for an excluded lot: there is no breakdown of a score that was never computed. */
   readonly components: readonly SampleVerdictComponent[];
   readonly riskFlags: readonly SampleVerdictRiskFlag[];
   readonly explanation: string;
@@ -88,15 +88,15 @@ export interface SampleVerdict {
 export function sampleRecommendation(verdict: SampleVerdict): string {
   switch (verdict.classification) {
     case 'STRONG_MATCH':
-      return 'Pursue — read the tender documents and start a bid/no-bid review.';
+      return 'Pursue: read the tender documents and start a bid/no-bid review.';
     case 'WORTH_REVIEWING':
-      return 'Review — enough of this fits that a person should look before deciding.';
+      return 'Review: enough of this fits that a person should look before deciding.';
     case 'POSSIBLE_MATCH':
-      return 'Skim — adjacent to what this supplier does, not central to it.';
+      return 'Skim: adjacent to what this supplier does, not central to it.';
     case 'LOW_FIT':
-      return 'Skip — little here matches what this supplier sells.';
+      return 'Skip: little here matches what this supplier sells.';
     case 'EXCLUDED':
-      return 'Skip — ruled out by this supplier’s own settings, before any scoring.';
+      return 'Skip: ruled out by this supplier’s own settings, before any scoring.';
   }
 }
 

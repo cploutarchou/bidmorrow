@@ -62,10 +62,10 @@ describe('renderExplanation', () => {
     const result = scoreLotForOrg(input);
     const text = renderExplanation(result);
 
-    expect(text).toContain('84.5 / 100 — STRONG_MATCH');
+    expect(text).toContain('84.5 / 100 - STRONG_MATCH');
     expect(text).toContain('engine v1');
     expect(text).toContain('+27');
-    expect(text).toContain('CPV: lot 72155000 vs your preference 72150000 — same class (7215)');
+    expect(text).toContain('CPV: lot 72155000 vs your preference 72150000, same class (7215)');
     expect(text).toContain('+15  Geography: lot NUTS CY00 within your preferred region CY');
     expect(text).toContain('+10  Value: €180,000 within your €50,000–€500,000 range');
     expect(text).toContain('Risk flags:');

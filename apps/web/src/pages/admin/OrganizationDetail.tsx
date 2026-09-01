@@ -50,7 +50,7 @@ export function OrganizationDetail(): ReactElement {
       await load();
     } catch {
       setFlashTone('risk');
-      setStatusMessage('Could not suspend organization — please try again.');
+      setStatusMessage('Could not suspend organization. Please try again.');
     } finally {
       setBusy(false);
     }
@@ -67,7 +67,7 @@ export function OrganizationDetail(): ReactElement {
       await load();
     } catch {
       setFlashTone('risk');
-      setStatusMessage('Could not unsuspend organization — please try again.');
+      setStatusMessage('Could not unsuspend organization. Please try again.');
     } finally {
       setBusy(false);
     }
@@ -87,7 +87,7 @@ export function OrganizationDetail(): ReactElement {
 
   return (
     <AdminPage
-      documentTitle={`${detail.organization.name} — Admin`}
+      documentTitle={`${detail.organization.name} | Admin`}
       heading={detail.organization.name}
       note="Everything the admin surface knows about one organization. Suspension is the only mutation available here, and it is reversible."
     >

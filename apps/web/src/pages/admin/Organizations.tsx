@@ -46,9 +46,9 @@ export function Organizations(): ReactElement {
 
   return (
     <AdminPage
-      documentTitle="Organizations — Admin"
+      documentTitle="Organizations | Admin"
       heading="Organizations"
-      note="Every organization on the platform. Selecting one opens its detail view, which is where suspension lives — nothing on this page mutates anything."
+      note="Every organization on the platform. Selecting one opens its detail view, which is where suspension lives. Nothing on this page mutates anything."
     >
       <form
         className="admin-search"
@@ -95,8 +95,8 @@ export function Organizations(): ReactElement {
                       ? `SUSPENDED (since ${formatIsoUtc(org.suspendedAt)})`
                       : org.status}
                   </td>
-                  <td>{org.subscription?.plan ?? '—'}</td>
-                  <td>{org.subscription?.status ?? '—'}</td>
+                  <td>{org.subscription?.plan ?? '–'}</td>
+                  <td>{org.subscription?.status ?? '–'}</td>
                   <td>{org.memberCount}</td>
                 </tr>
               ))}

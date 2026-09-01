@@ -6,7 +6,7 @@
  * `prefers-color-scheme: light` mirror lets the OS decide.
  *
  * localStorage can throw (Safari private mode, storage-disabled
- * embeds) — every access is wrapped so the theme system degrades to
+ * embeds), so every access is wrapped and the theme system degrades to
  * "system" rather than crashing the shell.
  */
 
@@ -57,7 +57,7 @@ export function setThemePreference(preference: ThemePreference): void {
       window.localStorage.setItem(STORAGE_KEY, preference);
     }
   } catch {
-    // Storage unavailable — the stamp below still applies for this tab.
+    // Storage unavailable; the stamp below still applies for this tab.
   }
   stamp(preference);
   notify();

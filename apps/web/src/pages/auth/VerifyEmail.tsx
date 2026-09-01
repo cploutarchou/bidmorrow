@@ -15,7 +15,7 @@ import { AuthLayout } from './AuthLayout';
  * (Signup.tsx/Login.tsx's resend both pass it through the `callbackURL`).
  * There is no session yet at this point (Better Auth does not auto-sign-in
  * after email verification in this configuration), so the next real step
- * is always logging in — F11's routing-by-state (R1) happens there.
+ * is always logging in; F11's routing-by-state (R1) happens there.
  */
 export function VerifyEmail(): ReactElement {
   const [searchParams] = useSearchParams();
@@ -63,7 +63,7 @@ export function VerifyEmail(): ReactElement {
             That verification link is invalid or has expired.
           </p>
           <p className="auth-card__sub">
-            Try logging in again — we'll offer to resend the verification email from there.
+            Try logging in again. We'll offer to resend the verification email from there.
           </p>
           <Link className="cta" to="/login">
             Back to log in
@@ -86,7 +86,7 @@ export function VerifyEmail(): ReactElement {
               <p role="status" aria-live="polite" className="visually-hidden-status">
                 {resent ? 'Verification email resent.' : ''}
               </p>
-              {resent && <p className="auth-status">Sent again — give it a minute to arrive.</p>}
+              {resent && <p className="auth-status">Sent again. Give it a minute to arrive.</p>}
               {resendError !== null && (
                 <p role="alert" className="form-error">
                   {resendError}

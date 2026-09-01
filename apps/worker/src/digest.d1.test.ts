@@ -11,7 +11,7 @@
  * only `tender_matches`/`digest_*` behavior is under test here.
  */
 import { env } from 'cloudflare:workers';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createLogger } from '@bidmorrow/observability';
 import { ENGINE_VERSION } from '@bidmorrow/matching';
 import { organizationId as toOrganizationId } from '@bidmorrow/domain';
@@ -27,8 +27,12 @@ import {
   newId,
   setFeatureFlag,
   upsertDigestPreferences,
+  upsertSubscriptionByBillingCustomerId,
 } from '@bidmorrow/db';
 import { schema } from '@bidmorrow/db';
+
+import { runDigestJob } from './digest';
+import type { Env } from './env';
 
 const ORG_TZ = 'UTC';
 
@@ -709,5 +713,153 @@ describe('generateDigest', () => {
     expect(provider.sent).toHaveLength(0);
     const run = await getDigestRunByDate(db, orgId, '2026-08-15');
     expect(run).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Entitlement gate at CONSUME time (issue #3). `runDigestJob` is the
+// composition-root wrapper the queue consumer actually calls; every test
+// above exercises `generateDigest` directly and therefore skips this gate
+// entirely, which is how it stayed untested. These lock it in: a message
+// enqueued before a cancellation landed must not turn into an email.
+// `runDigestJob` uses the real clock, so subscription periods and scored-at
+// timestamps here are relative to `Date.now()`, not the fixed `NOW` above.
+// ---------------------------------------------------------------------------
+
+const CONSUME_DAY_MS = 24 * 60 * 60 * 1000;
+let consumeSubscriptionSeq = 0;
+
+function fakeDigestEnv(): Env {
+  return {
+    DB: env.DB,
+    APP_BASE_URL,
+    BETTER_AUTH_SECRET: TEST_UNSUBSCRIBE_SECRET,
+  } as unknown as Env;
+}
+
+async function seedConsumeSubscription(
+  db: ReturnType<typeof createDb>,
+  orgId: ReturnType<typeof toOrganizationId>,
+  args: {
+    status: 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
+    currentPeriodEndAt?: number | null;
+    cancelAtPeriodEnd?: boolean;
+  },
+): Promise<void> {
+  consumeSubscriptionSeq += 1;
+  await upsertSubscriptionByBillingCustomerId(db, orgId, {
+    billingCustomerId: `ctm_digest_consume_${String(consumeSubscriptionSeq)}`,
+    billingSubscriptionId: `sub_digest_consume_${String(consumeSubscriptionSeq)}`,
+    status: args.status,
+    plan: 'standard',
+    currentPeriodEndAt: args.currentPeriodEndAt ?? Date.now() + 30 * CONSUME_DAY_MS,
+    cancelAtPeriodEnd: args.cancelAtPeriodEnd ?? false,
+  });
+}
+
+/** An org that wants a digest today and has one real match to put in it. */
+async function makeDigestReadyOrg(
+  db: ReturnType<typeof createDb>,
+): Promise<ReturnType<typeof toOrganizationId>> {
+  const { orgId } = await makeOrg(db);
+  await upsertDigestPreferences(db, orgId, {
+    enabled: true,
+    sendEmpty: true,
+    minClassification: 'POSSIBLE_MATCH',
+    timezone: ORG_TZ,
+  });
+  await seedMatch(db, orgId, {
+    title: 'Municipal fibre rollout',
+    classification: 'STRONG_MATCH',
+    score: 91,
+    scoredAt: Date.now() - 3_600_000,
+    buyerName: 'City Council',
+  });
+  return orgId;
+}
+
+async function setEntitlementEnforced(
+  db: ReturnType<typeof createDb>,
+  enabled: boolean,
+): Promise<void> {
+  await setFeatureFlag(db, {
+    key: 'entitlement_enforced',
+    valueJson: enabled ? 'true' : 'false',
+    description: 'test: entitlement gate',
+  });
+}
+
+describe('runDigestJob entitlement gate', () => {
+  // The `digest_paused` test above leaves that global flag ON; clear it so
+  // these tests observe the entitlement gate and not the pause gate.
+  beforeEach(async () => {
+    await setFeatureFlag(createDb(env.DB), {
+      key: 'digest_paused',
+      valueJson: 'false',
+      description: 'test: unpaused',
+    });
+  });
+
+  afterEach(async () => {
+    await setEntitlementEnforced(createDb(env.DB), false);
+  });
+
+  it('enforced + canceled subscription: no email, no digest_runs row (issue #3)', async () => {
+    const db = createDb(env.DB);
+    const orgId = await makeDigestReadyOrg(db);
+    await seedConsumeSubscription(db, orgId, { status: 'canceled' });
+    await setEntitlementEnforced(db, true);
+
+    const provider = new FakeDigestProvider('ok');
+    const outcome = await runDigestJob(
+      fakeDigestEnv(),
+      createLogger({ test: true }),
+      { kind: 'digest', organizationId: orgId, localDate: '2026-09-01' },
+      provider,
+    );
+
+    expect(outcome.status).toBe('skipped_paused');
+    expect(provider.sent).toHaveLength(0);
+    expect(await getDigestRunByDate(db, orgId, '2026-09-01')).toBeNull();
+  });
+
+  it('enforced + cancel-at-period-end, still inside the paid period: the digest is sent', async () => {
+    const db = createDb(env.DB);
+    const orgId = await makeDigestReadyOrg(db);
+    await seedConsumeSubscription(db, orgId, {
+      status: 'active',
+      cancelAtPeriodEnd: true,
+      currentPeriodEndAt: Date.now() + 10 * CONSUME_DAY_MS,
+    });
+    await setEntitlementEnforced(db, true);
+
+    const provider = new FakeDigestProvider('ok');
+    const outcome = await runDigestJob(
+      fakeDigestEnv(),
+      createLogger({ test: true }),
+      { kind: 'digest', organizationId: orgId, localDate: '2026-09-01' },
+      provider,
+    );
+
+    expect(outcome.status).toBe('sent');
+    expect(provider.sent).toHaveLength(1);
+  });
+
+  it('flag OFF (the default): a canceled org still gets its digest, V1-pilot mode is unchanged', async () => {
+    const db = createDb(env.DB);
+    const orgId = await makeDigestReadyOrg(db);
+    await seedConsumeSubscription(db, orgId, { status: 'canceled' });
+    await setEntitlementEnforced(db, false);
+
+    const provider = new FakeDigestProvider('ok');
+    const outcome = await runDigestJob(
+      fakeDigestEnv(),
+      createLogger({ test: true }),
+      { kind: 'digest', organizationId: orgId, localDate: '2026-09-01' },
+      provider,
+    );
+
+    expect(outcome.status).toBe('sent');
+    expect(provider.sent).toHaveLength(1);
   });
 });

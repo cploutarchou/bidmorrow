@@ -13,15 +13,15 @@ export function Login(): ReactElement {
   const navigate = useNavigate();
   const { refresh } = useAuth();
   // Already-authenticated visitor landing on /login must not see the form
-  // (auth/session-flow-polish R1) — this must run for every render, so it's
+  // (auth/session-flow-polish R1): this must run for every render, so it's
   // declared before the early loading-state return below. Also owns
   // post-login navigation: once `refresh()` below resolves to a session,
   // `user` flips non-null and this hook's own effect resolves the
-  // destination and navigates — a single code path instead of duplicating
+  // destination and navigates: a single code path instead of duplicating
   // `resolvePostAuthDestination` here too (which raced it and could
   // double-fetch `/api/org/profile` / navigate twice).
   const { ready } = useRedirectIfAuthenticated();
-  // ResetPassword lands here with `state.passwordReset` — the reset-done
+  // ResetPassword lands here with `state.passwordReset`: the reset-done
   // confirmation the flow otherwise never showed (a silent bounce to the
   // login form read as "did that work?").
   const location = useLocation();
@@ -56,14 +56,14 @@ export function Login(): ReactElement {
         if (response.status === 403 && body.code === 'EMAIL_NOT_VERIFIED') {
           setNeedsVerification(true);
         } else {
-          setError(body.message ?? 'Could not sign in — check your email and password.');
+          setError(body.message ?? 'Could not sign in. Check your email and password.');
         }
         return;
       }
       // R1 (docs/redesign/ux-strategy.md §1.3): route by state, not a fixed
       // URL. `refresh()` flips `user` from null to the signed-in account;
       // `useRedirectIfAuthenticated` above reacts to that and does the
-      // `resolvePostAuthDestination` + navigate — an explicit `returnTo`
+      // `resolvePostAuthDestination` + navigate: an explicit `returnTo`
       // wins, else a new/incomplete profile lands on /onboarding instead of
       // hitting the feed's 403 dead-end.
       await refresh();
@@ -75,7 +75,7 @@ export function Login(): ReactElement {
   }
 
   async function resendVerification(): Promise<void> {
-    // Same callbackURL fix as Signup.tsx — see its comment (carries
+    // Same callbackURL fix as Signup.tsx; see its comment (carries
     // `?email=` through so VerifyEmail can show the resend affordance).
     const verifyEmailPath = `/verify-email?email=${encodeURIComponent(email)}`;
     await fetch('/api/auth/send-verification-email', {

@@ -5,7 +5,7 @@ import { PageMeta } from '../../components/PageMeta';
 import { MARKETING_META } from '../../lib/seo';
 
 /**
- * "How it works" — 2026-08-21 handoff redesign (`BidMorrow
+ * "How it works": 2026-08-21 handoff redesign (`BidMorrow
  * Marketing.dc.html`, page="how"): five numbered flow rows, each with an
  * animated figure in the homepage's motion vocabulary (profile chips, TED
  * scan, score bars, feed sort, digest week). The prototype's three pages
@@ -72,8 +72,8 @@ export function HowItWorks(): ReactElement {
           <span className="mkt-flow__body">
             <h2>TED lands here every morning</h2>
             <p>
-              Competition notices arrive daily from Tenders Electronic Daily — the European Union's
-              official procurement journal — within a published CPV scope. A notice outside that
+              Competition notices arrive daily from Tenders Electronic Daily, the European Union's
+              official procurement journal, within a published CPV scope. A notice outside that
               scope is never ingested, and never scored, however well it might have fitted.
             </p>
             <Link className="mkt-flow__link" to="/methodology">
@@ -127,7 +127,7 @@ export function HowItWorks(): ReactElement {
           <span className="mkt-flow__body">
             <h2>Strong matches lead the feed</h2>
             <p>
-              Then worth reviewing, then possible. No dashboards to interpret and no vanity charts —
+              Then worth reviewing, then possible. No dashboards to interpret and no vanity charts:
               save it, ignore it, or open the original notice on TED when you want the procurement
               documents themselves.
             </p>
@@ -169,7 +169,7 @@ export function HowItWorks(): ReactElement {
               <span className="mkt-fig-day" />
               <span className="mkt-fig-day" />
             </span>
-            <span className="mkt-fig-note">Two sends in seven days — the rest earned silence.</span>
+            <span className="mkt-fig-note">Two sends in seven days; the rest earned silence.</span>
           </span>
         </li>
       </ol>

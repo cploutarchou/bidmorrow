@@ -1,5 +1,5 @@
 /**
- * `pollForSubscription` — the retry behaviour behind the post-checkout
+ * `pollForSubscription`: the retry behaviour behind the post-checkout
  * confirmation page (/app/billing/success).
  *
  * This is the part with real failure modes: the Paddle webhook writes the
@@ -84,7 +84,7 @@ describe('pollForSubscription', () => {
     expect(h.calls).toBe(3);
   });
 
-  it('ends in "not-yet" — never a failure state — when attempts run out', async () => {
+  it('ends in "not-yet", never a failure state, when attempts run out', async () => {
     const h = harness([EMPTY]);
     const outcome = await pollForSubscription(h.deps);
     expect(outcome).toEqual({ kind: 'not-yet' });

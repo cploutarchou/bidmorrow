@@ -50,9 +50,9 @@ export function scoreCapability(lot: LotInput, org: OrgProfile): CapabilityScore
         points,
         maxPoints,
         status: 'UNKNOWN',
-        explanation: `No matchable-language text on this lot (source language: ${availableLang}) — neutral score applied.`,
+        explanation: `No matchable-language text on this lot (source language: ${availableLang}). Neutral score applied.`,
       },
-      sourceLanguageIndicator: `source language: ${availableLang} — keyword matching limited`,
+      sourceLanguageIndicator: `source language: ${availableLang}, keyword matching limited`,
     };
   }
 

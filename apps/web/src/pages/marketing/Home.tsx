@@ -10,7 +10,7 @@ import { useTilt } from '../../lib/use-tilt';
 import { parseFactValue } from './home-facts';
 
 /**
- * Homepage — 2026-08-21 handoff redesign (`BidMorrow Homepage.dc.html`).
+ * Homepage: 2026-08-21 handoff redesign (`BidMorrow Homepage.dc.html`).
  * Structure and copy follow the prototype: hero over a drifting grid,
  * a live-feed demo panel with a geo picker (country detected from the
  * browser's timezone/locale, never from a network call), the facts row,
@@ -59,7 +59,7 @@ const DEMO_POOL: DemoCard[] = [
     ],
     risk: {
       kind: 'Blocker',
-      text: 'SC security clearance required for 3 named staff — none on file.',
+      text: 'SC security clearance required for 3 named staff. None on file.',
     },
   },
   {
@@ -69,7 +69,7 @@ const DEMO_POOL: DemoCard[] = [
     tone: 'strong',
     deadline: 'closes in 11 days',
     deadlineTone: 'caution',
-    title: 'Cybersecurity operations centre — 24/7 monitoring, three years',
+    title: 'Cybersecurity operations centre: 24/7 monitoring, three years',
     meta: 'National police force · CY · €2.40M · restricted',
     comps: [
       { name: 'CPV fit', pts: 30, max: 35 },
@@ -79,7 +79,7 @@ const DEMO_POOL: DemoCard[] = [
     ],
     risk: {
       kind: 'Caution',
-      text: 'Two-stage procedure — the pre-qualification pack is due before the tender itself.',
+      text: 'Two-stage procedure: the pre-qualification pack is due before the tender itself.',
     },
   },
   {
@@ -115,7 +115,7 @@ const DEMO_POOL: DemoCard[] = [
     ],
     risk: {
       kind: 'Caution',
-      text: 'Greek-language submission required — quoted from the notice text (confirmed pattern).',
+      text: 'Greek-language submission required, quoted from the notice text (confirmed pattern).',
     },
   },
   {
@@ -151,7 +151,7 @@ const DEMO_POOL: DemoCard[] = [
     ],
     risk: {
       kind: 'Caution',
-      text: 'Local operating presence in the region expected — possible requirement, verify in source.',
+      text: 'Local operating presence in the region expected: possible requirement, verify in source.',
     },
   },
   {
@@ -171,7 +171,7 @@ const DEMO_POOL: DemoCard[] = [
     ],
     risk: {
       kind: 'Blocker',
-      text: 'BSI C5 attestation required — not held on file (confirmed pattern).',
+      text: 'BSI C5 attestation required, not held on file (confirmed pattern).',
     },
   },
 ];
@@ -189,7 +189,7 @@ const COUNTRY_NAMES: Record<string, string> = {
 
 const GEO_OPTIONS = ['EU', 'CY', 'GR', 'MT', 'IT', 'DE'];
 
-/** Country from timezone/locale only — never a network lookup. */
+/** Country from timezone/locale only, never a network lookup. */
 function detectCountry(): string | null {
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -232,11 +232,11 @@ function detectCountry(): string | null {
 const STEPS = [
   {
     title: 'TED, ingested daily',
-    body: 'Competition notices from Tenders Electronic Daily — the Publications Office of the European Union — within a documented CPV scope.',
+    body: 'Competition notices from Tenders Electronic Daily (the Publications Office of the European Union) within a documented CPV scope.',
   },
   {
     title: 'Your company profile',
-    body: 'CPV codes, capabilities, keywords, geography, value range and exclusions — set once in onboarding, editable forever after.',
+    body: 'CPV codes, capabilities, keywords, geography, value range and exclusions: set once in onboarding, editable forever after.',
   },
   {
     title: 'Deterministic scoring',
@@ -244,7 +244,7 @@ const STEPS = [
   },
   {
     title: 'Verdict + explanation',
-    body: 'Strong match, worth reviewing or possible — with the reasoning for every point, quoted evidence, and a link to the notice on TED.',
+    body: 'Strong match, worth reviewing or possible, with the reasoning for every point, quoted evidence, and a link to the notice on TED.',
   },
 ];
 
@@ -282,7 +282,7 @@ const FACTS = [
   },
   {
     value: '5 rules',
-    label: 'The only grounds on which a tender is excluded outright — all of them yours to set.',
+    label: 'The only grounds on which a tender is excluded outright, all of them yours to set.',
   },
   {
     value: '3 tiers',
@@ -294,7 +294,7 @@ const FACTS = [
 const TRUTHS = [
   {
     title: 'Missing data is never guessed',
-    body: 'When a notice omits something a score component needs — no value, no deadline — BidMorrow does not score it as zero or as a perfect match. It applies a documented neutral score, half that component’s maximum points, and marks the component Unknown with an explanation of what was missing.',
+    body: 'When a notice omits something a score component needs (no value, no deadline), BidMorrow does not score it as zero or as a perfect match. It applies a documented neutral score, half that component’s maximum points, and marks the component Unknown with an explanation of what was missing.',
   },
   {
     title: 'Every risk flag quotes its source',
@@ -302,7 +302,7 @@ const TRUTHS = [
   },
   {
     title: 'Exclusions fire only on known values',
-    body: 'A tender is excluded outright — no score shown — only when a known value trips one of five rules: excluded geography, excluded CPV family, an excluded phrase in the notice text, an unsupported contract nature, or a deadline runway below your threshold. Unknown fields never trigger an exclusion.',
+    body: 'A tender is excluded outright, with no score shown, only when a known value trips one of five rules: excluded geography, excluded CPV family, an excluded phrase in the notice text, an unsupported contract nature, or a deadline runway below your threshold. Unknown fields never trigger an exclusion.',
   },
   {
     title: 'Coverage is scoped and published',
@@ -328,14 +328,14 @@ const STATUSES = [
   },
   {
     label: 'Partial match',
-    note: 'Some overlap — a secondary CPV code, a neighbouring region — scored proportionally rather than all or nothing.',
+    note: 'Some overlap (a secondary CPV code, a neighbouring region), scored proportionally rather than all or nothing.',
   },
   {
     label: 'No match',
     note: 'The notice is explicit and it does not fit. Zero points, and the breakdown says which fact decided it.',
   },
   {
-    label: 'Unknown — neutral score applied',
+    label: 'Unknown: neutral score applied',
     note: 'The notice never published the field. Half the component’s points, marked Unknown, with a note on what was missing.',
   },
 ];
@@ -395,7 +395,7 @@ const RULES = [
 const FAQS = [
   {
     q: 'Is this a bid-writing tool?',
-    a: 'No. BidMorrow decides what deserves your time — discovery, scoring and a defensible bid/no-bid call. The writing stays with your team.',
+    a: 'No. BidMorrow decides what deserves your time: discovery, scoring and a defensible bid/no-bid call. The writing stays with your team.',
   },
   {
     q: 'Which sectors can I profile?',
@@ -420,7 +420,7 @@ const FAQS = [
 ];
 
 const FOUNDING_POINTS = [
-  'The same product every customer gets — no separate pilot feature set',
+  'The same product every customer gets, with no separate pilot feature set',
   'Direct access to the team building BidMorrow',
   'Cancel any time from account settings',
 ];
@@ -469,7 +469,7 @@ function HeroHeadline({ text }: { text: string }): ReactElement {
  * One "product facts" tile (`FACTS`). The numeric part counts up from 0
  * with `useCountUp` the moment the card is scrolled into view
  * (`useRevealed`, driven by the same shared observer `useReveal()`
- * installs in `MarketingLayout`) — before that, and whenever
+ * installs in `MarketingLayout`). Before that, and whenever
  * `IntersectionObserver` never fires, it renders the plain final string,
  * so the text is never wrong, only sometimes still counting up to it.
  */
@@ -573,7 +573,7 @@ export function Home(): ReactElement {
   // nearest the centre of the scroll snap container. rAF-throttled: a
   // touch-driven scroll fires this event far faster than the layout reads
   // inside it (`querySelectorAll` + `offsetLeft`/`offsetWidth`, both
-  // forced-layout) need to run — coalescing to one measurement per
+  // forced-layout) need to run; coalescing to one measurement per
   // animation frame keeps a scroll fling from queuing more forced-layout
   // work than a mid-range mobile device can paint through.
   useEffect(() => {
@@ -610,12 +610,12 @@ export function Home(): ReactElement {
   }, [geoPicked, detected]);
 
   // Whether the card track is actually acting as a carousel (CSS switches
-  // it to `overflow-x: auto` + snap only ≤40rem, see marketing.css) — kept
+  // it to `overflow-x: auto` + snap only ≤40rem, see marketing.css), kept
   // in sync via `matchMedia` rather than assumed from viewport width at
   // mount, since a device can cross the breakpoint (rotation, resizing a
   // window) without a reload. Drives `tabIndex`/`role` below: the
   // scrollable region needs to be keyboard-focusable so arrow-key/Page
-  // scrolling can reach cards 2 and 3 (axe "scrollable-region-focusable" —
+  // scrolling can reach cards 2 and 3 (axe "scrollable-region-focusable",
   // WCAG 2.1.1), but only while it is actually the scroll container; at
   // ≥40rem the same element is a static grid with no scroll to reach, and
   // a `tabIndex` there would be a dead, purposeless Tab stop.
@@ -629,7 +629,7 @@ export function Home(): ReactElement {
     return () => mql.removeEventListener('change', onChange);
   }, []);
 
-  // Sticky mobile CTA (SC 2.4.11 Focus Not Obscured — Minimum): a fixed
+  // Sticky mobile CTA (SC 2.4.11 Focus Not Obscured, Minimum): a fixed
   // bottom bar can hide whatever a sighted keyboard user has just tabbed
   // to underneath it. `scroll-padding-bottom` (styles/marketing.css,
   // `html.sticky-cta-open`) reserves that space so the browser's own
@@ -637,7 +637,7 @@ export function Home(): ReactElement {
   // the bar. The class goes on `<html>`, not `<body>`: `scroll-padding`
   // applies to the element that owns the document's scroll port, which in
   // standards mode is the root (`document.scrollingElement`/`<html>`),
-  // not `<body>` — unlike `body.consent-banner-open` (marketing.css)
+  // not `<body>`, unlike `body.consent-banner-open` (marketing.css)
   // above, which uses plain `padding-bottom` and works on `<body>` for an
   // unrelated reason (padding on any in-flow box adds to document height
   // regardless of which element owns the scroll port).
@@ -658,7 +658,7 @@ export function Home(): ReactElement {
           ...DEMO_POOL.filter((d) => d.country !== picked),
         ].slice(0, 3);
 
-  // Product-truth (docs/product-scope.md): this panel is ILLUSTRATIVE —
+  // Product-truth (docs/product-scope.md): this panel is ILLUSTRATIVE,
   // invented example tenders with anonymized buyers, never live data, and
   // the visible copy must say so (production review PR-001).
   const geoHeadline =
@@ -669,7 +669,7 @@ export function Home(): ReactElement {
     detected === null
       ? 'Pick a country to see examples there:'
       : picked === detected
-        ? `Detected ${COUNTRY_NAMES[detected] ?? detected} from your browser — change it:`
+        ? `Detected ${COUNTRY_NAMES[detected] ?? detected} from your browser. Change it:`
         : `Showing ${COUNTRY_NAMES[picked] ?? picked}:`;
 
   return (
@@ -738,7 +738,7 @@ export function Home(): ReactElement {
 
       <section
         className="mkt-wrap hp-section hp-demo-persp"
-        aria-label="Example feed — illustrative data"
+        aria-label="Example feed, illustrative data"
         data-reveal
       >
         <div className="hp-demo-frame" ref={demoTiltRef}>
@@ -763,14 +763,14 @@ export function Home(): ReactElement {
               ))}
             </div>
             <p className="hp-demo__disclaimer">
-              Illustrative examples with anonymized buyers — this is what a scored feed looks like,
+              Illustrative examples with anonymized buyers. This is what a scored feed looks like,
               not live TED data.
             </p>
             <div
               className="hp-demo__cards"
               ref={cardsRef}
               // Only a real scroll container (≤40rem, see `carouselMode`
-              // above) gets pulled into the tab order — a static desktop
+              // above) gets pulled into the tab order; a static desktop
               // grid has nothing to scroll to and no business owning a Tab
               // stop. `role="group"` + `aria-label` (rather than leaving it
               // an unlabelled scrollable `<div>`) gives the region a name
@@ -821,7 +821,7 @@ export function Home(): ReactElement {
                       {card.comps.map((comp) => (
                         <div className="hp-comp" key={comp.name}>
                           <span className="hp-comp__name">{comp.name}</span>
-                          {/* Native <progress> — CSP forbids inline style widths. */}
+                          {/* Native <progress>: CSP forbids inline style widths. */}
                           <progress
                             className="score-bar score-bar--sm"
                             value={comp.pts}
@@ -856,7 +856,7 @@ export function Home(): ReactElement {
               </span>
             </div>
             {/* Accessible counterpart to the visual (`aria-hidden`) dots
-                above — announced politely as the carousel scrolls, rather
+                above, announced politely as the carousel scrolls, rather
                 than left silent for screen-reader users. Only rendered in
                 carousel mode: at ≥40rem the visual indicator is hidden too
                 (marketing.css), and `shown.length` never changes there
@@ -960,7 +960,7 @@ export function Home(): ReactElement {
                   ))}
                 </div>
                 <p className="hp-stage__note">
-                  Your CPV codes, keywords, geography, value band and exclusions — the only inputs
+                  Your CPV codes, keywords, geography, value band and exclusions: the only inputs
                   that decide what gets scored.
                 </p>
               </>
@@ -1026,12 +1026,12 @@ export function Home(): ReactElement {
                 <p className="hp-risk hp-risk--caution">
                   <span className="hp-risk__kind">Flag</span>
                   <span>
-                    ISO 27001 may be required — “certified to ISO 27001” · possible requirement,
+                    ISO 27001 may be required: “certified to ISO 27001” · possible requirement,
                     verify in source documents.
                   </span>
                 </p>
                 <p className="hp-stage__note">
-                  Verdict, component breakdown, quoted evidence and a link to the original notice —
+                  Verdict, component breakdown, quoted evidence and a link to the original notice:
                   the audit trail behind a bid/no-bid call.
                 </p>
               </div>
@@ -1051,8 +1051,8 @@ export function Home(): ReactElement {
           Deterministic on purpose
         </h2>
         <p className="hp-lede">
-          A bid/no-bid call deserves a scoring engine you can audit, rerun, and disagree with —
-          point by point. Not an AI black box.
+          A bid/no-bid call deserves a scoring engine you can audit, rerun, and disagree with, point
+          by point. Not an AI black box.
         </p>
         <div className="hp-truths">
           {TRUTHS.map((truth) => (
@@ -1163,7 +1163,7 @@ export function Home(): ReactElement {
             <p className="hp-coverage__note">
               Each detection quotes the sentence it came from and is labelled either{' '}
               <strong>Confirmed pattern</strong> or{' '}
-              <strong>Possible requirement — verify in source documents</strong>. Pattern matching,
+              <strong>Possible requirement: verify in source documents</strong>. Pattern matching,
               not an LLM guess.
             </p>
           </div>
@@ -1181,7 +1181,7 @@ export function Home(): ReactElement {
             </div>
             <p className="hp-coverage__note">
               Unknown fields never exclude anything. Every sector's CPV codes can be saved to your
-              profile — ingestion covers 72*, 48* and 79417000 today, and anything outside it is
+              profile. Ingestion covers 72*, 48* and 79417000 today, and anything outside it is
               shown as out of scope rather than dropped in silence.
             </p>
           </div>
@@ -1201,7 +1201,7 @@ export function Home(): ReactElement {
             §7; named-competitor tables are owner-gated, decision D11). Every
             "typical" cell restates a finding documented in
             docs/redesign/competitor-findings.md (rendered-page captures of
-            seven EU tender-alert services, 2026-08-17) — nothing here is
+            seven EU tender-alert services, 2026-08-17). Nothing here is
             asserted from memory, and the basis is stated to the reader below
             rather than left as an implied survey of the whole market. Every
             BidMorrow cell links to the page where that claim is kept true. */}
@@ -1230,7 +1230,7 @@ export function Home(): ReactElement {
               <tr>
                 <th scope="row">Scoring</th>
                 <td>
-                  Deterministic 0&ndash;100 — the same inputs always produce the same score, and
+                  Deterministic 0&ndash;100: the same inputs always produce the same score, and
                   every score decomposes into eight readable components.
                 </td>
                 <td>
@@ -1265,7 +1265,7 @@ export function Home(): ReactElement {
         <p className="hp-compare__note">
           The right-hand column summarises our own review of the public marketing pages of seven EU
           tender-alert services, captured in August 2026. No service is named, and any individual
-          service may differ — check the one you are considering. The left-hand column links to
+          service may differ, so check the one you are considering. The left-hand column links to
           where each claim is kept true.
         </p>
       </section>
@@ -1285,12 +1285,12 @@ export function Home(): ReactElement {
         </p>
         <div className="hp-plans">
           <article className="hp-plan hp-plan--founding">
-            <p className="hp-plan__cap hp-plan__cap--accent">Founding — first 100 customers</p>
+            <p className="hp-plan__cap hp-plan__cap--accent">Founding: first 100 customers</p>
             <p className="hp-plan__price">
               €29<span className="hp-plan__per"> /month</span>
             </p>
             <p className="hp-plan__desc">
-              Retained for the life of your subscription — it never auto-migrates to the standard
+              Retained for the life of your subscription; it never auto-migrates to the standard
               price.
             </p>
             <ul className="hp-plan__list">

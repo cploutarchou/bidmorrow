@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 /**
  * Live countdown to the launch instant (owner decision 2026-08-21:
  * "end of August we launch"). Day/hour/minute granularity, ticking once a
- * minute — a seconds counter adds urgency theatre without information.
+ * minute; a seconds counter adds urgency theatre without information.
  * The full launch date is always printed beside the numerals so the
  * countdown is never the only carrier, and a past date degrades to
  * "any moment now" rather than a negative count.

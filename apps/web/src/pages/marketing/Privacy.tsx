@@ -24,7 +24,7 @@ export function Privacy(): ReactElement {
             ignore).
           </li>
           <li>
-            No third-party analytics or session replay tooling — see our product scope for what we
+            No third-party analytics or session replay tooling. See our product scope for what we
             deliberately don't do.
           </li>
         </ul>
@@ -37,7 +37,7 @@ export function Privacy(): ReactElement {
             show you.
           </li>
           <li>
-            We don't ingest or claim exhaustive coverage of all EU procurement notices — see our
+            We don't ingest or claim exhaustive coverage of all EU procurement notices. See our
             methodology page.
           </li>
         </ul>
@@ -49,7 +49,7 @@ export function Privacy(): ReactElement {
         </p>
 
         <h2>Contact &amp; data requests</h2>
-        {/* Owner decision 2026-08-16: contact is email-only — no postal
+        {/* Owner decision 2026-08-16: contact is email-only, with no postal
             address published (HUMAN_DECISION_BLOCKERS item 7). */}
         <p>
           Privacy questions and data requests (access, correction, deletion):{' '}

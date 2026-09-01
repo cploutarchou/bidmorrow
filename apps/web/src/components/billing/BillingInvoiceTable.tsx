@@ -11,7 +11,7 @@ import type { Invoice, InvoicesState } from './types';
 
 /** Status pill tone for an invoice row. Reuses `.billing-status-badge`'s
  * existing tone vocabulary (`paymentStateTone` in lib/format.ts covers
- * subscription statuses only — `billed | paid | completed | past_due |
+ * subscription statuses only: `billed | paid | completed | past_due |
  * canceled` is the invoice-status vocabulary, `packages/billing/src/
  * invoices.ts`) so the pill and its print stylesheet override are shared,
  * not duplicated. */
@@ -19,13 +19,13 @@ function invoiceStatusTone(status: string): PaymentStateTone {
   if (status === 'paid' || status === 'completed') return 'ok';
   if (status === 'past_due') return 'danger';
   if (status === 'canceled') return 'muted';
-  return 'info'; // 'billed' — issued, awaiting payment
+  return 'info'; // 'billed': issued, awaiting payment
 }
 
 /**
  * Invoice history table: loading/empty/error/forbidden states and a
  * per-invoice "Download PDF" action that resolves the Paddle-hosted PDF on
- * demand (`GET /api/billing/invoices/:id/pdf` — never a client-fabricated
+ * demand (`GET /api/billing/invoices/:id/pdf`, never a client-fabricated
  * PDF; the URL is temporary so it is fetched at click time, not listed).
  * `hasBillingCustomer: false` with zero invoices is a normal "never
  * checked out" state, not an error (mirrors
@@ -46,7 +46,7 @@ function InvoicePdfButton({ transactionId }: { transactionId: string }): ReactEl
       setError(
         cause instanceof ApiError && cause.status === 404
           ? 'No PDF available for this invoice yet.'
-          : 'Could not fetch the invoice PDF — please try again shortly.',
+          : 'Could not fetch the invoice PDF. Please try again shortly.',
       );
     } finally {
       setBusy(false);
@@ -72,7 +72,7 @@ function InvoicePdfButton({ transactionId }: { transactionId: string }): ReactEl
   );
 }
 
-/** "Payments and invoices by Paddle" note — Paddle is the Merchant of
+/** "Payments and invoices by Paddle" note. Paddle is the Merchant of
  * Record for every charge (docs/product-scope.md, ADR-0011): the wordmark
  * is plain styled text, never a remote-hosted logo image (CSP has no
  * third-party `img-src`, and Paddle brand assets are not self-hosted). */
@@ -88,7 +88,7 @@ function PaddleProviderNote(): ReactElement {
 function invoiceRow(invoice: Invoice): ReactElement {
   const tone = invoiceStatusTone(invoice.status);
   // Paid invoices show what was paid; open/past-due show what is owed
-  // (PR-M6-01 — a €0.00 "amount" on an unpaid invoice reads as ambiguous
+  // (PR-M6-01: a €0.00 "amount" on an unpaid invoice reads as ambiguous
   // next to its status).
   const amount = formatMinorUnitsAsCurrency(
     invoice.status === 'paid' || invoice.status === 'completed'
@@ -135,16 +135,16 @@ export function BillingInvoiceTable({ state }: { state: InvoicesState }): ReactE
         <p className="hint">Only the organization owner can view billing invoices.</p>
       )}
       {state.kind === 'not_configured' && (
-        <p className="hint">Billing is not available right now — please try again shortly.</p>
+        <p className="hint">Billing is not available right now. Please try again shortly.</p>
       )}
       {state.kind === 'provider_error' && (
         <p role="alert" className="form-error">
-          Could not reach the billing provider — please try again shortly.
+          Could not reach the billing provider. Please try again shortly.
         </p>
       )}
       {state.kind === 'error' && (
         <p role="alert" className="form-error">
-          Could not load invoices — please try again.
+          Could not load invoices. Please try again.
         </p>
       )}
       {state.kind === 'ready' && state.invoices.length === 0 && (

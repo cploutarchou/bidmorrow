@@ -77,9 +77,9 @@ export function Support(): ReactElement {
 
   return (
     <AdminPage
-      documentTitle="Support notes — Admin"
+      documentTitle="Support notes | Admin"
       heading="Support notes"
-      note="Internal notes attached to one organization. Customers never see these, and they are scoped to the organization ID you load — nothing is listed globally."
+      note="Internal notes attached to one organization. Customers never see these, and they are scoped to the organization ID you load. Nothing is listed globally."
     >
       <form
         className="form-field inline admin-filters"
@@ -114,7 +114,7 @@ export function Support(): ReactElement {
               <li key={note.id} className="admin-note">
                 <p className="admin-note__body">{note.body}</p>
                 <p className="admin-note__meta">
-                  {formatIsoUtc(note.createdAt)} — author {note.authorUserId}
+                  {formatIsoUtc(note.createdAt)}, author {note.authorUserId}
                 </p>
               </li>
             ))}

@@ -12,7 +12,7 @@ type GateState =
 /**
  * Access probe for the entire `/admin/*` subtree: calls
  * `GET /api/admin/health-details` once on mount. A 404 (or any other
- * failure) renders the app's normal `NotFound` page — the admin surface is
+ * failure) renders the app's normal `NotFound` page: the admin surface is
  * never revealed to a caller who cannot use it, mirroring the server's own
  * cloaking (apps/worker/src/middleware/admin.ts always 404s a non-admin,
  * including an unauthenticated visitor). This is UX only: the server

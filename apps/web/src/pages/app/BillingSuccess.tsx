@@ -17,11 +17,11 @@ import { fetchBillingStatus, pollForSubscription, type BillingStatus } from '../
  * (packages/billing/src/webhook.ts), which re-fetches the subscription
  * before its D1 upsert. Paddle redirects the browser in parallel
  * with delivering that webhook, and delivery is at-least-once with no ordering
- * guarantee — so on first paint the row legitimately may not exist yet.
+ * guarantee, so on first paint the row legitimately may not exist yet.
  *
  * Two rules follow, and both are load-bearing:
  *
- * 1. Arriving at this URL is NOT proof of payment — anyone can navigate here.
+ * 1. Arriving at this URL is NOT proof of payment: anyone can navigate here.
  *    The confirmation, including the plan and price shown, is read from
  *    `GET /api/billing/status`, never inferred from the redirect.
  * 2. Not-yet-activated is never presented as failure. If the webhook is slow,
@@ -49,7 +49,7 @@ export function BillingSuccess(): ReactElement {
     }).then((outcome) => {
       if (outcome.kind === 'confirmed') setState({ kind: 'confirmed', status: outcome.status });
       else if (outcome.kind === 'not-yet') setState({ kind: 'not-yet' });
-      // 'cancelled' means the page unmounted — leave state alone.
+      // 'cancelled' means the page unmounted; leave state alone.
     });
 
     return () => {
@@ -59,7 +59,7 @@ export function BillingSuccess(): ReactElement {
 
   return (
     <div className="billing-success">
-      <title>Subscription — BidMorrow</title>
+      <title>Subscription | BidMorrow</title>
       {state.kind === 'checking' && <Checking />}
       {state.kind === 'confirmed' && <Confirmed status={state.status} />}
       {state.kind === 'not-yet' && <NotYet />}
@@ -83,7 +83,7 @@ function Checking(): ReactElement {
 }
 
 function Confirmed({ status }: { status: BillingStatus }): ReactElement {
-  // Non-null by construction — `confirmed` is only set when the row exists.
+  // Non-null by construction: `confirmed` is only set when the row exists.
   const subscription = status.subscription;
   if (subscription === null) return <NotYet />;
   const planLabel = subscription.plan === 'founding' ? 'Founding' : 'Standard';
@@ -107,7 +107,7 @@ function Confirmed({ status }: { status: BillingStatus }): ReactElement {
           Manage this in billing settings.
         </p>
       )}
-      {/* Completing checkout does not trigger a matching run — ingestion and
+      {/* Completing checkout does not trigger a matching run: ingestion and
           matching are daily, so promising results now would be untrue. This
           matches the feed's own empty state. */}
       <p>Ingestion and matching run daily, so your first matches appear after the next run.</p>
@@ -127,7 +127,7 @@ function NotYet(): ReactElement {
       <h1>Still activating</h1>
       <p aria-live="polite">
         Your subscription hasn't finished activating yet. If your payment went through this normally
-        resolves on its own within a minute or two — there's nothing you need to do.
+        resolves on its own within a minute or two, and there's nothing you need to do.
       </p>
       <p>
         If billing settings still shows no subscription after that, contact{' '}

@@ -242,3 +242,50 @@ test.describe('forgot password: failure modes stay separated', () => {
     await expect(page.getByRole('status')).toHaveText(/Sent again/);
   });
 });
+
+test.describe('reset password: the confirmation must match before anything is sent', () => {
+  // Both tests intercept the endpoint, so nothing reaches Better Auth and no
+  // account state changes; the token value is therefore never checked. What
+  // is under test is the form in front of it, which shipped with a single
+  // password input and no way to catch a typo before the only single-use
+  // link had been spent.
+  const RESET_URL = '/reset-password?token=e2e-not-a-real-token';
+
+  test('a mismatched confirmation blocks the request and says so in words', async ({ page }) => {
+    let requested = false;
+    await page.route('**/api/auth/reset-password', (route) => {
+      requested = true;
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto(RESET_URL);
+    await page.getByLabel('New password', { exact: true }).fill(TEST_PASSWORD);
+    await page.getByLabel('Confirm new password').fill(`${TEST_PASSWORD} typo`);
+    await page.getByRole('button', { name: 'Set new password' }).click();
+
+    await expect(page.getByRole('alert')).toHaveText(/do not match/i);
+    // Never colour alone: the field is flagged to assistive technology too.
+    await expect(page.getByLabel('Confirm new password')).toHaveAttribute('aria-invalid', 'true');
+    expect(requested, 'a mismatch must not spend the single-use reset token').toBe(false);
+    await expect(page).toHaveURL(/\/reset-password/);
+  });
+
+  test('matching passwords send exactly the newPassword and token, never the confirmation', async ({
+    page,
+  }) => {
+    let body: unknown = null;
+    await page.route('**/api/auth/reset-password', async (route) => {
+      body = route.request().postDataJSON();
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto(RESET_URL);
+    await page.getByLabel('New password', { exact: true }).fill(TEST_PASSWORD);
+    await page.getByLabel('Confirm new password').fill(TEST_PASSWORD);
+    await page.getByRole('button', { name: 'Set new password' }).click();
+
+    // The server contract is unchanged, and the reset-done confirmation
+    // still rides the navigation state onto /login.
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole('status')).toHaveText(/Password updated/);
+    expect(body).toEqual({ newPassword: TEST_PASSWORD, token: 'e2e-not-a-real-token' });
+  });
+});

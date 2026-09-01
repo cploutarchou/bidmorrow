@@ -5,11 +5,11 @@ import { PageMeta } from '../../components/PageMeta';
 import { MARKETING_META } from '../../lib/seo';
 
 /**
- * Methodology — 2026-08-21 handoff redesign (`BidMorrow Marketing.dc.html`,
+ * Methodology: 2026-08-21 handoff redesign (`BidMorrow Marketing.dc.html`,
  * page="method"). The prototype rewrote the disclosure copy for the
  * marketing surface while keeping every fact from copy.ts /
  * docs/matching-engine.md: the 100-point component split with each
- * component's published missing-data policy (CPV fit exempt — a CPV code
+ * component's published missing-data policy (CPV fit exempt, because a CPV code
  * is mandatory on every notice), the four component verdicts, the
  * classification tiers, risk flags with confirmed/possible labelling and
  * the eight detected categories, the CPV pre-filter disclosure with what
@@ -21,7 +21,7 @@ const SCORE_COMPONENTS: { component: string; max: number; policy: string; exempt
   {
     component: 'CPV fit',
     max: 35,
-    policy: 'n/a — CPV is mandatory on every notice',
+    policy: 'n/a, CPV is mandatory on every notice',
     exempt: true,
   },
   {
@@ -50,7 +50,7 @@ const VERDICTS: { label: string; note: string; tone: 'accent' | 'risk' | 'cautio
   {
     label: 'Partial match',
     tone: 'accent',
-    note: 'Some overlap — a secondary code, a neighbouring region — scored proportionally instead of all or nothing.',
+    note: 'Some overlap (a secondary code, a neighbouring region), scored proportionally instead of all or nothing.',
   },
   {
     label: 'No match',
@@ -58,9 +58,9 @@ const VERDICTS: { label: string; note: string; tone: 'accent' | 'risk' | 'cautio
     note: 'The notice is explicit and it does not fit. Zero points, and the breakdown names the fact that decided it.',
   },
   {
-    label: 'Unknown — neutral applied',
+    label: 'Unknown: neutral applied',
     tone: 'caution',
-    note: 'The field was never published, so half that component’s points are applied and the component is marked unknown with a note on what was missing. CPV fit is the exception — every notice must publish a CPV code, so it is never unknown.',
+    note: 'The field was never published, so half that component’s points are applied and the component is marked unknown with a note on what was missing. CPV fit is the exception: every notice must publish a CPV code, so it is never unknown.',
   },
 ];
 
@@ -133,7 +133,7 @@ export function Methodology(): ReactElement {
           <h2 className="mkt-sec-title">Where the hundred points go</h2>
           <p className="mkt-sec-lede">
             Eight components, fixed maximums, the same arithmetic for every company. Same inputs at
-            the same engine version, same score — and each component publishes what happens when the
+            the same engine version, same score, and each component publishes what happens when the
             notice leaves its data out.
           </p>
           <div className="mkt-comp-head" aria-hidden="true">
@@ -203,7 +203,7 @@ export function Methodology(): ReactElement {
         <section>
           <h2 className="mkt-sec-title">Risk flags quote their evidence</h2>
           <p className="mkt-sec-lede">
-            Flags are deterministic pattern matches over the notice text — never a language model's
+            Flags are deterministic pattern matches over the notice text, never a language model's
             hunch. Each one quotes the exact text it fired on, and says whether it is a confirmed
             pattern or a possible requirement you should verify in the source documents. Nothing is
             asserted without the evidence attached.
@@ -222,7 +222,7 @@ export function Methodology(): ReactElement {
             </div>
             <div className="mkt-evidence-card mkt-evidence-card--possible">
               <p className="mkt-cell__cap mkt-cell__cap--caution">Possible requirement</p>
-              <p>The wording suggests it — verify in the source documents before you commit.</p>
+              <p>The wording suggests it. Verify in the source documents before you commit.</p>
             </div>
           </div>
         </section>
@@ -230,8 +230,8 @@ export function Methodology(): ReactElement {
         <section>
           <h2 className="mkt-sec-title">The CPV pre-filter, and its cost</h2>
           <p className="mkt-sec-lede">
-            Before anything is scored, a tender's CPV code has to share a division — the first two
-            digits — with at least one CPV preference you declared. Tenders with no division overlap
+            Before anything is scored, a tender's CPV code has to share a division, the first two
+            digits, with at least one CPV preference you declared. Tenders with no division overlap
             are never scored at all, however well the geography, value, buyer or keywords would have
             fitted.
           </p>
@@ -272,7 +272,7 @@ export function Methodology(): ReactElement {
           <h2 className="mkt-sec-title">Coverage, stated plainly</h2>
           <p className="mkt-sec-lede">
             Notices are ingested within a documented, configured CPV scope: IT services (CPV 72*),
-            software packages and information systems (CPV 48*), and a small reviewed extras list —
+            software packages and information systems (CPV 48*), and a small reviewed extras list:
             safety consultancy, CPV 79417000. This is scoped coverage, not exhaustive EU coverage: a
             notice outside it is never ingested or scored, regardless of how well it might otherwise
             fit your profile. Codes you declare outside the scope are kept on your profile and shown

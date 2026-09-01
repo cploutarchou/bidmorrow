@@ -1,6 +1,6 @@
 /**
  * Typed `/api/admin/*` wrappers over the shared `api` fetch helper
- * (lib/api.ts). No client-side authorization logic lives here — every
+ * (lib/api.ts). No client-side authorization logic lives here: every
  * function just calls the endpoint and lets the caller branch on
  * `ApiError.status` (404 = not an admin / route hidden, per
  * apps/worker/src/middleware/admin.ts).

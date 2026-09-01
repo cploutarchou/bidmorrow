@@ -19,7 +19,7 @@ describe('computeCpvScopeOverlap', () => {
     expect(result).toEqual({ totalCount: 3, inScopeCount: 3, hasOverlap: true });
   });
 
-  it('reports partial overlap — never rounds a real gap up to "fine"', () => {
+  it('reports partial overlap, never rounding a real gap up to "fine"', () => {
     const result = computeCpvScopeOverlap(['72150000', '45000000']);
     expect(result).toEqual({ totalCount: 2, inScopeCount: 1, hasOverlap: true });
   });

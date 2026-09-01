@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { decimalPrecision, easeOutCubic, prefersReducedMotion, roundToPrecision } from './motion';
 
 // This project runs `apps/web/src/**/*.test.ts` under Vitest's `node`
-// environment (root vitest.config.ts), not jsdom — there is no `window`
+// environment (root vitest.config.ts), not jsdom, so there is no `window`
 // here. `prefersReducedMotion()` exercising that exact branch is itself
 // the SSR/non-browser-safety test: it must degrade to `false` (motion
 // allowed) rather than throw.
@@ -38,7 +38,7 @@ describe('decimalPrecision', () => {
     expect(decimalPrecision(4.5)).toBe(1);
     expect(decimalPrecision(4.25)).toBe(2);
   });
-  it('never throws on non-finite input — falls back to 0', () => {
+  it('never throws on non-finite input, falling back to 0', () => {
     expect(decimalPrecision(Number.NaN)).toBe(0);
     expect(decimalPrecision(Number.POSITIVE_INFINITY)).toBe(0);
   });
