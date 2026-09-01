@@ -12,15 +12,19 @@ import { ScoreRing } from './ScoreRing';
  * into its published band. Three illustrative tenders cycle (Strong match,
  * Worth reviewing, Low fit) on one 13.5 s loop.
  *
- * Motion is CSS only (`styles/hero.css`): every element animates on the
- * shared cycle, offset per scene through the inherited `--scene-delay`
- * custom property, so there are no timers to leak and the browser pauses
- * the whole thing in background tabs. The only JavaScript is (a) writing
- * each scene's target score into `--de-target` through the CSSOM (the
- * count-up and the ring read it; an inline `style` attribute would be an
- * inline style under the CSP, `setProperty` is not, matching `useTilt`),
- * and (b) one IntersectionObserver that pauses the animation while the
- * visual is scrolled out of view.
+ * Motion is CSS only (`styles/hero.css`): every element in a scene runs a
+ * one-shot 4.5 s animation, so nothing is scheduled from timers and the
+ * browser pauses it all in background tabs. Only the playing scene is in
+ * the render tree; the JavaScript here is (a) writing each scene's target
+ * score into `--de-target` through the CSSOM (the count-up and the ring
+ * read it; an inline `style` attribute would be an inline style under
+ * the CSP, `setProperty` is not, matching `useTilt`), (b) one
+ * `animationend` listener that, when a scene's own timeline ends, hides
+ * it, shows the next and records the scene number on the root (which
+ * restarts the next scene's animations and lights its band), and (c) one
+ * IntersectionObserver that pauses the animation while the visual is
+ * scrolled out of view. Hidden scenes and finished animations cost no
+ * per-frame work, which keeps the loop cheap on slow phones.
  *
  * `prefers-reduced-motion: reduce` renders the first tender's finished
  * frame and nothing moves. The whole visual is one `role="img"` whose
@@ -31,20 +35,44 @@ export function DecisionEngine(): ReactElement {
 
   useEffect(() => {
     const root = rootRef.current;
-    if (root === null || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry === undefined) return;
-        root.classList.toggle('is-offscreen', !entry.isIntersecting);
-      },
-      { threshold: 0.05 },
-    );
-    observer.observe(root);
-    return () => observer.disconnect();
+    if (root === null) return;
+
+    // Scene hand-over: the scene element's own `de-scene` animation ends
+    // at 4.5 s; the next scene is shown (its animations start from zero)
+    // and the finished one is hidden. Under reduced motion nothing
+    // animates, so this never fires and scene one stays, still.
+    const onAnimationEnd = (event: AnimationEvent): void => {
+      if (event.animationName !== 'de-scene') return;
+      const scenes = Array.from(root.querySelectorAll<HTMLElement>('.de__scene'));
+      const index = scenes.indexOf(event.target as HTMLElement);
+      const current = scenes[index];
+      const next = scenes[(index + 1) % scenes.length];
+      if (current === undefined || next === undefined) return;
+      next.hidden = false;
+      current.hidden = true;
+      root.dataset['scene'] = String(((index + 1) % scenes.length) + 1);
+    };
+    root.addEventListener('animationend', onAnimationEnd);
+
+    const observer =
+      typeof IntersectionObserver === 'undefined'
+        ? null
+        : new IntersectionObserver(
+            ([entry]) => {
+              if (entry === undefined) return;
+              root.classList.toggle('is-offscreen', !entry.isIntersecting);
+            },
+            { threshold: 0.05 },
+          );
+    observer?.observe(root);
+    return () => {
+      root.removeEventListener('animationend', onAnimationEnd);
+      observer?.disconnect();
+    };
   }, []);
 
   return (
-    <div className="de" role="img" aria-label={describe(HERO_TENDERS)} ref={rootRef}>
+    <div className="de" role="img" aria-label={describe(HERO_TENDERS)} data-scene="1" ref={rootRef}>
       <div className="de__source">
         <span className="de__source-label">TED · OJ S · every morning</span>
         <span className="de__queue">
@@ -76,6 +104,7 @@ function Scene({
   return (
     <div
       className={`de__scene de__scene--${String(index + 1)}`}
+      hidden={index > 0}
       ref={(el) => {
         el?.style.setProperty('--de-target', String(tender.score));
       }}

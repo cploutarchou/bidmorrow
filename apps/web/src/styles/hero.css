@@ -1,20 +1,23 @@
 /* ============================================================
    Decision engine — homepage hero visual (components/hero/DecisionEngine.tsx)
 
-   One 13.5 s cycle, three 4.5 s scenes. Every animated element runs a
-   13.5 s infinite animation whose keyframes are written as percentages
-   of the cycle; a scene offsets all of its descendants with the inherited
-   `--scene-delay` (0, -9 s, -4.5 s: negative, so scenes two and three are
-   already past their visible window when the page loads and every timeline
-   stays in phase forever). Within a scene:
+   One 13.5 s loop, three 4.5 s scenes, one scene in the render tree at a
+   time. Every animated element runs a short one-shot animation at a
+   delay into the scene (fill both, so it rests on its finished frame);
+   when the scene's own 4.5 s `de-scene` animation ends, DecisionEngine.tsx hides it (`hidden`),
+   shows the next, and writes `data-scene` on the root, which restarts the
+   next scene's animations from zero and lights that scene's band. Hidden
+   scenes and finished animations cost nothing per frame, which is the
+   point: the earlier shared-timeline version kept 39 infinite animations
+   ticking, three quarters of them invisible. Within a scene:
 
-     0.0–0.4 s  notice card enters                      0%–2.96%
-     0.4–0.9 s  a dot travels the connector             2.96%–6.67%
-     0.8–2.4 s  eight signal rows check in, 200 ms each 5.93%–17.78%
-     2.6–3.3 s  the score ring draws, the number counts 19.26%–24.44%
-     3.3–3.6 s  the band label appears                  24.44%–26.67%
-     3.6–4.2 s  the card settles, the band below lights 26.67%–31.11%
-     4.2–4.5 s  scene fades                             31.11%–33.33%
+     0.0–0.4 s  notice card enters
+     0.4–0.9 s  a dot travels the connector
+     0.8–2.4 s  eight signal rows check in, 200 ms each
+     2.6–3.3 s  the score ring draws, the number counts
+     3.3–3.6 s  the band label appears
+     3.6–4.2 s  the card nods, the band below lights
+     4.2–4.5 s  scene fades, the next one takes over
 
    No inline styles (CSP): per-scene score targets arrive through the
    CSSOM as `--de-target`; the count-up interpolates the registered
@@ -31,8 +34,7 @@
 }
 
 .de {
-  --de-cycle: 13.5s;
-  --scene-delay: 0s;
+  --de-scene: 4.5s;
   --de-target: 0;
   position: relative;
   width: min(100%, 30rem);
@@ -74,7 +76,6 @@
 .de__queue {
   display: inline-flex;
   gap: 0.375rem;
-  animation: de-queue var(--de-cycle) var(--ease) infinite;
 }
 
 .de__queue-chip {
@@ -115,6 +116,17 @@
   opacity: 0.3;
 }
 
+/* Chips already taken through the engine fade back as the scenes advance
+   (`data-scene` on the root, set by DecisionEngine.tsx). */
+.de__queue-chip {
+  transition: opacity 300ms var(--ease);
+}
+
+.de[data-scene='2'] .de__queue-chip:nth-child(1),
+.de[data-scene='3'] .de__queue-chip:nth-child(-n + 2) {
+  opacity: 0.12;
+}
+
 /* --- scenes, stacked in one cell --------------------------------------- */
 
 .de__scenes {
@@ -125,16 +137,14 @@
   grid-area: 1 / 1;
   display: grid;
   gap: 0.375rem;
-  animation: de-scene var(--de-cycle) linear infinite;
-  animation-delay: var(--scene-delay);
+  animation: de-scene var(--de-scene) linear both;
 }
 
-.de__scene--2 {
-  --scene-delay: -9s;
-}
-
-.de__scene--3 {
-  --scene-delay: -4.5s;
+/* Only the playing scene exists in the render tree: the others are
+   `hidden` (DecisionEngine.tsx flips them on the scene's animationend),
+   so a hidden scene costs no style, layout or paint at all. */
+.de__scene[hidden] {
+  display: none;
 }
 
 /* --- notice card ------------------------------------------------------- */
@@ -148,9 +158,14 @@
   background: var(--bg-raised);
 }
 
+/* Short animations with delays, not scene-long ones with holds: an
+   animation that has finished costs nothing per frame, so each element
+   only ticks while it actually moves. The nod carries no fill so it does
+   not mask the entry before its delay. */
 .de__scene .de-notice {
-  animation: de-notice var(--de-cycle) var(--ease) infinite;
-  animation-delay: var(--scene-delay);
+  animation:
+    de-notice-in 0.4s var(--ease) both,
+    de-notice-nod 0.6s var(--ease) 3.6s;
 }
 
 .de-notice p {
@@ -230,8 +245,7 @@
 
 .de__scene .de-connector__dot {
   opacity: 0;
-  animation: de-dot var(--de-cycle) var(--ease) infinite;
-  animation-delay: var(--scene-delay);
+  animation: de-dot 0.5s var(--ease) 0.4s both;
 }
 
 /* --- engine panel ------------------------------------------------------ */
@@ -246,8 +260,7 @@
 }
 
 .de__scene .de-engine {
-  animation: de-engine var(--de-cycle) var(--ease) infinite;
-  animation-delay: var(--scene-delay);
+  animation: de-engine 0.4s var(--ease) 0.4s both;
 }
 
 .de-engine__head {
@@ -293,10 +306,7 @@
 }
 
 .de__scene .de-signal {
-  animation-duration: var(--de-cycle);
-  animation-timing-function: var(--ease);
-  animation-iteration-count: infinite;
-  animation-delay: var(--scene-delay);
+  animation: de-row 0.2s var(--ease) both;
 }
 
 .de-signal__mark {
@@ -362,8 +372,7 @@
 }
 
 .de__scene .de-score {
-  animation: de-score var(--de-cycle) var(--ease) infinite;
-  animation-delay: var(--scene-delay);
+  animation: de-score 0.7s var(--ease) 2.6s both;
 }
 
 .score-ring {
@@ -385,12 +394,20 @@
   stroke-linecap: round;
 }
 
+.score-ring--engine {
+  contain: strict; /* the arc redraw stays inside the ring's own box */
+}
+
 .score-ring--engine .score-ring__value {
   stroke-dasharray: var(--de-value) 100;
 }
 
 .de-score__num {
-  min-width: 2ch; /* the count-up never reflows its neighbours */
+  /* The count-up changes text every frame for 0.7 s; size and layout
+     containment keep that reflow inside this 2ch box. */
+  inline-size: 2ch;
+  block-size: 1em;
+  contain: strict;
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
   font-size: 1.625rem;
@@ -420,8 +437,7 @@
 }
 
 .de__scene .de-score__band {
-  animation: de-band-label var(--de-cycle) var(--ease) infinite;
-  animation-delay: var(--scene-delay);
+  animation: de-band-label 0.3s var(--ease) 3.3s both;
 }
 
 .de-score__band--strong {
@@ -463,21 +479,20 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  animation-duration: var(--de-cycle);
-  animation-timing-function: var(--ease);
-  animation-iteration-count: infinite;
 }
 
-.de__band--strong {
-  animation-name: de-band-strong;
+/* The playing scene's band lights in the scene's last fifth; when the
+   scene changes the rule stops matching and the band goes quiet. */
+.de[data-scene='1'] .de__band--strong {
+  animation: de-band-strong 0.4s var(--ease) 3.6s both;
 }
 
-.de__band--review {
-  animation-name: de-band-review;
+.de[data-scene='2'] .de__band--review {
+  animation: de-band-review 0.4s var(--ease) 3.6s both;
 }
 
-.de__band--low {
-  animation-name: de-band-low;
+.de[data-scene='3'] .de__band--low {
+  animation: de-band-low 0.4s var(--ease) 3.6s both;
 }
 
 .de__caption {
@@ -490,74 +505,47 @@
   color: var(--ink-3);
 }
 
-/* --- keyframes (percent of the 13.5 s cycle) --------------------------- */
+/* --- keyframes: each is the motion only; timing lives in the delays above --- */
 
 @keyframes de-scene {
   0%,
-  31.11% {
+  93.33% {
     opacity: 1;
-    visibility: visible;
   }
-  33.33%,
   100% {
     opacity: 0;
-    visibility: hidden;
   }
 }
 
-@keyframes de-queue {
-  0%,
-  33.33%,
-  66.67% {
-    transform: translateX(0);
-  }
-  1.5%,
-  34.8%,
-  68.2% {
-    transform: translateX(-5px);
-  }
-  2.96%,
-  36.3%,
-  69.6%,
-  100% {
-    transform: translateX(0);
-  }
-}
-
-/* The card stays readable for the whole scene: an earlier version faded it
-   out as it "settled" into its band, which left a blank panel top for the
-   last second of every scene. The settle is now the band lighting up plus
-   a small nod of the card toward it. */
-@keyframes de-notice {
-  0% {
+@keyframes de-notice-in {
+  from {
     opacity: 0;
     transform: translateY(-12px);
   }
-  2.96%,
-  26.67% {
+  to {
     opacity: 1;
     transform: none;
   }
-  28.5% {
-    transform: translateY(4px);
-  }
-  30.4%,
+}
+
+@keyframes de-notice-nod {
+  0%,
   100% {
-    opacity: 1;
     transform: none;
+  }
+  50% {
+    transform: translateY(4px);
   }
 }
 
 @keyframes de-dot {
-  0%,
-  2.96% {
+  0% {
     opacity: 0;
     transform: translateY(0);
   }
-  3.7% {
+  20% {
     opacity: 1;
   }
-  6.67%,
   100% {
     opacity: 0;
     transform: translateY(1.25rem);
@@ -565,176 +553,54 @@
 }
 
 @keyframes de-engine {
-  0%,
-  2.96% {
+  from {
     opacity: 0.35;
     transform: translateY(6px);
   }
-  5.93%,
-  100% {
+  to {
     opacity: 1;
     transform: none;
   }
 }
 
-/* Row r checks in at 5.93% + r × 1.48% (0.8 s + r × 200 ms). */
-@keyframes de-row-1 {
-  0%,
-  5.93% {
+@keyframes de-row {
+  from {
     opacity: 0.35;
     transform: translateX(-4px);
   }
-  7.41%,
-  100% {
+  to {
     opacity: 1;
     transform: none;
   }
-}
-@keyframes de-row-2 {
-  0%,
-  7.41% {
-    opacity: 0.35;
-    transform: translateX(-4px);
-  }
-  8.89%,
-  100% {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes de-row-3 {
-  0%,
-  8.89% {
-    opacity: 0.35;
-    transform: translateX(-4px);
-  }
-  10.37%,
-  100% {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes de-row-4 {
-  0%,
-  10.37% {
-    opacity: 0.35;
-    transform: translateX(-4px);
-  }
-  11.85%,
-  100% {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes de-row-5 {
-  0%,
-  11.85% {
-    opacity: 0.35;
-    transform: translateX(-4px);
-  }
-  13.33%,
-  100% {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes de-row-6 {
-  0%,
-  13.33% {
-    opacity: 0.35;
-    transform: translateX(-4px);
-  }
-  14.81%,
-  100% {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes de-row-7 {
-  0%,
-  14.81% {
-    opacity: 0.35;
-    transform: translateX(-4px);
-  }
-  16.3%,
-  100% {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes de-row-8 {
-  0%,
-  16.3% {
-    opacity: 0.35;
-    transform: translateX(-4px);
-  }
-  17.78%,
-  100% {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.de__scene .de-signal:nth-child(1) {
-  animation-name: de-row-1;
-}
-.de__scene .de-signal:nth-child(2) {
-  animation-name: de-row-2;
-}
-.de__scene .de-signal:nth-child(3) {
-  animation-name: de-row-3;
-}
-.de__scene .de-signal:nth-child(4) {
-  animation-name: de-row-4;
-}
-.de__scene .de-signal:nth-child(5) {
-  animation-name: de-row-5;
-}
-.de__scene .de-signal:nth-child(6) {
-  animation-name: de-row-6;
-}
-.de__scene .de-signal:nth-child(7) {
-  animation-name: de-row-7;
-}
-.de__scene .de-signal:nth-child(8) {
-  animation-name: de-row-8;
 }
 
 @keyframes de-score {
-  0%,
-  19.26% {
+  from {
     --de-value: 0;
   }
-  24.44%,
-  100% {
+  to {
     --de-value: var(--de-target);
   }
 }
 
 @keyframes de-band-label {
-  0%,
-  24.44% {
+  from {
     opacity: 0;
     transform: translateY(4px);
   }
-  26.67%,
-  100% {
+  to {
     opacity: 1;
     transform: none;
   }
 }
 
 @keyframes de-band-strong {
-  0%,
-  26.4%,
-  33.6%,
-  100% {
+  from {
     background: var(--bg-canvas);
     border-color: var(--line-hair);
     color: var(--ink-3);
   }
-  26.67%,
-  33.33% {
+  to {
     background: var(--fit-strong-fill);
     border-color: var(--fit-strong-fill);
     color: var(--fit-strong-ink);
@@ -742,16 +608,12 @@
 }
 
 @keyframes de-band-review {
-  0%,
-  59.7%,
-  66.9%,
-  100% {
+  from {
     background: var(--bg-canvas);
     border-color: var(--line-hair);
     color: var(--ink-3);
   }
-  60%,
-  66.67% {
+  to {
     background: var(--fit-review-tint);
     border-color: var(--accent-line);
     color: var(--fit-review-ink);
@@ -759,14 +621,12 @@
 }
 
 @keyframes de-band-low {
-  0%,
-  93.1% {
+  from {
     background: var(--bg-canvas);
     border-color: var(--line-hair);
     color: var(--ink-3);
   }
-  93.33%,
-  100% {
+  to {
     background: var(--bg-raised);
     border-color: var(--line-strong);
     color: var(--ink-1);

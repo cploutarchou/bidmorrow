@@ -1739,7 +1739,7 @@
   border-radius: 999px;
   background: var(--accent);
   display: block;
-  opacity: 0.2;
+  opacity: 0.45;
 }
 
 .hp-grid-bg__dot--1 {
@@ -2992,15 +2992,6 @@ body.consent-banner-open {
       transform: translateY(42px);
     }
   }
-  @keyframes hp-pulse {
-    0%,
-    100% {
-      opacity: 0.2;
-    }
-    50% {
-      opacity: 0.9;
-    }
-  }
   @keyframes hp-rise-in {
     from {
       opacity: 0;
@@ -3018,18 +3009,9 @@ body.consent-banner-open {
   .hp-grid-bg__rows {
     animation: hp-drift-b 34s linear infinite alternate;
   }
-  .hp-grid-bg__dot--1 {
-    animation: hp-pulse 4.5s ease-in-out infinite;
-  }
-  .hp-grid-bg__dot--2 {
-    animation: hp-pulse 6s ease-in-out 1.2s infinite;
-  }
-  .hp-grid-bg__dot--3 {
-    animation: hp-pulse 5.2s ease-in-out 2.4s infinite;
-  }
-  .hp-grid-bg__dot--4 {
-    animation: hp-pulse 7s ease-in-out 0.6s infinite;
-  }
+  /* The grid dots used to pulse on four infinite loops. Each running
+     animation costs a style pass per frame for the life of the page, and
+     the pulse was never noticed; they now sit still at mid opacity. */
 
   .hp-stage__chip {
     animation: hp-rise-in 380ms ease-out both;
