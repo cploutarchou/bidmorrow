@@ -39,6 +39,20 @@ explicit instruction** (standing rule, blockers item 2c) — production's 150
 rows are due 2026-09-02 05:09 under the old ladder and will be picked up
 by the first `:40` drain after deploy.
 
+**Staging latency gate (F-06 weekly `staging-perf`), 2026-09-01.** The
+first scheduled run (08-31 05:47 UTC) died in 4 s with no logs, the same
+signature as the E2E nightly and TED canary that day: the GitHub Actions
+account block, not the workflow. A manual re-run at 19:13 UTC ran properly
+and FAILED THE 800 ms BUDGET: p95 health 671 ms, public config 387 ms,
+account 648 ms, org profile 1,190 ms, feed routes ~1,965 ms, saved searches
+1,165 ms, against the 08-30 baseline of 595–640 ms for the feed. Every
+route is ~3× slower including the trivial ones, so this is path latency
+(GitHub runner region → Cloudflare edge → the D1 primary) rather than a
+query regression; customers are EU-based and do not take that path. Not
+loosened. Follow-up (task, not decided here): measure from where customers
+are, or take Smart Placement to the architect as an ADR. `timeout-minutes:
+20` added to the job so a hung probe cannot run for six hours.
+
 **Phase 14 — Production-readiness audit: RUN 2026-08-29. Verdict FAIL at
 the time.** Findings in `PRODUCTION_READINESS_AUDIT.md` (3 HIGH, 4 MEDIUM,
 4 LOW). Nothing in the finding set was a defect in the shipped application

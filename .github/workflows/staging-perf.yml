@@ -12,6 +12,9 @@ jobs:
   measure:
     runs-on: ubuntu-latest
     environment: staging
+    # ~10 min at 8 routes x 40 iterations x 700 ms pacing; 20 is a hard stop,
+    # not a budget (GitHub's default would let a hung probe run for 6 hours).
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
