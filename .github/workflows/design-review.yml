@@ -1,0 +1,75 @@
+# Design review capture (docs/design-redesign-plan.md, phase 7): renders the
+# public site at eight viewport widths in both colour schemes with
+# Playwright and runs the five baseline Lighthouse pairs, against staging
+# by default (the session sandbox's egress proxy blocks bidmorrow.com, so
+# staging validation has to run here). Uploads everything as a workflow
+# artifact and writes the Lighthouse table to the job summary. Read-only:
+# it never touches the deployment.
+name: design-review
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Site to capture
+        default: https://staging.bidmorrow.com
+        required: true
+      label:
+        description: Artifact label (folder name under artifacts/design-review)
+        default: staging
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: design-review
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Screenshots (375 to 1920, light and dark)
+        run: |
+          node scripts/design-screenshots.mjs \
+            --base-url "${{ inputs.base_url }}" \
+            --label "${{ inputs.label }}" \
+            --widths 375,390,430,768,1024,1280,1440,1920
+
+      - name: Lighthouse (five baseline pairs)
+        run: |
+          node scripts/design-lighthouse.mjs \
+            --base-url "${{ inputs.base_url }}" \
+            --label "${{ inputs.label }}" | tee lighthouse-summary.md
+          {
+            echo "## Lighthouse (${{ inputs.base_url }})"
+            echo
+            cat lighthouse-summary.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload captures and reports
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: design-review-${{ inputs.label }}
+          path: artifacts/design-review
+          retention-days: 30

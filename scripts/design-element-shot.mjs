@@ -6,6 +6,10 @@
  *
  *   node scripts/design-element-shot.mjs --selector .de --width 390 \
  *     --scheme light --wait 3300 --out artifacts/design-review/de-390.png
+ *
+ * `--click <selector>` (repeatable) clicks each selector in order before the
+ * wait, e.g. a "how it works" step button, so a stateful panel can be
+ * captured in the state under review.
  */
 import { parseArgs } from 'node:util';
 import { chromium } from '@playwright/test';
@@ -19,6 +23,7 @@ const { values } = parseArgs({
     scheme: { type: 'string', default: 'light' },
     wait: { type: 'string', default: '2600' },
     'reduced-motion': { type: 'boolean', default: false },
+    click: { type: 'string', multiple: true, default: [] },
     out: { type: 'string', default: 'artifacts/design-review/element.png' },
   },
 });
@@ -39,6 +44,9 @@ try {
   await page.goto(`${values['base-url']}${values.path}`, { waitUntil: 'networkidle' });
   const reject = page.getByRole('button', { name: 'Reject all' });
   if (await reject.count()) await reject.first().click();
+  for (const selector of values.click) {
+    await page.locator(selector).first().click();
+  }
   const target = page.locator(values.selector).first();
   await target.scrollIntoViewIfNeeded();
   await page.waitForTimeout(Number(values.wait));
