@@ -69,6 +69,32 @@ env-specific resource names/ids — wrangler does not inherit bindings.
 - Values are human-provided; Claude never invents them. Local dev uses
   `.dev.vars` (git-ignored, deny-listed).
 
+## Branching model (owner decision 2026-09-02)
+
+Trunk-based on `main`. The owner considered environment branches
+(`staging` → `main` promotion pull requests) and chose against them for a
+solo-owner repository with a green pipeline: one pull request per change,
+staging always equal to `main`, and no second branch to drift or to
+hotfix around.
+
+- `main` is the production branch and the only long-lived branch. It is
+  ruleset-protected: pull request required, `checks` and `secret-scan`
+  required, force-push and deletion blocked.
+- Every change lands through a pull request from a short-lived branch
+  (the session's `claude/…` working branch is re-synced to `main` after
+  each merge). A merge deploys staging, and a green staging deploy
+  deploys production (CI/CD flow steps 2 and 3 below).
+- Head branches are deleted after merge. GitHub's "Automatically delete
+  head branches" repository setting is the owner's one-click way to make
+  this automatic (HUMAN_DECISION_BLOCKERS item 8); until then, or for
+  branches that predate it, `.github/workflows/branch-cleanup.yml`
+  deletes an explicit list of named branches with CI's token (the
+  development sandbox cannot delete refs: HTTP 403). It refuses `main`
+  and the working branches and never deletes by pattern.
+- Scratch branches written by workflows (`competitor-shots`,
+  `design-review-shots*`, `ted-fixture-raw`) are transient by design and
+  are deleted once their captures are reviewed.
+
 ## CI/CD flow [validate: Phase 13]
 
 1. **PR pipeline** (every PR): install (frozen lockfile) → format/lint →
