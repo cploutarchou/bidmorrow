@@ -3562,32 +3562,40 @@ Baseline model established: ~$6/mo (0–10 customers), ~$26/mo (100),
 ## Deployment state
 
 _Superseded repeatedly; kept as one live section rather than a Phase-5-era
-snapshot. Last verified 2026-09-01 23:50 UTC against the GitHub deploy
-history (`Deploy production` run 23, `Deploy staging` run 128) and the
-`site-health` probe (run 8)._
+snapshot. Last verified 2026-09-02 17:41 UTC against the GitHub deploy
+history (`Deploy production` run 25, `Deploy staging` run 130) and the
+`site-health` probe (run 8 of 2026-09-01)._
 
-- **Staging** — CURRENT at `main` `5bca213` (PRs #136 + #137, the deploy
-  record and the design-review cleanup mode, on top of #134 + #135, the
-  website visual upgrade and its accessibility fix). `staging.bidmorrow.com`; D1
+**Policy since 2026-09-02 (owner decision):** `main` is the production
+branch. Every successful `Deploy staging` run on `main` triggers
+`Deploy production` for the same commit (`workflow_run` trigger in
+`deploy-production.yml`), so production equals `main` after each merge
+and the `Deploy production` run list is the record of the exact commit.
+The typed-confirmation dispatch stays for manual re-deploys.
+
+- **Staging** — CURRENT at `main` `823dfa9` (#139, continuous production
+  deploys, on top of #136 to #138 and the website visual upgrade #134 +
+  #135). `staging.bidmorrow.com`; D1
   `bidmorrow-staging` (`cd51fe7b-6b12-48b4-ae94-84205c3de99a`),
   migrations unchanged by any of the three PRs. Deploys 2026-09-01
   21:38–21:39 UTC (`Deploy staging` run 124, 33562159261, #134),
-  22:52–22:53 UTC (run 126, 33568361977, #135), 23:26–23:27 UTC (run 127,
-  33570999938, #136) and 23:35–23:36 UTC (run 128, 33571732213, #137),
-  all steps green, smoke passed. `site-health` run 8 at 23:04
+  22:52–22:53 UTC (run 126, 33568361977, #135), 23:26–23:27 UTC (run 127, 33570999938, #136), 23:35–23:36 UTC (run 128,
+  33571732213, #137), 23:56–23:57 UTC (run 129, 33573229429, #138) and
+  2026-09-02 17:37–17:38 UTC (run 130, 33662241622, #139), all steps
+  green, smoke passed. `site-health` run 8 at 23:04
   UTC: health live/ready 200, `stale: false` (last successful ingestion
   22:43 UTC), headers unchanged, `X-Robots-Tag: noindex, nofollow`
   present. Ingestion RUNNING; the hourly fetch-retry drains recover (see
   the 21:46 UTC evaluation below): `ingestion_fetch_retries` pending
   1,000 (669 never attempted, 331 at attempts=1), recovered 169 (69
   today), abandoned 0 at that check.
-- **Production** — CURRENT at `main` `5bca213`, deployed 2026-09-01
-  23:48:47–23:49:53 UTC (`Deploy production` run 23, 33572653017,
-  `success`, smoke tests passed) on the owner's instruction to deploy
-  everything to staging and production; run 22 (33571123557,
-  `eb66927`, 23:27–23:28 UTC, `success`) and run 23 shipped documentation
-  and a workflow input only, so the Worker build is the same as run
-  21's. Run 21
+- **Production** — CURRENT at `main` `823dfa9`, deployed 2026-09-02
+  17:38:50–17:40:43 UTC by `Deploy production` run 25 (33662368237,
+  event `workflow_run` from staging run 130, `success`, smoke tests
+  passed): the first automatic deploy under the policy above. Run 24
+  (33661177553, `9ddfc09`, 17:27 UTC) was the last manual dispatch; runs
+  22 to 25 shipped documentation and workflow changes only, so the
+  Worker build is the same as run 21's. Run 21
   (33569044580, `main` `7e13eea`, 23:01–23:02 UTC, `success`, smoke tests
   passed: health live/ready, CSP header present, e2e test hooks 404,
   production `robots.txt` body with the sitemap line, `sitemap.xml`
@@ -5525,6 +5533,48 @@ false`), `www` 301, robots production body, sitemap 200, `X-Robots-Tag`
   are removed by dispatching `design-review.yml` in its cleanup mode
   (`delete_branch`, added in #136) once that PR merges; a delete from
   the sandbox returns HTTP 403, the same limit as the tag pushes.
+
+## Production tracks `main` (owner decision, 2026-09-02)
+
+The owner asked whether production was synced with `main` and stated
+that `main` is the production branch; asked how production should follow
+`main` from now on, the owner chose automatic deployment on every merge.
+
+- `deploy-production.yml` gains a `workflow_run` trigger on
+  `Deploy staging` (completed, `main`); the job runs only when that run
+  succeeded, checks out the commit the staging run verified
+  (`workflow_run.head_sha`, not `main`'s head at trigger time) and runs
+  the unchanged steps (D1 Time Travel bookmark, migrations, FK check,
+  build, deploy, secrets, smoke tests). The typed-confirmation dispatch
+  stays for manual re-deploys and fix-forwards. The `production`
+  environment's protected-branches policy holds because a
+  `workflow_run` event runs in the default-branch context.
+- Gates to production are therefore the required PR checks, branch
+  protection on `main` and the staging deploy's smoke tests;
+  `docs/deployment.md` step 3, `HUMAN_DECISION_BLOCKERS.md` item 8.2 and
+  `docs/threat-model.md` (T20 prose, §5 accepted-residual row) are
+  restated to match. Migration safety is unchanged: a migration still
+  reaches staging first and production carries a Time Travel bookmark
+  before it applies; the decision to fix forward or roll back belongs in
+  the PR that carries the migration.
+- Before the change landed, run 24 (33661177553, 2026-09-02 17:27 UTC)
+  deployed `main` `9ddfc09` by dispatch so the two were equal at once.
+  The merge of this change (#139, `823dfa9`) was the first exercise of
+  the trigger: staging run 130 (17:37–17:38 UTC) started `Deploy
+production` run 25 (33662368237, event `workflow_run`, 17:38:50 to
+  17:40:43 UTC), whose confirmation step was skipped as designed, whose
+  record step logged the trigger and commit, and whose smoke tests
+  passed.
+- **Branching (same day):** asked whether to move to `staging` → `main`
+  promotion branches, the owner chose trunk-based on `main`
+  (`docs/deployment.md` "Branching model"). `branch-cleanup.yml` (#140)
+  deletes named branches with CI's token; after its merge the merged
+  branches `ci/e2e-nightly-wrangler-logs` (#104),
+  `docs/close-remaining-items` (#131), `feat/admin-signup-prelaunch`
+  (#121) and the scratch `competitor-shots` are removed with it.
+  `upload-template` is unmerged (a 1.4 MB handoff zip that `main`
+  git-ignores) and is left to the owner; enabling GitHub's automatic
+  head-branch deletion is an owner one-click (blockers item 8.3).
 
 ## Notes
 

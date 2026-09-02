@@ -1,0 +1,48 @@
+# Branch cleanup (docs/deployment.md "Branching model"): deletes the named
+# remote branches with CI's token. Exists because pushes from the
+# development sandbox are scoped to its working branch (a branch delete
+# returns HTTP 403), the same reason ted-fixture-fetch.yml and
+# design-review.yml carry their own cleanup modes. Refuses `main` and the
+# session's working branches; everything else must be named explicitly,
+# one dispatch per cleanup, so nothing is deleted by pattern.
+name: branch-cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      branches:
+        description: Comma-separated remote branch names to delete (merged or scratch branches only)
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: branch-cleanup
+  cancel-in-progress: false
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete the named branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCHES: ${{ inputs.branches }}
+        run: |
+          tmp=$(mktemp -d); cd "$tmp"; git init -q
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          status=0
+          echo "$BRANCHES" | tr ',' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$' | while read -r b; do
+            case "$b" in
+              main|work/*) echo "refusing to delete protected or working branch: $b"; exit 1 ;;
+            esac
+            if git ls-remote --exit-code --heads "$remote" "$b" >/dev/null 2>&1; then
+              git push "$remote" --delete "$b" && echo "deleted $b"
+            else
+              echo "no such branch: $b"; exit 1
+            fi
+          done || status=$?
+          echo "remaining branches:"; git ls-remote --heads "$remote" | awk '{print "  " $2}' | sed 's#refs/heads/##'
+          exit $status
