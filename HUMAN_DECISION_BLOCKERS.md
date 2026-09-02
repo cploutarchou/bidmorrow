@@ -575,6 +575,15 @@ payouts remains their/their accountant's matter.
    the typed-confirmation dispatch stays for manual re-deploys. Gates to
    production are therefore the required PR checks, branch protection on
    `main` and the staging deploy's smoke tests; threat-model §5 restated.
+3. **Branch hygiene (2026-09-02, owner chose trunk-based on `main` over
+   a `staging` → `main` promotion model):** please enable "Automatically
+   delete head branches" (repository Settings → General → Pull Requests)
+   so merged branches disappear on their own; the session cannot change
+   repository settings. Merged and scratch branches that predate it are
+   removed with `.github/workflows/branch-cleanup.yml` (explicit list,
+   CI's token). `upload-template` is left alone: it is not merged and
+   holds only a 1.4 MB handoff zip that `main` deliberately git-ignores;
+   delete it from the Branches page if it is no longer wanted.
 
 ## 9. TED developer API key — CLOSED 2026-08-18 (key NOT needed)
 
