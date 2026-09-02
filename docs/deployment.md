@@ -78,14 +78,19 @@ env-specific resource names/ids — wrangler does not inherit bindings.
    `wrangler d1 migrations apply bidmorrow-staging --env staging --remote`
    then `wrangler deploy --env staging`, then automated smoke tests
    (health endpoint, login, one API round-trip).
-3. **Production deploy**: `.github/workflows/deploy-production.yml` —
-   dispatch-only, gated three ways (GitHub Required reviewers need
-   Enterprise on private repos, so they are NOT used): the `production`
-   environment is restricted to protected branches only, the dispatch
-   requires typing `confirm: deploy-production` (validated as the job's
-   first step), and by convention Claude never dispatches a production
-   deploy without explicit owner instruction. Steps: ensure
-   queues/R2/D1 idempotently
+3. **Production deploy**: `.github/workflows/deploy-production.yml` runs
+   automatically after every successful `Deploy staging` run on `main`
+   and deploys the exact commit staging just verified (owner decision
+   2026-09-02: `main` is the production branch, so production always
+   equals `main`; the `Deploy production` run list is the record of what
+   production runs). The same workflow can be dispatched by hand with the
+   typed `confirm: deploy-production` input for a re-deploy or a
+   fix-forward. Gates (GitHub Required reviewers need Enterprise on
+   private repos, so they are NOT used): the PR pipeline and the staging
+   deploy's smoke tests must both be green first, the `production`
+   environment is restricted to protected branches only, and a manual
+   dispatch must type the confirmation (validated as the job's first
+   step). Steps: ensure queues/R2/D1 idempotently
    (first run creates them; the resolved D1 id is patched into the
    checkout and printed as `PRODUCTION_D1_ID` for committing) → capture
    D1 Time Travel bookmark → apply migrations → verify FK enforcement

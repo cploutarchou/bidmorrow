@@ -568,7 +568,13 @@ payouts remains their/their accountant's matter.
    convention that Claude never dispatches production deploys without
    explicit owner instruction. Accepted residual: any repo-write
    principal can technically dispatch a production deploy — recorded in
-   docs/threat-model.md §5.
+   docs/threat-model.md §5. **Updated 2026-09-02 (owner decision: `main`
+   is the production branch):** `deploy-production.yml` now also runs
+   automatically after every successful `Deploy staging` run on `main`
+   and deploys that exact commit, so production always equals `main`;
+   the typed-confirmation dispatch stays for manual re-deploys. Gates to
+   production are therefore the required PR checks, branch protection on
+   `main` and the staging deploy's smoke tests; threat-model §5 restated.
 
 ## 9. TED developer API key — CLOSED 2026-08-18 (key NOT needed)
 
