@@ -402,6 +402,11 @@ duplicate insert'` test plus out-of-order/duplicate-delivery cases.
 
 ## 3. E2E-in-CI recommendation
 
+_Update 2026-09-03: the suite now also runs per pull request
+(`.github/workflows/e2e-pr.yml`, non-blocking, drafts and docs-only
+changes skipped), sharing the nightly's job through `e2e-suite.yml`;
+see `docs/deployment.md` CI/CD flow step 1._
+
 **Recommendation: (c) — a separate nightly scheduled workflow, NOT a
 per-PR blocking or non-blocking job.**
 

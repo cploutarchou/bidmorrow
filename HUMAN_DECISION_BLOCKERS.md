@@ -577,9 +577,20 @@ payouts remains their/their accountant's matter.
    so merged branches disappear on their own; the session cannot change
    repository settings. Merged and scratch branches that predate it are
    removed with `.github/workflows/branch-cleanup.yml` (explicit list,
-   CI's token). `upload-template` is left alone: it is not merged and
-   holds only a 1.4 MB handoff zip that `main` deliberately git-ignores;
-   delete it from the Branches page if it is no longer wanted.
+   CI's token). `upload-template` is left alone: it is not merged and holds only a
+   1.4 MB handoff zip that `main` deliberately git-ignores; delete it from
+   the Branches page if it is no longer wanted.
+4. **Required check for the per-PR E2E run (2026-09-03, owner
+   instruction "add it to the required checks now"):** please add
+   `e2e-gate` to the `main-protection` ruleset's required status checks
+   (repository Settings → Rules → Rulesets → main-protection → "Require
+   status checks to pass" → add check `e2e-gate`). The session cannot
+   edit rulesets. The repository side is ready: `e2e-gate` in
+   `.github/workflows/e2e-pr.yml` reports on every pull request event
+   (green when the suite passed or was rightly skipped for a docs-only
+   change or a draft, red when it failed), so requiring it cannot leave
+   a pull request waiting forever. Do not require `e2e / e2e` itself:
+   that check only exists when the suite actually runs.
 
 ## 9. TED developer API key — CLOSED 2026-08-18 (key NOT needed)
 

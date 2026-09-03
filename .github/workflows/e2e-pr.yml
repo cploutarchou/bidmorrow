@@ -1,0 +1,85 @@
+# Per-pull-request run of the Playwright E2E suite (owner decision
+# 2026-09-03). Until then the suite ran only on the nightly schedule, so a
+# copy change merged on 2026-09-01 turned the nightly red for two nights
+# before anyone saw it.
+#
+# Shape, chosen so the `e2e-gate` job can be a REQUIRED check on main
+# (owner decision, same day):
+#   - `changes` decides whether the pull request touches anything besides
+#     documentation. A workflow-level `paths-ignore` would leave a required
+#     check "expected" forever on a docs-only pull request and block the
+#     merge, so the filter lives inside the run instead.
+#   - `e2e` calls the shared suite (e2e-suite.yml, the same job the nightly
+#     runs) unless the change is docs-only or the pull request is a draft.
+#   - `e2e-gate` always reports: green when the suite passed or was
+#     rightly skipped, red when it failed or was cancelled. That is the
+#     check name to require in the ruleset.
+# A newer push cancels the run for the older one. Cost: about seven runner
+# minutes per ready-for-review push.
+name: E2E (pull request)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide whether the suite is needed
+        id: filter
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          git fetch --quiet origin "$BASE_REF"
+          changed=$(git diff --name-only "origin/$BASE_REF...HEAD")
+          echo "changed files:"; echo "$changed" | sed 's/^/  /'
+          if echo "$changed" | grep -v -E '^docs/|\.md$' | grep -q .; then
+            echo "run=true" >> "$GITHUB_OUTPUT"; echo "suite needed"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"; echo "documentation only: suite not needed"
+          fi
+
+  e2e:
+    needs: changes
+    if: ${{ needs.changes.outputs.run == 'true' && !github.event.pull_request.draft }}
+    uses: ./.github/workflows/e2e-suite.yml
+
+  e2e-gate:
+    # The required check. Runs whatever happened above and turns the
+    # suite's outcome into one verdict: skipped (docs-only or draft) and
+    # success pass; failure and cancellation fail.
+    needs: [changes, e2e]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verdict
+        env:
+          SUITE: ${{ needs.e2e.result }}
+          CHANGES: ${{ needs.changes.result }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          [ "$CHANGES" = "success" ] || { echo "change detection $CHANGES"; exit 1; }
+          case "$SUITE" in
+            success) echo "E2E suite passed" ;;
+            skipped)
+              if [ "$DRAFT" = "true" ]; then echo "draft pull request: the suite runs when it is marked ready for review"
+              else echo "documentation-only change: the suite is not needed"; fi ;;
+            *) echo "E2E suite $SUITE"; exit 1 ;;
+          esac
