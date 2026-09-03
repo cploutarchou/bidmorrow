@@ -5604,6 +5604,17 @@ five minutes.
   dying mid-suite) ended on its own: runs 14 to 17 (08-27 to 08-30) and
   19 passed; run 18 (08-31) was a 3-second runner abort. That entry is
   closed by this one.
+- The confirmation run after the fix merged (run 22, dispatched 05:04
+  UTC) passed the paywall test and failed one other of 92:
+  `accessibility.spec.ts` "onboarding — every screen", with "no
+  verification mail captured". Its bespoke bootstrap read the test
+  mailbox once, immediately after the sign-up click, while the
+  verification mail is sent fire-and-forget after the response
+  (`ExecutionContext.waitUntil` in `auth-instance.ts`); every other spec
+  polls through `waitForMail` in `tests/e2e/helpers.ts`. The helper now
+  polls too and asserts the sign-up reached `/verify-email` first. This
+  was a latent race, not a regression: the same read had passed on
+  every earlier run.
 - Recommendation, not done: promote `critical-path.spec.ts` (or the whole
   suite, non-blocking) to a per-pull-request job so copy changes cannot
   break the nightly unseen; the phase 12 note already names this as the
