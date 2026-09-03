@@ -4467,6 +4467,9 @@ repository tests.
 
 ## Nightly E2E has been red since 2026-08-19 — diagnostics landed, cause open (2026-08-25)
 
+_Closed 2026-09-03: the streak ended on 2026-08-27 (see the 09-03 entry
+near the end of this file)._
+
 Found while merging #103: `E2E (nightly)` (schedule-only, so never on a
 PR) has failed every night since 08-19. Two distinct phases:
 
@@ -5575,6 +5578,36 @@ production` run 25 (33662368237, event `workflow_run`, 17:38:50 to
   `upload-template` is unmerged (a 1.4 MB handoff zip that `main`
   git-ignores) and is left to the owner; enabling GitHub's automatic
   head-branch deletion is an owner one-click (blockers item 8.3).
+
+## Nightly E2E red on 2026-09-02 and 09-03: one stale expectation after the em-dash sweep (2026-09-03)
+
+The owner asked why the CI/CD action failed. Every deploy and pull
+request run is green; the red runs are `E2E (nightly)` 20 (09-02 03:13
+UTC) and 21 (09-03 04:27 UTC): 91 tests passed, one failed, in
+`tests/e2e/billing.spec.ts` ("entitlement enforced without a
+subscription: the feed renders the designed paywall"). The test still
+looked for the heading "Your profile is ready — a subscription activates
+your feed." while #133 (the owner's em-dash rule, 09-01) had rewritten
+the component to "Your profile is ready. A subscription activates your
+feed." Run 19 (09-01, before #133) had passed 91/91, so the change in
+between is the whole cause. Nothing timed out: the suite ran its normal
+five minutes.
+
+- Why the pull request pipeline did not catch it: the nightly suite is
+  schedule-only by design (phase 12 decision), and the em-dash guard test
+  scans `apps/web/src`, not `tests/e2e`, so an expectation string that
+  quotes app copy can go stale silently. Fix: the expectation now quotes
+  the current copy, verified locally against the real `wrangler dev`
+  stack before the push. The `E2E (nightly)` workflow was dispatched on
+  `main` after the merge to confirm green.
+- The earlier red streak in this ledger ("red since 2026-08-19", workerd
+  dying mid-suite) ended on its own: runs 14 to 17 (08-27 to 08-30) and
+  19 passed; run 18 (08-31) was a 3-second runner abort. That entry is
+  closed by this one.
+- Recommendation, not done: promote `critical-path.spec.ts` (or the whole
+  suite, non-blocking) to a per-pull-request job so copy changes cannot
+  break the nightly unseen; the phase 12 note already names this as the
+  next step once the nightly is stable, which it now is.
 
 ## Notes
 
