@@ -159,7 +159,7 @@ test.describe('billing: 402 paywall and checkout-success page', () => {
       await page.goto('/app');
       await expect(
         page.getByRole('heading', {
-          name: 'Your profile is ready — a subscription activates your feed.',
+          name: 'Your profile is ready. A subscription activates your feed.',
         }),
       ).toBeVisible();
       // The designed paywall state (F17), never the generic failure copy —
