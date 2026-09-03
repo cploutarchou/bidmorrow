@@ -99,7 +99,13 @@ hotfix around.
 
 1. **PR pipeline** (every PR): install (frozen lockfile) → format/lint →
    typecheck → unit/contract/integration/security tests → build → gitleaks.
-   All gates required to merge (blocker 8 branch protection).
+   All gates required to merge (blocker 8 branch protection). In
+   addition, `.github/workflows/e2e-pr.yml` runs the full Playwright suite
+   (the same job as the nightly, shared through `e2e-suite.yml`) on every
+   ready-for-review pull request that touches more than documentation;
+   it is visible on the pull request but NOT a required check until it
+   has proven stable (owner decision 2026-09-03, after a copy change
+   turned the nightly red for two nights unseen).
 2. **Staging auto-deploy**: merge to the integration branch triggers
    `wrangler d1 migrations apply bidmorrow-staging --env staging --remote`
    then `wrangler deploy --env staging`, then automated smoke tests

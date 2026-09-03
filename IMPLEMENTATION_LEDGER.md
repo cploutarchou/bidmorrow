@@ -5620,6 +5620,28 @@ five minutes.
   break the nightly unseen; the phase 12 note already names this as the
   next step once the nightly is stable, which it now is.
 
+## Per-pull-request E2E run (owner request, 2026-09-03)
+
+After the nightly's two red nights on a copy change no pull request had
+run the suite against, the owner asked for the per-PR job the phase 12
+note had deferred.
+
+- The nightly's job moved into `.github/workflows/e2e-suite.yml`
+  (`workflow_call`); `e2e-nightly.yml` keeps its schedule and dispatch
+  and calls it; the new `e2e-pr.yml` calls it on `pull_request`
+  (opened, reopened, synchronize, ready_for_review), skips drafts and
+  documentation-only changes (`**.md`, `docs/**`), and cancels the
+  previous run of the same pull request on a new push. About seven runner
+  minutes per ready-for-review push.
+- Deliberately NOT a required check: the ruleset still requires only
+  `checks` and `secret-scan`, so a red E2E run shows on the pull request
+  without blocking the merge. Promote it once it has proven stable; the
+  session cannot edit the ruleset.
+- `docs/deployment.md` CI/CD step 1 and `docs/phase12-quality-findings.md`
+  §3 updated. The pull request carrying this change is the first
+  exercise of the per-PR job; the nightly is dispatched once after the
+  merge to prove the reusable call path.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
