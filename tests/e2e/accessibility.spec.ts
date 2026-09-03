@@ -7,7 +7,7 @@
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { login, TEST_PASSWORD } from './helpers';
+import { login, TEST_PASSWORD, waitForMail } from './helpers';
 
 interface SeriousViolation {
   readonly id: string;
@@ -221,11 +221,13 @@ async function bootstrapOnboardedUserWithMatchesForAxe(
   await page.getByLabel('Work email').fill(email);
   await page.getByLabel('Password').fill(TEST_PASSWORD);
   await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page).toHaveURL(/\/verify-email/);
 
-  const mailResponse = await page.request.get(`/api/test/mailbox?to=${encodeURIComponent(email)}`);
-  const mailBody = (await mailResponse.json()) as { mails: { kind: string; url: string }[] };
-  const verification = mailBody.mails.find((m) => m.kind === 'verification');
-  if (verification === undefined) throw new Error('no verification mail captured');
+  // The verification mail is sent fire-and-forget after the sign-up response
+  // (ExecutionContext.waitUntil in auth-instance.ts), so a single read of the
+  // mailbox can race it: nightly run 22 (2026-09-03) failed here with an empty
+  // mailbox. Poll like every other spec does.
+  const verification = await waitForMail(page.request, email, 'verification');
   await page.goto(verification.url);
 
   await login(page, email, TEST_PASSWORD);
