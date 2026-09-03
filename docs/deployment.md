@@ -78,8 +78,8 @@ staging always equal to `main`, and no second branch to drift or to
 hotfix around.
 
 - `main` is the production branch and the only long-lived branch. It is
-  ruleset-protected: pull request required, `checks` and `secret-scan`
-  required, force-push and deletion blocked.
+  ruleset-protected: pull request required, `checks`, `secret-scan` and
+  `e2e-gate` required, force-push and deletion blocked.
 - Every change lands through a pull request from a short-lived branch
   (the session's `claude/…` working branch is re-synced to `main` after
   each merge). A merge deploys staging, and a green staging deploy
@@ -99,13 +99,16 @@ hotfix around.
 
 1. **PR pipeline** (every PR): install (frozen lockfile) → format/lint →
    typecheck → unit/contract/integration/security tests → build → gitleaks.
-   All gates required to merge (blocker 8 branch protection). In
-   addition, `.github/workflows/e2e-pr.yml` runs the full Playwright suite
-   (the same job as the nightly, shared through `e2e-suite.yml`) on every
-   ready-for-review pull request that touches more than documentation;
-   it is visible on the pull request but NOT a required check until it
-   has proven stable (owner decision 2026-09-03, after a copy change
-   turned the nightly red for two nights unseen).
+   All gates required to merge (blocker 8 branch protection). In addition, `.github/workflows/e2e-pr.yml` runs the full Playwright
+   suite (the same job as the nightly, shared through `e2e-suite.yml`) on
+   every ready-for-review pull request that touches more than
+   documentation (owner decision 2026-09-03, after a copy change turned
+   the nightly red for two nights unseen). Its `e2e-gate` job always
+   reports one verdict (suite passed, or rightly skipped for a docs-only
+   change or a draft, or failed) and is the check the owner adds to the
+   ruleset's required checks (blocker item 8.4): a plain `paths-ignore`
+   would leave a required check "expected" forever on docs-only pull
+   requests, which is why the filter runs inside the workflow.
 2. **Staging auto-deploy**: merge to the integration branch triggers
    `wrangler d1 migrations apply bidmorrow-staging --env staging --remote`
    then `wrangler deploy --env staging`, then automated smoke tests
