@@ -1,0 +1,31 @@
+# Per-pull-request run of the Playwright E2E suite (owner decision
+# 2026-09-03). Until now the suite ran only on the nightly schedule, so a
+# copy change merged on 2026-09-01 turned the nightly red for two nights
+# before anyone saw it. Runs when a pull request is ready for review, and
+# on every push while it stays ready; drafts and documentation-only
+# changes are skipped, and a newer push cancels the run for the older one.
+#
+# NOT one of the ruleset's required checks: a red run is visible on the
+# pull request but does not block the merge. Promote it to required in the
+# ruleset once it has proven stable across a few weeks of pull requests.
+# Cost: about seven runner minutes per ready-for-review push.
+name: E2E (pull request)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    if: ${{ !github.event.pull_request.draft }}
+    uses: ./.github/workflows/e2e-suite.yml
