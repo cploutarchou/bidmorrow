@@ -71,7 +71,7 @@ describe('request timing (ADR-0012)', () => {
     // covered by request-timing.test.ts.
     const response = await exports.default.fetch('https://bidmorrow.local/api/health/live');
     expect(response.headers.get('server-timing')).toMatch(
-      /^app;dur=\d+, colo;desc="(?:[A-Z]{3}|unknown)"$/,
+      /^app;dur=\d+, colo;desc="(?:[A-Z]{3}|unknown)", continent;desc="(?:[A-Z]{2}|unknown)"$/,
     );
   });
 });

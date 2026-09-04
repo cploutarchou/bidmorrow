@@ -73,6 +73,23 @@ feed 37 ms, net 5–9 ms, colo DFW from miniflare); gates green; docs:
 docs/performance.md (both staging runs tabulated + the split),
 docs/cost-model.md, docs/security.md C4, PRODUCTION_READINESS_AUDIT F-06.
 
+**First split run and the gate that follows (ADR-0012 A1), 2026-09-04.**
+PR #146 merged 16:25 UTC; staging (run 137) and production (run 32)
+deployed `7a754f3` green; the site-health probe (run 9, from `SJC`) shows
+`Server-Timing` on staging and none on production as designed. The
+dispatched `staging-perf` run 33895830914 (Worker colo `ATL`) answered
+the attribution question: `net` flat at ~80 ms on every route, `app`
+growing ~115 ms per D1 round trip (1 read 125, 2 reads 240, feed 837 =
+~7 trips), i.e. the runner's continent, not a query regression. Decided
+and shipped: the weekly gate runs `--gate app --budget-ms 500 --vantage
+EU` — the checklist budget on the Worker-side figure, asserted only from a
+European colo (the header now also carries `continent`); elsewhere the
+run prints the table, emits a `::warning` naming the colo and exits 0 as
+NOT GATED. The 800 ms client-side budget is retired (net carries no
+application signal). Next step, not started: a per-request D1 round-trip
+counter would give a geography-independent assertion for the weekly run.
+Customer p95 lives in Workers Logs (`request completed`, European colos).
+
 **2026-09-01 19:52–19:57 UTC — owner: "deploy to production and enable
 entitlement_enforced".** Both done and verified: `deploy-production.yml`
 run 33552153011 on `main` `3c08100` (#132 + #133) succeeded 19:55:04 UTC

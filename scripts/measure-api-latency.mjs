@@ -30,10 +30,19 @@
  * number was taken in. `--gate app` gates on the Worker-side figure,
  * `--gate total` (default) on the client-side one.
  *
+ * THE VANTAGE (ADR-0012 amendment A1). `--vantage EU` asserts the budget
+ * only when every sample was served from a European colo — the customers'
+ * path to the WEUR database. From anywhere else the Worker-side figure is
+ * dominated by transatlantic D1 hops (measured 2026-09-04 from ATL:
+ * ~115 ms per hop, feed p95 837 ms app / 96 ms net), which no customer
+ * pays; the run then prints everything, emits a workflow warning and
+ * exits 0 as NOT GATED rather than failing on geography. The budget is
+ * never loosened; it is simply not asserted from an invalid vantage.
+ *
  * USAGE
  *   node scripts/measure-api-latency.mjs [--base-url URL] [--iterations N]
  *                                        [--budget-ms MS] [--gate total|app]
- *                                        [--json]
+ *                                        [--vantage EU] [--json]
  *
  * Against the local stack, start it first (the same one Playwright uses):
  *   bash scripts/e2e-webserver.sh    # 127.0.0.1:8787, builds + migrates + seeds
@@ -72,6 +81,9 @@ const { values } = parseArgs({
     // or `app` (Worker-side wall clock from Server-Timing). `app` refuses
     // to run against an environment that sends no Server-Timing header.
     gate: { type: 'string', default: 'total' },
+    // Continent code the Worker must have run in for the gate to be
+    // asserted (only `EU` is meaningful today). Requires `--gate app`.
+    vantage: { type: 'string' },
     json: { type: 'boolean', default: false },
   },
 });
@@ -84,6 +96,11 @@ const SEEDED_EMAIL = values.email;
 const GATE = values.gate;
 if (GATE !== 'total' && GATE !== 'app') {
   console.error('--gate must be `total` or `app`');
+  process.exit(2);
+}
+const VANTAGE = values.vantage;
+if (VANTAGE !== undefined && (GATE !== 'app' || !/^[A-Z]{2}$/.test(VANTAGE))) {
+  console.error('--vantage takes a two-letter continent code and requires --gate app');
   process.exit(2);
 }
 const PASSWORD =
@@ -117,6 +134,7 @@ function parseServerTiming(header) {
   if (header === null || header === undefined) return null;
   let appMs = null;
   let colo = null;
+  let continent = null;
   for (const entry of header.split(',')) {
     const [rawName, ...rawParams] = entry.trim().split(';');
     const name = rawName?.trim();
@@ -137,9 +155,13 @@ function parseServerTiming(header) {
       if (Number.isFinite(dur)) appMs = dur;
     } else if (name === 'colo' && params.has('desc')) {
       colo = params.get('desc');
+    } else if (name === 'continent' && params.has('desc')) {
+      continent = params.get('desc');
     }
   }
-  return appMs === null ? null : { appMs, colo: colo ?? 'unknown' };
+  return appMs === null
+    ? null
+    : { appMs, colo: colo ?? 'unknown', continent: continent ?? 'unknown' };
 }
 
 async function timed(fetchFn) {
@@ -228,6 +250,7 @@ async function measure(label, path, init = {}) {
   const appSamples = [];
   const networkSamples = [];
   const colos = new Set();
+  const continents = new Set();
   const statuses = new Set();
   // One warm-up: the first request to a cold isolate pays module-init and
   // connection setup that no subsequent real request pays, and including it
@@ -245,6 +268,7 @@ async function measure(label, path, init = {}) {
       // are on different machines and the Worker's only advances on I/O.
       networkSamples.push(Math.max(0, ms - serverTiming.appMs));
       colos.add(serverTiming.colo);
+      continents.add(serverTiming.continent);
     }
   }
   // A route that answered 4xx/5xx measured an ERROR path — a rejected query
@@ -282,6 +306,7 @@ async function measure(label, path, init = {}) {
           networkP50: percentile(networkSamples, 50),
           networkP95: percentile(networkSamples, 95),
           colos: [...colos].sort(),
+          continents: [...continents].sort(),
         };
   results.push({
     label,
@@ -312,6 +337,13 @@ await measure('saved searches', '/api/org/saved-searches', authed);
 
 const gated = (row) => (GATE === 'app' ? row.split.appP95 : row.p95);
 const breaches = results.filter((row) => gated(row) > BUDGET_MS);
+// Vantage check: every sample of every route must have been served from
+// the requested continent for the budget to mean what it claims.
+const offVantage =
+  VANTAGE === undefined
+    ? []
+    : results.filter((row) => row.split.continents.some((code) => code !== VANTAGE));
+const gateAsserted = offVantage.length === 0;
 
 if (values.json) {
   console.log(
@@ -321,6 +353,8 @@ if (values.json) {
         iterations: ITERATIONS,
         budgetMs: BUDGET_MS,
         gate: GATE,
+        vantage: VANTAGE ?? null,
+        gateAsserted,
         results,
         ok: breaches.length === 0,
       },
@@ -348,11 +382,26 @@ if (values.json) {
         `${num(row.split?.appP95 ?? null)}${num(row.split?.networkP95 ?? null)}  ${row.split?.colos.join('/') ?? '-'}`,
     );
   }
-  console.log(
-    breaches.length === 0
-      ? `\nAll routes within budget (${GATE} p95 < ${String(BUDGET_MS)} ms).`
-      : `\nOVER BUDGET (${GATE} p95 > ${String(BUDGET_MS)} ms): ${breaches.map((row) => row.label).join(', ')}`,
-  );
+  if (!gateAsserted) {
+    const seen = [...new Set(results.flatMap((row) => row.split.colos))].join('/');
+    const where = [...new Set(results.flatMap((row) => row.split.continents))].join('/');
+    console.log(
+      `\nNOT GATED: the Worker ran in ${seen} (${where}), not in ${VANTAGE}. The app figures ` +
+        `above include one transatlantic D1 round trip per query, a path no customer takes; ` +
+        `the ${GATE} p95 < ${String(BUDGET_MS)} ms budget is asserted only from a ${VANTAGE} vantage ` +
+        `(ADR-0012 A1). Read the customer-geography p95 from Workers Logs instead.`,
+    );
+    console.log(
+      `::warning title=staging-perf not gated::measured from ${seen} (${where}); ` +
+        `budget asserted only from ${VANTAGE}. Worst app p95: ${Math.max(...results.map((row) => row.split.appP95)).toFixed(0)} ms.`,
+    );
+  } else {
+    console.log(
+      breaches.length === 0
+        ? `\nAll routes within budget (${GATE} p95 < ${String(BUDGET_MS)} ms).`
+        : `\nOVER BUDGET (${GATE} p95 > ${String(BUDGET_MS)} ms): ${breaches.map((row) => row.label).join(', ')}`,
+    );
+  }
 }
 
-process.exit(breaches.length === 0 ? 0 : 1);
+process.exit(gateAsserted && breaches.length > 0 ? 1 : 0);

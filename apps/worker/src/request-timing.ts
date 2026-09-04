@@ -25,10 +25,18 @@
 const COLO_PATTERN = /^[A-Z]{3}$/;
 /** ISO 3166-1 alpha-2, plus Cloudflare's `T1` for Tor exits. */
 const COUNTRY_PATTERN = /^[A-Z0-9]{2}$/;
+/** Cloudflare continent codes: AF, AN, AS, EU, NA, OC, SA. */
+const CONTINENT_PATTERN = /^[A-Z]{2}$/;
 
 export interface RequestPlacement {
   readonly colo: string;
   readonly country: string;
+  /**
+   * Continent of the colo the Worker ran in. The latency script uses it to
+   * tell a European vantage (the customers' path to the WEUR database)
+   * from any other, where every D1 round trip crosses an ocean.
+   */
+  readonly continent: string;
 }
 
 /**
@@ -46,7 +54,11 @@ export function readPlacement(cf: unknown): RequestPlacement {
     typeof record['country'] === 'string' && COUNTRY_PATTERN.test(record['country'])
       ? record['country']
       : 'unknown';
-  return { colo, country };
+  const continent =
+    typeof record['continent'] === 'string' && CONTINENT_PATTERN.test(record['continent'])
+      ? record['continent']
+      : 'unknown';
+  return { colo, country, continent };
 }
 
 /**
@@ -62,5 +74,5 @@ export function serverTimingHeader(
     return null;
   }
   const duration = Number.isFinite(durationMs) && durationMs >= 0 ? Math.round(durationMs) : 0;
-  return `app;dur=${String(duration)}, colo;desc="${placement.colo}"`;
+  return `app;dur=${String(duration)}, colo;desc="${placement.colo}", continent;desc="${placement.continent}"`;
 }
