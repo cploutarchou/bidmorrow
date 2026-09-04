@@ -22,6 +22,7 @@ Prices verified against official Cloudflare/Resend docs on **2026-08-14**
 | KV reads/writes         | 10M / 1M per mo                                 | $0.50/M / $5.00/M                  |
 | Cron triggers           | 250/account                                     | —                                  |
 | D1 Time Travel          | 30-day retention, free                          | —                                  |
+| Workers Logs            | 20M events/mo, 7-day retention (ADR-0012)       | $0.60/M                            |
 | R2 (separate free tier) | 10 GB storage, 1M Class A, 10M Class B per mo   | $0.015/GB-mo, $4.50/M A, $0.36/M B |
 
 Key limits: **D1 max database size 10 GB (paid)**; 1,000 D1 queries per

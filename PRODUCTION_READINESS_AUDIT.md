@@ -208,6 +208,16 @@ fabricates a fraction.
 
 ### F-06 · MEDIUM · Performance · **CLOSED as a gate 2026-08-30; follow-up perf item opened**
 
+_Update 2026-09-04 (ADR-0012)_: the weekly staging gate failed on 09-01
+with every route ~3× the 08-30 baseline and no way to attribute it
+(runner path vs. Worker colo vs. D1). Now attributable: staging sends
+`Server-Timing` (Worker-side wall time + colo) and the script reports
+total/app/net per route; Workers Logs is enabled with a per-request
+`request completed` record (route pattern, status, `duration_ms`, colo,
+country), which is where the customer-geography p95 is read. Smart
+Placement declined (ADR-0012 §4). Budget unchanged; the first split run
+decides whether the gate moves to `--gate app` at 500 ms (ADR-0012 §3).
+
 _Update 2026-08-30_: seeded staging account (`STAGING_PERF_EMAIL` variable +
 `STAGING_PERF_PASSWORD` secret in the `staging` environment),
 `measure-api-latency.mjs` extended with `--email`/`PERF_PASSWORD` (seeded
