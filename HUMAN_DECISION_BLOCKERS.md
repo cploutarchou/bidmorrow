@@ -26,6 +26,21 @@ product image set via API on all four products, brand kit in docs/brand/.
 products, revoke the test key at dashboard.stripe.com (GitHub `STRIPE_*` secrets already deleted;
 last code mention scrubbed in #130). Everything below is history.
 
+## FYI 2026-09-04 — Workers Logs is on for both Workers (ADR-0012); the customer-geography latency number lives in the dashboard
+
+**What:** PR #146 enabled Workers Logs (`observability.enabled`, sampling
+
+1. for `bidmorrow-staging` and `bidmorrow-production`, and every API
+   request now ends with a `request completed` log line carrying the route
+   pattern, status, `duration_ms`, `colo` and `country`. Retention is 7 days
+   on Workers Paid; 20M events/month are included and the site emits a few
+   thousand a day, so the cost is ~$0. No owner action is required. Where to
+   look: Cloudflare dashboard → Workers & Pages → bidmorrow-production →
+   Logs, filter `msg = "request completed"`, group or filter by `colo` (the
+   European ones are what customers see) and read the `duration_ms` p95. The
+   session cannot read these logs itself (no MCP route to Workers Logs), so
+   when the p95 for European colos is wanted in a doc, paste the number.
+
 ## OPEN 2026-09-01 22:10 UTC — Cloudflare Web Analytics beacon is injected into every page and blocked by our CSP (zone setting, owner decision)
 
 **What:** the staging design-review capture (run 33562293252) logged two
