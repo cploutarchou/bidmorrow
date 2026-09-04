@@ -1,6 +1,15 @@
 # F-06: measure real staging API latency (p50/p95/p99) with the seeded
 # perf-probe account. Manual dispatch + weekly. The script gates on the
-# 500 ms p95 budget and exits 1 on a breach.
+# p95 budget given below and exits 1 on a breach.
+#
+# ADR-0012: staging answers with a Server-Timing header, so every route is
+# reported as total (client wall clock), app (Worker-side wall clock) and
+# net (the path between this runner and the Worker's colo), with the colo
+# and continent named. GitHub-hosted runners are not in Europe while D1 is
+# (WEUR); the budget is asserted only from a European vantage (`--vantage
+# EU`) and the run is otherwise a warning, not a failure. The
+# customer-geography p95 is read from Workers Logs (`request completed`,
+# by colo), not from here.
 name: staging-perf
 on:
   workflow_dispatch: {}
@@ -28,9 +37,12 @@ jobs:
             --base-url https://staging.bidmorrow.com \
             --email "${{ vars.STAGING_PERF_EMAIL }}" \
             --delay-ms 700 \
-            --budget-ms 800
-        # 500 ms is the LOCAL budget (a floor, per the script header). This
-        # run crosses the public internet + Cloudflare edge from a GitHub
-        # runner, so the gate is 800 ms. First real staging baseline
-        # (2026-08-30, empty org): feed routes p95 595-640 ms — inside 800,
-        # over the local 500; tracked as follow-up perf work in the audit.
+            --gate app --budget-ms 500 --vantage EU
+        # ADR-0012 A1: the checklist budget (500 ms p95) is asserted on the
+        # Worker-side figure, and only when the Worker ran in Europe, the
+        # customers' path to the WEUR database. GitHub-hosted runners have
+        # landed in SJC and ATL so far: from there every D1 round trip
+        # crosses the Atlantic (~115 ms each, 2026-09-04) and the script
+        # reports NOT GATED with a warning instead of failing on geography.
+        # Values are still worth reading week over week: from one vantage
+        # a doubled query count shows as a doubled app figure.

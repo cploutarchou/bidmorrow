@@ -64,6 +64,18 @@ describe('request correlation', () => {
   });
 });
 
+describe('request timing (ADR-0012)', () => {
+  it('echoes the Worker-side wall time and colo as Server-Timing outside production', async () => {
+    // The test environment is not production (APP_ENV is local), so the
+    // header must be present and well-formed. Production suppression is
+    // covered by request-timing.test.ts.
+    const response = await exports.default.fetch('https://bidmorrow.local/api/health/live');
+    expect(response.headers.get('server-timing')).toMatch(
+      /^app;dur=\d+, colo;desc="(?:[A-Z]{3}|unknown)", continent;desc="(?:[A-Z]{2}|unknown)"$/,
+    );
+  });
+});
+
 describe('unknown API routes', () => {
   it('returns 404 JSON for /api/does-not-exist', async () => {
     const response = await exports.default.fetch('https://bidmorrow.local/api/does-not-exist');

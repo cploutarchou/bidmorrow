@@ -26,7 +26,30 @@ product image set via API on all four products, brand kit in docs/brand/.
 products, revoke the test key at dashboard.stripe.com (GitHub `STRIPE_*` secrets already deleted;
 last code mention scrubbed in #130). Everything below is history.
 
+## FYI 2026-09-04 — Workers Logs is on for both Workers (ADR-0012); the customer-geography latency number lives in the dashboard
+
+**What:** PR #146 enabled Workers Logs (`observability.enabled`, sampling
+
+1. for `bidmorrow-staging` and `bidmorrow-production`, and every API
+   request now ends with a `request completed` log line carrying the route
+   pattern, status, `duration_ms`, `colo` and `country`. Retention is 7 days
+   on Workers Paid; 20M events/month are included and the site emits a few
+   thousand a day, so the cost is ~$0. No owner action is required. Where to
+   look: Cloudflare dashboard → Workers & Pages → bidmorrow-production →
+   Logs, filter `msg = "request completed"`, group or filter by `colo` (the
+   European ones are what customers see) and read the `duration_ms` p95. The
+   session cannot read these logs itself (no MCP route to Workers Logs), so
+   when the p95 for European colos is wanted in a doc, paste the number.
+
 ## OPEN 2026-09-01 22:10 UTC — Cloudflare Web Analytics beacon is injected into every page and blocked by our CSP (zone setting, owner decision)
+
+_Observation 2026-09-04 (site-health run 9, from a GitHub runner):_ the
+served HTML of `bidmorrow.com/` and `staging.bidmorrow.com/` contains zero
+`cloudflareinsights` references. Either the automatic beacon has already
+been switched off in the zone, or Cloudflare skips the injection for a
+non-browser client; the earlier finding came from a headless-browser
+capture. If the dashboard toggle is off, this item is done — say so and it
+gets closed. If it is still on, option 1 below still stands.
 
 **What:** the staging design-review capture (run 33562293252) logged two
 CSP violations on every page: Cloudflare injects
@@ -106,6 +129,9 @@ Design" as file and product names; those are references, not
 attribution, and stay unless the owner wants them changed too.
 
 ## OPEN 2026-09-01 23:15 UTC — Cloudflare's managed robots.txt adds a `Content-Signal` line that Lighthouse flags (zone setting, owner decision)
+
+_Still present 2026-09-04_ (site-health run 9 prints the managed block on
+both hosts). Nothing to do unless SEO 100 in Lighthouse is wanted.
 
 **What:** the production design-review run (33569309061, after the
 website upgrade deploy) scores SEO 92 instead of 100 on every page
@@ -581,8 +607,13 @@ payouts remains their/their accountant's matter.
    1.4 MB handoff zip that `main` deliberately git-ignores; delete it from
    the Branches page if it is no longer wanted.
 4. **Required check for the per-PR E2E run (2026-09-03, owner
-   instruction "add it to the required checks now"):** please add
-   `e2e-gate` to the `main-protection` ruleset's required status checks
+   instruction "add it to the required checks now"):** DONE 2026-09-03,
+   the owner added `e2e-gate` to the `main-protection` ruleset; verified
+   the same morning with a documentation-only pull request (the case that
+   would hang under a naive path filter): the merge state read "blocked"
+   while `e2e-gate` was pending and "clean" once it reported green with
+   the suite rightly skipped. The request had been: add `e2e-gate` to
+   the `main-protection` ruleset's required status checks
    (repository Settings → Rules → Rulesets → main-protection → "Require
    status checks to pass" → add check `e2e-gate`). The session cannot
    edit rulesets. The repository side is ready: `e2e-gate` in

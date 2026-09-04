@@ -53,6 +53,43 @@ loosened. Follow-up (task, not decided here): measure from where customers
 are, or take Smart Placement to the architect as an ADR. `timeout-minutes:
 20` added to the job so a hung probe cannot run for six hours.
 
+**Latency gate follow-up closed, 2026-09-04 (ADR-0012).** Decided: no Smart
+Placement (customers are EU, both D1 databases run in `WEUR`, and Cloudflare
+documents that with `assets.run_worker_first` the whole script is placed as
+one unit); measure customer geography from real traffic instead. Shipped:
+(1) the request-correlation middleware now ends every request with a
+structured `request completed` line (route PATTERN, method, status,
+`duration_ms`, `colo`, `country`; `apps/worker/src/request-timing.ts`
+validates the platform fields) and Workers Logs is enabled for staging and
+production (`observability.enabled`, sampling 1, 7-day retention, 20M
+events/month included, ~$0); (2) outside production the Worker answers with
+`Server-Timing: app;dur=<ms>, colo;desc="<IATA>"`, and
+`scripts/measure-api-latency.mjs` reports total/app/net per route with the
+colo and gains `--gate total|app` (`app` refuses where the header is
+absent); (3) the weekly gate keeps its 800 ms client-side budget, NOT
+loosened; ADR-0012 §3 names which split outcome moves it to `--gate app`
+at 500 ms. Verified locally against the e2e stack (health app p95 6 ms,
+feed 37 ms, net 5–9 ms, colo DFW from miniflare); gates green; docs:
+docs/performance.md (both staging runs tabulated + the split),
+docs/cost-model.md, docs/security.md C4, PRODUCTION_READINESS_AUDIT F-06.
+
+**First split run and the gate that follows (ADR-0012 A1), 2026-09-04.**
+PR #146 merged 16:25 UTC; staging (run 137) and production (run 32)
+deployed `7a754f3` green; the site-health probe (run 9, from `SJC`) shows
+`Server-Timing` on staging and none on production as designed. The
+dispatched `staging-perf` run 33895830914 (Worker colo `ATL`) answered
+the attribution question: `net` flat at ~80 ms on every route, `app`
+growing ~115 ms per D1 round trip (1 read 125, 2 reads 240, feed 837 =
+~7 trips), i.e. the runner's continent, not a query regression. Decided
+and shipped: the weekly gate runs `--gate app --budget-ms 500 --vantage
+EU` — the checklist budget on the Worker-side figure, asserted only from a
+European colo (the header now also carries `continent`); elsewhere the
+run prints the table, emits a `::warning` naming the colo and exits 0 as
+NOT GATED. The 800 ms client-side budget is retired (net carries no
+application signal). Next step, not started: a per-request D1 round-trip
+counter would give a geography-independent assertion for the weekly run.
+Customer p95 lives in Workers Logs (`request completed`, European colos).
+
 **2026-09-01 19:52–19:57 UTC — owner: "deploy to production and enable
 entitlement_enforced".** Both done and verified: `deploy-production.yml`
 run 33552153011 on `main` `3c08100` (#132 + #133) succeeded 19:55:04 UTC
@@ -3458,6 +3495,9 @@ ADR-0004 Currency: EUR direct; ECB reference rates (≤7d old) for scoring
 only; else UNKNOWN. Original values always displayed.
 ADR-0005 Raw XML snapshots gzipped in private R2, 3-year lifecycle.
 ADR-0006 Queues + Cron; Workflows rejected (per-step billing, no need).
+ADR-0012 API latency measured where customers are (Workers Logs
+`request completed` by colo; staging `Server-Timing` split); no Smart
+Placement.
 
 ## Dependencies added
 
@@ -3558,6 +3598,8 @@ finalization, per requirement.
 
 Baseline model established: ~$6/mo (0–10 customers), ~$26/mo (100),
 ~$30–105/mo (1,000) — see docs/cost-model.md. Within constraint.
+2026-09-04: Workers Logs enabled (ADR-0012) — 20M events/month included in
+Workers Paid, $0.60/M beyond; expected volume a few thousand/day, ~$0.
 
 ## Deployment state
 
@@ -5640,7 +5682,12 @@ note had deferred.
   `e2e-gate` job that turns the suite's outcome into one verdict: passed
   or rightly skipped (docs-only, draft) is green, failed or cancelled is
   red. `e2e-gate` is the name to require; the session cannot edit the
-  ruleset, so the one click is recorded as blocker item 8.4.
+  ruleset, so the one click was recorded as blocker item 8.4. The owner
+  made it the same morning, and a documentation-only pull request
+  verified the enforcement: merge state "blocked" while `e2e-gate` was
+  pending, "clean" once it reported green with the suite rightly
+  skipped. The ruleset now requires `checks`, `secret-scan` and
+  `e2e-gate`.
 - `docs/deployment.md` CI/CD step 1 and `docs/phase12-quality-findings.md`
   §3 updated. The pull request carrying this change is the first
   exercise of the per-PR job; the nightly is dispatched once after the
