@@ -16,6 +16,7 @@ import { bodyLimit } from 'hono/body-limit';
 import { secureHeaders } from 'hono/secure-headers';
 import { createDb, getDbSizeEstimate, recordDeadLetter } from '@bidmorrow/db';
 import { robotsTxt } from './robots';
+import { readPlacement, serverTimingHeader } from './request-timing';
 import { resolveBillingConfig } from './billing';
 import { readPrelaunchState } from './prelaunch';
 import { isInternalAdminEmail } from './middleware/admin';
@@ -63,12 +64,34 @@ const app = new Hono<AppBindings>();
 // Correlation: every request gets a UUID, stored on the context, echoed as
 // the `x-request-id` response header, and bound to the structured logger so
 // every log line for this request carries request_id.
+//
+// Timing (ADR-0012): the same middleware closes every request with a
+// `request completed` log line (route pattern, status, wall time, colo,
+// country) and, outside production, a `Server-Timing` header carrying the
+// Worker-side wall time and colo for `scripts/measure-api-latency.mjs`.
+// The route PATTERN is logged, never the concrete path or query string.
 app.use('*', async (c, next) => {
   const requestId = crypto.randomUUID();
+  const startedAt = Date.now();
+  const logger = createLogger({ request_id: requestId });
   c.set('requestId', requestId);
-  c.set('logger', createLogger({ request_id: requestId }));
+  c.set('logger', logger);
   c.header('x-request-id', requestId);
   await next();
+  const durationMs = Date.now() - startedAt;
+  const placement = readPlacement(c.req.raw.cf);
+  const serverTiming = serverTimingHeader(c.env.APP_ENV, durationMs, placement);
+  if (serverTiming !== null) {
+    c.header('server-timing', serverTiming);
+  }
+  logger.info('request completed', {
+    method: c.req.method,
+    route: c.req.routePath,
+    status: c.res.status,
+    duration_ms: durationMs,
+    colo: placement.colo,
+    country: placement.country,
+  });
 });
 
 // Security headers per docs/security.md C3 (strict CSP: default-src 'self',

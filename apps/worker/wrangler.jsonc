@@ -226,6 +226,14 @@
       "triggers": {
         "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *", "40 * * * *"],
       },
+      // Workers Logs (ADR-0012): persist every log line, including the
+      // per-request `request completed` record (route pattern, status, wall
+      // time, colo, country), for 7 days in the dashboard. That record is
+      // the customer-geography latency measurement: query it by colo. Log
+      // lines carry ids and redacted fields only (packages/observability).
+      // Volume is a few thousand events/day against the plan's included
+      // 20M/month (docs/cost-model.md).
+      "observability": { "enabled": true, "head_sampling_rate": 1 },
       "vars": {
         "APP_ENV": "staging",
         "APP_BASE_URL": "https://staging.bidmorrow.com",
@@ -320,6 +328,14 @@
       "triggers": {
         "crons": ["0 5 * * *", "30 6 * * *", "0 9 * * *", "15 * * * *", "40 * * * *"],
       },
+      // Workers Logs (ADR-0012): persist every log line, including the
+      // per-request `request completed` record (route pattern, status, wall
+      // time, colo, country), for 7 days in the dashboard. That record is
+      // the customer-geography latency measurement: query it by colo. Log
+      // lines carry ids and redacted fields only (packages/observability).
+      // Volume is a few thousand events/day against the plan's included
+      // 20M/month (docs/cost-model.md).
+      "observability": { "enabled": true, "head_sampling_rate": 1 },
       "vars": {
         "APP_ENV": "production",
         "APP_BASE_URL": "https://bidmorrow.com",

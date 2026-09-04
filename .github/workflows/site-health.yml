@@ -36,6 +36,14 @@ jobs:
               echo "curl error: $(cat /tmp/err)"; return 0; }
             echo "status: $code"
             head -12 /tmp/hdrs
+            # ADR-0012: Server-Timing must appear on staging and NEVER on
+            # production; printed explicitly because it sits past the first
+            # twelve header lines.
+            grep -i '^server-timing' /tmp/hdrs || echo "(no server-timing header)"
+            # Zone-level injection check (HUMAN_DECISION_BLOCKERS.md, Web
+            # Analytics beacon): count of cloudflareinsights references in
+            # the full body, 0 when the automatic beacon is off.
+            echo "cloudflareinsights references in body: $(grep -c cloudflareinsights /tmp/body || true)"
             echo "body (first 300 bytes):"
             head -c 300 /tmp/body; echo
           }

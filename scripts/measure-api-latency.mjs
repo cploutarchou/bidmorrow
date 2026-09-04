@@ -19,9 +19,30 @@
  * FLOOR, not a prediction of production p95 — read the recorded numbers with
  * the environment they were taken in, which the output always states.
  *
+ * THE SPLIT (ADR-0012). Outside production the worker answers with a
+ * `Server-Timing: app;dur=<ms>, colo;desc="<IATA>"` header: the wall time
+ * the request spent inside the Worker (D1 round trips included) and the
+ * Cloudflare colo it ran in. Each sample is therefore reported twice —
+ * `total` (what the client saw) and `app` (what the Worker saw) — and the
+ * difference is the network path between this machine and that colo. A
+ * runner on another continent inflates `total` and, because every D1 hop
+ * then crosses an ocean too, `app`; the colo column says which situation a
+ * number was taken in. `--gate app` gates on the Worker-side figure,
+ * `--gate total` (default) on the client-side one.
+ *
+ * THE VANTAGE (ADR-0012 amendment A1). `--vantage EU` asserts the budget
+ * only when every sample was served from a European colo — the customers'
+ * path to the WEUR database. From anywhere else the Worker-side figure is
+ * dominated by transatlantic D1 hops (measured 2026-09-04 from ATL:
+ * ~115 ms per hop, feed p95 837 ms app / 96 ms net), which no customer
+ * pays; the run then prints everything, emits a workflow warning and
+ * exits 0 as NOT GATED rather than failing on geography. The budget is
+ * never loosened; it is simply not asserted from an invalid vantage.
+ *
  * USAGE
  *   node scripts/measure-api-latency.mjs [--base-url URL] [--iterations N]
- *                                        [--budget-ms MS] [--json]
+ *                                        [--budget-ms MS] [--gate total|app]
+ *                                        [--vantage EU] [--json]
  *
  * Against the local stack, start it first (the same one Playwright uses):
  *   bash scripts/e2e-webserver.sh    # 127.0.0.1:8787, builds + migrates + seeds
@@ -56,6 +77,13 @@ const { values } = parseArgs({
     'delay-ms': { type: 'string', default: '0' },
     iterations: { type: 'string', default: '40' },
     'budget-ms': { type: 'string', default: '500' },
+    // Which figure the budget applies to: `total` (client-side wall clock)
+    // or `app` (Worker-side wall clock from Server-Timing). `app` refuses
+    // to run against an environment that sends no Server-Timing header.
+    gate: { type: 'string', default: 'total' },
+    // Continent code the Worker must have run in for the gate to be
+    // asserted (only `EU` is meaningful today). Requires `--gate app`.
+    vantage: { type: 'string' },
     json: { type: 'boolean', default: false },
   },
 });
@@ -65,6 +93,16 @@ const ITERATIONS = Number.parseInt(values.iterations, 10);
 const BUDGET_MS = Number.parseInt(values['budget-ms'], 10);
 const DELAY_MS = Number.parseInt(values['delay-ms'], 10);
 const SEEDED_EMAIL = values.email;
+const GATE = values.gate;
+if (GATE !== 'total' && GATE !== 'app') {
+  console.error('--gate must be `total` or `app`');
+  process.exit(2);
+}
+const VANTAGE = values.vantage;
+if (VANTAGE !== undefined && (GATE !== 'app' || !/^[A-Z]{2}$/.test(VANTAGE))) {
+  console.error('--vantage takes a two-letter continent code and requires --gate app');
+  process.exit(2);
+}
 const PASSWORD =
   SEEDED_EMAIL === undefined
     ? 'correct horse battery staple 1!'
@@ -87,13 +125,56 @@ function percentile(sorted, p) {
   return sorted[Math.min(Math.max(rank, 1), sorted.length) - 1];
 }
 
+/**
+ * Parse the worker's `Server-Timing` header into `{ appMs, colo }`, or
+ * `null` when the header is absent (production never sends it) or does not
+ * carry the `app` metric.
+ */
+function parseServerTiming(header) {
+  if (header === null || header === undefined) return null;
+  let appMs = null;
+  let colo = null;
+  let continent = null;
+  for (const entry of header.split(',')) {
+    const [rawName, ...rawParams] = entry.trim().split(';');
+    const name = rawName?.trim();
+    const params = new Map();
+    for (const param of rawParams) {
+      const eq = param.indexOf('=');
+      if (eq === -1) continue;
+      params.set(
+        param.slice(0, eq).trim(),
+        param
+          .slice(eq + 1)
+          .trim()
+          .replace(/^"|"$/g, ''),
+      );
+    }
+    if (name === 'app' && params.has('dur')) {
+      const dur = Number.parseFloat(params.get('dur'));
+      if (Number.isFinite(dur)) appMs = dur;
+    } else if (name === 'colo' && params.has('desc')) {
+      colo = params.get('desc');
+    } else if (name === 'continent' && params.has('desc')) {
+      continent = params.get('desc');
+    }
+  }
+  return appMs === null
+    ? null
+    : { appMs, colo: colo ?? 'unknown', continent: continent ?? 'unknown' };
+}
+
 async function timed(fetchFn) {
   const started = performance.now();
   const response = await fetchFn();
   // Drain the body: the response is not "complete" until it is read, and a
   // route that streams a large payload would otherwise look artificially fast.
   await response.arrayBuffer();
-  return { ms: performance.now() - started, status: response.status };
+  return {
+    ms: performance.now() - started,
+    status: response.status,
+    serverTiming: parseServerTiming(response.headers.get('server-timing')),
+  };
 }
 
 async function establishSession() {
@@ -166,6 +247,10 @@ const results = [];
 
 async function measure(label, path, init = {}) {
   const samples = [];
+  const appSamples = [];
+  const networkSamples = [];
+  const colos = new Set();
+  const continents = new Set();
   const statuses = new Set();
   // One warm-up: the first request to a cold isolate pays module-init and
   // connection setup that no subsequent real request pays, and including it
@@ -173,9 +258,18 @@ async function measure(label, path, init = {}) {
   await timed(() => fetch(`${BASE}${path}`, init));
   for (let i = 0; i < ITERATIONS; i += 1) {
     if (DELAY_MS > 0) await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
-    const { ms, status } = await timed(() => fetch(`${BASE}${path}`, init));
+    const { ms, status, serverTiming } = await timed(() => fetch(`${BASE}${path}`, init));
     samples.push(ms);
     statuses.add(status);
+    if (serverTiming !== null) {
+      appSamples.push(serverTiming.appMs);
+      // The client-side clock includes the Worker-side one; the remainder
+      // is the path to the colo and back. Clamped at zero: the two clocks
+      // are on different machines and the Worker's only advances on I/O.
+      networkSamples.push(Math.max(0, ms - serverTiming.appMs));
+      colos.add(serverTiming.colo);
+      continents.add(serverTiming.continent);
+    }
   }
   // A route that answered 4xx/5xx measured an ERROR path — a rejected query
   // or an auth failure short-circuits before the work the budget is about,
@@ -190,7 +284,30 @@ async function measure(label, path, init = {}) {
     );
     process.exit(2);
   }
+  // `--gate app` against an environment that sends no Server-Timing would
+  // gate on nothing: refuse rather than pass vacuously.
+  if (GATE === 'app' && appSamples.length !== samples.length) {
+    console.error(
+      `\n${label} (${path}) returned ${String(samples.length - appSamples.length)} response(s) ` +
+        `without a Server-Timing app metric; --gate app needs every sample to carry one ` +
+        `(production never sends it by design).`,
+    );
+    process.exit(2);
+  }
   samples.sort((a, b) => a - b);
+  appSamples.sort((a, b) => a - b);
+  networkSamples.sort((a, b) => a - b);
+  const split =
+    appSamples.length === 0
+      ? null
+      : {
+          appP50: percentile(appSamples, 50),
+          appP95: percentile(appSamples, 95),
+          networkP50: percentile(networkSamples, 50),
+          networkP95: percentile(networkSamples, 95),
+          colos: [...colos].sort(),
+          continents: [...continents].sort(),
+        };
   results.push({
     label,
     path,
@@ -200,6 +317,7 @@ async function measure(label, path, init = {}) {
     p95: percentile(samples, 95),
     p99: percentile(samples, 99),
     max: samples[samples.length - 1],
+    split,
   });
 }
 
@@ -217,7 +335,15 @@ await measure('feed, saved shelf', '/api/org/feed?tab=saved', authed);
 await measure('feed stats (7 counts)', '/api/org/feed/stats', authed);
 await measure('saved searches', '/api/org/saved-searches', authed);
 
-const breaches = results.filter((row) => row.p95 > BUDGET_MS);
+const gated = (row) => (GATE === 'app' ? row.split.appP95 : row.p95);
+const breaches = results.filter((row) => gated(row) > BUDGET_MS);
+// Vantage check: every sample of every route must have been served from
+// the requested continent for the budget to mean what it claims.
+const offVantage =
+  VANTAGE === undefined
+    ? []
+    : results.filter((row) => row.split.continents.some((code) => code !== VANTAGE));
+const gateAsserted = offVantage.length === 0;
 
 if (values.json) {
   console.log(
@@ -226,6 +352,9 @@ if (values.json) {
         baseUrl: BASE,
         iterations: ITERATIONS,
         budgetMs: BUDGET_MS,
+        gate: GATE,
+        vantage: VANTAGE ?? null,
+        gateAsserted,
         results,
         ok: breaches.length === 0,
       },
@@ -235,26 +364,44 @@ if (values.json) {
   );
 } else {
   console.log(
-    `\nAPI latency — ${BASE}, ${String(ITERATIONS)} iterations/route, budget p95 < ${String(BUDGET_MS)} ms`,
+    `\nAPI latency — ${BASE}, ${String(ITERATIONS)} iterations/route, budget ${GATE} p95 < ${String(BUDGET_MS)} ms`,
   );
   console.log(
-    'Wall-clock per request including body read. Local runs exclude network and edge — a floor, not a production prediction.\n',
+    'total = client wall clock including body read; app = Worker-side wall clock from Server-Timing (absent in production); net = total minus app.',
   );
+  console.log('Local runs exclude network and edge — a floor, not a production prediction.\n');
   const pad = (value, width) => String(value).padEnd(width);
-  const num = (value) => `${value.toFixed(1)} ms`.padStart(10);
+  const num = (value) =>
+    value === null ? '-'.padStart(10) : `${value.toFixed(1)} ms`.padStart(10);
   console.log(
-    `${pad('route', 34)}${pad('status', 9)}${'p50'.padStart(10)}${'p95'.padStart(10)}${'p99'.padStart(10)}`,
+    `${pad('route', 34)}${pad('status', 9)}${'total p50'.padStart(10)}${'total p95'.padStart(10)}${'total p99'.padStart(10)}${'app p95'.padStart(10)}${'net p95'.padStart(10)}  colo`,
   );
   for (const row of results) {
     console.log(
-      `${pad(row.label, 34)}${pad(row.statuses.join(','), 9)}${num(row.p50)}${num(row.p95)}${num(row.p99)}`,
+      `${pad(row.label, 34)}${pad(row.statuses.join(','), 9)}${num(row.p50)}${num(row.p95)}${num(row.p99)}` +
+        `${num(row.split?.appP95 ?? null)}${num(row.split?.networkP95 ?? null)}  ${row.split?.colos.join('/') ?? '-'}`,
     );
   }
-  console.log(
-    breaches.length === 0
-      ? `\nAll routes within budget (p95 < ${String(BUDGET_MS)} ms).`
-      : `\nOVER BUDGET: ${breaches.map((row) => row.label).join(', ')}`,
-  );
+  if (!gateAsserted) {
+    const seen = [...new Set(results.flatMap((row) => row.split.colos))].join('/');
+    const where = [...new Set(results.flatMap((row) => row.split.continents))].join('/');
+    console.log(
+      `\nNOT GATED: the Worker ran in ${seen} (${where}), not in ${VANTAGE}. The app figures ` +
+        `above include one transatlantic D1 round trip per query, a path no customer takes; ` +
+        `the ${GATE} p95 < ${String(BUDGET_MS)} ms budget is asserted only from a ${VANTAGE} vantage ` +
+        `(ADR-0012 A1). Read the customer-geography p95 from Workers Logs instead.`,
+    );
+    console.log(
+      `::warning title=staging-perf not gated::measured from ${seen} (${where}); ` +
+        `budget asserted only from ${VANTAGE}. Worst app p95: ${Math.max(...results.map((row) => row.split.appP95)).toFixed(0)} ms.`,
+    );
+  } else {
+    console.log(
+      breaches.length === 0
+        ? `\nAll routes within budget (${GATE} p95 < ${String(BUDGET_MS)} ms).`
+        : `\nOVER BUDGET (${GATE} p95 > ${String(BUDGET_MS)} ms): ${breaches.map((row) => row.label).join(', ')}`,
+    );
+  }
 }
 
-process.exit(breaches.length === 0 ? 0 : 1);
+process.exit(gateAsserted && breaches.length > 0 ? 1 : 0);
