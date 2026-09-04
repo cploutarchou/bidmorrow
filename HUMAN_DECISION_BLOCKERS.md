@@ -43,6 +43,14 @@ last code mention scrubbed in #130). Everything below is history.
 
 ## OPEN 2026-09-01 22:10 UTC — Cloudflare Web Analytics beacon is injected into every page and blocked by our CSP (zone setting, owner decision)
 
+_Observation 2026-09-04 (site-health run 9, from a GitHub runner):_ the
+served HTML of `bidmorrow.com/` and `staging.bidmorrow.com/` contains zero
+`cloudflareinsights` references. Either the automatic beacon has already
+been switched off in the zone, or Cloudflare skips the injection for a
+non-browser client; the earlier finding came from a headless-browser
+capture. If the dashboard toggle is off, this item is done — say so and it
+gets closed. If it is still on, option 1 below still stands.
+
 **What:** the staging design-review capture (run 33562293252) logged two
 CSP violations on every page: Cloudflare injects
 `https://static.cloudflareinsights.com/beacon.min.js` plus an inline
@@ -125,6 +133,9 @@ Design" as file and product names; those are references, not
 attribution, and stay unless the owner wants them changed too.
 
 ## OPEN 2026-09-01 23:15 UTC — Cloudflare's managed robots.txt adds a `Content-Signal` line that Lighthouse flags (zone setting, owner decision)
+
+_Still present 2026-09-04_ (site-health run 9 prints the managed block on
+both hosts). Nothing to do unless SEO 100 in Lighthouse is wanted.
 
 **What:** the production design-review run (33569309061, after the
 website upgrade deploy) scores SEO 92 instead of 100 on every page

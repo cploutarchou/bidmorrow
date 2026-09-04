@@ -76,16 +76,16 @@ baseline, and a named list of what would turn it into a production claim.
 Same script, `--email` seeded account, 40 iterations per route, 700–900 ms
 pacing, gate 800 ms on the client-side figure. All p95, ms.
 
-| Route                 | 2026-08-30 (run 1) | 2026-09-01 (run 33548220706) |
-| --------------------- | -----------------: | ---------------------------: |
-| health (2 D1 reads)   |                166 |                          671 |
-| public config         |                 98 |                          387 |
-| account me            |                177 |                          648 |
-| org profile bundle    |                411 |                        1,190 |
-| feed, first page      |                608 |                        1,965 |
-| feed, saved shelf     |                640 |                        1,968 |
-| feed stats (7 counts) |                596 |                        1,964 |
-| saved searches        |                293 |                        1,165 |
+| Route                 | 08-30 (run 1) | 09-01 (run 33548220706) | 09-04 (run 33895830914, ATL) total / app / net |
+| --------------------- | ------------: | ----------------------: | ---------------------------------------------: |
+| health (2 D1 reads)   |           166 |                     671 |                                 318 / 240 / 78 |
+| public config         |            98 |                     387 |                                 199 / 125 / 74 |
+| account me            |           177 |                     648 |                                 316 / 244 / 79 |
+| org profile bundle    |           411 |                   1,190 |                                 605 / 519 / 94 |
+| feed, first page      |           608 |                   1,965 |                                 926 / 837 / 96 |
+| feed, saved shelf     |           640 |                   1,968 |                                 953 / 867 / 96 |
+| feed stats (7 counts) |           596 |                   1,964 |                                 967 / 877 / 93 |
+| saved searches        |           293 |                   1,165 |                                 604 / 487 / 82 |
 
 Nothing on those code paths changed between the two runs, and the one-read
 routes moved by the same factor as the feed. That is the signature of the
@@ -110,6 +110,22 @@ The script reports each route as:
 `--gate total|app` picks which figure the budget applies to. `--gate app`
 refuses to run where the header is absent (production never sends it), so
 it cannot pass vacuously.
+
+The 09-04 run answered the question the earlier two could not: `net` is
+flat at ~80 ms, and `app` grows by ~115 ms per D1 round trip because the
+Worker ran in Atlanta against a database in `WEUR`. The feed routes make
+roughly seven such trips. From a European colo each trip costs about a
+tenth of that, which puts the customers' feed near 100–200 ms; that is a
+derivation, and the measured customer figure is the Workers Logs number.
+
+**The vantage rule (ADR-0012 A1).** `staging-perf.yml` now runs
+`--gate app --budget-ms 500 --vantage EU`: the checklist budget is asserted
+on the Worker-side figure and only when the Worker ran in Europe (the
+header also carries the continent). From anywhere else the run prints the
+table, emits a workflow warning naming the colo, and exits 0 as NOT GATED.
+GitHub-hosted runners have landed in `SJC` and `ATL` so far, so expect the
+warning weekly until a European runner exists; the values remain a trend
+line from one vantage.
 
 The customer-geography number is not this script at all: every request also
 writes a `request completed` log line (route pattern, status, `duration_ms`,
