@@ -1,6 +1,13 @@
 # F-06: measure real staging API latency (p50/p95/p99) with the seeded
 # perf-probe account. Manual dispatch + weekly. The script gates on the
-# 500 ms p95 budget and exits 1 on a breach.
+# p95 budget given below and exits 1 on a breach.
+#
+# ADR-0012: staging answers with a Server-Timing header, so every route is
+# reported as total (client wall clock), app (Worker-side wall clock) and
+# net (the path between this runner and the Worker's colo), with the colo
+# named. GitHub-hosted runners are not in Europe while D1 is (WEUR); the
+# split is what makes a breach attributable. The customer-geography p95
+# is read from Workers Logs (`request completed`, by colo), not from here.
 name: staging-perf
 on:
   workflow_dispatch: {}
@@ -31,6 +38,8 @@ jobs:
             --budget-ms 800
         # 500 ms is the LOCAL budget (a floor, per the script header). This
         # run crosses the public internet + Cloudflare edge from a GitHub
-        # runner, so the gate is 800 ms. First real staging baseline
-        # (2026-08-30, empty org): feed routes p95 595-640 ms — inside 800,
-        # over the local 500; tracked as follow-up perf work in the audit.
+        # runner, so the gate is 800 ms on the client-side figure
+        # (`--gate total`, the default). Baselines: 2026-08-30 feed routes
+        # p95 595-640 ms; 2026-09-01 ~1,965 ms with no code change on those
+        # paths. ADR-0012 §3 says which split outcome moves this gate to
+        # `--gate app --budget-ms 500`; the budget is never loosened here.
