@@ -84,13 +84,17 @@ hotfix around.
   (the session's `claude/…` working branch is re-synced to `main` after
   each merge). A merge deploys staging, and a green staging deploy
   deploys production (CI/CD flow steps 2 and 3 below).
-- Head branches are deleted after merge. GitHub's "Automatically delete
-  head branches" repository setting is the owner's one-click way to make
-  this automatic (HUMAN_DECISION_BLOCKERS item 8); until then, or for
-  branches that predate it, `.github/workflows/branch-cleanup.yml`
-  deletes an explicit list of named branches with CI's token (the
-  development sandbox cannot delete refs: HTTP 403). It refuses `main`
-  and the working branches and never deletes by pattern.
+- Head branches are deleted after merge:
+  `.github/workflows/merged-branch-cleanup.yml` runs on every merged pull
+  request and deletes its head branch with CI's token (never `main`, never
+  a branch that still has another open pull request; a pull request that
+  was closed without merging keeps its branch). GitHub's "Automatically
+  delete head branches" repository setting does the same thing natively;
+  if the owner enables it the workflow finds the branch already gone and
+  exits 0. For branches that predate either mechanism,
+  `.github/workflows/branch-cleanup.yml` deletes an explicit list of named
+  branches (the development sandbox cannot delete refs: HTTP 403). It
+  refuses `main` and the working branches and never deletes by pattern.
 - Scratch branches written by workflows (`competitor-shots`,
   `design-review-shots*`, `ted-fixture-raw`) are transient by design and
   are deleted once their captures are reviewed.

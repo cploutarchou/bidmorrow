@@ -1,0 +1,1990 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/styles.css">
+<script src="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Source+Sans+3:wght@400;500;600&family=Source+Code+Pro:wght@400;500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns@3.6.0/cdn.min.js"></script>
+<style>
+  :root {
+    --bm-sunken: #0a0c10; --bm-canvas: #0d1014; --bm-panel: #14181e; --bm-raised: #1b2027; --bm-overlay: #1f252d;
+    --bm-line-hair: #22282f; --bm-line: #2e353f; --bm-line-strong: #414a57;
+    --bm-ink1: #eef1f5; --bm-ink2: #a3adbb; --bm-ink3: #7a8593;
+    --bm-accent: #2ec4b0; --bm-accent-hover: #3ad3bd; --bm-accent-ink: #04211d; --bm-accent-text: #6fe0d0;
+    --bm-accent-tint: rgba(46,196,176,0.12); --bm-accent-line: rgba(46,196,176,0.34); --bm-fit-mid: rgba(46,196,176,0.45);
+    --bm-caution: #e8a33d; --bm-caution-tint: rgba(232,163,61,0.12);
+    --bm-risk: #ef6461; --bm-risk-tint: rgba(239,100,97,0.12); --bm-info: #7fb3ea;
+    --bm-head: 'Archivo', system-ui, sans-serif; --bm-ui: 'Archivo', system-ui, sans-serif; --bm-num: 'Archivo', system-ui, sans-serif; --bm-code: 'Source Code Pro', ui-monospace, monospace;
+    --bm-shadow: 0 32px 80px -16px rgba(0,0,0,0.62);
+  }
+  [data-bm-theme='light'] {
+    --bm-sunken: #eceff1; --bm-canvas: #f7f8f9; --bm-panel: #ffffff; --bm-raised: #ffffff; --bm-overlay: #ffffff;
+    --bm-line-hair: #e6e9ec; --bm-line: #d5dae0; --bm-line-strong: #b3bcc6;
+    --bm-ink1: #14181d; --bm-ink2: #4d5661; --bm-ink3: #6b7480;
+    --bm-accent: #0f7d6f; --bm-accent-hover: #0c6b5f; --bm-accent-ink: #ffffff; --bm-accent-text: #0b6a5e;
+    --bm-accent-tint: rgba(15,125,111,0.10); --bm-accent-line: rgba(15,125,111,0.28); --bm-fit-mid: rgba(15,125,111,0.40);
+    --bm-caution: #a16207; --bm-caution-tint: rgba(161,98,7,0.10);
+    --bm-risk: #c0392f; --bm-risk-tint: rgba(192,57,47,0.10); --bm-info: #1e6bb8;
+    --bm-shadow: 0 26px 64px -18px rgba(20,24,29,0.20);
+  }
+  [data-bm-type='franklin'] { --bm-head: 'Libre Franklin', system-ui, sans-serif; --bm-ui: 'Libre Franklin', system-ui, sans-serif; --bm-num: 'Libre Franklin', system-ui, sans-serif; }
+  [data-bm-type='source'] { --bm-head: 'Source Serif 4', Georgia, serif; --bm-ui: 'Source Sans 3', system-ui, sans-serif; --bm-num: 'Source Sans 3', system-ui, sans-serif; }
+  body { margin: 0; background: var(--bm-canvas); font-variant-numeric: tabular-nums; }
+  [data-bm-board]::-webkit-scrollbar { height: 0; width: 0; }
+  a { color: var(--bm-accent-text); text-decoration: none; }
+  a:hover { color: var(--bm-accent); text-decoration: underline; }
+  * { box-sizing: border-box; }
+  @keyframes bm-slide { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes bm-rise { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes bm-fade { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</helmet>
+
+<div data-bm-theme="{{ theme }}" data-bm-type="{{ typeface }}" style="min-height: 100vh; background: var(--bm-canvas); color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 15px; --bm-accent: {{ accent }};">
+
+  <header style="position: sticky; top: 0; z-index: 40; background: var(--bm-panel); border-bottom: 1px solid var(--bm-line-hair);">
+    <div style="max-width: 1600px; margin: 0 auto; padding: 0 24px; height: 60px; display: flex; align-items: center; gap: 28px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <svg width="24" height="24" viewBox="0 0 26 26" fill="none" role="img" aria-hidden="true" focusable="false" style="color: var(--bm-ink1);">
+          <rect x="6.5" y="2.5" width="13" height="6" rx="3" fill="currentColor" opacity="0.28"></rect>
+          <rect x="4" y="9.5" width="18" height="6" rx="3" fill="currentColor" opacity="0.55"></rect>
+          <rect x="1.5" y="16.5" width="23" height="7" rx="3.5" fill="url(#bm-logo-solgrad)"></rect>
+          <defs>
+            <linearGradient id="bm-logo-solgrad" x1="1.5" y1="16.5" x2="24.5" y2="23.5" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#35D3C0"></stop>
+              <stop offset="1" stop-color="#1FA899"></stop>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span style="font-family: var(--bm-head); font-size: 19px; font-weight: 600; letter-spacing: -0.01em;">BidMorrow</span>
+      </div>
+      <nav style="display: flex; gap: 2px;">
+        <sc-for list="{{ nav }}" as="tab" hint-placeholder-count="4">
+          <button type="button" onClick="{{ tab.onClick }}" style="appearance: none; border: 0; background: {{ tab.bg }}; color: {{ tab.ink }}; font-family: var(--bm-ui); font-size: 14px; font-weight: 500; padding: 8px 12px; border-radius: 14px; cursor: pointer; display: flex; align-items: center; gap: 7px;">
+            <span>{{ tab.label }}</span>
+            <sc-if value="{{ tab.hasCount }}" hint-placeholder-val="{{ false }}">
+              <span style="font-family: var(--bm-num); font-size: 11px; color: {{ tab.countInk }}; background: {{ tab.countBg }}; padding: 1px 5px; border-radius: 7px;">{{ tab.count }}</span>
+            </sc-if>
+          </button>
+        </sc-for>
+      </nav>
+      <button type="button" onClick="{{ onOpenPalette }}" style="margin-left: auto; appearance: none; display: flex; align-items: center; gap: 9px; flex: 0 1 300px; min-width: 0; height: 34px; overflow: hidden; white-space: nowrap; background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 0 10px; color: var(--bm-ink3); font-family: var(--bm-ui); font-size: 13px; cursor: pointer; text-align: left;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="flex: 0 0 auto;" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5 21 21"></path></svg>
+        <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis;">Search tenders, buyers, CPV…</span>
+        <span style="margin-left: auto; flex: 0 0 auto; font-family: var(--bm-num); font-size: 11px; border: 1px solid var(--bm-line); border-radius: 7px; padding: 1px 5px;">⌘K</span>
+      </button>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <button type="button" onClick="{{ onToggleBell }}" style="position: relative; appearance: none; background: transparent; border: 1px solid var(--bm-line-hair); border-radius: 14px; width: 34px; height: 34px; color: var(--bm-ink2); cursor: pointer; display: grid; place-items: center;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2 7.5-2 7.5h16s-2-1.5-2-7.5"></path><path d="M10.3 19.5a2 2 0 0 0 3.4 0"></path></svg>
+          <span style="position: absolute; top: -5px; right: -5px; min-width: 17px; height: 17px; border-radius: 9px; background: var(--bm-accent); color: var(--bm-accent-ink); font-family: var(--bm-num); font-size: 10px; line-height: 17px; font-weight: 500;">3</span>
+        </button>
+        <button type="button" onClick="{{ onToggleTheme }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line-hair); border-radius: 14px; height: 34px; padding: 0 11px 0 9px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 7px;">
+          <sc-if value="{{ isDark }}" hint-placeholder-val="{{ true }}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"></path></svg>
+          </sc-if>
+          <sc-if value="{{ isLight }}" hint-placeholder-val="{{ false }}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"></path></svg>
+          </sc-if>
+          <span>{{ themeLabel }}</span>
+        </button>
+        <span style="width: 32px; height: 32px; border-radius: 14px; background: var(--bm-raised); border: 1px solid var(--bm-line); display: grid; place-items: center; font-family: var(--bm-num); font-size: 12px; color: var(--bm-ink2);">CP</span>
+      </div>
+    </div>
+    <sc-if value="{{ bellOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; right: 120px; top: 58px; width: 380px; background: var(--bm-overlay); border: 1px solid var(--bm-line); border-radius: 18px; box-shadow: var(--bm-shadow); padding: 8px; animation: bm-fade 140ms ease-out;">
+        <p style="margin: 6px 8px 8px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bm-ink3); font-weight: 600;">Alerts · today 07:00 digest</p>
+        <sc-for list="{{ alerts }}" as="alert" hint-placeholder-count="3">
+          <div style="display: grid; grid-template-columns: 8px 1fr; gap: 10px; padding: 10px; border-radius: 14px; align-items: start;">
+            <span style="width: 7px; height: 7px; border-radius: 9px; margin-top: 5px; background: {{ alert.dot }};"></span>
+            <div>
+              <p style="margin: 0 0 2px; font-size: 13.5px; line-height: 1.45; color: var(--bm-ink1);">{{ alert.text }}</p>
+              <p style="margin: 0; font-family: var(--bm-num); font-size: 11px; color: var(--bm-ink3);">{{ alert.when }}</p>
+            </div>
+          </div>
+        </sc-for>
+        <div style="border-top: 1px solid var(--bm-line-hair); margin-top: 6px; padding: 10px 10px 6px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 12.5px; color: var(--bm-ink3);">Digest · daily 07:00 · email + Slack</span>
+          <a href="#alerts" style="font-size: 12.5px;">Edit rules</a>
+        </div>
+      </div>
+    </sc-if>
+  </header>
+
+  <sc-if value="{{ isFeed }}" hint-placeholder-val="{{ true }}">
+    <div style="max-width: 1600px; margin: 0 auto; padding: 28px 24px 80px; display: grid; grid-template-columns: {{ feedCols }}; gap: 32px; align-items: start;">
+
+      <sc-if value="{{ showRail }}" hint-placeholder-val="{{ true }}">
+        <aside style="display: grid; gap: 26px; position: sticky; top: 88px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px;">
+              <p style="margin: 0; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bm-ink3); font-weight: 600;">Saved searches</p>
+              <button type="button" style="appearance: none; background: transparent; border: 0; color: var(--bm-accent-text); font-family: var(--bm-ui); font-size: 12px; cursor: pointer; padding: 0;">+ New</button>
+            </div>
+            <div style="display: grid; gap: 2px;">
+              <sc-for list="{{ searches }}" as="s" hint-placeholder-count="4">
+                <button type="button" onClick="{{ s.onClick }}" style="appearance: none; text-align: left; background: {{ s.bg }}; border: 0; border-left: 2px solid {{ s.mark }}; padding: 9px 10px; border-radius: 0 14px 14px 0; cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: var(--bm-ui);">
+                  <span style="font-size: 13.5px; color: {{ s.ink }}; font-weight: {{ s.weight }};">{{ s.label }}</span>
+                  <span style="margin-left: auto; font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3);">{{ s.count }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <div>
+            <p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bm-ink3); font-weight: 600;">Shelves</p>
+            <div style="display: grid; gap: 2px;">
+              <sc-for list="{{ shelves }}" as="sh" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px;">
+                  <span style="font-size: 13.5px; color: var(--bm-ink2);">{{ sh.label }}</span>
+                  <span style="margin-left: auto; font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3);">{{ sh.count }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 14px;">
+            <p style="margin: 0 0 6px; font-size: 12.5px; font-weight: 600; color: var(--bm-ink1);">Matching profile</p>
+            <p style="margin: 0 0 12px; font-size: 12.5px; line-height: 1.5; color: var(--bm-ink2);">14 CPV groups · CY, GR, MT · €250k–€5M · last tuned 6 Aug</p>
+            <div style="height: 4px; border-radius: 6px; background: var(--bm-sunken); overflow: hidden;"><span style="display: block; height: 4px; width: 78%; background: var(--bm-accent);"></span></div>
+            <p style="margin: 8px 0 0; font-family: var(--bm-num); font-size: 11px; color: var(--bm-ink3);">78% complete — add 2 references</p>
+          </div>
+        </aside>
+      </sc-if>
+
+      <main style="min-width: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-bottom: 22px;">
+          <div>
+            <h1 style="margin: 0 0 6px; font-family: var(--bm-head); font-size: 32px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.1; color: var(--bm-ink1);">What should you investigate today?</h1>
+            <p style="margin: 0; font-size: 14px; color: var(--bm-ink2);">{{ feedSubtitle }}</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 14px; height: 34px; padding: 0 12px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">Export CSV</button>
+            <button type="button" onClick="{{ onRescore }}" style="appearance: none; background: var(--bm-accent); border: 1px solid var(--bm-accent); border-radius: 14px; height: 34px; padding: 0 14px; color: var(--bm-accent-ink); font-family: var(--bm-ui); font-size: 13px; font-weight: 500; cursor: pointer;">Run new match</button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden; margin-bottom: 24px;">
+          <sc-for list="{{ stats }}" as="stat" hint-placeholder-count="4">
+            <div style="background: var(--bm-panel); padding: 14px 16px 16px;">
+              <p style="margin: 0 0 8px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-ink3); font-weight: 600;">{{ stat.label }}</p>
+              <p style="margin: 0 0 3px; font-family: var(--bm-ui); font-variant-numeric: tabular-nums; font-size: 26px; font-weight: 600; color: {{ stat.ink }}; letter-spacing: -0.02em;">{{ stat.value }}</p>
+              <p style="margin: 0; font-size: 12.5px; color: var(--bm-ink3);">{{ stat.note }}</p>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--bm-line-hair); margin-bottom: 14px; flex-wrap: wrap;">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="6">
+            <button type="button" onClick="{{ t.onClick }}" style="appearance: none; background: transparent; border: 0; border-bottom: 2px solid {{ t.mark }}; padding: 9px 12px; margin-bottom: -1px; color: {{ t.ink }}; font-family: var(--bm-ui); font-size: 13.5px; font-weight: {{ t.weight }}; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <span>{{ t.label }}</span>
+              <span style="font-family: var(--bm-num); font-size: 11px; color: var(--bm-ink3);">{{ t.count }}</span>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+          <span style="font-size: 12.5px; color: var(--bm-ink3);">Filters:</span>
+          <sc-for list="{{ chips }}" as="chip" hint-placeholder-count="3">
+            <span style="display: inline-flex; align-items: center; gap: 7px; background: var(--bm-raised); border: 1px solid var(--bm-line); border-radius: 9px; padding: 4px 8px; font-size: 12.5px; color: var(--bm-ink1);">
+              <span>{{ chip.label }}</span>
+              <button type="button" onClick="{{ chip.onRemove }}" style="appearance: none; background: transparent; border: 0; color: var(--bm-ink3); cursor: pointer; padding: 0; font-size: 13px; line-height: 1;">×</button>
+            </span>
+          </sc-for>
+          <button type="button" style="appearance: none; background: transparent; border: 1px dashed var(--bm-line); border-radius: 9px; padding: 4px 9px; font-family: var(--bm-ui); font-size: 12.5px; color: var(--bm-ink2); cursor: pointer;">+ Add filter</button>
+          <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12.5px; color: var(--bm-ink3);">Sort</span>
+            <select onChange="{{ onSort }}" style="appearance: none; background: var(--bm-sunken); color: var(--bm-ink1); border: 1px solid var(--bm-line-hair); border-radius: 14px; height: 30px; padding: 0 10px; font-family: var(--bm-ui); font-size: 12.5px;">
+              <option>Fit score</option>
+              <option>Deadline soonest</option>
+              <option>Value highest</option>
+              <option>Newest</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; gap: 12px;">
+          <sc-for list="{{ cards }}" as="item" hint-placeholder-count="4">
+            <article style="display: grid; grid-template-columns: 4px 1fr; background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden; opacity: {{ item.opacity }};">
+              <div style="background: {{ item.gutter }};"></div>
+              <div style="padding: {{ item.pad }}; display: grid; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 11px; flex-wrap: wrap;">
+                  <span style="position: relative; width: 38px; height: 38px; display: inline-block; flex: 0 0 auto;">
+                    <svg width="38" height="38" viewBox="0 0 38 38" aria-hidden="true"><circle cx="19" cy="19" r="16" fill="none" stroke="var(--bm-sunken)" stroke-width="3"></circle><circle cx="19" cy="19" r="16" fill="none" stroke="{{ item.gutter }}" stroke-width="3" stroke-linecap="round" stroke-dasharray="{{ item.dash }}" transform="rotate(-90 19 19)"></circle></svg>
+                    <span style="position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--bm-num); font-size: 12.5px; font-weight: 500; color: var(--bm-ink1);">{{ item.scoreNum }}</span>
+                  </span>
+                  <span style="display: inline-flex; align-items: center; background: {{ item.chipBg }}; border: 1px solid {{ item.chipLine }}; color: {{ item.chipInk }}; border-radius: 9px; padding: 2px 8px; font-size: 12px; font-weight: 500;">{{ item.fitLabel }}</span>
+                  <span style="font-size: 12.5px; color: var(--bm-ink3);">{{ item.source }}</span>
+                  <span style="margin-left: auto; font-family: var(--bm-num); font-size: 12.5px; color: {{ item.deadlineInk }};">{{ item.deadlineLabel }}</span>
+                </div>
+                <div>
+                  <h3 style="margin: 0 0 5px; font-family: var(--bm-head); font-size: 20px; font-weight: 500; line-height: 1.25; letter-spacing: -0.005em; color: var(--bm-ink1);">
+                    <a href="#tender" onClick="{{ item.onOpen }}" style="color: var(--bm-ink1);">{{ item.title }}</a>
+                  </h3>
+                  <p style="margin: 0; font-size: 13px; color: var(--bm-ink2);">{{ item.meta }}</p>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 24px;">
+                  <sc-for list="{{ item.comps }}" as="comp" hint-placeholder-count="4">
+                    <div style="display: grid; grid-template-columns: 1fr 64px 46px; align-items: center; gap: 10px;">
+                      <span style="font-size: 12.5px; color: var(--bm-ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ comp.name }}</span>
+                      <span style="height: 4px; border-radius: 6px; background: var(--bm-sunken); overflow: hidden; display: block;"><span style="display: block; height: 4px; width: {{ comp.pct }}; background: {{ comp.fill }};"></span></span>
+                      <span style="font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3); text-align: right;">{{ comp.pts }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ item.hasRisk }}" hint-placeholder-val="{{ false }}">
+                  <p style="margin: 0; display: flex; gap: 8px; align-items: baseline; background: {{ item.riskBg }}; border-left: 2px solid {{ item.riskLine }}; padding: 8px 10px; font-size: 12.5px; line-height: 1.5; color: var(--bm-ink1);">
+                    <span style="color: {{ item.riskLine }}; font-family: var(--bm-num); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21.5 20H2.5L12 3.5Z"></path><path d="M12 10v4.5M12 17.4v.2"></path></svg>
+                      <span>{{ item.riskKind }}</span>
+                    </span>
+                    <span>{{ item.riskText }}</span>
+                  </p>
+                </sc-if>
+                <sc-if value="{{ item.expanded }}" hint-placeholder-val="{{ false }}">
+                  <div style="background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 14px 16px; display: grid; gap: 10px;">
+                    <p style="margin: 0; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-ink3); font-weight: 600;">Why this score · engine {{ item.engine }}</p>
+                    <sc-for list="{{ item.reasons }}" as="r" hint-placeholder-count="3">
+                      <p style="margin: 0; font-size: 13px; line-height: 1.55; color: var(--bm-ink2);"><span style="color: var(--bm-ink1); font-weight: 500;">{{ r.name }}</span> — {{ r.text }}</p>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 2px;">
+                  <div style="display: flex; border: 1px solid var(--bm-line); border-radius: 14px; overflow: hidden;">
+                    <button type="button" onClick="{{ item.onBid }}" style="appearance: none; border: 0; background: {{ item.bidBg }}; color: {{ item.bidInk }}; font-family: var(--bm-ui); font-size: 12.5px; font-weight: 500; padding: 6px 12px; cursor: pointer;">Bid</button>
+                    <button type="button" onClick="{{ item.onMaybe }}" style="appearance: none; border: 0; border-left: 1px solid var(--bm-line); background: {{ item.maybeBg }}; color: {{ item.maybeInk }}; font-family: var(--bm-ui); font-size: 12.5px; font-weight: 500; padding: 6px 12px; cursor: pointer;">Maybe</button>
+                    <button type="button" onClick="{{ item.onPass }}" style="appearance: none; border: 0; border-left: 1px solid var(--bm-line); background: {{ item.passBg }}; color: {{ item.passInk }}; font-family: var(--bm-ui); font-size: 12.5px; font-weight: 500; padding: 6px 12px; cursor: pointer;">Pass</button>
+                  </div>
+                  <button type="button" onClick="{{ item.onSave }}" style="appearance: none; background: {{ item.saveBg }}; border: 1px solid {{ item.saveLine }}; border-radius: 14px; color: {{ item.saveInk }}; font-family: var(--bm-ui); font-size: 12.5px; padding: 6px 11px; cursor: pointer;">{{ item.saveLabel }}</button>
+                  <button type="button" onClick="{{ item.onToggle }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line-hair); border-radius: 14px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 12.5px; padding: 6px 11px; cursor: pointer;">{{ item.toggleLabel }}</button>
+                  <span style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3);">{{ item.assignee }}</span>
+                    <button type="button" onClick="{{ item.onOpen }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 12.5px; padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px;">
+                      <span>Open analysis</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12h14"></path><path d="M13 6.5 18.5 12 13 17.5"></path></svg>
+                    </button>
+                  </span>
+                </div>
+              </div>
+            </article>
+          </sc-for>
+        </div>
+        <div style="display: flex; justify-content: center; padding: 24px 0 0;">
+          <button type="button" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 14px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 13px; padding: 8px 16px; cursor: pointer;">Load 14 more</button>
+        </div>
+      </main>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isPipeline }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 1600px; margin: 0 auto; padding: 28px 24px 80px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-bottom: 22px;">
+        <div>
+          <h1 style="margin: 0 0 6px; font-family: var(--bm-head); font-size: 32px; font-weight: 600; letter-spacing: -0.015em; color: var(--bm-ink1);">Pipeline</h1>
+          <p style="margin: 0; font-size: 14px; color: var(--bm-ink2);">{{ boardSummary }}</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <span style="font-size: 12.5px; color: var(--bm-ink3);">Owner</span>
+          <sc-for list="{{ ownerChips }}" as="oc" hint-placeholder-count="4">
+            <button type="button" onClick="{{ oc.onClick }}" style="appearance: none; background: {{ oc.bg }}; border: 1px solid {{ oc.line }}; border-radius: 999px; height: 32px; padding: 0 13px; color: {{ oc.ink }}; font-family: var(--bm-ui); font-size: 12.5px; cursor: pointer;">{{ oc.label }}</button>
+          </sc-for>
+          <button type="button" onClick="{{ onToggleClosing }}" style="appearance: none; background: {{ closingBg }}; border: 1px solid {{ closingLine }}; border-radius: 999px; height: 32px; padding: 0 13px; color: {{ closingInk }}; font-family: var(--bm-ui); font-size: 12.5px; cursor: pointer;">Closing ≤ 7 days</button>
+        </div>
+      </div>
+      <div data-bm-board="true" style="display: flex; gap: 12px; align-items: start; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; padding-bottom: 10px;">
+        <sc-for list="{{ stages }}" as="stage" hint-placeholder-count="6">
+          <section onDragOver="{{ stage.onDragOver }}" onDragLeave="{{ stage.onDragLeave }}" onDrop="{{ stage.onDrop }}" style="background: {{ stage.bg }}; border: 1px {{ stage.borderStyle }} {{ stage.border }}; border-radius: 14px; padding: 12px; display: grid; gap: 10px; align-content: start; flex: 0 0 252px; min-width: 0; scroll-snap-align: start; transition: background 120ms, border-color 120ms;">
+            <div style="display: flex; align-items: baseline; gap: 8px; border-bottom: 1px solid var(--bm-line-hair); padding-bottom: 10px;">
+              <span style="font-size: 12.5px; font-weight: 600; color: var(--bm-ink1);">{{ stage.label }}</span>
+              <span style="font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3);">{{ stage.count }}</span>
+              <span style="margin-left: auto; font-family: var(--bm-num); font-size: 11px; color: var(--bm-ink3);">{{ stage.value }}</span>
+            </div>
+            <sc-for list="{{ stage.items }}" as="pc" hint-placeholder-count="2">
+              <article draggable="true" onDragStart="{{ pc.onDragStart }}" onDragEnd="{{ pc.onDragEnd }}" style="background: var(--bm-raised); border: 1px solid var(--bm-line-hair); border-left: 2px solid {{ pc.gutter }}; border-radius: 12px; padding: 10px; display: grid; gap: 8px; min-width: 0; cursor: grab; opacity: {{ pc.opacity }};">
+                <div style="display: flex; gap: 8px; align-items: start;">
+                  <p style="margin: 0; font-size: 13px; line-height: 1.35; font-weight: 500; color: var(--bm-ink1); min-width: 0;">{{ pc.title }}</p>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="flex: 0 0 auto; margin-top: 3px; color: var(--bm-ink3); opacity: 0.5;" aria-hidden="true"><circle cx="9" cy="6" r="1.6"></circle><circle cx="15" cy="6" r="1.6"></circle><circle cx="9" cy="12" r="1.6"></circle><circle cx="15" cy="12" r="1.6"></circle><circle cx="9" cy="18" r="1.6"></circle><circle cx="15" cy="18" r="1.6"></circle></svg>
+                </div>
+                <p style="margin: 0; font-size: 12px; color: var(--bm-ink3);">{{ pc.buyer }}</p>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-family: var(--bm-num); font-size: 11px; color: {{ pc.deadlineInk }};">{{ pc.deadline }}</span>
+                  <span style="font-family: var(--bm-num); font-size: 11px; color: var(--bm-ink3);">{{ pc.score }}</span>
+                  <button type="button" onClick="{{ pc.onOwner }}" title="Assign owner" style="margin-left: auto; appearance: none; width: 22px; height: 22px; border-radius: 999px; background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); display: grid; place-items: center; font-family: var(--bm-num); font-size: 9.5px; color: {{ pc.ownerInk }}; cursor: pointer;">{{ pc.owner }}</button>
+                </div>
+                <button type="button" onClick="{{ pc.onToggleWorkflow }}" style="appearance: none; background: transparent; border: 0; padding: 0; cursor: pointer; display: grid; gap: 5px; text-align: left;">
+                  <span style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-family: var(--bm-num); font-size: 10.5px; color: {{ pc.taskInk }};">{{ pc.taskLabel }}</span>
+                    <span style="flex: 1 1 auto; height: 3px; background: var(--bm-sunken); border-radius: 999px; overflow: hidden; display: block;"><span style="display: block; height: 3px; width: {{ pc.taskPct }}; background: var(--bm-accent);"></span></span>
+                  </span>
+                </button>
+                <sc-if value="{{ pc.workflowOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: grid; gap: 6px; background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 9px; padding: 9px;">
+                    <sc-for list="{{ pc.tasks }}" as="task" hint-placeholder-count="3">
+                      <button type="button" onClick="{{ task.onToggle }}" style="appearance: none; background: transparent; border: 0; padding: 0; cursor: pointer; display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; text-align: left;">
+                        <span style="width: 14px; height: 14px; border-radius: 5px; background: {{ task.box }}; border: 1px solid {{ task.boxLine }}; display: grid; place-items: center; font-size: 9px; color: var(--bm-accent-ink); margin-top: 1px;">{{ task.mark }}</span>
+                        <span style="font-size: 11.5px; line-height: 1.4; color: {{ task.ink }}; text-decoration: {{ task.strike }};">{{ task.label }}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+              </article>
+            </sc-for>
+            <sc-if value="{{ stage.addOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="display: grid; gap: 6px;">
+                <input value="{{ addDraft }}" onChange="{{ onAddDraft }}" placeholder="Bid name" style="height: 32px; background: var(--bm-sunken); border: 1px solid var(--bm-accent-line); border-radius: 9px; padding: 0 9px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 12.5px; outline: none;">
+                <span style="display: flex; gap: 6px;">
+                  <button type="button" onClick="{{ stage.onCommitAdd }}" style="appearance: none; flex: 1 1 auto; background: var(--bm-accent); border: 0; border-radius: 9px; color: var(--bm-accent-ink); font-family: var(--bm-ui); font-size: 11.5px; font-weight: 500; padding: 6px; cursor: pointer;">Add</button>
+                  <button type="button" onClick="{{ stage.onCancelAdd }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line-hair); border-radius: 9px; color: var(--bm-ink3); font-family: var(--bm-ui); font-size: 11.5px; padding: 6px 9px; cursor: pointer;">Cancel</button>
+                </span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ stage.addClosed }}" hint-placeholder-val="{{ true }}">
+              <button type="button" onClick="{{ stage.onOpenAdd }}" style="appearance: none; background: transparent; border: 1px dashed var(--bm-line); border-radius: 12px; color: var(--bm-ink3); font-family: var(--bm-ui); font-size: 12px; padding: 7px; cursor: pointer;">+ Add a bid</button>
+            </sc-if>
+          </section>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isInsights }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 1240px; margin: 0 auto; padding: 28px 24px 80px;">
+      <h1 style="margin: 0 0 6px; font-family: var(--bm-head); font-size: 32px; font-weight: 600; letter-spacing: -0.015em; color: var(--bm-ink1);">Insights</h1>
+      <p style="margin: 0 0 26px; font-size: 14px; color: var(--bm-ink2);">Last four quarters · 42 submissions · scoring engine v3.2 calibration included</p>
+
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden; margin-bottom: 28px;">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+          <div style="background: var(--bm-panel); padding: 16px 18px 18px;">
+            <p style="margin: 0 0 8px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-ink3); font-weight: 600;">{{ k.label }}</p>
+            <p style="margin: 0 0 4px; font-family: var(--bm-ui); font-variant-numeric: tabular-nums; font-size: 28px; font-weight: 600; letter-spacing: -0.02em;">{{ k.value }}</p>
+            <p style="margin: 0; font-size: 12.5px; color: {{ k.deltaInk }};">{{ k.delta }}</p>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 28px; align-items: start;">
+        <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 20px;">
+          <p style="margin: 0 0 2px; font-family: var(--bm-head); font-size: 19px; font-weight: 600;">Submitted vs won</p>
+          <p style="margin: 0 0 12px; font-size: 12.5px; color: var(--bm-ink3);">Hover a quarter for the win rate and average value.</p>
+          <div id="bm-chart-quarters" style="width: 100%; height: 260px;"></div>
+        </section>
+        <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 20px;">
+          <p style="margin: 0 0 4px; font-family: var(--bm-head); font-size: 19px; font-weight: 600;">Who wins in your categories</p>
+          <p style="margin: 0 0 16px; font-size: 12.5px; color: var(--bm-ink3);">Awards in your CPV groups, last 24 months</p>
+          <div style="display: grid; gap: 1px; background: var(--bm-line-hair);">
+            <sc-for list="{{ rivals }}" as="rv" hint-placeholder-count="5">
+              <div style="background: var(--bm-panel); display: grid; grid-template-columns: 1fr 54px 70px; gap: 12px; align-items: center; padding: 10px 0;">
+                <span style="font-size: 13.5px; color: var(--bm-ink1);">{{ rv.name }}</span>
+                <span style="font-family: var(--bm-num); font-size: 12px; color: var(--bm-ink2); text-align: right;">{{ rv.wins }}</span>
+                <span style="font-family: var(--bm-num); font-size: 12px; color: var(--bm-ink3); text-align: right;">{{ rv.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+
+      <section style="margin-top: 28px; background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 20px;">
+        <p style="margin: 0 0 4px; font-family: var(--bm-head); font-size: 19px; font-weight: 600;">Score calibration</p>
+        <p style="margin: 0 0 18px; font-size: 12.5px; color: var(--bm-ink3);">Does a high fit score actually convert? Use this to decide where the bid/no-bid line sits.</p>
+        <div style="display: grid; gap: 1px; background: var(--bm-line-hair);">
+          <div style="background: var(--bm-panel); display: grid; grid-template-columns: 140px 1fr 90px 90px; gap: 16px; padding: 0 0 10px;">
+            <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-ink3); font-weight: 600;">Score band</span>
+            <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-ink3); font-weight: 600;">Win rate</span>
+            <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-ink3); font-weight: 600; text-align: right;">Bids</span>
+            <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-ink3); font-weight: 600; text-align: right;">Won</span>
+          </div>
+          <sc-for list="{{ bands }}" as="b" hint-placeholder-count="4">
+            <div style="background: var(--bm-panel); display: grid; grid-template-columns: 140px 1fr 90px 90px; gap: 16px; align-items: center; padding: 11px 0;">
+              <span style="font-family: var(--bm-num); font-size: 12.5px; color: var(--bm-ink1);">{{ b.band }}</span>
+              <span style="font-family: var(--bm-num); font-size: 12.5px; color: var(--bm-ink1);">{{ b.rate }}</span>
+              <span style="font-family: var(--bm-num); font-size: 12px; color: var(--bm-ink3); text-align: right;">{{ b.bids }}</span>
+              <span style="font-family: var(--bm-num); font-size: 12px; color: var(--bm-ink3); text-align: right;">{{ b.won }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="margin-top: 28px; background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 20px;">
+        <p style="margin: 0 0 2px; font-family: var(--bm-head); font-size: 19px; font-weight: 600;">Win rate by score band</p>
+        <p style="margin: 0 0 12px; font-size: 12.5px; color: var(--bm-ink3);">Hover a band for the win-to-bid count behind the rate.</p>
+        <div id="bm-chart-bands" style="width: 100%; height: 240px;"></div>
+      </section>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 1240px; margin: 0 auto; padding: 28px 24px 80px;">
+      <h1 style="margin: 0 0 6px; font-family: var(--bm-head); font-size: 32px; font-weight: 600; letter-spacing: -0.015em; color: var(--bm-ink1);">Settings</h1>
+      <p style="margin: 0 0 24px; font-size: 14px; color: var(--bm-ink2);">Everything that changes what lands in your feed. Changes apply to the next matching run at 07:00.</p>
+
+      <sc-if value="{{ hasIssues }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; gap: 12px; align-items: flex-start; background: var(--bm-caution-tint); border: 1px solid var(--bm-caution); border-radius: 14px; padding: 14px 16px; margin-bottom: 22px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--bm-caution)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px;" aria-hidden="true"><path d="M12 3.5 21.5 20H2.5L12 3.5Z"></path><path d="M12 10v4.5M12 17.4v.2"></path></svg>
+          <div>
+            <p style="margin: 0 0 6px; font-size: 13.5px; font-weight: 600; color: var(--bm-ink1);">{{ issueCount }} to fix before the next run</p>
+            <div style="display: grid; gap: 3px;">
+              <sc-for list="{{ issues }}" as="iss" hint-placeholder-count="2">
+                <p style="margin: 0; font-size: 13px; line-height: 1.5; color: var(--bm-ink2);">{{ iss.text }}</p>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 28px; align-items: start;">
+        <nav style="position: sticky; top: 88px; display: grid; gap: 3px;">
+          <sc-for list="{{ setNav }}" as="sn" hint-placeholder-count="6">
+            <button type="button" onClick="{{ sn.onClick }}" style="appearance: none; text-align: left; background: {{ sn.bg }}; border: 0; border-radius: 12px; padding: 10px 13px; cursor: pointer; display: flex; align-items: center; gap: 9px; font-family: var(--bm-ui);">
+              <span style="font-size: 13.5px; color: {{ sn.ink }}; font-weight: {{ sn.weight }};">{{ sn.label }}</span>
+              <sc-if value="{{ sn.flagged }}" hint-placeholder-val="{{ false }}">
+                <span style="margin-left: auto; width: 7px; height: 7px; border-radius: 999px; background: var(--bm-caution);"></span>
+              </sc-if>
+            </button>
+          </sc-for>
+        </nav>
+
+        <div style="display: grid; gap: 20px; min-width: 0;">
+          <sc-if value="{{ isMatching }}" hint-placeholder-val="{{ true }}">
+            <div style="display: grid; gap: 20px;">
+              <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 22px;">
+                <h2 style="margin: 0 0 4px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">CPV scope</h2>
+                <p style="margin: 0 0 16px; font-size: 13px; line-height: 1.55; color: var(--bm-ink2);">A tender is only scored when its CPV shares a division with one of yours. A narrow list means a quiet feed; a wide one means more low-fit results to read past.</p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <sc-for list="{{ cpvChips }}" as="c" hint-placeholder-count="6">
+                    <span style="display: inline-flex; align-items: center; gap: 8px; background: var(--bm-accent-tint); border: 1px solid var(--bm-accent-line); border-radius: 999px; padding: 5px 12px; font-family: var(--bm-num); font-size: 12.5px; color: var(--bm-accent-text);">
+                      <span>{{ c.label }}</span>
+                      <button type="button" onClick="{{ c.onRemove }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-accent-text); cursor: pointer; display: grid; place-items: center;">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+                      </button>
+                    </span>
+                  </sc-for>
+                  <button type="button" onClick="{{ onAddCpv }}" style="appearance: none; background: transparent; border: 1px dashed var(--bm-line); border-radius: 999px; padding: 5px 13px; font-family: var(--bm-ui); font-size: 12.5px; color: var(--bm-ink2); cursor: pointer;">+ Add CPV group</button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 16px; padding: 10px 12px; background: {{ scopeBg }}; border: 1px solid {{ scopeLine }}; border-radius: 12px;">
+                  <span style="width: 7px; height: 7px; border-radius: 999px; background: {{ scopeLine }}; flex: 0 0 auto;"></span>
+                  <p style="margin: 0; font-size: 12.5px; color: var(--bm-ink1);">{{ scopeText }}</p>
+                </div>
+                <p style="margin: 12px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--bm-ink3);">Ingestion covers CPV divisions 72, 48 and 79417000 today. A code outside those divisions is stored but never scored — the server check on save is the authority.</p>
+              </section>
+
+              <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 22px;">
+                <h2 style="margin: 0 0 16px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">Contract value and days remaining</h2>
+                <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+                  <label style="display: grid; gap: 7px;">
+                    <span style="font-size: 12.5px; color: var(--bm-ink2);">Minimum contract value (EUR)</span>
+                    <input value="{{ minValue }}" onChange="{{ onMinValue }}" style="height: 38px; background: var(--bm-sunken); border: 1px solid {{ valueBorder }}; border-radius: 12px; padding: 0 12px; color: var(--bm-ink1); font-family: var(--bm-num); font-size: 13.5px; outline: none;">
+                  </label>
+                  <label style="display: grid; gap: 7px;">
+                    <span style="font-size: 12.5px; color: var(--bm-ink2);">Maximum contract value (EUR)</span>
+                    <input value="{{ maxValue }}" onChange="{{ onMaxValue }}" style="height: 38px; background: var(--bm-sunken); border: 1px solid {{ valueBorder }}; border-radius: 12px; padding: 0 12px; color: var(--bm-ink1); font-family: var(--bm-num); font-size: 13.5px; outline: none;">
+                  </label>
+                  <label style="display: grid; gap: 7px;">
+                    <span style="font-size: 12.5px; color: var(--bm-ink2);">Minimum days remaining</span>
+                    <input value="{{ runway }}" onChange="{{ onRunway }}" style="height: 38px; background: var(--bm-sunken); border: 1px solid {{ runwayBorder }}; border-radius: 12px; padding: 0 12px; color: var(--bm-ink1); font-family: var(--bm-num); font-size: 13.5px; outline: none;">
+                  </label>
+                </div>
+                <sc-if value="{{ hasValueError }}" hint-placeholder-val="{{ false }}">
+                  <p style="margin: 12px 0 0; display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--bm-risk);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M7.5 7.5l9 9"></path></svg>
+                    <span>{{ valueError }}</span>
+                  </p>
+                </sc-if>
+                <sc-if value="{{ hasRunwayWarning }}" hint-placeholder-val="{{ false }}">
+                  <p style="margin: 12px 0 0; display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--bm-caution);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 8v5M12 16.2v.2"></path></svg>
+                    <span>{{ runwayWarning }}</span>
+                  </p>
+                </sc-if>
+                <p style="margin: 14px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--bm-ink3);">A notice with no published value is never scored zero — it takes half of that component's points and is marked Unknown in the breakdown.</p>
+              </section>
+
+              <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 22px;">
+                <h2 style="margin: 0 0 16px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">Countries and regions</h2>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <sc-for list="{{ geoChips }}" as="g" hint-placeholder-count="4">
+                    <span style="display: inline-flex; align-items: center; gap: 8px; background: var(--bm-raised); border: 1px solid var(--bm-line); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; color: var(--bm-ink1);">
+                      <span>{{ g.label }}</span>
+                      <button type="button" onClick="{{ g.onRemove }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-ink3); cursor: pointer; display: grid; place-items: center;">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+                      </button>
+                    </span>
+                  </sc-for>
+                  <button type="button" onClick="{{ onAddGeo }}" style="appearance: none; background: transparent; border: 1px dashed var(--bm-line); border-radius: 999px; padding: 5px 13px; font-family: var(--bm-ui); font-size: 12.5px; color: var(--bm-ink2); cursor: pointer;">+ Add country</button>
+                </div>
+                <p style="margin: 20px 0 10px; font-size: 12.5px; color: var(--bm-ink2);">Preferred NUTS regions — scored as a bonus, never a filter</p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <sc-for list="{{ nutsChips }}" as="n" hint-placeholder-count="2">
+                    <span style="display: inline-flex; align-items: center; gap: 8px; background: transparent; border: 1px solid var(--bm-line); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; color: var(--bm-ink2);">
+                      <span>{{ n.label }}</span>
+                      <button type="button" onClick="{{ n.onRemove }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-ink3); cursor: pointer; display: grid; place-items: center;">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+                      </button>
+                    </span>
+                  </sc-for>
+                  <button type="button" onClick="{{ onAddNuts }}" style="appearance: none; background: transparent; border: 1px dashed var(--bm-line); border-radius: 999px; padding: 5px 13px; font-family: var(--bm-ui); font-size: 12.5px; color: var(--bm-ink2); cursor: pointer;">+ Add NUTS code</button>
+                </div>
+              </section>
+
+              <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 22px;">
+                <h2 style="margin: 0 0 4px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">Keywords and capabilities</h2>
+                <p style="margin: 0 0 16px; font-size: 13px; line-height: 1.55; color: var(--bm-ink2);">Keywords are matched against notice text; capabilities describe what you deliver and feed the reference-fit component.</p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+                  <sc-for list="{{ keywordChips }}" as="k" hint-placeholder-count="5">
+                    <span style="display: inline-flex; align-items: center; gap: 8px; background: var(--bm-raised); border: 1px solid var(--bm-line); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; color: var(--bm-ink1);">
+                      <span>{{ k.label }}</span>
+                      <button type="button" onClick="{{ k.onRemove }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-ink3); cursor: pointer; display: grid; place-items: center;">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+                      </button>
+                    </span>
+                  </sc-for>
+                  <button type="button" onClick="{{ onAddKeyword }}" style="appearance: none; background: transparent; border: 1px dashed var(--bm-line); border-radius: 999px; padding: 5px 13px; font-family: var(--bm-ui); font-size: 12.5px; color: var(--bm-ink2); cursor: pointer;">+ Add keyword</button>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <sc-for list="{{ capabilityChips }}" as="c" hint-placeholder-count="4">
+                    <span style="display: inline-flex; align-items: center; gap: 8px; background: transparent; border: 1px solid var(--bm-line); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; color: var(--bm-ink2);">
+                      <span>{{ c.label }}</span>
+                      <button type="button" onClick="{{ c.onRemove }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-ink3); cursor: pointer; display: grid; place-items: center;">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+                      </button>
+                    </span>
+                  </sc-for>
+                  <button type="button" onClick="{{ onAddCapability }}" style="appearance: none; background: transparent; border: 1px dashed var(--bm-line); border-radius: 999px; padding: 5px 13px; font-family: var(--bm-ui); font-size: 12.5px; color: var(--bm-ink2); cursor: pointer;">+ Add capability</button>
+                </div>
+              </section>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isExclusions }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; gap: 20px;">
+              <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 22px;">
+                <h2 style="margin: 0 0 4px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">Hard exclusion rules</h2>
+                <p style="margin: 0 0 18px; font-size: 13px; line-height: 1.55; color: var(--bm-ink2);">A tender is excluded outright — no score shown — only when a <em>known</em> value trips one of these five. An unknown field never excludes anything.</p>
+                <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+                  <sc-for list="{{ rules }}" as="rule" hint-placeholder-count="5">
+                    <div style="background: var(--bm-panel); display: flex; align-items: center; gap: 14px; padding: 13px 16px;">
+                      <div style="min-width: 0;">
+                        <p style="margin: 0 0 2px; font-size: 13.5px; color: var(--bm-ink1);">{{ rule.label }}</p>
+                        <p style="margin: 0; font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3);">{{ rule.detail }}</p>
+                      </div>
+                      <button type="button" onClick="{{ rule.onToggle }}" style="margin-left: auto; appearance: none; background: transparent; border: 0; padding: 0; cursor: pointer; flex: 0 0 auto;">
+                        <span style="width: 42px; height: 25px; border-radius: 999px; background: {{ rule.track }}; position: relative; display: inline-block;">
+                          <span style="position: absolute; top: 2.5px; left: {{ rule.knob }}; width: 20px; height: 20px; border-radius: 999px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.28); display: block;"></span>
+                        </span>
+                      </button>
+                    </div>
+                  </sc-for>
+                </div>
+              </section>
+              <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 22px;">
+                <h2 style="margin: 0 0 14px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">Excluded phrases</h2>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <sc-for list="{{ phraseChips }}" as="ph" hint-placeholder-count="4">
+                    <span style="display: inline-flex; align-items: center; gap: 8px; background: var(--bm-risk-tint); border: 1px solid var(--bm-risk); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; color: var(--bm-ink1);">
+                      <span>{{ ph.label }}</span>
+                      <button type="button" onClick="{{ ph.onRemove }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-risk); cursor: pointer; display: grid; place-items: center;">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+                      </button>
+                    </span>
+                  </sc-for>
+                  <button type="button" onClick="{{ onAddPhrase }}" style="appearance: none; background: transparent; border: 1px dashed var(--bm-line); border-radius: 999px; padding: 5px 13px; font-family: var(--bm-ui); font-size: 12.5px; color: var(--bm-ink2); cursor: pointer;">+ Add phrase</button>
+                </div>
+                <p style="margin: 14px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--bm-ink3);">Matched against notice text only. Excluded tenders still appear under Possible with the rule that fired, so a rule that is too broad is visible rather than silent.</p>
+              </section>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isAlerts }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; gap: 20px;">
+              <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 22px;">
+                <h2 style="margin: 0 0 16px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">Daily digest</h2>
+                <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 4px;">
+                  <label style="display: grid; gap: 7px;">
+                    <span style="font-size: 12.5px; color: var(--bm-ink2);">Minimum classification to include</span>
+                    <select onChange="{{ onDigestTime }}" style="appearance: none; height: 38px; background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 12px; padding: 0 12px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 13.5px;">
+                      <option>Strong match</option><option>Worth reviewing</option><option>Possible</option>
+                    </select>
+                  </label>
+                  <label style="display: grid; gap: 7px;">
+                    <span style="font-size: 12.5px; color: var(--bm-ink2);">Timezone</span>
+                    <select onChange="{{ onDigestScope }}" style="appearance: none; height: 38px; background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 12px; padding: 0 12px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 13.5px;">
+                      <option>Europe/Nicosia</option><option>Europe/Athens</option><option>UTC</option>
+                    </select>
+                  </label>
+                </div>
+                <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden; margin-top: 16px;">
+                  <sc-for list="{{ channels }}" as="ch" hint-placeholder-count="4">
+                    <div style="background: var(--bm-panel); display: flex; align-items: center; gap: 14px; padding: 13px 16px;">
+                      <div>
+                        <p style="margin: 0 0 2px; font-size: 13.5px; color: var(--bm-ink1);">{{ ch.label }}</p>
+                        <p style="margin: 0; font-size: 12px; color: var(--bm-ink3);">{{ ch.detail }}</p>
+                      </div>
+                      <button type="button" onClick="{{ ch.onToggle }}" style="margin-left: auto; appearance: none; background: transparent; border: 0; padding: 0; cursor: pointer; flex: 0 0 auto;">
+                        <span style="width: 42px; height: 25px; border-radius: 999px; background: {{ ch.track }}; position: relative; display: inline-block;">
+                          <span style="position: absolute; top: 2.5px; left: {{ ch.knob }}; width: 20px; height: 20px; border-radius: 999px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.28); display: block;"></span>
+                        </span>
+                      </button>
+                    </div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ noChannels }}" hint-placeholder-val="{{ false }}">
+                  <p style="margin: 12px 0 0; display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--bm-risk);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M7.5 7.5l9 9"></path></svg>
+                    <span>Turn on at least one channel, or the digest will never reach anyone.</span>
+                  </p>
+                </sc-if>
+              </section>
+              <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 22px;">
+                <h2 style="margin: 0 0 4px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">Deadline reminders</h2>
+                <p style="margin: 0 0 16px; font-size: 13px; line-height: 1.55; color: var(--bm-ink2);">Sent for anything sitting in the pipeline without a recorded decision.</p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <sc-for list="{{ reminders }}" as="rm" hint-placeholder-count="4">
+                    <button type="button" onClick="{{ rm.onClick }}" style="appearance: none; background: {{ rm.bg }}; border: 1px solid {{ rm.line }}; border-radius: 999px; padding: 6px 14px; font-family: var(--bm-num); font-size: 12.5px; color: {{ rm.ink }}; cursor: pointer;">{{ rm.label }}</button>
+                  </sc-for>
+                </div>
+              </section>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isOrg }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; gap: 20px;">
+              <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 22px;">
+                <h2 style="margin: 0 0 16px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">Company</h2>
+                <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+                  <label style="display: grid; gap: 7px;">
+                    <span style="font-size: 12.5px; color: var(--bm-ink2);">Company name</span>
+                    <input value="{{ orgName }}" onChange="{{ onOrgName }}" style="height: 38px; background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 12px; padding: 0 12px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 13.5px; outline: none;">
+                  </label>
+                  <label style="display: grid; gap: 7px;">
+                    <span style="font-size: 12.5px; color: var(--bm-ink2);">Website</span>
+                    <input value="{{ orgSite }}" onChange="{{ onOrgSite }}" style="height: 38px; background: var(--bm-sunken); border: 1px solid {{ siteBorder }}; border-radius: 12px; padding: 0 12px; color: var(--bm-ink1); font-family: var(--bm-num); font-size: 13.5px; outline: none;">
+                  </label>
+                </div>
+                <div style="display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 16px; margin-top: 16px;">
+                  <label style="display: grid; gap: 7px;">
+                    <span style="font-size: 12.5px; color: var(--bm-ink2);">Description</span>
+                    <textarea value="{{ orgDesc }}" onChange="{{ onOrgDesc }}" rows="4" style="background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 12px; padding: 10px 12px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 13.5px; line-height: 1.55; resize: vertical; outline: none;"></textarea>
+                    <span style="font-size: 12px; color: var(--bm-ink3);">{{ descCount }}</span>
+                  </label>
+                  <label style="display: grid; gap: 7px; align-content: start;">
+                    <span style="font-size: 12.5px; color: var(--bm-ink2);">Company size</span>
+                    <select onChange="{{ onOrgBand }}" style="appearance: none; height: 38px; background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 12px; padding: 0 12px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 13.5px;">
+                      <option>1–9</option><option>10–49</option><option>50–249</option><option>250+</option>
+                    </select>
+                    <span style="font-size: 12px; line-height: 1.5; color: var(--bm-ink3);">Feeds the value-band component: a 10–49 firm scores lower on €5M+ lots.</span>
+                  </label>
+                </div>
+                <sc-if value="{{ hasSiteError }}" hint-placeholder-val="{{ false }}">
+                  <p style="margin: 12px 0 0; display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--bm-risk);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M7.5 7.5l9 9"></path></svg>
+                    <span>Website must be a full URL, e.g. https://example.com.</span>
+                  </p>
+                </sc-if>
+              </section>
+              <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 22px;">
+                <h2 style="margin: 0 0 4px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">Certifications and references</h2>
+                <p style="margin: 0 0 16px; font-size: 13px; line-height: 1.55; color: var(--bm-ink2);">These are what the requirement checker measures a tender against — an expired certificate turns met requirements into gaps.</p>
+                <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+                  <sc-for list="{{ certs }}" as="ct" hint-placeholder-count="5">
+                    <div style="background: var(--bm-panel); display: grid; grid-template-columns: 1fr 130px 96px; gap: 12px; align-items: center; padding: 12px 16px;">
+                      <span style="font-size: 13.5px; color: var(--bm-ink1);">{{ ct.label }}</span>
+                      <span style="font-family: var(--bm-num); font-size: 12px; color: var(--bm-ink3);">{{ ct.until }}</span>
+                      <span style="font-family: var(--bm-num); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: {{ ct.ink }}; background: {{ ct.bg }}; border: 1px solid {{ ct.line }}; border-radius: 7px; padding: 3px 7px; text-align: center;">{{ ct.state }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </section>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isTeam }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; gap: 20px;">
+              <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 22px;">
+                <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px;">
+                  <h2 style="margin: 0; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">Team</h2>
+                  <span style="font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bm-caution); border: 1px solid var(--bm-caution); border-radius: 999px; padding: 2px 8px;">proposed</span>
+                  <span style="font-family: var(--bm-num); font-size: 12px; color: var(--bm-ink3);">3 of 5 seats</span>
+                  <button type="button" onClick="{{ onInvite }}" style="margin-left: auto; appearance: none; background: var(--bm-accent); border: 0; border-radius: 999px; color: var(--bm-accent-ink); font-family: var(--bm-ui); font-size: 12.5px; font-weight: 500; padding: 8px 16px; cursor: pointer;">Invite teammate</button>
+                </div>
+                <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+                  <sc-for list="{{ team }}" as="tm" hint-placeholder-count="3">
+                    <div style="background: var(--bm-panel); display: grid; grid-template-columns: 34px 1fr 120px 90px; gap: 12px; align-items: center; padding: 11px 16px;">
+                      <span style="width: 28px; height: 28px; border-radius: 999px; background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); display: grid; place-items: center; font-family: var(--bm-num); font-size: 11px; color: var(--bm-ink2);">{{ tm.initials }}</span>
+                      <div style="min-width: 0;">
+                        <p style="margin: 0; font-size: 13.5px; color: var(--bm-ink1);">{{ tm.name }}</p>
+                        <p style="margin: 0; font-size: 12px; color: var(--bm-ink3);">{{ tm.email }}</p>
+                      </div>
+                      <span style="font-size: 12.5px; color: var(--bm-ink2);">{{ tm.role }}</span>
+                      <span style="font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3); text-align: right;">{{ tm.last }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </section>
+              <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 22px;">
+                <h2 style="margin: 0 0 16px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">Plan</h2>
+                <div style="display: flex; align-items: center; gap: 16px; background: var(--bm-accent-tint); border: 1px solid var(--bm-accent-line); border-radius: 14px; padding: 16px 18px; flex-wrap: wrap;">
+                  <div>
+                    <p style="margin: 0 0 3px; font-size: 13.5px; font-weight: 600; color: var(--bm-ink1);">Founding plan — €29 / month</p>
+                    <p style="margin: 0; font-size: 12.5px; color: var(--bm-ink2);">Price retained for the life of the subscription. Renews 1 Sep 2026 via Stripe.</p>
+                  </div>
+                  <button type="button" style="margin-left: auto; appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 999px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 12.5px; padding: 8px 15px; cursor: pointer;">Manage billing</button>
+                </div>
+                <div style="display: grid; gap: 1px; background: var(--bm-line-hair); margin-top: 16px;">
+                  <sc-for list="{{ invoices }}" as="inv" hint-placeholder-count="3">
+                    <div style="background: var(--bm-panel); display: grid; grid-template-columns: 1fr 90px 90px; gap: 12px; align-items: center; padding: 10px 0;">
+                      <span style="font-family: var(--bm-num); font-size: 12.5px; color: var(--bm-ink2);">{{ inv.date }}</span>
+                      <span style="font-family: var(--bm-num); font-size: 12.5px; color: var(--bm-ink1); text-align: right;">{{ inv.amount }}</span>
+                      <span style="font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-accent-text); text-align: right;">{{ inv.state }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </section>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isAppearance }}" hint-placeholder-val="{{ false }}">
+            <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 22px;">
+              <h2 style="margin: 0 0 4px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">Appearance</h2>
+              <p style="margin: 0 0 18px; font-size: 13px; line-height: 1.55; color: var(--bm-ink2);">Stored per user. Without an explicit choice the app follows your system setting.</p>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <sc-for list="{{ themeOptions }}" as="to" hint-placeholder-count="2">
+                  <button type="button" onClick="{{ to.onClick }}" style="appearance: none; background: {{ to.bg }}; border: 1px solid {{ to.line }}; border-radius: 14px; padding: 14px 16px; cursor: pointer; text-align: left; width: 200px;">
+                    <span style="display: block; height: 46px; border-radius: 9px; background: {{ to.swatchBg }}; border: 1px solid {{ to.swatchLine }}; margin-bottom: 12px; position: relative; overflow: hidden;">
+                      <span style="position: absolute; left: 8px; top: 9px; width: 58px; height: 6px; border-radius: 999px; background: {{ to.swatchInk }}; display: block;"></span>
+                      <span style="position: absolute; left: 8px; top: 21px; width: 90px; height: 6px; border-radius: 999px; background: {{ to.swatchLine }}; display: block;"></span>
+                      <span style="position: absolute; left: 8px; top: 33px; width: 34px; height: 6px; border-radius: 999px; background: {{ to.swatchAccent }}; display: block;"></span>
+                    </span>
+                    <span style="font-size: 13.5px; font-weight: {{ to.weight }}; color: var(--bm-ink1);">{{ to.label }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </section>
+          </sc-if>
+
+          <sc-if value="{{ isDanger }}" hint-placeholder-val="{{ false }}">
+            <section style="background: var(--bm-panel); border: 1px solid var(--bm-risk); border-radius: 18px; padding: 22px;">
+              <h2 style="margin: 0 0 4px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-risk);">Delete organisation</h2>
+              <p style="margin: 0 0 18px; max-width: 68ch; font-size: 13px; line-height: 1.55; color: var(--bm-ink2);">Removes the organisation, its matching profile, every saved and ignored tender, and all match history. Scored matches cannot be rebuilt for notices that have since left the ingestion window.</p>
+              <label style="display: grid; gap: 7px; max-width: 320px;">
+                <span style="font-size: 12.5px; color: var(--bm-ink2);">Type DELETE to confirm</span>
+                <input value="{{ deleteConfirm }}" onChange="{{ onDeleteConfirm }}" style="height: 38px; background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 12px; padding: 0 12px; color: var(--bm-ink1); font-size: 13.5px; outline: none;">
+              </label>
+              <button type="button" onClick="{{ onDelete }}" style="margin-top: 16px; appearance: none; background: {{ deleteBg }}; border: 1px solid var(--bm-risk); border-radius: 999px; color: {{ deleteInk }}; font-family: var(--bm-ui); font-size: 13px; font-weight: 500; padding: 10px 20px; cursor: {{ deleteCursor }};">Delete organisation</button>
+            </section>
+          </sc-if>
+
+          <div style="display: flex; gap: 10px; align-items: center; padding-top: 2px;">
+            <button type="button" onClick="{{ onSaveSettings }}" style="appearance: none; background: var(--bm-accent); border: 0; border-radius: 999px; color: var(--bm-accent-ink); font-family: var(--bm-ui); font-size: 13px; font-weight: 500; padding: 10px 20px; cursor: pointer;">Save changes</button>
+            <button type="button" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 999px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 13px; padding: 10px 18px; cursor: pointer;">Discard</button>
+            <span style="font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3);">{{ settingsSaved }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div onClick="{{ onCloseSheet }}" style="position: fixed; inset: 0; background: rgba(4,6,9,0.55); z-index: 50; animation: bm-fade 140ms ease-out;"></div>
+      <aside style="position: fixed; top: 0; right: 0; bottom: 0; width: min(680px, 100%); background: var(--bm-panel); border-left: 1px solid var(--bm-line); border-radius: 24px 0 0 24px; box-shadow: var(--bm-shadow); z-index: 51; overflow-y: auto; animation: bm-slide 180ms ease-out;">
+        <div style="position: sticky; top: 0; background: var(--bm-panel); border-bottom: 1px solid var(--bm-line-hair); padding: 18px 24px 0;">
+          <div style="display: flex; align-items: flex-start; gap: 16px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <span style="font-family: var(--bm-num); font-size: 13px; font-weight: 500;">{{ sheet.scoreLabel }}</span>
+                <span style="background: {{ sheet.chipBg }}; border: 1px solid {{ sheet.chipLine }}; color: {{ sheet.chipInk }}; border-radius: 9px; padding: 2px 8px; font-size: 12px; font-weight: 500;">{{ sheet.fitLabel }}</span>
+                <span style="font-family: var(--bm-num); font-size: 12.5px; color: {{ sheet.deadlineInk }};">{{ sheet.deadlineLabel }}</span>
+              </div>
+              <h2 style="margin: 0 0 6px; font-family: var(--bm-head); font-size: 24px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; color: var(--bm-ink1);">{{ sheet.title }}</h2>
+              <p style="margin: 0 0 16px; font-size: 13px; color: var(--bm-ink2);">{{ sheet.meta }}</p>
+            </div>
+            <button type="button" onClick="{{ onCloseSheet }}" style="margin-left: auto; appearance: none; background: transparent; border: 1px solid var(--bm-line-hair); border-radius: 14px; width: 30px; height: 30px; color: var(--bm-ink2); cursor: pointer; flex: 0 0 auto; display: grid; place-items: center;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+            </button>
+          </div>
+          <div style="display: flex; gap: 2px;">
+            <sc-for list="{{ sheetTabs }}" as="st" hint-placeholder-count="5">
+              <button type="button" onClick="{{ st.onClick }}" style="appearance: none; background: transparent; border: 0; border-bottom: 2px solid {{ st.mark }}; padding: 9px 12px; margin-bottom: -1px; color: {{ st.ink }}; font-family: var(--bm-ui); font-size: 13px; font-weight: {{ st.weight }}; cursor: pointer;">{{ st.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="padding: 22px 24px 32px;">
+          <sc-if value="{{ isSummary }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; gap: 22px;">
+              <div>
+                <p style="margin: 0 0 8px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-ink3); font-weight: 600;">Extracted summary</p>
+                <p style="margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--bm-ink1); text-wrap: pretty;">{{ sheet.summary }}</p>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+                <sc-for list="{{ sheet.facts }}" as="f" hint-placeholder-count="8">
+                  <div style="background: var(--bm-panel); padding: 12px 14px;">
+                    <p style="margin: 0 0 4px; font-size: 11.5px; color: var(--bm-ink3);">{{ f.label }}</p>
+                    <p style="margin: 0; font-family: {{ f.font }}; font-size: 13.5px; color: var(--bm-ink1);">{{ f.value }}</p>
+                  </div>
+                </sc-for>
+              </div>
+              <div>
+                <p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-ink3); font-weight: 600;">Documents · 6 files, 214 pages</p>
+                <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+                  <sc-for list="{{ sheet.docs }}" as="d" hint-placeholder-count="4">
+                    <div style="background: var(--bm-panel); display: grid; grid-template-columns: 1fr 90px 90px; gap: 12px; align-items: center; padding: 10px 14px;">
+                      <span style="font-size: 13px; color: var(--bm-ink1);">{{ d.name }}</span>
+                      <span style="font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3); text-align: right;">{{ d.pages }}</span>
+                      <span style="font-family: var(--bm-num); font-size: 11.5px; color: {{ d.stateInk }}; text-align: right;">{{ d.state }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" onClick="{{ sheet.onPipeline }}" style="appearance: none; background: var(--bm-accent); border: 0; border-radius: 14px; color: var(--bm-accent-ink); font-family: var(--bm-ui); font-size: 13px; font-weight: 500; padding: 9px 14px; cursor: pointer;">{{ sheet.pipelineLabel }}</button>
+                <button type="button" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 13px; padding: 9px 14px; cursor: pointer;">Draft go/no-go note</button>
+                <button type="button" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 13px; padding: 9px 14px; cursor: pointer;">Open on TED ↗</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isReqs }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; gap: 18px;">
+              <div style="display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap;">
+                <p style="margin: 0; font-family: var(--bm-num); font-size: 13px; color: var(--bm-ink1);">{{ sheet.reqSummary }}</p>
+                <p style="margin: 0; font-size: 12.5px; color: var(--bm-ink3);">Checked against your org profile, certifications and references</p>
+              </div>
+              <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+                <sc-for list="{{ sheet.requirements }}" as="req" hint-placeholder-count="6">
+                  <div style="background: var(--bm-panel); display: grid; grid-template-columns: 96px 1fr; gap: 14px; padding: 13px 14px;">
+                    <span style="font-family: var(--bm-num); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: {{ req.ink }}; background: {{ req.bg }}; border: 1px solid {{ req.line }}; border-radius: 7px; padding: 2px 6px; height: 21px; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                      <sc-if value="{{ req.isMet }}" hint-placeholder-val="{{ false }}">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7"></path></svg>
+                      </sc-if>
+                      <sc-if value="{{ req.isGap }}" hint-placeholder-val="{{ false }}">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 8v5M12 16.2v.2"></path></svg>
+                      </sc-if>
+                      <sc-if value="{{ req.isBlocker }}" hint-placeholder-val="{{ false }}">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M7.5 7.5l9 9"></path></svg>
+                      </sc-if>
+                      <span>{{ req.status }}</span>
+                    </span>
+                    <div>
+                      <p style="margin: 0 0 3px; font-size: 13.5px; line-height: 1.4; color: var(--bm-ink1);">{{ req.label }}</p>
+                      <p style="margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--bm-ink2);">{{ req.note }} <span style="font-family: var(--bm-num); font-size: 11px; color: var(--bm-ink3);">{{ req.cite }}</span></p>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <p style="margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--bm-ink3);">Every line cites the page and clause it came from — extraction is never presented without a source. Gaps and blockers feed the go/no-go note.</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isScore }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; gap: 18px;">
+              <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+                <sc-for list="{{ sheet.components }}" as="c" hint-placeholder-count="5">
+                  <div style="background: var(--bm-panel); padding: 13px 14px; display: grid; gap: 7px;">
+                    <div style="display: flex; align-items: baseline; gap: 12px;">
+                      <span style="font-size: 13.5px; color: var(--bm-ink1); font-weight: 500;">{{ c.name }}</span>
+                      <span style="margin-left: auto; font-family: var(--bm-num); font-size: 12px; color: var(--bm-ink2);">{{ c.pts }}</span>
+                    </div>
+                    <span style="height: 5px; background: var(--bm-sunken); border-radius: 7px; overflow: hidden; display: block;"><span style="display: block; height: 5px; width: {{ c.pct }}; background: {{ c.fill }};"></span></span>
+                    <p style="margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--bm-ink2);">{{ c.text }}</p>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 14px 16px;">
+                <p style="margin: 0 0 6px; font-size: 12.5px; color: var(--bm-ink2);">Was this match useful?</p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button type="button" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 12.5px; padding: 6px 12px; cursor: pointer;">Useful</button>
+                  <button type="button" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 12.5px; padding: 6px 12px; cursor: pointer;">Not useful</button>
+                  <span style="font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3); align-self: center;">{{ sheet.engineLine }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isBuyer }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; gap: 20px;">
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+                <sc-for list="{{ sheet.buyerStats }}" as="bs" hint-placeholder-count="6">
+                  <div style="background: var(--bm-panel); padding: 13px 14px;">
+                    <p style="margin: 0 0 5px; font-size: 11.5px; color: var(--bm-ink3);">{{ bs.label }}</p>
+                    <p style="margin: 0; font-family: var(--bm-num); font-size: 18px; color: var(--bm-ink1);">{{ bs.value }}</p>
+                  </div>
+                </sc-for>
+              </div>
+              <div>
+                <p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-ink3); font-weight: 600;">Who this buyer awards to</p>
+                <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+                  <sc-for list="{{ sheet.winners }}" as="w" hint-placeholder-count="4">
+                    <div style="background: var(--bm-panel); display: grid; grid-template-columns: 1fr 60px 96px; gap: 12px; align-items: center; padding: 10px 14px;">
+                      <span style="font-size: 13px; color: var(--bm-ink1);">{{ w.name }}</span>
+                      <span style="font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink2); text-align: right;">{{ w.wins }}</span>
+                      <span style="font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3); text-align: right;">{{ w.value }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.6; color: var(--bm-ink2);">{{ sheet.buyerNote }}</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isActivity }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; gap: 18px;">
+              <div style="display: grid; gap: 14px;">
+                <sc-for list="{{ sheet.activity }}" as="a" hint-placeholder-count="4">
+                  <div style="display: grid; grid-template-columns: 14px 1fr; gap: 12px; align-items: start;">
+                    <span style="width: 7px; height: 7px; border-radius: 9px; background: {{ a.dot }}; margin-top: 6px;"></span>
+                    <div>
+                      <p style="margin: 0 0 2px; font-size: 13.5px; line-height: 1.45; color: var(--bm-ink1);">{{ a.text }}</p>
+                      <p style="margin: 0; font-family: var(--bm-num); font-size: 11px; color: var(--bm-ink3);">{{ a.when }}</p>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 12px;">
+                <input value="{{ noteDraft }}" onChange="{{ onNoteInput }}" placeholder="Add a note for the team…" style="width: 100%; background: transparent; border: 0; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 13.5px; outline: none;">
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                  <button type="button" onClick="{{ onAddNote }}" style="appearance: none; background: var(--bm-accent); border: 0; border-radius: 14px; color: var(--bm-accent-ink); font-family: var(--bm-ui); font-size: 12.5px; font-weight: 500; padding: 6px 12px; cursor: pointer;">Post note</button>
+                  <button type="button" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 14px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 12.5px; padding: 6px 12px; cursor: pointer;">@ Mention</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </aside>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ paletteOpen }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div onClick="{{ onClosePalette }}" style="position: fixed; inset: 0; background: rgba(4,6,9,0.55); z-index: 60; animation: bm-fade 120ms ease-out;"></div>
+      <div style="position: fixed; top: 96px; left: 50%; transform: translateX(-50%); width: min(640px, calc(100% - 32px)); background: var(--bm-overlay); border: 1px solid var(--bm-line); border-radius: 18px; box-shadow: var(--bm-shadow); z-index: 61; overflow: hidden; animation: bm-rise 140ms ease-out;">
+        <input value="{{ paletteQuery }}" onChange="{{ onPaletteInput }}" placeholder="Jump to, search, or run a command…" style="width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--bm-line-hair); color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 15px; padding: 16px 18px; outline: none;">
+        <div style="padding: 8px; display: grid; gap: 1px; max-height: 380px; overflow-y: auto;">
+          <sc-for list="{{ paletteItems }}" as="p" hint-placeholder-count="6">
+            <button type="button" onClick="{{ p.onClick }}" style="appearance: none; text-align: left; background: transparent; border: 0; border-radius: 14px; padding: 10px 12px; cursor: pointer; display: grid; grid-template-columns: 74px 1fr auto; gap: 12px; align-items: center; font-family: var(--bm-ui);">
+              <span style="font-family: var(--bm-num); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bm-ink3);">{{ p.kind }}</span>
+              <span style="font-size: 13.5px; color: var(--bm-ink1);">{{ p.label }}</span>
+              <span style="font-family: var(--bm-num); font-size: 11px; color: var(--bm-ink3);">{{ p.hint }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--bm-overlay); border: 1px solid var(--bm-line); border-radius: 14px; box-shadow: var(--bm-shadow); padding: 10px 16px; font-size: 13.5px; color: var(--bm-ink1); z-index: 70; animation: bm-rise 140ms ease-out;">{{ toast }}</div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark' | 'light'&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;typeface&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;archivo&quot;,&quot;franklin&quot;,&quot;source&quot;],&quot;default&quot;:&quot;archivo&quot;,&quot;tsType&quot;:&quot;'archivo' | 'franklin' | 'source'&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;options&quot;:[&quot;#2ec4b0&quot;,&quot;#3ba9d4&quot;,&quot;#7f9cf5&quot;,&quot;#0f7d6f&quot;],&quot;default&quot;:&quot;#2ec4b0&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;comfortable&quot;,&quot;tsType&quot;:&quot;'comfortable' | 'compact'&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;showRail&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+class Component extends DCLogic {
+  state = {
+    view: 'feed', theme: null, tab: 'today', search: 'health',
+    saved: { t1: true }, verdict: {}, expanded: {}, stage: { t1: 'qualify', t2: 'draft', t3: 'saved' },
+    sheet: null, sheetTab: 'summary', palette: false, paletteQuery: '', bell: false,
+    note: '', toast: null, chips: ['CY, GR, MT', '€250k – €5M', 'Deadline > 5 days'],
+    pane: 'matching', minValue: '250000', maxValue: '5000000', runway: '4',
+    orgName: 'Ploutarchou Digital Ltd', orgSite: 'https://example.com', savedAt: 'last saved 6 Aug, 14:22',
+    orgDesc: 'Cloud migration, identity and managed security services for public-sector clients in Cyprus and Greece. 34 staff, ISO 27001 and SOC 2 certified, seven delivered health and municipal platforms since 2019.',
+    deleteConfirm: '',
+    cpv: ['72000000 IT services: consulting, development, support', '72220000 Systems & technical consultancy',
+      '72222300 Information-systems planning', '48000000 Software packages & information systems',
+      '48730000 Security software', '79417000 Safety consultancy'],
+    geo: ['CY Cyprus', 'GR Greece', 'MT Malta'],
+    nuts: ['CY000 Kýpros', 'EL30 Attiki'],
+    keywords: ['cloud migration', 'identity management', 'managed hosting', 'penetration testing', 'SIEM'],
+    capabilities: ['Cloud migration', 'Managed SOC', 'Systems integration', 'IAM rollout'],
+    phrases: ['construction works', 'catering', 'vehicle leasing'],
+    ruleOn: { geo: true, cpv: true, phrase: true, nature: false, runway: true },
+    chan: { email: true, slack: true, weekly: false, mentions: true },
+    remind: { d1: true, d3: true, d7: true, d14: false },
+    dragging: null, dragOver: null,
+    owner: { t1: 'CP', t2: 'MK', t3: null }, tasks: {}, extra: [], addStage: null, addDraft: '',
+    ownerFilter: null, closingSoon: false, openWorkflow: null,
+  };
+
+  workflows = {
+    saved: ['Notice read end to end', 'CPV and value fit confirmed'],
+    qualify: ['Requirements extracted', 'Blockers resolved or accepted', 'Go/no-go note written'],
+    draft: ['Sections assigned', 'Pricing drafted', 'References chosen'],
+    review: ['Internal review booked', 'Compliance matrix checked', 'Pricing signed off'],
+    submit: ['Portal upload complete', 'Submission receipt stored'],
+    result: ['Outcome recorded', 'Debrief captured'],
+  };
+
+  owners = ['CP', 'MK', 'AN', null];
+
+  /** Board state persists per browser so a half-built pipeline survives a reload. */
+  persist(patch) {
+    this.setState(patch, () => {
+      try {
+        const s = this.state;
+        window.localStorage.setItem('bm_pipeline_v1', JSON.stringify({
+          stage: s.stage, owner: s.owner, tasks: s.tasks, extra: s.extra,
+        }));
+      } catch (err) { /* private mode — board stays in memory */ }
+    });
+  }
+
+  restoreBoard() {
+    try {
+      const raw = window.localStorage.getItem('bm_pipeline_v1');
+      if (raw === null) return;
+      const saved = JSON.parse(raw);
+      this.setState({
+        stage: saved.stage ?? this.state.stage,
+        owner: saved.owner ?? this.state.owner,
+        tasks: saved.tasks ?? {},
+        extra: Array.isArray(saved.extra) ? saved.extra : [],
+      });
+    } catch (err) { /* ignore malformed board */ }
+  }
+
+  allBids() { return this.tenders.concat(this.state.extra); }
+
+  taskState(id, stageId) {
+    const list = this.workflows[stageId] ?? [];
+    const done = (this.state.tasks[id] ?? {});
+    return { list, done, count: list.filter((t, i) => done[stageId + ':' + i] === true).length };
+  }
+
+  /** Deadline in days, from the real ISO date via date-fns when it has loaded. */
+  daysLeft(t) {
+    const df = typeof window !== 'undefined' ? window.dateFns : null;
+    if (df && df.differenceInCalendarDays) {
+      return df.differenceInCalendarDays(df.parseISO(t.deadlineIso), new Date());
+    }
+    return t.deadlineDays;
+  }
+
+  deadlineText(t) {
+    const days = this.daysLeft(t);
+    const df = typeof window !== 'undefined' ? window.dateFns : null;
+    const date = df && df.format ? df.format(df.parseISO(t.deadlineIso), 'd MMM yyyy') : t.deadlineDate;
+    if (days < 0) return 'closed · ' + date;
+    if (days === 0) return 'closes today · ' + date;
+    if (days === 1) return 'closes tomorrow · ' + date;
+    return 'closes in ' + days + ' days · ' + date;
+  }
+
+  tenders = [
+    {
+      id: 't1', score: 91, fit: 'strong', title: 'Framework for cloud migration and managed hosting of national health records',
+      buyer: 'Ministry of Health', country: 'CY', value: '€1.84M', deadlineDays: 6, deadlineDate: '25 Aug 2026', deadlineIso: '2026-08-25',
+      source: 'TED · 2026/S 141-004821 · open procedure', assignee: 'Owner: you',
+      comps: [
+        { name: 'CPV overlap', pts: 28, max: 30, text: 'Main CPV 72222000 sits inside your primary group; 3 of 4 secondary codes match.' },
+        { name: 'Geography', pts: 18, max: 20, text: 'Performance in Nicosia — inside your served region, no travel premium.' },
+        { name: 'Value band', pts: 16, max: 20, text: '€1.84M is mid-band for you: 2.1× your median won contract.' },
+        { name: 'Reference fit', pts: 14, max: 15, text: 'Two prior health-sector wins with comparable scope in the last 30 months.' },
+        { name: 'Procedure', pts: 9, max: 15, text: 'Open procedure, 60/40 quality-price — quality weighting favours your scored references.' },
+      ],
+      risk: { kind: 'blocker', text: 'SC-level security clearance required for 3 named staff — you hold none on file (high confidence, p. 41 §9.4).' },
+      summary: 'Three-year framework to migrate the national electronic health record estate to a sovereign cloud and run it as a managed service, with an optional two-year extension. Award is 60% quality / 40% price, with quality scored on migration methodology, ISO-certified security operations and two comparable health references. Mandatory ISO 27001; ISO 14001 requested but not disqualifying. Bid bond 2% of value. Submission in Greek or English through the eProcurement portal.',
+      facts: [
+        { label: 'Contract value', value: '€1,840,000 (est.)', font: 'var(--bm-num)' },
+        { label: 'Duration', value: '36 months + 24 optional', font: 'var(--bm-ui)' },
+        { label: 'Deadline', value: '25 Aug 2026, 12:00 EEST', font: 'var(--bm-num)' },
+        { label: 'Published', value: '22 Jul 2026', font: 'var(--bm-num)' },
+        { label: 'Award criteria', value: '60% quality / 40% price', font: 'var(--bm-num)' },
+        { label: 'Main CPV', value: '72222000 · IT strategy review', font: 'var(--bm-num)' },
+        { label: 'Place of performance', value: 'CY000 Kýpros', font: 'var(--bm-num)' },
+        { label: 'Languages', value: 'EL, EN', font: 'var(--bm-ui)' },
+      ],
+      docs: [
+        { name: 'Contract notice.pdf', pages: '12 p', state: 'read' },
+        { name: 'Technical specification.pdf', pages: '96 p', state: 'extracted' },
+        { name: 'Draft agreement.pdf', pages: '64 p', state: 'extracted' },
+        { name: 'ESPD template.xml', pages: '—', state: 'new' },
+      ],
+      reqSummary: '18 requirements · 13 met · 4 gaps · 1 blocker',
+      requirements: [
+        { label: 'ISO 27001 information security certification', status: 'met', note: 'On file, valid to Mar 2028.', cite: 'p. 38 §9.1' },
+        { label: 'ISO 14001 environmental management', status: 'gap', note: 'Not held. Requested, scored — not disqualifying (worth 4 of 100 points).', cite: 'p. 39 §9.2' },
+        { label: 'Average annual turnover ≥ €3M over 3 years', status: 'met', note: 'Your filed figure: €4.1M.', cite: 'p. 34 §8.2' },
+        { label: 'Three health-sector references ≥ €800k', status: 'gap', note: 'Two on file. Third slot could take the Limassol municipal EHR project.', cite: 'p. 35 §8.4' },
+        { label: 'SC security clearance for named staff', status: 'blocker', note: 'None on file. Clearance takes ~10 weeks — longer than the submission window.', cite: 'p. 41 §9.4' },
+        { label: 'Bid bond 2% of contract value', status: 'met', note: '€36,800 — within your standing facility.', cite: 'p. 30 §7.1' },
+        { label: 'Local support presence within 4 hours', status: 'met', note: 'Nicosia office qualifies.', cite: 'p. 44 §10.3' },
+      ],
+      buyerStats: [
+        { label: 'Notices, 24 mo', value: '14' }, { label: 'Awarded', value: '9' }, { label: 'Avg value', value: '€1.2M' },
+        { label: 'Your bids', value: '3' }, { label: 'Your wins', value: '1' }, { label: 'Days to award', value: '84' },
+      ],
+      winners: [
+        { name: 'Deloitte Cyprus', wins: '3', value: '€4.1M' },
+        { name: 'Logicom Solutions', wins: '2', value: '€2.6M' },
+        { name: 'NetU Consultants', wins: '2', value: '€1.9M' },
+        { name: 'You', wins: '1', value: '€0.9M' },
+      ],
+      buyerNote: 'This buyer splits large frameworks into lots and has never awarded on price alone — the last four awards all went to the highest quality score. Your one win here was a lot-2 award at €0.9M in 2024.',
+      activity: [
+        { text: 'Matched at 91/100 by engine v3.2', when: '22 Jul, 07:02' },
+        { text: 'Maria opened the technical specification', when: '22 Jul, 09:40' },
+        { text: 'Maria: “Clearance is the only real problem — ask the buyer in clarifications.”', when: '22 Jul, 09:52' },
+        { text: 'Moved to Qualify by you', when: '23 Jul, 08:15' },
+      ],
+    },
+    {
+      id: 't2', score: 84, fit: 'strong', title: 'Cybersecurity operations centre — 24/7 monitoring and incident response, 3 years',
+      buyer: 'Cyprus Police', country: 'CY', value: '€2.40M', deadlineDays: 11, deadlineDate: '30 Aug 2026', deadlineIso: '2026-08-30',
+      source: 'TED · 2026/S 138-004402 · restricted', assignee: 'Owner: Maria',
+      comps: [
+        { name: 'CPV overlap', pts: 26, max: 30, text: 'Security services group matches; managed-SOC code is secondary for you.' },
+        { name: 'Geography', pts: 20, max: 20, text: 'Nicosia — your home region.' },
+        { name: 'Value band', pts: 14, max: 20, text: '€2.4M is at the top of your comfortable band.' },
+        { name: 'Reference fit', pts: 13, max: 15, text: 'Three SOC references, one in public safety.' },
+        { name: 'Procedure', pts: 11, max: 15, text: 'Restricted — pre-qualification stage closes first.' },
+      ],
+      risk: { kind: 'caution', text: 'Restricted procedure: pre-qualification pack is due 11 days before the tender itself (medium confidence).' },
+      summary: 'A three-year managed detection and response contract covering 24/7 monitoring, incident response retainer and quarterly threat-hunting for the national police network. Two-stage restricted procedure: pre-qualification on capacity and clearances, then invited tender on methodology and price.',
+      facts: [
+        { label: 'Contract value', value: '€2,400,000 (est.)', font: 'var(--bm-num)' },
+        { label: 'Duration', value: '36 months', font: 'var(--bm-ui)' },
+        { label: 'PQQ deadline', value: '30 Aug 2026', font: 'var(--bm-num)' },
+        { label: 'Published', value: '18 Jul 2026', font: 'var(--bm-num)' },
+        { label: 'Award criteria', value: '70% quality / 30% price', font: 'var(--bm-num)' },
+        { label: 'Main CPV', value: '79714000 · surveillance services', font: 'var(--bm-num)' },
+        { label: 'Place of performance', value: 'CY000 Kýpros', font: 'var(--bm-num)' },
+        { label: 'Languages', value: 'EL', font: 'var(--bm-ui)' },
+      ],
+      docs: [
+        { name: 'Contract notice.pdf', pages: '10 p', state: 'read' },
+        { name: 'PQQ pack.pdf', pages: '28 p', state: 'extracted' },
+        { name: 'Security annex.pdf', pages: '18 p', state: 'new' },
+      ],
+      reqSummary: '12 requirements · 9 met · 3 gaps · 0 blockers',
+      requirements: [
+        { label: 'ISO 27001 + SOC 2 Type II', status: 'met', note: 'Both on file.', cite: 'p. 14 §4.1' },
+        { label: '24/7 staffed SOC in EU/EEA', status: 'met', note: 'Nicosia + Athens rota qualifies.', cite: 'p. 15 §4.3' },
+        { label: 'Two public-safety references', status: 'gap', note: 'One on file. Second could be the Water Board SOC pilot.', cite: 'p. 17 §5.2' },
+        { label: 'Greek-language reporting', status: 'gap', note: 'Reports are English-first — translation cost to price in.', cite: 'p. 22 §6.4' },
+        { label: 'Response SLA 15 min P1', status: 'met', note: 'Your retainer SLA is 10 min.', cite: 'p. 24 §7.1' },
+      ],
+      buyerStats: [
+        { label: 'Notices, 24 mo', value: '8' }, { label: 'Awarded', value: '6' }, { label: 'Avg value', value: '€1.7M' },
+        { label: 'Your bids', value: '1' }, { label: 'Your wins', value: '0' }, { label: 'Days to award', value: '112' },
+      ],
+      winners: [
+        { name: 'Odyssey Cybersecurity', wins: '3', value: '€5.2M' },
+        { name: 'Trust IT Services', wins: '2', value: '€2.1M' },
+        { name: 'PwC Cyprus', wins: '1', value: '€1.4M' },
+      ],
+      buyerNote: 'Slow to award (112 days average) and heavily quality-weighted. Incumbent Odyssey has held the SOC contract twice — expect an incumbency advantage on transition risk.',
+      activity: [
+        { text: 'Matched at 84/100 by engine v3.2', when: '18 Jul, 07:03' },
+        { text: 'Assigned to Maria', when: '18 Jul, 10:20' },
+        { text: 'Moved to Draft by Maria', when: '21 Jul, 16:05' },
+      ],
+    },
+    {
+      id: 't3', score: 78, fit: 'mid', title: 'Identity and access management platform for municipal services',
+      buyer: 'Municipality of Limassol', country: 'CY', value: '€640k', deadlineDays: 4, deadlineDate: '23 Aug 2026', deadlineIso: '2026-08-23',
+      source: 'TED · 2026/S 140-004711 · open', assignee: 'Unassigned',
+      comps: [
+        { name: 'CPV overlap', pts: 24, max: 30, text: 'IAM code is in your secondary group, not primary.' },
+        { name: 'Geography', pts: 20, max: 20, text: 'Limassol — inside your served region.' },
+        { name: 'Value band', pts: 17, max: 20, text: '€640k is your sweet spot.' },
+        { name: 'Reference fit', pts: 10, max: 15, text: 'One directly comparable IAM rollout.' },
+        { name: 'Procedure', pts: 7, max: 15, text: 'Four working days left — thin for a quality submission.' },
+      ],
+      risk: { kind: 'caution', text: 'Deadline in 4 days and no owner assigned — this is the decision that will be lost by default (high confidence).' },
+      summary: 'Supply, configure and support a single-sign-on and identity platform for 41 municipal services, including citizen self-service registration and a migration from the legacy LDAP directory. Two-year support included, extendable annually.',
+      facts: [
+        { label: 'Contract value', value: '€640,000 (est.)', font: 'var(--bm-num)' },
+        { label: 'Duration', value: '24 months + 12', font: 'var(--bm-ui)' },
+        { label: 'Deadline', value: '23 Aug 2026, 15:00 EEST', font: 'var(--bm-num)' },
+        { label: 'Published', value: '21 Jul 2026', font: 'var(--bm-num)' },
+        { label: 'Award criteria', value: '50% quality / 50% price', font: 'var(--bm-num)' },
+        { label: 'Main CPV', value: '48218000 · licence management', font: 'var(--bm-num)' },
+        { label: 'Place of performance', value: 'CY000 Kýpros', font: 'var(--bm-num)' },
+        { label: 'Languages', value: 'EL, EN', font: 'var(--bm-ui)' },
+      ],
+      docs: [
+        { name: 'Contract notice.pdf', pages: '9 p', state: 'read' },
+        { name: 'Technical annex.pdf', pages: '42 p', state: 'extracted' },
+      ],
+      reqSummary: '9 requirements · 7 met · 2 gaps · 0 blockers',
+      requirements: [
+        { label: 'Turnover ≥ €1M', status: 'met', note: 'Comfortably clear.', cite: 'p. 11 §3.1' },
+        { label: 'One IAM reference ≥ €300k', status: 'met', note: 'Paphos citizen portal, €410k.', cite: 'p. 12 §3.4' },
+        { label: 'Greek-language UI delivery', status: 'gap', note: 'Requires localisation pass — 6 dev-days.', cite: 'p. 19 §5.1' },
+        { label: 'On-site training, 8 sessions', status: 'gap', note: 'Not costed yet.', cite: 'p. 24 §6.2' },
+      ],
+      buyerStats: [
+        { label: 'Notices, 24 mo', value: '22' }, { label: 'Awarded', value: '19' }, { label: 'Avg value', value: '€480k' },
+        { label: 'Your bids', value: '2' }, { label: 'Your wins', value: '1' }, { label: 'Days to award', value: '46' },
+      ],
+      winners: [
+        { name: 'You', wins: '1', value: '€410k' },
+        { name: 'Infocredit Group', wins: '3', value: '€1.3M' },
+        { name: 'Cyta Business', wins: '2', value: '€1.0M' },
+      ],
+      buyerNote: 'Fast, price-sensitive buyer with a 50/50 split and a 46-day award cycle. You have an existing win and a live support contract — relationship is warm.',
+      activity: [
+        { text: 'Matched at 78/100 by engine v3.2', when: '21 Jul, 07:01' },
+        { text: 'Saved by you', when: '21 Jul, 11:12' },
+      ],
+    },
+    {
+      id: 't4', score: 71, fit: 'mid', title: 'Digital transformation advisory — national e-invoicing rollout',
+      buyer: 'Ministry of Finance', country: 'GR', value: '€1.20M', deadlineDays: 19, deadlineDate: '7 Sep 2026', deadlineIso: '2026-09-07',
+      source: 'TED · 2026/S 136-004201 · open', assignee: 'Unassigned',
+      comps: [
+        { name: 'CPV overlap', pts: 22, max: 30, text: 'Advisory codes overlap; implementation codes do not.' },
+        { name: 'Geography', pts: 15, max: 20, text: 'Athens — served, but travel and local-partner cost applies.' },
+        { name: 'Value band', pts: 16, max: 20, text: 'Mid-band.' },
+        { name: 'Reference fit', pts: 11, max: 15, text: 'Two e-invoicing programmes, both smaller.' },
+        { name: 'Procedure', pts: 7, max: 15, text: 'Consortium bid likely required.' },
+      ],
+      risk: null,
+      summary: 'Advisory and programme-management support for the second phase of the national e-invoicing mandate, covering stakeholder readiness, technical standards and a rollout plan across four tax authority regions.',
+      facts: [
+        { label: 'Contract value', value: '€1,200,000 (est.)', font: 'var(--bm-num)' },
+        { label: 'Duration', value: '18 months', font: 'var(--bm-ui)' },
+        { label: 'Deadline', value: '7 Sep 2026, 11:00 EEST', font: 'var(--bm-num)' },
+        { label: 'Published', value: '15 Jul 2026', font: 'var(--bm-num)' },
+        { label: 'Award criteria', value: '80% quality / 20% price', font: 'var(--bm-num)' },
+        { label: 'Main CPV', value: '79411000 · management consultancy', font: 'var(--bm-num)' },
+        { label: 'Place of performance', value: 'EL30 Attiki', font: 'var(--bm-num)' },
+        { label: 'Languages', value: 'EL', font: 'var(--bm-ui)' },
+      ],
+      docs: [
+        { name: 'Contract notice.pdf', pages: '14 p', state: 'read' },
+        { name: 'Terms of reference.pdf', pages: '58 p', state: 'extracted' },
+      ],
+      reqSummary: '15 requirements · 10 met · 5 gaps · 0 blockers',
+      requirements: [
+        { label: 'Greek legal entity or local partner', status: 'gap', note: 'No GR entity — partner needed.', cite: 'p. 21 §5.3' },
+        { label: 'Two e-invoicing references ≥ €500k', status: 'gap', note: 'Both of yours are under €500k.', cite: 'p. 23 §6.1' },
+        { label: 'Certified programme manager (PRINCE2/PMP)', status: 'met', note: 'Three on staff.', cite: 'p. 25 §6.4' },
+      ],
+      buyerStats: [
+        { label: 'Notices, 24 mo', value: '31' }, { label: 'Awarded', value: '24' }, { label: 'Avg value', value: '€2.1M' },
+        { label: 'Your bids', value: '0' }, { label: 'Your wins', value: '0' }, { label: 'Days to award', value: '97' },
+      ],
+      winners: [
+        { name: 'Accenture Greece', wins: '5', value: '€12.4M' },
+        { name: 'Uni Systems', wins: '4', value: '€8.1M' },
+        { name: 'Space Hellas', wins: '2', value: '€3.2M' },
+      ],
+      buyerNote: 'Heavily quality-weighted and dominated by large integrators. A first bid here is a positioning exercise more than a realistic win.',
+      activity: [{ text: 'Matched at 71/100 by engine v3.2', when: '15 Jul, 07:04' }],
+    },
+    {
+      id: 't5', score: 58, fit: 'possible', title: 'GIS platform for water utility asset management',
+      buyer: 'Water Board of Nicosia', country: 'CY', value: '€880k', deadlineDays: 9, deadlineDate: '28 Aug 2026', deadlineIso: '2026-08-28',
+      source: 'TED · 2026/S 139-004555 · open', assignee: 'Unassigned',
+      comps: [
+        { name: 'CPV overlap', pts: 16, max: 30, text: 'GIS is adjacent to your profile, not inside it.' },
+        { name: 'Geography', pts: 20, max: 20, text: 'Nicosia.' },
+        { name: 'Value band', pts: 15, max: 20, text: 'Mid-band.' },
+        { name: 'Reference fit', pts: 4, max: 15, text: 'No GIS reference on file.' },
+        { name: 'Procedure', pts: 3, max: 15, text: 'Specialist ESRI partnership expected.' },
+      ],
+      risk: { kind: 'caution', text: 'No GIS reference on file — quality score would likely land below the 60-point threshold (medium confidence).' },
+      summary: 'Replace the utility’s spreadsheet-based asset register with a GIS platform covering 4,100 km of network, including field-survey mobile capture and a maintenance-planning module.',
+      facts: [
+        { label: 'Contract value', value: '€880,000 (est.)', font: 'var(--bm-num)' },
+        { label: 'Duration', value: '30 months', font: 'var(--bm-ui)' },
+        { label: 'Deadline', value: '28 Aug 2026, 12:00 EEST', font: 'var(--bm-num)' },
+        { label: 'Published', value: '19 Jul 2026', font: 'var(--bm-num)' },
+        { label: 'Award criteria', value: '60% quality / 40% price', font: 'var(--bm-num)' },
+        { label: 'Main CPV', value: '38221000 · GIS systems', font: 'var(--bm-num)' },
+        { label: 'Place of performance', value: 'CY000 Kýpros', font: 'var(--bm-num)' },
+        { label: 'Languages', value: 'EL, EN', font: 'var(--bm-ui)' },
+      ],
+      docs: [{ name: 'Contract notice.pdf', pages: '11 p', state: 'read' }],
+      reqSummary: '11 requirements · 6 met · 4 gaps · 1 blocker',
+      requirements: [
+        { label: 'Two GIS implementation references', status: 'blocker', note: 'None on file — mandatory, not scored.', cite: 'p. 16 §4.2' },
+        { label: 'ESRI or QGIS certified staff', status: 'gap', note: 'None certified.', cite: 'p. 17 §4.4' },
+        { label: 'ISO 9001', status: 'met', note: 'On file.', cite: 'p. 13 §3.2' },
+      ],
+      buyerStats: [
+        { label: 'Notices, 24 mo', value: '17' }, { label: 'Awarded', value: '15' }, { label: 'Avg value', value: '€610k' },
+        { label: 'Your bids', value: '1' }, { label: 'Your wins', value: '0' }, { label: 'Days to award', value: '58' },
+      ],
+      winners: [
+        { name: 'Geoimaging Ltd', wins: '4', value: '€2.4M' },
+        { name: 'Atlantis Consulting', wins: '2', value: '€1.1M' },
+      ],
+      buyerNote: 'Specialist buyer with an entrenched GIS supplier base. Worth watching for the maintenance-planning lot rather than the platform lot.',
+      activity: [{ text: 'Matched at 58/100 by engine v3.2', when: '19 Jul, 07:02' }],
+    },
+    {
+      id: 't6', score: 34, fit: 'excluded', title: 'Construction of secondary school annex, Larnaca district',
+      buyer: 'Ministry of Education', country: 'CY', value: '€6.20M', deadlineDays: 22, deadlineDate: '10 Sep 2026', deadlineIso: '2026-09-10',
+      source: 'TED · 2026/S 135-004098 · open', assignee: '—',
+      comps: [
+        { name: 'CPV overlap', pts: 0, max: 30, text: 'Works CPV 45214220 is outside every group in your profile.' },
+        { name: 'Geography', pts: 20, max: 20, text: 'Larnaca — served.' },
+        { name: 'Value band', pts: 8, max: 20, text: '€6.2M is 3.4× your ceiling.' },
+        { name: 'Reference fit', pts: 0, max: 15, text: 'No construction references.' },
+      ],
+      risk: { kind: 'excluded', text: 'Excluded by rule CPV_OUT_OF_PROFILE — construction works, not IT services. Shown so you can confirm the rule is right.' },
+      summary: 'Design-and-build of a six-classroom annex with associated site works. Retained in the feed only as an audit sample of the exclusion rule — no action expected.',
+      facts: [
+        { label: 'Contract value', value: '€6,200,000 (est.)', font: 'var(--bm-num)' },
+        { label: 'Exclusion rule', value: 'CPV_OUT_OF_PROFILE', font: 'var(--bm-num)' },
+        { label: 'Deadline', value: '10 Sep 2026', font: 'var(--bm-num)' },
+        { label: 'Main CPV', value: '45214220 · school construction', font: 'var(--bm-num)' },
+      ],
+      docs: [{ name: 'Contract notice.pdf', pages: '16 p', state: 'new' }],
+      reqSummary: 'Not evaluated — excluded before requirement extraction',
+      requirements: [{ label: 'Requirement extraction skipped', status: 'gap', note: 'Excluded matches are not analysed; confirm or correct the rule instead.', cite: 'engine rule 12' }],
+      buyerStats: [
+        { label: 'Notices, 24 mo', value: '44' }, { label: 'Awarded', value: '39' }, { label: 'Avg value', value: '€3.8M' },
+        { label: 'Your bids', value: '0' }, { label: 'Your wins', value: '0' }, { label: 'Days to award', value: '71' },
+      ],
+      winners: [{ name: 'Cybarco', wins: '6', value: '€24.1M' }, { name: 'Iacovou Brothers', wins: '4', value: '€16.3M' }],
+      buyerNote: 'A works buyer. If you want their IT notices only, tighten the CPV filter rather than ignoring items one by one.',
+      activity: [{ text: 'Excluded by rule CPV_OUT_OF_PROFILE', when: '14 Jul, 07:02' }],
+    },
+  ];
+
+  stageDefs = [
+    { id: 'saved', label: 'Saved' }, { id: 'qualify', label: 'Qualify' }, { id: 'draft', label: 'Draft' },
+    { id: 'review', label: 'Review' }, { id: 'submit', label: 'Submit' }, { id: 'result', label: 'Result' },
+  ];
+
+  componentDidMount() {
+    this.onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        this.setState((s) => ({ palette: !s.palette }));
+      } else if (e.key === 'Escape') {
+        this.setState({ palette: false, sheet: null, bell: false });
+      }
+    };
+    window.addEventListener('keydown', this.onKey);
+    this.restoreBoard();
+    this.onResize = () => {
+      if (this.quarterChart) this.quarterChart.resize();
+      if (this.bandChart) this.bandChart.resize();
+    };
+    window.addEventListener('resize', this.onResize);
+    this.syncCharts();
+  }
+
+  componentDidUpdate() { this.syncCharts(); }
+
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this.onKey);
+    window.removeEventListener('resize', this.onResize);
+    if (this.quarterChart) { this.quarterChart.dispose(); this.quarterChart = null; }
+    if (this.bandChart) { this.bandChart.dispose(); this.bandChart = null; }
+    if (this.toastTimer) window.clearTimeout(this.toastTimer);
+  }
+
+  cssVar(name) {
+    const el = document.querySelector('[data-bm-theme]') || document.body;
+    const v = getComputedStyle(el).getPropertyValue(name).trim();
+    return v.length > 0 ? v : '#2ec4b0';
+  }
+
+  /** ECharts instances live outside React's tree, so they are (re)built here rather than in renderVals. */
+  syncCharts() {
+    const echarts = typeof window !== 'undefined' ? window.echarts : null;
+    if (!echarts) return;
+    if (this.state.view !== 'insights') {
+      if (this.quarterChart) { this.quarterChart.dispose(); this.quarterChart = null; }
+      if (this.bandChart) { this.bandChart.dispose(); this.bandChart = null; }
+      return;
+    }
+    const ink1 = this.cssVar('--bm-ink1'), ink2 = this.cssVar('--bm-ink2'), ink3 = this.cssVar('--bm-ink3');
+    const line = this.cssVar('--bm-line-hair'), sunken = this.cssVar('--bm-sunken');
+    const accent = this.cssVar('--bm-accent'), panel = this.cssVar('--bm-panel'), strong = this.cssVar('--bm-line-strong');
+    const font = 'Source Sans 3, system-ui, sans-serif';
+    const base = {
+      textStyle: { fontFamily: font, color: ink2 },
+      grid: { left: 42, right: 16, top: 28, bottom: 34 },
+      tooltip: {
+        trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: panel, borderColor: strong,
+        borderWidth: 1, textStyle: { color: ink1, fontFamily: font, fontSize: 12.5 }, extraCssText: 'border-radius:12px;',
+      },
+      legend: { textStyle: { color: ink3, fontFamily: font, fontSize: 12 }, top: 0, right: 0, itemWidth: 10, itemHeight: 10, icon: 'roundRect' },
+    };
+
+    const qEl = document.getElementById('bm-chart-quarters');
+    if (qEl) {
+      if (!this.quarterChart || this.quarterChart.getDom() !== qEl) {
+        if (this.quarterChart) this.quarterChart.dispose();
+        this.quarterChart = echarts.init(qEl, null, { renderer: 'svg' });
+      }
+      this.quarterChart.setOption(Object.assign({}, base, {
+        xAxis: { type: 'category', data: ["Q3'25", "Q4'25", "Q1'26", "Q2'26"], axisLine: { lineStyle: { color: line } }, axisTick: { show: false }, axisLabel: { color: ink2, fontSize: 12 } },
+        yAxis: { type: 'value', splitLine: { lineStyle: { color: line } }, axisLabel: { color: ink3, fontSize: 11 } },
+        series: [
+          { name: 'Submitted', type: 'bar', data: [8, 11, 10, 13], barWidth: 30, itemStyle: { color: line, borderColor: strong, borderWidth: 1, borderRadius: [6, 6, 0, 0] } },
+          { name: 'Won', type: 'bar', data: [2, 3, 4, 4], barWidth: 26, itemStyle: { color: accent, borderRadius: [6, 6, 0, 0] } },
+        ],
+      }), true);
+    }
+
+    const bEl = document.getElementById('bm-chart-bands');
+    if (bEl) {
+      if (!this.bandChart || this.bandChart.getDom() !== bEl) {
+        if (this.bandChart) this.bandChart.dispose();
+        this.bandChart = echarts.init(bEl, null, { renderer: 'svg' });
+      }
+      this.bandChart.setOption(Object.assign({}, base, {
+        grid: { left: 82, right: 24, top: 28, bottom: 30 },
+        tooltip: Object.assign({}, base.tooltip, {
+          formatter: (rows) => {
+            const bids = { '80–100': 21, '65–79': 14, '45–64': 7, '0–44': 0 };
+            const won = { '80–100': 10, '65–79': 4, '45–64': 1, '0–44': 0 };
+            const k = rows[0].name;
+            return k + '<br/>' + rows[0].value + '% win rate · ' + won[k] + ' of ' + bids[k] + ' bids';
+          },
+        }),
+        xAxis: { type: 'value', max: 60, axisLabel: { color: ink3, fontSize: 11, formatter: '{value}%' }, splitLine: { lineStyle: { color: line } } },
+        yAxis: { type: 'category', data: ['0–44', '45–64', '65–79', '80–100'], axisLine: { lineStyle: { color: line } }, axisTick: { show: false }, axisLabel: { color: ink2, fontSize: 12 } },
+        legend: { show: false },
+        series: [{
+          name: 'Win rate', type: 'bar', data: [0, 14, 29, 48], barWidth: 22,
+          itemStyle: { color: (p) => (p.dataIndex >= 2 ? accent : strong), borderRadius: [0, 6, 6, 0] },
+          label: { show: true, position: 'right', color: ink2, fontFamily: font, fontSize: 11.5, formatter: '{c}%' },
+        }],
+      }), true);
+    }
+  }
+
+  toast(text) {
+    this.setState({ toast: text });
+    if (this.toastTimer) window.clearTimeout(this.toastTimer);
+    this.toastTimer = window.setTimeout(() => this.setState({ toast: null }), 2400);
+  }
+
+  fitStyle(fit) {
+    if (fit === 'strong') return { gutter: 'var(--bm-accent)', bg: 'var(--bm-accent-tint)', line: 'var(--bm-accent-line)', ink: 'var(--bm-accent-text)', label: 'Strong fit' };
+    if (fit === 'mid') return { gutter: 'var(--bm-fit-mid)', bg: 'transparent', line: 'var(--bm-accent-line)', ink: 'var(--bm-accent-text)', label: 'Worth reviewing' };
+    if (fit === 'possible') return { gutter: 'var(--bm-line-strong)', bg: 'transparent', line: 'var(--bm-line)', ink: 'var(--bm-ink2)', label: 'Possible' };
+    return { gutter: 'var(--bm-risk)', bg: 'var(--bm-risk-tint)', line: 'var(--bm-risk)', ink: 'var(--bm-risk)', label: 'Excluded' };
+  }
+
+  deadlineInk(days) {
+    if (days <= 5) return 'var(--bm-risk)';
+    if (days <= 10) return 'var(--bm-caution)';
+    return 'var(--bm-ink2)';
+  }
+
+  visible() {
+    const tab = this.state.tab;
+    if (tab === 'strong') return this.tenders.filter((t) => t.fit === 'strong');
+    if (tab === 'worth') return this.tenders.filter((t) => t.fit === 'mid');
+    if (tab === 'possible') return this.tenders.filter((t) => t.fit === 'possible' || t.fit === 'excluded');
+    if (tab === 'saved') return this.tenders.filter((t) => this.state.saved[t.id]);
+    if (tab === 'ignored') return this.tenders.filter((t) => this.state.verdict[t.id] === 'pass');
+    return this.tenders;
+  }
+
+  moveStage(id, dir) {
+    const order = this.stageDefs.map((s) => s.id);
+    const cur = this.state.stage[id] ?? 'saved';
+    const next = order[Math.min(order.length - 1, Math.max(0, order.indexOf(cur) + dir))];
+    this.setState((s) => ({ stage: { ...s.stage, [id]: next } }));
+    this.toast('Moved to ' + this.stageDefs.find((x) => x.id === next).label + '.');
+  }
+
+  toggleStyle(on) {
+    return { track: on ? 'var(--bm-accent)' : 'var(--bm-line)', knob: on ? '19.5px' : '2.5px' };
+  }
+
+  chipList(key) {
+    return this.state[key].map((label) => ({
+      label,
+      onRemove: () => this.setState((s) => ({ [key]: s[key].filter((x) => x !== label) })),
+    }));
+  }
+
+  settingsVals() {
+    const st = this.state;
+    const min = Number(st.minValue);
+    const max = Number(st.maxValue);
+    const runway = Number(st.runway);
+    const valueError = Number.isNaN(min) || Number.isNaN(max)
+      ? 'Both values must be numbers.'
+      : min > max ? 'Minimum value must be less than or equal to maximum value.' : '';
+    const runwayWarning = runway < 5 && !Number.isNaN(runway)
+      ? 'Under 5 days you will see tenders you cannot realistically prepare. 4 days excluded 11 notices last month.' : '';
+    const siteError = /^https?:\/\/[^\s.]+\.[^\s]+$/.test(st.orgSite) ? '' : 'bad';
+    const noChannels = st.chan.email === false && st.chan.slack === false;
+    const noCpv = st.cpv.length === 0;
+    const inScope = st.cpv.filter((c) => ['72', '48', '79'].indexOf(c.slice(0, 2)) > -1).length;
+    const issues = [];
+    if (valueError.length > 0) issues.push({ text: 'Matching profile — ' + valueError });
+    if (noCpv) issues.push({ text: 'Matching profile — select at least one CPV code, or nothing can be scored.' });
+    if (inScope === 0 && !noCpv) issues.push({ text: 'Matching profile — no selected CPV code falls inside the ingestion scope (divisions 72, 48, 79).' });
+    if (siteError.length > 0) issues.push({ text: 'Company — website is not a full URL.' });
+    if (noChannels) issues.push({ text: 'Digest — no delivery channel is switched on.' });
+
+    const paneDefs = [
+      { id: 'matching', label: 'Matching profile', flag: valueError.length > 0 || noCpv || (inScope === 0 && !noCpv) },
+      { id: 'exclusions', label: 'Exclusions', flag: false },
+      { id: 'alerts', label: 'Digest', flag: noChannels },
+      { id: 'org', label: 'Company', flag: siteError.length > 0 },
+      { id: 'team', label: 'Billing', flag: false },
+      { id: 'appearance', label: 'Appearance', flag: false },
+      { id: 'danger', label: 'Delete organisation', flag: false },
+    ];
+    const ruleDefs = [
+      { id: 'geo', label: 'Excluded geographies', detail: 'skips lots in countries you do not serve' },
+      { id: 'cpv', label: 'Excluded CPV families', detail: 'works and supply families outside your profile' },
+      { id: 'phrase', label: 'Excluded phrases in notice text', detail: String(st.phrases.length) + ' phrases configured' },
+      { id: 'nature', label: 'Unsupported contract nature', detail: 'works / concessions' },
+      { id: 'runway', label: 'Deadline runway below threshold', detail: 'currently ' + st.runway + ' days' },
+    ];
+    const chanDefs = [
+      { id: 'email', label: 'Digest enabled', detail: 'one email per day to every member' },
+      { id: 'mentions', label: 'Send even when empty', detail: 'off means silent days stay silent' },
+      { id: 'slack', label: 'Slack — #bids channel', detail: 'proposed — not in the app today' },
+      { id: 'weekly', label: 'Weekly pipeline roll-up', detail: 'proposed — Mondays, to the whole team' },
+    ];
+    const remindDefs = [
+      { id: 'd14', label: '14 days out' }, { id: 'd7', label: '7 days' }, { id: 'd3', label: '3 days' }, { id: 'd1', label: '1 day' },
+    ];
+    const theme = st.theme ?? (this.props.theme ?? 'dark');
+
+    return {
+      isSettings: st.view === 'settings',
+      isMatching: st.pane === 'matching', isExclusions: st.pane === 'exclusions', isAlerts: st.pane === 'alerts',
+      isOrg: st.pane === 'org', isTeam: st.pane === 'team', isAppearance: st.pane === 'appearance',
+      isDanger: st.pane === 'danger',
+      scopeText: st.cpv.length === 0
+        ? 'No CPV codes selected — nothing will be scored.'
+        : inScope + ' of ' + st.cpv.length + ' codes fall inside the ingestion scope (divisions 72, 48, 79).',
+      scopeLine: inScope === 0 ? 'var(--bm-risk)' : inScope < st.cpv.length ? 'var(--bm-caution)' : 'var(--bm-accent)',
+      scopeBg: inScope === 0 ? 'var(--bm-risk-tint)' : inScope < st.cpv.length ? 'var(--bm-caution-tint)' : 'var(--bm-accent-tint)',
+      nutsChips: this.chipList('nuts'), keywordChips: this.chipList('keywords'), capabilityChips: this.chipList('capabilities'),
+      onAddNuts: () => this.setState((s) => ({ nuts: s.nuts.concat(['MT00 Malta']) })),
+      onAddKeyword: () => this.setState((s) => ({ keywords: s.keywords.concat(['data migration']) })),
+      onAddCapability: () => this.setState((s) => ({ capabilities: s.capabilities.concat(['Data engineering']) })),
+      deleteConfirm: st.deleteConfirm,
+      onDeleteConfirm: (e) => this.setState({ deleteConfirm: e.target.value }),
+      deleteBg: st.deleteConfirm === 'DELETE' ? 'var(--bm-risk)' : 'transparent',
+      deleteInk: st.deleteConfirm === 'DELETE' ? '#ffffff' : 'var(--bm-ink3)',
+      deleteCursor: st.deleteConfirm === 'DELETE' ? 'pointer' : 'not-allowed',
+      onDelete: () => this.toast(st.deleteConfirm === 'DELETE' ? 'Deletion would run here — owner only.' : 'Type DELETE to confirm.'),
+      setNav: paneDefs.map((p) => ({
+        label: p.label, flagged: p.flag,
+        bg: st.pane === p.id ? 'var(--bm-raised)' : 'transparent',
+        ink: st.pane === p.id ? 'var(--bm-ink1)' : 'var(--bm-ink2)',
+        weight: st.pane === p.id ? '600' : '400',
+        onClick: () => this.setState({ pane: p.id }),
+      })),
+      hasIssues: issues.length > 0, issues,
+      issueCount: issues.length === 1 ? '1 issue' : String(issues.length) + ' issues',
+      minValue: st.minValue, maxValue: st.maxValue, runway: st.runway,
+      onMinValue: (e) => this.setState({ minValue: e.target.value }),
+      onMaxValue: (e) => this.setState({ maxValue: e.target.value }),
+      onRunway: (e) => this.setState({ runway: e.target.value }),
+      hasValueError: valueError.length > 0, valueError,
+      valueBorder: valueError.length > 0 ? 'var(--bm-risk)' : 'var(--bm-line-hair)',
+      hasRunwayWarning: runwayWarning.length > 0, runwayWarning,
+      runwayBorder: runwayWarning.length > 0 ? 'var(--bm-caution)' : 'var(--bm-line-hair)',
+      cpvChips: this.chipList('cpv'), geoChips: this.chipList('geo'), phraseChips: this.chipList('phrases'),
+      onAddCpv: () => this.setState((s) => ({ cpv: s.cpv.concat(['72212000']) })),
+      onAddGeo: () => this.setState((s) => ({ geo: s.geo.concat(['BG Bulgaria']) })),
+      onAddPhrase: () => this.setState((s) => ({ phrases: s.phrases.concat(['road maintenance']) })),
+      rules: ruleDefs.map((r) => {
+        const t = this.toggleStyle(st.ruleOn[r.id]);
+        return { label: r.label, detail: r.detail, track: t.track, knob: t.knob,
+          onToggle: () => this.setState((s) => ({ ruleOn: { ...s.ruleOn, [r.id]: !s.ruleOn[r.id] } })) };
+      }),
+      channels: chanDefs.map((c) => {
+        const t = this.toggleStyle(st.chan[c.id]);
+        return { label: c.label, detail: c.detail, track: t.track, knob: t.knob,
+          onToggle: () => this.setState((s) => ({ chan: { ...s.chan, [c.id]: !s.chan[c.id] } })) };
+      }),
+      noChannels,
+      reminders: remindDefs.map((r) => ({
+        label: r.label,
+        bg: st.remind[r.id] ? 'var(--bm-accent-tint)' : 'transparent',
+        line: st.remind[r.id] ? 'var(--bm-accent-line)' : 'var(--bm-line)',
+        ink: st.remind[r.id] ? 'var(--bm-accent-text)' : 'var(--bm-ink2)',
+        onClick: () => this.setState((s) => ({ remind: { ...s.remind, [r.id]: !s.remind[r.id] } })),
+      })),
+      onDigestTime: () => this.toast('Digest time updated.'),
+      onDigestScope: () => this.toast('Digest scope updated.'),
+      orgName: st.orgName, orgSite: st.orgSite, orgDesc: st.orgDesc,
+      onOrgName: (e) => this.setState({ orgName: e.target.value }),
+      onOrgSite: (e) => this.setState({ orgSite: e.target.value }),
+      onOrgDesc: (e) => this.setState({ orgDesc: e.target.value }),
+      onOrgBand: (e) => this.toast('Company size set to ' + e.target.value + '.'),
+      descCount: st.orgDesc.length + ' characters — shown to no one; it feeds keyword and capability suggestions.',
+      hasSiteError: siteError.length > 0,
+      siteBorder: siteError.length > 0 ? 'var(--bm-risk)' : 'var(--bm-line-hair)',
+      certs: [
+        { label: 'ISO_27001 — information security', until: 'on file', state: 'held', ink: 'var(--bm-accent-text)', bg: 'var(--bm-accent-tint)', line: 'var(--bm-accent-line)' },
+        { label: 'ISO_9001 — quality management', until: 'on file', state: 'held', ink: 'var(--bm-accent-text)', bg: 'var(--bm-accent-tint)', line: 'var(--bm-accent-line)' },
+        { label: 'SOC2 — service organisation control', until: 'on file', state: 'held', ink: 'var(--bm-accent-text)', bg: 'var(--bm-accent-tint)', line: 'var(--bm-accent-line)' },
+        { label: 'OTHER — “Cyber Essentials Plus”', until: 'custom label', state: 'held', ink: 'var(--bm-ink2)', bg: 'transparent', line: 'var(--bm-line)' },
+        { label: 'ISO 14001 — environmental', until: 'not held · requested by 1 open tender', state: 'gap', ink: 'var(--bm-caution)', bg: 'var(--bm-caution-tint)', line: 'var(--bm-caution)' },
+      ],
+      team: [
+        { initials: 'CP', name: 'Christos Ploutarchou', email: 'christos@example.com', role: 'Owner', last: 'today' },
+        { initials: 'MK', name: 'Maria Kyriacou', email: 'maria@example.com', role: 'Bid manager', last: 'yesterday' },
+        { initials: 'AN', name: 'Andreas Nicolaou', email: 'andreas@example.com', role: 'Viewer', last: '9 Aug' },
+      ],
+      invoices: [
+        { date: '1 Aug 2026', amount: '€29.00', state: 'paid' },
+        { date: '1 Jul 2026', amount: '€29.00', state: 'paid' },
+        { date: '1 Jun 2026', amount: '€29.00', state: 'paid' },
+      ],
+      onInvite: () => this.toast('Invite sent — 2 seats left.'),
+      themeOptions: [
+        { id: 'dark', label: 'Dark', swatchBg: '#0d1014', swatchLine: '#2e353f', swatchInk: '#eef1f5', swatchAccent: '#2ec4b0' },
+        { id: 'light', label: 'Light', swatchBg: '#f7f8f9', swatchLine: '#d5dae0', swatchInk: '#14181d', swatchAccent: '#0f7d6f' },
+      ].map((o) => ({
+        label: o.label, swatchBg: o.swatchBg, swatchLine: o.swatchLine, swatchInk: o.swatchInk, swatchAccent: o.swatchAccent,
+        bg: theme === o.id ? 'var(--bm-raised)' : 'transparent',
+        line: theme === o.id ? 'var(--bm-accent-line)' : 'var(--bm-line-hair)',
+        weight: theme === o.id ? '600' : '400',
+        onClick: () => this.setState({ theme: o.id }),
+      })),
+      settingsSaved: st.savedAt,
+      onSaveSettings: () => {
+        if (issues.length > 0) { this.toast('Fix ' + (issues.length === 1 ? '1 issue' : issues.length + ' issues') + ' before saving.'); return; }
+        this.setState({ savedAt: 'saved just now' });
+        this.toast('Settings saved — applies at the next 07:00 run.');
+      },
+    };
+  }
+
+  renderVals() {
+    const st = this.state;
+    const theme = st.theme ?? (this.props.theme ?? 'dark');
+    const density = this.props.density ?? 'comfortable';
+    const pad = density === 'compact' ? '13px 16px 12px' : '18px 20px 16px';
+    const showRail = (this.props.showRail ?? true) && st.view === 'feed';
+
+    const navDefs = [
+      { id: 'feed', label: 'Feed', count: '18' },
+      { id: 'pipeline', label: 'Pipeline', count: '9' },
+      { id: 'insights', label: 'Insights', count: null },
+      { id: 'settings', label: 'Settings', count: null },
+    ];
+    const nav = navDefs.map((n) => ({
+      label: n.label, hasCount: n.count !== null, count: n.count,
+      bg: st.view === n.id ? 'var(--bm-raised)' : 'transparent',
+      ink: st.view === n.id ? 'var(--bm-ink1)' : 'var(--bm-ink2)',
+      countBg: st.view === n.id ? 'var(--bm-accent-tint)' : 'transparent',
+      countInk: st.view === n.id ? 'var(--bm-accent-text)' : 'var(--bm-ink3)',
+      onClick: () => this.setState({ view: n.id, sheet: null }),
+    }));
+
+    const tabDefs = [
+      { id: 'today', label: "Today's matches", count: '18' }, { id: 'strong', label: 'Strong', count: '4' },
+      { id: 'worth', label: 'Worth reviewing', count: '7' }, { id: 'possible', label: 'Possible', count: '5' },
+      { id: 'saved', label: 'Saved', count: '12' }, { id: 'ignored', label: 'Ignored', count: '34' },
+    ];
+    const tabs = tabDefs.map((t) => ({
+      label: t.label, count: t.count,
+      mark: st.tab === t.id ? 'var(--bm-accent)' : 'transparent',
+      ink: st.tab === t.id ? 'var(--bm-ink1)' : 'var(--bm-ink2)',
+      weight: st.tab === t.id ? '600' : '400',
+      onClick: () => this.setState({ tab: t.id }),
+    }));
+
+    const searchDefs = [
+      { id: 'health', label: 'Health & public IT (CY)', count: '18' },
+      { id: 'soc', label: 'Security & SOC (CY, GR)', count: '6' },
+      { id: 'big', label: 'Frameworks over €1M', count: '4' },
+      { id: 'closing', label: 'Closing this week', count: '5' },
+    ];
+    const searches = searchDefs.map((s) => ({
+      label: s.label, count: s.count,
+      bg: st.search === s.id ? 'var(--bm-raised)' : 'transparent',
+      mark: st.search === s.id ? 'var(--bm-accent)' : 'transparent',
+      ink: st.search === s.id ? 'var(--bm-ink1)' : 'var(--bm-ink2)',
+      weight: st.search === s.id ? '600' : '400',
+      onClick: () => { this.setState({ search: s.id }); this.toast('Saved search: ' + s.label); },
+    }));
+
+    const cards = this.visible().map((t) => {
+      const f = this.fitStyle(t.fit);
+      const v = st.verdict[t.id] ?? null;
+      const saved = st.saved[t.id] === true;
+      const inPipe = st.stage[t.id] !== undefined;
+      const riskKind = t.risk === null ? '' : (t.risk.kind === 'blocker' ? 'Blocker' : t.risk.kind === 'excluded' ? 'Excluded' : 'Caution');
+      const riskLine = t.risk === null ? '' : (t.risk.kind === 'caution' ? 'var(--bm-caution)' : 'var(--bm-risk)');
+      const riskBg = t.risk === null ? '' : (t.risk.kind === 'caution' ? 'var(--bm-caution-tint)' : 'var(--bm-risk-tint)');
+      return {
+        id: t.id, pad, opacity: t.fit === 'excluded' ? '0.72' : '1',
+        gutter: f.gutter, chipBg: f.bg, chipLine: f.line, chipInk: f.ink, fitLabel: f.label,
+        scoreLabel: t.score + '/100', scoreNum: String(t.score),
+        dash: (t.score / 100 * 100.5).toFixed(1) + ' 100.5',
+        source: t.source, title: t.title,
+        meta: t.buyer + ' · ' + t.country + ' · ' + t.value + ' · ' + t.deadlineDate,
+        deadlineLabel: this.deadlineText(t),
+        deadlineInk: this.deadlineInk(this.daysLeft(t)),
+        comps: t.comps.slice(0, 4).map((c) => ({
+          name: c.name, pts: '+' + c.pts + '/' + c.max, pct: Math.round((c.pts / c.max) * 100) + '%',
+          fill: c.pts / c.max > 0.6 ? 'var(--bm-accent)' : 'var(--bm-fit-mid)',
+        })),
+        hasRisk: t.risk !== null, riskKind, riskText: t.risk === null ? '' : t.risk.text, riskLine, riskBg,
+        expanded: st.expanded[t.id] === true, engine: 'v3.2',
+        reasons: t.comps.map((c) => ({ name: c.name + ' +' + c.pts, text: c.text })),
+        toggleLabel: st.expanded[t.id] === true ? 'Hide reasoning' : 'Why this score',
+        assignee: t.assignee,
+        bidBg: v === 'bid' ? 'var(--bm-accent)' : 'transparent', bidInk: v === 'bid' ? 'var(--bm-accent-ink)' : 'var(--bm-ink2)',
+        maybeBg: v === 'maybe' ? 'var(--bm-accent-tint)' : 'transparent', maybeInk: v === 'maybe' ? 'var(--bm-accent-text)' : 'var(--bm-ink2)',
+        passBg: v === 'pass' ? 'var(--bm-raised)' : 'transparent', passInk: v === 'pass' ? 'var(--bm-ink1)' : 'var(--bm-ink2)',
+        saveLabel: saved ? 'Saved' : 'Save', saveBg: saved ? 'var(--bm-accent-tint)' : 'transparent',
+        saveLine: saved ? 'var(--bm-accent-line)' : 'var(--bm-line)', saveInk: saved ? 'var(--bm-accent-text)' : 'var(--bm-ink2)',
+        onBid: () => { this.setState((s) => ({ verdict: { ...s.verdict, [t.id]: 'bid' }, stage: { ...s.stage, [t.id]: s.stage[t.id] ?? 'qualify' } })); this.toast('Marked Bid — added to Qualify.'); },
+        onMaybe: () => { this.setState((s) => ({ verdict: { ...s.verdict, [t.id]: 'maybe' } })); this.toast('Marked Maybe.'); },
+        onPass: () => { this.setState((s) => ({ verdict: { ...s.verdict, [t.id]: 'pass' } })); this.toast('Passed — moved to Ignored.'); },
+        onSave: () => { this.setState((s) => ({ saved: { ...s.saved, [t.id]: !saved } })); this.toast(saved ? 'Removed from saved.' : 'Saved.'); },
+        onToggle: () => this.setState((s) => ({ expanded: { ...s.expanded, [t.id]: !(s.expanded[t.id] === true) } })),
+        onOpen: (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ sheet: t.id, sheetTab: 'summary' }); },
+        inPipe,
+      };
+    });
+
+    const stages = this.stageDefs.map((sd) => {
+      const items = this.allBids().filter((t) => (st.stage[t.id] ?? null) === sd.id)
+        .filter((t) => (st.ownerFilter === null ? true : (st.owner[t.id] ?? null) === st.ownerFilter))
+        .filter((t) => (st.closingSoon === false ? true : this.daysLeft(t) <= 7));
+      const total = items.reduce((sum, t) => sum + parseFloat(String(t.value).replace(/[^0-9.]/g, '')) * (String(t.value).indexOf('k') > -1 ? 0.001 : 1), 0);
+      const over = st.dragOver === sd.id && st.dragging !== null;
+      return {
+        label: sd.label, count: String(items.length),
+        value: items.length === 0 ? '—' : '€' + total.toFixed(2) + 'M',
+        bg: over ? 'var(--bm-accent-tint)' : 'var(--bm-panel)',
+        border: over ? 'var(--bm-accent-line)' : 'var(--bm-line-hair)',
+        borderStyle: over ? 'dashed' : 'solid',
+        onDragOver: (e) => { e.preventDefault(); if (st.dragOver !== sd.id) this.setState({ dragOver: sd.id }); },
+        onDragLeave: () => { if (st.dragOver === sd.id) this.setState({ dragOver: null }); },
+        onDrop: (e) => {
+          e.preventDefault();
+          const id = st.dragging;
+          this.setState({ dragging: null, dragOver: null });
+          if (id === null || st.stage[id] === sd.id) return;
+          this.setState((s) => ({ stage: { ...s.stage, [id]: sd.id } }));
+          this.toast('Moved to ' + sd.label + '.');
+        },
+        items: items.map((t) => {
+          const ts = this.taskState(t.id, sd.id);
+          const ownerCode = st.owner[t.id] ?? null;
+          const nextOwner = this.owners[(this.owners.indexOf(ownerCode) + 1) % this.owners.length];
+          return {
+          title: t.title, buyer: t.buyer + ' · ' + t.country, deadline: this.daysLeft(t) + 'd',
+          deadlineInk: this.deadlineInk(this.daysLeft(t)), score: t.score === null ? 'new' : t.score + '/100',
+          owner: ownerCode === null ? '+' : ownerCode,
+          ownerInk: ownerCode === null ? 'var(--bm-ink3)' : 'var(--bm-ink1)',
+          onOwner: () => this.persist({ owner: Object.assign({}, st.owner, { [t.id]: nextOwner }) }),
+          taskLabel: ts.list.length === 0 ? 'no steps' : ts.count + '/' + ts.list.length + ' steps',
+          taskInk: ts.list.length > 0 && ts.count === ts.list.length ? 'var(--bm-accent-text)' : 'var(--bm-ink3)',
+          taskPct: ts.list.length === 0 ? '0%' : Math.round((ts.count / ts.list.length) * 100) + '%',
+          workflowOpen: st.openWorkflow === t.id,
+          onToggleWorkflow: () => this.setState({ openWorkflow: st.openWorkflow === t.id ? null : t.id }),
+          tasks: ts.list.map((label, i) => {
+            const key = sd.id + ':' + i;
+            const done = ts.done[key] === true;
+            return {
+              label, mark: done ? '✓' : '',
+              box: done ? 'var(--bm-accent)' : 'transparent',
+              boxLine: done ? 'var(--bm-accent)' : 'var(--bm-line)',
+              ink: done ? 'var(--bm-ink3)' : 'var(--bm-ink1)',
+              strike: done ? 'line-through' : 'none',
+              onToggle: () => this.persist({
+                tasks: Object.assign({}, st.tasks, {
+                  [t.id]: Object.assign({}, st.tasks[t.id] ?? {}, { [key]: !done }),
+                }),
+              }),
+            };
+          }),
+          gutter: this.fitStyle(t.fit).gutter, nextLabel: 'Advance →',
+          opacity: st.dragging === t.id ? '0.4' : '1',
+          onDragStart: (e) => { if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', t.id); } this.setState({ dragging: t.id }); },
+          onDragEnd: () => this.setState({ dragging: null, dragOver: null }),
+          onForward: () => this.moveStage(t.id, 1), onBack: () => this.moveStage(t.id, -1),
+          };
+        }),
+        addOpen: st.addStage === sd.id, addClosed: st.addStage !== sd.id,
+        onOpenAdd: () => this.setState({ addStage: sd.id, addDraft: '' }),
+        onCancelAdd: () => this.setState({ addStage: null, addDraft: '' }),
+        onCommitAdd: () => {
+          const title = st.addDraft.trim();
+          if (title.length === 0) { this.setState({ addStage: null }); return; }
+          const id = 'x' + Date.now();
+          const iso = new Date(Date.now() + 21 * 86400000).toISOString().slice(0, 10);
+          this.persist({
+            extra: st.extra.concat([{ id, title, score: null, fit: 'possible', buyer: 'Added by you', country: '—',
+              value: '—', deadlineDays: 21, deadlineDate: iso, deadlineIso: iso, source: 'manual entry',
+              assignee: 'Unassigned', comps: [], risk: null, summary: '', facts: [], docs: [], reqSummary: '',
+              requirements: [], buyerStats: [], winners: [], buyerNote: '', activity: [] }]),
+            stage: Object.assign({}, st.stage, { [id]: sd.id }),
+            addStage: null, addDraft: '',
+          });
+          this.toast('Added to ' + sd.label + '.');
+        },
+      };
+    });
+
+    const sel = this.tenders.find((t) => t.id === st.sheet) ?? null;
+    let sheet = {};
+    if (sel !== null) {
+      const f = this.fitStyle(sel.fit);
+      sheet = {
+        scoreLabel: sel.score + '/100', fitLabel: f.label, chipBg: f.bg, chipLine: f.line, chipInk: f.ink,
+        deadlineLabel: this.deadlineText(sel),
+        deadlineInk: this.deadlineInk(this.daysLeft(sel)), title: sel.title,
+        meta: sel.buyer + ' · ' + sel.country + ' · ' + sel.value + ' · ' + sel.source,
+        summary: sel.summary, facts: sel.facts, docs: sel.docs.map((d) => ({
+          name: d.name, pages: d.pages, state: d.state,
+          stateInk: d.state === 'new' ? 'var(--bm-caution)' : d.state === 'extracted' ? 'var(--bm-accent-text)' : 'var(--bm-ink3)',
+        })),
+        reqSummary: sel.reqSummary,
+        requirements: sel.requirements.map((r) => ({
+          label: r.label, note: r.note, cite: r.cite, status: r.status,
+          isMet: r.status === 'met', isGap: r.status === 'gap', isBlocker: r.status === 'blocker',
+          ink: r.status === 'met' ? 'var(--bm-accent-text)' : r.status === 'gap' ? 'var(--bm-caution)' : 'var(--bm-risk)',
+          bg: r.status === 'met' ? 'var(--bm-accent-tint)' : r.status === 'gap' ? 'var(--bm-caution-tint)' : 'var(--bm-risk-tint)',
+          line: r.status === 'met' ? 'var(--bm-accent-line)' : r.status === 'gap' ? 'var(--bm-caution)' : 'var(--bm-risk)',
+        })),
+        components: sel.comps.map((c) => ({
+          name: c.name, pts: '+' + c.pts + ' / ' + c.max, pct: Math.round((c.pts / c.max) * 100) + '%',
+          fill: c.pts / c.max > 0.6 ? 'var(--bm-accent)' : 'var(--bm-fit-mid)', text: c.text,
+        })),
+        engineLine: 'engine v3.2 · scored ' + sel.deadlineDate,
+        buyerStats: sel.buyerStats, winners: sel.winners, buyerNote: sel.buyerNote, activity: sel.activity,
+        pipelineLabel: st.stage[sel.id] === undefined ? 'Add to pipeline' : 'In pipeline · ' + (this.stageDefs.find((x) => x.id === st.stage[sel.id]) || {}).label,
+        onPipeline: () => { this.setState((s) => ({ stage: { ...s.stage, [sel.id]: s.stage[sel.id] ?? 'qualify' } })); this.toast('Added to pipeline · Qualify.'); },
+      };
+    }
+
+    const sheetTabDefs = [
+      { id: 'summary', label: 'Summary' }, { id: 'reqs', label: 'Requirements' }, { id: 'score', label: 'Score' },
+      { id: 'buyer', label: 'Buyer' }, { id: 'activity', label: 'Activity' },
+    ];
+    const sheetTabs = sheetTabDefs.map((t) => ({
+      label: t.label, mark: st.sheetTab === t.id ? 'var(--bm-accent)' : 'transparent',
+      ink: st.sheetTab === t.id ? 'var(--bm-ink1)' : 'var(--bm-ink2)',
+      weight: st.sheetTab === t.id ? '600' : '400',
+      onClick: () => this.setState({ sheetTab: t.id }),
+    }));
+
+    const paletteAll = [
+      { kind: 'go', label: 'Pipeline board', hint: 'G then P', act: () => this.setState({ view: 'pipeline', palette: false }) },
+      { kind: 'go', label: 'Insights & win rate', hint: 'G then I', act: () => this.setState({ view: 'insights', palette: false }) },
+      { kind: 'search', label: 'Tenders matching “identity management”', hint: '6 hits', act: () => { this.setState({ view: 'feed', palette: false }); this.toast('6 tenders for “identity management”.'); } },
+      { kind: 'buyer', label: 'Ministry of Health — buyer profile', hint: '14 notices', act: () => { this.setState({ sheet: 't1', sheetTab: 'buyer', palette: false }); } },
+      { kind: 'saved', label: 'Saved search: Security & SOC (CY, GR)', hint: '6 new', act: () => { this.setState({ view: 'feed', search: 'soc', palette: false }); } },
+      { kind: 'run', label: 'Run new match across 150,000 live notices', hint: '~2 min', act: () => { this.setState({ palette: false }); this.toast('Matching started — 18 new results expected.'); } },
+      { kind: 'run', label: 'Export pipeline to CSV', hint: '9 rows', act: () => { this.setState({ palette: false }); this.toast('Export queued.'); } },
+      { kind: 'team', label: 'Invite a teammate', hint: '3 of 5 seats', act: () => { this.setState({ palette: false }); this.toast('Invite dialog would open here.'); } },
+    ];
+    const q = st.paletteQuery.trim();
+    let matched = paletteAll;
+    if (q.length > 0) {
+      const Fuse = typeof window !== 'undefined' ? window.Fuse : null;
+      if (Fuse) {
+        matched = new Fuse(paletteAll, { keys: ['label', 'kind'], threshold: 0.4, ignoreLocation: true })
+          .search(q).map((r) => r.item);
+      } else {
+        matched = paletteAll.filter((p) => p.label.toLowerCase().indexOf(q.toLowerCase()) > -1);
+      }
+    }
+    const paletteItems = matched.map((p) => ({ kind: p.kind, label: p.label, hint: p.hint, onClick: p.act }));
+
+    return {
+      theme, typeface: this.props.typeface ?? 'archivo', accent: this.props.accent ?? '#2ec4b0',
+      themeLabel: theme === 'dark' ? 'Light' : 'Dark',
+      isDark: theme === 'dark', isLight: theme === 'light',
+      onToggleTheme: () => this.setState({ theme: theme === 'dark' ? 'light' : 'dark' }),
+      isFeed: st.view === 'feed', isPipeline: st.view === 'pipeline', isInsights: st.view === 'insights',
+      ...this.settingsVals(),
+      showRail, feedCols: showRail ? '264px minmax(0, 1fr)' : 'minmax(0, 1fr)',
+      nav, tabs, searches, cards, stages, sheetTabs,
+      addDraft: st.addDraft,
+      onAddDraft: (e) => this.setState({ addDraft: e.target.value }),
+      ownerChips: [null, 'CP', 'MK', 'AN'].map((o) => ({
+        label: o === null ? 'Everyone' : o,
+        bg: st.ownerFilter === o ? 'var(--bm-accent-tint)' : 'transparent',
+        line: st.ownerFilter === o ? 'var(--bm-accent-line)' : 'var(--bm-line)',
+        ink: st.ownerFilter === o ? 'var(--bm-accent-text)' : 'var(--bm-ink2)',
+        onClick: () => this.setState({ ownerFilter: o }),
+      })),
+      closingBg: st.closingSoon ? 'var(--bm-accent-tint)' : 'transparent',
+      closingLine: st.closingSoon ? 'var(--bm-accent-line)' : 'var(--bm-line)',
+      closingInk: st.closingSoon ? 'var(--bm-accent-text)' : 'var(--bm-ink2)',
+      onToggleClosing: () => this.setState((s) => ({ closingSoon: !s.closingSoon })),
+      boardSummary: (() => {
+        const live = this.allBids().filter((t) => st.stage[t.id] !== undefined);
+        const stepsDone = live.reduce((sum, t) => sum + this.taskState(t.id, st.stage[t.id]).count, 0);
+        const stepsAll = live.reduce((sum, t) => sum + (this.workflows[st.stage[t.id]] ?? []).length, 0);
+        return live.length + ' live bids · ' + stepsDone + ' of ' + stepsAll + ' workflow steps done · drag a card between stages to move it';
+      })(),
+      feedSubtitle: 'Scored at 07:00 this morning against your profile. Strong matches first.',
+      shelves: [{ label: 'Saved', count: '12' }, { label: 'In pipeline', count: '9' }, { label: 'Ignored', count: '34' }, { label: 'Team notes', count: '6' }],
+      stats: [
+        { label: 'New today', value: '18', note: 'across 4 saved searches', ink: 'var(--bm-ink1)' },
+        { label: 'Closing ≤ 7 days', value: '5', note: '2 have no owner', ink: 'var(--bm-caution)' },
+        { label: 'Awaiting decision', value: '7', note: 'oldest waiting 9 days', ink: 'var(--bm-ink1)' },
+        { label: 'Pipeline value', value: '€7.9M', note: 'across 9 live bids', ink: 'var(--bm-accent-text)' },
+      ],
+      chips: st.chips.map((c) => ({ label: c, onRemove: () => this.setState((s) => ({ chips: s.chips.filter((x) => x !== c) })) })),
+      onSort: () => this.toast('Re-sorted.'),
+      onRescore: () => this.toast('Matching 150,000 live notices — results in ~2 min.'),
+      alerts: [
+        { text: '3 new strong matches in Health & public IT (CY)', when: 'today 07:00 · digest', dot: 'var(--bm-accent)' },
+        { text: 'Cybersecurity SOC closes in 11 days — no decision recorded', when: 'today 07:00 · deadline rule', dot: 'var(--bm-caution)' },
+        { text: 'Maria added a note to the IAM platform tender', when: 'yesterday 16:05 · team', dot: 'var(--bm-info)' },
+      ],
+      bellOpen: st.bell, onToggleBell: () => this.setState((s) => ({ bell: !s.bell })),
+      paletteOpen: st.palette, paletteQuery: st.paletteQuery, paletteItems,
+      onOpenPalette: () => this.setState({ palette: true, paletteQuery: '' }),
+      onClosePalette: () => this.setState({ palette: false }),
+      onPaletteInput: (e) => this.setState({ paletteQuery: e.target.value }),
+      sheetOpen: sel !== null, sheet,
+      isSummary: st.sheetTab === 'summary', isReqs: st.sheetTab === 'reqs', isScore: st.sheetTab === 'score',
+      isBuyer: st.sheetTab === 'buyer', isActivity: st.sheetTab === 'activity',
+      onCloseSheet: () => this.setState({ sheet: null }),
+      noteDraft: st.note, onNoteInput: (e) => this.setState({ note: e.target.value }),
+      onAddNote: () => { this.setState({ note: '' }); this.toast('Note posted to the team.'); },
+      kpis: [
+        { label: 'Win rate', value: '31%', delta: '+6 pts vs last year', deltaInk: 'var(--bm-accent-text)' },
+        { label: 'Submitted', value: '42', delta: '13 won · 24 lost · 5 pending', deltaInk: 'var(--bm-ink3)' },
+        { label: 'Value won', value: '€6.1M', delta: 'avg €470k per win', deltaInk: 'var(--bm-ink3)' },
+        { label: 'Avg winning score', value: '79', delta: 'losses average 66', deltaInk: 'var(--bm-ink3)' },
+      ],
+      quarters: [
+        { label: "Q3'25", ratio: '2/8', h: '110px', wonH: '28px' },
+        { label: "Q4'25", ratio: '3/11', h: '150px', wonH: '41px' },
+        { label: "Q1'26", ratio: '4/10', h: '138px', wonH: '55px' },
+        { label: "Q2'26", ratio: '4/13', h: '178px', wonH: '55px' },
+      ],
+      rivals: [
+        { name: 'Deloitte Cyprus', wins: '9', value: '€14.2M' },
+        { name: 'Logicom Solutions', wins: '7', value: '€9.8M' },
+        { name: 'Odyssey Cybersecurity', wins: '6', value: '€8.4M' },
+        { name: 'NetU Consultants', wins: '5', value: '€4.1M' },
+        { name: 'You', wins: '13', value: '€6.1M' },
+      ],
+      bands: [
+        { band: '80 – 100', rate: '48%', pct: '48%', bids: '21', won: '10', fill: 'var(--bm-accent)' },
+        { band: '65 – 79', rate: '29%', pct: '29%', bids: '14', won: '4', fill: 'var(--bm-accent)' },
+        { band: '45 – 64', rate: '14%', pct: '14%', bids: '7', won: '1', fill: 'var(--bm-fit-mid)' },
+        { band: '0 – 44', rate: '0%', pct: '2%', bids: '0', won: '0', fill: 'var(--bm-line-strong)' },
+      ],
+      hasToast: st.toast !== null, toast: st.toast ?? '',
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -11,6 +11,8 @@ export default tseslint.config(
       // Design handoff bundle unzipped at the repo root — prototypes,
       // not product code (gitignored; kept locally for reference).
       'bidmorrow-repository-connection/**',
+      // The same bundle, preserved in docs from the upload-template branch.
+      'docs/redesign/design-handoff-2026-08-21/**',
       '**/.wrangler/**',
       '**/coverage/**',
       '**/playwright-report/**',

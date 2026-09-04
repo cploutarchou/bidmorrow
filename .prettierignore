@@ -8,6 +8,8 @@ pnpm-lock.yaml
 migrations/
 tests/fixtures/
 docs/redesign/mockups/
+# Claude Design handoff bundle of 2026-08-21, preserved from the upload-template branch: prototypes, not product code
+docs/redesign/design-handoff-2026-08-21/
 bidmorrow-repository-connection/
 # Agent worktrees (git-excluded via .git/info/exclude; never product code)
 .claude/worktrees/
