@@ -5640,7 +5640,12 @@ note had deferred.
   `e2e-gate` job that turns the suite's outcome into one verdict: passed
   or rightly skipped (docs-only, draft) is green, failed or cancelled is
   red. `e2e-gate` is the name to require; the session cannot edit the
-  ruleset, so the one click is recorded as blocker item 8.4.
+  ruleset, so the one click was recorded as blocker item 8.4. The owner
+  made it the same morning, and a documentation-only pull request
+  verified the enforcement: merge state "blocked" while `e2e-gate` was
+  pending, "clean" once it reported green with the suite rightly
+  skipped. The ruleset now requires `checks`, `secret-scan` and
+  `e2e-gate`.
 - `docs/deployment.md` CI/CD step 1 and `docs/phase12-quality-findings.md`
   §3 updated. The pull request carrying this change is the first
   exercise of the per-PR job; the nightly is dispatched once after the
