@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/styles.css">
+<script src="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Source+Sans+3:wght@400;500;600&family=Source+Code+Pro:wght@400;500&display=swap">
+<style>
+  :root {
+    --bm-sunken: #0a0c10; --bm-canvas: #0d1014; --bm-panel: #14181e; --bm-raised: #1b2027; --bm-overlay: #1f252d;
+    --bm-line-hair: #22282f; --bm-line: #2e353f; --bm-line-strong: #414a57;
+    --bm-ink1: #eef1f5; --bm-ink2: #a3adbb; --bm-ink3: #7a8593;
+    --bm-accent: #2ec4b0; --bm-accent-ink: #04211d; --bm-accent-text: #6fe0d0;
+    --bm-accent-tint: rgba(46,196,176,0.12); --bm-accent-line: rgba(46,196,176,0.34);
+    --bm-caution: #e8a33d; --bm-caution-tint: rgba(232,163,61,0.12);
+    --bm-risk: #ef6461; --bm-risk-tint: rgba(239,100,97,0.12);
+    --bm-head: 'Archivo', system-ui, sans-serif; --bm-ui: 'Archivo', system-ui, sans-serif; --bm-num: 'Archivo', system-ui, sans-serif; --bm-code: 'Source Code Pro', ui-monospace, monospace;
+    --bm-shadow: 0 40px 100px -24px rgba(0,0,0,0.7);
+  }
+  [data-bm-theme='light'] {
+    --bm-sunken: #eceff1; --bm-canvas: #f7f8f9; --bm-panel: #ffffff; --bm-raised: #ffffff; --bm-overlay: #ffffff;
+    --bm-line-hair: #e6e9ec; --bm-line: #d5dae0; --bm-line-strong: #b3bcc6;
+    --bm-ink1: #14181d; --bm-ink2: #4d5661; --bm-ink3: #6b7480;
+    --bm-accent: #0f7d6f; --bm-accent-ink: #ffffff; --bm-accent-text: #0b6a5e;
+    --bm-accent-tint: rgba(15,125,111,0.10); --bm-accent-line: rgba(15,125,111,0.28);
+    --bm-caution: #a16207; --bm-caution-tint: rgba(161,98,7,0.10);
+    --bm-risk: #c0392f; --bm-risk-tint: rgba(192,57,47,0.10);
+    --bm-shadow: 0 34px 80px -26px rgba(20,24,29,0.24);
+  }
+  [data-bm-type='franklin'] { --bm-head: 'Libre Franklin', system-ui, sans-serif; --bm-ui: 'Libre Franklin', system-ui, sans-serif; --bm-num: 'Libre Franklin', system-ui, sans-serif; }
+  [data-bm-type='source'] { --bm-head: 'Source Serif 4', Georgia, serif; --bm-ui: 'Source Sans 3', system-ui, sans-serif; --bm-num: 'Source Sans 3', system-ui, sans-serif; }
+  @keyframes bm-rise-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes bm-scan { 0% { transform: translateY(-6px); opacity: 0; } 18% { opacity: 1; } 82% { opacity: 1; } 100% { transform: translateY(108px); opacity: 0; } }
+  @keyframes bm-grow-x { 0% { transform: scaleX(0); } 55% { transform: scaleX(1); } 100% { transform: scaleX(1); } }
+  @keyframes bm-chip-in { 0%, 12% { opacity: 0.14; transform: translateY(3px); } 26%, 88% { opacity: 1; transform: translateY(0); } 100% { opacity: 0.14; transform: translateY(3px); } }
+  @keyframes bm-pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.85; } }
+  @keyframes bm-lift { 0%, 12% { transform: translateY(26px); opacity: 0.25; } 40%, 88% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(26px); opacity: 0.25; } }
+  @keyframes bm-settle { 0%, 12% { transform: translateY(-13px); } 40%, 100% { transform: translateY(0); } }
+  @keyframes bm-hold { 0% { width: 0; } 70%, 100% { width: 100%; } }
+  @media (prefers-reduced-motion: reduce) {
+    [data-bm-motion] * { animation: none !important; }
+  }
+  body { margin: 0; background: var(--bm-canvas); font-variant-numeric: tabular-nums; -webkit-text-size-adjust: 100%; }
+  a { color: var(--bm-accent-text); text-decoration: none; }
+  a:hover { color: var(--bm-accent); text-decoration: underline; }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--bm-accent); outline-offset: 2px; }
+  @media (max-width: 860px) { [data-mk-step] { grid-template-columns: 64px 1fr !important; } [data-mk-figure] { grid-column: 2 !important; } }
+  @media (max-width: 760px) { [data-mk-comp] { grid-template-columns: 1fr 66px !important; } [data-mk-policy] { grid-column: 1 / -1 !important; } }
+  @media (max-width: 760px) { [data-mk-hide-sm] { display: none; } }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+
+<div data-bm-theme="{{ theme }}" data-bm-type="{{ typeface }}" style="background: var(--bm-canvas); color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 16px; min-height: 100vh;">
+
+  <header style="position: sticky; top: 0; z-index: 30; background: var(--bm-canvas); border-bottom: 1px solid var(--bm-line-hair);">
+    <div style="max-width: 1180px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 28px); height: 68px; display: flex; align-items: center; gap: clamp(14px, 2.4vw, 30px);">
+      <a href="BidMorrow%20Homepage.dc.html" style="display: flex; align-items: center; gap: 10px; color: var(--bm-ink1);">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" role="img" aria-hidden="true" focusable="false" style="color: var(--bm-ink1);">
+          <rect x="6.5" y="2.5" width="13" height="6" rx="3" fill="currentColor" opacity="0.28"></rect>
+          <rect x="4" y="9.5" width="18" height="6" rx="3" fill="currentColor" opacity="0.55"></rect>
+          <rect x="1.5" y="16.5" width="23" height="7" rx="3.5" fill="url(#bm-mkt-grad)"></rect>
+          <defs><linearGradient id="bm-mkt-grad" x1="1.5" y1="16.5" x2="24.5" y2="23.5" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#35D3C0"></stop><stop offset="1" stop-color="#1FA899"></stop></linearGradient></defs>
+        </svg>
+        <span style="font-family: var(--bm-head); font-size: 21px; font-weight: 600; letter-spacing: -0.01em;">BidMorrow</span>
+      </a>
+      <nav data-mk-hide-sm="true" style="display: flex; gap: clamp(14px, 2vw, 26px); align-items: center; white-space: nowrap;">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <button type="button" onClick="{{ t.onClick }}" style="appearance: none; background: transparent; border: 0; border-bottom: 2px solid {{ t.mark }}; padding: 0 0 3px; color: {{ t.ink }}; font-family: var(--bm-ui); font-size: 14px; cursor: pointer;">{{ t.label }}</button>
+        </sc-for>
+      </nav>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 10px; white-space: nowrap;">
+        <button type="button" onClick="{{ onToggleTheme }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line-hair); border-radius: 999px; height: 34px; padding: 0 13px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">{{ themeLabel }}</button>
+        <a href="BidMorrow%20Auth.dc.html" data-mk-hide-sm="true" style="color: var(--bm-ink2); font-size: 14px;">Log in</a>
+        <a href="BidMorrow%20Auth.dc.html" style="background: var(--bm-accent); color: var(--bm-accent-ink); border-radius: 999px; padding: 10px 18px; font-size: 14px; font-weight: 500;">Join the pilot</a>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width: 1180px; margin: 0 auto; padding: clamp(44px, 6vw, 82px) clamp(16px, 4vw, 28px) 0;">
+    <p style="margin: 0 0 18px; font-family: var(--bm-num); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-accent-text);">{{ eyebrow }}</p>
+    <h1 style="margin: 0 0 18px; font-family: var(--bm-head); font-size: clamp(36px, 6vw, 62px); line-height: 1.04; font-weight: 600; letter-spacing: -0.03em; max-width: 24ch; text-wrap: pretty;">{{ headline }}</h1>
+    <p style="margin: 0 0 clamp(36px, 5vw, 64px); max-width: 58ch; font-size: 19px; line-height: 1.55; color: var(--bm-ink2); text-wrap: pretty;">{{ standfirst }}</p>
+
+    <sc-if value="{{ isHow }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <ol style="list-style: none; margin: 0; padding: 0;">
+          <li data-mk-step="true" data-bm-motion="true" style="display: grid; grid-template-columns: 84px 1fr 300px; gap: clamp(16px, 3vw, 36px); padding: 30px 0; border-top: 1px solid var(--bm-line-hair); align-items: start;">
+            <span style="font-family: var(--bm-num); font-size: 44px; font-weight: 600; line-height: 1; letter-spacing: -0.03em; color: var(--bm-accent-text);">1</span>
+            <span style="display: grid; gap: 9px;">
+              <h2 style="margin: 0; font-family: var(--bm-head); font-size: clamp(23px, 2.6vw, 30px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15;">Describe the work you want</h2>
+              <p style="margin: 0; max-width: 60ch; font-size: 16.5px; line-height: 1.62; color: var(--bm-ink2); text-wrap: pretty;">CPV codes, capabilities, keywords, the countries you will actually travel to, the contract sizes that pay, and the work you refuse outright. Start from a preset if it is close enough; every field stays yours to edit afterwards.</p>
+            </span>
+            <span data-mk-figure="true" style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 16px; padding: 16px; display: flex; flex-wrap: wrap; gap: 7px; align-content: flex-start; min-height: 132px;">
+              <sc-for list="{{ profileChips }}" as="c" hint-placeholder-count="7">
+                <span style="border: 1px solid var(--bm-accent-line); background: var(--bm-accent-tint); color: var(--bm-accent-text); border-radius: 999px; padding: 5px 11px; font-family: var(--bm-code); font-size: 11px; animation: bm-chip-in 7s ease-in-out {{ c.delay }} infinite;">{{ c.label }}</span>
+              </sc-for>
+            </span>
+          </li>
+
+          <li data-mk-step="true" data-bm-motion="true" style="display: grid; grid-template-columns: 84px 1fr 300px; gap: clamp(16px, 3vw, 36px); padding: 30px 0; border-top: 1px solid var(--bm-line-hair); align-items: start;">
+            <span style="font-family: var(--bm-num); font-size: 44px; font-weight: 600; line-height: 1; letter-spacing: -0.03em; color: var(--bm-accent-text);">2</span>
+            <span style="display: grid; gap: 9px;">
+              <h2 style="margin: 0; font-family: var(--bm-head); font-size: clamp(23px, 2.6vw, 30px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15;">TED lands here every morning</h2>
+              <p style="margin: 0; max-width: 60ch; font-size: 16.5px; line-height: 1.62; color: var(--bm-ink2); text-wrap: pretty;">Competition notices arrive daily from Tenders Electronic Daily — the European Union's official procurement journal — within a published CPV scope. A notice outside that scope is never ingested, and never scored, however well it might have fitted.</p>
+              <button type="button" onClick="{{ onGoMethod }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-accent-text); font-family: var(--bm-ui); font-size: 14.5px; text-decoration: underline; cursor: pointer; justify-self: start;">See what the scope covers</button>
+            </span>
+            <span data-mk-figure="true" style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 16px; padding: 16px; position: relative; overflow: hidden; display: grid; gap: 9px; align-content: start; min-height: 132px;">
+              <sc-for list="{{ noticeLines }}" as="n" hint-placeholder-count="6">
+                <span style="height: 8px; width: {{ n.w }}; background: var(--bm-sunken); border-radius: 999px; display: block;"></span>
+              </sc-for>
+              <span aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--bm-accent); opacity: 0.75; animation: bm-scan 2.8s ease-in-out infinite; display: block;"></span>
+            </span>
+          </li>
+
+          <li data-mk-step="true" data-bm-motion="true" style="display: grid; grid-template-columns: 84px 1fr 300px; gap: clamp(16px, 3vw, 36px); padding: 30px 0; border-top: 1px solid var(--bm-line-hair); align-items: start;">
+            <span style="font-family: var(--bm-num); font-size: 44px; font-weight: 600; line-height: 1; letter-spacing: -0.03em; color: var(--bm-accent-text);">3</span>
+            <span style="display: grid; gap: 9px;">
+              <h2 style="margin: 0; font-family: var(--bm-head); font-size: clamp(23px, 2.6vw, 30px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15;">Every lot is scored, not summarised</h2>
+              <p style="margin: 0; max-width: 60ch; font-size: 16.5px; line-height: 1.62; color: var(--bm-ink2); text-wrap: pretty;">A deterministic engine scores each lot against your profile out of a hundred and shows where every point came from. A field the notice never published gets a documented neutral score, not a guess and not a zero. No language model sits anywhere in the scoring path.</p>
+            </span>
+            <span data-mk-figure="true" style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 16px; padding: 16px; display: grid; gap: 9px; align-content: center; min-height: 132px;">
+              <sc-for list="{{ scoreBars }}" as="b" hint-placeholder-count="5">
+                <span style="display: grid; gap: 4px;">
+                  <span style="display: flex; justify-content: space-between; gap: 8px;">
+                    <span style="font-family: var(--bm-code); font-size: 10px; color: var(--bm-ink3);">{{ b.label }}</span>
+                    <span style="font-family: var(--bm-code); font-size: 10px; color: {{ b.ink }};">{{ b.value }}</span>
+                  </span>
+                  <span style="height: 4px; background: var(--bm-sunken); border-radius: 999px; overflow: hidden; display: block;"><span style="display: block; height: 4px; width: {{ b.w }}; background: {{ b.fill }}; transform-origin: left; animation: bm-grow-x 6s ease-out {{ b.delay }} infinite;"></span></span>
+                </span>
+              </sc-for>
+            </span>
+          </li>
+
+          <li data-mk-step="true" data-bm-motion="true" style="display: grid; grid-template-columns: 84px 1fr 300px; gap: clamp(16px, 3vw, 36px); padding: 30px 0; border-top: 1px solid var(--bm-line-hair); align-items: start;">
+            <span style="font-family: var(--bm-num); font-size: 44px; font-weight: 600; line-height: 1; letter-spacing: -0.03em; color: var(--bm-accent-text);">4</span>
+            <span style="display: grid; gap: 9px;">
+              <h2 style="margin: 0; font-family: var(--bm-head); font-size: clamp(23px, 2.6vw, 30px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15;">Strong matches lead the feed</h2>
+              <p style="margin: 0; max-width: 60ch; font-size: 16.5px; line-height: 1.62; color: var(--bm-ink2); text-wrap: pretty;">Then worth reviewing, then possible. No dashboards to interpret and no vanity charts — save it, ignore it, or open the original notice on TED when you want the procurement documents themselves.</p>
+            </span>
+            <span data-mk-figure="true" style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 16px; padding: 16px; display: grid; gap: 8px; align-content: center; min-height: 132px; overflow: hidden;">
+              <span style="border: 1px solid var(--bm-accent-line); background: var(--bm-accent-tint); border-radius: 10px; padding: 9px 11px; display: flex; justify-content: space-between; gap: 10px; animation: bm-lift 7s ease-in-out infinite;">
+                <span style="font-family: var(--bm-code); font-size: 10.5px; color: var(--bm-accent-text);">Strong match</span>
+                <span style="font-family: var(--bm-num); font-size: 11px; font-weight: 600; color: var(--bm-accent-text);">88</span>
+              </span>
+              <sc-for list="{{ feedCards }}" as="f" hint-placeholder-count="2">
+                <span style="border: 1px solid var(--bm-line-hair); border-radius: 10px; padding: 9px 11px; display: flex; justify-content: space-between; gap: 10px; animation: bm-settle 7s ease-in-out {{ f.delay }} infinite;">
+                  <span style="font-family: var(--bm-code); font-size: 10.5px; color: var(--bm-ink3);">{{ f.label }}</span>
+                  <span style="font-family: var(--bm-num); font-size: 11px; color: var(--bm-ink2);">{{ f.score }}</span>
+                </span>
+              </sc-for>
+            </span>
+          </li>
+
+          <li data-mk-step="true" data-bm-motion="true" style="display: grid; grid-template-columns: 84px 1fr 300px; gap: clamp(16px, 3vw, 36px); padding: 30px 0; border-top: 1px solid var(--bm-line-hair); border-bottom: 1px solid var(--bm-line-hair); align-items: start;">
+            <span style="font-family: var(--bm-num); font-size: 44px; font-weight: 600; line-height: 1; letter-spacing: -0.03em; color: var(--bm-accent-text);">5</span>
+            <span style="display: grid; gap: 9px;">
+              <h2 style="margin: 0; font-family: var(--bm-head); font-size: clamp(23px, 2.6vw, 30px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15;">One email, only when it is earned</h2>
+              <p style="margin: 0; max-width: 60ch; font-size: 16.5px; line-height: 1.62; color: var(--bm-ink2); text-wrap: pretty;">A single digest a day, sent only on the days something cleared the floor you set. Quiet weeks stay quiet, which is the point.</p>
+            </span>
+            <span data-mk-figure="true" style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 16px; padding: 16px; display: grid; gap: 12px; align-content: center; min-height: 132px;">
+              <span style="display: flex; gap: 6px; align-items: center;">
+                <sc-for list="{{ digestDays }}" as="d" hint-placeholder-count="7">
+                  <span style="flex: 1 1 0; height: 26px; border-radius: 6px; border: 1px solid {{ d.line }}; background: {{ d.bg }}; animation: bm-pulse 5.5s ease-in-out {{ d.delay }} infinite;"></span>
+                </sc-for>
+              </span>
+              <span style="font-family: var(--bm-code); font-size: 10.5px; line-height: 1.5; color: var(--bm-ink3);">Two sends in seven days — the rest earned silence.</span>
+            </span>
+          </li>
+        </ol>
+
+        <div style="padding: clamp(34px, 5vw, 54px) 0; display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
+          <a href="BidMorrow%20Auth.dc.html" style="background: var(--bm-accent); color: var(--bm-accent-ink); border-radius: 999px; padding: 15px 28px; font-size: 15.5px; font-weight: 500;">Join the founding pilot</a>
+          <button type="button" onClick="{{ onGoPricing }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); color: var(--bm-ink1); border-radius: 999px; padding: 15px 26px; font-family: var(--bm-ui); font-size: 15.5px; cursor: pointer;">What it costs</button>
+          <span style="font-family: var(--bm-num); font-size: 13px; color: var(--bm-ink3);">€29/month · first 50 customers</span>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isMethod }}" hint-placeholder-val="{{ false }}">
+      <div style="display: grid; gap: clamp(34px, 5vw, 56px);">
+        <section data-bm-motion="true" style="display: grid; gap: 18px;">
+          <h2 style="margin: 0; font-family: var(--bm-head); font-size: clamp(24px, 3vw, 34px); font-weight: 600; letter-spacing: -0.02em;">Where the hundred points go</h2>
+          <p style="margin: 0; max-width: 68ch; font-size: 16.5px; line-height: 1.62; color: var(--bm-ink2); text-wrap: pretty;">Eight components, fixed maximums, the same arithmetic for every company. Same inputs at the same engine version, same score — and each component publishes what happens when the notice leaves its data out.</p>
+          <div style="display: grid; grid-template-columns: 1fr 66px 270px; gap: 14px; padding-bottom: 2px;">
+            <span style="font-family: var(--bm-code); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Component</span>
+            <span style="font-family: var(--bm-code); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3); text-align: right;">Max</span>
+            <span style="font-family: var(--bm-code); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">If the data is missing</span>
+          </div>
+          <div style="display: grid; gap: 13px;">
+            <sc-for list="{{ components }}" as="c" hint-placeholder-count="8">
+              <div data-mk-comp="true" style="display: grid; grid-template-columns: 1fr 66px 270px; gap: 14px; align-items: center; border-top: 1px solid var(--bm-line-hair); padding-top: 12px;">
+                <div style="display: grid; gap: 6px;">
+                  <span style="font-size: 14.5px; color: var(--bm-ink1);">{{ c.label }}</span>
+                  <span style="height: 6px; background: var(--bm-sunken); border-radius: 999px; overflow: hidden; display: block;"><span style="display: block; height: 6px; width: {{ c.w }}; background: var(--bm-accent); transform-origin: left; animation: bm-grow-x 5.5s ease-out {{ c.delay }} infinite;"></span></span>
+                </div>
+                <span style="font-family: var(--bm-num); font-size: 14px; color: var(--bm-ink2); text-align: right;">{{ c.max }}</span>
+                <span data-mk-policy="true" style="font-family: var(--bm-code); font-size: 11.5px; line-height: 1.5; color: {{ c.policyInk }};">{{ c.policy }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display: grid; gap: 18px;">
+          <h2 style="margin: 0; font-family: var(--bm-head); font-size: clamp(24px, 3vw, 34px); font-weight: 600; letter-spacing: -0.02em;">Four things a component can say</h2>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 18px; overflow: hidden;">
+            <sc-for list="{{ verdicts }}" as="v" hint-placeholder-count="4">
+              <div style="background: var(--bm-panel); padding: 17px 18px; display: grid; gap: 7px; align-content: start;">
+                <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: {{ v.ink }};">{{ v.label }}</p>
+                <p style="margin: 0; font-size: 14px; line-height: 1.55; color: var(--bm-ink2);">{{ v.note }}</p>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display: grid; gap: 18px;">
+          <h2 style="margin: 0; font-family: var(--bm-head); font-size: clamp(24px, 3vw, 34px); font-weight: 600; letter-spacing: -0.02em;">What a total means</h2>
+          <div style="display: grid; gap: 9px; max-width: 820px;">
+            <sc-for list="{{ tiers }}" as="t" hint-placeholder-count="5">
+              <div style="display: grid; grid-template-columns: 96px 1fr; gap: 16px; padding: 13px 0; border-top: 1px solid var(--bm-line-hair); align-items: baseline;">
+                <span style="font-family: var(--bm-num); font-size: 14px; font-weight: 600; color: {{ t.ink }};">{{ t.range }}</span>
+                <span style="display: grid; gap: 3px;">
+                  <span style="font-size: 15px; color: var(--bm-ink1);">{{ t.label }}</span>
+                  <span style="font-size: 14px; line-height: 1.55; color: var(--bm-ink2);">{{ t.note }}</span>
+                </span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display: grid; gap: 18px;">
+          <h2 style="margin: 0; font-family: var(--bm-head); font-size: clamp(24px, 3vw, 34px); font-weight: 600; letter-spacing: -0.02em;">Risk flags quote their evidence</h2>
+          <p style="margin: 0; max-width: 68ch; font-size: 16.5px; line-height: 1.62; color: var(--bm-ink2); text-wrap: pretty;">Flags are deterministic pattern matches over the notice text — never a language model's hunch. Each one quotes the exact text it fired on, and says whether it is a confirmed pattern or a possible requirement you should verify in the source documents. Nothing is asserted without the evidence attached.</p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <sc-for list="{{ riskTypes }}" as="r" hint-placeholder-count="8">
+              <span style="border: 1px solid var(--bm-line-hair); border-radius: 999px; padding: 7px 13px; font-family: var(--bm-code); font-size: 11.5px; color: var(--bm-ink2);">{{ r.label }}</span>
+            </sc-for>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+            <div style="border: 1px solid var(--bm-accent-line); background: var(--bm-accent-tint); border-radius: 14px; padding: 14px 16px; display: grid; gap: 5px;">
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-accent-text);">Confirmed pattern</p>
+              <p style="margin: 0; font-size: 14px; line-height: 1.55; color: var(--bm-ink2);">The notice says it outright, and the quoted line is on the card.</p>
+            </div>
+            <div style="border: 1px solid var(--bm-caution); background: var(--bm-caution-tint); border-radius: 14px; padding: 14px 16px; display: grid; gap: 5px;">
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-caution);">Possible requirement</p>
+              <p style="margin: 0; font-size: 14px; line-height: 1.55; color: var(--bm-ink2);">The wording suggests it — verify in the source documents before you commit.</p>
+            </div>
+          </div>
+        </section>
+
+        <section style="display: grid; gap: 18px;">
+          <h2 style="margin: 0; font-family: var(--bm-head); font-size: clamp(24px, 3vw, 34px); font-weight: 600; letter-spacing: -0.02em;">The CPV pre-filter, and its cost</h2>
+          <p style="margin: 0; max-width: 68ch; font-size: 16.5px; line-height: 1.62; color: var(--bm-ink2); text-wrap: pretty;">Before anything is scored, a tender's CPV code has to share a division — the first two digits — with at least one CPV preference you declared. Tenders with no division overlap are never scored at all, however well the geography, value, buyer or keywords would have fitted.</p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 18px; overflow: hidden; max-width: 820px;">
+            <div style="background: var(--bm-panel); padding: 16px 18px; display: grid; gap: 5px;">
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-accent-text);">What it buys</p>
+              <p style="margin: 0; font-size: 14px; line-height: 1.55; color: var(--bm-ink2);">A feed that stays relevant, and a product cheap enough to run at this price.</p>
+            </div>
+            <div style="background: var(--bm-panel); padding: 16px 18px; display: grid; gap: 5px;">
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-caution);">What it costs</p>
+              <p style="margin: 0; font-size: 14px; line-height: 1.55; color: var(--bm-ink2);">A narrow preference list can miss work you would genuinely have wanted. If the feed seems too quiet, widen it.</p>
+            </div>
+          </div>
+        </section>
+
+        <section style="display: grid; gap: 18px;">
+          <h2 style="margin: 0; font-family: var(--bm-head); font-size: clamp(24px, 3vw, 34px); font-weight: 600; letter-spacing: -0.02em;">The only five ways out</h2>
+          <p style="margin: 0; max-width: 66ch; font-size: 16.5px; line-height: 1.62; color: var(--bm-ink2);">A tender is dropped without a score only when a value the notice actually published trips a rule you set. An unknown field never excludes anything.</p>
+          <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 18px; overflow: hidden; max-width: 820px;">
+            <sc-for list="{{ rules }}" as="r" hint-placeholder-count="5">
+              <div style="background: var(--bm-panel); padding: 14px 18px; display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: baseline;">
+                <span style="font-family: var(--bm-code); font-size: 11.5px; color: var(--bm-accent-text);">{{ r.n }}</span>
+                <span style="font-size: 14.5px; line-height: 1.55; color: var(--bm-ink2);">{{ r.text }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="display: grid; gap: 14px; padding-bottom: clamp(24px, 4vw, 40px);">
+          <h2 style="margin: 0; font-family: var(--bm-head); font-size: clamp(24px, 3vw, 34px); font-weight: 600; letter-spacing: -0.02em;">Coverage, stated plainly</h2>
+          <p style="margin: 0; max-width: 68ch; font-size: 16.5px; line-height: 1.62; color: var(--bm-ink2); text-wrap: pretty;">Notices are ingested within a documented, configured CPV scope: IT services (CPV 72*), software packages and information systems (CPV 48*), and a small reviewed extras list — safety consultancy, CPV 79417000. This is scoped coverage, not exhaustive EU coverage: a notice outside it is never ingested or scored, regardless of how well it might otherwise fit your profile. Codes you declare outside the scope are kept on your profile and shown as out of scope until ingestion widens.</p>
+          <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center; padding-top: 8px;">
+            <a href="BidMorrow%20Auth.dc.html" style="background: var(--bm-accent); color: var(--bm-accent-ink); border-radius: 999px; padding: 15px 28px; font-size: 15.5px; font-weight: 500;">Join the founding pilot</a>
+            <button type="button" onClick="{{ onGoHow }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); color: var(--bm-ink1); border-radius: 999px; padding: 15px 26px; font-family: var(--bm-ui); font-size: 15.5px; cursor: pointer;">Back to how it works</button>
+          </div>
+        </section>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPricing }}" hint-placeholder-val="{{ false }}">
+      <div style="display: grid; gap: clamp(30px, 4vw, 48px);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; align-items: stretch;">
+          <article style="background: var(--bm-panel); border: 1px solid var(--bm-accent-line); border-radius: 24px; padding: clamp(24px, 3vw, 34px); display: grid; gap: 16px; align-content: start; animation: bm-rise-in 420ms ease-out both;">
+            <p style="margin: 0; font-family: var(--bm-code); font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--bm-accent-text);">Founding — first 50 customers</p>
+            <h2 style="margin: 0; font-family: var(--bm-head); font-size: 27px; font-weight: 600; letter-spacing: -0.02em;">Founding plan</h2>
+            <p style="margin: 0; font-family: var(--bm-num); font-size: 42px; font-weight: 600; letter-spacing: -0.03em; line-height: 1;">€29 <span style="font-size: 17px; font-weight: 400; color: var(--bm-ink2);">/ month</span></p>
+            <p style="margin: 0; font-size: 15.5px; line-height: 1.6; color: var(--bm-ink2); text-wrap: pretty;">For the first fifty companies through the door, while the pilot runs. Your price is fixed for as long as the subscription lives — it never quietly becomes the standard price.</p>
+            <ul style="list-style: none; margin: 0; padding: 0; display: grid; gap: 10px;">
+              <sc-for list="{{ foundingPoints }}" as="p" hint-placeholder-count="3">
+                <li style="display: grid; grid-template-columns: 16px 1fr; gap: 11px; align-items: start; font-size: 15px; line-height: 1.55; color: var(--bm-ink1);">
+                  <span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 999px; background: var(--bm-accent); margin-top: 8px;"></span>
+                  <span>{{ p.text }}</span>
+                </li>
+              </sc-for>
+            </ul>
+            <a href="BidMorrow%20Auth.dc.html" style="background: var(--bm-accent); color: var(--bm-accent-ink); border-radius: 999px; padding: 14px 26px; font-size: 15px; font-weight: 500; justify-self: start; margin-top: 4px;">Join the founding pilot</a>
+          </article>
+
+          <article style="background: transparent; border: 1px solid var(--bm-line-hair); border-radius: 24px; padding: clamp(24px, 3vw, 34px); display: grid; gap: 16px; align-content: start; animation: bm-rise-in 420ms ease-out 90ms both;">
+            <p style="margin: 0; font-family: var(--bm-code); font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--bm-ink3);">Standard</p>
+            <h2 style="margin: 0; font-family: var(--bm-head); font-size: 27px; font-weight: 600; letter-spacing: -0.02em;">Standard plan</h2>
+            <p style="margin: 0; font-family: var(--bm-num); font-size: 42px; font-weight: 600; letter-spacing: -0.03em; line-height: 1;">€49 <span style="font-size: 17px; font-weight: 400; color: var(--bm-ink2);">/ month</span></p>
+            <p style="margin: 0; font-size: 15.5px; line-height: 1.6; color: var(--bm-ink2);">Open once the founding fifty are taken, and any time after.</p>
+            <ul style="list-style: none; margin: 0; padding: 0; display: grid; gap: 10px;">
+              <sc-for list="{{ standardPoints }}" as="p" hint-placeholder-count="3">
+                <li style="display: grid; grid-template-columns: 16px 1fr; gap: 11px; align-items: start; font-size: 15px; line-height: 1.55; color: var(--bm-ink1);">
+                  <span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 999px; background: var(--bm-line-strong); margin-top: 8px;"></span>
+                  <span>{{ p.text }}</span>
+                </li>
+              </sc-for>
+            </ul>
+            <a href="BidMorrow%20Auth.dc.html" style="border: 1px solid var(--bm-line); color: var(--bm-ink1); border-radius: 999px; padding: 14px 26px; font-size: 15px; justify-self: start; margin-top: 4px;">Sign up</a>
+          </article>
+        </div>
+
+        <section data-bm-motion="true" style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 24px; padding: clamp(22px, 3vw, 32px); display: grid; gap: 18px;">
+          <div style="display: grid; gap: 6px;">
+            <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--bm-ink3);">What the founding price does over twelve months</p>
+            <p style="margin: 0; max-width: 62ch; font-size: 15px; line-height: 1.6; color: var(--bm-ink2);">One line holds. The other is what the same year costs at the standard price — the gap is the whole benefit of being early.</p>
+          </div>
+          <div style="display: grid; gap: 14px;">
+            <div style="display: grid; gap: 7px;">
+              <div style="display: flex; justify-content: space-between; gap: 12px; align-items: baseline;">
+                <span style="font-family: var(--bm-code); font-size: 11px; color: var(--bm-accent-text);">Founding · €29 × 12</span>
+                <span style="font-family: var(--bm-num); font-size: 15px; font-weight: 600; color: var(--bm-accent-text);">€348</span>
+              </div>
+              <span style="height: 10px; background: var(--bm-sunken); border-radius: 999px; overflow: hidden; display: block;"><span style="display: block; height: 10px; width: 59%; background: var(--bm-accent); transform-origin: left; animation: bm-grow-x 3.4s ease-out both;"></span></span>
+            </div>
+            <div style="display: grid; gap: 7px;">
+              <div style="display: flex; justify-content: space-between; gap: 12px; align-items: baseline;">
+                <span style="font-family: var(--bm-code); font-size: 11px; color: var(--bm-ink3);">Standard · €49 × 12</span>
+                <span style="font-family: var(--bm-num); font-size: 15px; color: var(--bm-ink2);">€588</span>
+              </div>
+              <span style="height: 10px; background: var(--bm-sunken); border-radius: 999px; overflow: hidden; display: block;"><span style="display: block; height: 10px; width: 100%; background: var(--bm-line-strong); animation: bm-hold 3.4s ease-out 200ms both;"></span></span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 5px; align-items: flex-end;">
+            <sc-for list="{{ months }}" as="m" hint-placeholder-count="12">
+              <span style="flex: 1 1 0; height: 20px; border-radius: 3px; border: 1px solid var(--bm-accent-line); background: var(--bm-accent-tint); animation: bm-pulse 6s ease-in-out {{ m.delay }} infinite;"></span>
+            </sc-for>
+          </div>
+          <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; color: var(--bm-ink3);">Twelve months at the price you joined on. No annual contract to sign for it.</p>
+        </section>
+
+        <p style="margin: 0; max-width: 74ch; font-size: 15px; line-height: 1.65; color: var(--bm-ink2);">Both plans are the same product: same feed, same engine, same digest, same support. <button type="button" onClick="{{ onGoHow }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-accent-text); font-family: var(--bm-ui); font-size: 15px; text-decoration: underline; cursor: pointer;">How it works</button> walks the flow end to end, and <button type="button" onClick="{{ onGoMethod }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-accent-text); font-family: var(--bm-ui); font-size: 15px; text-decoration: underline; cursor: pointer;">the methodology</button> shows exactly how a score is built.</p>
+
+        <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 18px; overflow: hidden; margin-bottom: clamp(8px, 2vw, 16px);">
+          <sc-for list="{{ billingFacts }}" as="f" hint-placeholder-count="3">
+            <div style="background: var(--bm-panel); padding: 16px 18px; display: grid; gap: 4px;">
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--bm-ink3);">{{ f.label }}</p>
+              <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--bm-ink2);">{{ f.text }}</p>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+
+  <footer style="max-width: 1180px; margin: 0 auto; padding: 40px clamp(16px, 4vw, 28px) 64px;">
+    <div style="border-top: 1px solid var(--bm-line-hair); padding-top: 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 32px;">
+      <p style="margin: 0; font-size: 13px; line-height: 1.6; color: var(--bm-ink2); max-width: 74ch;">Notices come from Tenders Electronic Daily (TED), Publications Office of the European Union. BidMorrow is decision support: it does not guarantee eligibility, compliance or award — verify every requirement in the original procurement documents.</p>
+      <div style="display: flex; gap: 32px; justify-content: flex-end; flex-wrap: wrap;">
+        <div style="display: grid; gap: 9px; align-content: start;">
+          <a href="BidMorrow%20Homepage.dc.html" style="font-size: 13.5px; color: var(--bm-ink2);">Home</a>
+          <a href="BidMorrow%20Auth.dc.html" style="font-size: 13.5px; color: var(--bm-ink2);">Log in</a>
+        </div>
+        <div style="display: grid; gap: 9px; align-content: start;">
+          <a href="BidMorrow%20Homepage.dc.html#privacy" style="font-size: 13.5px; color: var(--bm-ink2);">Privacy</a>
+          <a href="BidMorrow%20Homepage.dc.html#terms" style="font-size: 13.5px; color: var(--bm-ink2);">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1320, &quot;height&quot;: 1000}, &quot;page&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;how&quot;, &quot;method&quot;, &quot;pricing&quot;], &quot;default&quot;: &quot;how&quot;, &quot;tsType&quot;: &quot;'how' | 'method' | 'pricing'&quot;}, &quot;theme&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;dark&quot;, &quot;light&quot;], &quot;default&quot;: &quot;dark&quot;, &quot;tsType&quot;: &quot;'dark' | 'light'&quot;}, &quot;typeface&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;archivo&quot;, &quot;franklin&quot;, &quot;source&quot;], &quot;default&quot;: &quot;archivo&quot;, &quot;tsType&quot;: &quot;'archivo' | 'franklin' | 'source'&quot;}}">
+class Component extends DCLogic {
+  state = { theme: null, typeface: null, page: null };
+
+  componentDidMount() {
+    const h = window.location.hash;
+    if (h === '#pricing') this.setState({ page: 'pricing' });
+    else if (h === '#methodology' || h === '#method') this.setState({ page: 'method' });
+  }
+
+  th() { return this.state.theme ?? (this.props.theme ?? 'dark'); }
+  pg() { return this.state.page ?? (this.props.page ?? 'how'); }
+
+  renderVals() {
+    const dark = this.th() !== 'light';
+    const page = this.pg();
+    const tab = (id, label) => ({
+      label,
+      ink: page === id ? 'var(--bm-ink1)' : 'var(--bm-ink2)',
+      mark: page === id ? 'var(--bm-accent)' : 'transparent',
+      onClick: () => this.setState({ page: id }),
+    });
+
+    const heads = {
+      how: { eyebrow: 'How it works', headline: 'From profile to shortlist, in five moves.', standfirst: 'Nothing between a published notice and your bid decision that you cannot inspect.' },
+      method: { eyebrow: 'Methodology', headline: 'Deterministic on purpose.', standfirst: 'Every number on a card traces to a rule you set and a line the notice actually published. This is decision support: it does not guarantee eligibility, compliance or award, so verify requirements in the original procurement documents.' },
+      pricing: { eyebrow: 'Pricing', headline: 'Two plans. One product.', standfirst: 'Flat euro pricing, billed monthly. No annual lock-in, no usage meter, no tier that hides the useful part.' },
+    };
+
+    return {
+      theme: this.th(),
+      typeface: this.state.typeface ?? (this.props.typeface ?? 'archivo'),
+      themeLabel: dark ? 'Light' : 'Dark',
+      onToggleTheme: () => this.setState({ theme: dark ? 'light' : 'dark' }),
+
+      isHow: page === 'how', isMethod: page === 'method', isPricing: page === 'pricing',
+      eyebrow: heads[page].eyebrow, headline: heads[page].headline, standfirst: heads[page].standfirst,
+      tabs: [tab('how', 'How it works'), tab('method', 'Methodology'), tab('pricing', 'Pricing')],
+      onGoHow: () => this.setState({ page: 'how' }),
+      onGoMethod: () => this.setState({ page: 'method' }),
+      onGoPricing: () => this.setState({ page: 'pricing' }),
+
+      profileChips: ['CPV 72', 'CPV 48', 'managed services', 'integration', 'CY', 'GR', '€50k–2M', 'no works contracts']
+        .map((label, i) => ({ label, delay: (i * 340) + 'ms' })),
+      noticeLines: ['92%', '76%', '84%', '61%', '88%', '48%'].map((w) => ({ w })),
+      scoreBars: [
+        { label: 'CPV fit', value: '35/35', w: '100%', fill: 'var(--bm-accent)', ink: 'var(--bm-accent-text)', delay: '0ms' },
+        { label: 'Capability', value: '14/20', w: '70%', fill: 'var(--bm-accent)', ink: 'var(--bm-ink2)', delay: '160ms' },
+        { label: 'Geography', value: '15/15', w: '100%', fill: 'var(--bm-accent)', ink: 'var(--bm-ink2)', delay: '320ms' },
+        { label: 'Value', value: '5/10 unknown', w: '50%', fill: 'var(--bm-caution)', ink: 'var(--bm-caution)', delay: '480ms' },
+        { label: 'Runway', value: '5/5', w: '100%', fill: 'var(--bm-accent)', ink: 'var(--bm-ink2)', delay: '640ms' },
+      ],
+      feedCards: [
+        { label: 'Worth reviewing', score: '74', delay: '120ms' },
+        { label: 'Possible', score: '58', delay: '240ms' },
+      ],
+      digestDays: [0, 1, 2, 3, 4, 5, 6].map((i) => ({
+        delay: (i * 260) + 'ms',
+        bg: i === 1 || i === 4 ? 'var(--bm-accent-tint)' : 'transparent',
+        line: i === 1 || i === 4 ? 'var(--bm-accent-line)' : 'var(--bm-line-hair)',
+      })),
+
+      components: [
+        { label: 'CPV fit', max: '35', w: '100%', delay: '0ms', policy: 'n/a — CPV is mandatory on every notice', policyInk: 'var(--bm-accent-text)' },
+        { label: 'Capability / keyword fit', max: '20', w: '57%', delay: '110ms', policy: '50% (10 pts) when no matchable-language text exists', policyInk: 'var(--bm-ink3)' },
+        { label: 'Geography', max: '15', w: '43%', delay: '220ms', policy: '50% (7.5 pts) when no NUTS/country on the lot', policyInk: 'var(--bm-ink3)' },
+        { label: 'Contract value', max: '10', w: '29%', delay: '330ms', policy: '50% (5 pts) when no value published', policyInk: 'var(--bm-ink3)' },
+        { label: 'Buyer / sector', max: '5', w: '14%', delay: '440ms', policy: '50% (2.5 pts) when buyer type absent', policyInk: 'var(--bm-ink3)' },
+        { label: 'Procedure / contract nature', max: '5', w: '14%', delay: '550ms', policy: '50% (2.5 pts) when absent', policyInk: 'var(--bm-ink3)' },
+        { label: 'Deadline runway', max: '5', w: '14%', delay: '660ms', policy: '50% (2.5 pts) when no deadline published', policyInk: 'var(--bm-ink3)' },
+        { label: 'Eligibility / certification signals', max: '5', w: '14%', delay: '770ms', policy: '50% (2.5 pts) when no signals detectable', policyInk: 'var(--bm-ink3)' },
+      ],
+      riskTypes: ['Certifications', 'Security clearance', 'Insurance', 'Financial turnover', 'Prior experience', 'Framework membership', 'Local presence', 'Mandatory references'].map((label) => ({ label })),
+      verdicts: [
+        { label: 'Matched', ink: 'var(--bm-accent-text)', note: 'The notice states something that fits your profile, and the component takes full or near-full points.' },
+        { label: 'Partial match', ink: 'var(--bm-accent-text)', note: 'Some overlap — a secondary code, a neighbouring region — scored proportionally instead of all or nothing.' },
+        { label: 'No match', ink: 'var(--bm-risk)', note: 'The notice is explicit and it does not fit. Zero points, and the breakdown names the fact that decided it.' },
+        { label: 'Unknown — neutral applied', ink: 'var(--bm-caution)', note: 'The field was never published, so half that component’s points are applied and the component is marked unknown with a note on what was missing. CPV fit is the exception — every notice must publish a CPV code, so it is never unknown.' },
+      ],
+      tiers: [
+        { range: '80 – 100', label: 'Strong match', note: 'Read it today. This is the top of your feed.', ink: 'var(--bm-accent-text)' },
+        { range: '65 – 79', label: 'Worth reviewing', note: 'Worth twenty minutes before you decide.', ink: 'var(--bm-ink1)' },
+        { range: '45 – 64', label: 'Possible match', note: 'Adjacent work. Skim it when the week is quiet.', ink: 'var(--bm-ink2)' },
+        { range: '0 – 44', label: 'Low fit', note: 'Scored and kept, not surfaced. Useful when you widen your profile.', ink: 'var(--bm-ink3)' },
+        { range: 'no score', label: 'Excluded', note: 'A rule you set fired on a known value. The rule is named on the card.', ink: 'var(--bm-ink3)' },
+      ],
+      rules: [
+        { n: '01', text: 'The lot’s country or region is one you excluded.' },
+        { n: '02', text: 'Its CPV code falls in a family you excluded.' },
+        { n: '03', text: 'An excluded phrase appears in the notice text.' },
+        { n: '04', text: 'Its contract nature is one you marked unsupported.' },
+        { n: '05', text: 'Its deadline runway is shorter than your threshold.' },
+      ],
+
+      foundingPoints: [
+        { text: 'The identical product — there is no cut-down pilot tier' },
+        { text: 'A direct line to the people building it' },
+        { text: 'Cancel from settings whenever you like' },
+      ],
+      standardPoints: [
+        { text: 'The same feed, engine, daily digest and support' },
+        { text: 'Billed monthly through Stripe' },
+        { text: 'Cancel from settings whenever you like' },
+      ],
+      months: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => ({ delay: (i * 190) + 'ms' })),
+      billingFacts: [
+        { label: 'Currency', text: 'Euro, charged monthly. Nothing is metered and nothing is bundled behind a higher tier.' },
+        { label: 'Founding price', text: 'Held for the life of the subscription. It never migrates to the standard price on its own.' },
+        { label: 'Cancelling', text: 'From account settings, any time. Access runs to the end of the period you have paid for.' },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

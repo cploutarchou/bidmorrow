@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/styles.css">
+<script src="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Source+Sans+3:wght@400;500;600&family=Source+Code+Pro:wght@400;500&display=swap">
+<style>
+  :root {
+    --bm-sunken: #0a0c10; --bm-canvas: #0d1014; --bm-panel: #14181e; --bm-raised: #1b2027; --bm-overlay: #1f252d;
+    --bm-line-hair: #22282f; --bm-line: #2e353f; --bm-line-strong: #414a57;
+    --bm-ink1: #eef1f5; --bm-ink2: #a3adbb; --bm-ink3: #7a8593;
+    --bm-accent: #2ec4b0; --bm-accent-ink: #04211d; --bm-accent-text: #6fe0d0;
+    --bm-accent-tint: rgba(46,196,176,0.12); --bm-accent-line: rgba(46,196,176,0.34); --bm-fit-mid: rgba(46,196,176,0.45);
+    --bm-caution: #e8a33d; --bm-caution-tint: rgba(232,163,61,0.12);
+    --bm-risk: #ef6461; --bm-risk-tint: rgba(239,100,97,0.12);
+    --bm-head: 'Archivo', system-ui, sans-serif; --bm-ui: 'Archivo', system-ui, sans-serif; --bm-num: 'Archivo', system-ui, sans-serif; --bm-code: 'Source Code Pro', ui-monospace, monospace;
+    --bm-shadow: 0 40px 100px -24px rgba(0,0,0,0.7);
+  }
+  [data-bm-theme='light'] {
+    --bm-sunken: #eceff1; --bm-canvas: #f7f8f9; --bm-panel: #ffffff; --bm-raised: #ffffff; --bm-overlay: #ffffff;
+    --bm-line-hair: #e6e9ec; --bm-line: #d5dae0; --bm-line-strong: #b3bcc6;
+    --bm-ink1: #14181d; --bm-ink2: #4d5661; --bm-ink3: #6b7480;
+    --bm-accent: #0f7d6f; --bm-accent-ink: #ffffff; --bm-accent-text: #0b6a5e;
+    --bm-accent-tint: rgba(15,125,111,0.10); --bm-accent-line: rgba(15,125,111,0.28); --bm-fit-mid: rgba(15,125,111,0.40);
+    --bm-caution: #a16207; --bm-caution-tint: rgba(161,98,7,0.10);
+    --bm-risk: #c0392f; --bm-risk-tint: rgba(192,57,47,0.10);
+    --bm-shadow: 0 34px 80px -26px rgba(20,24,29,0.24);
+  }
+  [data-bm-type='franklin'] { --bm-head: 'Libre Franklin', system-ui, sans-serif; --bm-ui: 'Libre Franklin', system-ui, sans-serif; --bm-num: 'Libre Franklin', system-ui, sans-serif; }
+  [data-bm-type='source'] { --bm-head: 'Source Serif 4', Georgia, serif; --bm-ui: 'Source Sans 3', system-ui, sans-serif; --bm-num: 'Source Sans 3', system-ui, sans-serif; }
+  @keyframes bm-drift-a { from { transform: translate3d(0,0,0); } to { transform: translate3d(-120px, -40px, 0); } }
+  @keyframes bm-drift-b { from { transform: translate3d(0,0,0); } to { transform: translate3d(90px, 30px, 0); } }
+  @keyframes bm-pulse { 0%, 100% { opacity: 0.18; } 50% { opacity: 0.6; } }
+  @keyframes bm-scan { 0% { transform: translateY(-8px); opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(64px); opacity: 0; } }
+  @keyframes bm-grow { from { width: 0; } }
+  @keyframes bm-rise-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) {
+    [data-bm-motion] * { animation: none !important; }
+  }
+  body { margin: 0; background: var(--bm-canvas); font-variant-numeric: tabular-nums; -webkit-text-size-adjust: 100%; }
+  @media (max-width: 1120px) { [data-hp-hide-md] { display: none; } }
+  @media (max-width: 760px) { [data-hp-hide-sm] { display: none; } }
+  a { color: var(--bm-accent-text); text-decoration: none; }
+  a:hover { color: var(--bm-accent); text-decoration: underline; }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+
+<div data-bm-theme="{{ theme }}" data-bm-type="{{ typeface }}" style="background: var(--bm-canvas); color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 16px; padding-bottom: {{ reserveBottom }}; --bm-accent: {{ accent }};">
+
+  <header style="position: sticky; top: 0; z-index: 30; background: var(--bm-canvas); border-bottom: 1px solid var(--bm-line-hair);">
+    <div style="max-width: 1180px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 28px); height: 68px; display: flex; align-items: center; gap: clamp(14px, 2.4vw, 30px); flex-wrap: nowrap;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" role="img" aria-hidden="true" focusable="false" style="color: var(--bm-ink1);">
+          <rect x="6.5" y="2.5" width="13" height="6" rx="3" fill="currentColor" opacity="0.28"></rect>
+          <rect x="4" y="9.5" width="18" height="6" rx="3" fill="currentColor" opacity="0.55"></rect>
+          <rect x="1.5" y="16.5" width="23" height="7" rx="3.5" fill="url(#bm-mk-grad)"></rect>
+          <defs><linearGradient id="bm-mk-grad" x1="1.5" y1="16.5" x2="24.5" y2="23.5" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#35D3C0"></stop><stop offset="1" stop-color="#1FA899"></stop></linearGradient></defs>
+        </svg>
+        <span style="font-family: var(--bm-head); font-size: 21px; font-weight: 600; letter-spacing: -0.01em;">BidMorrow</span>
+      </div>
+      <nav data-hp-hide-sm="true" style="display: flex; gap: clamp(14px, 2vw, 26px); align-items: center; flex: 0 0 auto; white-space: nowrap;">
+        <a href="#how" style="color: var(--bm-ink2); font-size: 14px; white-space: nowrap;">How it works</a>
+        <a href="#method" style="color: var(--bm-ink2); font-size: 14px; white-space: nowrap;">Methodology</a>
+        <a href="#pricing" style="color: var(--bm-ink2); font-size: 14px; white-space: nowrap;">Pricing</a>
+      </nav>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 10px; flex: 0 0 auto; white-space: nowrap;">
+        <button type="button" onClick="{{ onToggleTheme }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line-hair); border-radius: 999px; height: 34px; padding: 0 13px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 13px; cursor: pointer; flex: 0 0 auto; white-space: nowrap;">{{ themeLabel }}</button>
+        <a href="BidMorrow%20Auth.dc.html" data-hp-hide-sm="true" style="color: var(--bm-ink2); font-size: 14px; white-space: nowrap;">Log in</a>
+        <a href="BidMorrow%20Auth.dc.html" style="background: var(--bm-accent); color: var(--bm-accent-ink); border-radius: 999px; padding: 10px 18px; font-size: 14px; font-weight: 500; white-space: nowrap;">Join the pilot</a>
+      </div>
+    </div>
+  </header>
+
+  <div data-bm-motion="true" style="position: relative; overflow: hidden;">
+    <div aria-hidden="true" style="position: absolute; left: -40px; right: -40px; top: -80px; height: 660px; pointer-events: none; opacity: 0.55;">
+      <span style="position: absolute; inset: 0; background-image: repeating-linear-gradient(90deg, var(--bm-line-hair) 0 1px, transparent 1px 84px); animation: bm-drift-a 26s linear infinite alternate; display: block;"></span>
+      <span style="position: absolute; inset: 0; background-image: repeating-linear-gradient(0deg, var(--bm-line-hair) 0 1px, transparent 1px 84px); animation: bm-drift-b 34s linear infinite alternate; display: block; opacity: 0.7;"></span>
+      <span style="position: absolute; left: 12%; top: 180px; width: 6px; height: 6px; border-radius: 999px; background: var(--bm-accent); animation: bm-pulse 4.5s ease-in-out infinite; display: block;"></span>
+      <span style="position: absolute; left: 46%; top: 96px; width: 5px; height: 5px; border-radius: 999px; background: var(--bm-accent); animation: bm-pulse 6s ease-in-out 1.2s infinite; display: block;"></span>
+      <span style="position: absolute; left: 72%; top: 268px; width: 7px; height: 7px; border-radius: 999px; background: var(--bm-accent); animation: bm-pulse 5.2s ease-in-out 2.4s infinite; display: block;"></span>
+      <span style="position: absolute; left: 88%; top: 132px; width: 4px; height: 4px; border-radius: 999px; background: var(--bm-accent); animation: bm-pulse 7s ease-in-out 0.6s infinite; display: block;"></span>
+    </div>
+  <section style="position: relative; max-width: 1180px; margin: 0 auto; padding: clamp(56px, 9vw, 96px) clamp(16px, 4vw, 28px) 0;">
+    <p style="margin: 0 0 22px; font-family: var(--bm-num); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-accent-text);">Bid/no-bid qualification · EU public procurement · TED</p>
+    <h1 style="margin: 0 0 24px; font-family: var(--bm-head); font-size: clamp(38px, 8vw, 76px); line-height: 1.02; font-weight: 600; letter-spacing: -0.03em; max-width: 20ch; text-wrap: pretty; color: var(--bm-ink1);">Find the tenders worth pursuing. Skip the rest.</h1>
+    <p style="margin: 0 0 36px; max-width: 62ch; font-size: 19px; line-height: 1.55; color: var(--bm-ink2); text-wrap: pretty;">BidMorrow is bid/no-bid qualification intelligence for EU public procurement. It answers one question: “Should a company like mine spend time investigating this tender?”</p>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+      <a href="#pilot" style="background: var(--bm-accent); color: var(--bm-accent-ink); border-radius: 999px; padding: 15px 28px; font-size: 15.5px; font-weight: 500;">Join the founding pilot</a>
+      <a href="#how" style="border: 1px solid var(--bm-line); color: var(--bm-ink1); border-radius: 999px; padding: 15px 26px; font-size: 15.5px;">See how it works</a>
+      <span style="font-family: var(--bm-num); font-size: 13px; color: var(--bm-ink3); margin-left: 6px;">€29/month · first 50 customers</span>
+    </div>
+  </section>
+  </div>
+
+  <section style="max-width: 1180px; margin: 0 auto; padding: clamp(40px, 6vw, 64px) clamp(16px, 4vw, 28px) 0;">
+    <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: clamp(20px, 3vw, 32px); padding: clamp(14px, 2.6vw, 26px); box-shadow: var(--bm-shadow);">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 0 6px 20px;">
+        <span style="width: 10px; height: 10px; border-radius: 999px; background: var(--bm-line-strong);"></span>
+        <span style="width: 10px; height: 10px; border-radius: 999px; background: var(--bm-line-strong);"></span>
+        <span style="width: 10px; height: 10px; border-radius: 999px; background: var(--bm-line-strong);"></span>
+        <span style="margin-left: 8px; font-family: var(--bm-num); font-size: 12px; color: var(--bm-ink3);">{{ geoHeadline }}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 6px 18px;">
+        <span style="font-size: 12.5px; color: var(--bm-ink3);">{{ geoNote }}</span>
+        <sc-for list="{{ geoOptions }}" as="g" hint-placeholder-count="5">
+          <button type="button" onClick="{{ g.onClick }}" style="appearance: none; background: {{ g.bg }}; border: 1px solid {{ g.line }}; border-radius: 999px; padding: 5px 12px; font-family: var(--bm-ui); font-size: 12.5px; color: {{ g.ink }}; font-weight: {{ g.weight }}; cursor: pointer;">{{ g.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display: grid; gap: 12px;">
+        <sc-for list="{{ demo }}" as="d" hint-placeholder-count="3">
+          <article style="display: grid; grid-template-columns: 4px 1fr; background: var(--bm-raised); border: 1px solid var(--bm-line-hair); border-radius: 20px; overflow: hidden;">
+            <div style="background: {{ d.gutter }};"></div>
+            <div style="padding: 20px 22px; display: grid; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <span style="position: relative; width: 40px; height: 40px; display: inline-block; flex: 0 0 auto;">
+                  <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="var(--bm-sunken)" stroke-width="3"></circle><circle cx="20" cy="20" r="17" fill="none" stroke="{{ d.gutter }}" stroke-width="3" stroke-linecap="round" stroke-dasharray="{{ d.dash }}" transform="rotate(-90 20 20)"></circle></svg>
+                  <span style="position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--bm-num); font-size: 13px; font-weight: 500; color: var(--bm-ink1);">{{ d.score }}</span>
+                </span>
+                <span style="background: {{ d.chipBg }}; border: 1px solid {{ d.chipLine }}; color: {{ d.chipInk }}; border-radius: 999px; padding: 3px 12px; font-size: 12.5px; font-weight: 500;">{{ d.fit }}</span>
+                <span style="margin-left: auto; font-family: var(--bm-num); font-size: 12.5px; color: {{ d.deadlineInk }};">{{ d.deadline }}</span>
+              </div>
+              <div>
+                <p style="margin: 0 0 5px; font-family: var(--bm-head); font-size: 21px; font-weight: 500; line-height: 1.25;">{{ d.title }}</p>
+                <p style="margin: 0; font-size: 13.5px; color: var(--bm-ink2);">{{ d.meta }}</p>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 28px;">
+                <sc-for list="{{ d.comps }}" as="c" hint-placeholder-count="4">
+                  <div style="display: grid; grid-template-columns: 1fr 70px 48px; align-items: center; gap: 10px;">
+                    <span style="font-size: 12.5px; color: var(--bm-ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.name }}</span>
+                    <span style="height: 4px; border-radius: 999px; background: var(--bm-sunken); overflow: hidden; display: block;"><span style="display: block; height: 4px; width: {{ c.pct }}; background: var(--bm-accent);"></span></span>
+                    <span style="font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3); text-align: right;">{{ c.pts }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ d.hasRisk }}" hint-placeholder-val="{{ false }}">
+                <p style="margin: 0; display: flex; gap: 9px; align-items: baseline; background: {{ d.riskBg }}; border-left: 2px solid {{ d.riskLine }}; border-radius: 0 12px 12px 0; padding: 9px 12px; font-size: 12.5px; line-height: 1.5; color: var(--bm-ink1);">
+                  <span style="font-family: var(--bm-num); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: {{ d.riskLine }}; white-space: nowrap;">{{ d.riskKind }}</span>
+                  <span>{{ d.riskText }}</span>
+                </p>
+              </sc-if>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1180px; margin: 0 auto; padding: clamp(52px, 8vw, 84px) clamp(16px, 4vw, 28px) 0;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">
+      <sc-for list="{{ facts }}" as="f" hint-placeholder-count="4">
+        <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 22px; padding: 22px;">
+          <p style="margin: 0 0 10px; font-family: var(--bm-head); font-size: 30px; font-weight: 600; letter-spacing: -0.02em; color: var(--bm-ink1);">{{ f.value }}</p>
+          <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--bm-ink2);">{{ f.label }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="how" style="max-width: 1180px; margin: 0 auto; padding: clamp(60px, 9vw, 104px) clamp(16px, 4vw, 28px) 0;">
+    <p style="margin: 0 0 14px; font-family: var(--bm-num); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-accent-text);">How it works</p>
+    <h2 style="margin: 0 0 14px; font-family: var(--bm-head); font-size: 46px; line-height: 1.08; font-weight: 600; letter-spacing: -0.025em; max-width: 26ch; color: var(--bm-ink1);">From official journal to defensible decision</h2>
+    <p style="margin: 0 0 32px; max-width: 68ch; font-size: 17px; line-height: 1.6; color: var(--bm-ink2);">Four steps, no black box: the source is official, the profile is yours, the scoring is deterministic, and the verdict is explained. It runs while you read.</p>
+    <div data-bm-motion="true" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px; align-items: start;">
+      <div style="display: grid; gap: 10px;">
+        <sc-for list="{{ steps }}" as="s" hint-placeholder-count="4">
+          <button type="button" onClick="{{ s.onClick }}" style="appearance: none; text-align: left; background: {{ s.bg }}; border: 1px solid {{ s.line }}; border-radius: 20px; padding: 18px 20px; cursor: pointer; display: grid; gap: 8px; font-family: var(--bm-ui);">
+            <span style="display: flex; align-items: center; gap: 12px;">
+              <span style="display: grid; place-items: center; width: 30px; height: 30px; border-radius: 999px; background: {{ s.numBg }}; border: 1px solid {{ s.numLine }}; font-family: var(--bm-num); font-size: 13px; color: {{ s.numInk }}; flex: 0 0 auto;">{{ s.num }}</span>
+              <span style="font-family: var(--bm-head); font-size: 19px; font-weight: 600; color: var(--bm-ink1);">{{ s.title }}</span>
+            </span>
+            <sc-if value="{{ s.active }}" hint-placeholder-val="{{ false }}">
+              <span style="display: grid; gap: 10px; padding-left: 42px;">
+                <span style="font-size: 14.5px; line-height: 1.6; color: var(--bm-ink2); display: block;">{{ s.body }}</span>
+                <span style="height: 2px; background: var(--bm-line-hair); border-radius: 999px; overflow: hidden; display: block;"><span style="display: block; height: 2px; width: {{ s.progress }}; background: var(--bm-accent); transition: width 220ms linear;"></span></span>
+              </span>
+            </sc-if>
+          </button>
+        </sc-for>
+        <div style="display: flex; gap: 10px; align-items: center; padding-top: 4px;">
+          <button type="button" onClick="{{ onTogglePlay }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 999px; padding: 8px 16px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">{{ playLabel }}</button>
+          <span style="font-size: 12.5px; color: var(--bm-ink3);">{{ stepCounter }}</span>
+        </div>
+      </div>
+
+      <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 24px; padding: 26px; min-height: 300px; display: grid; align-content: start; gap: 18px;">
+        <p style="margin: 0; font-family: var(--bm-code); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">{{ stageCaption }}</p>
+
+        <sc-if value="{{ stageIsSource }}" hint-placeholder-val="{{ true }}">
+          <div style="position: relative; display: grid; gap: 9px; overflow: hidden; padding: 4px 0;">
+            <sc-for list="{{ noticeLines }}" as="n" hint-placeholder-count="6">
+              <span style="height: 8px; width: {{ n.w }}; background: var(--bm-sunken); border-radius: 999px; display: block; animation: bm-rise-in 420ms ease-out {{ n.delay }} both;"></span>
+            </sc-for>
+            <span aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--bm-accent); opacity: 0.7; animation: bm-scan 2.6s ease-in-out infinite; display: block;"></span>
+          </div>
+          <p style="margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--bm-ink2);">TED publishes; BidMorrow ingests inside the documented CPV scope and stores the notice with its source URL.</p>
+        </sc-if>
+
+        <sc-if value="{{ stageIsProfile }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <sc-for list="{{ profileChips }}" as="pc" hint-placeholder-count="6">
+              <span style="background: var(--bm-accent-tint); border: 1px solid var(--bm-accent-line); border-radius: 999px; padding: 6px 12px; font-family: var(--bm-num); font-size: 12.5px; color: var(--bm-accent-text); animation: bm-rise-in 380ms ease-out {{ pc.delay }} both;">{{ pc.label }}</span>
+            </sc-for>
+          </div>
+          <p style="margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--bm-ink2);">Your CPV codes, keywords, geography, value band and exclusions — the only inputs that decide what gets scored.</p>
+        </sc-if>
+
+        <sc-if value="{{ stageIsScore }}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; gap: 9px;">
+            <sc-for list="{{ scoreBars }}" as="b" hint-placeholder-count="8">
+              <span style="display: grid; grid-template-columns: minmax(0, 1fr) 120px 44px; gap: 12px; align-items: center;">
+                <span style="font-size: 12.5px; color: var(--bm-ink2);">{{ b.label }}</span>
+                <span style="height: 6px; background: var(--bm-sunken); border-radius: 999px; overflow: hidden; display: block;"><span style="display: block; height: 6px; width: {{ b.pct }}; background: var(--bm-accent); animation: bm-grow 700ms ease-out {{ b.delay }} both;"></span></span>
+                <span style="font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3); text-align: right;">{{ b.pts }}</span>
+              </span>
+            </sc-for>
+          </div>
+          <p style="margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--bm-ink2);">Eight components, published weights, no LLM. Same notice and engine version, same points every time.</p>
+        </sc-if>
+
+        <sc-if value="{{ stageIsVerdict }}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; gap: 14px; animation: bm-rise-in 420ms ease-out both;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <span style="position: relative; width: 56px; height: 56px; display: inline-block;">
+                <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="24" fill="none" stroke="var(--bm-sunken)" stroke-width="4"></circle><circle cx="28" cy="28" r="24" fill="none" stroke="var(--bm-accent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="127.2 150.8" transform="rotate(-90 28 28)"></circle></svg>
+                <span style="position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--bm-num); font-size: 15px; font-weight: 600; color: var(--bm-ink1);">84</span>
+              </span>
+              <span style="display: grid; gap: 4px;">
+                <span style="background: var(--bm-accent-tint); border: 1px solid var(--bm-accent-line); color: var(--bm-accent-text); border-radius: 999px; padding: 3px 12px; font-size: 12.5px; font-weight: 500; justify-self: start;">Strong match</span>
+                <span style="font-family: var(--bm-num); font-size: 12px; color: var(--bm-ink3);">84 / 100 · engine v1 · 80–100 band</span>
+              </span>
+            </div>
+            <p style="margin: 0; display: flex; gap: 9px; align-items: baseline; background: var(--bm-caution-tint); border-left: 2px solid var(--bm-caution); border-radius: 0 12px 12px 0; padding: 9px 12px; font-size: 12.5px; line-height: 1.5; color: var(--bm-ink1);">
+              <span style="font-family: var(--bm-num); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bm-caution); white-space: nowrap;">Flag</span>
+              <span>ISO 27001 may be required — “certified to ISO 27001” · possible requirement, verify in source documents.</span>
+            </p>
+            <p style="margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--bm-ink2);">Verdict, component breakdown, quoted evidence and a link to the original notice — the audit trail behind a bid/no-bid call.</p>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </section>
+
+  <section id="method" style="max-width: 1180px; margin: 0 auto; padding: clamp(60px, 9vw, 104px) clamp(16px, 4vw, 28px) 0;">
+    <p style="margin: 0 0 14px; font-family: var(--bm-num); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-accent-text);">Methodology</p>
+    <h2 style="margin: 0 0 14px; font-family: var(--bm-head); font-size: 46px; line-height: 1.08; font-weight: 600; letter-spacing: -0.025em; color: var(--bm-ink1);">Deterministic on purpose</h2>
+    <p style="margin: 0 0 40px; max-width: 68ch; font-size: 17px; line-height: 1.6; color: var(--bm-ink2);">A bid/no-bid call deserves a scoring engine you can audit, rerun, and disagree with — point by point. Not an AI black box.</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+      <sc-for list="{{ truths }}" as="t" hint-placeholder-count="4">
+        <article style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 24px; padding: 28px;">
+          <h3 style="margin: 0 0 10px; font-family: var(--bm-head); font-size: 22px; font-weight: 600; color: var(--bm-ink1);">{{ t.title }}</h3>
+          <p style="margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--bm-ink2); text-wrap: pretty;">{{ t.body }}</p>
+        </article>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="score" style="max-width: 1180px; margin: 0 auto; padding: clamp(60px, 9vw, 104px) clamp(16px, 4vw, 28px) 0;">
+    <p style="margin: 0 0 14px; font-family: var(--bm-code); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-accent-text);">The score</p>
+    <h2 style="margin: 0 0 14px; font-family: var(--bm-head); font-size: clamp(30px, 5vw, 46px); line-height: 1.08; font-weight: 600; letter-spacing: -0.025em; color: var(--bm-ink1);">Eight components. One hundred points.</h2>
+    <p style="margin: 0 0 36px; max-width: 68ch; font-size: 17px; line-height: 1.6; color: var(--bm-ink2);">Every score is the sum of the same eight components, each capped at a published weight. Open any tender and you see what it earned, what it lost, and why.</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px; align-items: start;">
+      <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 22px; overflow: hidden;">
+        <sc-for list="{{ components }}" as="c" hint-placeholder-count="8">
+          <div style="background: var(--bm-panel); display: grid; grid-template-columns: minmax(0, 1fr) 96px 52px; gap: 14px; align-items: center; padding: 14px 18px;">
+            <span style="font-size: 14.5px; color: var(--bm-ink1);">{{ c.label }}</span>
+            <span style="height: 6px; border-radius: 999px; background: var(--bm-sunken); overflow: hidden; display: block;"><span style="display: block; height: 6px; width: {{ c.pct }}; background: var(--bm-accent);"></span></span>
+            <span style="font-family: var(--bm-num); font-size: 13px; color: var(--bm-ink2); text-align: right;">{{ c.max }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: grid; gap: 14px;">
+        <sc-for list="{{ statuses }}" as="s" hint-placeholder-count="4">
+          <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 18px; padding: 18px 20px;">
+            <p style="margin: 0 0 5px; font-size: 14.5px; font-weight: 600; color: var(--bm-ink1);">{{ s.label }}</p>
+            <p style="margin: 0; font-size: 14px; line-height: 1.55; color: var(--bm-ink2);">{{ s.note }}</p>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section id="tiers" style="max-width: 1180px; margin: 0 auto; padding: clamp(60px, 9vw, 104px) clamp(16px, 4vw, 28px) 0;">
+    <p style="margin: 0 0 14px; font-family: var(--bm-code); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-accent-text);">Your feed</p>
+    <h2 style="margin: 0 0 14px; font-family: var(--bm-head); font-size: clamp(30px, 5vw, 46px); line-height: 1.08; font-weight: 600; letter-spacing: -0.025em; color: var(--bm-ink1);">Five verdicts, and no others.</h2>
+    <p style="margin: 0 0 36px; max-width: 68ch; font-size: 17px; line-height: 1.6; color: var(--bm-ink2);">The bands are published, not tuned per customer: the vocabulary is fixed, printed as words next to every score, and never conveyed by colour alone.</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+      <sc-for list="{{ tiers }}" as="t" hint-placeholder-count="5">
+        <div style="background: var(--bm-panel); border: 1px solid {{ t.line }}; border-radius: 20px; padding: 20px;">
+          <p style="margin: 0 0 10px; font-family: var(--bm-num); font-size: 12.5px; color: {{ t.ink }};">{{ t.range }}</p>
+          <p style="margin: 0 0 8px; font-family: var(--bm-head); font-size: 20px; font-weight: 600; color: var(--bm-ink1);">{{ t.label }}</p>
+          <p style="margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink2);">{{ t.note }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="coverage" style="max-width: 1180px; margin: 0 auto; padding: clamp(60px, 9vw, 104px) clamp(16px, 4vw, 28px) 0;">
+    <p style="margin: 0 0 14px; font-family: var(--bm-code); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-accent-text);">Coverage and exclusions</p>
+    <h2 style="margin: 0 0 14px; font-family: var(--bm-head); font-size: clamp(30px, 5vw, 46px); line-height: 1.08; font-weight: 600; letter-spacing: -0.025em; color: var(--bm-ink1);">What gets read, and what gets dropped.</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px; align-items: start; margin-top: 36px;">
+      <div>
+        <p style="margin: 0 0 12px; font-size: 14px; font-weight: 600; color: var(--bm-ink1);">Requirements the engine detects in the notice text</p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+          <sc-for list="{{ riskTypes }}" as="r" hint-placeholder-count="8">
+            <span style="background: var(--bm-panel); border: 1px solid var(--bm-line); border-radius: 999px; padding: 7px 14px; font-size: 13.5px; color: var(--bm-ink1);">{{ r.label }}</span>
+          </sc-for>
+        </div>
+        <p style="margin: 0; max-width: 62ch; font-size: 14px; line-height: 1.6; color: var(--bm-ink2);">Each detection quotes the sentence it came from and is labelled either <span style="color: var(--bm-ink1);">Confirmed pattern</span> or <span style="color: var(--bm-ink1);">Possible requirement — verify in source documents</span>. Pattern matching, not an LLM guess.</p>
+      </div>
+      <div>
+        <p style="margin: 0 0 12px; font-size: 14px; font-weight: 600; color: var(--bm-ink1);">The only five rules that exclude a tender outright</p>
+        <div style="display: grid; gap: 10px;">
+          <sc-for list="{{ rules }}" as="rule" hint-placeholder-count="5">
+            <div style="display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 12px; background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 16px; padding: 14px 16px;">
+              <span style="font-family: var(--bm-num); font-size: 13px; color: var(--bm-accent-text);">{{ rule.n }}</span>
+              <p style="margin: 0; font-size: 14px; line-height: 1.55; color: var(--bm-ink1);">{{ rule.text }}</p>
+            </div>
+          </sc-for>
+        </div>
+        <p style="margin: 14px 0 0; max-width: 62ch; font-size: 14px; line-height: 1.6; color: var(--bm-ink2);">Unknown fields never exclude anything. Every sector's CPV codes can be saved to your profile — ingestion covers 72*, 48* and 79417000 today, and anything outside it is shown as out of scope rather than dropped in silence.</p>
+      </div>
+    </div>
+  </section>
+
+  <sc-if value="{{ showPricing }}" hint-placeholder-val="{{ true }}">
+    <section id="pricing" style="max-width: 1180px; margin: 0 auto; padding: clamp(60px, 9vw, 104px) clamp(16px, 4vw, 28px) 0;">
+      <p style="margin: 0 0 14px; font-family: var(--bm-num); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-accent-text);">Pricing</p>
+      <h2 style="margin: 0 0 14px; font-family: var(--bm-head); font-size: 46px; line-height: 1.08; font-weight: 600; letter-spacing: -0.025em; color: var(--bm-ink1);">Two monthly plans. Nothing hidden.</h2>
+      <p style="margin: 0 0 40px; max-width: 66ch; font-size: 17px; line-height: 1.6; color: var(--bm-ink2);">Flat EUR pricing. No annual contract, no usage-based fees, no hidden tiers.</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+        <article style="background: var(--bm-panel); border: 1px solid var(--bm-accent-line); border-radius: 28px; padding: 32px;">
+          <p style="margin: 0 0 16px; font-family: var(--bm-num); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-accent-text);">Founding — first 50 customers</p>
+          <p style="margin: 0 0 6px; font-family: var(--bm-head); font-size: 52px; font-weight: 600; letter-spacing: -0.03em;">€29<span style="font-family: var(--bm-ui); font-size: 17px; font-weight: 400; color: var(--bm-ink3);"> /month</span></p>
+          <p style="margin: 0 0 22px; font-size: 15px; line-height: 1.6; color: var(--bm-ink2);">Retained for the life of your subscription — it never auto-migrates to the standard price.</p>
+          <div style="display: grid; gap: 11px; margin-bottom: 28px;">
+            <sc-for list="{{ foundingPoints }}" as="p" hint-placeholder-count="3">
+              <p style="margin: 0; display: flex; gap: 10px; align-items: baseline; font-size: 14.5px; line-height: 1.55; color: var(--bm-ink1);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--bm-accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 3px;" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7"></path></svg>
+                <span>{{ p.text }}</span>
+              </p>
+            </sc-for>
+          </div>
+          <a href="#pilot" style="display: inline-block; background: var(--bm-accent); color: var(--bm-accent-ink); border-radius: 999px; padding: 14px 26px; font-size: 15px; font-weight: 500;">Join the founding pilot</a>
+        </article>
+        <article style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 28px; padding: 32px;">
+          <p style="margin: 0 0 16px; font-family: var(--bm-num); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Standard</p>
+          <p style="margin: 0 0 6px; font-family: var(--bm-head); font-size: 52px; font-weight: 600; letter-spacing: -0.03em;">€49<span style="font-family: var(--bm-ui); font-size: 17px; font-weight: 400; color: var(--bm-ink3);"> /month</span></p>
+          <p style="margin: 0 0 22px; font-size: 15px; line-height: 1.6; color: var(--bm-ink2);">Full access once the founding plan is full, or any time after.</p>
+          <div style="display: grid; gap: 11px; margin-bottom: 28px;">
+            <sc-for list="{{ standardPoints }}" as="p" hint-placeholder-count="3">
+              <p style="margin: 0; display: flex; gap: 10px; align-items: baseline; font-size: 14.5px; line-height: 1.55; color: var(--bm-ink1);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--bm-ink3)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 3px;" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7"></path></svg>
+                <span>{{ p.text }}</span>
+              </p>
+            </sc-for>
+          </div>
+          <a href="#signup" style="display: inline-block; border: 1px solid var(--bm-line); color: var(--bm-ink1); border-radius: 999px; padding: 14px 26px; font-size: 15px;">Sign up</a>
+        </article>
+      </div>
+      <p style="margin: 22px 0 0; font-size: 14px; color: var(--bm-ink3);">Both plans include the same feed, matching engine, daily digest and support.</p>
+    </section>
+  </sc-if>
+
+  <section id="faq" style="max-width: 1180px; margin: 0 auto; padding: clamp(60px, 9vw, 104px) clamp(16px, 4vw, 28px) 0;">
+    <p style="margin: 0 0 14px; font-family: var(--bm-code); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-accent-text);">Questions</p>
+    <h2 style="margin: 0 0 36px; font-family: var(--bm-head); font-size: clamp(30px, 5vw, 46px); line-height: 1.08; font-weight: 600; letter-spacing: -0.025em; color: var(--bm-ink1);">Before you sign up.</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+      <sc-for list="{{ faqs }}" as="f" hint-placeholder-count="6">
+        <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 20px; padding: 22px 24px;">
+          <p style="margin: 0 0 8px; font-family: var(--bm-head); font-size: 19px; font-weight: 600; color: var(--bm-ink1);">{{ f.q }}</p>
+          <p style="margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--bm-ink2); text-wrap: pretty;">{{ f.a }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width: 1180px; margin: 0 auto; padding: clamp(60px, 9vw, 104px) clamp(16px, 4vw, 28px) 0;">
+    <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: clamp(20px, 3vw, 32px); padding: clamp(28px, 5vw, 56px) clamp(20px, 4vw, 48px); display: flex; align-items: center; gap: clamp(24px, 4vw, 40px); flex-wrap: wrap;">
+      <div style="min-width: 0;">
+        <h2 style="margin: 0 0 12px; font-family: var(--bm-head); font-size: 40px; line-height: 1.1; font-weight: 600; letter-spacing: -0.025em; max-width: 24ch; color: var(--bm-ink1);">Spend your bid hours on the tenders you can win.</h2>
+        <p style="margin: 0; max-width: 56ch; font-size: 16px; line-height: 1.6; color: var(--bm-ink2);">Qualification is the cheapest stage to get right and the most expensive to get wrong. Start with the founding pilot and keep the price for good.</p>
+      </div>
+      <a href="#pilot" style="margin-left: auto; background: var(--bm-accent); color: var(--bm-accent-ink); border-radius: 999px; padding: 16px 30px; font-size: 16px; font-weight: 500; white-space: nowrap;">Join the founding pilot</a>
+    </div>
+  </section>
+
+  <sc-if value="{{ bannerOpen }}" hint-placeholder-val="{{ true }}">
+    <div role="dialog" aria-label="Cookie choices" style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; background: var(--bm-overlay); border-top: 1px solid var(--bm-line); box-shadow: var(--bm-shadow);">
+      <div style="max-width: 1180px; margin: 0 auto; padding: 18px clamp(16px, 4vw, 28px); display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+        <div style="flex: 1 1 320px; min-width: 0;">
+          <p style="margin: 0 0 4px; font-size: 14.5px; font-weight: 600; color: var(--bm-ink1);">Your choice about cookies</p>
+          <p style="margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink2);">We use strictly necessary cookies to run the site. Analytics, preference and marketing cookies stay switched off until you say yes — and you can change or withdraw your choice at any time from the footer.</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; flex: 0 0 auto;">
+          <button type="button" onClick="{{ onRejectAll }}" style="appearance: none; background: var(--bm-raised); border: 1px solid var(--bm-line); border-radius: 999px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 14px; font-weight: 500; padding: 11px 20px; cursor: pointer;">Reject all</button>
+          <button type="button" onClick="{{ onAcceptAll }}" style="appearance: none; background: var(--bm-accent); border: 1px solid var(--bm-accent); border-radius: 999px; color: var(--bm-accent-ink); font-family: var(--bm-ui); font-size: 14px; font-weight: 500; padding: 11px 20px; cursor: pointer;">Accept all</button>
+          <button type="button" onClick="{{ onOpenPrefs }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 999px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 14px; padding: 11px 18px; cursor: pointer;">Manage preferences</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ prefsOpen }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div style="position: fixed; inset: 0; background: rgba(4,6,9,0.55); z-index: 61;"></div>
+      <div role="dialog" aria-modal="true" aria-label="Cookie preferences" style="position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 62; width: min(620px, calc(100% - 32px)); max-height: min(86vh, 760px); overflow-y: auto; background: var(--bm-panel); border: 1px solid var(--bm-line); border-radius: 24px; box-shadow: var(--bm-shadow); padding: 26px;">
+        <p style="margin: 0 0 6px; font-family: var(--bm-head); font-size: 24px; font-weight: 600;">Cookie preferences</p>
+        <p style="margin: 0 0 20px; font-size: 13.5px; line-height: 1.6; color: var(--bm-ink2);">Nothing outside “strictly necessary” runs before you switch it on. Your choice is stored on this device for 6 months, and withdrawing it is one click from the footer.</p>
+        <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 18px; overflow: hidden;">
+          <sc-for list="{{ categoryRows }}" as="cat" hint-placeholder-count="4">
+            <div style="background: var(--bm-panel); display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: 16px; align-items: start; padding: 16px 18px;">
+              <div>
+                <p style="margin: 0 0 4px; font-size: 14.5px; font-weight: 600; color: var(--bm-ink1);">{{ cat.label }}</p>
+                <p style="margin: 0; font-size: 13px; line-height: 1.55; color: var(--bm-ink2);">{{ cat.note }}</p>
+              </div>
+              <div style="display: grid; gap: 6px; justify-items: end;">
+                <sc-if value="{{ cat.unlocked }}" hint-placeholder-val="{{ true }}">
+                  <button type="button" onClick="{{ cat.onToggle }}" aria-label="Toggle {{ cat.label }} cookies" style="appearance: none; background: transparent; border: 0; padding: 0; cursor: pointer;">
+                    <span style="width: 42px; height: 25px; border-radius: 999px; background: {{ cat.track }}; position: relative; display: inline-block;">
+                      <span style="position: absolute; top: 2.5px; left: {{ cat.knob }}; width: 20px; height: 20px; border-radius: 999px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.28); display: block; transition: left 140ms ease-out;"></span>
+                    </span>
+                  </button>
+                </sc-if>
+                <sc-if value="{{ cat.locked }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bm-ink3); border: 1px solid var(--bm-line-hair); border-radius: 999px; padding: 5px 10px;">Always on</span>
+                </sc-if>
+                <span style="font-family: var(--bm-num); font-size: 11.5px; color: var(--bm-ink3);">{{ cat.state }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
+          <button type="button" onClick="{{ onSaveSelection }}" style="appearance: none; background: var(--bm-accent); border: 0; border-radius: 999px; color: var(--bm-accent-ink); font-family: var(--bm-ui); font-size: 14px; font-weight: 500; padding: 11px 20px; cursor: pointer;">Save my choice</button>
+          <button type="button" onClick="{{ onRejectAll }}" style="appearance: none; background: var(--bm-raised); border: 1px solid var(--bm-line); border-radius: 999px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 14px; padding: 11px 18px; cursor: pointer;">Reject all</button>
+          <button type="button" onClick="{{ onAcceptAll }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 999px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 14px; padding: 11px 18px; cursor: pointer;">Accept all</button>
+          <sc-if value="{{ consentSettled }}" hint-placeholder-val="{{ false }}">
+            <button type="button" onClick="{{ onResetConsent }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-risk); border-radius: 999px; color: var(--bm-risk); font-family: var(--bm-ui); font-size: 14px; padding: 11px 18px; cursor: pointer;">Withdraw consent</button>
+          </sc-if>
+          <button type="button" onClick="{{ onClosePrefs }}" style="appearance: none; margin-left: auto; background: transparent; border: 0; color: var(--bm-ink3); font-family: var(--bm-ui); font-size: 13px; padding: 11px 4px; cursor: pointer;">Close without changing</button>
+        </div>
+        <p style="margin: 16px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--bm-ink3);">Closing this panel is not consent: nothing changes until you choose. Details of every cookie and its retention are in the cookie policy, alongside the privacy notice and your rights under the GDPR.</p>
+      </div>
+    </div>
+  </sc-if>
+
+  <footer style="max-width: 1180px; margin: 0 auto; padding: 72px clamp(16px, 4vw, 28px) 64px;">
+    <div style="border-top: 1px solid var(--bm-line-hair); padding-top: 32px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 36px;">
+      <div style="display: grid; gap: 14px;">
+        <p style="margin: 0; font-size: 13px; line-height: 1.6; color: var(--bm-ink2); max-width: 74ch;">Source of procurement notices: Tenders Electronic Daily (TED), Publications Office of the European Union.</p>
+        <p style="margin: 0; font-size: 13px; line-height: 1.6; color: var(--bm-ink2); max-width: 74ch;">BidMorrow is decision support — it does not guarantee eligibility, compliance, award, or the completeness or accuracy of source notices; always verify requirements in the original procurement documents.</p>
+      </div>
+      <div style="display: grid; gap: 20px; align-content: start;">
+        <div style="display: grid; gap: 8px; justify-items: start;">
+          <p style="margin: 0; font-size: 12.5px; color: var(--bm-ink3);">{{ consentState }}</p>
+          <span style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" onClick="{{ onOpenPrefs }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 999px; padding: 8px 14px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 12.5px; cursor: pointer;">Cookie preferences</button>
+            <sc-if value="{{ consentSettled }}" hint-placeholder-val="{{ false }}">
+              <button type="button" onClick="{{ onResetConsent }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line-hair); border-radius: 999px; padding: 8px 14px; color: var(--bm-ink3); font-family: var(--bm-ui); font-size: 12.5px; cursor: pointer;">Withdraw consent</button>
+            </sc-if>
+          </span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Typeface</span>
+          <sc-for list="{{ typefaceOptions }}" as="tf" hint-placeholder-count="3">
+            <button type="button" onClick="{{ tf.onClick }}" style="appearance: none; background: {{ tf.bg }}; border: 1px solid var(--bm-line-hair); border-radius: 999px; padding: 6px 12px; color: {{ tf.ink }}; font-family: var(--bm-ui); font-size: 12.5px; cursor: pointer;">{{ tf.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display: flex; gap: 40px; justify-content: flex-end; flex-wrap: wrap;">
+        <div style="display: grid; gap: 9px; align-content: start;">
+          <a href="BidMorrow%20Marketing.dc.html" style="font-size: 13.5px; color: var(--bm-ink2);">How it works</a>
+          <a href="#method" style="font-size: 13.5px; color: var(--bm-ink2);">Methodology</a>
+          <a href="BidMorrow%20Marketing.dc.html#pricing" style="font-size: 13.5px; color: var(--bm-ink2);">Pricing</a>
+        </div>
+        <div style="display: grid; gap: 9px; align-content: start;">
+          <a href="#privacy" style="font-size: 13.5px; color: var(--bm-ink2);">Privacy</a>
+          <a href="#terms" style="font-size: 13.5px; color: var(--bm-ink2);">Terms</a>
+          <a href="#contact" style="font-size: 13.5px; color: var(--bm-ink2);">Contact</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark' | 'light'&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;typeface&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;archivo&quot;,&quot;franklin&quot;,&quot;source&quot;],&quot;default&quot;:&quot;archivo&quot;,&quot;tsType&quot;:&quot;'archivo' | 'franklin' | 'source'&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;options&quot;:[&quot;#2ec4b0&quot;,&quot;#3ba9d4&quot;,&quot;#7f9cf5&quot;,&quot;#0f7d6f&quot;],&quot;default&quot;:&quot;#2ec4b0&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;showPricing&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Sections&quot;}}">
+class Component extends DCLogic {
+  /** Only these three count as a recorded decision — anything else means "never asked", so the
+   *  banner shows again and any stale value self-heals rather than faking a choice. */
+  static readDecision() {
+    let raw = null;
+    try { raw = window.localStorage.getItem('bm_analytics_consent'); } catch (err) { raw = null; }
+    return raw === 'granted' || raw === 'denied' || raw === 'custom' ? raw : null;
+  }
+
+  /** Consent categories, all non-essential OFF until the visitor turns them on (no pre-ticks). */
+  static readCategories() {
+    const fallback = { necessary: true, preferences: false, analytics: false, marketing: false };
+    try {
+      const raw = window.localStorage.getItem('bm_consent_categories');
+      if (raw === null) return fallback;
+      const parsed = JSON.parse(raw);
+      return {
+        necessary: true,
+        preferences: parsed.preferences === true,
+        analytics: parsed.analytics === true,
+        marketing: parsed.marketing === true,
+      };
+    } catch (err) { return fallback; }
+  }
+
+  static detectCountryAtInit() {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      const byZone = { 'Asia/Nicosia': 'CY', 'Europe/Nicosia': 'CY', 'Europe/Athens': 'GR', 'Europe/Malta': 'MT',
+        'Europe/Rome': 'IT', 'Europe/Madrid': 'ES', 'Europe/Lisbon': 'PT', 'Europe/Berlin': 'DE', 'Europe/Paris': 'FR',
+        'Europe/Amsterdam': 'NL', 'Europe/Brussels': 'BE', 'Europe/Dublin': 'IE', 'Europe/Vienna': 'AT',
+        'Europe/Warsaw': 'PL', 'Europe/Bucharest': 'RO', 'Europe/Sofia': 'BG', 'Europe/Stockholm': 'SE',
+        'Europe/Copenhagen': 'DK', 'Europe/Helsinki': 'FI', 'Europe/Oslo': 'NO' };
+      if (byZone[tz]) return byZone[tz];
+      const langs = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || '']);
+      for (const l of langs) {
+        const parts = String(l).split('-');
+        if (parts.length > 1 && /^[A-Z]{2}$/.test(parts[parts.length - 1].toUpperCase())) return parts[parts.length - 1].toUpperCase();
+      }
+    } catch (err) { /* locale unavailable */ }
+    return null;
+  }
+
+  state = {
+    theme: null, typeface: null, geoPicked: null, step: 0, stepHeld: 0, playing: true, prefsOpen: false,
+    geo: Component.detectCountryAtInit(),
+    consent: Component.readDecision(),
+    categories: Component.readCategories(),
+  };
+
+  /** Placeholder — swap for the real GA4 property before shipping. */
+  gaId = 'G-XXXXXXXXXX';
+
+  /** GA4 is injected only after consent — never on load. */
+  loadAnalytics() {
+    if (this.gaLoaded || this.gaId.indexOf('XXXX') > -1) { this.gaLoaded = true; return; }
+    this.gaLoaded = true;
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + this.gaId;
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { window.dataLayer.push(arguments); };
+    window.gtag('js', new Date());
+    window.gtag('config', this.gaId, { anonymize_ip: true });
+  }
+
+  componentDidMount() {
+    if (this.state.consent === 'granted') this.loadAnalytics();
+    this.reduced = typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!this.reduced) this.startStepper();
+  }
+
+  componentWillUnmount() { this.stopStepper(); }
+
+  startStepper() {
+    this.stopStepper();
+    this.tick = window.setInterval(() => {
+      this.setState((s) => (s.stepHeld < 4
+        ? { stepHeld: s.stepHeld + 1 }
+        : { stepHeld: 0, step: (s.step + 1) % 4 }));
+    }, 900);
+  }
+
+  stopStepper() { if (this.tick) { window.clearInterval(this.tick); this.tick = null; } }
+
+  /** One writer for consent: stores the categories, records the decision, loads GA only if analytics is on. */
+  saveConsent(categories, decision) {
+    const next = { necessary: true, preferences: categories.preferences === true, analytics: categories.analytics === true, marketing: categories.marketing === true };
+    try {
+      window.localStorage.setItem('bm_consent_categories', JSON.stringify(next));
+      window.localStorage.setItem('bm_analytics_consent', next.analytics ? 'granted' : 'denied');
+    } catch (err) { /* private mode */ }
+    this.setState({ categories: next, consent: next.analytics ? 'granted' : decision === 'granted' ? 'denied' : decision, prefsOpen: false });
+    if (next.analytics) this.loadAnalytics();
+  }
+
+  renderVals() {
+    const st = this.state;
+    const theme = this.state.theme ?? (this.props.theme ?? 'dark');
+    const ring = (score) => (score / 100 * 106.8).toFixed(1) + ' 106.8';
+    const demo = [
+      {
+        score: '91', fit: 'Strong fit', gutter: 'var(--bm-accent)', chipBg: 'var(--bm-accent-tint)',
+        chipLine: 'var(--bm-accent-line)', chipInk: 'var(--bm-accent-text)', dash: ring(91),
+        deadline: 'closes in 6 days', deadlineInk: 'var(--bm-risk)',
+        title: 'Framework for cloud migration and managed hosting of national health records',
+        meta: 'Ministry of Health · CY · €1.84M · open procedure',
+        comps: [
+          { name: 'CPV fit', pts: '+32/35', pct: '91%' }, { name: 'Capability & keyword fit', pts: '+18/20', pct: '90%' },
+          { name: 'Geography', pts: '+14/15', pct: '93%' }, { name: 'Eligibility & certifications', pts: '+2/5', pct: '40%' },
+        ],
+        hasRisk: true, riskKind: 'Blocker', riskLine: 'var(--bm-risk)', riskBg: 'var(--bm-risk-tint)',
+        riskText: 'SC security clearance required for 3 named staff — none on file (quoted from p. 41 §9.4).',
+      },
+      {
+        score: '84', fit: 'Strong fit', gutter: 'var(--bm-accent)', chipBg: 'var(--bm-accent-tint)',
+        chipLine: 'var(--bm-accent-line)', chipInk: 'var(--bm-accent-text)', dash: ring(84),
+        deadline: 'closes in 11 days', deadlineInk: 'var(--bm-caution)',
+        title: 'Cybersecurity operations centre — 24/7 monitoring, three years',
+        meta: 'Cyprus Police · CY · €2.40M · restricted',
+        comps: [
+          { name: 'CPV fit', pts: '+30/35', pct: '86%' }, { name: 'Capability & keyword fit', pts: '+17/20', pct: '85%' },
+          { name: 'Geography', pts: '+15/15', pct: '100%' }, { name: 'Procedure & contract nature', pts: '+3/5', pct: '60%' },
+        ],
+        hasRisk: true, riskKind: 'Caution', riskLine: 'var(--bm-caution)', riskBg: 'var(--bm-caution-tint)',
+        riskText: 'Two-stage procedure — the pre-qualification pack is due before the tender itself.',
+      },
+      {
+        score: '58', fit: 'Possible', gutter: 'var(--bm-line-strong)', chipBg: 'transparent',
+        chipLine: 'var(--bm-line)', chipInk: 'var(--bm-ink2)', dash: ring(58),
+        deadline: 'closes in 9 days', deadlineInk: 'var(--bm-caution)',
+        title: 'GIS platform for water utility asset management',
+        meta: 'Water Board of Nicosia · CY · €880k · open procedure',
+        comps: [
+          { name: 'CPV fit', pts: '+16/35', pct: '46%' }, { name: 'Capability & keyword fit', pts: '+9/20', pct: '45%' },
+          { name: 'Geography', pts: '+15/15', pct: '100%' }, { name: 'Contract value', pts: '+7/10', pct: '70%' },
+        ],
+        hasRisk: false, riskKind: '', riskLine: '', riskBg: '', riskText: '',
+      },
+    ];
+
+    demo[0].country = 'CY'; demo[1].country = 'CY'; demo[2].country = 'CY';
+    const pool = demo.concat([
+      { country: 'GR', score: '88', fit: 'Strong fit', gutter: 'var(--bm-accent)', chipBg: 'var(--bm-accent-tint)',
+        chipLine: 'var(--bm-accent-line)', chipInk: 'var(--bm-accent-text)', dash: ring(88),
+        deadline: 'closes in 14 days', deadlineInk: 'var(--bm-ink2)',
+        title: 'Managed hosting and disaster recovery for the national land registry',
+        meta: 'Hellenic Cadastre · GR · €3.10M · open procedure',
+        comps: [{ name: 'CPV fit', pts: '+31/35', pct: '89%' }, { name: 'Capability & keyword fit', pts: '+17/20', pct: '85%' },
+          { name: 'Geography', pts: '+13/15', pct: '87%' }, { name: 'Contract value', pts: '+6/10', pct: '60%' }],
+        hasRisk: true, riskKind: 'Caution', riskLine: 'var(--bm-caution)', riskBg: 'var(--bm-caution-tint)',
+        riskText: 'Greek-language submission required — quoted from the notice text (confirmed pattern).' },
+      { country: 'MT', score: '76', fit: 'Worth reviewing', gutter: 'var(--bm-fit-mid)', chipBg: 'transparent',
+        chipLine: 'var(--bm-accent-line)', chipInk: 'var(--bm-accent-text)', dash: ring(76),
+        deadline: 'closes in 8 days', deadlineInk: 'var(--bm-caution)',
+        title: 'Service desk and endpoint management for government agencies',
+        meta: 'MITA · MT · €920k · restricted',
+        comps: [{ name: 'CPV fit', pts: '+27/35', pct: '77%' }, { name: 'Capability & keyword fit', pts: '+14/20', pct: '70%' },
+          { name: 'Geography', pts: '+13/15', pct: '87%' }, { name: 'Deadline runway', pts: '+2/5', pct: '40%' }],
+        hasRisk: false, riskKind: '', riskLine: '', riskBg: '', riskText: '' },
+      { country: 'IT', score: '71', fit: 'Worth reviewing', gutter: 'var(--bm-fit-mid)', chipBg: 'transparent',
+        chipLine: 'var(--bm-accent-line)', chipInk: 'var(--bm-accent-text)', dash: ring(71),
+        deadline: 'closes in 21 days', deadlineInk: 'var(--bm-ink2)',
+        title: 'Identity federation for regional health authorities',
+        meta: 'Regione Lombardia · IT · €2.40M · open procedure',
+        comps: [{ name: 'CPV fit', pts: '+27/35', pct: '77%' }, { name: 'Capability & keyword fit', pts: '+13/20', pct: '65%' },
+          { name: 'Geography', pts: '+6/15', pct: '40%' }, { name: 'Buyer & sector', pts: '+5/5', pct: '100%' }],
+        hasRisk: true, riskKind: 'Caution', riskLine: 'var(--bm-caution)', riskBg: 'var(--bm-caution-tint)',
+        riskText: 'Local operating presence in the region expected — possible requirement, verify in source.' },
+      { country: 'DE', score: '69', fit: 'Worth reviewing', gutter: 'var(--bm-fit-mid)', chipBg: 'transparent',
+        chipLine: 'var(--bm-accent-line)', chipInk: 'var(--bm-accent-text)', dash: ring(69),
+        deadline: 'closes in 17 days', deadlineInk: 'var(--bm-ink2)',
+        title: 'Framework for cloud security operations, federal transport authority',
+        meta: 'Bundesamt · DE · €4.80M · restricted',
+        comps: [{ name: 'CPV fit', pts: '+27/35', pct: '77%' }, { name: 'Capability & keyword fit', pts: '+15/20', pct: '75%' },
+          { name: 'Geography', pts: '+6/15', pct: '40%' }, { name: 'Contract value', pts: '+3/10', pct: '30%' }],
+        hasRisk: true, riskKind: 'Blocker', riskLine: 'var(--bm-risk)', riskBg: 'var(--bm-risk-tint)',
+        riskText: 'BSI C5 attestation required — not held on file (confirmed pattern).' },
+    ]);
+    const countryNames = { CY: 'Cyprus', GR: 'Greece', MT: 'Malta', IT: 'Italy', DE: 'Germany', ES: 'Spain', FR: 'France', NL: 'Netherlands' };
+    const detected = st.geo;
+    const picked = st.geoPicked ?? (detected !== null && pool.some((d) => d.country === detected) ? detected : 'EU');
+    const shown = picked === 'EU' ? pool.slice(0, 3)
+      : pool.filter((d) => d.country === picked).concat(pool.filter((d) => d.country !== picked)).slice(0, 3);
+
+    return {
+      steps: [
+        { num: '1', title: 'TED, ingested daily', body: 'Competition notices from Tenders Electronic Daily — the Publications Office of the European Union — within a documented CPV scope.' },
+        { num: '2', title: 'Your company profile', body: 'CPV codes, capabilities, keywords, geography, value range and exclusions — set once in onboarding, editable forever after.' },
+        { num: '3', title: 'Deterministic scoring', body: 'Eight components, published weights, same engine version, same score. No LLM anywhere in the scoring path.' },
+        { num: '4', title: 'Verdict + explanation', body: 'Strong match, worth reviewing or possible — with the reasoning for every point, quoted evidence, and a link to the notice on TED.' },
+      ].map((s, i) => ({
+        num: s.num, title: s.title, body: s.body, active: st.step === i,
+        progress: st.step === i ? Math.round(((st.stepHeld + 1) / 5) * 100) + '%' : '0%',
+        bg: st.step === i ? 'var(--bm-panel)' : 'transparent',
+        line: st.step === i ? 'var(--bm-accent-line)' : 'var(--bm-line-hair)',
+        numBg: st.step === i ? 'var(--bm-accent)' : 'transparent',
+        numLine: st.step === i ? 'var(--bm-accent)' : 'var(--bm-line)',
+        numInk: st.step === i ? 'var(--bm-accent-ink)' : 'var(--bm-ink3)',
+        onClick: () => { this.stopStepper(); this.setState({ step: i, stepHeld: 0, playing: false }); },
+      })),
+      playLabel: st.playing ? 'Pause' : 'Play',
+      stepCounter: 'Step ' + (st.step + 1) + ' of 4',
+      onTogglePlay: () => {
+        if (st.playing) { this.stopStepper(); this.setState({ playing: false }); }
+        else { this.setState({ playing: true, stepHeld: 0 }); this.startStepper(); }
+      },
+      stageCaption: ['01 · The source', '02 · Your profile', '03 · The score', '04 · The verdict'][st.step],
+      stageIsSource: st.step === 0, stageIsProfile: st.step === 1, stageIsScore: st.step === 2, stageIsVerdict: st.step === 3,
+      noticeLines: ['92%', '76%', '84%', '61%', '88%', '48%'].map((w, i) => ({ w, delay: (i * 90) + 'ms' })),
+      profileChips: [
+        { label: '72000000 IT services' }, { label: '48730000 Security software' }, { label: 'CY · GR · MT' },
+        { label: '€250k – €5M' }, { label: 'penetration testing' }, { label: '7 days runway' },
+      ].map((c, i) => ({ label: c.label, delay: (i * 80) + 'ms' })),
+      scoreBars: [
+        { label: 'CPV fit', pct: '86%', pts: '+30/35' },
+        { label: 'Capability & keyword fit', pct: '85%', pts: '+17/20' },
+        { label: 'Geography', pct: '100%', pts: '+15/15' },
+        { label: 'Contract value', pct: '100%', pts: '+10/10' },
+        { label: 'Buyer & sector', pct: '100%', pts: '+5/5' },
+        { label: 'Procedure & nature', pct: '100%', pts: '+5/5' },
+        { label: 'Deadline runway', pct: '40%', pts: '+2/5' },
+        { label: 'Eligibility & certs', pct: '50%', pts: '+2.5/5' },
+      ].map((b, i) => ({ label: b.label, pct: b.pct, pts: b.pts, delay: (i * 70) + 'ms' })),
+      geoHeadline: picked === 'EU' ? 'Live notices · scored this morning · EU-wide'
+        : 'Live notices in ' + (countryNames[picked] ?? picked) + ' · scored this morning',
+      geoNote: detected === null ? 'Pick a country to see today there:'
+        : picked === detected ? 'Detected ' + (countryNames[detected] ?? detected) + ' from your browser — change it:'
+        : 'Showing ' + (countryNames[picked] ?? picked) + ':',
+      geoOptions: ['EU', 'CY', 'GR', 'MT', 'IT', 'DE'].map((c) => ({
+        label: c === 'EU' ? 'EU-wide' : (countryNames[c] ?? c),
+        bg: picked === c ? 'var(--bm-accent-tint)' : 'transparent',
+        line: picked === c ? 'var(--bm-accent-line)' : 'var(--bm-line-hair)',
+        ink: picked === c ? 'var(--bm-accent-text)' : 'var(--bm-ink2)',
+        weight: picked === c ? '600' : '400',
+        onClick: () => this.setState({ geoPicked: c }),
+      })),
+      consentOpen: st.consent === null, prefsOpen: st.prefsOpen,
+      reserveBottom: st.consent === null && st.prefsOpen === false ? '148px' : '0px',
+      bannerOpen: st.consent === null && st.prefsOpen === false,
+      consentSettled: st.consent !== null,
+      consentAsked: st.consent !== null,
+      consentState: st.consent === null ? 'Cookies: no choice recorded yet' : st.consent === 'granted'
+        ? 'Cookies: analytics on' + (st.categories.preferences ? ', preferences on' : '') + (st.categories.marketing ? ', marketing on' : '')
+        : st.consent === 'custom' ? 'Cookies: your selection saved' : 'Cookies: strictly necessary only',
+      onOpenPrefs: () => this.setState({ prefsOpen: true }),
+      onClosePrefs: () => this.setState({ prefsOpen: false }),
+      categoryRows: [
+        { id: 'necessary', label: 'Strictly necessary', note: 'Session, sign-in and security. These cannot be switched off — they are what makes the app work.', locked: true },
+        { id: 'preferences', label: 'Preferences', note: 'Remembers your theme, saved-search selection and digest view between visits.', locked: false },
+        { id: 'analytics', label: 'Analytics', note: 'Google Analytics 4 with IP anonymisation — page views and feature use, so we know what to build next.', locked: false },
+        { id: 'marketing', label: 'Marketing', note: 'Nothing today. If we ever add advertising or retargeting tags, they would sit here — off unless you turn them on.', locked: false },
+      ].map((c) => {
+        const on = c.locked ? true : st.categories[c.id] === true;
+        return {
+          label: c.label, note: c.note, locked: c.locked, unlocked: !c.locked,
+          track: on ? 'var(--bm-accent)' : 'var(--bm-line)',
+          knob: on ? '19.5px' : '2.5px',
+          state: on ? 'On' : 'Off',
+          onToggle: () => { if (!c.locked) this.setState((s) => ({ categories: Object.assign({}, s.categories, { [c.id]: !s.categories[c.id] }) })); },
+        };
+      }),
+      onAcceptAll: () => this.saveConsent({ necessary: true, preferences: true, analytics: true, marketing: true }, 'granted'),
+      onRejectAll: () => this.saveConsent({ necessary: true, preferences: false, analytics: false, marketing: false }, 'denied'),
+      onSaveSelection: () => this.saveConsent(st.categories, st.categories.analytics ? 'granted' : 'custom'),
+      onResetConsent: () => {
+        try { window.localStorage.removeItem('bm_analytics_consent'); window.localStorage.removeItem('bm_consent_categories'); } catch (err) { /* private mode */ }
+        this.setState({ consent: null, prefsOpen: false, categories: { necessary: true, preferences: false, analytics: false, marketing: false } });
+      },
+      onAcceptAnalytics: () => {
+        try { window.localStorage.setItem('bm_analytics_consent', 'granted'); } catch (err) { /* private mode */ }
+        this.setState({ consent: 'granted' });
+        this.loadAnalytics();
+      },
+      onDeclineAnalytics: () => {
+        try { window.localStorage.setItem('bm_analytics_consent', 'denied'); } catch (err) { /* private mode */ }
+        this.setState({ consent: 'denied' });
+      },
+      theme, accent: this.props.accent ?? '#2ec4b0',
+      themeLabel: theme === 'dark' ? 'Light' : 'Dark',
+      onToggleTheme: () => this.setState({ theme: theme === 'dark' ? 'light' : 'dark' }),
+      showPricing: this.props.showPricing ?? true,
+      typeface: this.state.typeface ?? (this.props.typeface ?? 'archivo'),
+
+      demo: shown,
+      components: [
+        { label: 'CPV fit', max: '35 pts', pct: '100%' },
+        { label: 'Capability & keyword fit', max: '20 pts', pct: '57%' },
+        { label: 'Geography', max: '15 pts', pct: '43%' },
+        { label: 'Contract value', max: '10 pts', pct: '29%' },
+        { label: 'Buyer & sector', max: '5 pts', pct: '14%' },
+        { label: 'Procedure & contract nature', max: '5 pts', pct: '14%' },
+        { label: 'Deadline runway', max: '5 pts', pct: '14%' },
+        { label: 'Eligibility & certifications', max: '5 pts', pct: '14%' },
+      ],
+      statuses: [
+        { label: 'Matched', note: 'The notice states something that fits your profile, and the component takes full or near-full points.' },
+        { label: 'Partial match', note: 'Some overlap — a secondary CPV code, a neighbouring region — scored proportionally rather than all or nothing.' },
+        { label: 'No match', note: 'The notice is explicit and it does not fit. Zero points, and the breakdown says which fact decided it.' },
+        { label: 'Unknown — neutral score applied', note: 'The notice never published the field. Half the component’s points, marked Unknown, with a note on what was missing.' },
+      ],
+      tiers: [
+        { range: '80 – 100', label: 'Strong match', note: 'Read it today. This is the top of your feed.', line: 'var(--bm-accent-line)', ink: 'var(--bm-accent-text)' },
+        { range: '65 – 79', label: 'Worth reviewing', note: 'Worth twenty minutes before you decide.', line: 'var(--bm-line)', ink: 'var(--bm-ink2)' },
+        { range: '45 – 64', label: 'Possible match', note: 'Adjacent work. Skim it when the week is quiet.', line: 'var(--bm-line-hair)', ink: 'var(--bm-ink3)' },
+        { range: '0 – 44', label: 'Low fit', note: 'Scored and kept, not surfaced. Useful when you widen your profile.', line: 'var(--bm-line-hair)', ink: 'var(--bm-ink3)' },
+        { range: 'no score', label: 'Excluded', note: 'A rule you set fired on a known value. The rule is named on the card.', line: 'var(--bm-line-hair)', ink: 'var(--bm-ink3)' },
+      ],
+      riskTypes: [
+        { label: 'Certifications' }, { label: 'Security clearance' }, { label: 'Insurance' },
+        { label: 'Financial turnover' }, { label: 'Prior experience' }, { label: 'Framework membership' },
+        { label: 'Local presence' }, { label: 'Mandatory references' },
+      ],
+      rules: [
+        { n: '01', text: 'The lot’s country or region is in your excluded geographies.' },
+        { n: '02', text: 'Its CPV code falls in a CPV family you excluded.' },
+        { n: '03', text: 'An excluded phrase appears in the notice text.' },
+        { n: '04', text: 'Its contract nature is one you marked unsupported.' },
+        { n: '05', text: 'Its deadline runway is below your configured threshold.' },
+      ],
+      faqs: [
+        { q: 'Is this a bid-writing tool?', a: 'No. BidMorrow decides what deserves your time — discovery, scoring and a defensible bid/no-bid call. The writing stays with your team.' },
+        { q: 'Which sectors can I profile?', a: 'Any CPV sector: construction, health, catering, transport, education, facilities, IT. Ingestion covers CPV 72*, 48* and 79417000 today, and codes outside that are saved to your profile and shown as out of scope until ingestion widens.' },
+        { q: 'Where does the data come from?', a: 'Tenders Electronic Daily, the Publications Office of the European Union, ingested daily within a documented CPV scope.' },
+        { q: 'Is any of this AI?', a: 'Not in the scoring path. Scores and risk flags are deterministic: same notice, same engine version, same result, with the evidence quoted. That is what makes a bid/no-bid call defensible to a partner.' },
+        { q: 'How much noise should I expect?', a: 'One digest a day, only when something clears the floor you set, and Strong matches lead the feed. You choose the floor: Strong match, Worth reviewing, or everything scored.' },
+        { q: 'What if the score is wrong?', a: 'Every component can be disagreed with in one click, and the breakdown names the fact behind each point. Feedback tunes your own weighting; it never rewrites history.' },
+      ],
+      typefaceOptions: ['archivo', 'franklin', 'source'].map((t) => ({
+        label: t === 'archivo' ? 'Archivo' : t === 'franklin' ? 'Franklin' : 'Source',
+        bg: (this.state.typeface ?? (this.props.typeface ?? 'archivo')) === t ? 'var(--bm-accent-tint)' : 'transparent',
+        ink: (this.state.typeface ?? (this.props.typeface ?? 'archivo')) === t ? 'var(--bm-accent-text)' : 'var(--bm-ink3)',
+        onClick: () => this.setState({ typeface: t }),
+      })),
+      facts: [
+        { value: '0–100', label: 'A score per tender, with the points broken out component by component.' },
+        { value: '5 rules', label: 'The only grounds on which a tender is excluded outright — all of them yours to set.' },
+        { value: '3 tiers', label: 'Strong match, worth reviewing, possible. Your feed leads with the first.' },
+        { value: '1 email', label: 'Per day, and only on days when something scored worth reading.' },
+      ],
+      truths: [
+        { title: 'Missing data is never guessed', body: 'When a notice omits something a score component needs — no value, no deadline — BidMorrow does not score it as zero or as a perfect match. It applies a documented neutral score, half that component’s maximum points, and marks the component Unknown with an explanation of what was missing.' },
+        { title: 'Every risk flag quotes its source', body: 'Risk flags are deterministic pattern matches over the notice text: certifications, security clearance, insurance, turnover, prior experience, framework membership, local presence, mandatory references. Each flag quotes the exact text it was detected from and is labelled either a confirmed pattern or a possible requirement to verify in the source documents.' },
+        { title: 'Exclusions fire only on known values', body: 'A tender is excluded outright — no score shown — only when a known value trips one of five rules: excluded geography, excluded CPV family, an excluded phrase in the notice text, an unsupported contract nature, or a deadline runway below your threshold. Unknown fields never trigger an exclusion.' },
+        { title: 'Coverage is scoped and published', body: 'Ingestion covers a documented CPV scope, not all of TED: IT services, software and information systems, and a small reviewed extras list. A notice outside that scope is never ingested or scored, however well it might otherwise fit your profile.' },
+      ],
+      foundingPoints: [
+        { text: 'The same product every customer gets — no separate pilot feature set' },
+        { text: 'Direct access to the team building BidMorrow' },
+        { text: 'Cancel any time from account settings' },
+      ],
+      standardPoints: [
+        { text: 'Same feed, matching engine, daily digest and support' },
+        { text: 'Monthly subscription via Stripe' },
+        { text: 'Cancel any time from account settings' },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

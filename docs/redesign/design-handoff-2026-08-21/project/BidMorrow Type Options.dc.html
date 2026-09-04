@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/styles.css">
+<script src="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:wght@400;500;600&family=Source+Code+Pro:wght@400;500&display=swap">
+<style>
+  :root {
+    --bm-sunken: #0a0c10; --bm-canvas: #0d1014; --bm-panel: #14181e; --bm-raised: #1b2027;
+    --bm-line-hair: #22282f; --bm-line: #2e353f; --bm-line-strong: #414a57;
+    --bm-ink1: #eef1f5; --bm-ink2: #a3adbb; --bm-ink3: #7a8593;
+    --bm-accent: #2ec4b0; --bm-accent-ink: #04211d; --bm-accent-text: #6fe0d0;
+    --bm-accent-tint: rgba(46,196,176,0.12); --bm-accent-line: rgba(46,196,176,0.34);
+    --bm-caution: #e8a33d; --bm-risk: #ef6461; --bm-risk-tint: rgba(239,100,97,0.12);
+  }
+  [data-bm-theme='light'] {
+    --bm-sunken: #eceff1; --bm-canvas: #f7f8f9; --bm-panel: #ffffff; --bm-raised: #ffffff;
+    --bm-line-hair: #e6e9ec; --bm-line: #d5dae0; --bm-line-strong: #b3bcc6;
+    --bm-ink1: #14181d; --bm-ink2: #4d5661; --bm-ink3: #6b7480;
+    --bm-accent: #0f7d6f; --bm-accent-ink: #ffffff; --bm-accent-text: #0b6a5e;
+    --bm-accent-tint: rgba(15,125,111,0.10); --bm-accent-line: rgba(15,125,111,0.28);
+    --bm-caution: #a16207; --bm-risk: #c0392f; --bm-risk-tint: rgba(192,57,47,0.10);
+  }
+  body { margin: 0; background: var(--bm-canvas); }
+  a { color: var(--bm-accent-text); text-decoration: none; }
+  a:hover { color: var(--bm-accent); text-decoration: underline; }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+
+<div data-bm-theme="{{ theme }}" style="background: var(--bm-canvas); color: var(--bm-ink1); font-family: 'IBM Plex Sans', system-ui, sans-serif; padding: 0 0 96px;">
+
+  <header style="max-width: 1360px; margin: 0 auto; padding: 44px 32px 0;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; flex-wrap: wrap; border-bottom: 1px solid var(--bm-line-hair); padding-bottom: 22px;">
+      <div>
+        <p style="margin: 0 0 10px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-accent-text);">Type direction · four candidates on real product content</p>
+        <h1 style="margin: 0; font-family: 'Newsreader', serif; font-size: 40px; font-weight: 600; letter-spacing: -0.02em;">Which voice should BidMorrow set in?</h1>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button type="button" onClick="{{ onToggleTheme }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 999px; height: 36px; padding: 0 16px; color: var(--bm-ink2); font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; cursor: pointer;">{{ themeLabel }}</button>
+      </div>
+    </div>
+    <p style="margin: 20px 0 0; max-width: 84ch; font-size: 15px; line-height: 1.6; color: var(--bm-ink2);">Each block sets the same four things: the marketing headline, an interface label, a tender card, and the figure row where money, dates and scores have to line up. All four families are open-licence and self-hostable, so none of them need an external stylesheet in production.</p>
+  </header>
+
+  <div style="max-width: 1360px; margin: 0 auto; padding: 32px 32px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;">
+    <sc-for list="{{ options }}" as="o" hint-placeholder-count="4">
+      <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 20px; padding: 26px 28px 28px;">
+        <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; color: var(--bm-accent-text);">{{ o.key }}</span>
+          <span style="font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; font-weight: 600; color: var(--bm-ink1);">{{ o.name }}</span>
+          <span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--bm-ink3);">{{ o.stack }}</span>
+        </div>
+
+        <p style="margin: 0 0 6px; font-family: {{ o.head }}; font-size: 38px; line-height: 1.06; font-weight: {{ o.headWeight }}; letter-spacing: {{ o.headTrack }}; color: var(--bm-ink1);">Find the tenders worth pursuing. Skip the rest.</p>
+        <p style="margin: 0 0 22px; font-family: {{ o.ui }}; font-size: 15px; line-height: 1.6; color: var(--bm-ink2);">Bid/no-bid qualification intelligence for EU public procurement — every eligible notice scored against your profile, with an explanation for every point.</p>
+
+        <article style="display: grid; grid-template-columns: 4px 1fr; background: var(--bm-raised); border: 1px solid var(--bm-line-hair); border-radius: 16px; overflow: hidden; margin-bottom: 18px;">
+          <div style="background: var(--bm-accent);"></div>
+          <div style="padding: 16px 18px; display: grid; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span style="font-family: {{ o.num }}; font-size: 13px; font-weight: 500; color: var(--bm-ink1);">91/100</span>
+              <span style="font-family: {{ o.ui }}; background: var(--bm-accent-tint); border: 1px solid var(--bm-accent-line); color: var(--bm-accent-text); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 500;">Strong fit</span>
+              <span style="margin-left: auto; font-family: {{ o.num }}; font-size: 12.5px; color: var(--bm-risk);">closes in 6 days</span>
+            </div>
+            <p style="margin: 0; font-family: {{ o.head }}; font-size: 19px; line-height: 1.25; font-weight: {{ o.cardWeight }}; color: var(--bm-ink1);">Framework for cloud migration and managed hosting of national health records</p>
+            <p style="margin: 0; font-family: {{ o.ui }}; font-size: 13px; color: var(--bm-ink2);">Ministry of Health · CY · €1.84M · open procedure</p>
+            <p style="margin: 0; font-family: {{ o.ui }}; display: flex; gap: 8px; background: var(--bm-risk-tint); border-left: 2px solid var(--bm-risk); border-radius: 0 10px 10px 0; padding: 8px 10px; font-size: 12.5px; line-height: 1.5; color: var(--bm-ink1);">
+              <span style="font-family: {{ o.num }}; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bm-risk); white-space: nowrap;">Blocker</span>
+              <span>SC clearance required for 3 named staff — none on file (p. 41 §9.4).</span>
+            </p>
+          </div>
+        </article>
+
+        <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 12px; overflow: hidden; margin-bottom: 18px;">
+          <sc-for list="{{ o.figures }}" as="fig" hint-placeholder-count="4">
+            <div style="background: var(--bm-panel); display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 8px 14px;">
+              <span style="font-family: {{ o.ui }}; font-size: 12.5px; color: var(--bm-ink3);">{{ fig.label }}</span>
+              <span style="font-family: {{ o.num }}; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--bm-ink1);">{{ fig.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <p style="margin: 0; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; line-height: 1.6; color: var(--bm-ink2);"><span style="color: var(--bm-ink1); font-weight: 600;">{{ o.verdictLabel }}</span> {{ o.verdict }}</p>
+      </section>
+    </sc-for>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark' | 'light'&quot;,&quot;section&quot;:&quot;Appearance&quot;}}">
+class Component extends DCLogic {
+  state = { theme: null };
+
+  renderVals() {
+    const theme = this.state.theme ?? (this.props.theme ?? 'dark');
+    const figures = [
+      { label: 'Contract value', value: '€1,840,000' },
+      { label: 'Deadline', value: '25 Aug 2026, 12:00' },
+      { label: 'Score / band', value: '91 · 85–100' },
+      { label: 'Win rate in band', value: '48% (10 of 21)' },
+    ];
+    const options = [
+      {
+        key: 'A', name: 'Editorial (today)', stack: 'Newsreader · IBM Plex Sans · IBM Plex Mono',
+        head: "'Newsreader', Georgia, serif", ui: "'IBM Plex Sans', sans-serif", num: "'IBM Plex Mono', monospace",
+        headWeight: '600', headTrack: '-0.02em', cardWeight: '500', figures,
+        verdictLabel: 'Warm and readable.',
+        verdict: 'Newsreader’s low contrast holds up at small sizes, so the same face can set a card title and a hero. Plex Mono is wide, which pushes figure columns out.',
+      },
+      {
+        key: 'B', name: 'Modern editorial', stack: 'Instrument Serif · Manrope · JetBrains Mono',
+        head: "'Instrument Serif', Georgia, serif", ui: "'Manrope', sans-serif", num: "'JetBrains Mono', monospace",
+        headWeight: '400', headTrack: '-0.015em', cardWeight: '400', figures,
+        verdictLabel: 'Sharpest display.',
+        verdict: 'Instrument Serif is a display face — striking in the hero, too high-contrast for a 19px card title. Manrope is friendly and slightly informal for procurement.',
+      },
+      {
+        key: 'C', name: 'Institutional sans', stack: 'Libre Franklin · Libre Franklin · IBM Plex Mono',
+        head: "'Libre Franklin', sans-serif", ui: "'Libre Franklin', sans-serif", num: "'IBM Plex Mono', monospace",
+        headWeight: '700', headTrack: '-0.03em', cardWeight: '600', figures,
+        verdictLabel: 'One family, no serif.',
+        verdict: 'Franklin is the American gazette voice — sober, dense, entirely weight-driven. Cheapest to ship and hardest to make feel special.',
+      },
+      {
+        key: 'D', name: 'Document trio', stack: 'Source Serif 4 · Source Sans 3 · Source Code Pro',
+        head: "'Source Serif 4', Georgia, serif", ui: "'Source Sans 3', sans-serif", num: "'Source Code Pro', monospace",
+        headWeight: '600', headTrack: '-0.02em', cardWeight: '600', figures,
+        verdictLabel: 'Reads like the source.',
+        verdict: 'The trio was designed together, so serif, sans and mono share proportions — it looks like the official journal your data comes from. Least distinctive as a brand.',
+      },
+    ];
+    return {
+      theme, themeLabel: theme === 'dark' ? 'Light' : 'Dark',
+      onToggleTheme: () => this.setState({ theme: theme === 'dark' ? 'light' : 'dark' }),
+      options,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/styles.css">
+<script src="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Source+Sans+3:wght@400;500;600&family=Source+Code+Pro:wght@400;500&display=swap">
+<style>
+  :root {
+    --bm-sunken: #0a0c10; --bm-canvas: #0d1014; --bm-panel: #14181e; --bm-raised: #1b2027; --bm-overlay: #1f252d;
+    --bm-line-hair: #22282f; --bm-line: #2e353f; --bm-line-strong: #414a57;
+    --bm-ink1: #eef1f5; --bm-ink2: #a3adbb; --bm-ink3: #7a8593;
+    --bm-accent: #2ec4b0; --bm-accent-ink: #04211d; --bm-accent-text: #6fe0d0;
+    --bm-accent-tint: rgba(46,196,176,0.12); --bm-accent-line: rgba(46,196,176,0.34);
+    --bm-caution: #e8a33d; --bm-caution-tint: rgba(232,163,61,0.12);
+    --bm-risk: #ef6461; --bm-risk-tint: rgba(239,100,97,0.12);
+    --bm-head: 'Archivo', system-ui, sans-serif; --bm-ui: 'Archivo', system-ui, sans-serif; --bm-num: 'Archivo', system-ui, sans-serif; --bm-code: 'Source Code Pro', ui-monospace, monospace;
+    --bm-shadow: 0 40px 100px -24px rgba(0,0,0,0.7);
+  }
+  [data-bm-theme='light'] {
+    --bm-sunken: #eceff1; --bm-canvas: #f7f8f9; --bm-panel: #ffffff; --bm-raised: #ffffff; --bm-overlay: #ffffff;
+    --bm-line-hair: #e6e9ec; --bm-line: #d5dae0; --bm-line-strong: #b3bcc6;
+    --bm-ink1: #14181d; --bm-ink2: #4d5661; --bm-ink3: #6b7480;
+    --bm-accent: #0f7d6f; --bm-accent-ink: #ffffff; --bm-accent-text: #0b6a5e;
+    --bm-accent-tint: rgba(15,125,111,0.10); --bm-accent-line: rgba(15,125,111,0.28);
+    --bm-caution: #a16207; --bm-caution-tint: rgba(161,98,7,0.10);
+    --bm-risk: #c0392f; --bm-risk-tint: rgba(192,57,47,0.10);
+    --bm-shadow: 0 34px 80px -26px rgba(20,24,29,0.24);
+  }
+  [data-bm-type='franklin'] { --bm-head: 'Libre Franklin', system-ui, sans-serif; --bm-ui: 'Libre Franklin', system-ui, sans-serif; --bm-num: 'Libre Franklin', system-ui, sans-serif; }
+  [data-bm-type='source'] { --bm-head: 'Source Serif 4', Georgia, serif; --bm-ui: 'Source Sans 3', system-ui, sans-serif; --bm-num: 'Source Sans 3', system-ui, sans-serif; }
+  @keyframes bm-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes bm-spin { to { transform: rotate(360deg); } }
+  body { margin: 0; background: var(--bm-canvas); font-variant-numeric: tabular-nums; -webkit-text-size-adjust: 100%; }
+  a { color: var(--bm-accent-text); text-decoration: none; }
+  a:hover { color: var(--bm-accent); text-decoration: underline; }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--bm-accent); outline-offset: 2px; }
+  @media (max-width: 980px) { [data-auth-split] { grid-template-columns: 1fr !important; } [data-auth-aside] { display: none !important; } }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+
+<div data-bm-theme="{{ theme }}" data-bm-type="{{ typeface }}" style="background: var(--bm-canvas); color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 16px; min-height: 100vh;">
+
+  <header style="border-bottom: 1px solid var(--bm-line-hair);">
+    <div style="max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 32px); height: 68px; display: flex; align-items: center; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" role="img" aria-hidden="true" focusable="false" style="color: var(--bm-ink1);">
+          <rect x="6.5" y="2.5" width="13" height="6" rx="3" fill="currentColor" opacity="0.28"></rect>
+          <rect x="4" y="9.5" width="18" height="6" rx="3" fill="currentColor" opacity="0.55"></rect>
+          <rect x="1.5" y="16.5" width="23" height="7" rx="3.5" fill="url(#bm-auth-grad)"></rect>
+          <defs><linearGradient id="bm-auth-grad" x1="1.5" y1="16.5" x2="24.5" y2="23.5" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#35D3C0"></stop><stop offset="1" stop-color="#1FA899"></stop></linearGradient></defs>
+        </svg>
+        <span style="font-family: var(--bm-head); font-size: 20px; font-weight: 600; letter-spacing: -0.01em;">BidMorrow</span>
+      </div>
+      <span style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
+        <button type="button" onClick="{{ onToggleTheme }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line-hair); border-radius: 999px; height: 34px; padding: 0 13px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">{{ themeLabel }}</button>
+      </span>
+    </div>
+  </header>
+
+  <div data-auth-split="true" style="max-width: 1240px; margin: 0 auto; padding: clamp(28px, 5vw, 64px) clamp(16px, 4vw, 32px) 72px; display: grid; grid-template-columns: 1fr 468px; gap: clamp(32px, 6vw, 88px); align-items: start;">
+
+    <div data-auth-aside="true" style="display: grid; gap: 30px; padding-top: 12px;">
+      <div style="display: grid; gap: 16px;">
+        <p style="margin: 0; font-family: var(--bm-num); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-accent-text);">Account access</p>
+        <h1 style="margin: 0; font-family: var(--bm-head); font-size: clamp(32px, 4.4vw, 50px); line-height: 1.06; font-weight: 600; letter-spacing: -0.028em; max-width: 22ch; text-wrap: pretty;">Sign in and land where you left off.</h1>
+        <p style="margin: 0; max-width: 52ch; font-size: 17px; line-height: 1.6; color: var(--bm-ink2); text-wrap: pretty;">Where you land is decided by the state of your account, not a fixed URL — a saved destination wins, an unfinished profile goes to onboarding, a complete one goes to your feed.</p>
+      </div>
+      <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 18px; overflow: hidden; max-width: 560px;">
+        <sc-for list="{{ rules }}" as="r" hint-placeholder-count="3">
+          <div style="background: var(--bm-panel); padding: 16px 18px; display: grid; gap: 4px;">
+            <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--bm-accent-text);">{{ r.tag }}</p>
+            <p style="margin: 0; font-size: 14px; line-height: 1.55; color: var(--bm-ink2);">{{ r.text }}</p>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: grid; gap: 16px;">
+      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+          <button type="button" onClick="{{ t.onClick }}" style="appearance: none; background: {{ t.bg }}; border: 1px solid {{ t.line }}; color: {{ t.ink }}; border-radius: 999px; padding: 7px 14px; font-family: var(--bm-ui); font-size: 12.5px; cursor: pointer;">{{ t.label }}</button>
+        </sc-for>
+      </div>
+
+      <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 24px; padding: clamp(22px, 3vw, 32px); box-shadow: var(--bm-shadow); display: grid; gap: 20px;">
+
+        <div style="display: grid; gap: 7px;">
+          <h2 style="margin: 0; font-family: var(--bm-head); font-size: 27px; font-weight: 600; letter-spacing: -0.02em;">{{ title }}</h2>
+          <p style="margin: 0; font-size: 14px; line-height: 1.55; color: var(--bm-ink2);">{{ subtitle }}</p>
+        </div>
+
+        <sc-if value="{{ showError }}" hint-placeholder-val="{{ false }}">
+          <p role="alert" style="margin: 0; background: var(--bm-risk-tint); border: 1px solid var(--bm-risk); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; line-height: 1.5; color: var(--bm-ink1);">{{ error }}</p>
+        </sc-if>
+
+        <sc-if value="{{ needsVerify }}" hint-placeholder-val="{{ false }}">
+          <p role="alert" style="margin: 0; background: var(--bm-caution-tint); border: 1px solid var(--bm-caution); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink1);">Please verify your email before logging in. <button type="button" onClick="{{ onResend }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-accent-text); font-family: var(--bm-ui); font-size: 13.5px; text-decoration: underline; cursor: pointer;">Resend verification email</button></p>
+        </sc-if>
+
+        <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+          <div style="display: grid; gap: 16px;">
+            <label style="display: grid; gap: 7px;">
+              <span style="font-size: 12.5px; color: var(--bm-ink2);">Email</span>
+              <input type="email" autoComplete="email" placeholder="you@company.eu" value="{{ email }}" onChange="{{ onEmail }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 12px; padding: 13px 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 15px; width: 100%;">
+            </label>
+            <label style="display: grid; gap: 7px;">
+              <span style="font-size: 12.5px; color: var(--bm-ink2);">Password</span>
+              <input type="password" autoComplete="current-password" placeholder="••••••••" value="{{ password }}" onChange="{{ onPassword }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 12px; padding: 13px 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 15px; width: 100%;">
+            </label>
+            <button type="button" onClick="{{ onLogin }}" disabled="{{ submitting }}" style="appearance: none; background: var(--bm-accent); color: var(--bm-accent-ink); border: 0; border-radius: 999px; padding: 14px 22px; font-family: var(--bm-ui); font-size: 15px; font-weight: 500; cursor: pointer; width: 100%;">{{ primaryLabel }}</button>
+            <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13.5px;">
+              <button type="button" onClick="{{ onGoForgot }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-accent-text); font-family: var(--bm-ui); font-size: 13.5px; cursor: pointer;">Forgot your password?</button>
+              <button type="button" onClick="{{ onGoSignup }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 13.5px; cursor: pointer;">Create an account</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; gap: 16px;">
+            <label style="display: grid; gap: 7px;">
+              <span style="font-size: 12.5px; color: var(--bm-ink2);">Full name</span>
+              <input type="text" autoComplete="name" placeholder="Elena Marou" value="{{ name }}" onChange="{{ onName }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 12px; padding: 13px 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 15px; width: 100%;">
+            </label>
+            <label style="display: grid; gap: 7px;">
+              <span style="font-size: 12.5px; color: var(--bm-ink2);">Work email</span>
+              <input type="email" autoComplete="email" placeholder="you@company.eu" value="{{ email }}" onChange="{{ onEmail }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 12px; padding: 13px 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 15px; width: 100%;">
+            </label>
+            <label style="display: grid; gap: 7px;">
+              <span style="font-size: 12.5px; color: var(--bm-ink2);">Password</span>
+              <input type="password" autoComplete="new-password" placeholder="At least 8 characters" value="{{ password }}" onChange="{{ onPassword }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 12px; padding: 13px 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 15px; width: 100%;">
+              <span style="font-size: 12px; color: {{ pwInk }};">{{ pwHint }}</span>
+            </label>
+            <button type="button" onClick="{{ onSignup }}" disabled="{{ submitting }}" style="appearance: none; background: var(--bm-accent); color: var(--bm-accent-ink); border: 0; border-radius: 999px; padding: 14px 22px; font-family: var(--bm-ui); font-size: 15px; font-weight: 500; cursor: pointer; width: 100%;">{{ primaryLabel }}</button>
+            <p style="margin: 0; font-size: 13px; line-height: 1.55; color: var(--bm-ink3);">Verification is required before the first login — the account exists, but the feed stays closed until the emailed link is followed.</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isVerify }}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; gap: 16px;">
+            <sc-if value="{{ linkExpired }}" hint-placeholder-val="{{ false }}">
+              <div style="display: grid; gap: 12px;">
+                <p role="alert" style="margin: 0; background: var(--bm-risk-tint); border: 1px solid var(--bm-risk); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; line-height: 1.5;">That verification link is invalid or has expired.</p>
+                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: var(--bm-ink2);">Try logging in again — we’ll offer to resend the verification email from there.</p>
+                <button type="button" onClick="{{ onGoLogin }}" style="appearance: none; background: var(--bm-accent); color: var(--bm-accent-ink); border: 0; border-radius: 999px; padding: 13px 22px; font-family: var(--bm-ui); font-size: 15px; font-weight: 500; cursor: pointer; justify-self: start;">Back to log in</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ verifyPending }}" hint-placeholder-val="{{ true }}">
+              <div style="display: grid; gap: 16px;">
+                <div style="background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 16px; padding: 16px 18px; display: grid; gap: 6px;">
+                  <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--bm-ink3);">Sent to</p>
+                  <p style="margin: 0; font-size: 15px; color: var(--bm-ink1);">{{ verifyAddress }}</p>
+                </div>
+                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: var(--bm-ink2);">Click the link inside, then log in. Not there? Check your spam folder.</p>
+                <sc-if value="{{ resent }}" hint-placeholder-val="{{ false }}">
+                  <p role="status" style="margin: 0; background: var(--bm-accent-tint); border: 1px solid var(--bm-accent-line); border-radius: 14px; padding: 11px 14px; font-size: 13.5px; color: var(--bm-ink1);">Sent again — give it a minute to arrive.</p>
+                </sc-if>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <button type="button" onClick="{{ onGoLogin }}" style="appearance: none; background: var(--bm-accent); color: var(--bm-accent-ink); border: 0; border-radius: 999px; padding: 13px 22px; font-family: var(--bm-ui); font-size: 15px; font-weight: 500; cursor: pointer;">Log in</button>
+                  <button type="button" onClick="{{ onResend }}" disabled="{{ submitting }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); color: var(--bm-ink1); border-radius: 999px; padding: 13px 20px; font-family: var(--bm-ui); font-size: 14.5px; cursor: pointer;">{{ resendLabel }}</button>
+                </div>
+                <button type="button" onClick="{{ onExpire }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-ink3); font-family: var(--bm-ui); font-size: 12.5px; text-decoration: underline; cursor: pointer; justify-self: start;">Show the expired-link state</button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isForgot }}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; gap: 16px;">
+            <sc-if value="{{ sent }}" hint-placeholder-val="{{ false }}">
+              <div style="display: grid; gap: 14px;">
+                <p role="status" style="margin: 0; background: var(--bm-accent-tint); border: 1px solid var(--bm-accent-line); border-radius: 14px; padding: 13px 14px; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink1);">If an account exists for that email, a password reset link has been sent.</p>
+                <p style="margin: 0; font-size: 13px; line-height: 1.6; color: var(--bm-ink3);">The same confirmation shows whether or not the address is registered — an unauthenticated caller is never told which accounts exist.</p>
+                <button type="button" onClick="{{ onGoReset }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); color: var(--bm-ink1); border-radius: 999px; padding: 12px 20px; font-family: var(--bm-ui); font-size: 14px; cursor: pointer; justify-self: start;">Follow the emailed link</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ forgotForm }}" hint-placeholder-val="{{ true }}">
+              <div style="display: grid; gap: 16px;">
+                <label style="display: grid; gap: 7px;">
+                  <span style="font-size: 12.5px; color: var(--bm-ink2);">Email</span>
+                  <input type="email" autoComplete="email" placeholder="you@company.eu" value="{{ email }}" onChange="{{ onEmail }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 12px; padding: 13px 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 15px; width: 100%;">
+                </label>
+                <button type="button" onClick="{{ onForgot }}" disabled="{{ submitting }}" style="appearance: none; background: var(--bm-accent); color: var(--bm-accent-ink); border: 0; border-radius: 999px; padding: 14px 22px; font-family: var(--bm-ui); font-size: 15px; font-weight: 500; cursor: pointer; width: 100%;">{{ primaryLabel }}</button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isReset }}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; gap: 16px;">
+            <sc-if value="{{ tokenMissing }}" hint-placeholder-val="{{ false }}">
+              <div style="display: grid; gap: 14px;">
+                <p role="alert" style="margin: 0; background: var(--bm-risk-tint); border: 1px solid var(--bm-risk); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; line-height: 1.55;">This link is missing a reset token. Request a new link from forgot password.</p>
+                <button type="button" onClick="{{ onGoForgot }}" style="appearance: none; background: var(--bm-accent); color: var(--bm-accent-ink); border: 0; border-radius: 999px; padding: 13px 22px; font-family: var(--bm-ui); font-size: 15px; font-weight: 500; cursor: pointer; justify-self: start;">Request a new link</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ resetDone }}" hint-placeholder-val="{{ false }}">
+              <div style="display: grid; gap: 14px;">
+                <p role="status" style="margin: 0; background: var(--bm-accent-tint); border: 1px solid var(--bm-accent-line); border-radius: 14px; padding: 13px 14px; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink1);">Password set. Log in with your new password.</p>
+                <button type="button" onClick="{{ onGoLogin }}" style="appearance: none; background: var(--bm-accent); color: var(--bm-accent-ink); border: 0; border-radius: 999px; padding: 13px 22px; font-family: var(--bm-ui); font-size: 15px; font-weight: 500; cursor: pointer; justify-self: start;">Log in</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ resetForm }}" hint-placeholder-val="{{ true }}">
+              <div style="display: grid; gap: 16px;">
+                <div style="background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;">
+                  <span style="font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--bm-ink3);">Token</span>
+                  <span style="font-family: var(--bm-code); font-size: 12.5px; color: var(--bm-ink2); word-break: break-all;">{{ resetToken }}</span>
+                </div>
+                <label style="display: grid; gap: 7px;">
+                  <span style="font-size: 12.5px; color: var(--bm-ink2);">New password</span>
+                  <input type="password" autoComplete="new-password" placeholder="At least 8 characters" value="{{ password }}" onChange="{{ onPassword }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 12px; padding: 13px 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 15px; width: 100%;">
+                  <span style="font-size: 12px; color: {{ pwInk }};">{{ pwHint }}</span>
+                </label>
+                <button type="button" onClick="{{ onReset }}" disabled="{{ submitting }}" style="appearance: none; background: var(--bm-accent); color: var(--bm-accent-ink); border: 0; border-radius: 999px; padding: 14px 22px; font-family: var(--bm-ui); font-size: 15px; font-weight: 500; cursor: pointer; width: 100%;">{{ primaryLabel }}</button>
+                <button type="button" onClick="{{ onDropToken }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-ink3); font-family: var(--bm-ui); font-size: 12.5px; text-decoration: underline; cursor: pointer; justify-self: start;">Show the missing-token state</button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ landed }}" hint-placeholder-val="{{ false }}">
+          <div style="border-top: 1px solid var(--bm-line-hair); padding-top: 18px; display: grid; gap: 8px; animation: bm-fade-up 320ms ease-out both;">
+            <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--bm-accent-text);">Signed in · routed by state</p>
+            <p style="margin: 0; font-family: var(--bm-code); font-size: 17px; color: var(--bm-ink1);">{{ destPath }}</p>
+            <p style="margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink2);">{{ destWhy }}</p>
+            <a href="{{ destHref }}" style="background: var(--bm-accent); color: var(--bm-accent-ink); border-radius: 999px; padding: 12px 22px; font-size: 14.5px; font-weight: 500; justify-self: start; margin-top: 4px;">{{ destCta }}</a>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="border: 1px solid var(--bm-line-hair); border-radius: 20px; padding: 16px 18px; display: grid; gap: 10px;">
+        <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--bm-ink3);">Simulate the account</p>
+        <div style="display: flex; gap: 7px; flex-wrap: wrap;">
+          <sc-for list="{{ sims }}" as="s" hint-placeholder-count="4">
+            <button type="button" onClick="{{ s.onClick }}" style="appearance: none; background: {{ s.bg }}; border: 1px solid {{ s.line }}; color: {{ s.ink }}; border-radius: 999px; padding: 7px 13px; font-family: var(--bm-ui); font-size: 12.5px; cursor: pointer;">{{ s.label }}</button>
+          </sc-for>
+        </div>
+        <p style="margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--bm-ink3);">{{ simNote }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1320, &quot;height&quot;: 900}, &quot;theme&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;dark&quot;, &quot;light&quot;], &quot;default&quot;: &quot;dark&quot;, &quot;tsType&quot;: &quot;'dark' | 'light'&quot;}, &quot;typeface&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;archivo&quot;, &quot;franklin&quot;, &quot;source&quot;], &quot;default&quot;: &quot;archivo&quot;, &quot;tsType&quot;: &quot;'archivo' | 'franklin' | 'source'&quot;}}">
+class Component extends DCLogic {
+  state = {
+    theme: null, typeface: null, screen: 'login',
+    email: '', password: '', name: '',
+    submitting: false, error: null, needsVerify: false,
+    sent: false, resent: false, resetDone: false,
+    hasToken: true, linkExpired: false, dest: null, sim: 'new',
+  };
+
+  th() { return this.state.theme ?? (this.props.theme ?? 'dark'); }
+
+  go(screen) {
+    this.setState({
+      screen, error: null, submitting: false, needsVerify: false,
+      sent: false, resent: false, resetDone: false, linkExpired: false, hasToken: true, dest: null,
+    });
+  }
+
+  after(ms, patch) {
+    this.setState({ submitting: true, error: null });
+    window.setTimeout(() => this.setState(Object.assign({ submitting: false }, patch)), ms);
+  }
+
+  emailOrDefault() {
+    const e = this.state.email.trim();
+    return e.length > 0 ? e : 'elena@northwind-eu.example';
+  }
+
+  login() {
+    const { email, password, sim } = this.state;
+    if (!email.includes('@') || password.length === 0) {
+      this.setState({ error: 'Enter your email and password.', needsVerify: false });
+      return;
+    }
+    if (sim === 'unverified') { this.after(650, { needsVerify: true }); return; }
+    if (sim === 'wrongpw') { this.after(650, { error: 'Could not sign in — check your email and password.' }); return; }
+    this.after(700, { dest: sim === 'returnTo' ? '/app/pipeline' : sim === 'new' ? '/onboarding' : '/app' });
+  }
+
+  signup() {
+    const { name, email, password } = this.state;
+    if (name.trim().length === 0 || !email.includes('@') || password.length < 8) {
+      this.setState({ error: 'Fill in every field — the password needs at least 8 characters.' });
+      return;
+    }
+    this.after(700, { screen: 'verify', error: null, sim: 'new' });
+  }
+
+  renderVals() {
+    const st = this.state;
+    const dark = this.th() !== 'light';
+    const screen = st.screen;
+    const pwLongEnough = st.password.length >= 8;
+    const dest = st.dest;
+    const destWhy = dest === '/app/pipeline'
+      ? 'A saved destination from the expired-session link took priority over everything else.'
+      : dest === '/onboarding'
+        ? 'No completed company profile on this organization yet, so onboarding comes first — never the feed’s dead end.'
+        : 'Profile complete, so the daily feed loads straight away.';
+
+    const tab = (id, label) => ({
+      label,
+      bg: screen === id ? 'var(--bm-accent-tint)' : 'transparent',
+      line: screen === id ? 'var(--bm-accent-line)' : 'var(--bm-line-hair)',
+      ink: screen === id ? 'var(--bm-accent-text)' : 'var(--bm-ink2)',
+      onClick: () => this.go(id),
+    });
+
+    const sim = (id, label) => ({
+      label,
+      bg: st.sim === id ? 'var(--bm-accent-tint)' : 'transparent',
+      line: st.sim === id ? 'var(--bm-accent-line)' : 'var(--bm-line-hair)',
+      ink: st.sim === id ? 'var(--bm-accent-text)' : 'var(--bm-ink2)',
+      onClick: () => this.setState({ sim: id, dest: null, error: null, needsVerify: false }),
+    });
+
+    const simNotes = {
+      new: 'Fresh account, profile never completed — logging in lands on onboarding.',
+      onboarded: 'Company profile complete — logging in lands on the feed.',
+      unverified: 'Email never verified — login is refused with a resend offer instead of a dead end.',
+      wrongpw: 'Credentials rejected — one plain error, no hint about which half was wrong.',
+      returnTo: 'Arrived from an expired-session link carrying a saved destination — it wins over the state check.',
+    };
+
+    const titles = {
+      login: 'Log in', signup: 'Create your account', verify: 'Verify your email',
+      forgot: 'Reset your password', reset: 'Choose a new password',
+    };
+    const subtitles = {
+      login: 'Email and password. Where you land is worked out after you are signed in.',
+      signup: 'One account per person; organizations are joined or created during onboarding.',
+      verify: st.linkExpired ? 'That link can no longer be used.' : 'One email, one link. The account exists but stays closed until it is followed.',
+      forgot: st.sent ? 'Check your inbox.' : 'We send a single-use link that expires.',
+      reset: st.hasToken ? 'Set a new password and log in again.' : 'This link cannot be used.',
+    };
+    const primary = {
+      login: st.submitting ? 'Logging in…' : 'Log in',
+      signup: st.submitting ? 'Creating account…' : 'Create account',
+      forgot: st.submitting ? 'Sending…' : 'Send reset link',
+      reset: st.submitting ? 'Saving…' : 'Set new password',
+    };
+
+    return {
+      theme: this.th(),
+      typeface: st.typeface ?? (this.props.typeface ?? 'archivo'),
+      themeLabel: dark ? 'Light' : 'Dark',
+      onToggleTheme: () => this.setState({ theme: dark ? 'light' : 'dark' }),
+
+      title: titles[screen],
+      subtitle: subtitles[screen],
+      primaryLabel: primary[screen] ?? '',
+
+      isLogin: screen === 'login', isSignup: screen === 'signup',
+      isVerify: screen === 'verify', isForgot: screen === 'forgot', isReset: screen === 'reset',
+      verifyPending: screen === 'verify' && !st.linkExpired,
+      linkExpired: screen === 'verify' && st.linkExpired,
+      forgotForm: screen === 'forgot' && !st.sent,
+      resetForm: screen === 'reset' && st.hasToken && !st.resetDone,
+      tokenMissing: screen === 'reset' && !st.hasToken,
+      resetDone: screen === 'reset' && st.resetDone,
+
+      email: st.email, password: st.password, name: st.name,
+      submitting: st.submitting,
+      showError: st.error !== null, error: st.error,
+      needsVerify: st.needsVerify, resent: st.resent, sent: st.sent,
+      verifyAddress: this.emailOrDefault(),
+      resetToken: 'rst_7f3c9a1e42b8d05f6c1a',
+      resendLabel: st.submitting ? 'Resending…' : 'Resend verification email',
+      pwHint: st.password.length === 0 ? '8 characters minimum' : pwLongEnough ? 'Long enough' : (8 - st.password.length) + ' more characters needed',
+      pwInk: st.password.length === 0 ? 'var(--bm-ink3)' : pwLongEnough ? 'var(--bm-accent-text)' : 'var(--bm-caution)',
+
+      landed: dest !== null, destPath: dest ?? '', destWhy,
+      destHref: dest === '/onboarding' ? 'BidMorrow%20Onboarding.dc.html' : 'BidMorrow%20Client%20Area.dc.html',
+      destCta: dest === '/onboarding' ? 'Start onboarding' : dest === '/app/pipeline' ? 'Open the pipeline' : 'Open the feed',
+
+      onEmail: (e) => this.setState({ email: e.target.value }),
+      onPassword: (e) => this.setState({ password: e.target.value }),
+      onName: (e) => this.setState({ name: e.target.value }),
+      onLogin: () => this.login(),
+      onSignup: () => this.signup(),
+      onForgot: () => {
+        if (!st.email.includes('@')) { this.setState({ error: 'Enter the email on the account.' }); return; }
+        this.after(650, { sent: true, error: null });
+      },
+      onReset: () => {
+        if (st.password.length < 8) { this.setState({ error: 'Passwords need at least 8 characters.' }); return; }
+        this.after(650, { resetDone: true, error: null });
+      },
+      onResend: () => this.after(600, { screen: 'verify', resent: true, needsVerify: false, linkExpired: false }),
+      onExpire: () => this.setState({ linkExpired: true, resent: false }),
+      onDropToken: () => this.setState({ hasToken: false }),
+      onGoLogin: () => this.go('login'),
+      onGoSignup: () => this.go('signup'),
+      onGoForgot: () => this.go('forgot'),
+      onGoReset: () => this.setState({ screen: 'reset', hasToken: true, resetDone: false, error: null, password: '' }),
+
+      tabs: [tab('login', 'Log in'), tab('signup', 'Create account'), tab('verify', 'Verify email'), tab('forgot', 'Forgot password'), tab('reset', 'New password')],
+      sims: [sim('new', 'New account'), sim('onboarded', 'Onboarded'), sim('unverified', 'Unverified email'), sim('wrongpw', 'Wrong password'), sim('returnTo', 'Saved destination')],
+      simNote: simNotes[st.sim],
+
+      rules: [
+        { tag: 'Saved destination wins', text: 'A destination carried in the link is used as-is, provided it is a plain path on this site — never a full URL.' },
+        { tag: 'Otherwise, by state', text: 'No organization, or a profile never marked complete, goes to onboarding; a complete profile goes to the feed.' },
+        { tag: 'Verification first', text: 'An unverified account is refused at login with a resend offer, not silently dropped at the feed.' },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

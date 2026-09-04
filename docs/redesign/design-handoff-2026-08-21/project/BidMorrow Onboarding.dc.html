@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/styles.css">
+<script src="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Source+Sans+3:wght@400;500;600&family=Source+Code+Pro:wght@400;500&display=swap">
+<style>
+  :root {
+    --bm-sunken: #0a0c10; --bm-canvas: #0d1014; --bm-panel: #14181e; --bm-raised: #1b2027; --bm-overlay: #1f252d;
+    --bm-line-hair: #22282f; --bm-line: #2e353f; --bm-line-strong: #414a57;
+    --bm-ink1: #eef1f5; --bm-ink2: #a3adbb; --bm-ink3: #7a8593;
+    --bm-accent: #2ec4b0; --bm-accent-ink: #04211d; --bm-accent-text: #6fe0d0;
+    --bm-accent-tint: rgba(46,196,176,0.12); --bm-accent-line: rgba(46,196,176,0.34);
+    --bm-caution: #e8a33d; --bm-caution-tint: rgba(232,163,61,0.12);
+    --bm-risk: #ef6461; --bm-risk-tint: rgba(239,100,97,0.12);
+    --bm-head: 'Archivo', system-ui, sans-serif; --bm-ui: 'Archivo', system-ui, sans-serif;
+    --bm-num: 'Archivo', system-ui, sans-serif; --bm-code: 'Source Code Pro', ui-monospace, monospace;
+    --bm-shadow: 0 32px 80px -16px rgba(0,0,0,0.62);
+  }
+  [data-bm-theme='light'] {
+    --bm-sunken: #eceff1; --bm-canvas: #f7f8f9; --bm-panel: #ffffff; --bm-raised: #ffffff; --bm-overlay: #ffffff;
+    --bm-line-hair: #e6e9ec; --bm-line: #d5dae0; --bm-line-strong: #b3bcc6;
+    --bm-ink1: #14181d; --bm-ink2: #4d5661; --bm-ink3: #6b7480;
+    --bm-accent: #0f7d6f; --bm-accent-ink: #ffffff; --bm-accent-text: #0b6a5e;
+    --bm-accent-tint: rgba(15,125,111,0.10); --bm-accent-line: rgba(15,125,111,0.28);
+    --bm-caution: #a16207; --bm-caution-tint: rgba(161,98,7,0.10);
+    --bm-risk: #c0392f; --bm-risk-tint: rgba(192,57,47,0.10);
+    --bm-shadow: 0 26px 64px -18px rgba(20,24,29,0.20);
+  }
+  [data-bm-type='franklin'] { --bm-head: 'Libre Franklin', system-ui, sans-serif; --bm-ui: 'Libre Franklin', system-ui, sans-serif; --bm-num: 'Libre Franklin', system-ui, sans-serif; }
+  [data-bm-type='source'] { --bm-head: 'Source Serif 4', Georgia, serif; --bm-ui: 'Source Sans 3', system-ui, sans-serif; --bm-num: 'Source Sans 3', system-ui, sans-serif; }
+  body { margin: 0; background: var(--bm-canvas); font-variant-numeric: tabular-nums; -webkit-text-size-adjust: 100%; }
+  [data-ob-rail]::-webkit-scrollbar { height: 0; }
+  input, textarea, select, button { font-size: 16px; }
+  @media (max-width: 560px) {
+    [data-ob-hide-sm] { display: none; }
+  }
+  a { color: var(--bm-accent-text); text-decoration: none; }
+  a:hover { color: var(--bm-accent); text-decoration: underline; }
+  * { box-sizing: border-box; }
+  @keyframes bm-step { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes bm-pop { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+</style>
+</helmet>
+
+<div data-bm-theme="{{ theme }}" data-bm-type="{{ typeface }}" style="min-height: 100vh; background: var(--bm-canvas); color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 15px; display: grid; grid-template-rows: auto 1fr auto;">
+
+  <header style="border-bottom: 1px solid var(--bm-line-hair); background: var(--bm-panel);">
+    <div style="max-width: 1080px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 28px); height: 64px; display: flex; align-items: center; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <svg width="24" height="24" viewBox="0 0 26 26" fill="none" role="img" aria-hidden="true" focusable="false" style="color: var(--bm-ink1);">
+          <rect x="6.5" y="2.5" width="13" height="6" rx="3" fill="currentColor" opacity="0.28"></rect>
+          <rect x="4" y="9.5" width="18" height="6" rx="3" fill="currentColor" opacity="0.55"></rect>
+          <rect x="1.5" y="16.5" width="23" height="7" rx="3.5" fill="url(#bm-ob-grad)"></rect>
+          <defs><linearGradient id="bm-ob-grad" x1="1.5" y1="16.5" x2="24.5" y2="23.5" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#35D3C0"></stop><stop offset="1" stop-color="#1FA899"></stop></linearGradient></defs>
+        </svg>
+        <span style="font-family: var(--bm-head); font-size: 18px; font-weight: 600;">BidMorrow</span>
+      </div>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
+        <span data-ob-hide-sm="true" style="font-size: 12.5px; color: var(--bm-ink3);">{{ savedNote }}</span>
+        <button type="button" onClick="{{ onToggleTheme }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line-hair); border-radius: 999px; height: 32px; padding: 0 13px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 12.5px; cursor: pointer;">{{ themeLabel }}</button>
+        <button type="button" style="appearance: none; background: transparent; border: 0; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">Save and exit</button>
+      </div>
+    </div>
+    <div style="height: 2px; background: var(--bm-line-hair);">
+      <div style="height: 2px; width: {{ progressPct }}; background: var(--bm-accent); transition: width 260ms ease-out;"></div>
+    </div>
+  </header>
+
+  <main style="max-width: 1080px; margin: 0 auto; padding: clamp(24px, 5vw, 40px) clamp(16px, 4vw, 28px) 48px; width: 100%;">
+    <sc-if value="{{ inFlow }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <nav data-ob-rail="true" style="display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-bottom: 36px; padding-bottom: 2px;">
+          <sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+            <button type="button" onClick="{{ s.onClick }}" style="appearance: none; background: {{ s.bg }}; border: 1px solid {{ s.line }}; border-radius: 999px; padding: 6px 14px 6px 10px; cursor: {{ s.cursor }}; display: inline-flex; align-items: center; gap: 8px; font-family: var(--bm-ui);">
+              <span style="width: 20px; height: 20px; border-radius: 999px; background: {{ s.dotBg }}; color: {{ s.dotInk }}; display: grid; place-items: center; font-size: 11px; font-weight: 600;">{{ s.dot }}</span>
+              <span style="font-size: 13px; color: {{ s.ink }}; font-weight: {{ s.weight }};">{{ s.label }}</span>
+            </button>
+          </sc-for>
+        </nav>
+
+        <p style="margin: 0 0 8px; font-family: var(--bm-code); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bm-accent-text);">{{ stepKicker }}</p>
+        <h1 style="margin: 0 0 12px; font-family: var(--bm-head); font-size: clamp(28px, 6.4vw, 42px); line-height: 1.08; font-weight: 600; letter-spacing: -0.025em; max-width: 24ch; color: var(--bm-ink1);">{{ stepTitle }}</h1>
+        <p style="margin: 0 0 32px; max-width: 68ch; font-size: 16.5px; line-height: 1.6; color: var(--bm-ink2); text-wrap: pretty;">{{ stepBlurb }}</p>
+
+        <sc-if value="{{ isCompany }}" hint-placeholder-val="{{ true }}">
+          <div style="display: grid; gap: 18px; max-width: 720px; animation: bm-step 240ms ease-out;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+              <label style="display: grid; gap: 8px;">
+                <span style="font-size: 13px; color: var(--bm-ink2);">Workspace name</span>
+                <input value="{{ workspace }}" onChange="{{ onWorkspace }}" placeholder="e.g. Ploutarchou Digital" style="height: 44px; background: var(--bm-panel); border: 1px solid {{ workspaceBorder }}; border-radius: 14px; padding: 0 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 16px; outline: none;">
+                <span style="font-size: 12.5px; color: {{ workspaceHintInk }};">{{ workspaceHint }}</span>
+              </label>
+              <label style="display: grid; gap: 8px;">
+                <span style="font-size: 13px; color: var(--bm-ink2);">Website</span>
+                <input value="{{ website }}" onChange="{{ onWebsite }}" placeholder="https://" style="height: 44px; background: var(--bm-panel); border: 1px solid {{ websiteBorder }}; border-radius: 14px; padding: 0 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 16px; outline: none;">
+                <span style="font-size: 12.5px; color: {{ websiteHintInk }};">{{ websiteHint }}</span>
+              </label>
+            </div>
+            <div>
+              <p style="margin: 0 0 10px; font-size: 13px; color: var(--bm-ink2);">Company size</p>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <sc-for list="{{ bands }}" as="b" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ b.onClick }}" style="appearance: none; background: {{ b.bg }}; border: 1px solid {{ b.line }}; border-radius: 999px; padding: 9px 18px; font-family: var(--bm-ui); font-size: 14px; color: {{ b.ink }}; font-weight: {{ b.weight }}; cursor: pointer;">{{ b.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <sc-if value="{{ descOpen }}" hint-placeholder-val="{{ false }}">
+              <label style="display: grid; gap: 8px;">
+                <span style="font-size: 13px; color: var(--bm-ink2);">What you do — a paragraph is plenty</span>
+                <textarea value="{{ description }}" onChange="{{ onDescription }}" rows="4" placeholder="Cloud migration, identity and managed security for public-sector clients…" style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 12px 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 16px; line-height: 1.55; resize: vertical; outline: none;"></textarea>
+                <span style="font-size: 12.5px; color: var(--bm-ink3);">Used to suggest keywords and capabilities on the next screens. Never shown to buyers.</span>
+              </label>
+            </sc-if>
+            <sc-if value="{{ descClosed }}" hint-placeholder-val="{{ true }}">
+              <button type="button" onClick="{{ onOpenDesc }}" style="appearance: none; justify-self: start; background: transparent; border: 0; padding: 0; color: var(--bm-accent-text); font-family: var(--bm-ui); font-size: 14px; cursor: pointer;">+ Add a description (optional — improves keyword suggestions)</button>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isPreset }}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; gap: 30px; animation: bm-step 240ms ease-out;">
+            <div>
+              <p style="margin: 0 0 4px; font-size: 14px; font-weight: 600; color: var(--bm-ink1);">What do you sell into?</p>
+              <p style="margin: 0 0 16px; max-width: 70ch; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink2);">Every CPV sector, not just IT. Pick the one closest to your work — it pre-fills the CPV codes on the next screen, and you can add codes from any other sector there too.</p>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(236px, 1fr)); gap: 10px;">
+                <sc-for list="{{ sectors }}" as="sec" hint-placeholder-count="12">
+                  <button type="button" onClick="{{ sec.onClick }}" style="appearance: none; text-align: left; background: {{ sec.bg }}; border: 1px solid {{ sec.line }}; border-radius: 16px; padding: 14px 16px; min-height: 96px; cursor: pointer; display: grid; gap: 7px; align-content: start; font-family: var(--bm-ui);">
+                    <span style="display: flex; align-items: center; gap: 9px;">
+                      <span style="width: 18px; height: 18px; border-radius: 999px; border: 1.5px solid {{ sec.radioLine }}; background: {{ sec.radioBg }}; display: grid; place-items: center; flex: 0 0 auto;">
+                        <sc-if value="{{ sec.selected }}" hint-placeholder-val="{{ false }}">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--bm-accent-ink)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7"></path></svg>
+                        </sc-if>
+                      </span>
+                      <span style="font-size: 14.5px; font-weight: 600; color: var(--bm-ink1); line-height: 1.3;">{{ sec.label }}</span>
+                    </span>
+                    <span style="font-family: var(--bm-code); font-size: 11.5px; color: var(--bm-ink3);">{{ sec.divisions }}</span>
+                    <span style="font-size: 11.5px; color: {{ sec.badgeInk }};">{{ sec.badge }}</span>
+                  </button>
+                </sc-for>
+              </div>
+              <p style="margin: 14px 0 0; max-width: 78ch; font-size: 12.5px; line-height: 1.55; color: var(--bm-ink3);">Codes shown for divisions 72, 48 and 79417000 carry their official CPV 2008 titles; the other sector labels are plain-language placeholders until the official titles are loaded from the codelist. Ingestion runs on CPV divisions 72, 48 and 79417000 today. Codes outside that are saved to your profile and shown as out of scope until ingestion is widened server-side — nothing is silently dropped.</p>
+            </div>
+            <sc-if value="{{ hasPresets }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; gap: 12px; max-width: 900px;">
+              <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--bm-ink1);">Narrow it down (optional)</p>
+            <sc-for list="{{ presets }}" as="p" hint-placeholder-count="5">
+              <button type="button" onClick="{{ p.onClick }}" style="appearance: none; text-align: left; background: {{ p.bg }}; border: 1px solid {{ p.line }}; border-radius: 20px; padding: 22px 24px; cursor: pointer; display: grid; gap: 8px; font-family: var(--bm-ui);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="width: 22px; height: 22px; border-radius: 999px; border: 1.5px solid {{ p.radioLine }}; background: {{ p.radioBg }}; display: grid; place-items: center; flex: 0 0 auto;">
+                    <sc-if value="{{ p.selected }}" hint-placeholder-val="{{ false }}">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="{{ p.checkInk }}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="animation: bm-pop 160ms ease-out;" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7"></path></svg>
+                    </sc-if>
+                  </span>
+                  <span style="font-family: var(--bm-head); font-size: 21px; font-weight: 600; color: var(--bm-ink1);">{{ p.label }}</span>
+                  <span style="margin-left: auto; font-size: 12.5px; color: var(--bm-ink3);">{{ p.counts }}</span>
+                </div>
+                <p style="margin: 0 0 0 34px; font-size: 14.5px; line-height: 1.6; color: var(--bm-ink2);">{{ p.description }}</p>
+              </button>
+            </sc-for>
+            </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isScope }}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 28px; align-items: start; animation: bm-step 240ms ease-out;">
+            <div style="display: grid; gap: 28px; min-width: 0;">
+              <div>
+                <p style="margin: 0 0 4px; font-size: 14px; font-weight: 600; color: var(--bm-ink1);">What you sell</p>
+                <p style="margin: 0 0 14px; max-width: 72ch; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink2);">{{ cpvSourceNote }} Tap a code to remove it, or search any CPV sector below to add more.</p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <sc-for list="{{ cpvChips }}" as="c" hint-placeholder-count="5">
+                    <button type="button" onClick="{{ c.onToggle }}" style="appearance: none; background: {{ c.bg }}; border: 1px solid {{ c.line }}; border-radius: 999px; padding: 8px 14px; font-family: var(--bm-ui); font-size: 13.5px; color: {{ c.ink }}; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                      <span style="font-family: var(--bm-code); font-size: 12.5px;">{{ c.code }}</span>
+                      <span>{{ c.label }}</span>
+                      <sc-if value="{{ c.outOfScope }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--bm-caution);">out of scope</span>
+                      </sc-if>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+                    </button>
+                  </sc-for>
+                  <sc-if value="{{ noCpv }}" hint-placeholder-val="{{ false }}">
+                    <p style="margin: 0; font-size: 13.5px; color: var(--bm-caution);">Nothing selected yet — search below and add at least one code.</p>
+                  </sc-if>
+                </div>
+                <div style="margin-top: 14px; max-width: 520px;">
+                  <input value="{{ cpvQuery }}" onChange="{{ onCpvQuery }}" placeholder="Search every CPV sector — “construction”, “catering”, 45 or 8510" style="width: 100%; height: 44px; background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 0 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 16px; outline: none;">
+                  <sc-if value="{{ hasCpvResults }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top: 8px; background: var(--bm-panel); border: 1px solid var(--bm-line); border-radius: 16px; overflow: hidden; box-shadow: var(--bm-shadow);">
+                      <sc-for list="{{ cpvResults }}" as="r" hint-placeholder-count="4">
+                        <button type="button" onClick="{{ r.onAdd }}" style="appearance: none; width: 100%; text-align: left; background: transparent; border: 0; border-top: 1px solid var(--bm-line-hair); padding: 11px 14px; cursor: pointer; display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; gap: 12px; align-items: center; font-family: var(--bm-ui);">
+                          <span style="font-family: var(--bm-code); font-size: 12.5px; color: var(--bm-ink2);">{{ r.code }}</span>
+                          <span style="font-size: 13.5px; color: var(--bm-ink1);">{{ r.label }}<span style="color: var(--bm-ink3); font-size: 12px;">{{ r.sector }}</span></span>
+                          <span style="font-size: 12px; color: {{ r.stateInk }};">{{ r.state }}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ cpvNoResults }}" hint-placeholder-val="{{ false }}">
+                    <p style="margin: 10px 0 0; font-size: 12.5px; color: var(--bm-ink3);">No suggestion matches that. Suggestions are a curated list, not the whole 9,454-code CPV vocabulary — any valid code can still be entered.</p>
+                  </sc-if>
+                </div>
+              </div>
+              <div>
+                <p style="margin: 0 0 4px; font-size: 14px; font-weight: 600; color: var(--bm-ink1);">Where you will bid</p>
+                <p style="margin: 0 0 14px; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink2);">{{ geoNote }}</p>
+                <div style="display: grid; gap: 16px;">
+                  <sc-for list="{{ regions }}" as="r" hint-placeholder-count="3">
+                    <div>
+                      <p style="margin: 0 0 8px; font-family: var(--bm-code); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">{{ r.label }}</p>
+                      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <sc-for list="{{ r.countries }}" as="c" hint-placeholder-count="5">
+                          <button type="button" onClick="{{ c.onToggle }}" style="appearance: none; background: {{ c.bg }}; border: 1px solid {{ c.line }}; border-radius: 999px; padding: 7px 14px; font-family: var(--bm-ui); font-size: 13.5px; color: {{ c.ink }}; font-weight: {{ c.weight }}; cursor: pointer;">{{ c.name }}</button>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+            <aside style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 20px; padding: 20px; display: grid; gap: 16px; position: sticky; top: 24px;">
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">What this gives you</p>
+              <div>
+                <p style="margin: 0 0 2px; font-size: 32px; font-weight: 600; letter-spacing: -0.02em; color: var(--bm-ink1);">{{ estimateValue }}</p>
+                <p style="margin: 0; font-size: 13px; line-height: 1.5; color: var(--bm-ink2);">{{ estimateNote }}</p>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; background: {{ scopeBg }}; border: 1px solid {{ scopeLine }}; border-radius: 14px; padding: 11px 13px;">
+                <span style="width: 7px; height: 7px; border-radius: 999px; background: {{ scopeLine }}; flex: 0 0 auto;"></span>
+                <p style="margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--bm-ink1);">{{ scopeText }}</p>
+              </div>
+              <p style="margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--bm-ink3);">Estimates come from the last 30 days of notices already in scope — not a promise about future volume.</p>
+            </aside>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isFit }}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; gap: 30px; max-width: 760px; animation: bm-step 240ms ease-out;">
+            <div>
+              <p style="margin: 0 0 4px; font-size: 14px; font-weight: 600; color: var(--bm-ink1);">Contract size you can take on</p>
+              <p style="margin: 0 0 16px; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink2);">Anything outside the band still gets scored — it just scores lower. Nothing is hidden by this.</p>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px;">
+                <label style="display: grid; gap: 8px;">
+                  <span style="font-size: 13px; color: var(--bm-ink2);">Minimum contract value (EUR)</span>
+                  <input value="{{ minValue }}" onChange="{{ onMinValue }}" style="height: 44px; background: var(--bm-panel); border: 1px solid {{ valueBorder }}; border-radius: 14px; padding: 0 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 16px; outline: none;">
+                </label>
+                <label style="display: grid; gap: 8px;">
+                  <span style="font-size: 13px; color: var(--bm-ink2);">Maximum contract value (EUR)</span>
+                  <input value="{{ maxValue }}" onChange="{{ onMaxValue }}" style="height: 44px; background: var(--bm-panel); border: 1px solid {{ valueBorder }}; border-radius: 14px; padding: 0 14px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 16px; outline: none;">
+                </label>
+              </div>
+              <sc-if value="{{ hasValueError }}" hint-placeholder-val="{{ false }}">
+                <p style="margin: 12px 0 0; display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--bm-risk);">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M7.5 7.5l9 9"></path></svg>
+                  <span>Minimum value must be less than or equal to maximum value.</span>
+                </p>
+              </sc-if>
+              <p style="margin: 12px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--bm-ink3);">{{ bandNote }}</p>
+            </div>
+            <div>
+              <p style="margin: 0 0 4px; font-size: 14px; font-weight: 600; color: var(--bm-ink1);">How much runway you need</p>
+              <p style="margin: 0 0 16px; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink2);">Tenders closing sooner than this are excluded outright — the one exclusion most people set too low.</p>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <sc-for list="{{ runwayOptions }}" as="r" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ r.onClick }}" style="appearance: none; background: {{ r.bg }}; border: 1px solid {{ r.line }}; border-radius: 999px; padding: 9px 18px; font-family: var(--bm-ui); font-size: 14px; color: {{ r.ink }}; font-weight: {{ r.weight }}; cursor: pointer;">{{ r.label }}</button>
+                </sc-for>
+              </div>
+              <p style="margin: 14px 0 0; font-size: 12.5px; line-height: 1.55; color: {{ runwayNoteInk }};">{{ runwayNote }}</p>
+            </div>
+            <div>
+              <p style="margin: 0 0 4px; font-size: 14px; font-weight: 600; color: var(--bm-ink1);">Never show me</p>
+              <p style="margin: 0 0 16px; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink2);">Phrases that mean a notice is not for you. Excluded tenders still appear under Possible, tagged with the rule that fired.</p>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <sc-for list="{{ phraseChips }}" as="ph" hint-placeholder-count="3">
+                  <span style="display: inline-flex; align-items: center; gap: 9px; background: var(--bm-risk-tint); border: 1px solid var(--bm-risk); border-radius: 999px; padding: 7px 14px; font-size: 13.5px; color: var(--bm-ink1);">
+                    <span>{{ ph.label }}</span>
+                    <button type="button" onClick="{{ ph.onRemove }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-risk); cursor: pointer; display: grid; place-items: center;">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+                    </button>
+                  </span>
+                </sc-for>
+                <button type="button" onClick="{{ onAddPhrase }}" style="appearance: none; background: transparent; border: 1px dashed var(--bm-line); border-radius: 999px; padding: 7px 15px; font-family: var(--bm-ui); font-size: 13.5px; color: var(--bm-ink2); cursor: pointer;">+ Add phrase</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; gap: 24px; max-width: 820px; animation: bm-step 240ms ease-out;">
+            <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 20px; padding: 24px;">
+              <p style="margin: 0 0 4px; font-family: var(--bm-head); font-size: 21px; font-weight: 600;">Your daily digest</p>
+              <p style="margin: 0 0 18px; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink2);">One email a day, at most. Choose the floor — anything below it stays in the app.</p>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+                <sc-for list="{{ digestOptions }}" as="d" hint-placeholder-count="3">
+                  <button type="button" onClick="{{ d.onClick }}" style="appearance: none; background: {{ d.bg }}; border: 1px solid {{ d.line }}; border-radius: 999px; padding: 9px 18px; font-family: var(--bm-ui); font-size: 14px; color: {{ d.ink }}; font-weight: {{ d.weight }}; cursor: pointer;">{{ d.label }}</button>
+                </sc-for>
+              </div>
+              <button type="button" onClick="{{ onToggleEmpty }}" style="appearance: none; background: transparent; border: 0; padding: 0; cursor: pointer; display: flex; align-items: center; gap: 12px;">
+                <span style="width: 42px; height: 25px; border-radius: 999px; background: {{ emptyTrack }}; position: relative; display: inline-block; flex: 0 0 auto;">
+                  <span style="position: absolute; top: 2.5px; left: {{ emptyKnob }}; width: 20px; height: 20px; border-radius: 999px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.28); display: block; transition: left 140ms ease-out;"></span>
+                </span>
+                <span style="font-size: 13.5px; color: var(--bm-ink2);">{{ emptyLabel }}</span>
+              </button>
+            </section>
+
+            <section style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 20px; padding: 24px;">
+              <p style="margin: 0 0 18px; font-family: var(--bm-head); font-size: 21px; font-weight: 600;">Everything you set</p>
+              <div style="display: grid; gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 16px; overflow: hidden;">
+                <sc-for list="{{ summary }}" as="row" hint-placeholder-count="6">
+                  <div style="background: var(--bm-panel); display: grid; grid-template-columns: 170px minmax(0, 1fr) 60px; gap: 16px; align-items: center; padding: 14px 16px;">
+                    <span style="font-size: 13px; color: var(--bm-ink3);">{{ row.label }}</span>
+                    <span style="font-size: 13.5px; line-height: 1.5; color: var(--bm-ink1);">{{ row.value }}</span>
+                    <button type="button" onClick="{{ row.onEdit }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-accent-text); font-family: var(--bm-ui); font-size: 13px; cursor: pointer; text-align: right;">Edit</button>
+                  </div>
+                </sc-for>
+              </div>
+            </section>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width: 720px; padding-top: 48px; animation: bm-step 280ms ease-out;">
+        <span style="display: grid; place-items: center; width: 56px; height: 56px; border-radius: 999px; background: var(--bm-accent-tint); border: 1px solid var(--bm-accent-line); margin-bottom: 26px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--bm-accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7"></path></svg>
+        </span>
+        <h1 style="margin: 0 0 14px; font-family: var(--bm-head); font-size: clamp(30px, 7vw, 44px); line-height: 1.06; font-weight: 600; letter-spacing: -0.03em; color: var(--bm-ink1);">You’re set up.</h1>
+        <p style="margin: 0 0 30px; max-width: 60ch; font-size: 17px; line-height: 1.6; color: var(--bm-ink2);">{{ doneBlurb }}</p>
+        <div style="display: grid; gap: 12px; margin-bottom: 34px;">
+          <sc-for list="{{ nextSteps }}" as="n" hint-placeholder-count="3">
+            <div style="display: flex; gap: 12px; align-items: baseline; background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 16px; padding: 16px 18px;">
+              <span style="font-family: var(--bm-code); font-size: 12px; color: var(--bm-accent-text); flex: 0 0 auto;">{{ n.when }}</span>
+              <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--bm-ink1);">{{ n.text }}</p>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+          <a href="#feed" style="background: var(--bm-accent); color: var(--bm-accent-ink); border-radius: 999px; padding: 14px 26px; font-size: 15px; font-weight: 500;">Go to my feed</a>
+          <button type="button" onClick="{{ onRestart }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 999px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 15px; padding: 14px 24px; cursor: pointer;">Run through it again</button>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+
+  <sc-if value="{{ inFlow }}" hint-placeholder-val="{{ true }}">
+    <footer style="border-top: 1px solid var(--bm-line-hair); background: var(--bm-panel);">
+      <div style="max-width: 1080px; margin: 0 auto; padding: 14px clamp(16px, 4vw, 28px); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <button type="button" onClick="{{ onBack }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 999px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 14px; padding: 11px 20px; cursor: {{ backCursor }}; opacity: {{ backOpacity }};">Back</button>
+        <span data-ob-hide-sm="true" style="font-size: 12.5px; color: var(--bm-ink3);">{{ stepCounter }}</span>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 14px;">
+          <sc-if value="{{ canSkip }}" hint-placeholder-val="{{ false }}">
+            <button type="button" onClick="{{ onSkip }}" style="appearance: none; background: transparent; border: 0; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 14px; cursor: pointer;">Skip for now</button>
+          </sc-if>
+          <span style="font-size: 12.5px; color: {{ blockInk }};">{{ blockNote }}</span>
+          <button type="button" onClick="{{ onNext }}" style="appearance: none; background: {{ nextBg }}; border: 0; border-radius: 999px; color: {{ nextInk }}; font-family: var(--bm-ui); font-size: 15px; font-weight: 500; padding: 12px 26px; cursor: {{ nextCursor }};">{{ nextLabel }}</button>
+        </div>
+      </div>
+    </footer>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark' | 'light'&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;typeface&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;archivo&quot;,&quot;franklin&quot;,&quot;source&quot;],&quot;default&quot;:&quot;archivo&quot;,&quot;tsType&quot;:&quot;'archivo' | 'franklin' | 'source'&quot;,&quot;section&quot;:&quot;Appearance&quot;}}">
+class Component extends DCLogic {
+  state = {
+    theme: null, typeface: null, step: 0, done: false,
+    workspace: '', website: '', band: '10–49', description: '', descOpen: false,
+    sector: null, preset: null, cpvOff: {}, cpvAdded: [], cpvQuery: '', countries: Component.initialCountries(), detected: Component.detectCountryAtInit(),
+    minValue: '250000', maxValue: '5000000', runway: 7,
+    phrases: ['construction works', 'catering'],
+    digestFloor: 'Strong match', sendEmpty: false,
+    saved: 'Nothing to save yet',
+  };
+
+  presetDefs = [
+    { key: 'cyber_consultancy', label: 'Cybersecurity consultancy',
+      description: 'Security assessments, penetration testing, ISO 27001 and compliance advisory, and safety-adjacent consultancy for public-sector buyers.',
+      cpv: [['79417000', 'Safety consultancy'], ['72222300', 'Information-systems planning'], ['72220000', 'Systems & technical consultancy'], ['48730000', 'Security software']],
+      caps: 5, keywords: 9 },
+    { key: 'cloud_devops', label: 'Cloud / DevOps consultancy',
+      description: 'Cloud migration, infrastructure automation, managed hosting and network administration for public-sector IT estates.',
+      cpv: [['72000000', 'IT services'], ['72267100', 'Software maintenance'], ['72315000', 'Data network management'], ['48820000', 'Servers'], ['48210000', 'Network OS software']],
+      caps: 5, keywords: 9 },
+    { key: 'software_house', label: 'Software development house',
+      description: 'Bespoke application development, systems integration and software maintenance for public-sector clients.',
+      cpv: [['72200000', 'Software programming & consultancy'], ['72212000', 'Application-software programming'], ['48000000', 'Software packages'], ['48200000', 'Network software']],
+      caps: 4, keywords: 8 },
+    { key: 'it_generalist', label: 'IT services generalist',
+      description: 'Broad IT support, consultancy and software supply — a starting point for consultancies that do not specialise in one segment.',
+      cpv: [['72000000', 'IT services'], ['72222300', 'Information-systems planning'], ['48000000', 'Software packages'], ['79417000', 'Safety consultancy']],
+      caps: 4, keywords: 5 },
+    { key: 'custom', label: 'Build my own', description: 'Start from an empty profile and add every CPV code yourself with the search on the next screen. Slower — and you can always edit a preset instead.', cpv: [], caps: 0, keywords: 0 },
+  ];
+
+  /** Every CPV sector, so a non-IT company can onboard. Division titles follow the CPV 2008
+   *  codelist; the 48/72/79 entries are verbatim from the app's own cpv-suggestions.ts. */
+  /** Every CPV sector, so a non-IT company can onboard. Codes are CPV 2008 division/group codes;
+   *  the 48/72/79 titles are verbatim from the app's cpv-suggestions.ts, the others are our own
+   *  plain-language wording until the official titles are pulled from the SDK's cpv.gc codelist. */
+  sectorDefs = [
+    { id: 'tech', label: 'Technology, software and telecoms', divisions: '72 · 48 · 64 · 32', presets: true, codes: [
+      ['72000000', 'IT services: consulting, software development, Internet and support'],
+      ['48000000', 'Software package and information systems'],
+      ['72220000', 'Systems and technical consultancy services'],
+      ['64200000', 'Telecommunications services'],
+      ['32420000', 'Network equipment']] },
+    { id: 'construction', label: 'Construction and civil engineering', divisions: '45 · 44', presets: false, codes: [
+      ['45000000', 'Construction work'],
+      ['45200000', 'Building and civil engineering works'],
+      ['45300000', 'Building installation works'],
+      ['44000000', 'Construction materials and structures']] },
+    { id: 'engineering', label: 'Architecture and engineering', divisions: '71', presets: false, codes: [
+      ['71000000', 'Architecture, engineering and inspection'],
+      ['71200000', 'Architectural services'],
+      ['71300000', 'Engineering services'],
+      ['71600000', 'Technical testing and analysis']] },
+    { id: 'health', label: 'Health, medical and social care', divisions: '85 · 33', presets: false, codes: [
+      ['85000000', 'Health and social care services'],
+      ['85100000', 'Health services'],
+      ['33000000', 'Medical equipment and pharmaceuticals'],
+      ['33600000', 'Pharmaceutical products']] },
+    { id: 'education', label: 'Education and training', divisions: '80', presets: false, codes: [
+      ['80000000', 'Education and training services'],
+      ['80500000', 'Training services'],
+      ['80530000', 'Vocational training services'],
+      ['80533100', 'Computer training services']] },
+    { id: 'business', label: 'Business, legal and financial services', divisions: '79 · 66', presets: false, codes: [
+      ['79000000', 'Business services: law, marketing, consulting, recruitment, printing and security'],
+      ['79400000', 'Business and management consultancy and related services'],
+      ['79417000', 'Safety consultancy services'],
+      ['66000000', 'Financial and insurance services']] },
+    { id: 'transport', label: 'Transport and logistics', divisions: '60 · 63 · 34', presets: false, codes: [
+      ['60000000', 'Transport services'],
+      ['60100000', 'Road transport services'],
+      ['63000000', 'Supporting transport and travel services'],
+      ['34000000', 'Transport equipment']] },
+    { id: 'energy', label: 'Energy, water and utilities', divisions: '65 · 09 · 31 · 41', presets: false, codes: [
+      ['65000000', 'Public utilities'],
+      ['09000000', 'Fuel, electricity and energy'],
+      ['31000000', 'Electrical equipment and lighting'],
+      ['41000000', 'Water supply']] },
+    { id: 'facilities', label: 'Facilities, property and security', divisions: '90 · 50 · 79 · 70', presets: false, codes: [
+      ['90000000', 'Cleaning, refuse and environmental services'],
+      ['90900000', 'Cleaning and sanitation services'],
+      ['50000000', 'Repair and maintenance services'],
+      ['79710000', 'Security services'],
+      ['70000000', 'Real estate services']] },
+    { id: 'food', label: 'Food, catering and hospitality', divisions: '15 · 55', presets: false, codes: [
+      ['15000000', 'Food, beverages and tobacco products'],
+      ['55000000', 'Hotel, restaurant and retail services'],
+      ['55300000', 'Restaurant and food-serving services'],
+      ['15800000', 'Miscellaneous food products']] },
+    { id: 'equipment', label: 'Machinery, equipment and supplies', divisions: '42 · 39 · 30 · 38', presets: false, codes: [
+      ['42000000', 'Industrial machinery'],
+      ['39000000', 'Furniture, furnishings and domestic appliances'],
+      ['30000000', 'Office and computing machinery and supplies'],
+      ['38000000', 'Laboratory, optical and precision equipment']] },
+    { id: 'environment', label: 'Agriculture, forestry and environment', divisions: '03 · 77 · 90', presets: false, codes: [
+      ['03000000', 'Agricultural, farming, fishing and forestry products'],
+      ['77000000', 'Agricultural, forestry and horticultural services'],
+      ['90700000', 'Environmental services']] },
+  ];
+
+  /** Verbatim subset of the app's curated CPV suggestion list (data/cpv-suggestions.ts). */
+  cpvSuggestions = [
+    ['48000000', 'Software package and information systems'],
+    ['48200000', 'Networking, Internet and intranet software package'],
+    ['48210000', 'Networking software package'],
+    ['48610000', 'Database systems'],
+    ['48730000', 'Security software package'],
+    ['48760000', 'Virus protection software package'],
+    ['48810000', 'Information systems'],
+    ['48820000', 'Servers'],
+    ['72000000', 'IT services: consulting, software development, Internet and support'],
+    ['72200000', 'Software programming and consultancy services'],
+    ['72212000', 'Programming services of application software'],
+    ['72220000', 'Systems and technical consultancy services'],
+    ['72222000', 'Information systems or technology strategic review and planning services'],
+    ['72222300', 'Information technology services'],
+    ['72224000', 'Project management consultancy services'],
+    ['72230000', 'Custom software development services'],
+    ['72253000', 'Helpdesk and support services'],
+    ['72254000', 'Software testing'],
+    ['72261000', 'Software support services'],
+    ['72267100', 'Maintenance of information technology software'],
+    ['72315000', 'Data network management and support services'],
+    ['72700000', 'Computer network services'],
+    ['72810000', 'Computer audit services'],
+    ['79410000', 'Business and management consultancy services'],
+    ['79417000', 'Safety consultancy services'],
+    ['80533100', 'Computer training services'],
+    ['32420000', 'Network equipment'],
+    ['64210000', 'Telephone and data transmission services'],
+  ];
+
+  regionDefs = [
+    { label: 'Southern Europe', countries: [['CY', 'Cyprus'], ['GR', 'Greece'], ['MT', 'Malta'], ['IT', 'Italy'], ['ES', 'Spain'], ['PT', 'Portugal']] },
+    { label: 'Western Europe', countries: [['IE', 'Ireland'], ['NL', 'Netherlands'], ['BE', 'Belgium'], ['DE', 'Germany'], ['FR', 'France'], ['AT', 'Austria'], ['LU', 'Luxembourg']] },
+    { label: 'Central & Eastern Europe', countries: [['BG', 'Bulgaria'], ['RO', 'Romania'], ['HR', 'Croatia'], ['PL', 'Poland'], ['CZ', 'Czechia'], ['HU', 'Hungary'], ['SI', 'Slovenia'], ['SK', 'Slovakia'], ['EE', 'Estonia'], ['LV', 'Latvia'], ['LT', 'Lithuania']] },
+    { label: 'Nordics', countries: [['DK', 'Denmark'], ['FI', 'Finland'], ['SE', 'Sweden']] },
+    { label: 'EEA (non-EU)', countries: [['IS', 'Iceland'], ['NO', 'Norway'], ['LI', 'Liechtenstein']] },
+  ];
+
+  stepDefs = [
+    { id: 'company', label: 'Company', kicker: 'Step 1 of 5 · about a minute',
+      title: 'Who is bidding?', blurb: 'Two required fields. Everything else on this screen makes the matching better, and all of it stays editable in Settings.' },
+    { id: 'preset', label: 'Starting point', kicker: 'Step 2 of 5 · one tap',
+      title: 'What line of work are you in?', blurb: 'Pick a sector and BidMorrow fills in a starting set of CPV codes — construction, health, catering, transport, IT, all of them. Nothing is hidden: you see every code on the next screen and can change all of it.' },
+    { id: 'scope', label: 'Scope', kicker: 'Step 3 of 5 · the one that matters',
+      title: 'What you sell, and where.', blurb: 'This is the only screen that decides whether a tender is scored at all. The estimate panel shows what these choices would have returned over the last 30 days.' },
+    { id: 'fit', label: 'Fit', kicker: 'Step 4 of 5',
+      title: 'What counts as a real opportunity.', blurb: 'Contract size, how much runway you need before a deadline, and the phrases that mean a notice is never for you.' },
+    { id: 'review', label: 'Digest & review', kicker: 'Step 5 of 5 · last one',
+      title: 'How you hear about it.', blurb: 'One digest a day at most, and a look at everything you have set before it goes live.' },
+  ];
+
+  static detectCountryAtInit() {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      const byZone = { 'Asia/Nicosia': 'CY', 'Europe/Nicosia': 'CY', 'Europe/Athens': 'GR', 'Europe/Malta': 'MT',
+        'Europe/Rome': 'IT', 'Europe/Madrid': 'ES', 'Europe/Lisbon': 'PT', 'Europe/Berlin': 'DE', 'Europe/Paris': 'FR',
+        'Europe/Amsterdam': 'NL', 'Europe/Brussels': 'BE', 'Europe/Dublin': 'IE', 'Europe/Vienna': 'AT',
+        'Europe/Warsaw': 'PL', 'Europe/Bucharest': 'RO', 'Europe/Sofia': 'BG', 'Europe/Stockholm': 'SE',
+        'Europe/Copenhagen': 'DK', 'Europe/Helsinki': 'FI', 'Europe/Oslo': 'NO' };
+      if (byZone[tz]) return byZone[tz];
+      const langs = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || '']);
+      for (const l of langs) {
+        const parts = String(l).split('-');
+        if (parts.length > 1 && /^[A-Z]{2}$/.test(parts[parts.length - 1].toUpperCase())) return parts[parts.length - 1].toUpperCase();
+      }
+    } catch (err) { /* locale unavailable */ }
+    return null;
+  }
+
+  static initialCountries() {
+    const c = Component.detectCountryAtInit();
+    return c === null ? {} : { [c]: true };
+  }
+
+  componentDidMount() {
+    this.onKey = (e) => {
+      if (e.key === 'Enter' && !this.state.done && this.blocker() === '') {
+        const tag = document.activeElement ? document.activeElement.tagName : '';
+        if (tag !== 'TEXTAREA' && tag !== 'BUTTON') this.next();
+      }
+    };
+    window.addEventListener('keydown', this.onKey);
+  }
+
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); }
+
+  currentPreset() { return this.presetDefs.find((p) => p.key === this.state.preset) || null; }
+
+  currentSector() { return this.sectorDefs.find((s) => s.id === this.state.sector) || null; }
+
+  inScope(code) { return ['72', '48'].indexOf(code.slice(0, 2)) > -1 || code === '79417000'; }
+
+  /** All CPV suggestions: the curated IT list plus every sector's codes, de-duplicated. */
+  allSuggestions() {
+    const seen = {};
+    const out = [];
+    const push = (code, label, sector) => {
+      if (seen[code]) return;
+      seen[code] = true;
+      out.push([code, label, sector]);
+    };
+    this.sectorDefs.forEach((s) => s.codes.forEach((c) => push(c[0], c[1], s.label)));
+    this.cpvSuggestions.forEach((c) => push(c[0], c[1], 'Technology, software and telecoms'));
+    return out;
+  }
+
+  baselineCpv() {
+    const preset = this.currentPreset();
+    if (preset !== null && preset.key !== 'custom') return preset.cpv;
+    if (preset !== null && preset.key === 'custom') return [];
+    const sector = this.currentSector();
+    return sector === null ? [] : sector.codes;
+  }
+
+  activeCpv() {
+    const base = this.baselineCpv().filter((c) => this.state.cpvOff[c[0]] !== true);
+    const codes = base.map((c) => c[0]);
+    const added = this.state.cpvAdded.filter((c) => codes.indexOf(c[0]) === -1);
+    return base.concat(added);
+  }
+
+  activeCountries() { return Object.keys(this.state.countries).filter((k) => this.state.countries[k]); }
+
+  /** Empty string means the step is complete; anything else blocks Continue. */
+  blocker() {
+    const st = this.state;
+    if (st.step === 0) {
+      if (st.workspace.trim().length === 0) return 'Workspace name is required';
+      if (/^https?:\/\/[^\s.]+\.[^\s]+$/.test(st.website) === false) return 'A full website URL is required';
+      return '';
+    }
+    if (st.step === 1) return st.sector === null ? 'Pick the sector you sell into' : '';
+    if (st.step === 2) {
+      if (this.activeCpv().length === 0) return 'At least one CPV code is required';
+      if (this.activeCountries().length === 0) return 'Pick at least one country';
+      return '';
+    }
+    if (st.step === 3) {
+      const min = Number(st.minValue), max = Number(st.maxValue);
+      if (Number.isNaN(min) || Number.isNaN(max)) return 'Values must be numbers';
+      if (min > max) return 'Minimum value must be below the maximum';
+      return '';
+    }
+    return '';
+  }
+
+  save(note) { this.setState({ saved: note }); }
+
+  next() {
+    if (this.blocker() !== '') return;
+    if (this.state.step === 4) { this.setState({ done: true }); return; }
+    const label = this.stepDefs[this.state.step].label;
+    this.setState((s) => ({ step: Math.min(4, s.step + 1), saved: label + ' saved' }));
+    window.scrollTo(0, 0);
+  }
+
+  renderVals() {
+    const st = this.state;
+    const theme = st.theme ?? (this.props.theme ?? 'dark');
+    const preset = this.currentPreset();
+    const cpv = this.activeCpv();
+    const countries = this.activeCountries();
+    const blocker = this.blocker();
+    const step = this.stepDefs[st.step];
+    const sector = this.currentSector();
+    const inScope = cpv.filter((c) => this.inScope(c[0])).length;
+    const perMonth = Math.max(0, Math.round(cpv.length * 6.4 * Math.max(1, countries.length) * 0.9));
+    const strongMonth = Math.max(cpv.length === 0 ? 0 : 1, Math.round(perMonth * 0.22));
+    const q = st.cpvQuery.trim().toLowerCase();
+    const cpvResults = q.length < 2 ? [] : this.allSuggestions()
+      .filter((s) => s[0].indexOf(q) === 0 || s[1].toLowerCase().indexOf(q) > -1 || s[2].toLowerCase().indexOf(q) > -1)
+      .slice(0, 7);
+    const runwayNote = st.runway <= 3
+      ? 'Three days rarely leaves time to write anything — 4 in 5 teams that pick this never bid on the tenders it lets through.'
+      : st.runway >= 14 ? 'Fourteen days is safe but quiet: it excluded 1 in 3 notices in your scope last month.'
+      : 'A sensible default. You can change it any time without losing history.';
+
+    const summary = [
+      { label: 'Company', value: (st.workspace.length > 0 ? st.workspace : 'Not set') + ' · ' + st.band + ' people · ' + (st.website.length > 0 ? st.website : 'no website'), goto: 0 },
+      { label: 'Sector', value: sector === null ? 'Not chosen' : sector.label + ' · CPV ' + sector.divisions, goto: 1 },
+      { label: 'Starting point', value: preset === null ? (sector === null ? 'Not chosen' : 'Sector defaults') : preset.key === 'custom' ? 'Built from scratch' : preset.label, goto: 1 },
+      { label: 'CPV codes', value: cpv.length === 0 ? 'None' : cpv.map((c) => c[0]).join(', '), goto: 2 },
+      { label: 'Countries', value: countries.length === 0 ? 'None' : countries.join(', '), goto: 2 },
+      { label: 'Contract value', value: '€' + Number(st.minValue).toLocaleString('en-GB') + ' – €' + Number(st.maxValue).toLocaleString('en-GB'), goto: 3 },
+      { label: 'Deadline runway', value: st.runway + ' days minimum', goto: 3 },
+      { label: 'Never show me', value: st.phrases.length === 0 ? 'Nothing excluded' : st.phrases.join(', '), goto: 3 },
+      { label: 'Digest', value: st.digestFloor + ' and above' + (st.sendEmpty ? ' · sent daily even when empty' : ' · silent on empty days'), goto: 4 },
+    ];
+
+    const pill = (on) => ({
+      bg: on ? 'var(--bm-accent-tint)' : 'var(--bm-panel)',
+      line: on ? 'var(--bm-accent-line)' : 'var(--bm-line-hair)',
+      ink: on ? 'var(--bm-accent-text)' : 'var(--bm-ink2)',
+      weight: on ? '600' : '400',
+    });
+
+    return {
+      theme, typeface: this.state.typeface ?? (this.props.typeface ?? 'archivo'), themeLabel: theme === 'dark' ? 'Light' : 'Dark',
+      onToggleTheme: () => this.setState({ theme: theme === 'dark' ? 'light' : 'dark' }),
+      inFlow: !st.done, isDone: st.done,
+      savedNote: st.saved,
+      progressPct: st.done ? '100%' : Math.round(((st.step + 1) / 5) * 100) + '%',
+      steps: this.stepDefs.map((s, i) => {
+        const active = i === st.step, past = i < st.step;
+        return {
+          label: s.label, dot: past ? '✓' : String(i + 1),
+          bg: active ? 'var(--bm-raised)' : 'transparent',
+          line: active ? 'var(--bm-line)' : 'transparent',
+          ink: active ? 'var(--bm-ink1)' : past ? 'var(--bm-ink2)' : 'var(--bm-ink3)',
+          weight: active ? '600' : '400',
+          dotBg: past ? 'var(--bm-accent)' : active ? 'var(--bm-accent-tint)' : 'transparent',
+          dotInk: past ? 'var(--bm-accent-ink)' : active ? 'var(--bm-accent-text)' : 'var(--bm-ink3)',
+          cursor: past ? 'pointer' : 'default',
+          onClick: () => { if (past) this.setState({ step: i }); },
+        };
+      }),
+      stepKicker: step.kicker, stepTitle: step.title, stepBlurb: step.blurb,
+      stepCounter: 'Step ' + (st.step + 1) + ' of 5 · saved as you go',
+      isCompany: st.step === 0, isPreset: st.step === 1, isScope: st.step === 2, isFit: st.step === 3, isReview: st.step === 4,
+
+      workspace: st.workspace, onWorkspace: (e) => this.setState({ workspace: e.target.value }),
+      workspaceBorder: st.workspace.trim().length === 0 ? 'var(--bm-line-hair)' : 'var(--bm-accent-line)',
+      workspaceHint: st.workspace.trim().length === 0 ? 'Required — this names your workspace, not your legal entity.' : 'Looks good.',
+      workspaceHintInk: st.workspace.trim().length === 0 ? 'var(--bm-ink3)' : 'var(--bm-accent-text)',
+      website: st.website, onWebsite: (e) => this.setState({ website: e.target.value }),
+      websiteBorder: /^https?:\/\/[^\s.]+\.[^\s]+$/.test(st.website) ? 'var(--bm-accent-line)' : st.website.length === 0 ? 'var(--bm-line-hair)' : 'var(--bm-risk)',
+      websiteHint: st.website.length === 0 ? 'Required — we read it once to suggest keywords.' : /^https?:\/\/[^\s.]+\.[^\s]+$/.test(st.website) ? 'Looks good.' : 'Include https:// and a domain.',
+      websiteHintInk: /^https?:\/\/[^\s.]+\.[^\s]+$/.test(st.website) ? 'var(--bm-accent-text)' : st.website.length === 0 ? 'var(--bm-ink3)' : 'var(--bm-risk)',
+      bands: ['1–9', '10–49', '50–249', '250+'].map((b) => Object.assign({ label: b, onClick: () => this.setState({ band: b }) }, pill(st.band === b))),
+      description: st.description, onDescription: (e) => this.setState({ description: e.target.value }),
+      descOpen: st.descOpen, descClosed: !st.descOpen, onOpenDesc: () => this.setState({ descOpen: true }),
+
+      sectors: this.sectorDefs.map((s) => {
+        const selected = st.sector === s.id;
+        const inCount = s.codes.filter((c) => this.inScope(c[0])).length;
+        return {
+          label: s.label, divisions: 'CPV ' + s.divisions, selected,
+          badge: inCount === s.codes.length ? 'in ingestion scope today'
+            : inCount === 0 ? 'outside today’s scope' : inCount + ' of ' + s.codes.length + ' codes in scope',
+          badgeInk: inCount === s.codes.length ? 'var(--bm-accent-text)' : inCount === 0 ? 'var(--bm-ink3)' : 'var(--bm-caution)',
+          bg: selected ? 'var(--bm-accent-tint)' : 'var(--bm-panel)',
+          line: selected ? 'var(--bm-accent-line)' : 'var(--bm-line-hair)',
+          radioBg: selected ? 'var(--bm-accent)' : 'transparent',
+          radioLine: selected ? 'var(--bm-accent)' : 'var(--bm-line-strong)',
+          onClick: () => this.setState({ sector: s.id, preset: null, cpvOff: {}, cpvAdded: [], saved: 'Sector saved' }),
+        };
+      }),
+      hasPresets: sector !== null && sector.presets === true,
+      cpvSourceNote: preset !== null && preset.key !== 'custom'
+        ? 'These came from the ' + preset.label + ' preset.'
+        : sector !== null && (preset === null || preset.key !== 'custom')
+        ? 'These are the starting codes for ' + sector.label + '.'
+        : 'You chose to build your own list.',
+      presets: this.presetDefs.map((p) => {
+        const selected = st.preset === p.key;
+        return {
+          label: p.label, description: p.description,
+          counts: p.cpv.length === 0 ? 'nothing pre-filled' : p.cpv.length + ' CPV codes · ' + p.caps + ' capabilities · ' + p.keywords + ' keywords',
+          selected, checkInk: 'var(--bm-accent-ink)',
+          bg: selected ? 'var(--bm-accent-tint)' : 'var(--bm-panel)',
+          line: selected ? 'var(--bm-accent-line)' : 'var(--bm-line-hair)',
+          radioBg: selected ? 'var(--bm-accent)' : 'transparent',
+          radioLine: selected ? 'var(--bm-accent)' : 'var(--bm-line-strong)',
+          onClick: () => this.setState({ preset: p.key, cpvOff: {}, cpvAdded: [], saved: 'Starting point saved' }),
+        };
+      }),
+
+      cpvChips: cpv.map((c) => {
+        const ok = this.inScope(c[0]);
+        return {
+          code: c[0], label: c[1], outOfScope: !ok,
+          bg: ok ? 'var(--bm-accent-tint)' : 'var(--bm-caution-tint)',
+          line: ok ? 'var(--bm-accent-line)' : 'var(--bm-caution)',
+          ink: ok ? 'var(--bm-accent-text)' : 'var(--bm-ink1)',
+          onToggle: () => this.setState((s) => ({
+            cpvOff: Object.assign({}, s.cpvOff, { [c[0]]: true }),
+            cpvAdded: s.cpvAdded.filter((x) => x[0] !== c[0]),
+          })),
+        };
+      }),
+      noCpv: cpv.length === 0,
+      cpvQuery: st.cpvQuery,
+      onCpvQuery: (e) => this.setState({ cpvQuery: e.target.value }),
+      hasCpvResults: cpvResults.length > 0,
+      cpvNoResults: st.cpvQuery.trim().length > 1 && cpvResults.length === 0,
+      cpvResults: cpvResults.map((s) => {
+        const already = cpv.some((c) => c[0] === s[0]);
+        return {
+          code: s[0], label: s[1], sector: ' · ' + s[2],
+          state: already ? 'added' : this.inScope(s[0]) ? 'add' : 'add · out of scope',
+          stateInk: already ? 'var(--bm-ink3)' : 'var(--bm-accent-text)',
+          onAdd: () => {
+            if (already) return;
+            this.setState((prev) => ({
+              cpvAdded: prev.cpvAdded.concat([[s[0], s[1]]]),
+              cpvOff: Object.assign({}, prev.cpvOff, { [s[0]]: false }),
+              cpvQuery: '', saved: 'Scope saved',
+            }));
+          },
+        };
+      }),
+      geoNote: st.detected === null
+        ? 'Grouped by region, so you are not reading a list of thirty countries.'
+        : 'We pre-selected ' + (st.detected) + ' from your browser locale — no IP lookup, nothing stored. Add or remove any of them.',
+      regions: this.regionDefs.map((r) => ({
+        label: r.label,
+        countries: r.countries.map((c) => Object.assign({ name: c[1],
+          onToggle: () => this.setState((s) => ({ countries: Object.assign({}, s.countries, { [c[0]]: !s.countries[c[0]] }) })) },
+          pill(st.countries[c[0]] === true))),
+      })),
+      estimateValue: perMonth === 0 ? '—' : String(perMonth),
+      estimateNote: perMonth === 0 ? 'Add CPV codes and countries to see an estimate.'
+        : 'notices matched this scope in the last 30 days · ' + strongMonth + ' scored Strong match.',
+      scopeText: cpv.length === 0 ? 'No CPV codes selected — nothing would be scored.'
+        : inScope === cpv.length ? 'All ' + cpv.length + ' codes are inside the ingestion scope (72*, 48*, 79417000).'
+        : inScope === 0 ? 'None of your ' + cpv.length + ' codes are ingested yet — saved to your profile, scored once ingestion covers them.'
+        : inScope + ' of ' + cpv.length + ' codes are ingested today; the rest are saved and wait for a scope change.',
+      scopeLine: inScope === 0 ? 'var(--bm-risk)' : inScope < cpv.length ? 'var(--bm-caution)' : 'var(--bm-accent)',
+      scopeBg: inScope === 0 ? 'var(--bm-risk-tint)' : inScope < cpv.length ? 'var(--bm-caution-tint)' : 'var(--bm-accent-tint)',
+
+      minValue: st.minValue, maxValue: st.maxValue,
+      onMinValue: (e) => this.setState({ minValue: e.target.value }),
+      onMaxValue: (e) => this.setState({ maxValue: e.target.value }),
+      hasValueError: Number(st.minValue) > Number(st.maxValue),
+      valueBorder: Number(st.minValue) > Number(st.maxValue) ? 'var(--bm-risk)' : 'var(--bm-line-hair)',
+      bandNote: 'A missing value in a notice is never read as zero — it scores half the component and is marked Unknown.',
+      runwayOptions: [3, 5, 7, 14].map((d) => Object.assign({ label: d + ' days', onClick: () => this.setState({ runway: d }) }, pill(st.runway === d))),
+      runwayNote, runwayNoteInk: st.runway <= 3 ? 'var(--bm-caution)' : 'var(--bm-ink3)',
+      phraseChips: st.phrases.map((ph) => ({ label: ph, onRemove: () => this.setState((s) => ({ phrases: s.phrases.filter((x) => x !== ph) })) })),
+      onAddPhrase: () => this.setState((s) => ({ phrases: s.phrases.concat(['vehicle leasing']) })),
+
+      digestOptions: ['Strong match', 'Worth reviewing', 'Possible'].map((d) => Object.assign({ label: d, onClick: () => this.setState({ digestFloor: d }) }, pill(st.digestFloor === d))),
+      emptyTrack: st.sendEmpty ? 'var(--bm-accent)' : 'var(--bm-line)',
+      emptyKnob: st.sendEmpty ? '19.5px' : '2.5px',
+      emptyLabel: st.sendEmpty ? 'Send the digest even on days with nothing' : 'Stay silent on days with nothing',
+      onToggleEmpty: () => this.setState((s) => ({ sendEmpty: !s.sendEmpty })),
+      summary: summary.map((r) => ({ label: r.label, value: r.value, onEdit: () => { this.setState({ step: r.goto }); window.scrollTo(0, 0); } })),
+
+      onBack: () => { if (st.step > 0) { this.setState((s) => ({ step: s.step - 1 })); window.scrollTo(0, 0); } },
+      backCursor: st.step === 0 ? 'not-allowed' : 'pointer',
+      backOpacity: st.step === 0 ? '0.4' : '1',
+      onNext: () => this.next(),
+      nextLabel: st.step === 4 ? 'Finish setup' : 'Continue',
+      nextBg: blocker === '' ? 'var(--bm-accent)' : 'var(--bm-line)',
+      nextInk: blocker === '' ? 'var(--bm-accent-ink)' : 'var(--bm-ink3)',
+      nextCursor: blocker === '' ? 'pointer' : 'not-allowed',
+      blockNote: blocker, blockInk: 'var(--bm-caution)',
+      canSkip: st.step === 3, onSkip: () => this.next(),
+
+      doneBlurb: 'Your profile is live and the first matching run happens tonight. ' + cpv.length + ' CPV codes across ' + countries.length + ' countries, €' + Number(st.minValue).toLocaleString('en-GB') + '–€' + Number(st.maxValue).toLocaleString('en-GB') + ', ' + st.runway + ' days minimum runway.',
+      nextSteps: [
+        { when: 'tonight', text: 'TED notices published today are ingested and scored against your profile.' },
+        { when: '07:00', text: 'Your first digest arrives — ' + st.digestFloor.toLowerCase() + ' and above' + (st.sendEmpty ? ', even if the list is empty.' : ', only if there is something.') },
+        { when: 'this week', text: 'Mark a few matches Bid, Maybe or Pass. The score components you disagree with are worth telling us about — feedback tunes the weighting.' },
+      ],
+      onRestart: () => this.setState({ done: false, step: 0 }),
+    };
+  }
+}
+
+</script>
+</body>
+</html>
