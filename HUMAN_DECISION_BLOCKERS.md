@@ -581,8 +581,13 @@ payouts remains their/their accountant's matter.
    1.4 MB handoff zip that `main` deliberately git-ignores; delete it from
    the Branches page if it is no longer wanted.
 4. **Required check for the per-PR E2E run (2026-09-03, owner
-   instruction "add it to the required checks now"):** please add
-   `e2e-gate` to the `main-protection` ruleset's required status checks
+   instruction "add it to the required checks now"):** DONE 2026-09-03,
+   the owner added `e2e-gate` to the `main-protection` ruleset; verified
+   the same morning with a documentation-only pull request (the case that
+   would hang under a naive path filter): the merge state read "blocked"
+   while `e2e-gate` was pending and "clean" once it reported green with
+   the suite rightly skipped. The request had been: add `e2e-gate` to
+   the `main-protection` ruleset's required status checks
    (repository Settings → Rules → Rulesets → main-protection → "Require
    status checks to pass" → add check `e2e-gate`). The session cannot
    edit rulesets. The repository side is ready: `e2e-gate` in
