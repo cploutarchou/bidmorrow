@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/styles.css">
+<script src="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  body { margin: 0; background: var(--color-bg); }
+  a { color: var(--color-accent-700); text-decoration: none; }
+  a:hover { color: var(--color-accent); text-decoration: underline; }
+</style>
+</helmet>
+
+<div style="background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); padding: 0 0 96px 0;">
+
+  <header style="max-width: 1240px; margin: 0 auto; padding: 56px 40px 0 40px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; border-bottom: 2px solid var(--color-divider); padding-bottom: 20px;">
+      <div>
+        <p style="margin: 0 0 12px 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 600;">BidMorrow · apps/web · theme layer</p>
+        <h1 style="margin: 0; font-family: var(--font-heading); font-size: 64px; line-height: 0.98; font-weight: 700; letter-spacing: -0.02em; max-width: 20ch;">Theme spec v2</h1>
+      </div>
+      <div style="display: grid; gap: 6px; font-size: 13px; color: var(--color-neutral-700); text-align: right; min-width: 220px;">
+        <span>Scope: full visual redesign</span>
+        <span>Modes: dark (default) + light</span>
+        <span>Source: apps/web/src/styles.css</span>
+        <span>Repo: cploutarchou/bidmorrow @ main</span>
+      </div>
+    </div>
+    <p style="margin: 24px 0 0 0; max-width: 78ch; font-size: 17px; line-height: 1.55; color: var(--color-neutral-800); text-wrap: pretty;">One stylesheet drives the whole product, so the theme is one decision surface. This spec replaces the translucent near-black-plus-teal-glow layer with an opaque, stepped surface system, a real typographic voice, an editorial figure treatment, and a decision scale that stops competing with the brand accent. Every value below is paste-ready for the <code style="font-family: var(--font-body); background: var(--color-neutral-200); padding: 1px 5px;">:root</code> block in <code style="font-family: var(--font-body); background: var(--color-neutral-200); padding: 1px 5px;">styles.css</code>.</p>
+  </header>
+
+  <section style="max-width: 1240px; margin: 0 auto; padding: 64px 40px 0 40px;">
+    <p style="margin: 0 0 20px 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 600;">01 — Direction</p>
+    <h2 style="margin: 0 0 32px 0; font-family: var(--font-heading); font-size: 34px; line-height: 1.1; font-weight: 700; letter-spacing: -0.01em; max-width: 30ch;">Six rules that fix the six complaints</h2>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--color-divider);">
+      <div style="background: var(--color-bg); padding: 24px 24px 28px 0;">
+        <p style="margin: 0 0 8px 0; font-family: var(--font-mono, var(--font-body)); font-size: 12px; color: var(--color-neutral-600);">Weak hierarchy</p>
+        <h3 style="margin: 0 0 10px 0; font-family: var(--font-heading); font-size: 21px; font-weight: 600; line-height: 1.2;">Opaque steps, not glass</h3>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--color-neutral-800);">Five named surfaces — sunken, canvas, panel, raised, overlay — each one step lighter than the last, each carrying a hairline. <code style="background: var(--color-neutral-200); padding: 1px 4px;">backdrop-filter</code> and the <code style="background: var(--color-neutral-200); padding: 1px 4px;">.glass</code> tints come out; depth becomes readable, printable and cheap.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 24px 24px 28px 24px;">
+        <p style="margin: 0 0 8px 0; font-size: 12px; color: var(--color-neutral-600);">Type scale + font stack</p>
+        <h3 style="margin: 0 0 10px 0; font-family: var(--font-heading); font-size: 21px; font-weight: 600; line-height: 1.2;">A voice, not the OS default</h3>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--color-neutral-800);">Newsreader carries headings and figures with editorial authority; IBM Plex Sans runs the interface; IBM Plex Mono sets every money, date and score value with tabular figures. Seven steps, no in-between sizes.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 24px 0 28px 24px;">
+        <p style="margin: 0 0 8px 0; font-size: 12px; color: var(--color-neutral-600);">Buttons + controls</p>
+        <h3 style="margin: 0 0 10px 0; font-family: var(--font-heading); font-size: 21px; font-weight: 600; line-height: 1.2;">Three ranks, one geometry</h3>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--color-neutral-800);">Solid accent, outline, quiet — at two heights (36 / 30px) and one radius. Fields sit on sunken ground with a 1.5px inner-lit edge, so a form no longer reads as a stack of empty cards.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 24px 24px 28px 0; border-top: 2px solid var(--color-divider);">
+        <p style="margin: 0 0 8px 0; font-size: 12px; color: var(--color-neutral-600);">Generic cards</p>
+        <h3 style="margin: 0 0 10px 0; font-family: var(--font-heading); font-size: 21px; font-weight: 600; line-height: 1.2;">The tender card is the product</h3>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--color-neutral-800);">It gets its own anatomy: a score gutter, a deadline in mono, the fit chip flush left, score components as thin rules, and one risk line. Fit strength is expressed by the left gutter weight — not by tinting the whole card.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 24px 24px 28px 24px; border-top: 2px solid var(--color-divider);">
+        <p style="margin: 0 0 8px 0; font-size: 12px; color: var(--color-neutral-600);">Contrast + a11y</p>
+        <h3 style="margin: 0 0 10px 0; font-family: var(--font-heading); font-size: 21px; font-weight: 600; line-height: 1.2;">Ink lifted, accent demoted</h3>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--color-neutral-800);">Muted ink moves from #8b94a7 to #a3adbb so secondary copy clears 4.5:1 on every surface. The bright teal stops being body text: it fills buttons and marks state, and a lighter step handles inline links.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 24px 0 28px 24px; border-top: 2px solid var(--color-divider);">
+        <p style="margin: 0 0 8px 0; font-size: 12px; color: var(--color-neutral-600);">Feels dated</p>
+        <h3 style="margin: 0 0 10px 0; font-family: var(--font-heading); font-size: 21px; font-weight: 600; line-height: 1.2;">Instrument, not dashboard</h3>
+        <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--color-neutral-800);">No radial washes, no glow shadows, no gradient CTAs, radii down to 6px. What's left is a serious reading surface for a bid/no-bid decision — plus a genuine light mode for procurement teams who work in daylight and print.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1240px; margin: 0 auto; padding: 72px 40px 0 40px;">
+    <p style="margin: 0 0 20px 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 600;">02 — Surfaces &amp; hierarchy</p>
+    <h2 style="margin: 0 0 12px 0; font-family: var(--font-heading); font-size: 34px; line-height: 1.1; font-weight: 700; letter-spacing: -0.01em;">Five steps, one hairline each</h2>
+    <p style="margin: 0 0 32px 0; max-width: 74ch; font-size: 15.5px; line-height: 1.6; color: var(--color-neutral-800);">Rule: a container may sit one step above its parent, never two, and elevation is carried by the step plus <code style="background: var(--color-neutral-200); padding: 1px 4px;">--line-hair</code>. Shadow is reserved for things that float over the page (menus, dialogs, toasts).</p>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--color-divider);">
+      <div style="background: #0d1014; padding: 32px; font-family: 'IBM Plex Sans', system-ui, sans-serif;">
+        <p style="margin: 0 0 20px 0; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #7a8593; font-weight: 500;">Dark — default</p>
+        <div style="display: grid; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 14px; background: #0a0c10; border: 1px solid #22282f; padding: 14px 16px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #a3adbb; width: 130px;">--bg-sunken</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #7a8593;">#0a0c10</span><span style="font-size: 13px; color: #eef1f5; margin-left: auto;">fields, wells, table stripes</span></div>
+          <div style="display: flex; align-items: center; gap: 14px; background: #0d1014; border: 1px solid #22282f; padding: 14px 16px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #a3adbb; width: 130px;">--bg-canvas</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #7a8593;">#0d1014</span><span style="font-size: 13px; color: #eef1f5; margin-left: auto;">page ground</span></div>
+          <div style="display: flex; align-items: center; gap: 14px; background: #14181e; border: 1px solid #22282f; padding: 14px 16px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #a3adbb; width: 130px;">--bg-panel</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #7a8593;">#14181e</span><span style="font-size: 13px; color: #eef1f5; margin-left: auto;">cards, header, panels</span></div>
+          <div style="display: flex; align-items: center; gap: 14px; background: #1b2027; border: 1px solid #2e353f; padding: 14px 16px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #a3adbb; width: 130px;">--bg-raised</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #7a8593;">#1b2027</span><span style="font-size: 13px; color: #eef1f5; margin-left: auto;">hover, selected, chips</span></div>
+          <div style="display: flex; align-items: center; gap: 14px; background: #1f252d; border: 1px solid #414a57; padding: 14px 16px; box-shadow: 0 24px 60px -12px rgba(0,0,0,0.65);"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #a3adbb; width: 130px;">--bg-overlay</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #7a8593;">#1f252d</span><span style="font-size: 13px; color: #eef1f5; margin-left: auto;">menus, dialogs, toasts</span></div>
+        </div>
+      </div>
+      <div style="background: #f7f8f9; padding: 32px; font-family: 'IBM Plex Sans', system-ui, sans-serif;">
+        <p style="margin: 0 0 20px 0; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6b7480; font-weight: 500;">Light — new</p>
+        <div style="display: grid; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 14px; background: #eceff1; border: 1px solid #e6e9ec; padding: 14px 16px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4d5661; width: 130px;">--bg-sunken</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6b7480;">#eceff1</span><span style="font-size: 13px; color: #14181d; margin-left: auto;">fields, wells, table stripes</span></div>
+          <div style="display: flex; align-items: center; gap: 14px; background: #f7f8f9; border: 1px solid #e6e9ec; padding: 14px 16px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4d5661; width: 130px;">--bg-canvas</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6b7480;">#f7f8f9</span><span style="font-size: 13px; color: #14181d; margin-left: auto;">page ground</span></div>
+          <div style="display: flex; align-items: center; gap: 14px; background: #ffffff; border: 1px solid #e6e9ec; padding: 14px 16px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4d5661; width: 130px;">--bg-panel</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6b7480;">#ffffff</span><span style="font-size: 13px; color: #14181d; margin-left: auto;">cards, header, panels</span></div>
+          <div style="display: flex; align-items: center; gap: 14px; background: #ffffff; border: 1px solid #d5dae0; padding: 14px 16px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4d5661; width: 130px;">--bg-raised</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6b7480;">#ffffff</span><span style="font-size: 13px; color: #14181d; margin-left: auto;">hover = line-strong, not fill</span></div>
+          <div style="display: flex; align-items: center; gap: 14px; background: #ffffff; border: 1px solid #b3bcc6; padding: 14px 16px; box-shadow: 0 18px 44px -14px rgba(20,24,29,0.22);"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4d5661; width: 130px;">--bg-overlay</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6b7480;">#ffffff</span><span style="font-size: 13px; color: #14181d; margin-left: auto;">menus, dialogs, toasts</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1240px; margin: 0 auto; padding: 72px 40px 0 40px;">
+    <p style="margin: 0 0 20px 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 600;">03 — Ink, action, signal</p>
+    <h2 style="margin: 0 0 32px 0; font-family: var(--font-heading); font-size: 34px; line-height: 1.1; font-weight: 700; letter-spacing: -0.01em;">Teal keeps the brand, loses the glow</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--color-divider);">
+      <div style="background: #0d1014; padding: 32px; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #eef1f5;">
+        <p style="margin: 0 0 20px 0; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #7a8593; font-weight: 500;">Dark roles</p>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+          <div><div style="height: 56px; background: #eef1f5; border: 1px solid #22282f;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--ink-1</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a8593;">#eef1f5</p></div>
+          <div><div style="height: 56px; background: #a3adbb; border: 1px solid #22282f;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--ink-2</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a8593;">#a3adbb</p></div>
+          <div><div style="height: 56px; background: #7a8593; border: 1px solid #22282f;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--ink-3</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a8593;">#7a8593</p></div>
+          <div><div style="height: 56px; background: #2e353f; border: 1px solid #22282f;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--line</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a8593;">#2e353f</p></div>
+          <div><div style="height: 56px; background: #2ec4b0;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--accent</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a8593;">#2ec4b0</p></div>
+          <div><div style="height: 56px; background: #6fe0d0;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--accent-text</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a8593;">#6fe0d0</p></div>
+          <div><div style="height: 56px; background: rgba(46,196,176,0.12); border: 1px solid rgba(46,196,176,0.34);"></div><p style="margin: 8px 0 2px; font-size: 12px;">--accent-tint</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a8593;">12% / 34%</p></div>
+          <div><div style="height: 56px; background: #04211d; border: 1px solid #22282f;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--accent-ink</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a8593;">#04211d</p></div>
+          <div><div style="height: 56px; background: #e8a33d;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--sig-caution</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a8593;">#e8a33d</p></div>
+          <div><div style="height: 56px; background: #ef6461;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--sig-risk</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a8593;">#ef6461</p></div>
+          <div><div style="height: 56px; background: #7fb3ea;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--sig-info</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a8593;">#7fb3ea</p></div>
+          <div><div style="height: 56px; background: #6fe0d0; outline: 2px solid #6fe0d0; outline-offset: 3px;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--focus</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a8593;">#6fe0d0</p></div>
+        </div>
+      </div>
+      <div style="background: #f7f8f9; padding: 32px; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #14181d;">
+        <p style="margin: 0 0 20px 0; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6b7480; font-weight: 500;">Light roles</p>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+          <div><div style="height: 56px; background: #14181d;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--ink-1</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6b7480;">#14181d</p></div>
+          <div><div style="height: 56px; background: #4d5661;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--ink-2</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6b7480;">#4d5661</p></div>
+          <div><div style="height: 56px; background: #6b7480;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--ink-3</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6b7480;">#6b7480</p></div>
+          <div><div style="height: 56px; background: #d5dae0;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--line</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6b7480;">#d5dae0</p></div>
+          <div><div style="height: 56px; background: #0f7d6f;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--accent</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6b7480;">#0f7d6f</p></div>
+          <div><div style="height: 56px; background: #0b6a5e;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--accent-text</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6b7480;">#0b6a5e</p></div>
+          <div><div style="height: 56px; background: rgba(15,125,111,0.10); border: 1px solid rgba(15,125,111,0.28);"></div><p style="margin: 8px 0 2px; font-size: 12px;">--accent-tint</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6b7480;">10% / 28%</p></div>
+          <div><div style="height: 56px; background: #ffffff; border: 1px solid #d5dae0;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--accent-ink</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6b7480;">#ffffff</p></div>
+          <div><div style="height: 56px; background: #a16207;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--sig-caution</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6b7480;">#a16207</p></div>
+          <div><div style="height: 56px; background: #c0392f;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--sig-risk</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6b7480;">#c0392f</p></div>
+          <div><div style="height: 56px; background: #1e6bb8;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--sig-info</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6b7480;">#1e6bb8</p></div>
+          <div><div style="height: 56px; background: #0f7d6f; outline: 2px solid #0f7d6f; outline-offset: 3px;"></div><p style="margin: 8px 0 2px; font-size: 12px;">--focus</p><p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6b7480;">#0f7d6f</p></div>
+        </div>
+      </div>
+    </div>
+    <p style="margin: 24px 0 0 0; max-width: 84ch; font-size: 15px; line-height: 1.6; color: var(--color-neutral-800);">The old <code style="background: var(--color-neutral-200); padding: 1px 4px;">--sol-2</code> deep teal survives in one place only: the brand mark and favicon gradient. Nothing else in the product uses a gradient.</p>
+  </section>
+
+  <section style="max-width: 1240px; margin: 0 auto; padding: 72px 40px 0 40px;">
+    <p style="margin: 0 0 20px 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 600;">04 — Decision scale</p>
+    <h2 style="margin: 0 0 12px 0; font-family: var(--font-heading); font-size: 34px; line-height: 1.1; font-weight: 700; letter-spacing: -0.01em;">Fit is one hue, risk is another</h2>
+    <p style="margin: 0 0 32px 0; max-width: 76ch; font-size: 15.5px; line-height: 1.6; color: var(--color-neutral-800);">Today classification borrows the status greens and ambers, so "worth reviewing" and "requires certification" shout with the same voice. New rule: <strong>fit</strong> is a five-step ramp of the accent — strength shown by fill weight, never by hue change — and amber/red belong to risk flags and billing only.</p>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--color-divider);">
+      <div style="background: #0d1014; padding: 32px; font-family: 'IBM Plex Sans', system-ui, sans-serif;">
+        <div style="display: grid; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 16px;"><span style="display: inline-flex; align-items: center; gap: 8px; background: #2ec4b0; color: #04211d; font-weight: 600; font-size: 12.5px; letter-spacing: 0.02em; padding: 5px 10px; border-radius: 3px;">STRONG MATCH<span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">87</span></span><span style="font-size: 13px; color: #a3adbb;">solid fill + 3px left gutter on card</span></div>
+          <div style="display: flex; align-items: center; gap: 16px;"><span style="display: inline-flex; align-items: center; gap: 8px; background: rgba(46,196,176,0.14); color: #6fe0d0; border: 1px solid rgba(46,196,176,0.34); font-weight: 600; font-size: 12.5px; padding: 4px 9px; border-radius: 3px;">WORTH REVIEWING<span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">64</span></span><span style="font-size: 13px; color: #a3adbb;">tint + accent line</span></div>
+          <div style="display: flex; align-items: center; gap: 16px;"><span style="display: inline-flex; align-items: center; gap: 8px; background: transparent; color: #a3adbb; border: 1px solid #414a57; font-weight: 600; font-size: 12.5px; padding: 4px 9px; border-radius: 3px;">POSSIBLE<span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">41</span></span><span style="font-size: 13px; color: #a3adbb;">neutral outline</span></div>
+          <div style="display: flex; align-items: center; gap: 16px;"><span style="display: inline-flex; align-items: center; gap: 8px; color: #7a8593; font-weight: 600; font-size: 12.5px; padding: 4px 0; letter-spacing: 0.04em;">LOW FIT<span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">18</span></span><span style="font-size: 13px; color: #a3adbb;">label only, no container</span></div>
+          <div style="display: flex; align-items: center; gap: 16px;"><span style="display: inline-flex; align-items: center; gap: 8px; color: #7a8593; font-weight: 600; font-size: 12.5px; padding: 4px 9px; border-left: 2px solid #ef6461; background: #0a0c10;">EXCLUDED<span style="font-size: 11px; font-weight: 400;">rule: geography</span></span><span style="font-size: 13px; color: #a3adbb;">risk edge + reason, no score</span></div>
+        </div>
+      </div>
+      <div style="background: #f7f8f9; padding: 32px; font-family: 'IBM Plex Sans', system-ui, sans-serif;">
+        <div style="display: grid; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 16px;"><span style="display: inline-flex; align-items: center; gap: 8px; background: #0f7d6f; color: #ffffff; font-weight: 600; font-size: 12.5px; padding: 5px 10px; border-radius: 3px;">STRONG MATCH<span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">87</span></span><span style="font-size: 13px; color: #4d5661;">solid fill + 3px left gutter on card</span></div>
+          <div style="display: flex; align-items: center; gap: 16px;"><span style="display: inline-flex; align-items: center; gap: 8px; background: rgba(15,125,111,0.10); color: #0b6a5e; border: 1px solid rgba(15,125,111,0.28); font-weight: 600; font-size: 12.5px; padding: 4px 9px; border-radius: 3px;">WORTH REVIEWING<span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">64</span></span><span style="font-size: 13px; color: #4d5661;">tint + accent line</span></div>
+          <div style="display: flex; align-items: center; gap: 16px;"><span style="display: inline-flex; align-items: center; gap: 8px; color: #4d5661; border: 1px solid #b3bcc6; font-weight: 600; font-size: 12.5px; padding: 4px 9px; border-radius: 3px;">POSSIBLE<span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">41</span></span><span style="font-size: 13px; color: #4d5661;">neutral outline</span></div>
+          <div style="display: flex; align-items: center; gap: 16px;"><span style="display: inline-flex; align-items: center; gap: 8px; color: #6b7480; font-weight: 600; font-size: 12.5px; padding: 4px 0; letter-spacing: 0.04em;">LOW FIT<span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">18</span></span><span style="font-size: 13px; color: #4d5661;">label only, no container</span></div>
+          <div style="display: flex; align-items: center; gap: 16px;"><span style="display: inline-flex; align-items: center; gap: 8px; color: #6b7480; font-weight: 600; font-size: 12.5px; padding: 4px 9px; border-left: 2px solid #c0392f; background: #eceff1;">EXCLUDED<span style="font-size: 11px; font-weight: 400;">rule: geography</span></span><span style="font-size: 13px; color: #4d5661;">risk edge + reason, no score</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1240px; margin: 0 auto; padding: 72px 40px 0 40px;">
+    <p style="margin: 0 0 20px 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 600;">05 — Type</p>
+    <h2 style="margin: 0 0 32px 0; font-family: var(--font-heading); font-size: 34px; line-height: 1.1; font-weight: 700; letter-spacing: -0.01em;">Newsreader · IBM Plex Sans · IBM Plex Mono</h2>
+    <div style="background: #0d1014; padding: 40px; margin-bottom: 2px;">
+      <p style="margin: 0 0 28px 0; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #7a8593; font-family: 'IBM Plex Sans', sans-serif; font-weight: 500;">Specimen — dark</p>
+      <p style="margin: 0 0 6px 0; font-family: 'Newsreader', Georgia, serif; font-size: 52px; line-height: 1.05; color: #eef1f5; font-weight: 400; letter-spacing: -0.01em; max-width: 26ch;">Find the tenders worth pursuing. Skip the rest.</p>
+      <p style="margin: 18px 0 0 0; font-family: 'IBM Plex Sans', sans-serif; font-size: 16.5px; line-height: 1.6; color: #a3adbb; max-width: 62ch;">Bid/no-bid qualification intelligence for EU public procurement. It answers one question: should a company like mine spend time investigating this tender?</p>
+      <div style="display: flex; gap: 40px; margin-top: 32px; align-items: baseline; flex-wrap: wrap;">
+        <p style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 15px; color: #6fe0d0; font-variant-numeric: tabular-nums;">€1,240,000 · 2026-09-14 · 11 days left · 87/100</p>
+        <p style="margin: 0; font-family: 'Newsreader', serif; font-style: italic; font-size: 17px; color: #a3adbb;">Unknown value — neutral score applied.</p>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--color-divider);">
+      <div style="background: var(--color-bg); padding: 0 24px 0 0;">
+        <table class="table" style="width: 100%;">
+          <thead><tr><th>Step</th><th>Size / line</th><th>Face</th><th>Use</th></tr></thead>
+          <tbody>
+            <tr><td>display</td><td>52 / 1.05</td><td>Newsreader 400</td><td>marketing hero</td></tr>
+            <tr><td>h1</td><td>34 / 1.15</td><td>Newsreader 500</td><td>page title</td></tr>
+            <tr><td>h2</td><td>24 / 1.25</td><td>Newsreader 500</td><td>section, tender title</td></tr>
+            <tr><td>h3</td><td>17 / 1.35</td><td>Plex Sans 600</td><td>card title, group label</td></tr>
+            <tr><td>body</td><td>15 / 1.6</td><td>Plex Sans 400</td><td>all running copy</td></tr>
+            <tr><td>small</td><td>13 / 1.5</td><td>Plex Sans 400</td><td>meta, help text</td></tr>
+            <tr><td>micro</td><td>11 / 1.45</td><td>Plex Sans 500, .14em caps</td><td>eyebrows, table heads</td></tr>
+            <tr><td>figure</td><td>13–15 tabular</td><td>Plex Mono 400</td><td>money, dates, scores</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="background: var(--color-bg); padding: 0 0 0 24px;">
+        <h3 style="margin: 0 0 12px 0; font-family: var(--font-heading); font-size: 19px; font-weight: 600;">Rules</h3>
+        <ul style="margin: 0; padding-left: 20px; display: grid; gap: 10px; font-size: 15px; line-height: 1.55; color: var(--color-neutral-800);">
+          <li>Every figure a user compares — value, deadline, score, CPV code, invoice amount — sets in Plex Mono with <code style="background: var(--color-neutral-200); padding: 1px 4px;">font-variant-numeric: tabular-nums</code>. This replaces the <code style="background: var(--color-neutral-200); padding: 1px 4px;">.num</code> class's current system-mono fallback.</li>
+          <li>Newsreader is never bolded past 500, and never used below 17px — it is a reading face, not a UI face.</li>
+          <li>Newsreader italic carries product-truth caveats (unknown-policy notes, disclaimers) so they read as editorial voice rather than error text.</li>
+          <li>Self-host all three families from <code style="background: var(--color-neutral-200); padding: 1px 4px;">apps/web/public/fonts</code> with <code style="background: var(--color-neutral-200); padding: 1px 4px;">font-display: swap</code> — the current CSP (<code style="background: var(--color-neutral-200); padding: 1px 4px;">style-src 'self'</code>) rules out a Google Fonts stylesheet.</li>
+          <li>Line length caps at 74ch for prose, 62ch for lede copy.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1240px; margin: 0 auto; padding: 72px 40px 0 40px;">
+    <p style="margin: 0 0 20px 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 600;">06 — Buttons &amp; controls</p>
+    <h2 style="margin: 0 0 32px 0; font-family: var(--font-heading); font-size: 34px; line-height: 1.1; font-weight: 700; letter-spacing: -0.01em;">Three ranks, two heights, one radius</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--color-divider);">
+      <div style="background: #0d1014; padding: 32px; font-family: 'IBM Plex Sans', sans-serif;">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <button type="button" style="font-family: inherit; font-size: 14px; font-weight: 600; height: 36px; padding: 0 16px; border: 0; border-radius: 6px; background: #2ec4b0; color: #04211d; cursor: pointer;" style-hover="background: #3ad3bd;" style-active="background: #249e8e;">Save tender</button>
+          <button type="button" style="font-family: inherit; font-size: 14px; font-weight: 500; height: 36px; padding: 0 16px; border: 1px solid #414a57; border-radius: 6px; background: transparent; color: #eef1f5; cursor: pointer;" style-hover="border-color: #6fe0d0; color: #6fe0d0;">Ignore</button>
+          <button type="button" style="font-family: inherit; font-size: 14px; font-weight: 500; height: 36px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: #a3adbb; cursor: pointer;" style-hover="color: #eef1f5; background: #1b2027;">Reset filters</button>
+          <button type="button" style="font-family: inherit; font-size: 13px; font-weight: 500; height: 30px; padding: 0 12px; border: 1px solid #414a57; border-radius: 6px; background: transparent; color: #eef1f5; cursor: pointer;">Small</button>
+          <span style="display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 6px; background: #2ec4b0; color: #04211d; font-size: 14px; font-weight: 600; opacity: 0.45;">Disabled</span>
+        </div>
+        <div style="margin-top: 24px; display: grid; gap: 14px; max-width: 420px;">
+          <label style="display: grid; gap: 6px;"><span style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #a3adbb; font-weight: 500;">Buyer country</span><input type="text" value="Cyprus" style="font-family: inherit; font-size: 14.5px; height: 38px; padding: 0 12px; background: #0a0c10; border: 1px solid #2e353f; border-radius: 6px; color: #eef1f5; box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);"></label>
+          <label style="display: grid; gap: 6px;"><span style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #a3adbb; font-weight: 500;">CPV division — focused</span><input type="text" value="72 — IT services" style="font-family: inherit; font-size: 14.5px; height: 38px; padding: 0 12px; background: #0a0c10; border: 1px solid #6fe0d0; border-radius: 6px; color: #eef1f5; outline: 2px solid #6fe0d0; outline-offset: 2px;"></label>
+          <p style="margin: 0; font-size: 12.5px; color: #7a8593;">Help text sits at 12.5px in ink-3 — one step below the field, never inside it.</p>
+        </div>
+      </div>
+      <div style="background: #f7f8f9; padding: 32px; font-family: 'IBM Plex Sans', sans-serif;">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <button type="button" style="font-family: inherit; font-size: 14px; font-weight: 600; height: 36px; padding: 0 16px; border: 0; border-radius: 6px; background: #0f7d6f; color: #ffffff; cursor: pointer;" style-hover="background: #0c6b5f;" style-active="background: #095a50;">Save tender</button>
+          <button type="button" style="font-family: inherit; font-size: 14px; font-weight: 500; height: 36px; padding: 0 16px; border: 1px solid #b3bcc6; border-radius: 6px; background: #ffffff; color: #14181d; cursor: pointer;" style-hover="border-color: #0f7d6f; color: #0b6a5e;">Ignore</button>
+          <button type="button" style="font-family: inherit; font-size: 14px; font-weight: 500; height: 36px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: #4d5661; cursor: pointer;" style-hover="color: #14181d; background: #eceff1;">Reset filters</button>
+          <button type="button" style="font-family: inherit; font-size: 13px; font-weight: 500; height: 30px; padding: 0 12px; border: 1px solid #b3bcc6; border-radius: 6px; background: #ffffff; color: #14181d; cursor: pointer;">Small</button>
+          <span style="display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 6px; background: #0f7d6f; color: #ffffff; font-size: 14px; font-weight: 600; opacity: 0.45;">Disabled</span>
+        </div>
+        <div style="margin-top: 24px; display: grid; gap: 14px; max-width: 420px;">
+          <label style="display: grid; gap: 6px;"><span style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #4d5661; font-weight: 500;">Buyer country</span><input type="text" value="Cyprus" style="font-family: inherit; font-size: 14.5px; height: 38px; padding: 0 12px; background: #ffffff; border: 1px solid #d5dae0; border-radius: 6px; color: #14181d;"></label>
+          <label style="display: grid; gap: 6px;"><span style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #4d5661; font-weight: 500;">CPV division — focused</span><input type="text" value="72 — IT services" style="font-family: inherit; font-size: 14.5px; height: 38px; padding: 0 12px; background: #ffffff; border: 1px solid #0f7d6f; border-radius: 6px; color: #14181d; outline: 2px solid #0f7d6f; outline-offset: 2px;"></label>
+          <p style="margin: 0; font-size: 12.5px; color: #6b7480;">Focus ring is the same 2px accent outline at 2px offset in both modes.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1240px; margin: 0 auto; padding: 72px 40px 0 40px;">
+    <p style="margin: 0 0 20px 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 600;">07 — The tender card</p>
+    <h2 style="margin: 0 0 12px 0; font-family: var(--font-heading); font-size: 34px; line-height: 1.1; font-weight: 700; letter-spacing: -0.01em;">Anatomy, applied</h2>
+    <p style="margin: 0 0 32px 0; max-width: 76ch; font-size: 15.5px; line-height: 1.6; color: var(--color-neutral-800);">Same DOM as <code style="background: var(--color-neutral-200); padding: 1px 4px;">TenderCard.tsx</code> — head, title, meta, <code style="background: var(--color-neutral-200); padding: 1px 4px;">.card-anatomy</code> rows with native <code style="background: var(--color-neutral-200); padding: 1px 4px;">&lt;progress&gt;</code>, risk line, actions. Only the theme layer changes: fit gutter, mono figures, Newsreader title, component bars as 3px rules.</p>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--color-divider);">
+      <div style="background: #0d1014; padding: 32px; font-family: 'IBM Plex Sans', sans-serif;">
+        <article style="background: #14181e; border: 1px solid #22282f; border-left: 3px solid #2ec4b0; border-radius: 8px; padding: 20px 22px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+            <span style="display: inline-flex; align-items: center; gap: 8px; background: #2ec4b0; color: #04211d; font-weight: 600; font-size: 12px; padding: 4px 9px; border-radius: 3px;">STRONG MATCH<span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">87</span></span>
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #a3adbb; font-variant-numeric: tabular-nums;">11 days left · 2026-09-14</span>
+          </div>
+          <h3 style="margin: 14px 0 6px 0; font-family: 'Newsreader', serif; font-size: 23px; line-height: 1.25; font-weight: 500; color: #eef1f5;">Framework for cloud migration and managed platform services</h3>
+          <p style="margin: 0 0 16px 0; font-size: 13px; color: #a3adbb;">Ministry of Finance, Cyprus · <span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">€1,240,000</span></p>
+          <ul style="margin: 0 0 16px 0; padding: 0; list-style: none; display: grid; gap: 8px;">
+            <li style="display: grid; grid-template-columns: 128px 1fr 52px; align-items: center; gap: 12px;"><span style="font-size: 12.5px; color: #a3adbb;">CPV fit</span><span style="height: 3px; background: #2e353f; display: block;"><span style="display: block; height: 3px; width: 92%; background: #2ec4b0;"></span></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6fe0d0; text-align: right; font-variant-numeric: tabular-nums;">+23/25</span></li>
+            <li style="display: grid; grid-template-columns: 128px 1fr 52px; align-items: center; gap: 12px;"><span style="font-size: 12.5px; color: #a3adbb;">Geography</span><span style="height: 3px; background: #2e353f; display: block;"><span style="display: block; height: 3px; width: 100%; background: #2ec4b0;"></span></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6fe0d0; text-align: right; font-variant-numeric: tabular-nums;">+20/20</span></li>
+            <li style="display: grid; grid-template-columns: 128px 1fr 52px; align-items: center; gap: 12px;"><span style="font-size: 12.5px; color: #a3adbb;">Value band</span><span style="height: 3px; background: #2e353f; display: block;"><span style="display: block; height: 3px; width: 50%; background: #7a8593;"></span></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #a3adbb; text-align: right; font-variant-numeric: tabular-nums;">+7/15</span></li>
+          </ul>
+          <p style="margin: 0 0 16px 0; padding: 8px 10px; background: rgba(232,163,61,0.12); border-left: 2px solid #e8a33d; font-size: 12.5px; color: #eef1f5;">ISO 27001 certification referenced — <span style="color: #a3adbb;">possible requirement, verify in source documents</span></p>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" style="font-family: inherit; font-size: 13px; font-weight: 500; height: 30px; padding: 0 12px; border: 1px solid #414a57; border-radius: 6px; background: transparent; color: #eef1f5; cursor: pointer;" style-hover="border-color: #6fe0d0; color: #6fe0d0;">Save</button>
+            <button type="button" style="font-family: inherit; font-size: 13px; font-weight: 500; height: 30px; padding: 0 12px; border: 1px solid #414a57; border-radius: 6px; background: transparent; color: #a3adbb; cursor: pointer;" style-hover="border-color: #414a57; color: #eef1f5;">Ignore</button>
+          </div>
+        </article>
+        <article style="margin-top: 12px; background: #14181e; border: 1px solid #22282f; border-left: 3px solid #2e353f; border-radius: 8px; padding: 16px 22px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+            <span style="display: inline-flex; align-items: center; gap: 8px; color: #7a8593; font-weight: 600; font-size: 12px; letter-spacing: 0.04em;">LOW FIT<span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">18</span></span>
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #7a8593; font-variant-numeric: tabular-nums;">4 days left</span>
+          </div>
+          <h3 style="margin: 10px 0 4px 0; font-family: 'Newsreader', serif; font-size: 19px; line-height: 1.3; font-weight: 400; color: #a3adbb;">Supply of office furniture, lot 3</h3>
+          <p style="margin: 0; font-size: 12.5px; color: #7a8593;">Low-fit rows collapse: no component bars, no actions until hover.</p>
+        </article>
+      </div>
+      <div style="background: #f7f8f9; padding: 32px; font-family: 'IBM Plex Sans', sans-serif;">
+        <article style="background: #ffffff; border: 1px solid #e6e9ec; border-left: 3px solid #0f7d6f; border-radius: 8px; padding: 20px 22px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+            <span style="display: inline-flex; align-items: center; gap: 8px; background: #0f7d6f; color: #ffffff; font-weight: 600; font-size: 12px; padding: 4px 9px; border-radius: 3px;">STRONG MATCH<span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">87</span></span>
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #4d5661; font-variant-numeric: tabular-nums;">11 days left · 2026-09-14</span>
+          </div>
+          <h3 style="margin: 14px 0 6px 0; font-family: 'Newsreader', serif; font-size: 23px; line-height: 1.25; font-weight: 500; color: #14181d;">Framework for cloud migration and managed platform services</h3>
+          <p style="margin: 0 0 16px 0; font-size: 13px; color: #4d5661;">Ministry of Finance, Cyprus · <span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">€1,240,000</span></p>
+          <ul style="margin: 0 0 16px 0; padding: 0; list-style: none; display: grid; gap: 8px;">
+            <li style="display: grid; grid-template-columns: 128px 1fr 52px; align-items: center; gap: 12px;"><span style="font-size: 12.5px; color: #4d5661;">CPV fit</span><span style="height: 3px; background: #d5dae0; display: block;"><span style="display: block; height: 3px; width: 92%; background: #0f7d6f;"></span></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #0b6a5e; text-align: right; font-variant-numeric: tabular-nums;">+23/25</span></li>
+            <li style="display: grid; grid-template-columns: 128px 1fr 52px; align-items: center; gap: 12px;"><span style="font-size: 12.5px; color: #4d5661;">Geography</span><span style="height: 3px; background: #d5dae0; display: block;"><span style="display: block; height: 3px; width: 100%; background: #0f7d6f;"></span></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #0b6a5e; text-align: right; font-variant-numeric: tabular-nums;">+20/20</span></li>
+            <li style="display: grid; grid-template-columns: 128px 1fr 52px; align-items: center; gap: 12px;"><span style="font-size: 12.5px; color: #4d5661;">Value band</span><span style="height: 3px; background: #d5dae0; display: block;"><span style="display: block; height: 3px; width: 50%; background: #6b7480;"></span></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4d5661; text-align: right; font-variant-numeric: tabular-nums;">+7/15</span></li>
+          </ul>
+          <p style="margin: 0 0 16px 0; padding: 8px 10px; background: rgba(161,98,7,0.10); border-left: 2px solid #a16207; font-size: 12.5px; color: #14181d;">ISO 27001 certification referenced — <span style="color: #4d5661;">possible requirement, verify in source documents</span></p>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" style="font-family: inherit; font-size: 13px; font-weight: 500; height: 30px; padding: 0 12px; border: 1px solid #b3bcc6; border-radius: 6px; background: #ffffff; color: #14181d; cursor: pointer;" style-hover="border-color: #0f7d6f; color: #0b6a5e;">Save</button>
+            <button type="button" style="font-family: inherit; font-size: 13px; font-weight: 500; height: 30px; padding: 0 12px; border: 1px solid #b3bcc6; border-radius: 6px; background: #ffffff; color: #4d5661; cursor: pointer;" style-hover="color: #14181d;">Ignore</button>
+          </div>
+        </article>
+        <article style="margin-top: 12px; background: #ffffff; border: 1px solid #e6e9ec; border-left: 3px solid #d5dae0; border-radius: 8px; padding: 16px 22px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+            <span style="display: inline-flex; align-items: center; gap: 8px; color: #6b7480; font-weight: 600; font-size: 12px; letter-spacing: 0.04em;">LOW FIT<span style="font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;">18</span></span>
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #6b7480; font-variant-numeric: tabular-nums;">4 days left</span>
+          </div>
+          <h3 style="margin: 10px 0 4px 0; font-family: 'Newsreader', serif; font-size: 19px; line-height: 1.3; font-weight: 400; color: #4d5661;">Supply of office furniture, lot 3</h3>
+          <p style="margin: 0; font-size: 12.5px; color: #6b7480;">Low-fit rows collapse: no component bars, no actions until hover.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <sc-if value="{{ showAudit }}" hint-placeholder-val="{{ true }}">
+    <section style="max-width: 1240px; margin: 0 auto; padding: 72px 40px 0 40px;">
+      <p style="margin: 0 0 20px 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 600;">08 — Contrast audit</p>
+      <h2 style="margin: 0 0 12px 0; font-family: var(--font-heading); font-size: 34px; line-height: 1.1; font-weight: 700; letter-spacing: -0.01em;">Targets and computed ratios</h2>
+      <p style="margin: 0 0 28px 0; max-width: 76ch; font-size: 15.5px; line-height: 1.6; color: var(--color-neutral-800);">Body copy ≥ 4.5:1, interface chrome and large text ≥ 3:1. Ratios below are computed from the hexes in this spec; re-verify in CI with the existing axe/Playwright pass before shipping.</p>
+      <table class="table" style="width: 100%;">
+        <thead><tr><th>Pair</th><th>Mode</th><th>Ratio ≈</th><th>Needs</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>--ink-1 on --bg-canvas</td><td>dark</td><td>16.4:1</td><td>4.5</td><td>pass</td></tr>
+          <tr><td>--ink-2 on --bg-panel</td><td>dark</td><td>7.5:1</td><td>4.5</td><td>pass</td></tr>
+          <tr><td>--ink-3 on --bg-canvas</td><td>dark</td><td>5.3:1</td><td>4.5</td><td>pass (was 4.1 at #8b94a7 on panel)</td></tr>
+          <tr><td>--accent-text on --bg-panel</td><td>dark</td><td>9.6:1</td><td>4.5</td><td>pass — inline links</td></tr>
+          <tr><td>--accent-ink on --accent</td><td>dark</td><td>8.7:1</td><td>4.5</td><td>pass — button label</td></tr>
+          <tr><td>--accent on --bg-canvas</td><td>dark</td><td>8.5:1</td><td>3.0</td><td>pass — chrome, gutters</td></tr>
+          <tr><td>--sig-caution on --bg-panel</td><td>dark</td><td>8.1:1</td><td>4.5</td><td>pass — risk text</td></tr>
+          <tr><td>--sig-risk on --bg-panel</td><td>dark</td><td>5.4:1</td><td>4.5</td><td>pass</td></tr>
+          <tr><td>--line on --bg-panel</td><td>dark</td><td>1.5:1</td><td>—</td><td>decorative only; never sole state carrier</td></tr>
+          <tr><td>--ink-1 on --bg-canvas</td><td>light</td><td>15.2:1</td><td>4.5</td><td>pass</td></tr>
+          <tr><td>--ink-2 on --bg-panel</td><td>light</td><td>8.0:1</td><td>4.5</td><td>pass</td></tr>
+          <tr><td>--ink-3 on --bg-canvas</td><td>light</td><td>4.9:1</td><td>4.5</td><td>pass</td></tr>
+          <tr><td>--accent-ink on --accent</td><td>light</td><td>4.9:1</td><td>4.5</td><td>pass — white on #0f7d6f</td></tr>
+          <tr><td>--accent-text on --bg-panel</td><td>light</td><td>5.6:1</td><td>4.5</td><td>pass</td></tr>
+          <tr><td>--sig-risk on --bg-panel</td><td>light</td><td>5.5:1</td><td>4.5</td><td>pass</td></tr>
+        </tbody>
+      </table>
+      <p style="margin: 20px 0 0 0; max-width: 76ch; font-size: 15px; line-height: 1.6; color: var(--color-neutral-800);">Non-color carriers kept: fit chips print their classification word, the excluded state prints its rule, risk lines print the confidence label, and <code style="background: var(--color-neutral-200); padding: 1px 4px;">aria-pressed</code> stays on Save/Ignore. The <code style="background: var(--color-neutral-200); padding: 1px 4px;">prefers-contrast: more</code> block keeps its job: <code style="background: var(--color-neutral-200); padding: 1px 4px;">--line-hair</code> and <code style="background: var(--color-neutral-200); padding: 1px 4px;">--line</code> both resolve to <code style="background: var(--color-neutral-200); padding: 1px 4px;">--line-strong</code>.</p>
+    </section>
+  </sc-if>
+
+  <section style="max-width: 1240px; margin: 0 auto; padding: 72px 40px 0 40px;">
+    <p style="margin: 0 0 20px 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 600;">09 — Paste-ready tokens</p>
+    <h2 style="margin: 0 0 12px 0; font-family: var(--font-heading); font-size: 34px; line-height: 1.1; font-weight: 700; letter-spacing: -0.01em;">The new <span style="font-family: var(--font-body);">:root</span></h2>
+    <p style="margin: 0 0 24px 0; max-width: 76ch; font-size: 15.5px; line-height: 1.6; color: var(--color-neutral-800);">Mode switching: keep dark as the default at <code style="background: var(--color-neutral-200); padding: 1px 4px;">:root</code>, put light under <code style="background: var(--color-neutral-200); padding: 1px 4px;">[data-theme='light']</code> on <code style="background: var(--color-neutral-200); padding: 1px 4px;">&lt;html&gt;</code>, and honour <code style="background: var(--color-neutral-200); padding: 1px 4px;">prefers-color-scheme: light</code> only when no explicit choice is stored.</p>
+    <pre style="margin: 0; background: #0d1014; color: #cfd6e0; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; line-height: 1.75; padding: 28px 32px; overflow-x: auto; border-left: 3px solid #2ec4b0;">:root {
+  color-scheme: dark;
+
+  /* surfaces — one step apart, opaque, no backdrop-filter */
+  --bg-sunken:  #0a0c10;
+  --bg-canvas:  #0d1014;
+  --bg-panel:   #14181e;
+  --bg-raised:  #1b2027;
+  --bg-overlay: #1f252d;
+
+  /* lines */
+  --line-hair:   #22282f;
+  --line:        #2e353f;
+  --line-strong: #414a57;
+
+  /* ink */
+  --ink-1: #eef1f5;
+  --ink-2: #a3adbb;
+  --ink-3: #7a8593;
+
+  /* action */
+  --accent:       #2ec4b0;
+  --accent-hover: #3ad3bd;
+  --accent-press: #249e8e;
+  --accent-ink:   #04211d;
+  --accent-text:  #6fe0d0;
+  --accent-tint:  rgba(46, 196, 176, 0.12);
+  --accent-line:  rgba(46, 196, 176, 0.34);
+  --brand-deep:   #1fa899;          /* brand mark / favicon only */
+
+  /* fit ramp — classification, accent hue only */
+  --fit-strong-fill: var(--accent);
+  --fit-strong-ink:  var(--accent-ink);
+  --fit-review-tint: var(--accent-tint);
+  --fit-review-ink:  var(--accent-text);
+  --fit-neutral-line: var(--line-strong);
+  --fit-muted-ink:   var(--ink-3);
+
+  /* signal — risk, billing, system only */
+  --sig-caution:      #e8a33d;
+  --sig-caution-tint: rgba(232, 163, 61, 0.12);
+  --sig-risk:         #ef6461;
+  --sig-risk-tint:    rgba(239, 100, 97, 0.12);
+  --sig-info:         #7fb3ea;
+  --sig-ok:           var(--accent);
+
+  /* type */
+  --font-head: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-ui:   'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-num:  'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* scale — 7 steps + figures */
+  --t-display: 3.25rem/1.05;
+  --t-h1:      2.125rem/1.15;
+  --t-h2:      1.5rem/1.25;
+  --t-h3:      1.0625rem/1.35;
+  --t-body:    0.9375rem/1.6;
+  --t-small:   0.8125rem/1.5;
+  --t-micro:   0.6875rem/1.45;
+
+  /* geometry */
+  --r-xs: 3px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+
+  /* focus + float */
+  --focus: var(--accent-text);
+  --shadow-overlay: 0 24px 60px -12px rgba(0, 0, 0, 0.65);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  --bg-sunken:  #eceff1;
+  --bg-canvas:  #f7f8f9;
+  --bg-panel:   #ffffff;
+  --bg-raised:  #ffffff;
+  --bg-overlay: #ffffff;
+
+  --line-hair:   #e6e9ec;
+  --line:        #d5dae0;
+  --line-strong: #b3bcc6;
+
+  --ink-1: #14181d;
+  --ink-2: #4d5661;
+  --ink-3: #6b7480;
+
+  --accent:       #0f7d6f;
+  --accent-hover: #0c6b5f;
+  --accent-press: #095a50;
+  --accent-ink:   #ffffff;
+  --accent-text:  #0b6a5e;
+  --accent-tint:  rgba(15, 125, 111, 0.10);
+  --accent-line:  rgba(15, 125, 111, 0.28);
+
+  --sig-caution:      #a16207;
+  --sig-caution-tint: rgba(161, 98, 7, 0.10);
+  --sig-risk:         #c0392f;
+  --sig-risk-tint:    rgba(192, 57, 47, 0.10);
+  --sig-info:         #1e6bb8;
+
+  --focus: var(--accent);
+  --shadow-overlay: 0 18px 44px -14px rgba(20, 24, 29, 0.22);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) { /* mirror the [data-theme='light'] block */ }
+}</pre>
+  </section>
+
+  <sc-if value="{{ showMigration }}" hint-placeholder-val="{{ true }}">
+    <section style="max-width: 1240px; margin: 0 auto; padding: 72px 40px 0 40px;">
+      <p style="margin: 0 0 20px 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 600;">10 — Migration</p>
+      <h2 style="margin: 0 0 12px 0; font-family: var(--font-heading); font-size: 34px; line-height: 1.1; font-weight: 700; letter-spacing: -0.01em;">Old token → new token</h2>
+      <p style="margin: 0 0 28px 0; max-width: 76ch; font-size: 15.5px; line-height: 1.6; color: var(--color-neutral-800);">Keep the old names as one-line aliases for a release so nothing breaks mid-migration, then delete the alias block. Ten of the ninety-odd call sites need real edits — everything else resolves through the alias.</p>
+      <table class="table" style="width: 100%;">
+        <thead><tr><th>Today</th><th>Becomes</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>--ground-deep / --ground / --ground-high</td><td>--bg-sunken / --bg-canvas / --bg-raised</td><td>direct</td></tr>
+          <tr><td>--surface-1 / --surface-2</td><td>--bg-panel / --bg-raised</td><td>opaque; drop the rgba tints</td></tr>
+          <tr><td>--glass / --glass-strong / --glass-solid</td><td>--bg-panel</td><td>edit: remove <code>backdrop-filter</code> + <code>.glass</code> rule; header and menus become panel/overlay</td></tr>
+          <tr><td>--pane-tint</td><td>—</td><td>delete: the teal wash goes</td></tr>
+          <tr><td>--stroke-faint / --stroke / --stroke-strong</td><td>--line-hair / --line / --line-strong</td><td>direct</td></tr>
+          <tr><td>--text-1 / --text-2 / --text-3</td><td>--ink-1 / --ink-2 / --ink-3</td><td>ink-2 lightens to #a3adbb</td></tr>
+          <tr><td>--sol-1 / --sol-2</td><td>--accent / --brand-deep</td><td>brand-deep restricted to the mark</td></tr>
+          <tr><td>--accent-grad</td><td>--accent</td><td>alias already flat; delete after migration</td></tr>
+          <tr><td>--accent-soft / --accent-edge</td><td>--accent-tint / --accent-line</td><td>direct</td></tr>
+          <tr><td>--wash-hero / --wash-deep</td><td>—</td><td>delete: no radial washes, no gradient grounds</td></tr>
+          <tr><td>--status-strong-text / --status-caution-* / --status-danger-text / --status-info-text</td><td>--fit-* (classification) or --sig-* (risk, billing)</td><td>edit: split by meaning — score badges take the fit ramp, risk flags take signal</td></tr>
+          <tr><td>--status-low-text</td><td>--fit-muted-ink</td><td>direct</td></tr>
+          <tr><td>--font-display / --font-body / --font-mono</td><td>--font-head / --font-ui / --font-num</td><td>edit: add self-hosted @font-face, keep old names as aliases</td></tr>
+          <tr><td>--r-s / --r-m / --r-l / --r-xl</td><td>--r-sm / --r-md / --r-lg</td><td>16px tier retires; --r-xl → --r-lg</td></tr>
+          <tr><td>--shadow-s / --shadow-m / --shadow-l</td><td>--shadow-overlay</td><td>edit: cards lose shadow entirely; only overlays keep one</td></tr>
+          <tr><td>--edge-lit</td><td>--field-inner-lit</td><td>survives on inputs only, at 3% white</td></tr>
+          <tr><td>--field-bg</td><td>--bg-sunken</td><td>direct</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 40px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--color-divider);">
+        <div style="background: var(--color-bg); padding: 22px 22px 24px 0;">
+          <p style="margin: 0 0 6px 0; font-family: var(--font-heading); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 700;">Step 1</p>
+          <h3 style="margin: 0 0 8px 0; font-family: var(--font-heading); font-size: 19px; font-weight: 600;">Token swap + alias block</h3>
+          <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--color-neutral-800);">New <code style="background: var(--color-neutral-200); padding: 1px 4px;">:root</code> and light block land, old names alias to new. Visual change: surfaces stop being translucent, ink lifts. No component edits.</p>
+        </div>
+        <div style="background: var(--color-bg); padding: 22px;">
+          <p style="margin: 0 0 6px 0; font-family: var(--font-heading); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 700;">Step 2</p>
+          <h3 style="margin: 0 0 8px 0; font-family: var(--font-heading); font-size: 19px; font-weight: 600;">Type + controls</h3>
+          <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--color-neutral-800);">Self-host the three families, apply the seven-step scale, rebuild <code style="background: var(--color-neutral-200); padding: 1px 4px;">.cta</code>/<code style="background: var(--color-neutral-200); padding: 1px 4px;">.btn-*</code>/<code style="background: var(--color-neutral-200); padding: 1px 4px;">.form-field</code> on the new geometry, add the theme toggle to Settings → Appearance.</p>
+        </div>
+        <div style="background: var(--color-bg); padding: 22px 0 24px 22px;">
+          <p style="margin: 0 0 6px 0; font-family: var(--font-heading); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-700); font-weight: 700;">Step 3</p>
+          <h3 style="margin: 0 0 8px 0; font-family: var(--font-heading); font-size: 19px; font-weight: 600;">Card, feed, marketing</h3>
+          <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--color-neutral-800);">Tender card anatomy, score badges on the fit ramp, then the marketing washes and plan cards. Admin inherits with no bespoke work.</p>
+        </div>
+      </div>
+    </section>
+  </sc-if>
+
+  <footer style="max-width: 1240px; margin: 72px auto 0 auto; padding: 24px 40px 0 40px; border-top: 2px solid var(--color-divider); display: flex; justify-content: space-between; gap: 32px; flex-wrap: wrap;">
+    <p style="margin: 0; font-size: 13px; color: var(--color-neutral-700); max-width: 60ch;">Open questions for you: keep teal as the action colour or move the accent to a colder cyan; whether light mode ships as a Settings preference or follows the OS only; and whether Newsreader also carries the marketing display or stays app-side.</p>
+    <p style="margin: 0; font-size: 13px; color: var(--color-neutral-700);">BidMorrow theme spec v2 · cploutarchou/bidmorrow @ main</p>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showAudit&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Sections&quot;},&quot;showMigration&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Sections&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showAudit: this.props.showAudit ?? true,
+      showMigration: this.props.showMigration ?? true,
+    };
+  }
+}
+</script>
+</body>
+</html>

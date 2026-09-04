@@ -1,0 +1,48 @@
+# Deletes a pull request's head branch once the pull request is merged
+# (docs/deployment.md "Branching model": head branches are deleted, main is
+# the only long-lived branch). This is the repository setting "Automatically
+# delete head branches" expressed as a workflow, because that setting can
+# only be flipped in the repository's Settings page; if the owner enables it
+# the branch is already gone when this runs and the step reports that and
+# exits 0. Never touches `main`, never touches a branch that still has
+# another open pull request, and only runs for MERGED pull requests, never
+# for ones merely closed.
+name: merged-branch-cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  delete-head:
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete the merged head branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          case "$HEAD_REF" in
+            main) echo "refusing to delete main"; exit 1 ;;
+          esac
+          # Another open pull request from the same branch keeps it alive.
+          others=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls?state=open&head=${GITHUB_REPOSITORY_OWNER}:${HEAD_REF}&per_page=1" \
+            | grep -c '"number"' || true)
+          if [ "$others" != "0" ]; then
+            echo "branch $HEAD_REF still has an open pull request; leaving it"; exit 0
+          fi
+          tmp=$(mktemp -d); cd "$tmp"; git init -q
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$remote" "$HEAD_REF" >/dev/null 2>&1; then
+            git push "$remote" --delete "$HEAD_REF" && echo "deleted $HEAD_REF after #${PR_NUMBER} merged"
+          else
+            echo "branch $HEAD_REF already gone (repository auto-delete or manual); nothing to do"
+          fi

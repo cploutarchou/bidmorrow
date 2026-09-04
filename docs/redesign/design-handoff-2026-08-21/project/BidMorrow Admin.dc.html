@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/styles.css">
+<script src="_ds/modernist-c321f3ae-7509-4992-91df-e34a76eb183c/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Source+Sans+3:wght@400;500;600&family=Source+Code+Pro:wght@400;500&display=swap">
+<style>
+  :root {
+    --bm-sunken: #0a0c10; --bm-canvas: #0d1014; --bm-panel: #14181e; --bm-raised: #1b2027; --bm-overlay: #1f252d;
+    --bm-line-hair: #22282f; --bm-line: #2e353f; --bm-line-strong: #414a57;
+    --bm-ink1: #eef1f5; --bm-ink2: #a3adbb; --bm-ink3: #7a8593;
+    --bm-accent: #2ec4b0; --bm-accent-ink: #04211d; --bm-accent-text: #6fe0d0;
+    --bm-accent-tint: rgba(46,196,176,0.12); --bm-accent-line: rgba(46,196,176,0.34);
+    --bm-caution: #e8a33d; --bm-caution-tint: rgba(232,163,61,0.12);
+    --bm-risk: #ef6461; --bm-risk-tint: rgba(239,100,97,0.12);
+    --bm-head: 'Archivo', system-ui, sans-serif; --bm-ui: 'Archivo', system-ui, sans-serif; --bm-num: 'Archivo', system-ui, sans-serif; --bm-code: 'Source Code Pro', ui-monospace, monospace;
+    --bm-shadow: 0 40px 100px -24px rgba(0,0,0,0.7);
+  }
+  [data-bm-theme='light'] {
+    --bm-sunken: #eceff1; --bm-canvas: #f7f8f9; --bm-panel: #ffffff; --bm-raised: #ffffff; --bm-overlay: #ffffff;
+    --bm-line-hair: #e6e9ec; --bm-line: #d5dae0; --bm-line-strong: #b3bcc6;
+    --bm-ink1: #14181d; --bm-ink2: #4d5661; --bm-ink3: #6b7480;
+    --bm-accent: #0f7d6f; --bm-accent-ink: #ffffff; --bm-accent-text: #0b6a5e;
+    --bm-accent-tint: rgba(15,125,111,0.10); --bm-accent-line: rgba(15,125,111,0.28);
+    --bm-caution: #a16207; --bm-caution-tint: rgba(161,98,7,0.10);
+    --bm-risk: #c0392f; --bm-risk-tint: rgba(192,57,47,0.10);
+    --bm-shadow: 0 34px 80px -26px rgba(20,24,29,0.24);
+  }
+  [data-bm-type='franklin'] { --bm-head: 'Libre Franklin', system-ui, sans-serif; --bm-ui: 'Libre Franklin', system-ui, sans-serif; --bm-num: 'Libre Franklin', system-ui, sans-serif; }
+  [data-bm-type='source'] { --bm-head: 'Source Serif 4', Georgia, serif; --bm-ui: 'Source Sans 3', system-ui, sans-serif; --bm-num: 'Source Sans 3', system-ui, sans-serif; }
+  @keyframes bm-fade-up { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  body { margin: 0; background: var(--bm-canvas); font-variant-numeric: tabular-nums; -webkit-text-size-adjust: 100%; }
+  a { color: var(--bm-accent-text); text-decoration: none; }
+  a:hover { color: var(--bm-accent); text-decoration: underline; }
+  input:focus-visible, button:focus-visible, textarea:focus-visible { outline: 2px solid var(--bm-accent); outline-offset: 2px; }
+  @media (max-width: 1040px) { [data-admin-split] { grid-template-columns: 1fr !important; } [data-admin-rail] { position: static !important; } }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+
+<div data-bm-theme="{{ theme }}" data-bm-type="{{ typeface }}" style="background: var(--bm-canvas); color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 15px; min-height: 100vh;">
+
+  <header style="border-bottom: 1px solid var(--bm-line); background: var(--bm-panel);">
+    <div style="max-width: 1560px; margin: 0 auto; padding: 14px clamp(14px, 2.5vw, 26px); display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
+      <svg width="24" height="24" viewBox="0 0 26 26" fill="none" role="img" aria-hidden="true" focusable="false" style="color: var(--bm-ink1); flex: 0 0 auto;">
+        <rect x="6.5" y="2.5" width="13" height="6" rx="3" fill="currentColor" opacity="0.28"></rect>
+        <rect x="4" y="9.5" width="18" height="6" rx="3" fill="currentColor" opacity="0.55"></rect>
+        <rect x="1.5" y="16.5" width="23" height="7" rx="3.5" fill="url(#bm-admin-grad)"></rect>
+        <defs><linearGradient id="bm-admin-grad" x1="1.5" y1="16.5" x2="24.5" y2="23.5" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#35D3C0"></stop><stop offset="1" stop-color="#1FA899"></stop></linearGradient></defs>
+      </svg>
+      <div style="display: grid; gap: 3px;">
+        <p style="margin: 0; font-family: var(--bm-head); font-size: 16px; font-weight: 600; letter-spacing: -0.01em;">BidMorrow — Internal Admin</p>
+        <p style="margin: 0; font-family: var(--bm-code); font-size: 11px; letter-spacing: 0.04em; color: var(--bm-ink3);">Internal ops tooling — not a customer surface. Every request here is audited.</p>
+      </div>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <span style="font-family: var(--bm-code); font-size: 11.5px; color: {{ ingestPillInk }}; border: 1px solid {{ ingestPillLine }}; background: {{ ingestPillBg }}; border-radius: 999px; padding: 6px 12px;">{{ ingestPill }}</span>
+        <span style="font-family: var(--bm-code); font-size: 11.5px; color: {{ digestPillInk }}; border: 1px solid {{ digestPillLine }}; background: {{ digestPillBg }}; border-radius: 999px; padding: 6px 12px;">{{ digestPill }}</span>
+        <span style="font-family: var(--bm-code); font-size: 11.5px; color: var(--bm-ink2); border: 1px solid var(--bm-line-hair); border-radius: 999px; padding: 6px 12px;">{{ auditPill }}</span>
+        <button type="button" onClick="{{ onToggleTheme }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); border-radius: 999px; height: 32px; padding: 0 13px; color: var(--bm-ink2); font-family: var(--bm-ui); font-size: 12.5px; cursor: pointer;">{{ themeLabel }}</button>
+        <button type="button" onClick="{{ onResetDemo }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line-hair); border-radius: 999px; height: 32px; padding: 0 13px; color: var(--bm-ink3); font-family: var(--bm-ui); font-size: 12.5px; cursor: pointer;">Reset state</button>
+      </div>
+    </div>
+  </header>
+
+  <div data-admin-split="true" style="max-width: 1560px; margin: 0 auto; padding: 0 clamp(14px, 2.5vw, 26px) 64px; display: grid; grid-template-columns: 216px 1fr; gap: clamp(18px, 2.4vw, 34px); align-items: start;">
+
+    <nav aria-label="Admin sections" data-admin-rail="true" style="position: sticky; top: 0; padding: 22px 0 0; display: grid; gap: 2px; align-content: start;">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="10">
+        <button type="button" onClick="{{ n.onClick }}" style="appearance: none; text-align: left; background: {{ n.bg }}; border: 0; border-left: 2px solid {{ n.mark }}; color: {{ n.ink }}; padding: 9px 12px; font-family: var(--bm-ui); font-size: 13.5px; cursor: pointer; display: flex; justify-content: space-between; gap: 10px; align-items: center;">
+          <span>{{ n.label }}</span>
+          <span style="font-family: var(--bm-code); font-size: 11px; color: var(--bm-ink3);">{{ n.count }}</span>
+        </button>
+      </sc-for>
+    </nav>
+
+    <main style="padding: 22px 0 0; display: grid; gap: 20px; min-width: 0;">
+
+      <div style="display: grid; gap: 6px;">
+        <h1 style="margin: 0; font-family: var(--bm-head); font-size: 26px; font-weight: 600; letter-spacing: -0.02em;">{{ sectionTitle }}</h1>
+        <p style="margin: 0; max-width: 86ch; font-size: 13.5px; line-height: 1.55; color: var(--bm-ink2);">{{ sectionNote }}</p>
+      </div>
+
+      <sc-if value="{{ flash }}" hint-placeholder-val="{{ false }}">
+        <p role="status" style="margin: 0; background: var(--bm-accent-tint); border: 1px solid var(--bm-accent-line); border-radius: 12px; padding: 10px 13px; font-family: var(--bm-code); font-size: 12.5px; color: var(--bm-ink1); animation: bm-fade-up 260ms ease-out both;">{{ flashText }}</p>
+      </sc-if>
+
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+        <div style="display: grid; gap: 16px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); gap: 12px;">
+            <sc-for list="{{ healthCards }}" as="c" hint-placeholder-count="6">
+              <div style="background: var(--bm-panel); border: 1px solid {{ c.line }}; border-radius: 14px; padding: 14px 16px; display: grid; gap: 6px; align-content: start;">
+                <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">{{ c.label }}</p>
+                <p style="margin: 0; font-family: var(--bm-num); font-size: 21px; font-weight: 600; color: {{ c.ink }};">{{ c.value }}</p>
+                <p style="margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--bm-ink2);">{{ c.note }}</p>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+            <sc-for list="{{ usageCounts }}" as="u" hint-placeholder-count="5">
+              <div style="background: var(--bm-panel); padding: 13px 15px; display: grid; gap: 4px;">
+                <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">{{ u.label }}</p>
+                <p style="margin: 0; font-family: var(--bm-num); font-size: 19px; font-weight: 600;">{{ u.value }}</p>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hasSearch }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap;">
+          <label style="display: grid; gap: 6px;">
+            <span style="font-size: 12px; color: var(--bm-ink2);">{{ searchLabel }}</span>
+            <input value="{{ searchValue }}" onChange="{{ onSearch }}" placeholder="{{ searchPlaceholder }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 9px 12px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 13.5px; width: 300px; max-width: 100%;">
+          </label>
+          <span style="font-family: var(--bm-code); font-size: 11.5px; color: var(--bm-ink3); padding-bottom: 10px;">{{ searchCount }}</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hasStatusFilter }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; gap: 7px; flex-wrap: wrap;">
+          <sc-for list="{{ statusOptions }}" as="s" hint-placeholder-count="6">
+            <button type="button" onClick="{{ s.onClick }}" style="appearance: none; background: {{ s.bg }}; border: 1px solid {{ s.line }}; color: {{ s.ink }}; border-radius: 999px; padding: 6px 12px; font-family: var(--bm-code); font-size: 11.5px; cursor: pointer;">{{ s.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isIngestion }}" hint-placeholder-val="{{ false }}">
+        <div style="display: grid; gap: 14px;">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" onClick="{{ onArmIngestToggle }}" style="appearance: none; background: transparent; border: 1px solid {{ ingestBtnLine }}; color: {{ ingestBtnInk }}; border-radius: 10px; padding: 9px 15px; font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">{{ ingestToggleLabel }}</button>
+            <button type="button" onClick="{{ onArmScope }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); color: var(--bm-ink1); border-radius: 10px; padding: 9px 15px; font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">Update CPV scope</button>
+            <button type="button" onClick="{{ onArmBackfill }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); color: var(--bm-ink1); border-radius: 10px; padding: 9px 15px; font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">Run backfill</button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px;">
+            <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 15px 16px; display: grid; gap: 11px; align-content: start;">
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">CPV scope</p>
+              <label style="display: grid; gap: 6px;">
+                <span style="font-size: 12px; color: var(--bm-ink2);">CPV families (max 20, each 2–8 chars)</span>
+                <input value="{{ scopeFamilies }}" onChange="{{ onScopeFamilies }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 9px 12px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px; width: 100%;">
+              </label>
+              <label style="display: grid; gap: 6px;">
+                <span style="font-size: 12px; color: var(--bm-ink2);">Countries (2-letter codes, blank = all)</span>
+                <input value="{{ scopeCountries }}" onChange="{{ onScopeCountries }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 9px 12px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px; width: 100%;">
+              </label>
+              <p style="margin: 0; font-size: 12.5px; line-height: 1.5; color: {{ scopeInk }};">{{ scopeMessage }}</p>
+            </div>
+            <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 15px 16px; display: grid; gap: 11px; align-content: start;">
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Backfill window</p>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <label style="display: grid; gap: 6px;">
+                  <span style="font-size: 12px; color: var(--bm-ink2);">From</span>
+                  <input type="date" value="{{ backfillFrom }}" onChange="{{ onBackfillFrom }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 8px 11px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px;">
+                </label>
+                <label style="display: grid; gap: 6px;">
+                  <span style="font-size: 12px; color: var(--bm-ink2);">To</span>
+                  <input type="date" value="{{ backfillTo }}" onChange="{{ onBackfillTo }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 8px 11px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px;">
+                </label>
+              </div>
+              <p style="margin: 0; font-size: 12.5px; line-height: 1.5; color: {{ backfillInk }};">{{ backfillMessage }}</p>
+            </div>
+            <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 15px 16px; display: grid; gap: 9px; align-content: start;">
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Per-notice fetch retries</p>
+              <sc-for list="{{ retryCounts }}" as="r" hint-placeholder-count="3">
+                <div style="display: flex; justify-content: space-between; gap: 12px; align-items: baseline;">
+                  <span style="font-size: 13px; color: var(--bm-ink2);">{{ r.label }}</span>
+                  <span style="font-family: var(--bm-num); font-size: 16px; font-weight: 600; color: {{ r.ink }};">{{ r.value }}</span>
+                </div>
+              </sc-for>
+              <p style="margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--bm-ink3);">Render-pending skips are counted apart from genuine fetch failures — a slow origin is not evidence of refusal.</p>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isMatching }}" hint-placeholder-val="{{ false }}">
+        <div style="display: grid; gap: 14px;">
+          <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+            <label style="display: grid; gap: 6px;">
+              <span style="font-size: 12px; color: var(--bm-ink2);">Organization ID</span>
+              <input value="{{ traceOrg }}" onChange="{{ onTraceOrg }}" placeholder="org_3f1c" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 9px 12px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px; width: 210px;">
+            </label>
+            <label style="display: grid; gap: 6px;">
+              <span style="font-size: 12px; color: var(--bm-ink2);">Lot ID</span>
+              <input value="{{ traceLot }}" onChange="{{ onTraceLot }}" placeholder="lot_88d0" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 9px 12px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px; width: 210px;">
+            </label>
+            <button type="button" onClick="{{ onTrace }}" style="appearance: none; background: var(--bm-accent); color: var(--bm-accent-ink); border: 0; border-radius: 10px; padding: 10px 18px; font-family: var(--bm-ui); font-size: 13px; font-weight: 500; cursor: pointer;">Trace</button>
+            <button type="button" onClick="{{ onTraceExample }}" style="appearance: none; background: transparent; border: 0; color: var(--bm-ink3); font-family: var(--bm-ui); font-size: 12.5px; text-decoration: underline; cursor: pointer; padding-bottom: 10px;">Use a known pair</button>
+          </div>
+          <sc-if value="{{ traceError }}" hint-placeholder-val="{{ false }}">
+            <p role="alert" style="margin: 0; background: var(--bm-risk-tint); border: 1px solid var(--bm-risk); border-radius: 12px; padding: 10px 13px; font-size: 13px;">{{ traceErrorText }}</p>
+          </sc-if>
+          <sc-if value="{{ traceLoaded }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+              <sc-for list="{{ traceFacts }}" as="f" hint-placeholder-count="4">
+                <div style="background: var(--bm-panel); padding: 13px 15px; display: grid; gap: 4px;">
+                  <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">{{ f.label }}</p>
+                  <p style="margin: 0; font-family: var(--bm-num); font-size: 16px; font-weight: 600; color: {{ f.ink }};">{{ f.value }}</p>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDigest }}" hint-placeholder-val="{{ false }}">
+        <div style="display: grid; gap: 14px;">
+          <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+            <button type="button" onClick="{{ onArmDigestToggle }}" style="appearance: none; background: transparent; border: 1px solid {{ digestBtnLine }}; color: {{ digestBtnInk }}; border-radius: 10px; padding: 9px 15px; font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">{{ digestToggleLabel }}</button>
+            <label style="display: grid; gap: 6px;">
+              <span style="font-size: 12px; color: var(--bm-ink2);">Preview organization</span>
+              <input value="{{ previewOrg }}" onChange="{{ onPreviewOrg }}" placeholder="org_3f1c" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 9px 12px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px; width: 190px;">
+            </label>
+            <label style="display: grid; gap: 6px;">
+              <span style="font-size: 12px; color: var(--bm-ink2);">Date</span>
+              <input type="date" value="{{ previewDate }}" onChange="{{ onPreviewDate }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 8px 11px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px;">
+            </label>
+            <button type="button" onClick="{{ onPreview }}" style="appearance: none; background: var(--bm-accent); color: var(--bm-accent-ink); border: 0; border-radius: 10px; padding: 10px 18px; font-family: var(--bm-ui); font-size: 13px; font-weight: 500; cursor: pointer;">Render preview</button>
+          </div>
+          <sc-if value="{{ previewLoaded }}" hint-placeholder-val="{{ false }}">
+            <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 15px 17px; display: grid; gap: 9px;">
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Subject</p>
+              <p style="margin: 0; font-size: 15px; font-weight: 500;">{{ previewSubject }}</p>
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Text alternative</p>
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 12.5px; line-height: 1.7; color: var(--bm-ink2); white-space: pre-wrap;">{{ previewText }}</p>
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Raw HTML source — shown as text, never injected as markup</p>
+              <p style="margin: 0; background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 10px; padding: 10px 12px; font-family: var(--bm-code); font-size: 11.5px; line-height: 1.6; color: var(--bm-ink3); white-space: pre-wrap; word-break: break-word;">{{ previewHtml }}</p>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSupport }}" hint-placeholder-val="{{ false }}">
+        <div style="display: grid; gap: 14px;">
+          <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+            <label style="display: grid; gap: 6px;">
+              <span style="font-size: 12px; color: var(--bm-ink2);">Organization ID</span>
+              <input value="{{ supportOrg }}" onChange="{{ onSupportOrg }}" placeholder="org_3f1c" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 9px 12px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px; width: 210px;">
+            </label>
+            <span style="font-family: var(--bm-code); font-size: 11.5px; color: var(--bm-ink3); padding-bottom: 10px;">{{ supportCount }}</span>
+          </div>
+          <div style="display: grid; gap: 9px;">
+            <sc-for list="{{ supportNotes }}" as="n" hint-placeholder-count="2">
+              <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 12px; padding: 12px 14px; display: grid; gap: 5px;">
+                <p style="margin: 0; font-size: 13.5px; line-height: 1.55;">{{ n.body }}</p>
+                <p style="margin: 0; font-family: var(--bm-code); font-size: 11px; color: var(--bm-ink3);">{{ n.meta }}</p>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 15px 16px; display: grid; gap: 10px;">
+            <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Add a note</p>
+            <textarea value="{{ noteDraft }}" onChange="{{ onNoteDraft }}" rows="3" placeholder="What the customer asked, and what was done." style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 10px 12px; color: var(--bm-ink1); font-family: var(--bm-ui); font-size: 13.5px; resize: vertical; width: 100%;"></textarea>
+            <button type="button" onClick="{{ onAddNote }}" disabled="{{ noteDisabled }}" style="appearance: none; background: var(--bm-accent); color: var(--bm-accent-ink); border: 0; border-radius: 10px; padding: 10px 18px; font-family: var(--bm-ui); font-size: 13px; font-weight: 500; cursor: pointer; justify-self: start;">Add note</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAudit }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+          <label style="display: grid; gap: 6px;">
+            <span style="font-size: 12px; color: var(--bm-ink2);">Action contains</span>
+            <input value="{{ auditAction }}" onChange="{{ onAuditAction }}" placeholder="admin.ingestion" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 9px 12px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px; width: 240px;">
+          </label>
+          <label style="display: grid; gap: 6px;">
+            <span style="font-size: 12px; color: var(--bm-ink2);">Since</span>
+            <input type="date" value="{{ auditSince }}" onChange="{{ onAuditSince }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 8px 11px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px;">
+          </label>
+          <span style="font-family: var(--bm-code); font-size: 11.5px; color: var(--bm-ink3); padding-bottom: 10px;">{{ auditCount }}</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isOrgDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="display: grid; gap: 14px;">
+          <button type="button" onClick="{{ onBackToOrgs }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-accent-text); font-family: var(--bm-ui); font-size: 13px; cursor: pointer; justify-self: start;">← Back to organizations</button>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: var(--bm-line-hair); border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+            <sc-for list="{{ orgFacts }}" as="f" hint-placeholder-count="5">
+              <div style="background: var(--bm-panel); padding: 13px 15px; display: grid; gap: 4px;">
+                <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">{{ f.label }}</p>
+                <p style="margin: 0; font-family: var(--bm-num); font-size: 14.5px; font-weight: 500; color: {{ f.ink }};">{{ f.value }}</p>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px;">
+            <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 15px 16px; display: grid; gap: 8px; align-content: start;">
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Members</p>
+              <sc-for list="{{ orgMembers }}" as="m" hint-placeholder-count="3">
+                <p style="margin: 0; font-family: var(--bm-code); font-size: 12.5px; color: var(--bm-ink2);">{{ m.email }}</p>
+              </sc-for>
+            </div>
+            <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 15px 16px; display: grid; gap: 8px; align-content: start;">
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Company profile (raw)</p>
+              <p style="margin: 0; font-family: var(--bm-code); font-size: 11.5px; line-height: 1.65; color: var(--bm-ink2); white-space: pre-wrap; word-break: break-word;">{{ orgProfileJson }}</p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" onClick="{{ onArmSuspend }}" style="appearance: none; background: transparent; border: 1px solid {{ suspendLine }}; color: {{ suspendInk }}; border-radius: 10px; padding: 9px 15px; font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">{{ suspendLabel }}</button>
+            <button type="button" onClick="{{ onGoOrgSupport }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); color: var(--bm-ink1); border-radius: 10px; padding: 9px 15px; font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">Support notes for this org</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ tablePresent }}" hint-placeholder-val="{{ true }}">
+        <div style="border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+          <div style="display: grid; grid-template-columns: {{ tableCols }}; gap: 14px; padding: 10px 16px; background: var(--bm-raised); border-bottom: 1px solid var(--bm-line-hair);">
+            <sc-for list="{{ tableHead }}" as="h" hint-placeholder-count="5">
+              <span style="font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--bm-ink3);">{{ h.label }}</span>
+            </sc-for>
+          </div>
+          <sc-for list="{{ tableRows }}" as="r" hint-placeholder-count="6">
+            <div onClick="{{ r.onClick }}" style="display: grid; grid-template-columns: {{ tableCols }}; gap: 14px; padding: 11px 16px; border-bottom: 1px solid var(--bm-line-hair); background: var(--bm-panel); cursor: {{ r.cursor }};">
+              <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="5">
+                <span style="font-family: var(--bm-code); font-size: 12.5px; line-height: 1.45; color: {{ c.ink }}; overflow-wrap: anywhere;">{{ c.text }}</span>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ tableEmpty }}" hint-placeholder-val="{{ false }}">
+        <p style="margin: 0; font-family: var(--bm-code); font-size: 12.5px; color: var(--bm-ink3);">{{ emptyText }}</p>
+      </sc-if>
+
+      <sc-if value="{{ hasMore }}" hint-placeholder-val="{{ false }}">
+        <button type="button" onClick="{{ onLoadMore }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); color: var(--bm-ink1); border-radius: 999px; padding: 9px 18px; font-family: var(--bm-ui); font-size: 13px; cursor: pointer; justify-self: start;">{{ loadMoreLabel }}</button>
+      </sc-if>
+
+      <sc-if value="{{ isIngestErrors }}" hint-placeholder-val="{{ false }}">
+        <div style="display: grid; gap: 10px;">
+          <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+            <label style="display: grid; gap: 6px;">
+              <span style="font-size: 12px; color: var(--bm-ink2);">Ingestion run ID</span>
+              <input value="{{ errorsRunId }}" onChange="{{ onErrorsRunId }}" placeholder="run_9c88" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 9px 12px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px; width: 210px;">
+            </label>
+            <button type="button" onClick="{{ onLoadErrors }}" style="appearance: none; background: var(--bm-accent); color: var(--bm-accent-ink); border: 0; border-radius: 10px; padding: 10px 18px; font-family: var(--bm-ui); font-size: 13px; font-weight: 500; cursor: pointer;">Load errors</button>
+            <span style="font-family: var(--bm-code); font-size: 11.5px; color: var(--bm-ink3); padding-bottom: 10px;">{{ errorsCount }}</span>
+          </div>
+          <sc-for list="{{ ingestErrors }}" as="e" hint-placeholder-count="3">
+            <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 12px; padding: 12px 14px; display: grid; gap: 7px;">
+              <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: baseline;">
+                <span style="font-family: var(--bm-code); font-size: 11.5px; color: var(--bm-risk);">{{ e.code }}</span>
+                <span style="font-family: var(--bm-code); font-size: 11.5px; color: var(--bm-ink3);">stage {{ e.stage }}</span>
+                <span style="font-family: var(--bm-code); font-size: 11.5px; color: var(--bm-ink2);">{{ e.notice }}</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.5; color: var(--bm-ink1);">{{ e.message }}</p>
+              <button type="button" onClick="{{ e.onToggle }}" style="appearance: none; background: transparent; border: 0; padding: 0; color: var(--bm-accent-text); font-family: var(--bm-ui); font-size: 12.5px; text-decoration: underline; cursor: pointer; justify-self: start;">{{ e.toggleLabel }}</button>
+              <sc-if value="{{ e.expanded }}" hint-placeholder-val="{{ false }}">
+                <p style="margin: 0; background: var(--bm-sunken); border: 1px solid var(--bm-line-hair); border-radius: 10px; padding: 10px 12px; font-family: var(--bm-code); font-size: 11.5px; line-height: 1.6; color: var(--bm-ink2); white-space: pre-wrap; word-break: break-word;">{{ e.detail }}</p>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isIngestion }}" hint-placeholder-val="{{ false }}">
+        <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 15px 16px; display: grid; gap: 12px;">
+          <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Notice lookup</p>
+          <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+            <label style="display: grid; gap: 6px;">
+              <span style="font-size: 12px; color: var(--bm-ink2);">Source notice ID</span>
+              <input value="{{ noticeQuery }}" onChange="{{ onNoticeQuery }}" placeholder="2026-OJS-158-004221" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 9px 12px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px; width: 260px;">
+            </label>
+            <button type="button" onClick="{{ onLookupNotice }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); color: var(--bm-ink1); border-radius: 10px; padding: 10px 17px; font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">Look up</button>
+            <button type="button" onClick="{{ onNoticeExample }}" style="appearance: none; background: transparent; border: 0; color: var(--bm-ink3); font-family: var(--bm-ui); font-size: 12.5px; text-decoration: underline; cursor: pointer; padding-bottom: 10px;">Use a known notice</button>
+          </div>
+          <sc-if value="{{ noticeError }}" hint-placeholder-val="{{ false }}">
+            <p role="alert" style="margin: 0; background: var(--bm-risk-tint); border: 1px solid var(--bm-risk); border-radius: 12px; padding: 10px 13px; font-size: 13px;">No notice found with that source notice ID.</p>
+          </sc-if>
+          <sc-if value="{{ noticeLoaded }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; gap: 12px;">
+              <div style="display: grid; gap: 7px;">
+                <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Versions</p>
+                <sc-for list="{{ noticeVersions }}" as="v" hint-placeholder-count="2">
+                  <div style="display: grid; gap: 3px; border-left: 2px solid var(--bm-accent-line); padding-left: 11px;">
+                    <p style="margin: 0; font-family: var(--bm-code); font-size: 12px; color: var(--bm-ink1);">{{ v.label }}</p>
+                    <p style="margin: 0; font-family: var(--bm-code); font-size: 11.5px; line-height: 1.55; color: var(--bm-ink2);">{{ v.lots }}</p>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display: grid; gap: 7px;">
+                <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Snapshot keys</p>
+                <sc-for list="{{ noticeSnapshots }}" as="s" hint-placeholder-count="2">
+                  <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: baseline;">
+                    <span style="font-family: var(--bm-code); font-size: 11.5px; color: var(--bm-ink2); overflow-wrap: anywhere;">{{ s.key }}</span>
+                    <span style="font-family: var(--bm-code); font-size: 11.5px; color: var(--bm-ink3);">{{ s.meta }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDigest }}" hint-placeholder-val="{{ false }}">
+        <div style="display: grid; gap: 10px;">
+          <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Email failures</p>
+          <div style="border: 1px solid var(--bm-line-hair); border-radius: 14px; overflow: hidden;">
+            <div style="display: grid; grid-template-columns: 1.5fr 0.9fr 0.7fr 1.1fr 1fr; gap: 14px; padding: 10px 16px; background: var(--bm-raised); border-bottom: 1px solid var(--bm-line-hair);">
+              <span style="font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--bm-ink3);">To</span>
+              <span style="font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--bm-ink3);">Kind</span>
+              <span style="font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--bm-ink3);">Provider</span>
+              <span style="font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--bm-ink3);">Error</span>
+              <span style="font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--bm-ink3);">Created</span>
+            </div>
+            <sc-for list="{{ emailFailures }}" as="f" hint-placeholder-count="3">
+              <div style="display: grid; grid-template-columns: 1.5fr 0.9fr 0.7fr 1.1fr 1fr; gap: 14px; padding: 11px 16px; border-bottom: 1px solid var(--bm-line-hair); background: var(--bm-panel);">
+                <span style="font-family: var(--bm-code); font-size: 12.5px; color: var(--bm-ink1); overflow-wrap: anywhere;">{{ f.to }}</span>
+                <span style="font-family: var(--bm-code); font-size: 12.5px; color: var(--bm-ink2);">{{ f.kind }}</span>
+                <span style="font-family: var(--bm-code); font-size: 12.5px; color: var(--bm-ink2);">{{ f.provider }}</span>
+                <span style="font-family: var(--bm-code); font-size: 12.5px; color: {{ f.ink }};">{{ f.error }}</span>
+                <span style="font-family: var(--bm-code); font-size: 12.5px; color: var(--bm-ink2);">{{ f.created }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isFlags }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ flagEditing }}" hint-placeholder-val="{{ false }}">
+          <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 15px 16px; display: grid; gap: 11px;">
+            <p style="margin: 0; font-family: var(--bm-code); font-size: 12.5px; color: var(--bm-accent-text);">{{ flagEditKey }}</p>
+            <label style="display: grid; gap: 6px;">
+              <span style="font-size: 12px; color: var(--bm-ink2);">Value (JSON)</span>
+              <input value="{{ flagEditValue }}" onChange="{{ onFlagValue }}" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 9px 12px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 13px; width: 100%;">
+            </label>
+            <p style="margin: 0; font-size: 12.5px; color: {{ flagValueInk }};">{{ flagValueHint }}</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button type="button" onClick="{{ onArmFlag }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-risk); color: var(--bm-risk); border-radius: 10px; padding: 9px 15px; font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">Update flag</button>
+              <button type="button" onClick="{{ onCancelFlag }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); color: var(--bm-ink2); border-radius: 10px; padding: 9px 15px; font-family: var(--bm-ui); font-size: 13px; cursor: pointer;">Cancel</button>
+            </div>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{ isMatching }}" hint-placeholder-val="{{ false }}">
+        <div style="background: var(--bm-panel); border: 1px solid var(--bm-line-hair); border-radius: 14px; padding: 15px 16px; display: grid; gap: 11px;">
+          <p style="margin: 0; font-family: var(--bm-code); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bm-ink3);">Recompute matches</p>
+          <div style="display: flex; gap: 7px; flex-wrap: wrap;">
+            <sc-for list="{{ idKinds }}" as="k" hint-placeholder-count="2">
+              <button type="button" onClick="{{ k.onClick }}" style="appearance: none; background: {{ k.bg }}; border: 1px solid {{ k.line }}; color: {{ k.ink }}; border-radius: 999px; padding: 6px 13px; font-family: var(--bm-code); font-size: 11.5px; cursor: pointer;">{{ k.label }}</button>
+            </sc-for>
+          </div>
+          <textarea value="{{ recomputeIds }}" onChange="{{ onRecomputeIds }}" rows="3" placeholder="notice_1a2b, notice_3c4d …" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 10px 12px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 12.5px; resize: vertical; width: 100%;"></textarea>
+          <p style="margin: 0; font-size: 12.5px; color: {{ recomputeInk }};">{{ recomputeMessage }}</p>
+          <button type="button" onClick="{{ onArmRecompute }}" style="appearance: none; background: transparent; border: 1px solid var(--bm-line); color: var(--bm-ink1); border-radius: 10px; padding: 9px 15px; font-family: var(--bm-ui); font-size: 13px; cursor: pointer; justify-self: start;">Enqueue recompute</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ pending }}" hint-placeholder-val="{{ false }}">
+        <div style="position: sticky; bottom: 16px; background: var(--bm-overlay); border: 1px solid {{ pendingLine }}; border-radius: 16px; padding: 15px 17px; display: grid; gap: 11px; box-shadow: var(--bm-shadow); animation: bm-fade-up 220ms ease-out both;">
+          <div style="display: grid; gap: 4px;">
+            <p style="margin: 0; font-size: 13.5px; font-weight: 500;">{{ pendingLabel }}</p>
+            <p style="margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--bm-ink2);">{{ pendingNote }}</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <span style="font-family: var(--bm-code); font-size: 12px; color: var(--bm-ink3);">Type {{ pendingConfirm }} to confirm</span>
+            <input value="{{ typed }}" onChange="{{ onTyped }}" autoComplete="off" style="background: var(--bm-sunken); border: 1px solid var(--bm-line); border-radius: 10px; padding: 9px 12px; color: var(--bm-ink1); font-family: var(--bm-code); font-size: 12.5px; width: 280px; max-width: 100%;">
+            <button type="button" onClick="{{ onConfirm }}" disabled="{{ confirmDisabled }}" style="appearance: none; background: {{ confirmBg }}; border: 1px solid {{ confirmLine }}; color: {{ confirmInk }}; border-radius: 10px; padding: 9px 17px; font-family: var(--bm-ui); font-size: 13px; font-weight: 500; cursor: pointer;">{{ pendingLabel }}</button>
+            <button type="button" onClick="{{ onCancelPending }}" style="appearance: none; background: transparent; border: 0; color: var(--bm-ink3); font-family: var(--bm-ui); font-size: 12.5px; text-decoration: underline; cursor: pointer;">Cancel</button>
+          </div>
+        </div>
+      </sc-if>
+    </main>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1520, &quot;height&quot;: 1000}, &quot;theme&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;dark&quot;, &quot;light&quot;], &quot;default&quot;: &quot;dark&quot;, &quot;tsType&quot;: &quot;'dark' | 'light'&quot;}, &quot;typeface&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;archivo&quot;, &quot;franklin&quot;, &quot;source&quot;], &quot;default&quot;: &quot;archivo&quot;, &quot;tsType&quot;: &quot;'archivo' | 'franklin' | 'source'&quot;}}">
+const STORE_KEY = 'bm-admin-ops-v1';
+const DAY = 86400000;
+const NOW = Date.UTC(2026, 7, 20, 6, 40);
+
+class Component extends DCLogic {
+  state = {
+    theme: null, typeface: null, section: 'dashboard', orgId: null,
+    search: '', subStatus: 'all', ingestView: 'runs',
+    scopeFamilies: '72, 48, 79417000', scopeCountries: 'CY, GR, IE, MT',
+    backfillFrom: '2026-08-01', backfillTo: '2026-08-14',
+    errorsRunId: 'run_9c88', errorsLoaded: true, expandedErrorId: null,
+    noticeQuery: '', noticeLoaded: false, noticeError: false,
+    traceOrg: '', traceLot: '', traceLoaded: false, traceError: false,
+    idKind: 'noticeIds', recomputeIds: '',
+    previewOrg: '', previewDate: '2026-08-19', previewLoaded: false,
+    supportOrg: 'org_3f1c', noteDraft: '',
+    auditAction: '', auditSince: '',
+    flagEditKey: null, flagEditValue: '',
+    pending: null, typed: '', flash: null, limit: 6,
+    ops: Component.readOps(),
+  };
+
+  static defaultOps() {
+    return {
+      ingestionPaused: false, digestPaused: false,
+      suspended: {},
+      flags: {
+        'ingestion.enabled': 'true', 'digest.enabled': 'true', 'matching.engine.version': '"2.4.0"',
+        'scoring.neutral.unknown': 'true', 'signup.open': 'false', 'trial.days': '14',
+      },
+      notes: {
+        org_3f1c: [{ id: 'note_1', body: 'Asked whether CPV 45* will be ingested — explained the published scope and logged the request.', author: 'usr_ops_2', at: NOW - 2 * DAY }],
+        org_91ab: [{ id: 'note_2', body: 'Card declined twice; customer switching to SEPA. Watch the past_due state.', author: 'usr_ops_1', at: NOW - 5 * DAY }],
+      },
+      audit: [
+        { id: 'ae_seed3', action: 'admin.flag.update', actor: 'usr_ops_1', target: 'flag (signup.open)', org: null, before: 'true', after: 'false', at: NOW - 26 * 3600000 },
+        { id: 'ae_seed2', action: 'admin.org.unsuspend', actor: 'usr_ops_2', target: 'organization (org_7cd2)', org: 'org_7cd2', before: 'suspended', after: 'active', at: NOW - 3 * DAY },
+        { id: 'ae_seed1', action: 'admin.ingestion.backfill', actor: 'usr_ops_1', target: 'system (ingestion)', org: null, before: '—', after: '6 windows', at: NOW - 4 * DAY },
+      ],
+    };
+  }
+
+  static readOps() {
+    try {
+      const raw = window.localStorage.getItem(STORE_KEY);
+      if (raw === null) return Component.defaultOps();
+      return Object.assign(Component.defaultOps(), JSON.parse(raw));
+    } catch { return Component.defaultOps(); }
+  }
+
+  writeOps(next) {
+    this.setState({ ops: next });
+    try { window.localStorage.setItem(STORE_KEY, JSON.stringify(next)); } catch { /* preview sandbox */ }
+  }
+
+  th() { return this.state.theme ?? (this.props.theme ?? 'dark'); }
+
+  static orgs() {
+    return [
+      { id: 'org_3f1c', name: 'Northwind Systems', status: 'active', members: 4, plan: 'founding', subStatus: 'active', periodEnd: NOW + 12 * DAY, created: NOW - 88 * DAY, matches: 1412, saved: 63, feedback: 27, cancels: false },
+      { id: 'org_91ab', name: 'Kyrenia Digital', status: 'active', members: 2, plan: 'founding', subStatus: 'past_due', periodEnd: NOW + 3 * DAY, created: NOW - 61 * DAY, matches: 803, saved: 21, feedback: 9, cancels: false },
+      { id: 'org_7cd2', name: 'Larnaca Civil Works', status: 'active', members: 7, plan: 'standard', subStatus: 'active', periodEnd: NOW + 25 * DAY, created: NOW - 140 * DAY, matches: 2210, saved: 118, feedback: 44, cancels: true },
+      { id: 'org_44e8', name: 'Aegean Facilities', status: 'active', members: 3, plan: 'standard', subStatus: 'trialing', periodEnd: NOW + 9 * DAY, created: NOW - 11 * DAY, matches: 96, saved: 4, feedback: 1, cancels: false },
+      { id: 'org_2b60', name: 'Meridian Health IT', status: 'active', members: 5, plan: 'founding', subStatus: 'active', periodEnd: NOW + 19 * DAY, created: NOW - 47 * DAY, matches: 1180, saved: 52, feedback: 18, cancels: false },
+      { id: 'org_08fa', name: 'Paphos Transport Co', status: 'active', members: 1, plan: null, subStatus: null, periodEnd: null, created: NOW - 4 * DAY, matches: 0, saved: 0, feedback: 0, cancels: false },
+      { id: 'org_d517', name: 'Thalassa Catering', status: 'active', members: 2, plan: 'standard', subStatus: 'canceled', periodEnd: NOW - 6 * DAY, created: NOW - 210 * DAY, matches: 640, saved: 15, feedback: 6, cancels: false },
+    ];
+  }
+
+  static users() {
+    return [
+      { id: 'usr_a71f', email: 'elena@northwind-eu.example', verified: true, orgs: ['org_3f1c'] },
+      { id: 'usr_b22c', email: 'tender.desk@northwind-eu.example', verified: true, orgs: ['org_3f1c'] },
+      { id: 'usr_c40d', email: 'marios@kyrenia-digital.example', verified: true, orgs: ['org_91ab'] },
+      { id: 'usr_d18e', email: 'bids@larnaca-civil.example', verified: true, orgs: ['org_7cd2'] },
+      { id: 'usr_e93a', email: 'ops@aegean-facilities.example', verified: false, orgs: ['org_44e8'] },
+      { id: 'usr_f5b1', email: 'procurement@meridian-health.example', verified: true, orgs: ['org_2b60'] },
+      { id: 'usr_0c7d', email: 'new.signup@paphos-transport.example', verified: false, orgs: [] },
+    ];
+  }
+
+  static runs() {
+    return [
+      { id: 'run_9f21', status: 'succeeded', from: '2026-08-20', to: '2026-08-20', seen: 1284, upserted: 1190, versions: 1204, lots: 1618, scored: 4412, errors: 3, fetchFailed: 2, renderPending: 1, started: NOW - 2 * 3600000 },
+      { id: 'run_9e04', status: 'succeeded', from: '2026-08-19', to: '2026-08-19', seen: 1362, upserted: 1301, versions: 1318, lots: 1744, scored: 4890, errors: 0, fetchFailed: 0, renderPending: 0, started: NOW - 26 * 3600000 },
+      { id: 'run_9c88', status: 'partial', from: '2026-08-18', to: '2026-08-18', seen: 1190, upserted: 1044, versions: 1051, lots: 1402, scored: 3980, errors: 21, fetchFailed: 14, renderPending: 7, started: NOW - 50 * 3600000 },
+      { id: 'run_9b13', status: 'succeeded', from: '2026-08-17', to: '2026-08-17', seen: 402, upserted: 380, versions: 384, lots: 470, scored: 1320, errors: 1, fetchFailed: 1, renderPending: 0, started: NOW - 74 * 3600000 },
+      { id: 'run_9a02', status: 'failed', from: '2026-08-16', to: '2026-08-16', seen: 88, upserted: 0, versions: 0, lots: 0, scored: 0, errors: 88, fetchFailed: 0, renderPending: 0, started: NOW - 98 * 3600000 },
+    ];
+  }
+
+  static digestRuns() {
+    return [
+      { id: 'dg_5501', org: 'org_3f1c', date: '2026-08-19', status: 'sent', matches: 7, sent: NOW - 23 * 3600000 },
+      { id: 'dg_5502', org: 'org_7cd2', date: '2026-08-19', status: 'sent', matches: 12, sent: NOW - 23 * 3600000 },
+      { id: 'dg_5503', org: 'org_91ab', date: '2026-08-19', status: 'skipped_no_matches', matches: 0, sent: null },
+      { id: 'dg_5504', org: 'org_2b60', date: '2026-08-19', status: 'failed', matches: 4, sent: null },
+      { id: 'dg_5505', org: 'org_44e8', date: '2026-08-18', status: 'sent', matches: 2, sent: NOW - 47 * 3600000 },
+    ];
+  }
+
+  static failures() {
+    return [
+      { id: 'ef_31', org: 'org_2b60', kind: 'daily_digest', to: 'procurement@meridian-health.example', provider: 'resend', status: 'bounced', error: 'mailbox full', at: NOW - 23 * 3600000 },
+      { id: 'ef_30', org: null, kind: 'verify_email', to: 'ops@aegean-facilities.example', provider: 'resend', status: 'deferred', error: 'greylisted, retry scheduled', at: NOW - 31 * 3600000 },
+      { id: 'ef_29', org: 'org_d517', kind: 'daily_digest', to: 'kitchen@thalassa-catering.example', provider: 'resend', status: 'dropped', error: 'suppression list', at: NOW - 40 * 3600000 },
+    ];
+  }
+
+  static retries() {
+    return [
+      { id: 'fr_88', notice: '2026-OJS-158-004221', attempts: 3, next: NOW + 1800000, code: 'XML_FETCH_502', status: 'pending', date: '2026-08-18', updated: NOW - 1800000 },
+      { id: 'fr_87', notice: '2026-OJS-158-004102', attempts: 2, next: NOW + 900000, code: 'RENDER_PENDING', status: 'pending', date: '2026-08-18', updated: NOW - 2700000 },
+      { id: 'fr_86', notice: '2026-OJS-157-003940', attempts: 4, next: NOW - 3600000, code: 'XML_FETCH_TIMEOUT', status: 'recovered', date: '2026-08-17', updated: NOW - 3600000 },
+      { id: 'fr_85', notice: '2026-OJS-157-003888', attempts: 6, next: NOW - 7200000, code: 'XML_FETCH_404', status: 'abandoned', date: '2026-08-17', updated: NOW - 7200000 },
+    ];
+  }
+
+  static ingestionErrors() {
+    return {
+      run_9c88: [
+        { id: 'ie_701', stage: 'fetch_xml', code: 'XML_FETCH_502', notice: '2026-OJS-158-004221', message: 'TED returned 502 for the notice XML after 3 attempts; recorded and continued.', detail: '{\n  "attempt": 3,\n  "status": 502,\n  "url": "https://ted.europa.eu/…/004221.xml",\n  "queuedRetry": true\n}' },
+        { id: 'ie_702', stage: 'fetch_xml', code: 'RENDER_PENDING', notice: '2026-OJS-158-004102', message: 'Origin accepted the request but the render was still pending when the window closed.', detail: '{\n  "status": 202,\n  "renderAttempts": 4,\n  "failCeiling": null\n}' },
+        { id: 'ie_703', stage: 'parse_lots', code: 'LOT_MISSING_CPV', notice: '2026-OJS-158-003997', message: 'Lot 2 published no CPV code; the lot was stored and scored with the documented neutral value.', detail: null },
+        { id: 'ie_704', stage: 'score', code: 'PROFILE_STALE', notice: '2026-OJS-158-003980', message: 'Organization profile changed mid-run; the affected lots were re-queued for scoring.', detail: '{\n  "organizationId": "org_7cd2",\n  "requeued": 12\n}' },
+      ],
+      run_9f21: [
+        { id: 'ie_690', stage: 'fetch_xml', code: 'XML_FETCH_TIMEOUT', notice: '2026-OJS-159-004410', message: 'Read timeout at 20s; queued for bounded retry.', detail: '{\n  "timeoutMs": 20000,\n  "attempt": 1\n}' },
+        { id: 'ie_691', stage: 'parse_lots', code: 'LOT_TITLE_EMPTY', notice: '2026-OJS-159-004388', message: 'Lot title was empty in the source XML; stored with the notice title as fallback.', detail: null },
+        { id: 'ie_692', stage: 'snapshot', code: 'R2_PUT_RETRIED', notice: '2026-OJS-159-004350', message: 'Snapshot upload retried once, then succeeded.', detail: '{\n  "bucket": "notices",\n  "attempts": 2\n}' },
+      ],
+      run_9a02: [
+        { id: 'ie_650', stage: 'auth', code: 'TED_API_KEY_REJECTED', notice: null, message: 'Every request in the window was rejected: the source API key was refused. Run aborted.', detail: '{\n  "status": 401,\n  "noticesAttempted": 88,\n  "aborted": true\n}' },
+      ],
+    };
+  }
+
+  static noticeBundle() {
+    return {
+      id: '2026-OJS-158-004221',
+      versions: [
+        { label: 'Version 2 — published 2026-08-18, 3 lots', lots: '1: Managed IT services, Ministry of Health; 2: Network refresh, regional offices; 3: Helpdesk, out of hours' },
+        { label: 'Version 1 — published 2026-08-14, 2 lots', lots: '1: Managed IT services, Ministry of Health; 2: Network refresh, regional offices' },
+      ],
+      snapshots: [
+        { key: 'notices/2026/08/2026-OJS-158-004221.v2.xml', meta: '412,880 bytes · not deleted' },
+        { key: 'notices/2026/08/2026-OJS-158-004221.v1.xml', meta: '398,214 bytes · deleted 2026-08-19 04:00Z' },
+      ],
+    };
+  }
+
+  fmt(ms) {
+    if (ms === null || ms === undefined) return '—';
+    const d = new Date(ms);
+    const p = (n) => String(n).padStart(2, '0');
+    return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) + ' ' + p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + 'Z';
+  }
+
+  audit(action, target, org, before, after) {
+    const ops = this.state.ops;
+    const event = { id: 'ae_' + Math.random().toString(36).slice(2, 8), action, actor: 'usr_ops_1', target, org, before, after, at: Date.now() };
+    return Object.assign({}, ops, { audit: [event].concat(ops.audit) });
+  }
+
+  arm(label, confirmText, note, run, danger) {
+    this.setState({ pending: { label, confirmText, note, run, danger: danger === true }, typed: '', flash: null });
+  }
+
+  fire() {
+    const p = this.state.pending;
+    if (p === null || this.state.typed !== p.confirmText) return;
+    const message = p.run();
+    this.setState({ pending: null, typed: '', flash: message });
+    window.setTimeout(() => this.setState((s) => (s.flash === message ? { flash: null } : {})), 4200);
+  }
+
+  parseIds(text) {
+    return text.split(/[\s,]+/).map((s) => s.trim()).filter((s) => s.length > 0);
+  }
+
+  scopeCheck() {
+    const families = this.parseIds(this.state.scopeFamilies);
+    const countries = this.parseIds(this.state.scopeCountries);
+    if (families.length === 0) return { ok: false, msg: 'At least one CPV family is required.' };
+    if (families.length > 20) return { ok: false, msg: 'CPV families are bounded to 20 (has ' + families.length + ').' };
+    const bad = families.find((f) => f.length < 2 || f.length > 8);
+    if (bad !== undefined) return { ok: false, msg: '"' + bad + '" must be 2–8 characters.' };
+    const badC = countries.find((c) => c.length !== 2);
+    if (badC !== undefined) return { ok: false, msg: '"' + badC + '" must be a 2-letter country code.' };
+    return { ok: true, msg: families.length + ' famil' + (families.length === 1 ? 'y' : 'ies') + ', ' + (countries.length === 0 ? 'all countries' : countries.length + ' countries') + ' — valid.' };
+  }
+
+  backfillCheck() {
+    const { backfillFrom, backfillTo } = this.state;
+    const re = /^\d{4}-\d{2}-\d{2}$/;
+    if (!re.test(backfillFrom) || !re.test(backfillTo)) return { ok: false, msg: 'Dates must be in YYYY-MM-DD format.' };
+    const a = Date.parse(backfillFrom + 'T00:00:00Z');
+    const b = Date.parse(backfillTo + 'T00:00:00Z');
+    if (Number.isNaN(a) || Number.isNaN(b)) return { ok: false, msg: 'Dates must be valid calendar dates.' };
+    if (b < a) return { ok: false, msg: 'End date must not be before start date.' };
+    const days = Math.round((b - a) / DAY) + 1;
+    if (days > 90) return { ok: false, msg: 'Range is bounded to 90 days (requested ' + days + ').' };
+    return { ok: true, days, msg: days + ' day window — ' + days + ' ingestion messages enqueued on confirm.' };
+  }
+
+  recomputeCheck() {
+    const ids = this.parseIds(this.state.recomputeIds);
+    const cap = this.state.idKind === 'noticeIds' ? 100 : 500;
+    if (ids.length === 0) return { ok: false, msg: 'Paste at least one ID.' };
+    if (ids.length > cap) return { ok: false, msg: 'Bounded to ' + cap + ' IDs (has ' + ids.length + ').' };
+    return { ok: true, count: ids.length, msg: ids.length + ' ID' + (ids.length === 1 ? '' : 's') + ' parsed — within the ' + cap + ' cap.' };
+  }
+
+  visibleOrgs() {
+    const q = this.state.search.trim().toLowerCase();
+    const sus = this.state.ops.suspended;
+    return Component.orgs()
+      .map((o) => Object.assign({}, o, { suspendedAt: sus[o.id] ?? null }))
+      .filter((o) => q.length === 0 || o.name.toLowerCase().includes(q) || o.id.includes(q));
+  }
+
+  auditRows() {
+    const { auditAction, auditSince } = this.state;
+    const sinceMs = auditSince.length > 0 ? Date.parse(auditSince + 'T00:00:00Z') : null;
+    return this.state.ops.audit.filter((e) => {
+      if (auditAction.trim().length > 0 && !e.action.includes(auditAction.trim())) return false;
+      if (sinceMs !== null && e.at < sinceMs) return false;
+      return true;
+    });
+  }
+
+  renderVals() {
+    const st = this.state;
+    const ops = st.ops;
+    const section = st.section;
+    const dark = this.th() !== 'light';
+    const ink = { ok: 'var(--bm-accent-text)', warn: 'var(--bm-caution)', bad: 'var(--bm-risk)', dim: 'var(--bm-ink3)', base: 'var(--bm-ink2)', strong: 'var(--bm-ink1)' };
+    const statusInk = (s) => (s === 'succeeded' || s === 'sent' || s === 'active' || s === 'recovered' ? ink.ok : s === 'partial' || s === 'past_due' || s === 'trialing' || s === 'pending' || s === 'deferred' ? ink.warn : s === 'failed' || s === 'abandoned' || s === 'bounced' || s === 'dropped' || s === 'canceled' ? ink.bad : ink.base);
+    const cell = (text, tone) => ({ text: text === null || text === undefined ? '—' : String(text), ink: tone ?? ink.base });
+
+    const orgs = this.visibleOrgs();
+    const org = st.orgId !== null ? orgs.concat(Component.orgs().map((o) => Object.assign({}, o, { suspendedAt: ops.suspended[o.id] ?? null }))).find((o) => o.id === st.orgId) ?? null : null;
+    const runs = Component.runs();
+    const users = Component.users().filter((u) => st.search.trim().length === 0 || u.email.toLowerCase().includes(st.search.trim().toLowerCase()));
+    const subs = Component.orgs().filter((o) => o.subStatus !== null).filter((o) => st.subStatus === 'all' || o.subStatus === st.subStatus);
+    const retries = Component.retries();
+    const notes = ops.notes[st.supportOrg.trim()] ?? [];
+    const auditRows = this.auditRows();
+    const flagKeys = Object.keys(ops.flags);
+    const scope = this.scopeCheck();
+    const backfill = this.backfillCheck();
+    const recompute = this.recomputeCheck();
+
+    const titles = {
+      dashboard: 'Dashboard', orgs: 'Organizations', orgDetail: org !== null ? org.name : 'Organization',
+      users: 'Users', subs: 'Subscriptions', ingestion: 'Ingestion', matching: 'Matching',
+      digest: 'Digest', support: 'Support notes', audit: 'Audit events', flags: 'Feature flags',
+    };
+    const notes_ = {
+      dashboard: 'Health probes and usage counts. An unmeasured database size is reported as unmeasured, never as zero.',
+      orgs: 'Cursor-paged, 50 per page server-side. Suspension is set from the organization’s own page.',
+      orgDetail: 'Loosely-specified payloads — profile, subscription, digest preferences — are displayed as raw JSON rather than re-typed here.',
+      users: 'Read-only. Accounts are never edited from admin; they are looked up to answer a support question.',
+      subs: 'Stripe-derived state. Nothing here writes to Stripe — billing changes happen in Stripe itself.',
+      ingestion: 'Runs, the bounded fetch-retry queue, per-run errors and a notice debug lookup. Pause, scope and backfill each take a typed confirmation; bounds are mirrored client-side for feedback and re-validated server-side.',
+      matching: 'Compare the stored match against a live recompute for one organization and lot, then enqueue recomputes by ID.',
+      digest: 'Cycle runs, a rendered preview for one organization and date, and recent email failures.',
+      support: 'Per-organization notes, newest first. Notes are internal and audited like everything else.',
+      audit: 'Every mutation made anywhere in this tool lands here, with the before and after summary.',
+      flags: 'Values are JSON literals. Updating one takes a typed confirmation and is audited.',
+    };
+
+    const counts = {
+      dashboard: '', orgs: String(Component.orgs().length), orgDetail: '', users: String(Component.users().length),
+      subs: String(Component.orgs().filter((o) => o.subStatus !== null).length), ingestion: String(runs.length),
+      matching: '', digest: String(Component.digestRuns().length), support: String(Object.keys(ops.notes).length),
+      audit: String(ops.audit.length), flags: String(flagKeys.length),
+    };
+
+    const nav = [
+      ['dashboard', 'Dashboard'], ['orgs', 'Organizations'], ['users', 'Users'], ['subs', 'Subscriptions'],
+      ['ingestion', 'Ingestion'], ['matching', 'Matching'], ['digest', 'Digest'], ['support', 'Support'],
+      ['audit', 'Audit'], ['flags', 'Flags'],
+    ].map(([id, label]) => {
+      const active = section === id || (id === 'orgs' && section === 'orgDetail');
+      return {
+        label, count: counts[id] ?? '',
+        bg: active ? 'var(--bm-accent-tint)' : 'transparent',
+        mark: active ? 'var(--bm-accent)' : 'transparent',
+        ink: active ? 'var(--bm-ink1)' : 'var(--bm-ink2)',
+        onClick: () => this.setState({ section: id, orgId: null, search: '', limit: 6, pending: null, typed: '', flash: null }),
+      };
+    });
+
+    let cols = '';
+    let head = [];
+    let rows = [];
+    let empty = '';
+
+    if (section === 'dashboard') {
+      cols = '1.1fr 0.8fr 0.8fr 0.6fr';
+      head = ['Organization', 'Digest date', 'Status', 'Matches'].map((label) => ({ label }));
+      rows = Component.digestRuns().slice(0, 4).map((r) => ({
+        cursor: 'default', onClick: () => {},
+        cells: [cell(r.org, ink.strong), cell(r.date), cell(r.status, statusInk(r.status)), cell(r.matches)],
+      }));
+    } else if (section === 'orgs') {
+      cols = '1.2fr 1fr 0.7fr 0.8fr 0.5fr';
+      head = ['Name', 'Status', 'Plan', 'Subscription', 'Members'].map((label) => ({ label }));
+      rows = orgs.slice(0, st.limit).map((o) => ({
+        cursor: 'pointer',
+        onClick: () => this.setState({ section: 'orgDetail', orgId: o.id, pending: null, typed: '' }),
+        cells: [
+          cell(o.name, ink.strong),
+          o.suspendedAt !== null ? cell('SUSPENDED since ' + this.fmt(o.suspendedAt), ink.bad) : cell(o.status, statusInk(o.status)),
+          cell(o.plan ?? '—'),
+          cell(o.subStatus ?? '—', o.subStatus === null ? ink.dim : statusInk(o.subStatus)),
+          cell(o.members),
+        ],
+      }));
+      empty = 'No organizations match that search.';
+    } else if (section === 'users') {
+      cols = '1.6fr 0.5fr 1fr';
+      head = ['Email', 'Verified', 'Organizations'].map((label) => ({ label }));
+      rows = users.slice(0, st.limit).map((u) => ({
+        cursor: 'default', onClick: () => {},
+        cells: [cell(u.email, ink.strong), cell(u.verified ? 'Yes' : 'No', u.verified ? ink.ok : ink.warn), cell(u.orgs.length === 0 ? '—' : u.orgs.join(', '))],
+      }));
+      empty = 'No users match that search.';
+    } else if (section === 'subs') {
+      cols = '1fr 0.7fr 0.8fr 0.7fr 1fr';
+      head = ['Organization', 'Plan', 'Status', 'Cancels at end', 'Period end'].map((label) => ({ label }));
+      rows = subs.map((o) => ({
+        cursor: 'default', onClick: () => {},
+        cells: [cell(o.id, ink.strong), cell(o.plan), cell(o.subStatus, statusInk(o.subStatus)), cell(o.cancels ? 'Yes' : 'No', o.cancels ? ink.warn : ink.base), cell(this.fmt(o.periodEnd))],
+      }));
+      empty = 'No subscriptions in that state.';
+    } else if (section === 'ingestion' && st.ingestView === 'runs') {
+      cols = '0.7fr 0.6fr 1fr 0.8fr 0.45fr 0.45fr 0.5fr 0.9fr';
+      head = ['Run', 'Status', 'Window', 'Seen / upserted', 'Errors', 'Fetch', 'Render', 'Started'].map((label) => ({ label }));
+      rows = runs.map((r) => ({
+        cursor: 'pointer',
+        onClick: () => this.setState({ ingestView: 'errors', errorsRunId: r.id, errorsLoaded: true, expandedErrorId: null }),
+        cells: [
+          cell(r.id, ink.strong), cell(r.status, statusInk(r.status)),
+          cell(r.from + ' – ' + r.to), cell(r.seen + ' / ' + r.upserted),
+          cell(r.errors, r.errors > 10 ? ink.bad : r.errors > 0 ? ink.warn : ink.base),
+          cell(r.fetchFailed, r.fetchFailed > 0 ? ink.warn : ink.base),
+          cell(r.renderPending, r.renderPending > 0 ? ink.warn : ink.base),
+          cell(this.fmt(r.started)),
+        ],
+      }));
+    } else if (section === 'ingestion' && st.ingestView === 'retries') {
+      cols = '1.2fr 0.8fr 0.5fr 0.9fr 1fr 0.8fr 0.9fr';
+      head = ['Source notice', 'Publication', 'Attempts', 'Next attempt', 'Last error code', 'Status', 'Updated'].map((label) => ({ label }));
+      rows = retries.map((r) => ({
+        cursor: 'default', onClick: () => {},
+        cells: [cell(r.notice, ink.strong), cell(r.date), cell(r.attempts), cell(this.fmt(r.next)), cell(r.code), cell(r.status, statusInk(r.status)), cell(this.fmt(r.updated))],
+      }));
+    } else if (section === 'matching') {
+      cols = '1.1fr 0.9fr 0.9fr 0.7fr';
+      head = ['Component', 'Stored', 'Live', 'Result'].map((label) => ({ label }));
+      rows = st.traceLoaded ? [
+        { key: 'cpv_fit', stored: '35/35 (matched)', live: '35/35 (matched)', same: true },
+        { key: 'capability_keyword', stored: '11/20 (partial)', live: '14/20 (partial)', same: false },
+        { key: 'geography', stored: '15/15 (matched)', live: '15/15 (matched)', same: true },
+        { key: 'contract_value', stored: '5/10 (unknown)', live: '5/10 (unknown)', same: true },
+        { key: 'buyer_sector', stored: '5/5 (matched)', live: '5/5 (matched)', same: true },
+        { key: 'deadline_runway', stored: '5/5 (matched)', live: '5/5 (matched)', same: true },
+        { key: 'eligibility_certs', stored: '2/5 (partial)', live: '2/5 (partial)', same: true },
+      ].map((r) => ({
+        cursor: 'default', onClick: () => {},
+        cells: [cell(r.key, ink.strong), cell(r.stored), cell(r.live), cell(r.same ? 'match' : 'MISMATCH', r.same ? ink.ok : ink.bad)],
+      })) : [];
+      empty = 'Trace an organization and lot to compare the stored match against a live recompute.';
+    } else if (section === 'digest') {
+      cols = '1fr 0.8fr 1fr 0.6fr 1fr';
+      head = ['Organization', 'Date', 'Status', 'Matches', 'Sent'].map((label) => ({ label }));
+      rows = Component.digestRuns().map((r) => ({
+        cursor: 'default', onClick: () => {},
+        cells: [cell(r.org, ink.strong), cell(r.date), cell(r.status, statusInk(r.status)), cell(r.matches), cell(this.fmt(r.sent))],
+      }));
+    } else if (section === 'audit') {
+      cols = '1fr 1.1fr 1.1fr 1.2fr';
+      head = ['Occurred', 'Action', 'Target', 'Before → after'].map((label) => ({ label }));
+      rows = auditRows.map((e) => ({
+        cursor: 'default', onClick: () => {},
+        cells: [cell(this.fmt(e.at)), cell(e.action, ink.strong), cell(e.target), cell(e.before + ' → ' + e.after)],
+      }));
+      empty = 'No audit events match those filters.';
+    } else if (section === 'flags') {
+      cols = '1.2fr 0.8fr 0.6fr';
+      head = ['Key', 'Value', 'Edit'].map((label) => ({ label }));
+      rows = flagKeys.map((k) => ({
+        cursor: 'pointer',
+        onClick: () => this.setState({ flagEditKey: k, flagEditValue: ops.flags[k] }),
+        cells: [cell(k, ink.strong), cell(ops.flags[k], ink.ok), cell('Edit', ink.dim)],
+      }));
+    }
+
+    const totalForSection = section === 'orgs' ? orgs.length : section === 'users' ? users.length : 0;
+    const flagValid = (() => { try { JSON.parse(st.flagEditValue); return true; } catch { return false; } })();
+
+    const suspended = org !== null && org.suspendedAt !== null;
+
+    return {
+      theme: this.th(),
+      typeface: st.typeface ?? (this.props.typeface ?? 'archivo'),
+      themeLabel: dark ? 'Light' : 'Dark',
+      onToggleTheme: () => this.setState({ theme: dark ? 'light' : 'dark' }),
+      onResetDemo: () => { this.writeOps(Component.defaultOps()); this.setState({ flash: 'Demo state reset.', pending: null, typed: '' }); },
+
+      ingestPill: ops.ingestionPaused ? 'ingestion paused' : 'ingestion ok',
+      ingestPillInk: ops.ingestionPaused ? 'var(--bm-caution)' : 'var(--bm-accent-text)',
+      ingestPillLine: ops.ingestionPaused ? 'var(--bm-caution)' : 'var(--bm-accent-line)',
+      ingestPillBg: ops.ingestionPaused ? 'var(--bm-caution-tint)' : 'var(--bm-accent-tint)',
+      digestPill: ops.digestPaused ? 'digest paused' : 'digest ok',
+      digestPillInk: ops.digestPaused ? 'var(--bm-caution)' : 'var(--bm-accent-text)',
+      digestPillLine: ops.digestPaused ? 'var(--bm-caution)' : 'var(--bm-accent-line)',
+      digestPillBg: ops.digestPaused ? 'var(--bm-caution-tint)' : 'var(--bm-accent-tint)',
+      auditPill: ops.audit.length + ' audit events',
+
+      navItems: nav,
+      sectionTitle: titles[section],
+      sectionNote: notes_[section],
+      isDashboard: section === 'dashboard', isOrgDetail: section === 'orgDetail' && org !== null,
+      isIngestion: section === 'ingestion', isMatching: section === 'matching',
+      isIngestErrors: section === 'ingestion' && st.ingestView === 'errors',
+      isDigest: section === 'digest', isSupport: section === 'support',
+      isAudit: section === 'audit', isFlags: section === 'flags',
+
+      flash: st.flash !== null, flashText: st.flash ?? '',
+
+      healthCards: [
+        { label: 'Ingestion', value: ops.ingestionPaused ? 'PAUSED' : 'OK', note: 'Last successful run ' + this.fmt(NOW - 2 * 3600000) + ' · 3 errors in 24h', ink: ops.ingestionPaused ? ink.warn : ink.ok, line: ops.ingestionPaused ? 'var(--bm-caution)' : 'var(--bm-line-hair)' },
+        { label: 'Digest', value: ops.digestPaused ? 'PAUSED' : 'OK', note: '4 of 5 cycles sent yesterday; one failed on a bounce', ink: ops.digestPaused ? ink.warn : ink.ok, line: ops.digestPaused ? 'var(--bm-caution)' : 'var(--bm-line-hair)' },
+        { label: 'Email failures (24h)', value: '2', note: 'One bounce, one greylist deferral retrying', ink: ink.warn, line: 'var(--bm-line-hair)' },
+        { label: 'Database size', value: 'Unmeasured', note: 'The size estimate was unavailable — reported honestly rather than as zero', ink: ink.dim, line: 'var(--bm-line-hair)' },
+        { label: 'Dead-letter queue', value: '0', note: 'No messages parked; failures record and continue', ink: ink.ok, line: 'var(--bm-line-hair)' },
+        { label: 'Fetch retries pending', value: '2', note: 'Bounded per-notice retry queue, one render-pending', ink: ink.warn, line: 'var(--bm-line-hair)' },
+      ],
+      usageCounts: [
+        { label: 'Organizations', value: '7' }, { label: 'Users', value: '7' },
+        { label: 'Notices', value: '48,206' }, { label: 'Lots', value: '61,884' }, { label: 'Matches', value: '6,341' },
+      ],
+
+      hasSearch: section === 'orgs' || section === 'users',
+      searchLabel: section === 'users' ? 'Search by email' : 'Search by name or ID',
+      searchPlaceholder: section === 'users' ? 'elena@' : 'Northwind',
+      searchValue: st.search,
+      searchCount: totalForSection + ' result' + (totalForSection === 1 ? '' : 's'),
+      onSearch: (e) => this.setState({ search: e.target.value, limit: 6 }),
+
+      hasStatusFilter: section === 'subs' || section === 'ingestion',
+      statusOptions: (section === 'subs'
+        ? ['all', 'trialing', 'active', 'past_due', 'canceled'].map((s) => ({ id: s, label: s, key: 'subStatus', current: st.subStatus }))
+        : [{ id: 'runs', label: 'ingestion runs' }, { id: 'retries', label: 'fetch retry queue' }, { id: 'errors', label: 'errors for a run' }].map((s) => ({ id: s.id, label: s.label, key: 'ingestView', current: st.ingestView }))
+      ).map((o) => ({
+        label: o.label,
+        bg: o.current === o.id ? 'var(--bm-accent-tint)' : 'transparent',
+        line: o.current === o.id ? 'var(--bm-accent-line)' : 'var(--bm-line-hair)',
+        ink: o.current === o.id ? 'var(--bm-accent-text)' : 'var(--bm-ink2)',
+        onClick: () => this.setState(o.key === 'subStatus' ? { subStatus: o.id } : { ingestView: o.id }),
+      })),
+
+      tablePresent: rows.length > 0,
+      tableEmpty: rows.length === 0 && empty.length > 0,
+      emptyText: empty,
+      tableCols: cols,
+      tableHead: head,
+      tableRows: rows,
+      hasMore: (section === 'orgs' || section === 'users') && totalForSection > st.limit,
+      loadMoreLabel: 'Load more (' + Math.max(0, totalForSection - st.limit) + ' left)',
+      onLoadMore: () => this.setState({ limit: st.limit + 6 }),
+
+      orgFacts: org === null ? [] : [
+        { label: 'Organization ID', value: org.id, ink: ink.strong },
+        { label: 'Lifecycle', value: org.status, ink: statusInk(org.status) },
+        { label: 'Suspension', value: suspended ? 'SUSPENDED ' + this.fmt(org.suspendedAt) : 'Not suspended', ink: suspended ? ink.bad : ink.base },
+        { label: 'Created', value: this.fmt(org.created), ink: ink.base },
+        { label: 'Matches / saved / feedback', value: org.matches + ' / ' + org.saved + ' / ' + org.feedback, ink: ink.base },
+      ],
+      orgMembers: org === null ? [] : Component.users().filter((u) => u.orgs.includes(org.id)).map((u) => ({ email: u.email })),
+      orgProfileJson: org === null ? '' : JSON.stringify({
+        cpvFamilies: ['72', '48'], keywords: ['integration', 'managed services'],
+        geographies: ['CY', 'GR'], valueRange: { min: 50000, max: 2000000 },
+        exclusions: { phrases: ['construction'], contractNatures: ['works'] },
+        onboardingCompletedAt: org.id === 'org_08fa' ? null : org.created + 2 * DAY,
+      }, null, 2),
+      suspendLabel: suspended ? 'Unsuspend organization' : 'Suspend organization',
+      suspendLine: suspended ? 'var(--bm-line)' : 'var(--bm-risk)',
+      suspendInk: suspended ? 'var(--bm-ink1)' : 'var(--bm-risk)',
+      onBackToOrgs: () => this.setState({ section: 'orgs', orgId: null, pending: null, typed: '' }),
+      onGoOrgSupport: () => this.setState({ section: 'support', supportOrg: org === null ? '' : org.id, pending: null }),
+      onArmSuspend: () => {
+        if (org === null) return;
+        const nowSuspended = suspended;
+        this.arm(nowSuspended ? 'Unsuspend organization' : 'Suspend organization',
+          nowSuspended ? 'UNSUSPEND_ORGANIZATION' : 'SUSPEND_ORGANIZATION',
+          nowSuspended ? 'Access is restored immediately; the digest resumes on the next cycle.' : 'Members lose access to the feed at once. Data is kept and the digest stops.',
+          () => {
+            const suspendedMap = Object.assign({}, ops.suspended);
+            if (nowSuspended) delete suspendedMap[org.id]; else suspendedMap[org.id] = Date.now();
+            const next = Object.assign({}, this.audit(nowSuspended ? 'admin.org.unsuspend' : 'admin.org.suspend', 'organization (' + org.id + ')', org.id, nowSuspended ? 'suspended' : 'active', nowSuspended ? 'active' : 'suspended'), { suspended: suspendedMap });
+            this.writeOps(next);
+            return org.name + (nowSuspended ? ' unsuspended.' : ' suspended.');
+          }, !nowSuspended);
+      },
+
+      ingestToggleLabel: ops.ingestionPaused ? 'Resume ingestion' : 'Pause ingestion',
+      ingestBtnLine: ops.ingestionPaused ? 'var(--bm-accent-line)' : 'var(--bm-caution)',
+      ingestBtnInk: ops.ingestionPaused ? 'var(--bm-accent-text)' : 'var(--bm-caution)',
+      onArmIngestToggle: () => {
+        const paused = ops.ingestionPaused;
+        this.arm(paused ? 'Resume ingestion' : 'Pause ingestion', paused ? 'RESUME_INGESTION' : 'PAUSE_INGESTION',
+          paused ? 'The next scheduled window runs normally; nothing is backfilled automatically.' : 'Scheduled windows stop being enqueued. Notices already fetched are unaffected.',
+          () => {
+            const next = Object.assign({}, this.audit(paused ? 'admin.ingestion.resume' : 'admin.ingestion.pause', 'system (ingestion)', null, paused ? 'paused' : 'running', paused ? 'running' : 'paused'), { ingestionPaused: !paused });
+            this.writeOps(next);
+            return paused ? 'Ingestion resumed.' : 'Ingestion paused.';
+          }, !paused);
+      },
+      scopeFamilies: st.scopeFamilies, scopeCountries: st.scopeCountries,
+      onScopeFamilies: (e) => this.setState({ scopeFamilies: e.target.value }),
+      onScopeCountries: (e) => this.setState({ scopeCountries: e.target.value }),
+      scopeMessage: scope.msg, scopeInk: scope.ok ? ink.ok : ink.bad,
+      onArmScope: () => {
+        if (!scope.ok) { this.setState({ flash: 'Fix the scope before confirming: ' + scope.msg }); return; }
+        this.arm('Update CPV scope', 'UPDATE_INGESTION_SCOPE', 'Notices outside the new scope are never ingested — widening does not backfill the past.',
+          () => {
+            const next = this.audit('admin.ingestion.scope.update', 'system (ingestion scope)', null, 'previous scope', this.parseIds(st.scopeFamilies).join('|'));
+            this.writeOps(next);
+            return 'Ingestion scope updated.';
+          });
+      },
+      backfillFrom: st.backfillFrom, backfillTo: st.backfillTo,
+      onBackfillFrom: (e) => this.setState({ backfillFrom: e.target.value }),
+      onBackfillTo: (e) => this.setState({ backfillTo: e.target.value }),
+      backfillMessage: backfill.msg, backfillInk: backfill.ok ? ink.ok : ink.bad,
+      onArmBackfill: () => {
+        if (!backfill.ok) { this.setState({ flash: 'Fix the window before confirming: ' + backfill.msg }); return; }
+        this.arm('Run backfill', 'RUN_BACKFILL', 'One message per day in the window, processed at normal rate limits.',
+          () => {
+            const next = this.audit('admin.ingestion.backfill', 'system (ingestion)', null, '—', backfill.days + ' windows');
+            this.writeOps(next);
+            return backfill.days + ' backfill windows enqueued.';
+          });
+      },
+      retryCounts: [
+        { label: 'Pending', value: '2', ink: ink.warn },
+        { label: 'Recovered', value: '1', ink: ink.ok },
+        { label: 'Abandoned', value: '1', ink: ink.bad },
+      ],
+
+      errorsRunId: st.errorsRunId,
+      onErrorsRunId: (e) => this.setState({ errorsRunId: e.target.value, errorsLoaded: false }),
+      onLoadErrors: () => this.setState({ errorsLoaded: true, expandedErrorId: null }),
+      errorsCount: !st.errorsLoaded
+        ? 'Enter a run ID, or click a run in the runs table'
+        : (Component.ingestionErrors()[st.errorsRunId.trim()] ?? []).length + ' recorded error(s) for ' + st.errorsRunId.trim(),
+      ingestErrors: (!st.errorsLoaded ? [] : Component.ingestionErrors()[st.errorsRunId.trim()] ?? []).map((e) => ({
+        stage: e.stage, code: e.code, notice: e.notice ?? 'no notice id', message: e.message,
+        expanded: st.expandedErrorId === e.id && e.detail !== null,
+        detail: e.detail ?? '',
+        toggleLabel: e.detail === null ? 'No detail recorded' : st.expandedErrorId === e.id ? 'Hide detail' : 'Show detail',
+        onToggle: () => { if (e.detail !== null) this.setState({ expandedErrorId: st.expandedErrorId === e.id ? null : e.id }); },
+      })),
+
+      noticeQuery: st.noticeQuery,
+      onNoticeQuery: (e) => this.setState({ noticeQuery: e.target.value, noticeLoaded: false, noticeError: false }),
+      onNoticeExample: () => this.setState({ noticeQuery: Component.noticeBundle().id, noticeLoaded: false, noticeError: false }),
+      onLookupNotice: () => {
+        const known = st.noticeQuery.trim() === Component.noticeBundle().id;
+        this.setState({ noticeLoaded: known, noticeError: !known && st.noticeQuery.trim().length > 0 });
+      },
+      noticeLoaded: st.noticeLoaded, noticeError: st.noticeError,
+      noticeVersions: Component.noticeBundle().versions,
+      noticeSnapshots: Component.noticeBundle().snapshots,
+
+      emailFailures: Component.failures().map((f) => ({
+        to: f.to, kind: f.kind, provider: f.provider,
+        error: f.error ?? '—', ink: statusInk(f.status),
+        created: this.fmt(f.at),
+      })),
+
+      traceOrg: st.traceOrg, traceLot: st.traceLot,
+      onTraceOrg: (e) => this.setState({ traceOrg: e.target.value }),
+      onTraceLot: (e) => this.setState({ traceLot: e.target.value }),
+      onTraceExample: () => this.setState({ traceOrg: 'org_3f1c', traceLot: 'lot_88d0', traceLoaded: false, traceError: false }),
+      onTrace: () => {
+        const known = st.traceOrg.trim() === 'org_3f1c' && st.traceLot.trim() === 'lot_88d0';
+        this.setState({ traceLoaded: known, traceError: !known });
+      },
+      traceLoaded: st.traceLoaded, traceError: st.traceError,
+      traceErrorText: 'Organization or lot not found. Try the known pair org_3f1c / lot_88d0.',
+      traceFacts: [
+        { label: 'Stored score', value: '78 / worth reviewing', ink: ink.strong },
+        { label: 'Live recompute', value: '81 / strong match', ink: ink.warn },
+        { label: 'Engine version', value: '2.4.0', ink: ink.base },
+        { label: 'Divergence', value: '1 component', ink: ink.bad },
+      ],
+      idKinds: [
+        { label: 'Notice IDs (max 100)', id: 'noticeIds' }, { label: 'Lot IDs (max 500)', id: 'lotIds' },
+      ].map((k) => ({
+        label: k.label,
+        bg: st.idKind === k.id ? 'var(--bm-accent-tint)' : 'transparent',
+        line: st.idKind === k.id ? 'var(--bm-accent-line)' : 'var(--bm-line-hair)',
+        ink: st.idKind === k.id ? 'var(--bm-accent-text)' : 'var(--bm-ink2)',
+        onClick: () => this.setState({ idKind: k.id }),
+      })),
+      recomputeIds: st.recomputeIds,
+      onRecomputeIds: (e) => this.setState({ recomputeIds: e.target.value }),
+      recomputeMessage: st.recomputeIds.trim().length === 0 ? 'Comma or whitespace separated.' : recompute.msg,
+      recomputeInk: st.recomputeIds.trim().length === 0 ? ink.dim : recompute.ok ? ink.ok : ink.bad,
+      onArmRecompute: () => {
+        if (!recompute.ok) { this.setState({ flash: 'Cannot enqueue: ' + recompute.msg }); return; }
+        this.arm('Enqueue recompute', 'RECOMPUTE_MATCHES', 'Scores are recalculated at the current engine version; history is not rewritten.',
+          () => {
+            const next = this.audit('admin.matching.recompute', 'system (' + st.idKind + ')', null, '—', recompute.count + ' ids');
+            this.writeOps(next);
+            return recompute.count + ' recompute messages enqueued.';
+          });
+      },
+
+      digestToggleLabel: ops.digestPaused ? 'Resume digest' : 'Pause digest',
+      digestBtnLine: ops.digestPaused ? 'var(--bm-accent-line)' : 'var(--bm-caution)',
+      digestBtnInk: ops.digestPaused ? 'var(--bm-accent-text)' : 'var(--bm-caution)',
+      onArmDigestToggle: () => {
+        const paused = ops.digestPaused;
+        this.arm(paused ? 'Resume digest' : 'Pause digest', paused ? 'RESUME_DIGEST' : 'PAUSE_DIGEST',
+          paused ? 'The next cycle sends normally; skipped days are not resent.' : 'No digest emails are sent until resumed. Matching continues.',
+          () => {
+            const next = Object.assign({}, this.audit(paused ? 'admin.digest.resume' : 'admin.digest.pause', 'system (digest)', null, paused ? 'paused' : 'running', paused ? 'running' : 'paused'), { digestPaused: !paused });
+            this.writeOps(next);
+            return paused ? 'Digest resumed.' : 'Digest paused.';
+          }, !paused);
+      },
+      previewOrg: st.previewOrg, previewDate: st.previewDate,
+      onPreviewOrg: (e) => this.setState({ previewOrg: e.target.value }),
+      onPreviewDate: (e) => this.setState({ previewDate: e.target.value }),
+      onPreview: () => this.setState({ previewLoaded: true, previewOrg: st.previewOrg.trim().length === 0 ? 'org_3f1c' : st.previewOrg }),
+      previewLoaded: st.previewLoaded,
+      previewSubject: '7 tenders worth a look — ' + st.previewDate,
+      previewHtml: '<!doctype html>\n<html><body style="margin:0;background:#f7f8f9">\n  <h1 style="font:600 20px Archivo,sans-serif">7 tenders worth a look</h1>\n  <ul>\n    <li><a href="https://ted.europa.eu/…/004221">Managed IT services framework</a> — 88</li>\n    <li><a href="https://ted.europa.eu/…/004102">Network refresh, City of Larnaca</a> — 84</li>\n  </ul>\n</body></html>',
+      previewText: '2 strong matches\n· Managed IT services framework, Ministry of Health (CY) — 88, closes in 21 days\n· Network refresh, City of Larnaca — 84, closes in 16 days\n\n5 worth reviewing\n· Software maintenance, University of Cyprus — 76\n· Helpdesk outsourcing, Water Board — 74\n· Data centre migration, Tax Department — 71\n· Licence renewal, Port Authority — 68\n· Support contract, Land Registry — 66\n\nOne email a day, only when something clears your floor.',
+
+      supportOrg: st.supportOrg,
+      onSupportOrg: (e) => this.setState({ supportOrg: e.target.value }),
+      supportCount: notes.length + ' note' + (notes.length === 1 ? '' : 's'),
+      supportNotes: notes.map((n) => ({ body: n.body, meta: this.fmt(n.at) + ' — author ' + n.author })),
+      noteDraft: st.noteDraft,
+      onNoteDraft: (e) => this.setState({ noteDraft: e.target.value }),
+      noteDisabled: st.noteDraft.trim().length === 0 || st.supportOrg.trim().length === 0,
+      onAddNote: () => {
+        const orgKey = st.supportOrg.trim();
+        const list = (ops.notes[orgKey] ?? []).slice();
+        list.unshift({ id: 'note_' + Math.random().toString(36).slice(2, 7), body: st.noteDraft.trim(), author: 'usr_ops_1', at: Date.now() });
+        const nextNotes = Object.assign({}, ops.notes);
+        nextNotes[orgKey] = list;
+        const next = Object.assign({}, this.audit('admin.support.note.add', 'organization (' + orgKey + ')', orgKey, '—', 'note added'), { notes: nextNotes });
+        this.writeOps(next);
+        this.setState({ noteDraft: '', flash: 'Note added to ' + orgKey + '.' });
+      },
+
+      auditAction: st.auditAction, auditSince: st.auditSince,
+      onAuditAction: (e) => this.setState({ auditAction: e.target.value }),
+      onAuditSince: (e) => this.setState({ auditSince: e.target.value }),
+      auditCount: auditRows.length + ' of ' + ops.audit.length + ' events',
+
+      flagEditing: st.flagEditKey !== null,
+      flagEditKey: st.flagEditKey ?? '',
+      flagEditValue: st.flagEditValue,
+      onFlagValue: (e) => this.setState({ flagEditValue: e.target.value }),
+      flagValueHint: flagValid ? 'Valid JSON literal.' : 'Value must be valid JSON (e.g. true, 42, or a quoted string).',
+      flagValueInk: flagValid ? ink.ok : ink.bad,
+      onCancelFlag: () => this.setState({ flagEditKey: null, flagEditValue: '' }),
+      onArmFlag: () => {
+        if (!flagValid) { this.setState({ flash: 'Value must be valid JSON.' }); return; }
+        const key = st.flagEditKey;
+        this.arm('Update flag', 'UPDATE_FLAG', 'Flags take effect on the next request — there is no staged rollout here.',
+          () => {
+            const flags = Object.assign({}, ops.flags);
+            const before = flags[key];
+            flags[key] = st.flagEditValue;
+            const next = Object.assign({}, this.audit('admin.flag.update', 'flag (' + key + ')', null, before, st.flagEditValue), { flags });
+            this.writeOps(next);
+            this.setState({ flagEditKey: null, flagEditValue: '' });
+            return key + ' updated.';
+          }, true);
+      },
+
+      pending: st.pending !== null,
+      pendingLabel: st.pending === null ? '' : st.pending.label,
+      pendingNote: st.pending === null ? '' : st.pending.note,
+      pendingConfirm: st.pending === null ? '' : st.pending.confirmText,
+      pendingLine: st.pending !== null && st.pending.danger ? 'var(--bm-risk)' : 'var(--bm-line)',
+      typed: st.typed,
+      onTyped: (e) => this.setState({ typed: e.target.value }),
+      confirmDisabled: st.pending === null || st.typed !== st.pending.confirmText,
+      confirmBg: st.pending !== null && st.typed === st.pending.confirmText ? (st.pending.danger ? 'var(--bm-risk-tint)' : 'var(--bm-accent-tint)') : 'transparent',
+      confirmLine: st.pending !== null && st.typed === st.pending.confirmText ? (st.pending.danger ? 'var(--bm-risk)' : 'var(--bm-accent-line)') : 'var(--bm-line-hair)',
+      confirmInk: st.pending !== null && st.typed === st.pending.confirmText ? (st.pending.danger ? 'var(--bm-risk)' : 'var(--bm-accent-text)') : 'var(--bm-ink3)',
+      onConfirm: () => this.fire(),
+      onCancelPending: () => this.setState({ pending: null, typed: '' }),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

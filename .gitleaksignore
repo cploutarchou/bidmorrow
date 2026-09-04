@@ -10,3 +10,12 @@
 # non-key-shaped fixture in the following commit, but the original commit
 # stays in history.
 eac1bf95f3b57e3e131918201e9b5fee82ff34f5:packages/observability/src/logger.test.ts:generic-api-key:59
+
+# docs/redesign/design-handoff-2026-08-21: the design-tool Auth prototype's
+# account simulator carries a made-up reset-token literal
+# (`rst_7f3c9a1e42b8d05f6c1a`) so the "new password" screen can render a
+# link. Prototype demo data, never issued by any system. Listed twice: the
+# PR commit's fingerprint and the commit-less form that matches the squash
+# commit on main and any future scan of the same line.
+docs/redesign/design-handoff-2026-08-21/project/BidMorrow Auth.dc.html:generic-api-key:381
+01e2e65367d96f55cd0cd1c329dac842fbb40533:docs/redesign/design-handoff-2026-08-21/project/BidMorrow Auth.dc.html:generic-api-key:381
