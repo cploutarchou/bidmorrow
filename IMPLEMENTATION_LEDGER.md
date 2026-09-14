@@ -5693,6 +5693,94 @@ note had deferred.
   exercise of the per-PR job; the nightly is dispatched once after the
   merge to prove the reusable call path.
 
+## `main` history rewrite: at most two commits per day, owner identity, no attribution (2026-09-14)
+
+Owner instruction in the session of 2026-09-14: `main` must carry at most
+two commits on each day that already has commits, protection may be
+bypassed for the push. This closes the blockers item opened 2026-09-01
+(attribution removal), which had been refused five times.
+
+**Method.** A scratch script rebuilt `main` from the unchanged root
+`dff5b86` (#57): every commit was replayed in order with
+`git cherry-pick -n`; on days with three or four commits, consecutive
+members were committed together under a new conventional subject that
+lists every PR number, with each member's original message appended
+unchanged as the body; single-day commits kept their message. Every
+rebuilt commit carries the last member's real author timestamp as both
+author and committer date, the original author, and the owner as
+committer. Messages passed through the filter from the blockers item
+(drop `Co-[Aa]uthored-[Bb]y: …the assistant`, session-link trailers,
+generator footers and session links
+lines; trim trailing blank lines). No file content was touched.
+
+**Validation (real output).** `git diff --stat b06cc2d main-squashed`
+empty; `git rev-list --count` 29 (was 50); per-day counts 1 or 2 on all
+16 days (08-18 1, 08-19 2, 08-20 2, 08-21 2, 08-22 2, 08-23 2, 08-24 2,
+08-25 2, 08-26 2, 08-29 1, 08-30 2, 09-01 2, 09-02 2, 09-03 2, 09-04 2,
+09-05 1); author/committer identities: 28 × owner/owner, 1 × owner/GitHub
+(the root); attribution grep 0 (was 13); author dates monotonic.
+
+**Old → new SHA map** (old commits left to right, oldest day first):
+
+| Day   | Old                                            | New       |
+| ----- | ---------------------------------------------- | --------- |
+| 08-18 | `dff5b86` (#57)                                | unchanged |
+| 08-19 | `2abbe02` (#58)                                | `d6a06bb` |
+| 08-19 | `dfeff49` (#59)                                | `5607570` |
+| 08-20 | `ecc77ca` `24a387e` (#60 #62)                  | `0b46823` |
+| 08-20 | `46995a1` `76f8a8c` (#64 #66)                  | `343b705` |
+| 08-21 | `913d1fc` `c6ff276` (#68 #70)                  | `d2602ed` |
+| 08-21 | `9964d67` `31a308d` (#72 #74)                  | `8594d96` |
+| 08-22 | `597483f` `2e2d381` (#75 #76)                  | `7bc5726` |
+| 08-22 | `29db8ff` `b51b2f3` (#77 #78)                  | `68cf815` |
+| 08-23 | `39738fa` `efa2d7c` (#82 #86)                  | `f6ae4ec` |
+| 08-23 | `6ce9fa0` `6658132` (#90 #94)                  | `f6dc51e` |
+| 08-24 | `6916136` `de0913c` `ffd2e85` (#95 #96 #97)    | `87cdda4` |
+| 08-24 | `fa1310b` (#98)                                | `70f5651` |
+| 08-25 | `9571597` `baa013e` (#99 #101)                 | `4d7f3db` |
+| 08-25 | `db570fd` `9afe61f` (#102 #104)                | `97c942c` |
+| 08-26 | `d8fd4ef` `304fb9b` `794c4a4` (#105 #107 #108) | `8e3b4bb` |
+| 08-26 | `8352e54` (#110)                               | `402b347` |
+| 08-29 | `08b4567` (#111)                               | `ed539ea` |
+| 08-30 | `9c7a760` `5c4bd79` `6788638` (#115 #120 #125) | `b70e131` |
+| 08-30 | `dae81fd` (#130)                               | `205b567` |
+| 09-01 | `92fc04d` (#132)                               | `427f72d` |
+| 09-01 | `dbe1250` (#133)                               | `1d78ef1` |
+| 09-02 | `1cae102` `6f9e833` `5025bad` (#131 #136 #138) | `1dcebb3` |
+| 09-02 | `02b3864` (#140)                               | `02ddaa9` |
+| 09-03 | `fed6b65` `4af7290` (#141 #142)                | `9ede73b` |
+| 09-03 | `e110afc` `e243300` (#143 #144)                | `8ddc138` |
+| 09-04 | `2a6eafe` (#145)                               | `8acac00` |
+| 09-04 | `cee5847` `6b1af6d` (#146 #147)                | `ec4ab45` |
+| 09-05 | `b06cc2d` (#148)                               | `557a1f6` |
+
+**Consequences and rollback.** SHAs cited earlier in this file and in the
+blockers file refer to the old history; deploy runs keep pointing at the
+old SHAs; rebuilt commits carry no "Verified" badge; clones need
+`git fetch origin && git reset --hard origin/main`. The old head
+`b06cc2d` is kept on the remote as branch
+`backup/main-pre-squash-2026-09-14` (pushed 2026-09-14; the tag of the
+same name exists only locally, the tag push was rejected as recorded
+under Notes). Rollback is
+`git push --force origin backup/main-pre-squash-2026-09-14:main`. Delete
+the backup branch once satisfied — it keeps the 50 old commits reachable
+(`git push origin --delete backup/main-pre-squash-2026-09-14`).
+
+**Push record.** `git push --force-with-lease origin main-squashed:main`
+was declined by the `main-protection` ruleset ("push declined due to
+repository rule violations", two required status checks expected); the
+session has no tool that edits rulesets. The rewritten history (this
+commit on top) was pushed to `work/history-rewrite`
+and to the old working branch `work/bidmorrow-production-impl`
+(previously identical to the old `main`). Finishing is one owner step:
+set the `main-protection` ruleset to Disabled (Settings → Rules →
+Rulesets), run
+`git push --force origin work/history-rewrite:main`
+(or tell the session "go" while it is disabled), then set the ruleset
+back to Active. No pull request was opened for the branch on purpose: a
+merge would join the two histories (80 commits) instead of replacing
+`main`.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
