@@ -83,7 +83,25 @@ doing exactly what docs/security.md says it should.
 Until decided, the capture script reports these messages separately and
 does not count them as site errors (commit on the dev branch, 22:09 UTC).
 
-## OPEN 2026-09-01 23:50 UTC — rewrite `main` so every commit carries the owner's identity (owner action)
+## ✅ CLOSED 2026-09-14 — `main` rewritten: owner identity on every commit, no attribution lines, at most two commits per day
+
+**Done (2026-09-14, owner instruction "2 commits per day on main, bypass
+the protection"):** `main` was rebuilt from the root commit `dff5b86`
+(29 commits, previously 50). Same days, same content, same order: on the
+eleven days that carried three or four squash-merged pull requests the
+consecutive commits were combined into two, keeping the last member's
+real timestamp and every original message (subject, body and PR number)
+inside the new body. No day was added or moved. The thirteen remaining
+attribution lines (assistant co-author trailers and session links) that
+the 2026-09-01 consolidation had kept inside commit bodies were removed
+with the message filter below; the committer of every rebuilt commit is
+the owner (the root commit keeps GitHub's squash-merge committer). The
+tree at the new head is byte-identical to the old head `b06cc2d`
+(`git diff` empty). Method, validation output, the old→new SHA map and
+the rollback refs are in `IMPLEMENTATION_LEDGER.md` §"`main` history
+rewrite (2026-09-14)". The push outcome is recorded there too.
+
+_History of the item as it stood before closure:_
 
 **What:** the owner asked four times on 2026-09-01 for the assistant
 attribution to be removed from the whole history of `main`. Measured on
