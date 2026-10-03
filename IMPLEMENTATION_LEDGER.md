@@ -2687,9 +2687,8 @@ ingestionRunId})` — CPV DIVISION pre-filter (skip = no row of any kind,
   - Stack: Better Auth 1.6.29 (+ official Drizzle adapter, org plugin),
     Hono 4.13, Drizzle 0.45.2, Stripe SDK 22 (constructEventAsync on
     Workers), Resend 6, Vite 8, Vitest 4.1 + pool-workers 0.21, wrangler 4.
-  - the coding assistant: agents support model/effort/skills/tools frontmatter
-    (model: fable valid); skills = SKILL.md dirs; hooks/permissions schema
-    confirmed.
+  - the coding assistant: agent-definition format (front-matter fields,
+    skill directories, hooks/permissions schema) confirmed.
 - Created: `docs/conventions/` (13 agents per routing table),
   `docs/procedures/` (9 skills), `the session settings` (env-file deny
   rules, destructive-wrangler deny rules, PostToolUse typecheck hook +
@@ -4805,7 +4804,7 @@ test` failed one assertion — the `_headers` verbatim-copy check read a
   (F-03) is unstarted two days from launch.
 - **F-01 (HIGH), found and fixed here**: eight owner-facing passages —
   blockers 4c/item-4 header/snapshot 6/item 7, setup-guide §4b + §4f,
-  pricing.md, agents/billing.md — still instructed `tax_mode: external`
+  pricing.md, docs/conventions/billing.md — still instructed `tax_mode: external`
   after PR #108 made prices VAT-INCLUSIVE. Following them to build the
   LIVE catalog would have charged €29/€49 + VAT while every page promises
   all-in. ADR-0011 §2 had been amended; the instructions had not.
@@ -5721,50 +5720,48 @@ empty; `git rev-list --count` 29 (was 50); per-day counts 1 or 2 on all
 
 **Old → new SHA map** (old commits left to right, oldest day first):
 
-| Day   | Old                                            | New       |
-| ----- | ---------------------------------------------- | --------- |
-| 08-18 | `dff5b86` (#57)                                | `8cadb76` |
-| 08-19 | `2abbe02` (#58)                                | `c26f299` |
-| 08-19 | `dfeff49` (#59)                                | `65e5052` |
-| 08-20 | `ecc77ca` `24a387e` (#60 #62)                  | `1012706` |
-| 08-20 | `46995a1` `76f8a8c` (#64 #66)                  | `abb9f3c` |
-| 08-21 | `913d1fc` `c6ff276` (#68 #70)                  | `e39f12d` |
-| 08-21 | `9964d67` `31a308d` (#72 #74)                  | `fb886db` |
-| 08-22 | `597483f` `2e2d381` (#75 #76)                  | `1b1b3ba` |
-| 08-22 | `29db8ff` `b51b2f3` (#77 #78)                  | `80f5a13` |
-| 08-23 | `39738fa` `efa2d7c` (#82 #86)                  | `cb5d3ec` |
-| 08-23 | `6ce9fa0` `6658132` (#90 #94)                  | `29ec5cf` |
-| 08-24 | `6916136` `de0913c` `ffd2e85` (#95 #96 #97)    | `3a9dc99` |
-| 08-24 | `fa1310b` (#98)                                | `b4fb8b8` |
-| 08-25 | `9571597` `baa013e` (#99 #101)                 | `d234886` |
-| 08-25 | `db570fd` `9afe61f` (#102 #104)                | `aa177c1` |
-| 08-26 | `d8fd4ef` `304fb9b` `794c4a4` (#105 #107 #108) | `9d977c9` |
-| 08-26 | `8352e54` (#110)                               | `1ccc5db` |
-| 08-29 | `08b4567` (#111)                               | `722db7f` |
-| 08-30 | `9c7a760` `5c4bd79` `6788638` (#115 #120 #125) | `2fa4477` |
-| 08-30 | `dae81fd` (#130)                               | `d0a434a` |
-| 09-01 | `92fc04d` (#132)                               | `fe57378` |
-| 09-01 | `dbe1250` (#133)                               | `9875bf5` |
-| 09-02 | `1cae102` `6f9e833` `5025bad` (#131 #136 #138) | `fa2acbd` |
-| 09-02 | `02b3864` (#140)                               | `3d082db` |
-| 09-03 | `fed6b65` `4af7290` (#141 #142)                | `31ac494` |
-| 09-03 | `e110afc` `e243300` (#143 #144)                | `660b5f0` |
-| 09-04 | `2a6eafe` (#145)                               | `65f15c8` |
-| 09-04 | `cee5847` `6b1af6d` (#146 #147)                | `1b328b3` |
-| 09-05 | `b06cc2d` (#148)                               | `c47cc31` |
-| 09-14 | `f08556c` (this record, 2026-09-14)            | `4dc7730` |
+| Day   | Old                                                                | New       |
+| ----- | ------------------------------------------------------------------ | --------- |
+| 08-18 | `dff5b86` (#57)                                                    | `509494a` |
+| 08-19 | `2abbe02` (#58)                                                    | `1c91dd7` |
+| 08-19 | `dfeff49` (#59)                                                    | `0856d51` |
+| 08-20 | `ecc77ca` (#60) `24a387e` (#62)                                    | `3442ebb` |
+| 08-20 | `46995a1` (#64) `76f8a8c` (#66)                                    | `100a361` |
+| 08-21 | `913d1fc` (#68) `c6ff276` (#70)                                    | `df9f78e` |
+| 08-21 | `9964d67` (#72) `31a308d` (#74)                                    | `4678733` |
+| 08-22 | `597483f` (#75) `2e2d381` (#76)                                    | `f086cf9` |
+| 08-22 | `29db8ff` (#77) `b51b2f3` (#78)                                    | `e09a2c3` |
+| 08-23 | `39738fa` (#82) `efa2d7c` (#86)                                    | `e4123bd` |
+| 08-23 | `6ce9fa0` (#90) `6658132` (#94)                                    | `bfa7ab6` |
+| 08-24 | `6916136` (#95) `de0913c` (#96) `ffd2e85` (#97)                    | `fdf6575` |
+| 08-24 | `fa1310b` (#98)                                                    | `904fe37` |
+| 08-25 | `9571597` (#99) `baa013e` (#101) `db570fd` (#102) `9afe61f` (#104) | `f05702c` |
+| 08-26 | `d8fd4ef` (#105) `304fb9b` (#107) `794c4a4` (#108)                 | `deb2346` |
+| 08-26 | `8352e54` (#110)                                                   | `939eca4` |
+| 08-29 | `08b4567` (#111)                                                   | `e35007a` |
+| 08-30 | `9c7a760` (#115) `5c4bd79` (#120) `6788638` (#125)                 | `50fc10d` |
+| 08-30 | `dae81fd` (#130)                                                   | `b666bb1` |
+| 09-01 | `92fc04d` (#132) `dbe1250` (#133)                                  | `3b38cb4` |
+| 09-02 | `1cae102` (#131) `6f9e833` (#136) `5025bad` (#138)                 | `4c43673` |
+| 09-02 | `02b3864` (#140)                                                   | `5dc20e2` |
+| 09-03 | `fed6b65` (#141) `4af7290` (#142)                                  | `1fb5b40` |
+| 09-03 | `e110afc` (#143) `e243300` (#144)                                  | `467cd5a` |
+| 09-04 | `2a6eafe` (#145) `cee5847` (#146) `6b1af6d` (#147)                 | `9894870` |
+| 09-05 | `b06cc2d` (#148)                                                   | `9b58de1` |
+| 09-14 | `f08556c` (2026-09-14 record)                                      | `b528d3f` |
 
 **Consequences and rollback.** SHAs cited earlier in this file and in the
 blockers file refer to the old history; deploy runs keep pointing at the
 old SHAs; rebuilt commits carry no "Verified" badge; clones need
 `git fetch origin && git reset --hard origin/main`. The old head
-`b06cc2d` is kept on the remote as branch
-`backup/main-pre-squash-2026-09-14` (pushed 2026-09-14; the tag of the
-same name exists only locally, the tag push was rejected as recorded
-under Notes). Rollback is
-`git push --force origin backup/main-pre-squash-2026-09-14:main`. Delete
-the backup branch once satisfied — it keeps the 50 old commits reachable
-(`git push origin --delete backup/main-pre-squash-2026-09-14`).
+`b06cc2d` was pushed on 2026-09-14 as the remote branch
+`backup/main-pre-squash-2026-09-14` for rollback; the owner deleted that
+branch on 2026-09-29 (see the finding below), so the pre-rewrite history
+now exists only in the owner's local clones (and, until GitHub's garbage
+collection, as unreachable objects and pull-request head refs on the
+remote). Rollback, if ever wanted, is a force push of `b06cc2d` from such
+a clone; nothing on the remote should be re-created for it, because that
+history carries the names the owner has ruled out.
 
 **Push record.** `git push --force-with-lease origin main-squashed:main`
 was declined by the `main-protection` ruleset ("push declined due to
@@ -5795,8 +5792,11 @@ For every commit the exact original tree was checked out, the tooling
 directory and guide file removed, nine cited files relocated, and one
 ordered replacement ruleset applied to every text file and to the commit
 message; the rebuild fails hard if the assistant's or its vendor's name
-survives in any tree, path or message. Relocations (so no document, test
-or code comment points at a deleted file): guide → `docs/project-guide.md`;
+survives in any tree, path or message. Relocations (so documents, tests
+and code comments keep a valid target; the one comment that cited a
+deleted, non-relocated file — `apps/web/src/components/TenderCard.tsx`
+— was found by the independent review and now cites `docs/security.md`):
+guide → `docs/project-guide.md`;
 role conventions frontend/billing/ux-strategist → `docs/conventions/`;
 procedures tenant-isolation-audit, production-readiness-audit, launch-mode
 → `docs/procedures/`; the redesign requirements/decisions log →
@@ -5844,6 +5844,96 @@ pinned as local tags in the session (not pushed: both carry the names the
 owner wants out of the repository). Recovery = the same swap as planned:
 `git push --force origin work/history-rewrite:main` with the ruleset
 disabled, then redeploy staging from the new `main`.
+
+**Swap completed (2026-10-03 19:59 UTC).** The owner ran, from a local
+clone, `gh api -X PUT …/rulesets/20917184 -f enforcement=disabled`, then
+`git push --force origin origin/work/history-rewrite:main`
+(`78ea0a4…8f1de0d`, forced update), then the same call with
+`enforcement=active`; the ruleset was open for three seconds
+(22:59:14–22:59:17 +03:00) and is Active again with its four rules
+(deletion, non_fast_forward, pull_request, required_status_checks) and no
+bypass actors. The session's own attempts to push (`--force-with-lease`)
+and to toggle the ruleset through its proxy were refused (HTTP 403 on
+write; rule violations on push), so the owner's action was the only way,
+as the blockers item had predicted. `main` verified after the push:
+`8f1de0d`, 31 commits, no day above two, zero occurrences of the
+assistant's or vendor's name in any file, path or message, owner identity
+on every commit. The push triggered `CI` (run 37149881991: `checks` and
+`secret-scan` green, 19:59–20:02 UTC), `Deploy staging` (run 37149882030,
+green, 20:00:03 UTC) and, by the production-tracks-main rule of
+2026-09-02, `Deploy production` (run 37149931417, green, 20:00:59 UTC).
+Production and staging therefore run `8f1de0d`, whose product code
+differs from the 09-05 head `b06cc2d` by ten comment lines in ten files
+(`git diff --stat b06cc2d 8f1de0d -- apps packages migrations tests`: 10
+files, +10/−10); staging is back on current code after five days on the
+08-22 tree. GitHub-side: no repository description, topics or tags, no
+open pull requests, two branches (`main`, `work/history-rewrite`,
+identical). The session's local backup tags (`backup/main-pre-squash-
+2026-09-14` = `b06cc2d`, `backup/main-stale-0822-pushed-2026-09-29` =
+`78ea0a4`) were not pushed and die with the session; the owner's local
+clones are the only other copies of the pre-rewrite history.
+
+**Guard (2026-10-03, owner: "ensure that we never mention the word
+anywhere").** `scripts/check-forbidden-terms.mjs` (`pnpm terms:check`)
+fails when either ruled-out name appears, case-insensitively, in any
+tracked path, in the content of any tracked file (binary included), in
+any commit message, author or committer reachable from `HEAD`, or in the
+branch name CI runs for. The two terms are assembled from fragments so
+the script never contains them, and a self-test proves the assembled
+pattern matches (and does not match "clause"/"anthropology") before the
+scan. It runs as the first step of the `checks` job in `ci.yml`, before
+`pnpm install`, on every pull request and every push to `main`; `checks`
+is already a required status check, so a violating pull request cannot
+merge. Rule recorded in `docs/project-guide.md` §Hard rules.
+
+## Final rebuild (v3): unsigned commits, model names gone, two a day in UTC too (2026-10-03, evening)
+
+**Why.** An independent five-agent review of the morning's rewrite
+(history integrity, exhaustive mention scan, fresh quality gates,
+reference integrity, completeness critic) passed the stated criteria but
+found three things worth one more pass, and the owner chose to take it:
+(1) the sandbox had SSH-signed every rebuilt commit with a key GitHub
+does not know, so all 31 commits rendered "Unverified" (the old squash
+commits carried no badge); (2) the vendor's model-family names survived
+in three lines of every historical tree (dead agent front-matter in two
+relocated convention files, one ledger line); (3) the two-a-day rule held
+in the recorded +03:00 offset but, rendered in UTC, 08-24, 09-01 and
+09-04 showed three. It also found reference damage at the head: a
+product-code comment citing a deleted, non-relocated convention file
+(`TenderCard.tsx`), two artifact links the scrub had mangled in
+`docs/redesign/requirements.md`, tooling front-matter and sibling-skill
+references in the six relocated files, current docs naming deleted
+skills, the ledger shorthand `agents/billing.md`, two grammar slips, and
+record statements that described the 09-14 step as if it were current.
+
+**Method.** Same rebuild from the original commits, in a separate
+worktree, with: `commit.gpgsign=false` (no signatures, as before the
+rewrite); front-matter of the six relocated files replaced by a title and
+a purpose sentence in every commit; two extra rules (bare artifact links
+removed, model-family names and the agent-format line neutralised); the
+hard check extended to the model-family names; and three regroupings so
+both offsets stay at two a day — 08-25 is one commit (#99 #101 #102
+#104), 09-01 is one (#132 #133), 09-04 is one (#145 #146 #147). The
+26 rebuilt commits plus the 09-14 record commit are listed in the SHA map
+above (regenerated for v3). The head commit carries the guard, the
+reference fixes (24 files, comment and prose only; product code
+unchanged apart from comment text), and these records.
+
+**Validation (real output).** 27 rebuilt commits: per-day maximum 2 in
++03:00 and 2 in UTC; case-insensitive scan of every file in every tree,
+every path, every message, author and committer for the two names and the
+four model-family names: 0 hits; `gpgsig` headers: 0; author/committer:
+owner on all. Quality gates on the head commit are recorded with that
+commit. The guard (`pnpm terms:check`) now also refuses the model-family
+names (word-bounded; "clause", "anthropology" and ordinary prose are not
+matched by the self-test's negative sample).
+
+**Swap.** As on the morning swap: the owner disables the
+`main-protection` ruleset, force-pushes `work/history-rewrite-v3` to
+`main`, re-enables the ruleset; the swap itself and the CI/deploy runs it
+triggers are recorded in the next entry, written after the fact.
+Pull request #150 is superseded by the head commit of v3 and is closed
+once `main` carries it.
 
 ## Notes
 

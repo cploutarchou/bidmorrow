@@ -1,6 +1,6 @@
 /**
  * Captures the built marketing pages at mobile / tablet / desktop widths in
- * BOTH themes, for the `responsive-qa` skill's finalize checklist. Unlike
+ * BOTH themes, for responsive QA review before a UI change is finalized. Unlike
  * `capture-competitor-pages.mjs` (external hosts, CI-only), this points at a
  * LOCAL preview of our own built SPA and runs in the session sandbox.
  *

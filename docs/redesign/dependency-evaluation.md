@@ -1,7 +1,7 @@
 # Dependency Evaluation — BidMorrow Website Redesign
 
-Date: 2026-08-17. Evaluator: dependency-vetting subagent.
-Constraints protected (requirements.md §Hard technical constraints, frontend-engineer.md, accessibility-performance-engineer.md):
+Date: 2026-08-17. Evaluator: dependency-vetting helper task.
+Constraints protected (requirements.md §Hard technical constraints; the frontend and accessibility conventions, docs/conventions/frontend.md):
 
 - CSP `script-src 'self'; style-src 'self'; font-src 'self'` — **no unsafe-inline, no nonces possible** (headers are static in `apps/web/public/_headers`, byte-exact-tested in `tests/security/static-asset-headers.test.ts`). Runtime `<style>`-element injection with CSS text content is **blocked**. Inline styles set via CSSOM (`element.style.x = …`, React `style` prop) are **allowed** (CSP does not govern CSSOM).
 - Self-hosted fonts ≤ ~90KB total; marketing JS bundle ≈ 150KB gz budget; React 19.2 + Vite 8.2 + react-router 7.18 (library mode) + TS strict + pnpm; no SSR-framework rebuild.
@@ -73,7 +73,7 @@ License: all candidates **OFL-1.1** (self-hosting explicitly allowed). Fontsourc
 
 - Package: `motion` 13.1.0 (2026-08-10), **MIT**, extremely active; `framer-motion` is now a re-export shell — depend on `motion` only. peer React ^19 ✓.
 - **CSP finding (verified against published 13.1.0 dist):** the _only_ `<style>`-element injection in the ESM tree is `AnimatePresence mode="popLayout"` (`PopChild.mjs`) — it appends an empty `<style>` and writes rules via CSSOM `insertRule` (generally not CSP-blocked, and it supports a nonce we can't provide anyway). Everything else animates via `element.style`/WAAPI (CSSOM — allowed). **Policy if adopted: ban `mode="popLayout"`** (ESLint no-restricted-syntax rule + note in the shared plan) and re-run `tests/security/` + a manual console check for CSP violations in the e2e pass.
-- Reduced motion: pure CSS → one `@media (prefers-reduced-motion: reduce)` block zeroing durations (frontend-engineer.md already mandates this); motion → `<MotionConfig reducedMotion="user">` / `useReducedMotion`. Both stories are good; CSS is simpler to enforce globally.
+- Reduced motion: pure CSS → one `@media (prefers-reduced-motion: reduce)` block zeroing durations; motion → `<MotionConfig reducedMotion="user">` / `useReducedMotion`. Both stories are good; CSS is simpler to enforce globally.
 - **Recommendation: start with zero motion dependencies.** CSS + View Transitions deliver the macOS feel (ease curves, subtle depth/parallax, staggered reveals) within CSP at 0KB. Add `motion/mini` (~2.3KB) only when a concrete approved interaction needs interruptible springs/orchestration, and record the rationale in `docs/dependency-versions.md`.
 - **Existing code covers:** nothing (no transitions in styles.css yet).
 
@@ -81,7 +81,7 @@ License: all candidates **OFL-1.1** (self-hosting explicitly allowed). Fontsourc
 
 **Verdict: REJECT radix-ui under this CSP; ADOPT native `<dialog>` + `popover` attribute + small internal primitives; react-aria-components ADOPT-IF a genuinely complex app-side widget (combobox/select) appears later.**
 
-- **radix-ui 1.6.7 (MIT, active, React 19 ✓) — hard CSP incompatibility, empirically verified:** `@radix-ui/react-dialog` (and AlertDialog, DropdownMenu, Select, etc. — anything modal) depends on `react-remove-scroll` → `react-style-singleton`, whose published dist does `document.createElement('style')` + `appendChild(document.createTextNode(css))`. That is inline `<style>` text content → **blocked by `style-src 'self'`** without unsafe-inline or a nonce, and our static `_headers` cannot carry nonces. Result: CSP violation reports in console and broken scroll-lock/scrollbar-compensation styling. `modal={false}` sidesteps it but forfeits the main reason to use Radix modals. Do not adopt; do not weaken the policy (escalation rule in frontend-engineer.md).
+- **radix-ui 1.6.7 (MIT, active, React 19 ✓) — hard CSP incompatibility, empirically verified:** `@radix-ui/react-dialog` (and AlertDialog, DropdownMenu, Select, etc. — anything modal) depends on `react-remove-scroll` → `react-style-singleton`, whose published dist does `document.createElement('style')` + `appendChild(document.createTextNode(css))`. That is inline `<style>` text content → **blocked by `style-src 'self'`** without unsafe-inline or a nonce, and our static `_headers` cannot carry nonces. Result: CSP violation reports in console and broken scroll-lock/scrollbar-compensation styling. `modal={false}` sidesteps it but forfeits the main reason to use Radix modals. Do not adopt; do not weaken the policy (docs/security.md C3).
 - **react-aria-components 1.20.0 (Apache-2.0, Adobe, very active):** no style injection found in its published dist (verified); CSP-clean. But it is heavyweight (tens of KB gz even tree-shaken per component) and the marketing site does not need it. Keep on the shelf for future complex app widgets only, with a bundle measurement gate at adoption.
 - **Native platform (recommended):**
   - `<dialog>` + `showModal()`: top layer, focus containment, Esc, `::backdrop`, inert background — free, CSP-perfect, excellent support. React 19 renders `<dialog>` fine.
@@ -132,7 +132,7 @@ Bundle-budget note for the coordinator: on a 150KB gz marketing budget, the ~10�
 
 **Verdict: REJECT by default (matches requirements.md standing decision — carousels only where they genuinely improve comprehension).**
 
-Accessibility bar any future proposal must meet **before** a library is even evaluated (from requirements + accessibility-performance-engineer.md; failing any item = auto-reject):
+Accessibility bar any future proposal must meet **before** a library is even evaluated (from requirements + the frontend and accessibility conventions, docs/conventions/frontend.md; failing any item = auto-reject):
 
 1. **Keyboard:** all controls tabbable in logical order; arrow-key slide navigation; no focus trap; focus not lost when slides change; visible focus indicators.
 2. **Touch/pointer:** swipe with equivalent button controls (WCAG 2.5.1/2.5.7 single-pointer alternatives); targets ≥24×24 (2.5.8).

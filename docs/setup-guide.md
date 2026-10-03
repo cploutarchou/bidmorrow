@@ -11,8 +11,8 @@ is the _how_.
 
 ## 0. The golden rules for secrets
 
-1. **Never paste a secret into a the assistant chat, a commit, an issue, or a PR.**
-   the assistant never needs to see secret values — only to know they exist.
+1. **Never paste a secret into the assistant chat, a commit, an issue, or a PR.**
+   The assistant never needs to see secret values — only to know they exist.
 2. Every secret has exactly **one place you put it**, and the pipeline
    distributes it from there:
 

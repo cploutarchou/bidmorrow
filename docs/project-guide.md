@@ -4,15 +4,15 @@ Bid/no-bid qualification intelligence for EU public procurement (TED).
 "Find the tenders worth pursuing. Skip the rest." Production SaaS for real
 paying customers — not a prototype.
 
-## Session protocol
+## Working protocol
 
 1. Start every session by reading `IMPLEMENTATION_LEDGER.md`,
    `HUMAN_DECISION_BLOCKERS.md`, and only the docs/ files relevant to the
    current phase.
-2. One phase (or half-phase) per session. Begin in plan mode; write a short
-   phase plan; execute without stopping unless a human blocker is hit.
-3. Before session end or context compaction: flush all state into
-   `IMPLEMENTATION_LEDGER.md` — the ledger, not chat memory, is truth.
+2. One phase (or half-phase) per session. Write a short phase plan; execute
+   without stopping unless a human blocker is hit.
+3. Before session end: flush all state into `IMPLEMENTATION_LEDGER.md` — the
+   ledger is the source of truth.
 4. Keep exploration notes out of the ledger; record conclusions, not dumps.
 5. Never re-derive a decision recorded in an ADR
    (`docs/architecture-decisions/`). If an ADR seems wrong, write a
@@ -20,7 +20,8 @@ paying customers — not a prototype.
 6. After every phase: run quality gates, then an independent
    production-readiness review (`docs/procedures/production-readiness-audit.md`)
    and a security review for security-relevant work, before marking
-   complete, commit, tag `phase-N-complete`.
+   complete and committing. Phase completion is recorded in the ledger (no
+   tags).
 
 ## Hard rules
 
@@ -38,6 +39,11 @@ paying customers — not a prototype.
   escape everything.
 - Blockers needing human credentials/decisions go in
   `HUMAN_DECISION_BLOCKERS.md`; continue unrelated work with mocks.
+- The names of the owner's third-party coding-assistant tooling, its vendor
+  and the vendor's model families never appear in this repository — not in
+  paths, file content, commit messages, identities or branch names.
+  `pnpm terms:check` enforces it in CI (`scripts/check-forbidden-terms.mjs`);
+  working branches use the `work/` prefix.
 
 ## Commands (available from Phase 2)
 
@@ -80,5 +86,5 @@ every check and never accepts implementer claims.
 ## Git
 
 Feature work on the designated development branch; conventional commits at
-every green checkpoint; tag phase completions; never commit secrets
-(gitleaks runs in CI from Phase 2).
+every green checkpoint; phase completions are recorded in the ledger (no
+tags); never commit secrets (gitleaks runs in CI from Phase 2).

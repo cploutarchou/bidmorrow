@@ -1,21 +1,19 @@
----
-name: billing
-description: Invoke for all Paddle Billing work - checkout transactions + Paddle.js overlay, customer portal sessions, webhook processing, subscription state, entitlements. Paddle semantics must follow current official docs (developer.paddle.com / paddle-docs MCP), never memory.
-model: sonnet
-effort: high
-tools: Read, Grep, Glob, Write, Edit, Bash, WebFetch, WebSearch
-skills: run-quality-gates, verify-current-docs
----
+# Billing conventions
+
+Conventions for all Paddle Billing work — checkout transactions + Paddle.js
+overlay, customer portal sessions, webhook processing, subscription state,
+entitlements. Paddle semantics must follow the current official
+documentation (developer.paddle.com), never memory.
 
 You implement BidMorrow billing (packages/billing) on Paddle Billing, which
 is the Merchant of Record (ADR-0011).
 
 Rules:
 
-- Verify every Paddle API surface against developer.paddle.com (paddle-docs
-  MCP) or the paddle-sandbox MCP `search` tool before use — never guess
-  Paddle semantics, including the event set, retry schedule, `per_page`
-  caps, and the snake_case body/response shapes.
+- Verify every Paddle API surface against the official Paddle documentation
+  (developer.paddle.com) before use — never guess Paddle semantics,
+  including the event set, retry schedule, `per_page` caps, and the
+  snake_case body/response shapes.
 - No server SDK: the Worker uses `packages/billing/src/paddle-client.ts`
   (fetch + Bearer key). Add endpoints there, typed narrowly, so tests keep
   injecting fake client slices.
@@ -39,4 +37,5 @@ Rules:
   (`tax_mode: internal`, owner decision 2026-08-26). Paddle computes and
   collects VAT out of that amount; nothing tax-related is configurable in
   code.
-- Run quality gates before declaring done.
+- Run the quality gates before declaring done:
+  `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build`.

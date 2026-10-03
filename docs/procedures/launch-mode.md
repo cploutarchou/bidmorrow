@@ -1,9 +1,8 @@
----
-name: launch-mode
-description: Operate the pre-launch gate (registrations + new subscriptions closed in production until the end-of-August launch) — check status, preview the countdown, verify the gates, and execute the go-live flag flip. Use when asked about launch state, to open/close signups, or on launch day.
----
+# Launch mode procedure (pre-launch gate + go-live)
 
-# Launch mode (pre-launch gate + go-live)
+Operates the pre-launch gate (registrations + new subscriptions closed in
+production until the end-of-August launch): check status, preview the
+countdown, verify the gates, and execute the go-live flag flip.
 
 ## How it works (implemented 2026-08-21)
 
@@ -73,4 +72,5 @@ the banner, not the gates).
   `prelaunch` in production unless overriding the default; absence
   already means closed there.
 - Any change to gate behavior needs `apps/worker/src/prelaunch.test.ts`
-  updated and the full gates + E2E green (see run-quality-gates skill).
+  updated and the full quality gates + E2E green
+  (`pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build`).

@@ -1,9 +1,9 @@
-# Fixture raw-material fetch (ted-fixture-refresh skill, Phase 13 gate 3):
+# Fixture raw-material fetch (Phase 13 gate 3):
 # downloads recent REAL competition notices from the TED Search API (the
 # session sandbox cannot reach ted.europa.eu — CI can) and force-pushes them
 # to the scratch branch `ted-fixture-raw`. The branch is transient raw
 # material: fixtures are sanitized + labeled from it by hand into
-# tests/fixtures/ted/ (see the skill), and the branch is deleted afterwards.
+# tests/fixtures/ted/, and the branch is deleted afterwards.
 # TED notices are public documents; the raw branch never touches main.
 name: TED fixture fetch
 

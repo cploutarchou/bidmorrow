@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "build": "pnpm --filter @bidmorrow/web build && pnpm --filter @bidmorrow/worker build",
     "verify:build": "node scripts/verify-build-artifacts.mjs",
+    "terms:check": "node scripts/check-forbidden-terms.mjs",
     "dev": "pnpm --filter @bidmorrow/worker dev",
     "db:migrate:local": "pnpm --filter @bidmorrow/worker db:migrate:local",
     "test:e2e": "playwright test"

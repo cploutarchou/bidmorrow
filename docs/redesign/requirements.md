@@ -96,8 +96,8 @@ security history, accessibility, licensing, bundle-size and runtime
 impact, whether the existing stack already covers it, and whether a small
 internal implementation is more appropriate. Avoid overlap. Record every
 added dependency and its rationale in `docs/dependency-versions.md` and
-the shared plan. Verify current API syntax via the `verify-current-docs`
-skill — never from memory.
+the shared plan. Verify current API syntax against the current official
+documentation — never from memory.
 
 ## Approval and pause rules
 
@@ -116,9 +116,8 @@ skill — never from memory.
 - 2026-08-17: Initial three directions rejected (see above); workflow
   restarted at research/creative exploration with this reusable system.
 - 2026-08-17 (~06:05 UTC): **Owner APPROVED Direction G — "Strata"**
-  ("i like strata"). ADOPTED for implementation. Reference mockup:
-  the assistant/code/artifact/d841bf21-aafa-4634-bbb8-0ca92f280ff5 (source
-  committed at `docs/redesign/mockups/direction-g-strata.html`).
+  ("i like strata"). ADOPTED for implementation. Reference mockup source
+  committed at `docs/redesign/mockups/direction-g-strata.html`.
   Character: dark-first ink-navy (#0C142E family) with warm solar
   apricot→rose accent, fully designed daylight twin, tasteful glass with
   reduced-transparency/no-backdrop-filter fallbacks, Sora display +
@@ -199,8 +198,8 @@ skill — never from memory.
   designed** — the theme toggle is removed and the Strata daylight twin is
   retired. Structure, copy, IA, pricing presentation, and page set are
   UNCHANGED — this is a visual re-skin, not a content or scope change.
-  Reference mockup: the assistant/code/artifact/701f686f-c51b-470a-9d0d-ab5a5995549d
-  (source committed at `docs/redesign/mockups/direction-b-control-room.html`).
+  Reference mockup source committed at
+  `docs/redesign/mockups/direction-b-control-room.html`.
   Character: near-black `#0b0d11` ground, panel `#12151b`/`#161a22`, ink
   `#e8edf4`, teal accent `#35d3c0` (on-accent `#062723`), strong `#4ade80`,
   risk `#f87171`, faint 64px grid-line texture, glowing tabular-mono score

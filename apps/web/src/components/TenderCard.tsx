@@ -139,8 +139,8 @@ export function TenderCard({
                 <span className="card-anatomy__name">{componentLabel(component.componentKey)}</span>
                 {max !== null && (
                   // Native <progress>, never an inline `style` width: CSP is
-                  // `style-src 'self'` with no unsafe-inline (docs/conventions/
-                  // frontend-engineer.md); the fill is styled entirely via
+                  // `style-src 'self'` with no unsafe-inline (docs/security.md);
+                  // the fill is styled entirely via
                   // ::-webkit-progress-value/::-moz-progress-bar in styles/base.css.
                   <progress
                     className="score-bar score-bar--sm"
