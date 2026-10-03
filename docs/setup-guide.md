@@ -247,7 +247,7 @@ Also confirm the admin allowlist (a variable, not a secret):
 
 ## 7. What is already connected to the assistant (no action needed)
 
-| Connection                        | Status       | What the assistant can do with it                                                                                                         |
+| Connection                        | Status       | What the assistant can do with it                                                                                                  |
 | --------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
 | GitHub (`cploutarchou/bidmorrow`) | ✅ connected | Branches, commits, PRs, CI status, merges                                                                                          |
 | Cloudflare MCP connector          | ✅ connected | Create/manage D1 databases, R2 buckets, KV; query D1; inspect Workers — used in Phase 13 to provision staging/production resources |
@@ -257,7 +257,7 @@ Also confirm the admin allowlist (a variable, not a secret):
 
 | Connector                                                                  | How                                                     | What it automates                                                                                              | Worth it?      |
 | -------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | -------------- |
-| **Paddle MCP** (official plugin: `paddle-sandbox` / `paddle-live` servers) | assistant plugin, already connected for sandbox       | Created the sandbox catalog, webhook destination and client token (4b/4d); can repeat for live once authorised | Already in use |
+| **Paddle MCP** (official plugin: `paddle-sandbox` / `paddle-live` servers) | assistant plugin, already connected for sandbox         | Created the sandbox catalog, webhook destination and client token (4b/4d); can repeat for live once authorised | Already in use |
 | Resend MCP                                                                 | Resend publishes an MCP server for _sending_ email only | Nothing in this guide — account, domain, API key stay manual                                                   | No             |
 
 Everything else is **deliberately not automatable**: plan/billing approvals,

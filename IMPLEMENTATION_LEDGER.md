@@ -5709,9 +5709,8 @@ unchanged as the body; single-day commits kept their message. Every
 rebuilt commit carries the last member's real author timestamp as both
 author and committer date, the original author, and the owner as
 committer. Messages passed through the filter from the blockers item
-(drop `Co-[Aa]uthored-[Bb]y: …the assistant`, session-link trailers,
-generator footers and session links
-lines; trim trailing blank lines). No file content was touched.
+(drop co-author trailers naming the assistant, session-link trailers and
+generator footers; trim trailing blank lines). No file content was touched.
 
 **Validation (real output).** `git diff --stat b06cc2d main-squashed`
 empty; `git rev-list --count` 29 (was 50); per-day counts 1 or 2 on all
@@ -5724,35 +5723,36 @@ empty; `git rev-list --count` 29 (was 50); per-day counts 1 or 2 on all
 
 | Day   | Old                                            | New       |
 | ----- | ---------------------------------------------- | --------- |
-| 08-18 | `dff5b86` (#57)                                | unchanged |
-| 08-19 | `2abbe02` (#58)                                | `d6a06bb` |
-| 08-19 | `dfeff49` (#59)                                | `5607570` |
-| 08-20 | `ecc77ca` `24a387e` (#60 #62)                  | `0b46823` |
-| 08-20 | `46995a1` `76f8a8c` (#64 #66)                  | `343b705` |
-| 08-21 | `913d1fc` `c6ff276` (#68 #70)                  | `d2602ed` |
-| 08-21 | `9964d67` `31a308d` (#72 #74)                  | `8594d96` |
-| 08-22 | `597483f` `2e2d381` (#75 #76)                  | `7bc5726` |
-| 08-22 | `29db8ff` `b51b2f3` (#77 #78)                  | `68cf815` |
-| 08-23 | `39738fa` `efa2d7c` (#82 #86)                  | `f6ae4ec` |
-| 08-23 | `6ce9fa0` `6658132` (#90 #94)                  | `f6dc51e` |
-| 08-24 | `6916136` `de0913c` `ffd2e85` (#95 #96 #97)    | `87cdda4` |
-| 08-24 | `fa1310b` (#98)                                | `70f5651` |
-| 08-25 | `9571597` `baa013e` (#99 #101)                 | `4d7f3db` |
-| 08-25 | `db570fd` `9afe61f` (#102 #104)                | `97c942c` |
-| 08-26 | `d8fd4ef` `304fb9b` `794c4a4` (#105 #107 #108) | `8e3b4bb` |
-| 08-26 | `8352e54` (#110)                               | `402b347` |
-| 08-29 | `08b4567` (#111)                               | `ed539ea` |
-| 08-30 | `9c7a760` `5c4bd79` `6788638` (#115 #120 #125) | `b70e131` |
-| 08-30 | `dae81fd` (#130)                               | `205b567` |
-| 09-01 | `92fc04d` (#132)                               | `427f72d` |
-| 09-01 | `dbe1250` (#133)                               | `1d78ef1` |
-| 09-02 | `1cae102` `6f9e833` `5025bad` (#131 #136 #138) | `1dcebb3` |
-| 09-02 | `02b3864` (#140)                               | `02ddaa9` |
-| 09-03 | `fed6b65` `4af7290` (#141 #142)                | `9ede73b` |
-| 09-03 | `e110afc` `e243300` (#143 #144)                | `8ddc138` |
-| 09-04 | `2a6eafe` (#145)                               | `8acac00` |
-| 09-04 | `cee5847` `6b1af6d` (#146 #147)                | `ec4ab45` |
-| 09-05 | `b06cc2d` (#148)                               | `557a1f6` |
+| 08-18 | `dff5b86` (#57)                                | `8cadb76` |
+| 08-19 | `2abbe02` (#58)                                | `c26f299` |
+| 08-19 | `dfeff49` (#59)                                | `65e5052` |
+| 08-20 | `ecc77ca` `24a387e` (#60 #62)                  | `1012706` |
+| 08-20 | `46995a1` `76f8a8c` (#64 #66)                  | `abb9f3c` |
+| 08-21 | `913d1fc` `c6ff276` (#68 #70)                  | `e39f12d` |
+| 08-21 | `9964d67` `31a308d` (#72 #74)                  | `fb886db` |
+| 08-22 | `597483f` `2e2d381` (#75 #76)                  | `1b1b3ba` |
+| 08-22 | `29db8ff` `b51b2f3` (#77 #78)                  | `80f5a13` |
+| 08-23 | `39738fa` `efa2d7c` (#82 #86)                  | `cb5d3ec` |
+| 08-23 | `6ce9fa0` `6658132` (#90 #94)                  | `29ec5cf` |
+| 08-24 | `6916136` `de0913c` `ffd2e85` (#95 #96 #97)    | `3a9dc99` |
+| 08-24 | `fa1310b` (#98)                                | `b4fb8b8` |
+| 08-25 | `9571597` `baa013e` (#99 #101)                 | `d234886` |
+| 08-25 | `db570fd` `9afe61f` (#102 #104)                | `aa177c1` |
+| 08-26 | `d8fd4ef` `304fb9b` `794c4a4` (#105 #107 #108) | `9d977c9` |
+| 08-26 | `8352e54` (#110)                               | `1ccc5db` |
+| 08-29 | `08b4567` (#111)                               | `722db7f` |
+| 08-30 | `9c7a760` `5c4bd79` `6788638` (#115 #120 #125) | `2fa4477` |
+| 08-30 | `dae81fd` (#130)                               | `d0a434a` |
+| 09-01 | `92fc04d` (#132)                               | `fe57378` |
+| 09-01 | `dbe1250` (#133)                               | `9875bf5` |
+| 09-02 | `1cae102` `6f9e833` `5025bad` (#131 #136 #138) | `fa2acbd` |
+| 09-02 | `02b3864` (#140)                               | `3d082db` |
+| 09-03 | `fed6b65` `4af7290` (#141 #142)                | `31ac494` |
+| 09-03 | `e110afc` `e243300` (#143 #144)                | `660b5f0` |
+| 09-04 | `2a6eafe` (#145)                               | `65f15c8` |
+| 09-04 | `cee5847` `6b1af6d` (#146 #147)                | `1b328b3` |
+| 09-05 | `b06cc2d` (#148)                               | `c47cc31` |
+| 09-14 | `f08556c` (this record, 2026-09-14)            | `4dc7730` |
 
 **Consequences and rollback.** SHAs cited earlier in this file and in the
 blockers file refer to the old history; deploy runs keep pointing at the
@@ -5769,17 +5769,81 @@ the backup branch once satisfied — it keeps the 50 old commits reachable
 **Push record.** `git push --force-with-lease origin main-squashed:main`
 was declined by the `main-protection` ruleset ("push declined due to
 repository rule violations", two required status checks expected); the
-session has no tool that edits rulesets. The rewritten history (this
-commit on top) was pushed to `work/history-rewrite`
-and to the old working branch `work/bidmorrow-production-impl`
-(previously identical to the old `main`). Finishing is one owner step:
-set the `main-protection` ruleset to Disabled (Settings → Rules →
-Rulesets), run
-`git push --force origin work/history-rewrite:main`
-(or tell the session "go" while it is disabled), then set the ruleset
-back to Active. No pull request was opened for the branch on purpose: a
-merge would join the two histories (80 commits) instead of replacing
-`main`.
+session has no tool that edits rulesets. The rewritten history was pushed
+to the session's working branch and to the old working branch (previously
+identical to the old `main`); both were superseded on 2026-10-03 by
+`work/history-rewrite` (next section), which is the branch to swap in.
+Finishing is one owner step: set the `main-protection` ruleset to
+Disabled (Settings → Rules → Rulesets), run
+`git push --force origin work/history-rewrite:main` (or tell the session
+"go" while it is disabled), then set the ruleset back to Active. No pull
+request was opened for the branch on purpose: a merge would join the two
+histories instead of replacing `main`.
+
+## Tooling directory removed and vendor mentions scrubbed from the whole history (2026-10-03)
+
+Owner instruction in the session of 2026-10-03, while the 09-14 rewrite
+was still waiting for the ruleset toggle: the assistant's name must not
+appear anywhere in the repository — branch names, commit messages, file
+paths or file content — and the assistant tooling directory and its guide
+file are to be deleted outright (owner's choice over keeping them
+untracked).
+
+**Method.** Second rebuild from the same root with the same grouping and
+dates as the 09-14 rewrite (30 commits including the 09-14 docs commit).
+For every commit the exact original tree was checked out, the tooling
+directory and guide file removed, nine cited files relocated, and one
+ordered replacement ruleset applied to every text file and to the commit
+message; the rebuild fails hard if the assistant's or its vendor's name
+survives in any tree, path or message. Relocations (so no document, test
+or code comment points at a deleted file): guide → `docs/project-guide.md`;
+role conventions frontend/billing/ux-strategist → `docs/conventions/`;
+procedures tenant-isolation-audit, production-readiness-audit, launch-mode
+→ `docs/procedures/`; the redesign requirements/decisions log →
+`docs/redesign/requirements.md`; the competitor-profile template →
+`docs/redesign/templates/`. Removed: the remaining 45 tooling files
+(agent prompts, skills, settings, hook, command). Wording: the assistant
+is "the assistant"/"the coding assistant", its design product "the design
+tool"; the working-branch prefix is `work/` (both workflows that guard
+`main|work/*` updated); artifact and session links dropped. Hand polish at
+the head: `docs/project-guide.md` (conventions/procedures section),
+`eslint.config.js` and `.prettierignore` (stale ignore comments), the
+closed blockers item (its obsolete recipe block), one sentence in
+`docs/website-redesign-plan.md`.
+
+**Validation (real output).** `git rev-list --count` 30; max two commits
+on any day; author/committer owner on all 30; case-insensitive scan of
+every tracked file in every one of the 30 trees: 0 hits; paths in every
+tree: 0 hits; all 30 messages: 0 hits. Head diff against the 09-14 result:
+93 files — 45 deleted, 9 renamed, 39 modified (112 insertions, 2,758
+deletions); product code changed only in comments (six `apps/web` files,
+one `packages/*` file, three tests). Quality gates are recorded with the
+commit that carries this entry.
+
+**Branches.** New history on `work/history-rewrite`. The SHA map above
+now lists the final (2026-10-03) commits.
+
+**Finding while pushing (2026-10-03): `main` no longer holds the 09-05
+code.** GitHub's event log shows that on 2026-09-29 19:38–19:39 UTC the
+owner's account deleted `backup/main-pre-squash-2026-09-14` and both
+former working branches, then force-pushed `main` from `b06cc2d` to
+`78ea0a4`: a 113-commit history whose newest commit is dated 2026-08-22
+(up to 20 commits a day in mid-August, 37 commits under assistant
+committer identities, 46 files naming the assistant). Its tree is older
+than the 08-22 state in the rewritten history (no `apps/www-redirect`, no
+`site-health.yml`, no template-conversion audit; it adds a 1.4 MB handoff
+zip) and lacks everything from 08-22 to 09-05 (Paddle billing, launch,
+the 09-01 incident fixes; 450 files differ from `b06cc2d`). The push
+auto-ran `Deploy staging` (19:39:56 UTC, success), so **staging has been
+running 08-22 code since**, and `E2E (nightly)` on `main` has failed every
+night from 09-30. `Deploy production` last ran on 09-04 (`9cc78f7`), so
+production is unaffected. The most likely cause is a stale local clone
+force-pushed by mistake. Nothing on `78ea0a4` is missing from
+`work/history-rewrite`; the stale head and the old 50-commit head are
+pinned as local tags in the session (not pushed: both carry the names the
+owner wants out of the repository). Recovery = the same swap as planned:
+`git push --force origin work/history-rewrite:main` with the ruleset
+disabled, then redeploy staging from the new `main`.
 
 ## Notes
 

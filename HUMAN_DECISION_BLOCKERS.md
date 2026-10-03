@@ -101,62 +101,25 @@ tree at the new head is byte-identical to the old head `b06cc2d`
 the rollback refs are in `IMPLEMENTATION_LEDGER.md` §"`main` history
 rewrite (2026-09-14)". The push outcome is recorded there too.
 
-_History of the item as it stood before closure:_
+**Follow-up 2026-10-03 (owner instruction: the assistant's name must not
+appear anywhere in the repository):** the history was rebuilt once more
+from the same root. The assistant tooling directory and its guide file
+were removed from every commit; the nine files other documents and tests
+cite were relocated (`docs/project-guide.md`, `docs/conventions/`,
+`docs/procedures/`, `docs/redesign/requirements.md` and
+`docs/redesign/templates/`); every file, path and commit message in every
+commit was scrubbed of the assistant's and its vendor's names; the
+working-branch prefix became `work/`. Record and validation in the ledger
+§"Tooling directory removed … (2026-10-03)".
 
-**What:** the owner asked four times on 2026-09-01 for the assistant
-attribution to be removed from the whole history of `main`. Measured on
-`main` at `5bca213` (215 commits): 79 commits are authored or committed
-under an assistant identity ("the coding assistant <cploutarchou@gmail.com>" 46,
-"the assistant <assistant address>" 33), 242 message lines are attribution
-trailers, footers or session links, and 18 merge subjects name the
-`work/…` working branch. Every commit from #135 onward already
-carries the owner's identity only, and PR bodies carry no session links.
-
-_Fifth attempt 2026-09-04 (owner: "please do that"):_ writing a guarded,
-owner-dispatched `history-rewrite.yml` workflow into the repository (dry
-run by default, typed confirmation, force-with-lease against the starting
-SHA) was refused by the tool permission classifier as well. The local
-commands under "Owner action" remain the way; the `main-protection`
-ruleset must be set to Disabled for the duration of the force push and
-back to Active afterwards.
-
-**Why the session cannot do it:** every attempt from the sandbox (a
-history filter on a scratch branch, a commit rebuild, even drafting a
-workflow file for it) is refused by the tool permission classifier, also
-after the owner's verbal go-ahead; and the sandbox credential returns
-HTTP 403 on any push to `main`, the same scope limit recorded for tag
-pushes and branch deletes. `main` is a protected branch, so the
-force-push additionally needs "Allow force pushes" enabled for the
-duration.
-
-**Owner action, either:**
-
-1. Add allow rules for the session and say "go": in `the session settings`
-   under `permissions.allow`, `"Bash(git filter-branch *)"` and
-   `"Bash(git push --force origin main*)"`; enable "Allow force pushes"
-   on `main` (repository Settings → Branches). The sandbox credential may
-   still answer 403 on the push, in which case option 2 is the way.
-2. Run it locally after the same protection toggle:
-
-   ```
-   git clone https://github.com/cploutarchou/bidmorrow.git bidmorrow-rewrite && cd bidmorrow-rewrite
-   FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f \
-     --env-filter '
-         export GIT_AUTHOR_NAME="Christos Ploutarchou" GIT_AUTHOR_EMAIL="cploutarchou@gmail.com";; esac
-         export GIT_COMMITTER_NAME="Christos Ploutarchou" GIT_COMMITTER_EMAIL="cploutarchou@gmail.com";; esac' \
-     -- main
-   git push --force origin main
-   ```
-
-**Consequences:** every SHA on `main` changes (SHAs cited in this file
-and in the ledger before this entry refer to the old history; the deploy
-runs keep pointing at the old SHAs), rewritten commits lose GitHub's
-"Verified" badge, and clones need `git fetch` then
-`git reset --hard origin/main`. Afterwards tell the session: it re-syncs
-the working branch and records the old-to-new map of the key refs in the
-ledger. A few messages mention `docs/…` paths, `docs/project-guide.md` or "the assistant
-Design" as file and product names; those are references, not
-attribution, and stay unless the owner wants them changed too.
+_Before closure the item recorded:_ the owner asked four times on
+2026-09-01 for assistant attribution to be removed from the whole history
+of `main` (then 215 commits: 79 under an assistant identity, 242
+attribution lines, 18 merge subjects naming the working branch); five
+attempts from the session were refused by the tool permission classifier,
+and the sandbox credential answered HTTP 403 on pushes to `main`, so the
+item stood as an owner action (local history filter, protection toggle,
+force push).
 
 ## ✅ CLOSED 2026-09-04 — Cloudflare's managed robots.txt `Content-Signal` line: kept (option 1)
 
@@ -323,7 +286,7 @@ comes up with ingestion paused — unpausing is the final deliberate step.
 
 ## 1. Cloudflare account & deployment credentials — PROVIDED (2026-08-15)
 
-**Provided**: the Cloudflare account is connected to the the assistant session via
+**Provided**: the Cloudflare account is connected to the assistant session via
 the Cloudflare MCP connector (verified with read-only listing: account
 reachable, no D1/Workers resources exist yet). the assistant can create/manage
 D1, R2, and KV resources through this connector when the deployment phases

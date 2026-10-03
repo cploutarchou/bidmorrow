@@ -283,8 +283,8 @@ OUT this cycle, with reasons:
 ### 4d. Design exploration & migration path (the design tool)
 
 Available in this session via the `DesignSync` tool + `/design-sync`
-skill (syncs a local component library into a the design tool
-design-system project the owner reviews in the Design pane).
+skill (syncs a local component library into a design-system project the
+owner reviews in the design tool's Design pane).
 
 - **Exploration (M0, before code lands in `apps/web`)**: build the Mac
   Modern design system as a reviewable library — foundations (color
