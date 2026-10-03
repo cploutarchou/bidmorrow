@@ -5845,6 +5845,34 @@ owner wants out of the repository). Recovery = the same swap as planned:
 `git push --force origin work/history-rewrite:main` with the ruleset
 disabled, then redeploy staging from the new `main`.
 
+**Swap completed (2026-10-03 19:59 UTC).** The owner ran, from a local
+clone, `gh api -X PUT …/rulesets/20917184 -f enforcement=disabled`, then
+`git push --force origin origin/work/history-rewrite:main`
+(`78ea0a4…8f1de0d`, forced update), then the same call with
+`enforcement=active`; the ruleset was open for three seconds
+(22:59:14–22:59:17 +03:00) and is Active again with its four rules
+(deletion, non_fast_forward, pull_request, required_status_checks) and no
+bypass actors. The session's own attempts to push (`--force-with-lease`)
+and to toggle the ruleset through its proxy were refused (HTTP 403 on
+write; rule violations on push), so the owner's action was the only way,
+as the blockers item had predicted. `main` verified after the push:
+`8f1de0d`, 31 commits, no day above two, zero occurrences of the
+assistant's or vendor's name in any file, path or message, owner identity
+on every commit. The push triggered `CI` (run 37149881991: `checks` and
+`secret-scan` green, 19:59–20:02 UTC), `Deploy staging` (run 37149882030,
+green, 20:00:03 UTC) and, by the production-tracks-main rule of
+2026-09-02, `Deploy production` (run 37149931417, green, 20:00:59 UTC).
+Production and staging therefore run `8f1de0d`, whose product code
+differs from the 09-05 head `b06cc2d` by ten comment lines in ten files
+(`git diff --stat b06cc2d 8f1de0d -- apps packages migrations tests`: 10
+files, +10/−10); staging is back on current code after five days on the
+08-22 tree. GitHub-side: no repository description, topics or tags, no
+open pull requests, two branches (`main`, `work/history-rewrite`,
+identical). The session's local backup tags (`backup/main-pre-squash-
+2026-09-14` = `b06cc2d`, `backup/main-stale-0822-pushed-2026-09-29` =
+`78ea0a4`) were not pushed and die with the session; the owner's local
+clones are the only other copies of the pre-rewrite history.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags

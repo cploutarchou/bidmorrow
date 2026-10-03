@@ -110,7 +110,11 @@ cite were relocated (`docs/project-guide.md`, `docs/conventions/`,
 `docs/redesign/templates/`); every file, path and commit message in every
 commit was scrubbed of the assistant's and its vendor's names; the
 working-branch prefix became `work/`. Record and validation in the ledger
-§"Tooling directory removed … (2026-10-03)".
+§"Tooling directory removed … (2026-10-03)". The owner swapped `main`
+to the new history the same evening (19:59 UTC; ruleset disabled for three
+seconds through the API, force push, ruleset re-enabled); CI, the staging
+deploy and the production deploy it triggered are green on `8f1de0d`.
+Nothing is left open on this item.
 
 _Before closure the item recorded:_ the owner asked four times on
 2026-09-01 for assistant attribution to be removed from the whole history
