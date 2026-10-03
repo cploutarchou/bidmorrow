@@ -70,9 +70,9 @@ before widening anything.
 - Widening triggers a **bounded backfill**: admin specifies family +
   publication-date range (max 90 days per operation), runs through the
   normal ingestion pipeline with its budget caps.
-- Cost guardrail: after any widening, the cost-audit skill re-projects D1
-  growth; scope changes that project past 60% of the D1 limit at 12 months
-  are rejected pending retention tightening.
+- Cost guardrail: after any widening, a cost review against docs/cost-model.md
+  re-projects D1 growth; scope changes that project past 60% of the D1 limit
+  at 12 months are rejected pending retention tightening.
 
 ## Product disclosure
 

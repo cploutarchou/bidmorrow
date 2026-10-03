@@ -1,8 +1,8 @@
 # Dependency & Platform Version Register
 
 Verified against official sources on **2026-08-14** (npm registry for
-versions; official docs for behavior). Re-verify via the verify-current-docs
-skill before relying on any entry older than ~1 month.
+versions; official docs for behavior). Re-verify against the current official
+documentation before relying on any entry older than ~1 month.
 
 ## Pinned application dependencies (Phase 2 targets)
 
@@ -54,7 +54,7 @@ skill before relying on any entry older than ~1 month.
 - **R2**: free tier 10 GB + 1M Class A + 10M Class B per month; lifecycle
   rules supported (age-based deletion / IA transition).
 
-## Paddle facts (ADR-0011, verified 2026-08-25 via the paddle-docs MCP / API reference)
+## Paddle facts (ADR-0011, verified 2026-08-25 against the official Paddle API reference)
 
 - API bases: sandbox `https://sandbox-api.paddle.com`, live
   `https://api.paddle.com`. Auth: `Authorization: Bearer <api key>`
@@ -117,8 +117,8 @@ None adopted pre-stable; revisit at Phase 12.
 
 ## Website redesign — M0.1 Strata design-system foundation (2026-08-17)
 
-Verified via the npm registry (`npm view <pkg> version`, per the
-verify-current-docs skill's approved source list) plus direct inspection of
+Verified via the npm registry (`npm view <pkg> version`, an approved source
+for verification against current official documentation) plus direct inspection of
 the installed package contents (README, shipped CSS, `dist/` source) —
 `fontsource.org`/`lucide.dev` doc pages were not reachable from this
 environment (no outbound web-fetch tool available to this session), so API

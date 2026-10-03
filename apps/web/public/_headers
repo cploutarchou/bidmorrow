@@ -17,8 +17,8 @@
 # mechanism): ≤100 header rules per project, ≤2,000 characters per header
 # line, ≤100 headers total per `_headers` file.
 #
-# VERIFICATION NOTE (2026-08-15): the `verify-current-docs` skill's live
-# Cloudflare-docs fetch was attempted for this session but the outbound
+# VERIFICATION NOTE (2026-08-15): a live fetch of the current official
+# Cloudflare docs was attempted for this session but the outbound
 # proxy returned a blocked/403 response (same restriction noted in prior
 # phases for ted.europa.eu/ecb.europa.eu — developers.cloudflare.com was
 # likewise unreachable from this dev environment). This `_headers` syntax

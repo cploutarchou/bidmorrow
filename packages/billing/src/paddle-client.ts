@@ -8,7 +8,7 @@
  * greppable in one file, and — like the previous `stripe-types.ts` seams —
  * lets unit tests inject a fake implementing only the slice a test needs.
  *
- * Verified against the Paddle API reference (paddle-docs MCP,
+ * Verified against the official Paddle API reference (developer.paddle.com,
  * 2026-08-25; docs/dependency-versions.md § Paddle facts):
  *   GET   /subscriptions/{id}
  *   POST  /subscriptions/{id}/cancel        { effective_from }

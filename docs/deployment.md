@@ -153,8 +153,9 @@ verifications could only be deferred to the first staging deploy:
    record actual scoped notices/day in docs/cost-model.md + the ledger
    (planning assumption is 150–300/day; tighten scope before widening if
    reality exceeds 2× projection per ADR-0003).
-3. Refresh fixtures from live published notices (ted-fixture-refresh skill)
-   to complement the OP-TED SDK example fixtures (TED-P5-02 audit note).
+3. Refresh fixtures from live published notices (per
+   .github/workflows/ted-fixture-fetch.yml) to complement the OP-TED SDK
+   example fixtures (TED-P5-02 audit note).
    Plan: source them from the first staging ingestion's R2 snapshots
    (real notices our own pipeline stored) rather than separate API pulls.
 

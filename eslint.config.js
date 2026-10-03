@@ -17,8 +17,6 @@ export default tseslint.config(
       '**/coverage/**',
       '**/playwright-report/**',
       '**/test-results/**',
-      // Agent worktrees checked out inside the repo during a session —
-      // full copies of the tree, git-excluded, never product code.
     ],
   },
   js.configs.recommended,
@@ -59,8 +57,8 @@ export default tseslint.config(
   },
   {
     // Node CLI helper scripts (E2E dev-vars writer, the sample-verdict
-    // generator, the run-bidmorrow driver, etc.): run under plain node, so
-    // node globals exist and stdout logging is their job.
+    // generator, etc.): run under plain node, so node globals exist and
+    // stdout logging is their job.
     files: ['scripts/**/*.mjs', 'packages/*/scripts/**/*.ts'],
     languageOptions: {
       globals: {

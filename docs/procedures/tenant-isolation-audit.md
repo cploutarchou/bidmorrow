@@ -1,8 +1,8 @@
 # Tenant-isolation audit procedure
 
-Structured audit for cross-tenant data isolation. Use during security review of any phase touching organization-owned data, and whenever a new table, repository, or endpoint is added. Any failure is Critical severity.
-
-# Tenant isolation audit
+Structured audit for cross-tenant data isolation, run during security review
+of any phase touching organization-owned data and whenever a new table,
+repository, or endpoint is added. Any failure is Critical severity.
 
 Structural rule: ALL organization-scoped data access goes through repository
 functions that REQUIRE organizationId. Isolation must be reviewable by grep,

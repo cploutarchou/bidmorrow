@@ -46,18 +46,19 @@ values are never committed. See `docs/deployment.md`.
 
 ## Documentation map
 
-| Topic                                     | Doc                                                                                    |
-| ----------------------------------------- | -------------------------------------------------------------------------------------- |
-| Product scope & exclusions                | docs/product-scope.md                                                                  |
-| Architecture + ADRs                       | docs/architecture.md, docs/architecture-decisions/                                     |
-| Data model                                | docs/data-model.md                                                                     |
-| TED integration & ingestion scope         | docs/ted-data-source.md, docs/ted-ingestion-scope.md                                   |
-| Matching engine                           | docs/matching-engine.md                                                                |
-| Security & threat model                   | docs/security.md, docs/threat-model.md                                                 |
-| Privacy                                   | docs/privacy.md                                                                        |
-| Cost model                                | docs/cost-model.md                                                                     |
-| Deployment / backup / runbook / incidents | docs/deployment.md, docs/backup-restore.md, docs/runbook.md, docs/incident-response.md |
-| Definition of Done                        | docs/production-checklist.md                                                           |
+| Topic                                      | Doc                                                                                    |
+| ------------------------------------------ | -------------------------------------------------------------------------------------- |
+| Project guide (rules, structure, commands) | docs/project-guide.md                                                                  |
+| Product scope & exclusions                 | docs/product-scope.md                                                                  |
+| Architecture + ADRs                        | docs/architecture.md, docs/architecture-decisions/                                     |
+| Data model                                 | docs/data-model.md                                                                     |
+| TED integration & ingestion scope          | docs/ted-data-source.md, docs/ted-ingestion-scope.md                                   |
+| Matching engine                            | docs/matching-engine.md                                                                |
+| Security & threat model                    | docs/security.md, docs/threat-model.md                                                 |
+| Privacy                                    | docs/privacy.md                                                                        |
+| Cost model                                 | docs/cost-model.md                                                                     |
+| Deployment / backup / runbook / incidents  | docs/deployment.md, docs/backup-restore.md, docs/runbook.md, docs/incident-response.md |
+| Definition of Done                         | docs/production-checklist.md                                                           |
 
 ## Data source & attribution
 

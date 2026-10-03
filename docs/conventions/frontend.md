@@ -1,6 +1,8 @@
 # Frontend conventions
 
-Implement or modify UI - the React app (feed, tender detail, onboarding, settings), the marketing pages, responsive layout, and accessibility work.
+Conventions for implementing or modifying UI — the React app (feed, tender
+detail, onboarding, settings), the marketing pages, responsive layout, and
+accessibility work. API handlers are backend work, not covered here.
 
 You implement BidMorrow UI (apps/web, packages/ui).
 
@@ -20,4 +22,5 @@ Rules:
   decision-support disclaimer, TED attribution in footer, SEO basics
   (title/description/canonical/OG/sitemap/robots).
 - Responsive design required. Pagination on all unbounded lists.
-- Run quality gates before declaring done.
+- Run the quality gates before declaring done:
+  `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build`.

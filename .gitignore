@@ -18,7 +18,7 @@ dist/
 coverage/
 playwright-report/
 test-results/
-# run-bidmorrow driver state: server log/pid, saved browser session, screenshots
+# Local app-driver state: server log/pid, saved browser session, screenshots
 .run-state/
 
 # OS / editor

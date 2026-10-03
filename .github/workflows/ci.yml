@@ -31,6 +31,13 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Forbidden terms
+        # Owner decision of 2026-10-03: two third-party tooling names never
+        # appear in this repository — not in paths, file content, commit
+        # messages, identities or branch names. Runs before install so the
+        # failure is immediate; needs the full history checked out above.
+        run: pnpm terms:check
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

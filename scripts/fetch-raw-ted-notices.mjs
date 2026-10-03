@@ -3,9 +3,9 @@
  * their raw multilingual XML + search metadata into ./raw-fixtures/.
  *
  * Used ONLY by .github/workflows/ted-fixture-fetch.yml (the session sandbox
- * cannot reach ted.europa.eu — CI can), as raw material for the
- * ted-fixture-refresh skill: the fixtures that land in tests/fixtures/ted/
- * are sanitized + labeled from these by hand, never committed raw.
+ * cannot reach ted.europa.eu — CI can), as raw material for fixture
+ * refreshes: the fixtures that land in tests/fixtures/ted/ are sanitized +
+ * labeled from these by hand, never committed raw.
  *
  * API surface per docs/ted-data-source.md (verified 2026-08-14):
  * POST https://api.ted.europa.eu/v3/notices/search — anonymous, JSON body,

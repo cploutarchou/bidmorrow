@@ -7,7 +7,7 @@ revenue, not fixed cost).
 
 Prices verified against official Cloudflare/Resend docs on **2026-08-14**
 (see docs/dependency-versions.md for sources). Re-verify at each phase review
-(cost-audit skill).
+(cost review against this document).
 
 ## Platform allowances (Workers Paid, $5/mo base)
 
