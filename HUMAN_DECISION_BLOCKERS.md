@@ -124,8 +124,10 @@ three lines of every historical tree, and that in UTC three days showed
 three commits; the owner chose a third, final rebuild (unsigned commits,
 front-matter and model names stripped, regrouped so UTC and +03:00 both
 stay at two a day) with the guard folded in. Its validation and SHA map
-are in the ledger §"Final rebuild (v3)". The GitHub-side residue that no
-rewrite can reach is the separate OPEN item below.
+are in the ledger §"Final rebuild (v3)". The owner swapped `main` to it
+at 21:02 UTC on 2026-10-03 (ledger §"Final history on `main`"); CI,
+staging and production are green on `8f22072`. The GitHub-side residue
+that no rewrite can reach is the separate OPEN item below.
 
 _Before closure the item recorded:_ the owner asked four times on
 2026-09-01 for assistant attribution to be removed from the whole history
@@ -171,10 +173,17 @@ credentials can change, and one mechanism keeps re-adding them:
    branch labels of old Actions runs. Pull-request head refs are immutable
    on GitHub; the runs can be deleted (`gh api -X DELETE
 repos/cploutarchou/bidmorrow/actions/runs/<id>` for the runs whose
-   `head_branch` starts with the old prefix; list them with
-   `gh api --paginate repos/cploutarchou/bidmorrow/actions/runs --jq
-'.workflow_runs[] | select(.head_branch|startswith("cl"+"aude/")) | .id'`
-   — the prefix is split in two so this file never contains it).
+   `head_branch` is neither `main`/`master` nor a `work/` branch — list
+   them with `gh api --paginate repos/cploutarchou/bidmorrow/actions/runs
+--jq '.workflow_runs[] | select(.head_branch != "main" and .head_branch
+!= "master" and (.head_branch | startswith("work/") | not)) | .id'`;
+   the stored run titles and head-commit messages of those runs carry the
+   old names too, so deleting the runs removes all three at once. The 179
+   `gitleaks-results.sarif` artifacts of those runs disappear with them.
+   The repository's installed GitHub App of the assistant vendor also
+   attaches a check suite under its own name to every commit (visible in
+   the Checks tab); removing the app from this repository ends that, at the
+   cost of sessions no longer being able to push here).
 3. **Unreachable old commits.** Every pre-rewrite commit is still served
    by SHA (and through the closed pull requests' head refs) until GitHub's
    garbage collection; a GitHub Support request can purge them if that

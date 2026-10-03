@@ -5935,6 +5935,30 @@ triggers are recorded in the next entry, written after the fact.
 Pull request #150 is superseded by the head commit of v3 and is closed
 once `main` carries it.
 
+## Final history on `main` (2026-10-03 21:02 UTC)
+
+The owner ran the three commands from a local clone: ruleset
+`main-protection` disabled at 00:02:32 (+03:00), `git push --force origin
+origin/work/history-rewrite-v3:main` (`8f1de0d…8f22072`, forced update),
+ruleset re-enabled at 00:02:38 with its four rules and no bypass actors.
+`main` verified after the push: `8f22072`, 28 commits, per-day maximum 2
+in +03:00 and in UTC, zero occurrences of the two names and the four
+model-family names in every tree, path, message and identity, no
+signatures (GitHub shows the commits as plain unsigned, as the original
+squash merges were), owner as author and committer on all 28. The push
+triggered `CI` run 37153705700 (`checks` green 21:02:42–21:04:38 UTC with
+the `Forbidden terms` step passing first, then test and build;
+`secret-scan` green), `Deploy staging` run 37153705696 (green, 21:03:28)
+and `Deploy production` run 37153756707 (green, 21:04:27); both
+environments run `8f22072`, whose product build the independent review
+had shown byte-identical to the 09-05 code. Pull requests #149 and #150
+are closed (their content is in the head commit). Remote branches left
+for the owner to delete (deletion is refused to the session):
+`work/history-rewrite`, `work/history-rewrite-v3`,
+`work/forbidden-terms-guard`, `work/ledger-main-swap-record`. The
+GitHub-side residue is the open blockers item of 2026-10-03; the nightly
+E2E of 2026-10-04 is the first on the new history.
+
 ## Notes
 
 - Tags `phase-0-complete` / `phase-1-complete` created locally; pushing tags
